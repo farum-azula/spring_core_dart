@@ -477,7 +477,10 @@ class SpringApplication {
   /// - [hotReload] returns the application as the code is now (the
   ///   generated `runApplication` passes `() => springApplication`). With
   ///   it, a hot reload on the Dart VM restarts the context when the
-  ///   generated code changed; see [SpringHotReload].
+  ///   generated code changed; see [SpringHotReload]. It is also how the
+  ///   same application is started in another isolate: the context gets
+  ///   an [ApplicationLaunch] bean with it, which the web server's pool
+  ///   of isolates uses.
   ConfigurableApplicationContext run(
     List<String> args, {
     Map<String, String>? systemEnvironment,
@@ -485,6 +488,8 @@ class SpringApplication {
     List<String> additionalProfiles = const [],
     SpringApplication Function()? hotReload,
   }) {
+    _source = hotReload;
+    _sourceAsync = false;
     final context = _run(
       args,
       systemEnvironment,
@@ -497,6 +502,12 @@ class SpringApplication {
     }
     return context;
   }
+
+  // What returns this application as the code is now (`hotReload` of the
+  // current run), and whether it was started with [runAsync]: the
+  // context's [ApplicationLaunch] starts it again from them.
+  SpringApplication Function()? _source;
+  var _sourceAsync = false;
 
   ConfigurableApplicationContext _run(
     List<String> args,
@@ -641,6 +652,8 @@ class SpringApplication {
     List<String> additionalProfiles = const [],
     SpringApplication Function()? hotReload,
   }) async {
+    _source = hotReload;
+    _sourceAsync = true;
     final context = await _runAsync(
       args,
       systemEnvironment,
@@ -759,6 +772,8 @@ class SpringApplication {
     if (running.isActive) {
       running.close();
     }
+    _source = previous?.source;
+    _sourceAsync = false;
     return _run(
       previous?.args ?? const [],
       previous?.systemEnvironment,
@@ -785,6 +800,8 @@ class SpringApplication {
     if (running.isActive) {
       await running.closeAsync();
     }
+    _source = previous?.source;
+    _sourceAsync = true;
     return await _runAsync(
       previous?.args ?? const [],
       previous?.systemEnvironment,
@@ -1104,6 +1121,7 @@ class SpringApplication {
       launch.$1,
       launch.$2,
       launch.$3,
+      _source,
     );
     final arguments = ApplicationArguments(args);
     final logStartupInfo = main.logStartupInfo;
@@ -1134,6 +1152,20 @@ class SpringApplication {
           beanFactory: context.beanFactory,
         ),
       );
+    if (_source case final source?) {
+      context.beanFactory.registerSingleton(
+        ApplicationLaunch.beanName,
+        ApplicationLaunch(
+          source,
+          args: List.unmodifiable(args),
+          systemEnvironment: launch.$1,
+          properties: launch.$2,
+          additionalProfiles: launch.$3,
+          async: _sourceAsync,
+        ),
+        types: const [ApplicationLaunch],
+      );
+    }
     if (main.lazyInitialization) {
       context.addBeanFactoryPostProcessor(
         LazyInitializationBeanFactoryPostProcessor(),
@@ -1926,13 +1958,80 @@ final class _Launch {
     this.systemEnvironment,
     this.properties,
     this.additionalProfiles,
+    this.source,
   );
 
+  final SpringApplication Function()? source;
   final String? fingerprint;
   final List<String> args;
   final Map<String, String>? systemEnvironment;
   final Map<String, Object?> properties;
   final List<String> additionalProfiles;
+}
+
+/// How the running application was started, so that the same one can be
+/// started again in another isolate: the bean `springApplicationLaunch`,
+/// present when the application was run with what returns it
+/// (`SpringApplication.run(hotReload:)`, which the generated
+/// `runApplication` passes).
+///
+/// The web server's pool of isolates (`server.isolates.count`) starts each
+/// of its isolates with [start]. Everything here crosses to another
+/// isolate: [application] must not use anything from around it (the
+/// generated `() => springApplication` does not).
+final class ApplicationLaunch {
+  /// The launch of [application] with what `run` was given.
+  const ApplicationLaunch(
+    this.application, {
+    this.args = const [],
+    this.systemEnvironment,
+    this.properties = const {},
+    this.additionalProfiles = const [],
+    this.async = false,
+  });
+
+  /// The bean's name.
+  static const beanName = 'springApplicationLaunch';
+
+  /// Returns the application.
+  final SpringApplication Function() application;
+
+  /// The command line.
+  final List<String> args;
+
+  /// The environment variables given instead of the process's.
+  final Map<String, String>? systemEnvironment;
+
+  /// The properties given over every other source.
+  final Map<String, Object?> properties;
+
+  /// The profiles added for this launch.
+  final List<String> additionalProfiles;
+
+  /// Whether it was started with `runAsync`.
+  final bool async;
+
+  /// Starts the application again, where this is called (another isolate),
+  /// with [properties] over its own: the port to share, no banner.
+  Future<ConfigurableApplicationContext> start({
+    Map<String, Object?> properties = const {},
+  }) async {
+    final all = {...this.properties, ...properties};
+    final app = application();
+    return async
+        ? await app.runAsync(
+            args,
+            systemEnvironment: systemEnvironment,
+            properties: all,
+            additionalProfiles: additionalProfiles,
+          )
+        : app.run(
+            args,
+            systemEnvironment: systemEnvironment,
+            properties: all,
+            additionalProfiles: additionalProfiles,
+          );
+  }
 }
 
 /// How far an application's start has come, as `SpringApplication`

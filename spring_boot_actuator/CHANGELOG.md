@@ -1,3 +1,7 @@
+## Unreleased
+
+- The `isolates` endpoint (`IsolatesEndpoint`): every isolate of the application with its load (busy share, event-loop lag, requests in flight, the process's memory), asked from the application's first isolate, so whichever isolate of a pool takes the request answers them all.
+
 ## 0.7.3
 
 - The `jsonschemas` endpoint (`JsonSchemasEndpoint`): the schemas of the context's `JsonSchemaRegistry` by location, and the schema of every `@Introspected` class made from its introspection with the `ObjectMapper`'s naming; `GET /actuator/jsonschemas/{name}` one by class name or location.

@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:spring_boot_dart/spring_boot_dart.dart' show IsolateLocalState;
 import 'package:spring_boot_starter_cache/src/cache.dart';
 
 // Real time, monotonic, shared by every cache: what time to live is
@@ -394,7 +395,7 @@ final class _Entry {
 /// CacheManager manager = new ConcurrentMapCacheManager(); // dynamic
 /// CacheManager fixed = new ConcurrentMapCacheManager("books", "authors");
 /// ```
-final class InMemoryCacheManager implements CacheManager {
+final class InMemoryCacheManager implements CacheManager, IsolateLocalState {
   /// A manager whose caches take their limits from [specs] by name, then
   /// [specFor], then [defaultSpec].
   ///
@@ -452,6 +453,9 @@ final class InMemoryCacheManager implements CacheManager {
     allowNullValues: allowNullValues,
     clock: _clock,
   );
+
+  @override
+  String get isolateLocalState => 'cached values';
 
   @override
   Cache? getCache(String name) =>

@@ -119,7 +119,7 @@ final class IoWebServerFactory implements ConfigurableWebServerFactory {
 ///
 /// The starter's lifecycle bean starts and stops it with the context;
 /// applications do not create one directly.
-final class IoWebServer implements WebServer {
+final class IoWebServer implements WebServer, WebServerActivity {
   /// A server that hands requests to [handler] and listens as [settings]
   /// say.
   IoWebServer(this.handler, this.settings);
@@ -138,6 +138,61 @@ final class IoWebServer implements WebServer {
   int get port => _server?.port ?? -1;
 
   @override
+  int get activeRequests => _exchanges.length;
+
+  @override
+  int get requestCount => _requests;
+  var _requests = 0;
+
+  @override
+  int get refusedCount => _refused;
+  var _refused = 0;
+
+  // The connections open, counted at most every 100 ms: dart:io counts
+  // them by going through them all.
+  int _connections = 0;
+  final _counted = Stopwatch();
+
+  // Why the server takes no more now, when it is full; `null` when it
+  // has room. A full server answers at once that it is: a request that
+  // waits behind the others answers late or never, and takes memory
+  // meanwhile.
+  (String, {bool close})? _full(io.HttpServer server) {
+    if (settings.maxConcurrentRequests case final max?
+        when _exchanges.length > max) {
+      var active = 0;
+      for (final exchange in _exchanges) {
+        if (!exchange.isStreaming) {
+          active++;
+        }
+      }
+      if (active > max) {
+        return (
+          'The server answers its most requests at a time ($max)',
+          close: false,
+        );
+      }
+    }
+    if (settings.maxConnections case final max?) {
+      if (!_counted.isRunning ||
+          _counted.elapsedMilliseconds >= 100 ||
+          _connections > max) {
+        _connections = server.connectionsInfo().total;
+        _counted
+          ..reset()
+          ..start();
+      }
+      if (_connections > max) {
+        return (
+          'The server has its most connections open ($max)',
+          close: true,
+        );
+      }
+    }
+    return null;
+  }
+
+  @override
   Future<void> start() => _starting ??= _bind();
 
   // The bind in progress: a stop() waits for it, so a server stopped while
@@ -149,12 +204,17 @@ final class IoWebServer implements WebServer {
     final ssl = settings.ssl;
     try {
       _server = ssl == null
-          ? await io.HttpServer.bind(address, settings.port)
+          ? await io.HttpServer.bind(
+              address,
+              settings.port,
+              shared: settings.shared,
+            )
           : await io.HttpServer.bindSecure(
               address,
               settings.port,
               _securityContext(ssl),
               requestClientCertificate: ssl.clientAuth != ClientAuth.none,
+              shared: settings.shared,
             );
     } on io.SocketException catch (error) {
       if (_isAddressInUse(error)) {
@@ -258,7 +318,29 @@ final class IoWebServer implements WebServer {
   Future<void> _serve(io.HttpRequest ioRequest) async {
     final exchange = _Exchange(this, ioRequest);
     _exchanges.add(exchange);
+    _requests++;
     try {
+      final server = _server;
+      if (server != null) {
+        if (_full(server) case (final reason, :final close)?) {
+          _refused++;
+          final seconds = settings.retryAfter.inSeconds;
+          exchange.response.headers.set(
+            'Retry-After',
+            '${seconds < 1 ? 1 : seconds}',
+          );
+          if (close) {
+            // One connection too many: this one goes.
+            exchange.response.headers.set('Connection', 'close');
+            ioRequest.response.persistentConnection = false;
+          }
+          await exchange.response.problem(
+            HttpStatus.serviceUnavailable,
+            reason,
+          );
+          return;
+        }
+      }
       final method = _method(ioRequest.method);
       if (method == null) {
         await exchange.response.problem(

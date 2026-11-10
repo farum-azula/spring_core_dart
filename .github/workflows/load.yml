@@ -1,0 +1,356 @@
+name: Load
+
+# Load tests (docs/load-testing.md): tool/load.dart builds the bench server
+# (tool/load_bench), loads it with oha in steps of a rising rate and writes,
+# per scenario, the highest sustainable QPS and the breaking point.
+#
+# Three jobs: `load` (every sweep scenario, per entry of its matrix),
+# `isolates` (the api scenarios on 1, 2 and 4 server isolates, and how
+# the throughput scales) and `behaviour` (scaling under load, CPU-bound
+# work, the overload checks).
+#
+# By hand (Run workflow) and every night; never on a push: a run takes
+# about 20 minutes and its numbers are not a pass or fail.
+#
+# Shared runners are noisy (other jobs on the same host, a different
+# processor from one day to the next), and the load generator shares the
+# machine with the server. Read the numbers as ratios: between the labels
+# of one run (the comparison of the `compare` job), or against the previous
+# run on the same runner type (the "previous run" table of each job's
+# summary). Never compare absolute numbers with another machine's.
+on:
+  workflow_dispatch:
+    inputs:
+      scenarios:
+        description: Sweep scenarios or groups (sweep, api, files), comma-separated
+        default: sweep
+      duration:
+        description: How long a step lasts
+        default: 10s
+      rates:
+        description: The rates of the steps, in requests a second
+        default: 500,1000,2000,4000,8000,16000
+      server_args:
+        description: Arguments for the server, space-separated (--server.compression.enabled=true)
+        default: ''
+  schedule:
+    # Every night at 03:17 UTC, on the default branch.
+    - cron: '17 3 * * *'
+
+# The reports of the previous run are read to compare with.
+permissions:
+  contents: read
+  actions: read
+
+# One at a time: two runs would not share a machine, but nothing is gained
+# by measuring the same commit twice.
+concurrency:
+  group: load-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The load generator, pinned: a release binary (a few seconds; `cargo
+  # install oha --locked` compiles for minutes). The checksum is the one
+  # GitHub shows for the asset of the release.
+  OHA_VERSION: 1.16.0
+  OHA_SHA256: 620bb9e16fb53eabc9a3fc45f88bdb41fefa3fee5c05e75892011ce320391716
+
+jobs:
+  load:
+    name: Load (${{ matrix.label }})
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # One run per entry: its label and the server arguments that make
+          # it differ from the baseline. The `compare` job puts them side
+          # by side, with ratios against the baseline. More entries, for
+          # example the isolates of the server:
+          #   - label: isolates=2
+          #     server_args: --server.isolates.count=2
+          - label: baseline
+            server_args: ''
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      # pubspec.lock is not committed: the cache is keyed on the pubspecs.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Install oha
+        run: |
+          curl --fail --silent --show-error --location \
+            --output "$RUNNER_TEMP/oha" \
+            "https://github.com/hatoo/oha/releases/download/v$OHA_VERSION/oha-linux-amd64"
+          echo "$OHA_SHA256  $RUNNER_TEMP/oha" | sha256sum --check
+          chmod +x "$RUNNER_TEMP/oha"
+          "$RUNNER_TEMP/oha" --version
+
+      # A moderate run: every scenario, six rates, 10 s a step, and a huge
+      # file of 256 MB (the default of the tool is 512 MB). The tool builds
+      # the server to a native executable first.
+      - name: Load tests
+        env:
+          SCENARIOS: ${{ inputs.scenarios || 'sweep' }}
+          DURATION: ${{ inputs.duration || '10s' }}
+          RATES: ${{ inputs.rates || '500,1000,2000,4000,8000,16000' }}
+          LABEL: ${{ matrix.label }}
+          MATRIX_ARGS: ${{ matrix.server_args }}
+          INPUT_ARGS: ${{ inputs.server_args }}
+        run: |
+          read -r -a server_args <<< "$MATRIX_ARGS $INPUT_ARGS"
+          for argument in "${server_args[@]}"; do
+            server+=(--server-arg "$argument")
+          done
+          dart run tool/load.dart \
+            --oha "$RUNNER_TEMP/oha" \
+            --scenarios "$SCENARIOS" \
+            --duration "$DURATION" \
+            --rates "$RATES" \
+            --huge-size 256MB \
+            --label "$LABEL" \
+            --out "build/load/$LABEL" \
+            "${server[@]}"
+
+      - name: Summary
+        if: always()
+        env:
+          LABEL: ${{ matrix.label }}
+        run: |
+          if [ -f "build/load/$LABEL/report.md" ]; then
+            cat "build/load/$LABEL/report.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No report: the load tests stopped before writing it." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # The same label of the last successful run of this workflow on this
+      # branch: the same runner type, so the ratios mean something. Without
+      # one (the first run, an expired artifact) there is nothing to
+      # compare with.
+      - name: Compare with the previous run
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LABEL: ${{ matrix.label }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          previous=$(gh run list --workflow load.yml --branch "$BRANCH" \
+            --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          if [ -z "$previous" ] || [ "$previous" = "$GITHUB_RUN_ID" ]; then
+            echo "No previous run to compare with."
+            exit 0
+          fi
+          gh run download "$previous" --name "load-$LABEL" --dir "$RUNNER_TEMP/previous"
+          {
+            echo
+            echo "## Against the previous run"
+            echo
+            dart run tool/load.dart --compare \
+              "$RUNNER_TEMP/previous/report.json" "build/load/$LABEL/report.json" \
+              | sed 's/^# /### /; s/^## /#### /'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: load-${{ matrix.label }}
+          path: |
+            build/load/${{ matrix.label }}/report.json
+            build/load/${{ matrix.label }}/report.md
+            build/load/${{ matrix.label }}/server*.log
+            build/load/${{ matrix.label }}/raw/
+          if-no-files-found: warn
+
+  # How the throughput grows with the server's isolates: the api scenarios
+  # on 1, 2 and 4 isolates (--isolates), a report each and scaling.md with
+  # the ratios and the efficiency. A hosted runner has 4 cores, which the
+  # run with 4 isolates shares with oha (2 threads): its efficiency here
+  # is a floor, and the trend from night to night is what to read.
+  isolates:
+    name: Isolates (1, 2, 4)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Install oha
+        run: |
+          curl --fail --silent --show-error --location \
+            --output "$RUNNER_TEMP/oha" \
+            "https://github.com/hatoo/oha/releases/download/v$OHA_VERSION/oha-linux-amd64"
+          echo "$OHA_SHA256  $RUNNER_TEMP/oha" | sha256sum --check
+          chmod +x "$RUNNER_TEMP/oha"
+
+      # Many connections: one stays with the isolate that accepted it, and
+      # a few dozen spread unevenly.
+      - name: Load tests on 1, 2 and 4 isolates
+        env:
+          DURATION: ${{ inputs.duration || '10s' }}
+          RATES: ${{ inputs.rates || '500,1000,2000,4000,8000,16000,32000' }}
+          INPUT_ARGS: ${{ inputs.server_args }}
+        run: |
+          read -r -a server_args <<< "$INPUT_ARGS"
+          for argument in "${server_args[@]}"; do
+            server+=(--server-arg "$argument")
+          done
+          dart run tool/load.dart \
+            --oha "$RUNNER_TEMP/oha" \
+            --oha-threads 2 \
+            --scenarios api \
+            --isolates 1,2,4 \
+            --connections 128 \
+            --duration "$DURATION" \
+            --rates "$RATES" \
+            --out build/load/isolates \
+            "${server[@]}"
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f build/load/isolates/scaling.md ]; then
+            cat build/load/isolates/scaling.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No scaling.md: the load tests stopped before writing it." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: load-isolates
+          path: |
+            build/load/isolates/scaling.md
+            build/load/isolates/isolates-*/report.json
+            build/load/isolates/isolates-*/report.md
+            build/load/isolates/server*.log
+            build/load/isolates/raw/
+          if-no-files-found: warn
+
+  # What the server does while its pool of isolates changes under load,
+  # with CPU-bound work, and when it is asked for more than its limits:
+  # timelines and checks with a verdict (docs/load-testing.md, sections 10
+  # to 12). A failed check is in the summary; the job stays green, as the
+  # numbers of a shared runner are no gate.
+  behaviour:
+    name: Scaling, CPU and overload
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Install oha
+        run: |
+          curl --fail --silent --show-error --location \
+            --output "$RUNNER_TEMP/oha" \
+            "https://github.com/hatoo/oha/releases/download/v$OHA_VERSION/oha-linux-amd64"
+          echo "$OHA_SHA256  $RUNNER_TEMP/oha" | sha256sum --check
+          chmod +x "$RUNNER_TEMP/oha"
+
+      - name: Scaling timelines, cpu and overload checks
+        run: |
+          dart run tool/load.dart \
+            --oha "$RUNNER_TEMP/oha" \
+            --oha-threads 2 \
+            --scenarios scaling,cpu,overload \
+            --scale-to 2 \
+            --label behaviour \
+            --out build/load/behaviour
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f build/load/behaviour/report.md ]; then
+            cat build/load/behaviour/report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No report: the run stopped before writing it." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: load-behaviour
+          path: |
+            build/load/behaviour/report.json
+            build/load/behaviour/report.md
+            build/load/behaviour/server*.log
+            build/load/behaviour/raw/
+          if-no-files-found: warn
+
+  # The labels of the matrix side by side, with ratios against the
+  # baseline. With one entry there is nothing to compare.
+  compare:
+    name: Compare the runs
+    needs: load
+    if: always()
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      # No artifact when every run failed: the step below says so.
+      - uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          pattern: load-*
+          path: reports
+
+      - name: Comparison
+        run: |
+          mkdir -p reports
+          # Only the entries of the `load` matrix: each has its report at
+          # the top of its artifact.
+          mapfile -t others < <(find reports -mindepth 2 -maxdepth 2 -name report.json \
+            ! -path 'reports/load-baseline/*' ! -path 'reports/load-behaviour/*' | sort -V)
+          if [ ! -f reports/load-baseline/report.json ] || [ "${#others[@]}" -eq 0 ]; then
+            echo "Nothing to compare: one run, or no report of the baseline." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          dart pub get
+          dart run tool/load.dart --compare reports/load-baseline/report.json "${others[@]}" \
+            --out reports/comparison >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: load-comparison
+          path: reports/comparison/comparison.md
+          if-no-files-found: ignore

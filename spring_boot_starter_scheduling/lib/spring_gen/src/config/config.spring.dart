@@ -23,17 +23,20 @@ void _$set2(_i2.SchedulingProperties bean, Object? value) =>
 Object? _$get3(_i2.SchedulingProperties bean) => bean.shutdown;
 void _$set4(_i2.SchedulingProperties bean, Object? value) =>
     bean.shutdown = (value as _i2.SchedulingShutdown);
-_i2.SchedulingProperties _$create5(
+Object? _$get5(_i2.SchedulingProperties bean) => bean.isolates;
+void _$set6(_i2.SchedulingProperties bean, Object? value) =>
+    bean.isolates = (value as _i2.SchedulingIsolates);
+_i2.SchedulingProperties _$create7(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SchedulingProperties();
-Object? _$get6(_i2.SchedulingShutdown bean) => bean.awaitTermination;
-void _$set7(_i2.SchedulingShutdown bean, Object? value) =>
-    bean.awaitTermination = (value as bool);
-Object? _$get8(_i2.SchedulingShutdown bean) => bean.awaitTerminationPeriod;
+Object? _$get8(_i2.SchedulingShutdown bean) => bean.awaitTermination;
 void _$set9(_i2.SchedulingShutdown bean, Object? value) =>
+    bean.awaitTermination = (value as bool);
+Object? _$get10(_i2.SchedulingShutdown bean) => bean.awaitTerminationPeriod;
+void _$set11(_i2.SchedulingShutdown bean, Object? value) =>
     bean.awaitTerminationPeriod = (value as Duration?);
-_i2.SchedulingShutdown _$create10(
+_i2.SchedulingShutdown _$create12(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SchedulingShutdown();
@@ -64,6 +67,12 @@ _i1.BeanModule get $schedulingProperties => _i1.BeanModule(
             returnType: r'SchedulingShutdown',
           ),
           _i1.MethodSignature.of(
+            r'isolates',
+            _$target0,
+            kind: _i1.MemberKind.getter,
+            returnType: r'SchedulingIsolates',
+          ),
+          _i1.MethodSignature.of(
             r'enabled',
             _$target0,
             kind: _i1.MemberKind.setter,
@@ -74,6 +83,12 @@ _i1.BeanModule get $schedulingProperties => _i1.BeanModule(
             _$target0,
             kind: _i1.MemberKind.setter,
             returnType: r'SchedulingShutdown',
+          ),
+          _i1.MethodSignature.of(
+            r'isolates',
+            _$target0,
+            kind: _i1.MemberKind.setter,
+            returnType: r'SchedulingIsolates',
           ),
         ],
       ),
@@ -97,13 +112,23 @@ _i1.BeanModule get $schedulingProperties => _i1.BeanModule(
           get: _$get3,
           set: _$set4,
         ),
+        _i1.BeanProperty<_i2.SchedulingProperties>(
+          r'isolates',
+          typeInfo: _i1.EnumType<_i2.SchedulingIsolates>(
+            _i2.SchedulingIsolates.values,
+          ),
+          hasInitialValue: true,
+          initialValue: _i2.SchedulingIsolates.primary,
+          get: _$get5,
+          set: _$set6,
+        ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.task.scheduling')],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
       instantiate: _i2.SchedulingProperties.new,
       constructor: _i1.BeanConstructor<_i2.SchedulingProperties>(
         parameters: [],
-        create: _$create5,
+        create: _$create7,
       ),
     ),
     const _i1.BeanIntrospection<_i2.SchedulingShutdown>(
@@ -114,21 +139,21 @@ _i1.BeanModule get $schedulingProperties => _i1.BeanModule(
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get6,
-          set: _$set7,
+          get: _$get8,
+          set: _$set9,
         ),
         _i1.BeanProperty<_i2.SchedulingShutdown>(
           r'awaitTerminationPeriod',
           nullable: true,
           typeInfo: _i1.ClassType<Duration>(nullable: true),
-          get: _$get8,
-          set: _$set9,
+          get: _$get10,
+          set: _$set11,
         ),
       ],
       instantiate: _i2.SchedulingShutdown.new,
       constructor: _i1.BeanConstructor<_i2.SchedulingShutdown>(
         parameters: [],
-        create: _$create10,
+        create: _$create12,
       ),
     ),
   ],

@@ -1,0 +1,23 @@
+name: load_bench
+description: "The server the load tests measure (tool/load.dart): one endpoint per scenario, on the web, security and data starters."
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+resolution: workspace
+
+# The starters the scenarios go through, the SQLite driver the data
+# starter needs an application to list (the generator wires it), and
+# crypto (the Dart team's) to sign the bearer token of the "secure"
+# scenario: the security starter checks tokens, it issues none.
+dependencies:
+  crypto: ^3.0.0
+  spring_boot_starter_data: ^0.7.3
+  spring_boot_starter_security: ^0.7.3
+  spring_boot_starter_web: ^0.7.3
+  sqlite3: ^3.8.0
+
+dev_dependencies:
+  build_runner: ^2.17.0
+  spring_core_dart_generator: ^0.7.3

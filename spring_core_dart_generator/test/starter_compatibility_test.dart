@@ -173,6 +173,82 @@ void main() {
     });
   });
 
+  group('platform: the module only where its code works', () {
+    Future<String> output(String arguments, {String? config}) async {
+      final result = await _build(
+        '^$springBootVersion',
+        arguments: arguments,
+        config: config,
+      );
+      expect(result.errors, isEmpty);
+      return _compact(result);
+    }
+
+    test('native: under dart.library.io', () async {
+      final code = await output(', platform: ModulePlatform.native');
+      expect(
+        code,
+        matches(
+          RegExp(
+            r"if\(constbool\.fromEnvironment\('dart\.library\.io'\)\)"
+            r'_i\d+\.neonCacheAutoConfiguration',
+          ),
+        ),
+      );
+      expect(code, isNot(contains('dart.vm.product')));
+    });
+
+    test('web: under dart.library.js_interop', () async {
+      final code = await output(', platform: ModulePlatform.web');
+      expect(
+        code,
+        matches(
+          RegExp(
+            r"if\(constbool\.fromEnvironment\('dart\.library\.js_interop'\)\)"
+            r'_i\d+\.neonCacheAutoConfiguration',
+          ),
+        ),
+      );
+    });
+
+    test('with a build property not set: both conditions', () async {
+      final code = await output(
+        ", build: AutoConfigurationBuild('neon.debug.enabled'), "
+        'platform: ModulePlatform.native',
+      );
+      expect(
+        code,
+        contains(
+          "if(!constbool.fromEnvironment('dart.vm.product')&&"
+          "constbool.fromEnvironment('dart.library.io'))",
+        ),
+      );
+    });
+
+    test('with a build property false: no module', () async {
+      final code = await output(
+        ", build: AutoConfigurationBuild('neon.debug.enabled'), "
+        'platform: ModulePlatform.native',
+        config: 'neon.debug.enabled=false',
+      );
+      expect(code, isNot(contains('neonCacheAutoConfiguration')));
+    });
+
+    test('its order stays, under the same condition', () async {
+      final code = await output(', order: 5, platform: ModulePlatform.native');
+      expect(
+        code,
+        matches(
+          RegExp(
+            r"autoConfigurationMetadata:\{if\(constbool\.fromEnvironment\("
+            r"'dart\.library\.io'\)\)_i\d+\.neonCacheAutoConfiguration:"
+            r'const_i\d+\.AutoConfigurationModule\(order:5,?\)',
+          ),
+        ),
+      );
+    });
+  });
+
   test('a compatible starter is discovered', () async {
     final result = await _build('^$springBootVersion');
     expect(result.errors, isEmpty);

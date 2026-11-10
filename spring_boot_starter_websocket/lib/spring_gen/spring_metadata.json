@@ -129,7 +129,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_websocket/src/web_socket_auto_configuration.dart",
-      "line": 49,
+      "line": 45,
       "injects": [],
       "members": [
         {
@@ -196,7 +196,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_websocket/src/web_socket_auto_configuration.dart",
-      "line": 72,
+      "line": 79,
       "injects": [],
       "members": [
         {
@@ -287,7 +287,8 @@
       "name": "webSocketSessionRegistry",
       "type": "WebSocketSessionRegistry",
       "types": [
-        "WebSocketSessionRegistry"
+        "WebSocketSessionRegistry",
+        "IsolateLocalState"
       ],
       "scope": "singleton",
       "primary": false,
@@ -295,7 +296,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_websocket/src/web_socket_auto_configuration.dart",
-      "line": 67,
+      "line": 74,
       "injects": [],
       "members": [
         {
@@ -306,6 +307,11 @@
             "String? pattern",
             "Object message"
           ]
+        },
+        {
+          "name": "isolateLocalState",
+          "kind": "getter",
+          "type": "String"
         },
         {
           "name": "register",
@@ -349,7 +355,7 @@
         "@ConditionalOnMissingBean(WebSocketTransport)"
       ],
       "source": "package:spring_boot_starter_websocket/src/web_socket_auto_configuration.dart",
-      "line": 33,
+      "line": 29,
       "injects": [],
       "members": [
         {

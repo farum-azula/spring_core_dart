@@ -11,32 +11,35 @@ import 'dart:async' as _i3;
 import 'dart:typed_data' as _i11;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
-import 'package:spring_boot_starter_web/src/dispatcher.dart' as _i20;
-import 'package:spring_boot_starter_web/src/handler_method.dart' as _i26;
+import 'package:spring_boot_starter_web/src/dispatcher.dart' as _i22;
+import 'package:spring_boot_starter_web/src/handler_method.dart' as _i28;
+import 'package:spring_boot_starter_web/src/isolates/isolate_scaler.dart'
+    as _i17;
 import 'package:spring_boot_starter_web/src/response_writer.dart' as _i15;
 import 'package:spring_boot_starter_web/src/sse_emitter.dart' as _i7;
 import 'package:spring_boot_starter_websocket/src/server/web_socket_endpoint.dart'
-    as _i24;
+    as _i26;
 import 'package:spring_boot_starter_websocket/src/web_socket_client.dart'
-    as _i25;
-import 'package:spring_web_dart/src/annotations.dart' as _i23;
-import 'package:spring_web_dart/src/controller_annotations.dart' as _i22;
+    as _i27;
+import 'package:spring_web_dart/src/annotations.dart' as _i25;
+import 'package:spring_web_dart/src/controller_annotations.dart' as _i24;
 import 'package:spring_web_dart/src/multipart/multipart.dart' as _i14;
 import 'package:spring_web_dart/src/problem_detail.dart' as _i8;
 import 'package:spring_web_dart/src/response_entity.dart' as _i5;
 import 'package:spring_web_dart/src/server/server_http_request.dart' as _i9;
-import 'package:spring_web_dart/src/server/server_http_response.dart' as _i21;
+import 'package:spring_web_dart/src/server/server_http_response.dart' as _i23;
 import 'package:spring_web_dart/src/sse/event_stream.dart' as _i6;
 
 import '../../app/book_controller.dart' as _i2;
 import '../../app/book_service.dart' as _i10;
 import '../../app/echo_endpoint.dart' as _i12;
 import '../../app/files_controller.dart' as _i13;
+import '../../app/isolate_controller.dart' as _i16;
 import '../../app/models.dart' as _i4;
-import '../../app/plain_controller.dart' as _i16;
-import '../../app/review_controller.dart' as _i17;
-import '../../app/session_controller.dart' as _i18;
-import '../../app/web_config.dart' as _i19;
+import '../../app/plain_controller.dart' as _i18;
+import '../../app/review_controller.dart' as _i19;
+import '../../app/session_controller.dart' as _i20;
+import '../../app/web_config.dart' as _i21;
 
 class _$BookControllerProxy
     with _i1.AdvisedWrapper
@@ -509,12 +512,123 @@ class _$FilesControllerProxy
   ) as _i15.StreamingResponseBody);
 }
 
+class _$IsolateControllerProxy
+    with _i1.AdvisedWrapper
+    implements _i16.IsolateController {
+  _$IsolateControllerProxy(this._target, this.aopInvoker);
+
+  final _i16.IsolateController _target;
+
+  @override
+  final _i1.ProxyInvoker aopInvoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  String toString() => _target.toString();
+
+  @override
+  String pool() => (this.aopInvoker.invoke(
+    this,
+    this._target,
+    0,
+    const [],
+    (args) => this._target.pool(),
+  ) as String);
+
+  @override
+  _i3.Future<String> scale(int to) => this.aopInvoker.invokeAsync<String>(
+    this,
+    this._target,
+    1,
+    [to],
+    (args) => this._target.scale((args[0] as int)),
+  );
+
+  @override
+  _i3.Future<String> loads() => this.aopInvoker.invokeAsync<String>(
+    this,
+    this._target,
+    2,
+    const [],
+    (args) => this._target.loads(),
+  );
+
+  @override
+  _i3.Future<String> askUnknown() => this.aopInvoker.invokeAsync<String>(
+    this,
+    this._target,
+    3,
+    const [],
+    (args) => this._target.askUnknown(),
+  );
+
+  @override
+  String name() => (this.aopInvoker.invoke(
+    this,
+    this._target,
+    4,
+    const [],
+    (args) => this._target.name(),
+  ) as String);
+
+  @override
+  _i3.Future<String> slow(int ms) => this.aopInvoker.invokeAsync<String>(
+    this,
+    this._target,
+    5,
+    [ms],
+    (args) => this._target.slow((args[0] as int)),
+  );
+
+  @override
+  String spin(int ms) => (this.aopInvoker.invoke(this, this._target, 6, [
+    ms,
+  ], (args) => this._target.spin((args[0] as int))) as String);
+
+  @override
+  void exit() {
+    this.aopInvoker.invoke(this, this._target, 7, const [], (args) {
+      this._target.exit();
+      return null;
+    });
+  }
+
+  @override
+  _i1.IsolateInfo get isolate => (this.aopInvoker.invoke(
+    this,
+    this._target,
+    8,
+    const [],
+    (_) => this._target.isolate,
+  ) as _i1.IsolateInfo);
+
+  @override
+  _i1.PrimaryIsolate get primary => (this.aopInvoker.invoke(
+    this,
+    this._target,
+    9,
+    const [],
+    (_) => this._target.primary,
+  ) as _i1.PrimaryIsolate);
+
+  @override
+  _i1.ObjectProvider<_i17.IsolateScaler> get scaler => (this.aopInvoker.invoke(
+    this,
+    this._target,
+    10,
+    const [],
+    (_) => this._target.scaler,
+  ) as _i1.ObjectProvider<_i17.IsolateScaler>);
+}
+
 class _$PlainControllerProxy
     with _i1.AdvisedWrapper
-    implements _i16.PlainController {
+    implements _i18.PlainController {
   _$PlainControllerProxy(this._target, this.aopInvoker);
 
-  final _i16.PlainController _target;
+  final _i18.PlainController _target;
 
   @override
   final _i1.ProxyInvoker aopInvoker;
@@ -542,10 +656,10 @@ class _$PlainControllerProxy
 
 class _$ReviewControllerProxy
     with _i1.AdvisedWrapper
-    implements _i17.ReviewController {
+    implements _i19.ReviewController {
   _$ReviewControllerProxy(this._target, this.aopInvoker);
 
-  final _i17.ReviewController _target;
+  final _i19.ReviewController _target;
 
   @override
   final _i1.ProxyInvoker aopInvoker;
@@ -614,10 +728,10 @@ class _$ReviewControllerProxy
 
 class _$ReviewFirstErrorsProxy
     with _i1.AdvisedWrapper
-    implements _i17.ReviewFirstErrors {
+    implements _i19.ReviewFirstErrors {
   _$ReviewFirstErrorsProxy(this._target, this.aopInvoker);
 
-  final _i17.ReviewFirstErrors _target;
+  final _i19.ReviewFirstErrors _target;
 
   @override
   final _i1.ProxyInvoker aopInvoker;
@@ -640,10 +754,10 @@ class _$ReviewFirstErrorsProxy
 
 class _$ReviewSecondErrorsProxy
     with _i1.AdvisedWrapper
-    implements _i17.ReviewSecondErrors {
+    implements _i19.ReviewSecondErrors {
   _$ReviewSecondErrorsProxy(this._target, this.aopInvoker);
 
-  final _i17.ReviewSecondErrors _target;
+  final _i19.ReviewSecondErrors _target;
 
   @override
   final _i1.ProxyInvoker aopInvoker;
@@ -677,10 +791,10 @@ class _$ReviewSecondErrorsProxy
 
 class _$ReviewThirdErrorsProxy
     with _i1.AdvisedWrapper
-    implements _i17.ReviewThirdErrors {
+    implements _i19.ReviewThirdErrors {
   _$ReviewThirdErrorsProxy(this._target, this.aopInvoker);
 
-  final _i17.ReviewThirdErrors _target;
+  final _i19.ReviewThirdErrors _target;
 
   @override
   final _i1.ProxyInvoker aopInvoker;
@@ -704,10 +818,10 @@ class _$ReviewThirdErrorsProxy
 
 class _$SessionControllerProxy
     with _i1.AdvisedWrapper
-    implements _i18.SessionController {
+    implements _i20.SessionController {
   _$SessionControllerProxy(this._target, this.aopInvoker);
 
-  final _i18.SessionController _target;
+  final _i20.SessionController _target;
 
   @override
   final _i1.ProxyInvoker aopInvoker;
@@ -753,10 +867,10 @@ class _$SessionControllerProxy
 
 class _$TraceFilterProxy
     with _i1.AdvisedWrapper
-    implements _i19.TraceFilter, _i20.WebFilter {
+    implements _i21.TraceFilter, _i22.WebFilter {
   _$TraceFilterProxy(this._target, this.aopInvoker);
 
-  final _i19.TraceFilter _target;
+  final _i21.TraceFilter _target;
 
   @override
   final _i1.ProxyInvoker aopInvoker;
@@ -770,8 +884,8 @@ class _$TraceFilterProxy
   @override
   _i3.Future<void> doFilter(
     _i9.ServerHttpRequest request,
-    _i21.ServerHttpResponse response,
-    _i20.WebFilterChain chain,
+    _i23.ServerHttpResponse response,
+    _i22.WebFilterChain chain,
   ) => this.aopInvoker.invokeAsync<void>(
     this,
     this._target,
@@ -779,8 +893,8 @@ class _$TraceFilterProxy
     [request, response, chain],
     (args) => this._target.doFilter(
       (args[0] as _i9.ServerHttpRequest),
-      (args[1] as _i21.ServerHttpResponse),
-      (args[2] as _i20.WebFilterChain),
+      (args[1] as _i23.ServerHttpResponse),
+      (args[2] as _i22.WebFilterChain),
     ),
   );
 }
@@ -832,7 +946,7 @@ Object? _$invoke10(_i2.BookController bean, List<Object?> arguments) =>
 const _$target11 = _i1.AopTarget(
   r'BookController',
   types: [r'BookController'],
-  annotations: [_i22.RestController(), _i23.RequestMapping(r'/api/books')],
+  annotations: [_i24.RestController(), _i25.RequestMapping(r'/api/books')],
   annotationTypes: [r'RestController', r'RequestMapping'],
 );
 Object? _$invoke12(_i2.MiscController bean, List<Object?> arguments) =>
@@ -862,7 +976,7 @@ Object? _$invoke23(_i2.MiscController bean, List<Object?> arguments) =>
 const _$target24 = _i1.AopTarget(
   r'MiscController',
   types: [r'MiscController'],
-  annotations: [_i22.RestController(), _i23.RequestMapping(r'/misc')],
+  annotations: [_i24.RestController(), _i25.RequestMapping(r'/misc')],
   annotationTypes: [r'RestController', r'RequestMapping'],
 );
 Object? _$invoke25(_i2.ApiErrors bean, List<Object?> arguments) =>
@@ -870,7 +984,7 @@ Object? _$invoke25(_i2.ApiErrors bean, List<Object?> arguments) =>
 const _$target26 = _i1.AopTarget(
   r'ApiErrors',
   types: [r'ApiErrors'],
-  annotations: [_i22.RestControllerAdvice()],
+  annotations: [_i24.RestControllerAdvice()],
   annotationTypes: [r'RestControllerAdvice'],
 );
 const _$target27 = _i1.AopTarget(
@@ -888,7 +1002,7 @@ Object? _$invoke28(_i12.EchoEndpoint bean, List<Object?> arguments) =>
 const _$target29 = _i1.AopTarget(
   r'EchoEndpoint',
   types: [r'EchoEndpoint'],
-  annotations: [_i24.WebSocketEndpoint(r'/ws/echo/{name}')],
+  annotations: [_i26.WebSocketEndpoint(r'/ws/echo/{name}')],
   annotationTypes: [r'WebSocketEndpoint'],
 );
 Object? _$invoke30(_i13.FilesController bean, List<Object?> arguments) =>
@@ -918,60 +1032,85 @@ Object? _$invoke38(_i13.FilesController bean, List<Object?> arguments) =>
 const _$target39 = _i1.AopTarget(
   r'FilesController',
   types: [r'FilesController'],
-  annotations: [_i22.RestController(), _i23.RequestMapping(r'/files')],
+  annotations: [_i24.RestController(), _i25.RequestMapping(r'/files')],
   annotationTypes: [r'RestController', r'RequestMapping'],
 );
-Object? _$invoke40(_i16.PlainController bean, List<Object?> arguments) =>
+Object? _$invoke40(_i16.IsolateController bean, List<Object?> arguments) =>
+    bean.pool();
+Object? _$invoke41(_i16.IsolateController bean, List<Object?> arguments) =>
+    bean.scale((arguments[0] as int));
+Object? _$invoke42(_i16.IsolateController bean, List<Object?> arguments) =>
+    bean.loads();
+Object? _$invoke43(_i16.IsolateController bean, List<Object?> arguments) =>
+    bean.askUnknown();
+Object? _$invoke44(_i16.IsolateController bean, List<Object?> arguments) =>
+    bean.name();
+Object? _$invoke45(_i16.IsolateController bean, List<Object?> arguments) =>
+    bean.slow((arguments[0] as int));
+Object? _$invoke46(_i16.IsolateController bean, List<Object?> arguments) =>
+    bean.spin((arguments[0] as int));
+Object? _$invoke47(_i16.IsolateController bean, List<Object?> arguments) {
+  bean.exit();
+  return null;
+}
+
+const _$target48 = _i1.AopTarget(
+  r'IsolateController',
+  types: [r'IsolateController'],
+  annotations: [_i24.RestController(), _i25.RequestMapping(r'/isolate')],
+  annotationTypes: [r'RestController', r'RequestMapping'],
+);
+Object? _$invoke49(_i18.PlainController bean, List<Object?> arguments) =>
     bean.badHeader();
-Object? _$invoke41(_i16.PlainController bean, List<Object?> arguments) =>
+Object? _$invoke50(_i18.PlainController bean, List<Object?> arguments) =>
     bean.text((arguments[0] as String));
-const _$target42 = _i1.AopTarget(
+const _$target51 = _i1.AopTarget(
   r'PlainController',
   types: [r'PlainController'],
-  annotations: [_i22.RestController(), _i23.RequestMapping(r'/plain')],
+  annotations: [_i24.RestController(), _i25.RequestMapping(r'/plain')],
   annotationTypes: [r'RestController', r'RequestMapping'],
 );
-Object? _$invoke43(_i17.ReviewController bean, List<Object?> arguments) =>
+Object? _$invoke52(_i19.ReviewController bean, List<Object?> arguments) =>
     bean.cors();
-Object? _$invoke44(_i17.ReviewController bean, List<Object?> arguments) =>
+Object? _$invoke53(_i19.ReviewController bean, List<Object?> arguments) =>
     bean.format();
-Object? _$invoke45(_i17.ReviewController bean, List<Object?> arguments) =>
+Object? _$invoke54(_i19.ReviewController bean, List<Object?> arguments) =>
     bean.argument();
-Object? _$invoke46(_i17.ReviewController bean, List<Object?> arguments) =>
+Object? _$invoke55(_i19.ReviewController bean, List<Object?> arguments) =>
     bean.unsupported();
-Object? _$invoke47(_i17.ReviewController bean, List<Object?> arguments) =>
+Object? _$invoke56(_i19.ReviewController bean, List<Object?> arguments) =>
     bean.entityEvents();
-Object? _$invoke48(_i17.ReviewController bean, List<Object?> arguments) =>
+Object? _$invoke57(_i19.ReviewController bean, List<Object?> arguments) =>
     bean.entityEmitter();
-const _$target49 = _i1.AopTarget(
+const _$target58 = _i1.AopTarget(
   r'ReviewController',
   types: [r'ReviewController'],
   annotations: [
-    _i22.RestController(),
-    _i23.RequestMapping(r'/api/review'),
-    _i17.ReviewApi(),
+    _i24.RestController(),
+    _i25.RequestMapping(r'/api/review'),
+    _i19.ReviewApi(),
   ],
   annotationTypes: [r'RestController', r'RequestMapping', r'ReviewApi'],
 );
-Object? _$invoke50(_i17.ReviewFirstErrors bean, List<Object?> arguments) =>
+Object? _$invoke59(_i19.ReviewFirstErrors bean, List<Object?> arguments) =>
     bean.any((arguments[0] as Exception));
-const _$target51 = _i1.AopTarget(
+const _$target60 = _i1.AopTarget(
   r'ReviewFirstErrors',
   types: [r'ReviewFirstErrors'],
   annotations: [
-    _i22.RestControllerAdvice.of(assignableTypes: [_i17.ReviewController]),
+    _i24.RestControllerAdvice.of(assignableTypes: [_i19.ReviewController]),
   ],
   annotationTypes: [r'RestControllerAdvice'],
 );
-Object? _$invoke52(_i17.ReviewSecondErrors bean, List<Object?> arguments) =>
+Object? _$invoke61(_i19.ReviewSecondErrors bean, List<Object?> arguments) =>
     bean.format((arguments[0] as FormatException));
-Object? _$invoke53(_i17.ReviewSecondErrors bean, List<Object?> arguments) =>
+Object? _$invoke62(_i19.ReviewSecondErrors bean, List<Object?> arguments) =>
     bean.argument((arguments[0] as ArgumentError));
-const _$target54 = _i1.AopTarget(
+const _$target63 = _i1.AopTarget(
   r'ReviewSecondErrors',
   types: [r'ReviewSecondErrors'],
   annotations: [
-    _i22.RestControllerAdvice.of(
+    _i24.RestControllerAdvice.of(
       basePackages: [
         r'asset:spring_boot_starter_web/test/app/review_controller',
       ],
@@ -979,73 +1118,73 @@ const _$target54 = _i1.AopTarget(
   ],
   annotationTypes: [r'RestControllerAdvice'],
 );
-Object? _$invoke55(_i17.ReviewThirdErrors bean, List<Object?> arguments) =>
+Object? _$invoke64(_i19.ReviewThirdErrors bean, List<Object?> arguments) =>
     bean.unsupported((arguments[0] as UnsupportedError));
-const _$target56 = _i1.AopTarget(
+const _$target65 = _i1.AopTarget(
   r'ReviewThirdErrors',
   types: [r'ReviewThirdErrors'],
   annotations: [
-    _i22.RestControllerAdvice.of(annotations: [_i17.ReviewApi]),
+    _i24.RestControllerAdvice.of(annotations: [_i19.ReviewApi]),
   ],
   annotationTypes: [r'RestControllerAdvice'],
 );
-Object? _$invoke57(_i18.SessionController bean, List<Object?> arguments) =>
+Object? _$invoke66(_i20.SessionController bean, List<Object?> arguments) =>
     bean.count((arguments[0] as _i9.ServerHttpRequest));
-Object? _$invoke58(_i18.SessionController bean, List<Object?> arguments) =>
+Object? _$invoke67(_i20.SessionController bean, List<Object?> arguments) =>
     bean.peek((arguments[0] as _i9.ServerHttpRequest));
-Object? _$invoke59(_i18.SessionController bean, List<Object?> arguments) =>
+Object? _$invoke68(_i20.SessionController bean, List<Object?> arguments) =>
     bean.rotate((arguments[0] as _i9.ServerHttpRequest));
-Object? _$invoke60(_i18.SessionController bean, List<Object?> arguments) {
+Object? _$invoke69(_i20.SessionController bean, List<Object?> arguments) {
   bean.invalidate((arguments[0] as _i9.ServerHttpRequest));
   return null;
 }
 
-const _$target61 = _i1.AopTarget(
+const _$target70 = _i1.AopTarget(
   r'SessionController',
   types: [r'SessionController'],
-  annotations: [_i22.RestController(), _i23.RequestMapping(r'/session')],
+  annotations: [_i24.RestController(), _i25.RequestMapping(r'/session')],
   annotationTypes: [r'RestController', r'RequestMapping'],
 );
-const _$target62 = _i1.AopTarget(
+const _$target71 = _i1.AopTarget(
   r'TraceFilter',
   types: [r'TraceFilter', r'WebFilter'],
   annotations: [_i1.Component()],
   annotationTypes: [r'Component'],
 );
-Object? _$get63(_i4.Book bean) => bean.isbn;
-Object? _$get64(_i4.Book bean) => bean.title;
-Object? _$get65(_i4.Book bean) => bean.stock;
-Object? _$get66(_i4.Book bean) => bean.genre;
-_i4.Book _$create67(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get72(_i4.Book bean) => bean.isbn;
+Object? _$get73(_i4.Book bean) => bean.title;
+Object? _$get74(_i4.Book bean) => bean.stock;
+Object? _$get75(_i4.Book bean) => bean.genre;
+_i4.Book _$create76(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i4.Book(
       isbn: (named[#isbn] as String),
       title: (named[#title] as String),
       stock: named.argumentOr(#stock, 0),
       genre: named.argumentOr(#genre, _i4.Genre.fiction),
     );
-Object? _$get68(_i4.NewBook bean) => bean.isbn;
-Object? _$get69(_i4.NewBook bean) => bean.title;
-Object? _$get70(_i4.NewBook bean) => bean.stock;
-_i4.NewBook _$create71(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get77(_i4.NewBook bean) => bean.isbn;
+Object? _$get78(_i4.NewBook bean) => bean.title;
+Object? _$get79(_i4.NewBook bean) => bean.stock;
+_i4.NewBook _$create80(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i4.NewBook(
       isbn: (named[#isbn] as String),
       title: (named[#title] as String),
       stock: named.argumentOr(#stock, 0),
     );
-Object? _$get72(_i7.SseEmitter bean) => bean.timeout;
-Object? _$get73(_i7.SseEmitter bean) => bean.isComplete;
-_i7.SseEmitter _$create74(
+Object? _$get81(_i7.SseEmitter bean) => bean.timeout;
+Object? _$get82(_i7.SseEmitter bean) => bean.isComplete;
+_i7.SseEmitter _$create83(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i7.SseEmitter(timeout: named.argumentOr(#timeout, null));
-Object? _$get75(_i12.Shout bean) => bean.text;
-Object? _$get76(_i13.Upload bean) => bean.name;
-Object? _$get77(_i13.Upload bean) => bean.filename;
-Object? _$get78(_i13.Upload bean) => bean.size;
-Object? _$get79(_i13.Upload bean) => bean.contentType;
-Object? _$get80(_i13.Upload bean) => bean.note;
-Object? _$get81(_i13.Upload bean) => bean.text;
-_i13.Upload _$create82(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get84(_i12.Shout bean) => bean.text;
+Object? _$get85(_i13.Upload bean) => bean.name;
+Object? _$get86(_i13.Upload bean) => bean.filename;
+Object? _$get87(_i13.Upload bean) => bean.size;
+Object? _$get88(_i13.Upload bean) => bean.contentType;
+Object? _$get89(_i13.Upload bean) => bean.note;
+Object? _$get90(_i13.Upload bean) => bean.text;
+_i13.Upload _$create91(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i13.Upload(
       name: (named[#name] as String),
       filename: (named[#filename] as String?),
@@ -1054,16 +1193,16 @@ _i13.Upload _$create82(List<Object?> positional, Map<Symbol, Object?> named) =>
       note: (named[#note] as String),
       text: (named[#text] as String),
     );
-Object? _$get83(_i13.Stored bean) => bean.title;
-Object? _$get84(_i13.Stored bean) => bean.files;
-Object? _$get85(_i13.Stored bean) => bean.cover;
-_i13.Stored _$create86(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get92(_i13.Stored bean) => bean.title;
+Object? _$get93(_i13.Stored bean) => bean.files;
+Object? _$get94(_i13.Stored bean) => bean.cover;
+_i13.Stored _$create95(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i13.Stored(
       title: (named[#title] as String),
       files: (named[#files] as List<String>),
       cover: named.argumentOr(#cover, null),
     );
-_i15.StreamingResponseBody _$create87(
+_i15.StreamingResponseBody _$create96(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i15.StreamingResponseBody(
@@ -1089,13 +1228,13 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'isbn',
               type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: [_i23.PathVariable()],
+              annotations: [_i25.PathVariable()],
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i4.Book>(),
           isFuture: true,
           invoke: _$invoke0,
-          annotations: [_i23.GetMapping(r'/{isbn}')],
+          annotations: [_i25.GetMapping(r'/{isbn}')],
         ),
         const _i1.BeanMethod<_i2.BookController>(
           r'search',
@@ -1105,26 +1244,26 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'query',
               type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: [_i23.RequestParam(r'q')],
+              annotations: [_i25.RequestParam(r'q')],
             ),
             _i1.BeanParameter(
               r'page',
               type: _i1.ClassType<int>(),
               symbol: #page,
-              annotations: [_i23.RequestParam(r'page')],
+              annotations: [_i25.RequestParam(r'page')],
             ),
             _i1.BeanParameter(
               r'genre',
               type: _i1.EnumType<_i4.Genre>(_i4.Genre.values, nullable: true),
               symbol: #genre,
-              annotations: [_i23.RequestParam(r'genre')],
+              annotations: [_i25.RequestParam(r'genre')],
             ),
           ],
           returnTypeInfo: _i1.ListType<_i4.Book>(_i1.ClassType<_i4.Book>()),
           isFuture: true,
           invoke: _$invoke1,
           invokeNamed: _$invokeNamed2,
-          annotations: [_i23.GetMapping()],
+          annotations: [_i25.GetMapping()],
         ),
         const _i1.BeanMethod<_i2.BookController>(
           r'form',
@@ -1134,18 +1273,18 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'title',
               type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: [_i23.RequestParam(r'title')],
+              annotations: [_i25.RequestParam(r'title')],
             ),
             _i1.BeanParameter(
               r'count',
               type: _i1.ClassType<int>(),
               isRequired: true,
-              annotations: [_i23.RequestParam(r'count')],
+              annotations: [_i25.RequestParam(r'count')],
             ),
           ],
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke3,
-          annotations: [_i23.PostMapping(r'/form')],
+          annotations: [_i25.PostMapping(r'/form')],
         ),
         const _i1.BeanMethod<_i2.BookController>(
           r'sample',
@@ -1154,37 +1293,37 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'size',
               type: _i1.ClassType<int>(),
               symbol: #size,
-              annotations: [_i23.RequestParam(r'size')],
+              annotations: [_i25.RequestParam(r'size')],
             ),
             _i1.BeanParameter(
               r'sort',
               type: _i1.ClassType<String>(),
               symbol: #sort,
-              annotations: [_i23.RequestParam()],
+              annotations: [_i25.RequestParam()],
             ),
             _i1.BeanParameter(
               r'tag',
               type: _i1.ClassType<String>(nullable: true),
               symbol: #tag,
-              annotations: [_i23.RequestParam(r'tag')],
+              annotations: [_i25.RequestParam(r'tag')],
             ),
             _i1.BeanParameter(
               r'limit',
               type: _i1.ClassType<int>(nullable: true),
               symbol: #limit,
-              annotations: [_i23.RequestParam(r'limit')],
+              annotations: [_i25.RequestParam(r'limit')],
             ),
             _i1.BeanParameter(
               r'lang',
               type: _i1.ClassType<String>(nullable: true),
               symbol: #lang,
-              annotations: [_i23.RequestHeader(r'X-Lang')],
+              annotations: [_i25.RequestHeader(r'X-Lang')],
             ),
           ],
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke4,
           invokeNamed: _$invokeNamed5,
-          annotations: [_i23.GetMapping(r'/sample/defaults')],
+          annotations: [_i25.GetMapping(r'/sample/defaults')],
         ),
         const _i1.BeanMethod<_i2.BookController>(
           r'create',
@@ -1194,7 +1333,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'book',
               type: _i1.ClassType<_i4.NewBook>(),
               isRequired: true,
-              annotations: [_i23.RequestBody(), _i1.Valid()],
+              annotations: [_i25.RequestBody(), _i1.Valid()],
             ),
           ],
           returnTypeInfo: _i1.GenericType<_i5.ResponseEntity<_i4.Book>>([
@@ -1202,7 +1341,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
           ]),
           isFuture: true,
           invoke: _$invoke6,
-          annotations: [_i23.PostMapping()],
+          annotations: [_i25.PostMapping()],
         ),
         const _i1.BeanMethod<_i2.BookController>(
           r'delete',
@@ -1212,14 +1351,14 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'isbn',
               type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: [_i23.PathVariable()],
+              annotations: [_i25.PathVariable()],
             ),
           ],
           isVoid: true,
           invoke: _$invoke7,
           annotations: [
-            _i23.DeleteMapping(r'/{isbn}'),
-            _i22.ResponseStatus(204),
+            _i25.DeleteMapping(r'/{isbn}'),
+            _i24.ResponseStatus(204),
           ],
         ),
         const _i1.BeanMethod<_i2.BookController>(
@@ -1228,13 +1367,13 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             _i1.ClassType<_i4.Book>(),
           ]),
           invoke: _$invoke8,
-          annotations: [_i23.GetMapping(r'/changes')],
+          annotations: [_i25.GetMapping(r'/changes')],
         ),
         const _i1.BeanMethod<_i2.BookController>(
           r'notifications',
           returnTypeInfo: _i1.ClassType<_i7.SseEmitter>(),
           invoke: _$invoke9,
-          annotations: [_i23.GetMapping(r'/notifications')],
+          annotations: [_i25.GetMapping(r'/notifications')],
         ),
         const _i1.BeanMethod<_i2.BookController>(
           r'notFound',
@@ -1253,12 +1392,12 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
           ],
           returnTypeInfo: _i1.ClassType<_i8.ProblemDetail>(),
           invoke: _$invoke10,
-          annotations: [_i22.ExceptionHandler(), _i22.ResponseStatus(404)],
+          annotations: [_i24.ExceptionHandler(), _i24.ResponseStatus(404)],
         ),
       ],
       annotations: const [
-        _i22.RestController(),
-        _i23.RequestMapping(r'/api/books'),
+        _i24.RestController(),
+        _i25.RequestMapping(r'/api/books'),
       ],
       aopProxy: _i1.AopProxyFactory(
         signatures: const [
@@ -1269,9 +1408,9 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
             parameterAnnotations: [
-              [_i23.PathVariable()],
+              [_i25.PathVariable()],
             ],
-            annotations: [_i23.GetMapping(r'/{isbn}')],
+            annotations: [_i25.GetMapping(r'/{isbn}')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
@@ -1281,11 +1420,11 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'String', r'int', r'Genre'],
             parameterNames: [r'query', r'page', r'genre'],
             parameterAnnotations: [
-              [_i23.RequestParam(r'q')],
-              [_i23.RequestParam(r'page')],
-              [_i23.RequestParam(r'genre')],
+              [_i25.RequestParam(r'q')],
+              [_i25.RequestParam(r'page')],
+              [_i25.RequestParam(r'genre')],
             ],
-            annotations: [_i23.GetMapping()],
+            annotations: [_i25.GetMapping()],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
@@ -1295,10 +1434,10 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'String', r'int'],
             parameterNames: [r'title', r'count'],
             parameterAnnotations: [
-              [_i23.RequestParam(r'title')],
-              [_i23.RequestParam(r'count')],
+              [_i25.RequestParam(r'title')],
+              [_i25.RequestParam(r'count')],
             ],
-            annotations: [_i23.PostMapping(r'/form')],
+            annotations: [_i25.PostMapping(r'/form')],
             annotationTypes: [r'PostMapping'],
           ),
           _i1.MethodSignature.of(
@@ -1308,13 +1447,13 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'int', r'String', r'String', r'int', r'String'],
             parameterNames: [r'size', r'sort', r'tag', r'limit', r'lang'],
             parameterAnnotations: [
-              [_i23.RequestParam(r'size')],
-              [_i23.RequestParam()],
-              [_i23.RequestParam(r'tag')],
-              [_i23.RequestParam(r'limit')],
-              [_i23.RequestHeader(r'X-Lang')],
+              [_i25.RequestParam(r'size')],
+              [_i25.RequestParam()],
+              [_i25.RequestParam(r'tag')],
+              [_i25.RequestParam(r'limit')],
+              [_i25.RequestHeader(r'X-Lang')],
             ],
-            annotations: [_i23.GetMapping(r'/sample/defaults')],
+            annotations: [_i25.GetMapping(r'/sample/defaults')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
@@ -1324,9 +1463,9 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'NewBook'],
             parameterNames: [r'book'],
             parameterAnnotations: [
-              [_i23.RequestBody(), _i1.Valid()],
+              [_i25.RequestBody(), _i1.Valid()],
             ],
-            annotations: [_i23.PostMapping()],
+            annotations: [_i25.PostMapping()],
             annotationTypes: [r'PostMapping'],
           ),
           _i1.MethodSignature.of(
@@ -1336,11 +1475,11 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
             parameterAnnotations: [
-              [_i23.PathVariable()],
+              [_i25.PathVariable()],
             ],
             annotations: [
-              _i23.DeleteMapping(r'/{isbn}'),
-              _i22.ResponseStatus(204),
+              _i25.DeleteMapping(r'/{isbn}'),
+              _i24.ResponseStatus(204),
             ],
             annotationTypes: [r'DeleteMapping', r'ResponseStatus'],
           ),
@@ -1348,14 +1487,14 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             r'changes',
             _$target11,
             returnType: r'EventStream',
-            annotations: [_i23.GetMapping(r'/changes')],
+            annotations: [_i25.GetMapping(r'/changes')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
             r'notifications',
             _$target11,
             returnType: r'SseEmitter',
-            annotations: [_i23.GetMapping(r'/notifications')],
+            annotations: [_i25.GetMapping(r'/notifications')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
@@ -1364,7 +1503,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             returnType: r'ProblemDetail',
             parameterTypes: [r'BookNotFoundException', r'ServerHttpRequest'],
             parameterNames: [r'e', r'request'],
-            annotations: [_i22.ExceptionHandler(), _i22.ResponseStatus(404)],
+            annotations: [_i24.ExceptionHandler(), _i24.ResponseStatus(404)],
             annotationTypes: [r'ExceptionHandler', r'ResponseStatus'],
           ),
           _i1.MethodSignature.of(
@@ -1387,21 +1526,21 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
           r'text',
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke12,
-          annotations: [_i23.GetMapping(r'/text')],
+          annotations: [_i25.GetMapping(r'/text')],
         ),
         const _i1.BeanMethod<_i2.MiscController>(
           r'slow',
           returnTypeInfo: _i1.ClassType<String>(),
           isFuture: true,
           invoke: _$invoke13,
-          annotations: [_i23.GetMapping(r'/slow')],
+          annotations: [_i25.GetMapping(r'/slow')],
         ),
         const _i1.BeanMethod<_i2.MiscController>(
           r'bytes',
           returnTypeInfo: _i1.ClassType<_i11.Uint8List>(),
           invoke: _$invoke14,
           annotations: [
-            _i23.GetMapping.of(
+            _i25.GetMapping.of(
               path: r'/bytes',
               produces: r'application/octet-stream',
             ),
@@ -1415,12 +1554,12 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'name',
               type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: [_i23.RequestHeader(r'X-Name')],
+              annotations: [_i25.RequestHeader(r'X-Name')],
             ),
           ],
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke15,
-          annotations: [_i23.GetMapping(r'/echo-header')],
+          annotations: [_i25.GetMapping(r'/echo-header')],
         ),
         const _i1.BeanMethod<_i2.MiscController>(
           r'cookie',
@@ -1430,12 +1569,12 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'session',
               type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: [_i23.CookieValue(r'session')],
+              annotations: [_i25.CookieValue(r'session')],
             ),
           ],
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke16,
-          annotations: [_i23.GetMapping(r'/cookie')],
+          annotations: [_i25.GetMapping(r'/cookie')],
         ),
         const _i1.BeanMethod<_i2.MiscController>(
           r'ids',
@@ -1445,12 +1584,12 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'ids',
               type: _i1.ListType<int>(_i1.ClassType<int>()),
               isRequired: true,
-              annotations: [_i23.RequestParam(r'id')],
+              annotations: [_i25.RequestParam(r'id')],
             ),
           ],
           returnTypeInfo: _i1.ListType<int>(_i1.ClassType<int>()),
           invoke: _$invoke17,
-          annotations: [_i23.GetMapping(r'/ids')],
+          annotations: [_i25.GetMapping(r'/ids')],
         ),
         const _i1.BeanMethod<_i2.MiscController>(
           r'file',
@@ -1460,12 +1599,12 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'path',
               type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: [_i23.PathVariable()],
+              annotations: [_i25.PathVariable()],
             ),
           ],
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke18,
-          annotations: [_i23.GetMapping(r'/files/{*path}')],
+          annotations: [_i25.GetMapping(r'/files/{*path}')],
         ),
         const _i1.BeanMethod<_i2.MiscController>(
           r'jsonOnly',
@@ -1478,7 +1617,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
                 _i1.DynamicType(),
               ),
               isRequired: true,
-              annotations: [_i23.RequestBody()],
+              annotations: [_i25.RequestBody()],
             ),
           ],
           returnTypeInfo: _i1.MapType<String, dynamic>(
@@ -1487,7 +1626,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
           ),
           invoke: _$invoke19,
           annotations: [
-            _i23.PostMapping.of(
+            _i25.PostMapping.of(
               path: r'/json-only',
               consumes: r'application/json',
             ),
@@ -1497,13 +1636,13 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
           r'state',
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke20,
-          annotations: [_i23.GetMapping(r'/state')],
+          annotations: [_i25.GetMapping(r'/state')],
         ),
         const _i1.BeanMethod<_i2.MiscController>(
           r'boom',
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke21,
-          annotations: [_i23.GetMapping(r'/boom')],
+          annotations: [_i25.GetMapping(r'/boom')],
         ),
         const _i1.BeanMethod<_i2.MiscController>(
           r'request',
@@ -1517,7 +1656,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
           ],
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke22,
-          annotations: [_i23.GetMapping(r'/request')],
+          annotations: [_i25.GetMapping(r'/request')],
         ),
         const _i1.BeanMethod<_i2.MiscController>(
           r'ndjson',
@@ -1526,28 +1665,28 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
           ]),
           invoke: _$invoke23,
           annotations: [
-            _i23.GetMapping.of(
+            _i25.GetMapping.of(
               path: r'/ndjson',
               produces: r'application/x-ndjson',
             ),
           ],
         ),
       ],
-      annotations: const [_i22.RestController(), _i23.RequestMapping(r'/misc')],
+      annotations: const [_i24.RestController(), _i25.RequestMapping(r'/misc')],
       aopProxy: _i1.AopProxyFactory(
         signatures: const [
           _i1.MethodSignature.of(
             r'text',
             _$target24,
             returnType: r'String',
-            annotations: [_i23.GetMapping(r'/text')],
+            annotations: [_i25.GetMapping(r'/text')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
             r'slow',
             _$target24,
             returnType: r'Future',
-            annotations: [_i23.GetMapping(r'/slow')],
+            annotations: [_i25.GetMapping(r'/slow')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
@@ -1555,7 +1694,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             _$target24,
             returnType: r'Uint8List',
             annotations: [
-              _i23.GetMapping.of(
+              _i25.GetMapping.of(
                 path: r'/bytes',
                 produces: r'application/octet-stream',
               ),
@@ -1569,9 +1708,9 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'name'],
             parameterAnnotations: [
-              [_i23.RequestHeader(r'X-Name')],
+              [_i25.RequestHeader(r'X-Name')],
             ],
-            annotations: [_i23.GetMapping(r'/echo-header')],
+            annotations: [_i25.GetMapping(r'/echo-header')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
@@ -1581,9 +1720,9 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'session'],
             parameterAnnotations: [
-              [_i23.CookieValue(r'session')],
+              [_i25.CookieValue(r'session')],
             ],
-            annotations: [_i23.GetMapping(r'/cookie')],
+            annotations: [_i25.GetMapping(r'/cookie')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
@@ -1593,9 +1732,9 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'List'],
             parameterNames: [r'ids'],
             parameterAnnotations: [
-              [_i23.RequestParam(r'id')],
+              [_i25.RequestParam(r'id')],
             ],
-            annotations: [_i23.GetMapping(r'/ids')],
+            annotations: [_i25.GetMapping(r'/ids')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
@@ -1605,9 +1744,9 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'path'],
             parameterAnnotations: [
-              [_i23.PathVariable()],
+              [_i25.PathVariable()],
             ],
-            annotations: [_i23.GetMapping(r'/files/{*path}')],
+            annotations: [_i25.GetMapping(r'/files/{*path}')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
@@ -1617,10 +1756,10 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'Map'],
             parameterNames: [r'body'],
             parameterAnnotations: [
-              [_i23.RequestBody()],
+              [_i25.RequestBody()],
             ],
             annotations: [
-              _i23.PostMapping.of(
+              _i25.PostMapping.of(
                 path: r'/json-only',
                 consumes: r'application/json',
               ),
@@ -1631,14 +1770,14 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             r'state',
             _$target24,
             returnType: r'String',
-            annotations: [_i23.GetMapping(r'/state')],
+            annotations: [_i25.GetMapping(r'/state')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
             r'boom',
             _$target24,
             returnType: r'String',
-            annotations: [_i23.GetMapping(r'/boom')],
+            annotations: [_i25.GetMapping(r'/boom')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
@@ -1647,7 +1786,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             returnType: r'String',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i23.GetMapping(r'/request')],
+            annotations: [_i25.GetMapping(r'/request')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
@@ -1655,7 +1794,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             _$target24,
             returnType: r'Stream',
             annotations: [
-              _i23.GetMapping.of(
+              _i25.GetMapping.of(
                 path: r'/ndjson',
                 produces: r'application/x-ndjson',
               ),
@@ -1687,10 +1826,10 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
                 _i1.ClassType<_i8.ProblemDetail>(),
               ]),
           invoke: _$invoke25,
-          annotations: [_i22.ExceptionHandler()],
+          annotations: [_i24.ExceptionHandler()],
         ),
       ],
-      annotations: const [_i22.RestControllerAdvice()],
+      annotations: const [_i24.RestControllerAdvice()],
       aopProxy: _i1.AopProxyFactory(
         signatures: const [
           _i1.MethodSignature.of(
@@ -1699,7 +1838,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             returnType: r'ResponseEntity',
             parameterTypes: [r'StateError'],
             parameterNames: [r'error'],
-            annotations: [_i22.ExceptionHandler()],
+            annotations: [_i24.ExceptionHandler()],
             annotationTypes: [r'ExceptionHandler'],
           ),
         ],
@@ -1767,7 +1906,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'name',
               type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: [_i23.PathVariable()],
+              annotations: [_i25.PathVariable()],
             ),
             _i1.BeanParameter(
               r'text',
@@ -1782,10 +1921,10 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
           ],
           returnTypeInfo: _i1.ClassType<_i12.Shout>(),
           invoke: _$invoke28,
-          annotations: [_i25.OnMessage()],
+          annotations: [_i27.OnMessage()],
         ),
       ],
-      annotations: const [_i24.WebSocketEndpoint(r'/ws/echo/{name}')],
+      annotations: const [_i26.WebSocketEndpoint(r'/ws/echo/{name}')],
       aopProxy: _i1.AopProxyFactory(
         signatures: const [
           _i1.MethodSignature.of(
@@ -1795,11 +1934,11 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'String', r'String', r'Principal'],
             parameterNames: [r'name', r'text', r'user'],
             parameterAnnotations: [
-              [_i23.PathVariable()],
+              [_i25.PathVariable()],
               [],
               [],
             ],
-            annotations: [_i25.OnMessage()],
+            annotations: [_i27.OnMessage()],
             annotationTypes: [r'OnMessage'],
           ),
         ],
@@ -1820,20 +1959,20 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'file',
               type: _i1.ClassType<_i14.MultipartFile>(),
               isRequired: true,
-              annotations: [_i23.RequestPart(r'file')],
+              annotations: [_i25.RequestPart(r'file')],
             ),
             _i1.BeanParameter(
               r'note',
               type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: [_i23.RequestParam(r'note')],
+              annotations: [_i25.RequestParam(r'note')],
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i13.Upload>(),
           isFuture: true,
           invoke: _$invoke30,
           annotations: [
-            _i23.PostMapping.of(
+            _i25.PostMapping.of(
               path: r'/upload',
               consumes: r'multipart/form-data',
             ),
@@ -1849,13 +1988,13 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
                 _i1.ClassType<_i14.MultipartFile>(),
               ),
               isRequired: true,
-              annotations: [_i23.RequestPart(r'files')],
+              annotations: [_i25.RequestPart(r'files')],
             ),
           ],
           returnTypeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
           isFuture: true,
           invoke: _$invoke31,
-          annotations: [_i23.PostMapping(r'/many')],
+          annotations: [_i25.PostMapping(r'/many')],
         ),
         const _i1.BeanMethod<_i13.FilesController>(
           r'book',
@@ -1865,19 +2004,19 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'book',
               type: _i1.ClassType<_i4.NewBook>(),
               isRequired: true,
-              annotations: [_i23.RequestPart(r'book'), _i1.Valid()],
+              annotations: [_i25.RequestPart(r'book'), _i1.Valid()],
             ),
             _i1.BeanParameter(
               r'cover',
               type: _i1.ClassType<_i14.MultipartFile>(nullable: true),
               symbol: #cover,
-              annotations: [_i23.RequestPart(r'cover')],
+              annotations: [_i25.RequestPart(r'cover')],
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i13.Stored>(),
           invoke: _$invoke32,
           invokeNamed: _$invokeNamed33,
-          annotations: [_i23.PostMapping(r'/book')],
+          annotations: [_i25.PostMapping(r'/book')],
         ),
         const _i1.BeanMethod<_i13.FilesController>(
           r'save',
@@ -1887,13 +2026,13 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'file',
               type: _i1.ClassType<_i14.MultipartFile>(),
               isRequired: true,
-              annotations: [_i23.RequestPart(r'file')],
+              annotations: [_i25.RequestPart(r'file')],
             ),
           ],
           returnTypeInfo: _i1.ClassType<int>(),
           isFuture: true,
           invoke: _$invoke34,
-          annotations: [_i23.PostMapping(r'/save')],
+          annotations: [_i25.PostMapping(r'/save')],
         ),
         const _i1.BeanMethod<_i13.FilesController>(
           r'report',
@@ -1901,7 +2040,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             _i1.ClassType<_i1.Resource>(),
           ]),
           invoke: _$invoke35,
-          annotations: [_i23.GetMapping(r'/report')],
+          annotations: [_i25.GetMapping(r'/report')],
         ),
         const _i1.BeanMethod<_i13.FilesController>(
           r'file',
@@ -1911,12 +2050,12 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'path',
               type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: [_i23.RequestParam(r'path')],
+              annotations: [_i25.RequestParam(r'path')],
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i1.Resource>(),
           invoke: _$invoke36,
-          annotations: [_i23.GetMapping(r'/file')],
+          annotations: [_i25.GetMapping(r'/file')],
         ),
         const _i1.BeanMethod<_i13.FilesController>(
           r'stream',
@@ -1924,20 +2063,20 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             _i1.ClassType<_i11.Uint8List>(),
           ]),
           invoke: _$invoke37,
-          annotations: [_i23.GetMapping(r'/stream')],
+          annotations: [_i25.GetMapping(r'/stream')],
         ),
         const _i1.BeanMethod<_i13.FilesController>(
           r'export',
           returnTypeInfo: _i1.ClassType<_i15.StreamingResponseBody>(),
           invoke: _$invoke38,
           annotations: [
-            _i23.GetMapping.of(path: r'/export', produces: r'text/csv'),
+            _i25.GetMapping.of(path: r'/export', produces: r'text/csv'),
           ],
         ),
       ],
       annotations: const [
-        _i22.RestController(),
-        _i23.RequestMapping(r'/files'),
+        _i24.RestController(),
+        _i25.RequestMapping(r'/files'),
       ],
       aopProxy: _i1.AopProxyFactory(
         signatures: const [
@@ -1948,11 +2087,11 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'MultipartFile', r'String'],
             parameterNames: [r'file', r'note'],
             parameterAnnotations: [
-              [_i23.RequestPart(r'file')],
-              [_i23.RequestParam(r'note')],
+              [_i25.RequestPart(r'file')],
+              [_i25.RequestParam(r'note')],
             ],
             annotations: [
-              _i23.PostMapping.of(
+              _i25.PostMapping.of(
                 path: r'/upload',
                 consumes: r'multipart/form-data',
               ),
@@ -1966,9 +2105,9 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'List'],
             parameterNames: [r'files'],
             parameterAnnotations: [
-              [_i23.RequestPart(r'files')],
+              [_i25.RequestPart(r'files')],
             ],
-            annotations: [_i23.PostMapping(r'/many')],
+            annotations: [_i25.PostMapping(r'/many')],
             annotationTypes: [r'PostMapping'],
           ),
           _i1.MethodSignature.of(
@@ -1978,10 +2117,10 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'NewBook', r'MultipartFile'],
             parameterNames: [r'book', r'cover'],
             parameterAnnotations: [
-              [_i23.RequestPart(r'book'), _i1.Valid()],
-              [_i23.RequestPart(r'cover')],
+              [_i25.RequestPart(r'book'), _i1.Valid()],
+              [_i25.RequestPart(r'cover')],
             ],
-            annotations: [_i23.PostMapping(r'/book')],
+            annotations: [_i25.PostMapping(r'/book')],
             annotationTypes: [r'PostMapping'],
           ),
           _i1.MethodSignature.of(
@@ -1991,16 +2130,16 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'MultipartFile'],
             parameterNames: [r'file'],
             parameterAnnotations: [
-              [_i23.RequestPart(r'file')],
+              [_i25.RequestPart(r'file')],
             ],
-            annotations: [_i23.PostMapping(r'/save')],
+            annotations: [_i25.PostMapping(r'/save')],
             annotationTypes: [r'PostMapping'],
           ),
           _i1.MethodSignature.of(
             r'report',
             _$target39,
             returnType: r'ResponseEntity',
-            annotations: [_i23.GetMapping(r'/report')],
+            annotations: [_i25.GetMapping(r'/report')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
@@ -2010,16 +2149,16 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'path'],
             parameterAnnotations: [
-              [_i23.RequestParam(r'path')],
+              [_i25.RequestParam(r'path')],
             ],
-            annotations: [_i23.GetMapping(r'/file')],
+            annotations: [_i25.GetMapping(r'/file')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
             r'stream',
             _$target39,
             returnType: r'Stream',
-            annotations: [_i23.GetMapping(r'/stream')],
+            annotations: [_i25.GetMapping(r'/stream')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
@@ -2027,7 +2166,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             _$target39,
             returnType: r'StreamingResponseBody',
             annotations: [
-              _i23.GetMapping.of(path: r'/export', produces: r'text/csv'),
+              _i25.GetMapping.of(path: r'/export', produces: r'text/csv'),
             ],
             annotationTypes: [r'GetMapping'],
           ),
@@ -2036,20 +2175,216 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             _$FilesControllerProxy((target as _i13.FilesController), invoker),
       ),
     ),
-    _i1.BeanDefinition<_i16.PlainController>(
+    _i1.BeanDefinition<_i16.IsolateController>(
+      name: r'isolateController',
+      source: r'asset:spring_boot_starter_web/test/app/isolate_controller.dart#IsolateController',
+      dependencies: const [
+        _i1.Dependency(_i1.IsolateInfo, name: r'isolate'),
+        _i1.Dependency(_i1.PrimaryIsolate, name: r'primary'),
+        _i1.Dependency.provider(_i17.IsolateScaler, name: r'scaler'),
+      ],
+      create: (r) => _i16.IsolateController(
+        r.dependency<_i1.IsolateInfo>(name: r'isolate'),
+        r.dependency<_i1.PrimaryIsolate>(name: r'primary'),
+        r.provider<_i17.IsolateScaler>(name: r'scaler'),
+      ),
+      annotatedMethods: [
+        const _i1.BeanMethod<_i16.IsolateController>(
+          r'pool',
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke40,
+          annotations: [_i25.GetMapping(r'/pool')],
+        ),
+        const _i1.BeanMethod<_i16.IsolateController>(
+          r'scale',
+          parameterTypes: [int],
+          parameters: [
+            _i1.BeanParameter(
+              r'to',
+              type: _i1.ClassType<int>(),
+              isRequired: true,
+              annotations: [_i25.RequestParam()],
+            ),
+          ],
+          returnTypeInfo: _i1.ClassType<String>(),
+          isFuture: true,
+          invoke: _$invoke41,
+          annotations: [_i25.GetMapping(r'/scale')],
+        ),
+        const _i1.BeanMethod<_i16.IsolateController>(
+          r'loads',
+          returnTypeInfo: _i1.ClassType<String>(),
+          isFuture: true,
+          invoke: _$invoke42,
+          annotations: [_i25.GetMapping(r'/loads')],
+        ),
+        const _i1.BeanMethod<_i16.IsolateController>(
+          r'askUnknown',
+          returnTypeInfo: _i1.ClassType<String>(),
+          isFuture: true,
+          invoke: _$invoke43,
+          annotations: [_i25.GetMapping(r'/ask-unknown')],
+        ),
+        const _i1.BeanMethod<_i16.IsolateController>(
+          r'name',
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke44,
+          annotations: [_i25.GetMapping(r'/name')],
+        ),
+        const _i1.BeanMethod<_i16.IsolateController>(
+          r'slow',
+          parameterTypes: [int],
+          parameters: [
+            _i1.BeanParameter(
+              r'ms',
+              type: _i1.ClassType<int>(),
+              isRequired: true,
+              annotations: [_i25.RequestParam()],
+            ),
+          ],
+          returnTypeInfo: _i1.ClassType<String>(),
+          isFuture: true,
+          invoke: _$invoke45,
+          annotations: [_i25.GetMapping(r'/slow')],
+        ),
+        const _i1.BeanMethod<_i16.IsolateController>(
+          r'spin',
+          parameterTypes: [int],
+          parameters: [
+            _i1.BeanParameter(
+              r'ms',
+              type: _i1.ClassType<int>(),
+              isRequired: true,
+              annotations: [_i25.RequestParam()],
+            ),
+          ],
+          returnTypeInfo: _i1.ClassType<String>(),
+          invoke: _$invoke46,
+          annotations: [_i25.GetMapping(r'/spin')],
+        ),
+        const _i1.BeanMethod<_i16.IsolateController>(
+          r'exit',
+          isVoid: true,
+          invoke: _$invoke47,
+          annotations: [_i25.GetMapping(r'/exit')],
+        ),
+      ],
+      annotations: const [
+        _i24.RestController(),
+        _i25.RequestMapping(r'/isolate'),
+      ],
+      aopProxy: _i1.AopProxyFactory(
+        signatures: const [
+          _i1.MethodSignature.of(
+            r'pool',
+            _$target48,
+            returnType: r'String',
+            annotations: [_i25.GetMapping(r'/pool')],
+            annotationTypes: [r'GetMapping'],
+          ),
+          _i1.MethodSignature.of(
+            r'scale',
+            _$target48,
+            returnType: r'Future',
+            parameterTypes: [r'int'],
+            parameterNames: [r'to'],
+            parameterAnnotations: [
+              [_i25.RequestParam()],
+            ],
+            annotations: [_i25.GetMapping(r'/scale')],
+            annotationTypes: [r'GetMapping'],
+          ),
+          _i1.MethodSignature.of(
+            r'loads',
+            _$target48,
+            returnType: r'Future',
+            annotations: [_i25.GetMapping(r'/loads')],
+            annotationTypes: [r'GetMapping'],
+          ),
+          _i1.MethodSignature.of(
+            r'askUnknown',
+            _$target48,
+            returnType: r'Future',
+            annotations: [_i25.GetMapping(r'/ask-unknown')],
+            annotationTypes: [r'GetMapping'],
+          ),
+          _i1.MethodSignature.of(
+            r'name',
+            _$target48,
+            returnType: r'String',
+            annotations: [_i25.GetMapping(r'/name')],
+            annotationTypes: [r'GetMapping'],
+          ),
+          _i1.MethodSignature.of(
+            r'slow',
+            _$target48,
+            returnType: r'Future',
+            parameterTypes: [r'int'],
+            parameterNames: [r'ms'],
+            parameterAnnotations: [
+              [_i25.RequestParam()],
+            ],
+            annotations: [_i25.GetMapping(r'/slow')],
+            annotationTypes: [r'GetMapping'],
+          ),
+          _i1.MethodSignature.of(
+            r'spin',
+            _$target48,
+            returnType: r'String',
+            parameterTypes: [r'int'],
+            parameterNames: [r'ms'],
+            parameterAnnotations: [
+              [_i25.RequestParam()],
+            ],
+            annotations: [_i25.GetMapping(r'/spin')],
+            annotationTypes: [r'GetMapping'],
+          ),
+          _i1.MethodSignature.of(
+            r'exit',
+            _$target48,
+            returnType: r'void',
+            annotations: [_i25.GetMapping(r'/exit')],
+            annotationTypes: [r'GetMapping'],
+          ),
+          _i1.MethodSignature.of(
+            r'isolate',
+            _$target48,
+            kind: _i1.MemberKind.getter,
+            returnType: r'IsolateInfo',
+          ),
+          _i1.MethodSignature.of(
+            r'primary',
+            _$target48,
+            kind: _i1.MemberKind.getter,
+            returnType: r'PrimaryIsolate',
+          ),
+          _i1.MethodSignature.of(
+            r'scaler',
+            _$target48,
+            kind: _i1.MemberKind.getter,
+            returnType: r'ObjectProvider',
+          ),
+        ],
+        create: (target, invoker) => _$IsolateControllerProxy(
+          (target as _i16.IsolateController),
+          invoker,
+        ),
+      ),
+    ),
+    _i1.BeanDefinition<_i18.PlainController>(
       name: r'plainController',
       source: r'asset:spring_boot_starter_web/test/app/plain_controller.dart#PlainController',
-      create: (r) => _i16.PlainController(),
+      create: (r) => _i18.PlainController(),
       annotatedMethods: [
-        const _i1.BeanMethod<_i16.PlainController>(
+        const _i1.BeanMethod<_i18.PlainController>(
           r'badHeader',
           returnTypeInfo: _i1.GenericType<_i5.ResponseEntity<String>>([
             _i1.ClassType<String>(),
           ]),
-          invoke: _$invoke40,
-          annotations: [_i23.GetMapping(r'/bad-header')],
+          invoke: _$invoke49,
+          annotations: [_i25.GetMapping(r'/bad-header')],
         ),
-        const _i1.BeanMethod<_i16.PlainController>(
+        const _i1.BeanMethod<_i18.PlainController>(
           r'text',
           parameterTypes: [String],
           parameters: [
@@ -2057,77 +2392,77 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
               r'body',
               type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: [_i23.RequestBody()],
+              annotations: [_i25.RequestBody()],
             ),
           ],
           returnTypeInfo: _i1.ClassType<String>(),
-          invoke: _$invoke41,
-          annotations: [_i23.PostMapping(r'/text')],
+          invoke: _$invoke50,
+          annotations: [_i25.PostMapping(r'/text')],
         ),
       ],
       annotations: const [
-        _i22.RestController(),
-        _i23.RequestMapping(r'/plain'),
+        _i24.RestController(),
+        _i25.RequestMapping(r'/plain'),
       ],
       aopProxy: _i1.AopProxyFactory(
         signatures: const [
           _i1.MethodSignature.of(
             r'badHeader',
-            _$target42,
+            _$target51,
             returnType: r'ResponseEntity',
-            annotations: [_i23.GetMapping(r'/bad-header')],
+            annotations: [_i25.GetMapping(r'/bad-header')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
             r'text',
-            _$target42,
+            _$target51,
             returnType: r'String',
             parameterTypes: [r'String'],
             parameterNames: [r'body'],
             parameterAnnotations: [
-              [_i23.RequestBody()],
+              [_i25.RequestBody()],
             ],
-            annotations: [_i23.PostMapping(r'/text')],
+            annotations: [_i25.PostMapping(r'/text')],
             annotationTypes: [r'PostMapping'],
           ),
         ],
         create: (target, invoker) =>
-            _$PlainControllerProxy((target as _i16.PlainController), invoker),
+            _$PlainControllerProxy((target as _i18.PlainController), invoker),
       ),
     ),
-    _i1.BeanDefinition<_i17.ReviewController>(
+    _i1.BeanDefinition<_i19.ReviewController>(
       name: r'reviewController',
       source: r'asset:spring_boot_starter_web/test/app/review_controller.dart#ReviewController',
-      create: (r) => _i17.ReviewController(),
+      create: (r) => _i19.ReviewController(),
       annotatedMethods: [
-        const _i1.BeanMethod<_i17.ReviewController>(
+        const _i1.BeanMethod<_i19.ReviewController>(
           r'cors',
           returnTypeInfo: _i1.ClassType<String>(),
-          invoke: _$invoke43,
+          invoke: _$invoke52,
           annotations: [
-            _i22.CrossOrigin(methods: [r'PUT']),
-            _i23.PutMapping(r'/cors'),
+            _i24.CrossOrigin(methods: [r'PUT']),
+            _i25.PutMapping(r'/cors'),
           ],
         ),
-        const _i1.BeanMethod<_i17.ReviewController>(
+        const _i1.BeanMethod<_i19.ReviewController>(
           r'format',
           returnTypeInfo: _i1.ClassType<String>(),
-          invoke: _$invoke44,
-          annotations: [_i23.GetMapping(r'/format')],
+          invoke: _$invoke53,
+          annotations: [_i25.GetMapping(r'/format')],
         ),
-        const _i1.BeanMethod<_i17.ReviewController>(
+        const _i1.BeanMethod<_i19.ReviewController>(
           r'argument',
           returnTypeInfo: _i1.ClassType<String>(),
-          invoke: _$invoke45,
-          annotations: [_i23.GetMapping(r'/argument')],
+          invoke: _$invoke54,
+          annotations: [_i25.GetMapping(r'/argument')],
         ),
-        const _i1.BeanMethod<_i17.ReviewController>(
+        const _i1.BeanMethod<_i19.ReviewController>(
           r'unsupported',
           returnTypeInfo: _i1.ClassType<String>(),
-          invoke: _$invoke46,
-          annotations: [_i23.GetMapping(r'/unsupported')],
+          invoke: _$invoke55,
+          annotations: [_i25.GetMapping(r'/unsupported')],
         ),
-        const _i1.BeanMethod<_i17.ReviewController>(
+        const _i1.BeanMethod<_i19.ReviewController>(
           r'entityEvents',
           returnTypeInfo:
               _i1.GenericType<_i5.ResponseEntity<_i6.EventStream<String>>>([
@@ -2135,82 +2470,82 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
                   _i1.ClassType<String>(),
                 ]),
               ]),
-          invoke: _$invoke47,
-          annotations: [_i23.GetMapping(r'/entity-events')],
+          invoke: _$invoke56,
+          annotations: [_i25.GetMapping(r'/entity-events')],
         ),
-        const _i1.BeanMethod<_i17.ReviewController>(
+        const _i1.BeanMethod<_i19.ReviewController>(
           r'entityEmitter',
           returnTypeInfo: _i1.GenericType<_i5.ResponseEntity<_i7.SseEmitter>>([
             _i1.ClassType<_i7.SseEmitter>(),
           ]),
-          invoke: _$invoke48,
-          annotations: [_i23.GetMapping(r'/entity-emitter')],
+          invoke: _$invoke57,
+          annotations: [_i25.GetMapping(r'/entity-emitter')],
         ),
       ],
       annotations: const [
-        _i22.RestController(),
-        _i23.RequestMapping(r'/api/review'),
-        _i17.ReviewApi(),
+        _i24.RestController(),
+        _i25.RequestMapping(r'/api/review'),
+        _i19.ReviewApi(),
       ],
       aopProxy: _i1.AopProxyFactory(
         signatures: const [
           _i1.MethodSignature.of(
             r'cors',
-            _$target49,
+            _$target58,
             returnType: r'String',
             annotations: [
-              _i22.CrossOrigin(methods: [r'PUT']),
-              _i23.PutMapping(r'/cors'),
+              _i24.CrossOrigin(methods: [r'PUT']),
+              _i25.PutMapping(r'/cors'),
             ],
             annotationTypes: [r'CrossOrigin', r'PutMapping'],
           ),
           _i1.MethodSignature.of(
             r'format',
-            _$target49,
+            _$target58,
             returnType: r'String',
-            annotations: [_i23.GetMapping(r'/format')],
+            annotations: [_i25.GetMapping(r'/format')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
             r'argument',
-            _$target49,
+            _$target58,
             returnType: r'String',
-            annotations: [_i23.GetMapping(r'/argument')],
+            annotations: [_i25.GetMapping(r'/argument')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
             r'unsupported',
-            _$target49,
+            _$target58,
             returnType: r'String',
-            annotations: [_i23.GetMapping(r'/unsupported')],
+            annotations: [_i25.GetMapping(r'/unsupported')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
             r'entityEvents',
-            _$target49,
+            _$target58,
             returnType: r'ResponseEntity',
-            annotations: [_i23.GetMapping(r'/entity-events')],
+            annotations: [_i25.GetMapping(r'/entity-events')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
             r'entityEmitter',
-            _$target49,
+            _$target58,
             returnType: r'ResponseEntity',
-            annotations: [_i23.GetMapping(r'/entity-emitter')],
+            annotations: [_i25.GetMapping(r'/entity-emitter')],
             annotationTypes: [r'GetMapping'],
           ),
         ],
         create: (target, invoker) =>
-            _$ReviewControllerProxy((target as _i17.ReviewController), invoker),
+            _$ReviewControllerProxy((target as _i19.ReviewController), invoker),
       ),
     ),
-    _i1.BeanDefinition<_i17.ReviewFirstErrors>(
+    _i1.BeanDefinition<_i19.ReviewFirstErrors>(
       name: r'reviewFirstErrors',
       source: r'asset:spring_boot_starter_web/test/app/review_controller.dart#ReviewFirstErrors',
       order: 1,
-      create: (r) => _i17.ReviewFirstErrors(),
+      create: (r) => _i19.ReviewFirstErrors(),
       annotatedMethods: [
-        const _i1.BeanMethod<_i17.ReviewFirstErrors>(
+        const _i1.BeanMethod<_i19.ReviewFirstErrors>(
           r'any',
           parameterTypes: [Exception],
           parameters: [
@@ -2223,39 +2558,39 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
           returnTypeInfo: _i1.GenericType<_i5.ResponseEntity<String>>([
             _i1.ClassType<String>(),
           ]),
-          invoke: _$invoke50,
-          annotations: [_i22.ExceptionHandler()],
+          invoke: _$invoke59,
+          annotations: [_i24.ExceptionHandler()],
         ),
       ],
       annotations: const [
-        _i22.RestControllerAdvice.of(assignableTypes: [_i17.ReviewController]),
+        _i24.RestControllerAdvice.of(assignableTypes: [_i19.ReviewController]),
         _i1.Order(1),
       ],
       aopProxy: _i1.AopProxyFactory(
         signatures: const [
           _i1.MethodSignature.of(
             r'any',
-            _$target51,
+            _$target60,
             returnType: r'ResponseEntity',
             parameterTypes: [r'Exception'],
             parameterNames: [r'error'],
-            annotations: [_i22.ExceptionHandler()],
+            annotations: [_i24.ExceptionHandler()],
             annotationTypes: [r'ExceptionHandler'],
           ),
         ],
         create: (target, invoker) => _$ReviewFirstErrorsProxy(
-          (target as _i17.ReviewFirstErrors),
+          (target as _i19.ReviewFirstErrors),
           invoker,
         ),
       ),
     ),
-    _i1.BeanDefinition<_i17.ReviewSecondErrors>(
+    _i1.BeanDefinition<_i19.ReviewSecondErrors>(
       name: r'reviewSecondErrors',
       source: r'asset:spring_boot_starter_web/test/app/review_controller.dart#ReviewSecondErrors',
       order: 2,
-      create: (r) => _i17.ReviewSecondErrors(),
+      create: (r) => _i19.ReviewSecondErrors(),
       annotatedMethods: [
-        const _i1.BeanMethod<_i17.ReviewSecondErrors>(
+        const _i1.BeanMethod<_i19.ReviewSecondErrors>(
           r'format',
           parameterTypes: [FormatException],
           parameters: [
@@ -2268,10 +2603,10 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
           returnTypeInfo: _i1.GenericType<_i5.ResponseEntity<String>>([
             _i1.ClassType<String>(),
           ]),
-          invoke: _$invoke52,
-          annotations: [_i22.ExceptionHandler()],
+          invoke: _$invoke61,
+          annotations: [_i24.ExceptionHandler()],
         ),
-        const _i1.BeanMethod<_i17.ReviewSecondErrors>(
+        const _i1.BeanMethod<_i19.ReviewSecondErrors>(
           r'argument',
           parameterTypes: [ArgumentError],
           parameters: [
@@ -2284,12 +2619,12 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
           returnTypeInfo: _i1.GenericType<_i5.ResponseEntity<String>>([
             _i1.ClassType<String>(),
           ]),
-          invoke: _$invoke53,
-          annotations: [_i22.ExceptionHandler()],
+          invoke: _$invoke62,
+          annotations: [_i24.ExceptionHandler()],
         ),
       ],
       annotations: const [
-        _i22.RestControllerAdvice.of(
+        _i24.RestControllerAdvice.of(
           basePackages: [
             r'asset:spring_boot_starter_web/test/app/review_controller',
           ],
@@ -2300,36 +2635,36 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'format',
-            _$target54,
+            _$target63,
             returnType: r'ResponseEntity',
             parameterTypes: [r'FormatException'],
             parameterNames: [r'error'],
-            annotations: [_i22.ExceptionHandler()],
+            annotations: [_i24.ExceptionHandler()],
             annotationTypes: [r'ExceptionHandler'],
           ),
           _i1.MethodSignature.of(
             r'argument',
-            _$target54,
+            _$target63,
             returnType: r'ResponseEntity',
             parameterTypes: [r'ArgumentError'],
             parameterNames: [r'error'],
-            annotations: [_i22.ExceptionHandler()],
+            annotations: [_i24.ExceptionHandler()],
             annotationTypes: [r'ExceptionHandler'],
           ),
         ],
         create: (target, invoker) => _$ReviewSecondErrorsProxy(
-          (target as _i17.ReviewSecondErrors),
+          (target as _i19.ReviewSecondErrors),
           invoker,
         ),
       ),
     ),
-    _i1.BeanDefinition<_i17.ReviewThirdErrors>(
+    _i1.BeanDefinition<_i19.ReviewThirdErrors>(
       name: r'reviewThirdErrors',
       source: r'asset:spring_boot_starter_web/test/app/review_controller.dart#ReviewThirdErrors',
       order: 3,
-      create: (r) => _i17.ReviewThirdErrors(),
+      create: (r) => _i19.ReviewThirdErrors(),
       annotatedMethods: [
-        const _i1.BeanMethod<_i17.ReviewThirdErrors>(
+        const _i1.BeanMethod<_i19.ReviewThirdErrors>(
           r'unsupported',
           parameterTypes: [UnsupportedError],
           parameters: [
@@ -2342,38 +2677,38 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
           returnTypeInfo: _i1.GenericType<_i5.ResponseEntity<String>>([
             _i1.ClassType<String>(),
           ]),
-          invoke: _$invoke55,
-          annotations: [_i22.ExceptionHandler()],
+          invoke: _$invoke64,
+          annotations: [_i24.ExceptionHandler()],
         ),
       ],
       annotations: const [
-        _i22.RestControllerAdvice.of(annotations: [_i17.ReviewApi]),
+        _i24.RestControllerAdvice.of(annotations: [_i19.ReviewApi]),
         _i1.Order(3),
       ],
       aopProxy: _i1.AopProxyFactory(
         signatures: const [
           _i1.MethodSignature.of(
             r'unsupported',
-            _$target56,
+            _$target65,
             returnType: r'ResponseEntity',
             parameterTypes: [r'UnsupportedError'],
             parameterNames: [r'error'],
-            annotations: [_i22.ExceptionHandler()],
+            annotations: [_i24.ExceptionHandler()],
             annotationTypes: [r'ExceptionHandler'],
           ),
         ],
         create: (target, invoker) => _$ReviewThirdErrorsProxy(
-          (target as _i17.ReviewThirdErrors),
+          (target as _i19.ReviewThirdErrors),
           invoker,
         ),
       ),
     ),
-    _i1.BeanDefinition<_i18.SessionController>(
+    _i1.BeanDefinition<_i20.SessionController>(
       name: r'sessionController',
       source: r'asset:spring_boot_starter_web/test/app/session_controller.dart#SessionController',
-      create: (r) => _i18.SessionController(),
+      create: (r) => _i20.SessionController(),
       annotatedMethods: [
-        const _i1.BeanMethod<_i18.SessionController>(
+        const _i1.BeanMethod<_i20.SessionController>(
           r'count',
           parameterTypes: [_i9.ServerHttpRequest],
           parameters: [
@@ -2384,10 +2719,10 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<int>(),
-          invoke: _$invoke57,
-          annotations: [_i23.GetMapping(r'/count')],
+          invoke: _$invoke66,
+          annotations: [_i25.GetMapping(r'/count')],
         ),
-        const _i1.BeanMethod<_i18.SessionController>(
+        const _i1.BeanMethod<_i20.SessionController>(
           r'peek',
           parameterTypes: [_i9.ServerHttpRequest],
           parameters: [
@@ -2398,10 +2733,10 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             ),
           ],
           returnTypeInfo: _i1.ClassType<bool>(),
-          invoke: _$invoke58,
-          annotations: [_i23.GetMapping(r'/peek')],
+          invoke: _$invoke67,
+          annotations: [_i25.GetMapping(r'/peek')],
         ),
-        const _i1.BeanMethod<_i18.SessionController>(
+        const _i1.BeanMethod<_i20.SessionController>(
           r'rotate',
           parameterTypes: [_i9.ServerHttpRequest],
           parameters: [
@@ -2413,10 +2748,10 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
           ],
           returnTypeInfo: _i1.ClassType<String>(),
           isFuture: true,
-          invoke: _$invoke59,
-          annotations: [_i23.PostMapping(r'/rotate')],
+          invoke: _$invoke68,
+          annotations: [_i25.PostMapping(r'/rotate')],
         ),
-        const _i1.BeanMethod<_i18.SessionController>(
+        const _i1.BeanMethod<_i20.SessionController>(
           r'invalidate',
           parameterTypes: [_i9.ServerHttpRequest],
           parameters: [
@@ -2427,72 +2762,72 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             ),
           ],
           isVoid: true,
-          invoke: _$invoke60,
-          annotations: [_i23.PostMapping(r'/invalidate')],
+          invoke: _$invoke69,
+          annotations: [_i25.PostMapping(r'/invalidate')],
         ),
       ],
       annotations: const [
-        _i22.RestController(),
-        _i23.RequestMapping(r'/session'),
+        _i24.RestController(),
+        _i25.RequestMapping(r'/session'),
       ],
       aopProxy: _i1.AopProxyFactory(
         signatures: const [
           _i1.MethodSignature.of(
             r'count',
-            _$target61,
+            _$target70,
             returnType: r'int',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i23.GetMapping(r'/count')],
+            annotations: [_i25.GetMapping(r'/count')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
             r'peek',
-            _$target61,
+            _$target70,
             returnType: r'bool',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i23.GetMapping(r'/peek')],
+            annotations: [_i25.GetMapping(r'/peek')],
             annotationTypes: [r'GetMapping'],
           ),
           _i1.MethodSignature.of(
             r'rotate',
-            _$target61,
+            _$target70,
             returnType: r'Future',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i23.PostMapping(r'/rotate')],
+            annotations: [_i25.PostMapping(r'/rotate')],
             annotationTypes: [r'PostMapping'],
           ),
           _i1.MethodSignature.of(
             r'invalidate',
-            _$target61,
+            _$target70,
             returnType: r'void',
             parameterTypes: [r'ServerHttpRequest'],
             parameterNames: [r'request'],
-            annotations: [_i23.PostMapping(r'/invalidate')],
+            annotations: [_i25.PostMapping(r'/invalidate')],
             annotationTypes: [r'PostMapping'],
           ),
         ],
         create: (target, invoker) => _$SessionControllerProxy(
-          (target as _i18.SessionController),
+          (target as _i20.SessionController),
           invoker,
         ),
       ),
     ),
-    _i1.BeanDefinition<_i19.TraceFilter>(
+    _i1.BeanDefinition<_i21.TraceFilter>(
       name: r'traceFilter',
       source:
           r'asset:spring_boot_starter_web/test/app/web_config.dart#TraceFilter',
-      types: const [_i19.TraceFilter, _i20.WebFilter],
+      types: const [_i21.TraceFilter, _i22.WebFilter],
       order: 1,
-      create: (r) => _i19.TraceFilter(),
+      create: (r) => _i21.TraceFilter(),
       annotations: const [_i1.Component(), _i1.Order(1)],
       aopProxy: _i1.AopProxyFactory(
         signatures: const [
           _i1.MethodSignature.of(
             r'doFilter',
-            _$target62,
+            _$target71,
             declaringType: r'WebFilter',
             declaringTypes: [r'TraceFilter', r'WebFilter'],
             returnType: r'Future',
@@ -2505,15 +2840,15 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
           ),
         ],
         create: (target, invoker) =>
-            _$TraceFilterProxy((target as _i19.TraceFilter), invoker),
+            _$TraceFilterProxy((target as _i21.TraceFilter), invoker),
       ),
     ),
-    _i1.BeanDefinition<_i19.WebConfig>(
+    _i1.BeanDefinition<_i21.WebConfig>(
       name: r'webConfig',
       source:
           r'asset:spring_boot_starter_web/test/app/web_config.dart#WebConfig',
-      types: const [_i19.WebConfig, _i26.WebMvcConfigurer],
-      create: (r) => _i19.WebConfig(),
+      types: const [_i21.WebConfig, _i28.WebMvcConfigurer],
+      create: (r) => _i21.WebConfig(),
       annotations: const [_i1.Configuration()],
     ),
   ],
@@ -2524,22 +2859,22 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
         _i1.BeanProperty<_i4.Book>(
           r'isbn',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get63,
+          get: _$get72,
         ),
         _i1.BeanProperty<_i4.Book>(
           r'title',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get64,
+          get: _$get73,
         ),
         _i1.BeanProperty<_i4.Book>(
           r'stock',
           typeInfo: _i1.ClassType<int>(),
-          get: _$get65,
+          get: _$get74,
         ),
         _i1.BeanProperty<_i4.Book>(
           r'genre',
           typeInfo: _i1.EnumType<_i4.Genre>(_i4.Genre.values),
-          get: _$get66,
+          get: _$get75,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -2572,7 +2907,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             defaultValue: _i4.Genre.fiction,
           ),
         ],
-        create: _$create67,
+        create: _$create76,
       ),
     ),
     const _i1.BeanIntrospection<_i4.NewBook>(
@@ -2581,19 +2916,19 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
         _i1.BeanProperty<_i4.NewBook>(
           r'isbn',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get68,
+          get: _$get77,
           annotations: [_i1.NotBlank(), _i1.Size(min: 4, max: 13)],
         ),
         _i1.BeanProperty<_i4.NewBook>(
           r'title',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get69,
+          get: _$get78,
           annotations: [_i1.NotBlank()],
         ),
         _i1.BeanProperty<_i4.NewBook>(
           r'stock',
           typeInfo: _i1.ClassType<int>(),
-          get: _$get70,
+          get: _$get79,
           annotations: [_i1.PositiveOrZero()],
         ),
       ],
@@ -2620,7 +2955,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             defaultValue: 0,
           ),
         ],
-        create: _$create71,
+        create: _$create80,
       ),
     ),
     const _i1.BeanIntrospection<_i7.SseEmitter>(
@@ -2630,12 +2965,12 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
           r'timeout',
           nullable: true,
           typeInfo: _i1.ClassType<Duration>(nullable: true),
-          get: _$get72,
+          get: _$get81,
         ),
         _i1.BeanProperty<_i7.SseEmitter>(
           r'isComplete',
           typeInfo: _i1.ClassType<bool>(),
-          get: _$get73,
+          get: _$get82,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -2648,7 +2983,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             symbol: #timeout,
           ),
         ],
-        create: _$create74,
+        create: _$create83,
       ),
     ),
     const _i1.BeanIntrospection<_i12.Shout>(
@@ -2657,7 +2992,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
         _i1.BeanProperty<_i12.Shout>(
           r'text',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get75,
+          get: _$get84,
         ),
       ],
       parts: {_i1.IntrospectionPart.read},
@@ -2668,34 +3003,34 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
         _i1.BeanProperty<_i13.Upload>(
           r'name',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get76,
+          get: _$get85,
         ),
         _i1.BeanProperty<_i13.Upload>(
           r'filename',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get77,
+          get: _$get86,
         ),
         _i1.BeanProperty<_i13.Upload>(
           r'size',
           typeInfo: _i1.ClassType<int>(),
-          get: _$get78,
+          get: _$get87,
         ),
         _i1.BeanProperty<_i13.Upload>(
           r'contentType',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get79,
+          get: _$get88,
         ),
         _i1.BeanProperty<_i13.Upload>(
           r'note',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get80,
+          get: _$get89,
         ),
         _i1.BeanProperty<_i13.Upload>(
           r'text',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get81,
+          get: _$get90,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -2738,7 +3073,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create82,
+        create: _$create91,
       ),
     ),
     const _i1.BeanIntrospection<_i13.Stored>(
@@ -2747,18 +3082,18 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
         _i1.BeanProperty<_i13.Stored>(
           r'title',
           typeInfo: _i1.ClassType<String>(),
-          get: _$get83,
+          get: _$get92,
         ),
         _i1.BeanProperty<_i13.Stored>(
           r'files',
           typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get84,
+          get: _$get93,
         ),
         _i1.BeanProperty<_i13.Stored>(
           r'cover',
           nullable: true,
           typeInfo: _i1.ClassType<int>(nullable: true),
-          get: _$get85,
+          get: _$get94,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -2782,7 +3117,7 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             symbol: #cover,
           ),
         ],
-        create: _$create86,
+        create: _$create95,
       ),
     ),
     const _i1.BeanIntrospection<_i15.StreamingResponseBody>(
@@ -2797,13 +3132,13 @@ _i1.BeanModule get $webTestBeans => _i1.BeanModule(
             isRequired: true,
           ),
         ],
-        create: _$create87,
+        create: _$create96,
       ),
     ),
   ],
   typeTests: {
-    _i17.ReviewController: (value) => value is _i17.ReviewController,
-    _i17.ReviewApi: (value) => value is _i17.ReviewApi,
+    _i19.ReviewController: (value) => value is _i19.ReviewController,
+    _i19.ReviewApi: (value) => value is _i19.ReviewApi,
   },
-  typeDepths: {_i17.ReviewController: 1, _i17.ReviewApi: 1},
+  typeDepths: {_i19.ReviewController: 1, _i19.ReviewApi: 1},
 );

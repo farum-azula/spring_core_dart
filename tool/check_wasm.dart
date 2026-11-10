@@ -30,6 +30,15 @@ const wasmPackages = [
   'spring_boot_starter_data',
   'spring_security_core',
   'spring_search_dart',
+  // The server's: their modules are left out of a browser build
+  // (`ModulePlatform.native`), but an application that shares its code
+  // between a server and a Flutter web app lists them, and its generated
+  // file imports their auto-configuration libraries.
+  'spring_boot_starter_web',
+  'spring_boot_actuator',
+  'spring_boot_starter_actuator',
+  'spring_boot_starter_oauth2_client',
+  'spring_boot_starter_security',
 ];
 
 /// The apps the Flutter starters are built in, with the starters each

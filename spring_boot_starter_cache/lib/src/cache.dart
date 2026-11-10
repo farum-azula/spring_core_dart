@@ -1,3 +1,5 @@
+import 'package:spring_boot_dart/spring_boot_dart.dart' show IsolateLocalState;
+
 /// A value found in a cache, wrapped so that a stored `null` can be told
 /// apart from a missing entry.
 ///
@@ -274,13 +276,16 @@ abstract interface class CacheManagerCustomizer {
 ///   return manager;
 /// }
 /// ```
-final class SimpleCacheManager implements CacheManager {
+final class SimpleCacheManager implements CacheManager, IsolateLocalState {
   /// A manager of [caches], found by their [Cache.name]; of two caches with
   /// the same name the later one wins.
   SimpleCacheManager(Iterable<Cache> caches)
     : _caches = {for (final cache in caches) cache.name: cache};
 
   final Map<String, Cache> _caches;
+
+  @override
+  String get isolateLocalState => 'cached values';
 
   @override
   Cache? getCache(String name) => _caches[name];

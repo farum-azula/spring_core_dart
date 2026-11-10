@@ -17,6 +17,8 @@ export 'package:spring_boot_dart/src/annotations.dart';
 export 'package:spring_boot_dart/src/async_startup.dart';
 export 'package:spring_boot_dart/src/auto_configuration_sorter.dart'
     show selectAutoConfigurations;
+export 'package:spring_boot_dart/src/autoconfigure/isolate_auto_configuration.dart'
+    show IsolateLoadsHandler;
 export 'package:spring_boot_dart/src/autoconfigure/jackson_auto_configuration.dart'
     show
         JsonMapperBuilderCustomizer,

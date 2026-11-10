@@ -90,7 +90,12 @@ app can use there: `spring_core_dart`, `spring_boot_dart`, the logging,
 scheduling, cache, Feign, WebSocket and data starters,
 `spring_security_core`, `spring_search_dart` and the three Flutter
 starters, and for every dependency they bring (a new one is checked the
-same way before it is added).
+same way before it is added). The server's packages (the web, actuator,
+OAuth2 client and security starters, `spring_boot_actuator`) compile to
+it too: a browser build has none of their modules
+(`AutoConfigurationModule(platform: ModulePlatform.native)`), but an
+application that shares its code between a server and a Flutter web app
+lists them, and its generated file imports their libraries.
 
 - No `dart:html`, `dart:js`, `dart:js_util`, `dart:indexed_db`,
   `dart:svg`, `dart:web_audio`, `dart:web_gl` and no `package:js`: the
@@ -143,7 +148,7 @@ too, but only through it.
 | `very_good_analysis` | `verygood.ventures` (Very Good Ventures) | The lint rules of `analysis_options.yaml`, which CI's `quality` job enforces. Only rules (a YAML file), no code; a dev dependency of the workspace root, never of a package. | `spring_core_dart_workspace` only |
 | `melos` | `invertase.io` | Workspace scripts (`dart run melos run check`). It is a dev tool of the workspace root and is never a dependency of a package. | `spring_core_dart_workspace` only |
 | `postgres` | ⚠️ `agilord.com` (Istvan Soos) | The PostgreSQL driver; the owner allowed database drivers, as `sqlite3`. Only a dev dependency of `spring_boot_starter_data`, to test the driver glue the generator writes into applications that list `postgres` themselves; the starter's runtime never depends on it. Pure Dart: no entry for the workspace root. Its own dependencies (`buffer`, `charcode`, `pool`...) come only through it. | `spring_boot_starter_data` (dev) |
-| `sqlite3` | ⚠️ `simonbinder.eu` (Simon Binder) | The SQLite driver; the owner allowed database drivers. Only a dev dependency of `spring_boot_starter_data`, to test the driver glue the generator writes into applications that list `sqlite3` themselves; the starter's runtime never depends on it (pub has no optional dependencies, and `sqlite3` bundles a native library). | `spring_boot_starter_data` (dev); the workspace root (dev), so tests run from the root build SQLite too |
+| `sqlite3` | ⚠️ `simonbinder.eu` (Simon Binder) | The SQLite driver; the owner allowed database drivers. Only a dev dependency of `spring_boot_starter_data`, to test the driver glue the generator writes into applications that list `sqlite3` themselves; the starter's runtime never depends on it (pub has no optional dependencies, and `sqlite3` bundles a native library). | `spring_boot_starter_data` (dev); the workspace root (dev), so tests run from the root build SQLite too; `load_bench` (`tool/load_bench`, not published), the server the load tests measure, for its database scenarios |
 | `material_color_utilities` | `material.io` (Google's Material team) | `package:flutter` depends on it and the Flutter SDK pins its version, so it cannot be avoided. | the Flutter packages only |
 | `pointycastle` | ⚠️ `bouncycastle.org` (Legion of the Bouncy Castle) | **Third-party, temporary.** The JWT signatures and the password hashes of the security packages, and the SHA-256 of PKCE and the ES256 DPoP proofs in the OAuth2 client, until a Dart team package covers them: [below](#pointycastle-third-party-to-be-removed). | `spring_security_core`, `spring_boot_starter_oauth2_client`, `spring_boot_starter_security`; the Flutter guide as a dev dependency (its integration test verifies the DPoP proofs of the platform keys) |
 | `node_preamble` | none | `package:test` (Dart team) pulls it for browser tests. It has no publisher on pub.dev. | any package (through `test`) |
@@ -261,6 +266,7 @@ in its `pubspec.yaml`.
 | `static_site_server` (`example/static_site/server`) | The static site's server: the Flutter web build of `static_site_app` as static files and an API, on one port | no | `spring_boot_starter_web` (which brings the rest) | `build_runner`, `spring_boot_starter_test`, `spring_core_dart_generator`, `test` |
 | `static_site_app` (`example/static_site/app`) | The static site: a Flutter web app of a few pages, built and served by `static_site_server` | no | `flutter` (SDK), `spring_boot_starter_flutter_navigation` (which brings the Flutter starter and `spring_web_dart`) | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator` |
 | `seo_site_app` (`example/seo_site`) | A Flutter web site with a page for search engines per address (`spring.flutter.web.seo.*`) | no | `flutter` (SDK), `spring_boot_starter_flutter_navigation` (which brings the Flutter starter) | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator` |
+| `load_bench` (`tool/load_bench`) | The server the load tests measure (`tool/load.dart`, [Load testing](load-testing.md)): one endpoint per scenario | no | the web, security and data starters (which bring the rest), `crypto`, `sqlite3` | `build_runner`, `spring_core_dart_generator` |
 | `spring_core_dart_workspace` (root) | The pub workspace | no | — | `lints`, `melos`, `path`, `test`, `very_good_analysis`, `yaml` |
 
 **Four resolutions.** Everything except the Flutter packages is one pub
@@ -628,7 +634,7 @@ pub workspace and the three Flutter packages). Columns:
 | `conventional_commit` | ⚠️ `invertase.io` — only through `melos` | melos only | — | `melos` |
 | `convert` | `dart.dev` | app (security), codegen, tests, language server | `typed_data` | `analyzer`, `build_runner`, `pointycastle`, `shelf_static` |
 | `coverage` | `tools.dart.dev` | tests | `args`, `cli_config`, `cli_util`, `glob`, `logging`, `meta`, `package_config`, `path`, `source_maps`, `stack_trace`, `vm_service`, `yaml` | `spring_core_dart` (dev), `spring_core_dart_generator` (dev), `test`, `test_core` |
-| `crypto` | `dart.dev` | codegen, tests, language server, melos | `typed_data` | `analyzer`, `build`, `build_daemon`, `build_runner`, `build_test`, `hooks`, `melos`, `postgres`, `sqlite3`, `web_socket_channel` |
+| `crypto` | `dart.dev` | codegen, tests, language server, melos, the load bench | `typed_data` | `analyzer`, `build`, `build_daemon`, `build_runner`, `build_test`, `hooks`, `load_bench`, `melos`, `postgres`, `sqlite3`, `web_socket_channel` |
 | `csslib` | `tools.dart.dev` | tests | `source_span` | `html` |
 | `dart_style` | `tools.dart.dev` | codegen, tests | `analyzer`, `args`, `collection`, `package_config`, `path`, `pub_semver`, `source_span`, `yaml` | `build_runner`, `source_gen`, `spring_core_dart_generator` |
 | `fake_async` | `dart.dev` | tests | `clock`, `collection` | `flutter_test`, `spring_boot_starter_scheduling` (dev) |
@@ -698,7 +704,7 @@ pub workspace and the three Flutter packages). Columns:
 | `source_map_stack_trace` | `tools.dart.dev` | tests | `path`, `source_maps`, `stack_trace` | `test_core` |
 | `source_maps` | `tools.dart.dev` | tests | `source_span` | `coverage`, `source_map_stack_trace`, `test_core` |
 | `source_span` | `tools.dart.dev` | app, codegen, tests, language server, melos | `collection`, `path`, `term_glyph` | `analyzer`, `boolean_selector`, `checked_yaml`, `csslib`, `dart_style`, `html`, `http_parser`, `source_gen`, `source_maps`, `string_scanner`, `test`, `test_api`, `test_core`, `yaml`, `yaml_edit` |
-| `sqlite3` | ⚠️ `simonbinder.eu` — [exception](#2-exceptions): the data starter's tests | tests (data starter) | `code_assets`, `collection`, `crypto`, `ffi`, `hooks`, `meta`, `native_toolchain_c`, `path`, `typed_data`, `web` | `spring_boot_starter_data` (dev), `spring_core_dart_workspace` (dev) |
+| `sqlite3` | ⚠️ `simonbinder.eu` — [exception](#2-exceptions): the data starter's tests, the load bench | tests (data starter), the load bench | `code_assets`, `collection`, `crypto`, `ffi`, `hooks`, `meta`, `native_toolchain_c`, `path`, `typed_data`, `web` | `load_bench`, `spring_boot_starter_data` (dev), `spring_core_dart_workspace` (dev) |
 | `stack_trace` | `tools.dart.dev` | codegen, tests, melos | `path` | `coverage`, `flutter_test`, `matcher`, `pool`, `postgres`, `shelf`, `source_map_stack_trace`, `test`, `test_api`, `test_core` |
 | `stream_channel` | `tools.dart.dev` | codegen, tests | `async` | `flutter_test`, `postgres`, `shelf`, `shelf_web_socket`, `test`, `test_api`, `test_core`, `web_socket_channel` |
 | `stream_transform` | `tools.dart.dev` | codegen, tests | — | `build_daemon`, `build_runner`, `build_test` |
@@ -735,7 +741,10 @@ repository use other ecosystems:
   `VeryGoodOpenSource/very_good_coverage` (Very Good Ventures: reads
   `coverage/lcov.info` and fails below the minimum), the `vulnerabilities`
   job Google's `osv-scanner` (Go, built from source in the job), the
-  `differential` job a JDK and Maven (Spring Boot). Dependabot updates the
+  `differential` job a JDK and Maven (Spring Boot). The nightly `Load`
+  workflow downloads [oha](https://github.com/hatoo/oha) (Rust, a release
+  binary of a fixed version checked by its SHA-256), the load generator of
+  `tool/load.dart` ([Load testing](load-testing.md)). Dependabot updates the
   pub dependencies and the actions weekly.
 
 ## 11. Adding a dependency

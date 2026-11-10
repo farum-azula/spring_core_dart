@@ -904,6 +904,40 @@
       ]
     },
     {
+      "name": "isolatesEndpoint",
+      "type": "IsolatesEndpoint",
+      "types": [
+        "IsolatesEndpoint"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_actuator/src/isolate/isolates_endpoint.dart",
+      "line": 35,
+      "injects": [
+        {
+          "parameter": "primary",
+          "type": "PrimaryIsolate",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "isolates",
+          "kind": "method",
+          "type": "Future<Map<String, Object?>>",
+          "parameters": []
+        },
+        {
+          "name": "primary",
+          "kind": "field",
+          "type": "PrimaryIsolate"
+        }
+      ]
+    },
+    {
       "name": "jsonSchemasEndpoint",
       "type": "JsonSchemasEndpoint",
       "types": [

@@ -52,6 +52,7 @@ const dependents = [
   'example/static_site/app',
   'example/seo_site',
   'extensions/language_server',
+  'tool/load_bench',
 ];
 
 const _versionFile = 'spring_boot_dart/lib/src/version.dart';

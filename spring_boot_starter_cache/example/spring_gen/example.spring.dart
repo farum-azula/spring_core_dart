@@ -207,7 +207,11 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
   _i1.BeanDefinition<_i4.SimpleCacheManager>(
     name: r'cacheManager',
     source: r'asset:spring_boot_starter_cache/example/example.dart#CacheSetup.cacheManager',
-    types: const [_i4.SimpleCacheManager, _i4.CacheManager],
+    types: const [
+      _i4.SimpleCacheManager,
+      _i4.CacheManager,
+      _i1.IsolateLocalState,
+    ],
     factoryBeanName: r'cacheSetup',
     factoryMethodName: r'cacheManager',
     dependencies: const [
@@ -299,7 +303,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '5495800e',
+  fingerprint: 'd0cd7486',
 );
 
 /// Starts the application: config files, environment, context, runners

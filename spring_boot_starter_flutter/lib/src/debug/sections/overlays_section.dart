@@ -29,7 +29,8 @@ final class DebugOverlaysSection implements DebugPanelSection, Ordered {
       return Text(
         'No debug feature with an overlay is in this build '
         '(spring.flutter.debug.frame-meter.enabled, '
-        'spring.flutter.debug.timeline.enabled).',
+        'spring.flutter.debug.timeline.enabled, '
+        'spring.flutter.debug.isolates.enabled).',
         style: style.text.copyWith(color: style.muted),
       );
     }

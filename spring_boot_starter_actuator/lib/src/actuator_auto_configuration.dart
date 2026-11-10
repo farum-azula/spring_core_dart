@@ -21,6 +21,8 @@ const _mappings =
     'package:spring_boot_starter_actuator#MappingsEndpointAutoConfiguration';
 const _jsonSchemas =
     'package:spring_boot_starter_actuator#JsonSchemasEndpointAutoConfiguration';
+const _isolates =
+    'package:spring_boot_starter_actuator#IsolatesEndpointAutoConfiguration';
 const _web =
     'package:spring_boot_starter_actuator#WebEndpointAutoConfiguration';
 
@@ -454,6 +456,27 @@ final actuatorAutoConfiguration = <BeanDefinition<Object>>[
         invoke: (bean, arguments) =>
             bean.schema(arguments.single! as List<String>),
         parameters: const [_pathParameter],
+        annotations: const [ReadOperation()],
+      ),
+    ],
+  ),
+  // Isolates.
+  BeanDefinition<IsolatesEndpoint>(
+    name: 'isolatesEndpoint',
+    factoryMethodName: 'isolatesEndpoint',
+    source: _isolates,
+    annotations: const [Endpoint(id: 'isolates')],
+    conditions: const [
+      ConditionGroup('$_isolates.isolatesEndpoint', [
+        ConditionalOnBean(PrimaryIsolate),
+        ConditionalOnMissingBean(IsolatesEndpoint),
+      ]),
+    ],
+    create: (r) => IsolatesEndpoint(r.dependency<PrimaryIsolate>()),
+    annotatedMethods: [
+      BeanMethod<IsolatesEndpoint>(
+        'isolates',
+        invoke: (bean, _) => bean.isolates(),
         annotations: const [ReadOperation()],
       ),
     ],

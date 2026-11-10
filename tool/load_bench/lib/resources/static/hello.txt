@@ -1,0 +1,9 @@
+Hello from the static resource handler of spring_boot_starter_web.
+
+This file is embedded in the executable by the generator (lib/resources/)
+and served as GET /static/hello.txt, with an ETag. The load tests ask for
+it again and again to measure the handler: the lookup of the file, the
+checks of the path and the headers of the answer.
+
+It is a few hundred bytes on purpose, like a small style sheet or an icon:
+the cost measured is the handler's, not the copy of the bytes.

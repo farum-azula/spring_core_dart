@@ -24,6 +24,8 @@ library;
 // Logging and spring_boot_dart (re-exported by the logging starter), so
 // this starter is the only dependency an application needs.
 export 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
+export 'package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart'
+    show SchedulingIsolates;
 export 'package:spring_boot_starter_scheduling/src/cron_expression.dart';
 export 'package:spring_boot_starter_scheduling/src/scheduled.dart';
 export 'package:spring_boot_starter_scheduling/src/scheduled_annotation_bean_post_processor.dart';

@@ -1,5 +1,10 @@
 ## Unreleased
 
+- A pool of isolates serves the port (`server.isolates.count`: a number or `auto`, one per core): each isolate runs the whole application with its own beans, the first one (`main`) starts the others (`isolate-1`, …), restarts one that ends unexpectedly and stops them with the context; every start, scaling step and failure is logged. One warning names the beans that keep state per isolate (`IsolateLocalState`: the in-memory sessions). The `IsolateScaler` bean (`scaleTo`, `scaleBy`; in every isolate, the pool itself in the first and a bean that hands the step to it in the others) changes their number while the server runs, an isolate that leaves finishing its requests first (`server.isolates.drain-timeout`); `server.isolates.scaling: auto` lets a policy do it between `min` and `max` (`LagScalingPolicy`: by how late the isolates' event loops run; `scale-up-lag`, `scale-up-after`, `scale-down-after`, `cooldown`; an `IsolateScalingPolicy` bean replaces it).
+- The requests in flight and taken are in the isolate's row of the task manager (`WebServerLoadSource`, `WebServerActivity`).
+- The debug feature `qps` (`spring.web.debug.qps.enabled: true`, without which the build has none of its code): `RequestRateFilter` counts the requests of its isolate and `RequestRates` works out requests per second, p50/p95/p99 and errors for every isolate and in total each `spring.web.debug.qps.log-interval`, logged on `spring.web.qps`, and answers the other isolates through `PrimaryIsolate`.
+- A full server says so at once: past `server.max-concurrent-requests` (event streams not counted) or `server.max-connections` a request is answered 503 with `Retry-After` (`server.retry-after`) instead of waiting (past the connection limit the connection is closed too); no limit unless set.
+- The module is only where a server can run (`ModulePlatform.native`): a browser build of an application that has the starter among its dependencies carries none of it.
 - `WebServerInitializedEvent` names itself (`eventName`), readable in a release build.
 
 ## 0.7.3

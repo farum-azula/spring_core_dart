@@ -1,4 +1,5 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart';
 import 'package:spring_boot_starter_scheduling/src/cron_expression.dart';
 import 'package:spring_boot_starter_scheduling/src/scheduled.dart';
 import 'package:spring_boot_starter_scheduling/src/task_scheduler.dart';
@@ -41,7 +42,16 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
   /// A processor that runs the methods on [scheduler], unless they name
   /// another one, and resolves `${...}` in the attributes with
   /// [environment].
-  ScheduledAnnotationBeanPostProcessor(this.scheduler, this.environment);
+  ScheduledAnnotationBeanPostProcessor(
+    this.scheduler,
+    this.environment, {
+    this.isolates = SchedulingIsolates.primary,
+  });
+
+  /// Which isolates of a server's pool run the methods
+  /// (`spring.task.scheduling.isolates`): in another isolate than the
+  /// first, none with [SchedulingIsolates.primary].
+  final SchedulingIsolates isolates;
 
   /// The default scheduler of `@Scheduled` methods, used when they give
   /// no `scheduler:`.
@@ -83,6 +93,15 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
       return bean;
     }
     final owner = _typeName(definition.beanType);
+    if (isolates == SchedulingIsolates.primary &&
+        !IsolateInfo.current.primary) {
+      _log.debug(
+        () =>
+            '@Scheduled methods of $owner run in the primary isolate only '
+            '(spring.task.scheduling.isolates=primary)',
+      );
+      return bean;
+    }
     if (definition.scope != ScopeType.singleton) {
       _log.warning(
         "@Scheduled methods of $owner are ignored: bean '$beanName' has "

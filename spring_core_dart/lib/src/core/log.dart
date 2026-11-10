@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:spring_core_dart/src/core/isolate/isolate_info.dart';
 import 'package:spring_core_dart/src/core/log_console_stub.dart'
     if (dart.library.io) 'package:spring_core_dart/src/core/log_console_io.dart';
 
@@ -485,13 +486,18 @@ final class SpringLogHold {
 /// level coloured by level (error red, warning yellow, the others green),
 /// as Spring Boot's console colours its lines when it detects one. Written
 /// to a file or a pipe, in Flutter (the device log) and on the web (the
-/// browser's console) the line is plain text.
+/// browser's console) the line is plain text. In an isolate other than
+/// the application's first the line starts with its name: `[isolate-2]`.
 void printLogHandler(SpringLogRecord record) {
   final error = record.error;
   final name = record.level.name.toUpperCase();
   final message = '${record.message}${error == null ? '' : ': $error'}';
+  // Another isolate than the application's first says which it is.
+  final isolate = IsolateInfo.current.primary
+      ? ''
+      : '[${IsolateInfo.current.name}] ';
   if (!printLogHandlerColours) {
-    printLogHandlerOut('[${record.loggerName}] $name: $message');
+    printLogHandlerOut('$isolate[${record.loggerName}] $name: $message');
     return;
   }
   final level = switch (record.level) {
@@ -500,7 +506,7 @@ void printLogHandler(SpringLogRecord record) {
     _ => '32',
   };
   printLogHandlerOut(
-    '[\x1B[36m${record.loggerName}\x1B[0;39m] '
+    '$isolate[\x1B[36m${record.loggerName}\x1B[0;39m] '
     '\x1B[${level}m$name\x1B[0;39m: $message',
   );
 }

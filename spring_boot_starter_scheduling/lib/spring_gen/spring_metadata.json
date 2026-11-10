@@ -13,13 +13,23 @@
       "class": "SchedulingProperties"
     },
     {
+      "name": "spring.task.scheduling.isolates",
+      "type": "SchedulingIsolates",
+      "description": "Which isolates run the `@Scheduled` methods when the web server has a pool of them (`server.isolates.count`): `primary` (the default), so a job runs once for the application, or `all`, once in every isolate, for what each isolate must do for itself (refreshing what it keeps in memory).",
+      "default": "primary",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart",
+      "line": 19,
+      "class": "SchedulingProperties"
+    },
+    {
       "name": "spring.task.scheduling.shutdown.await-termination",
       "type": "bool",
       "description": "Closing the context with `closeAsync()` waits for the runs going on.",
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart",
-      "line": 19,
+      "line": 36,
       "class": "SchedulingShutdown"
     },
     {
@@ -29,11 +39,25 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart",
-      "line": 22,
+      "line": 39,
       "class": "SchedulingShutdown"
     }
   ],
-  "hints": [],
+  "hints": [
+    {
+      "name": "spring.task.scheduling.isolates",
+      "values": [
+        {
+          "value": "primary",
+          "description": "The application's first isolate only."
+        },
+        {
+          "value": "all",
+          "description": "Every isolate."
+        }
+      ]
+    }
+  ],
   "beans": [
     {
       "name": "applicationTaskExecutor",
@@ -110,6 +134,11 @@
           "name": "isRunning",
           "kind": "getter",
           "type": "bool"
+        },
+        {
+          "name": "isolates",
+          "kind": "field",
+          "type": "SchedulingIsolates"
         },
         {
           "name": "phase",
@@ -193,6 +222,11 @@
           "name": "enabled",
           "kind": "field",
           "type": "bool"
+        },
+        {
+          "name": "isolates",
+          "kind": "field",
+          "type": "SchedulingIsolates"
         },
         {
           "name": "shutdown",

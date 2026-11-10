@@ -1,3 +1,7 @@
+## Unreleased
+
+- `InMemoryCacheManager` (the default) and `SimpleCacheManager` are `IsolateLocalState`: a pool of server isolates names them in its warning, each isolate having its own cached values.
+
 ## 0.7.3
 
 - No changes of its own; released with the family version 0.7.3.

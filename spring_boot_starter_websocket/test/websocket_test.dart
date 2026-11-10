@@ -58,6 +58,9 @@ void main() {
         .withUserConfiguration(appModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
+        .withAutoConfiguration(
+          springBootStarterWebsocketServerAutoConfiguration,
+        )
         .withPropertyValues([
           'chat.url=ws://chat.test/ws',
           'spring.websocket.client.config.chat.reconnect.delay=10ms',
@@ -540,6 +543,9 @@ void main() {
         .withUserConfiguration(brokenModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
+        .withAutoConfiguration(
+          springBootStarterWebsocketServerAutoConfiguration,
+        )
         .withBean<WebSocketTransport>(() => MockWebSocketTransport())
         .run((context) {
           final failure = '${context.startupFailure}';
@@ -559,6 +565,9 @@ void main() {
         .withUserConfiguration(appModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
+        .withAutoConfiguration(
+          springBootStarterWebsocketServerAutoConfiguration,
+        )
         .withBean<WebSocketTransport>(() => MockWebSocketTransport())
         .withPropertyValues([
           'chat.url=http://ann:pw@chat.test/ws?token=s3cret',
@@ -577,6 +586,9 @@ void main() {
         .withUserConfiguration(appModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
+        .withAutoConfiguration(
+          springBootStarterWebsocketServerAutoConfiguration,
+        )
         .withBean<WebSocketTransport>(() => MockWebSocketTransport())
         .run((context) {
           expect('${context.startupFailure}', contains('chat.url'));

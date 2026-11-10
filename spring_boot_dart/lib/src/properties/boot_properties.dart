@@ -152,6 +152,36 @@ class ObservationsAnnotationsProperties {
   bool enabled = false;
 }
 
+/// The pool of the `isolateTaskExecutor`:
+/// `spring.task.execution.isolates.*`.
+///
+/// Spring Boot: `spring.task.execution.pool.*` (threads).
+@ConfigurationProperties('spring.task.execution.isolates')
+class TaskExecutionIsolatesProperties {
+  /// The isolates started before tasks wait in the queue; not set: one
+  /// less than the machine has processors (at least one).
+  int? coreSize;
+
+  /// The most isolates, reached only when the queue is full; not set: as
+  /// many as `core-size`.
+  int? maxSize;
+
+  /// How long an idle isolate stays before it is stopped.
+  Duration keepAlive = const Duration(seconds: 60);
+
+  /// How many tasks may wait for an isolate; not set: any number, so the
+  /// pool never grows past `core-size`.
+  int? queueCapacity;
+
+  /// Whether the first `core-size` isolates are stopped when idle too.
+  bool allowCoreTimeout = true;
+
+  /// The isolates' names in the logs, a number added: `task-1`; in an
+  /// isolate of the web server's pool, after its name:
+  /// `isolate-2-task-1`.
+  String namePrefix = 'task-';
+}
+
 /// The message source: `spring.messages.*`.
 @ConfigurationProperties('spring.messages')
 class MessagesProperties {

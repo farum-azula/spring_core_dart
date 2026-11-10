@@ -60,6 +60,23 @@ class ServerSettings {
   /// limit (`0` or less: none). Not in Spring Boot.
   Duration? requestTimeout;
 
+  /// The most connections one isolate keeps open. While it has more,
+  /// every request is answered 503 and its connection closed, until the
+  /// number is back under the limit (counted at most every 100 ms).
+  /// Not set: no limit. With a pool of isolates (`server.isolates.*`)
+  /// each isolate has this many.
+  int? maxConnections;
+
+  /// The most requests one isolate answers at a time (event streams not
+  /// counted); a request past it is answered 503 with `Retry-After` at
+  /// once, instead of waiting behind the others; its connection stays
+  /// open for the next try. Not set: no limit.
+  int? maxConcurrentRequests;
+
+  /// The `Retry-After` of a 503 for a server that is full
+  /// ([maxConnections], [maxConcurrentRequests]).
+  Duration retryAfter = const Duration(seconds: 1);
+
   /// Behind a reverse proxy: apply its `Forwarded` or `X-Forwarded-Proto`,
   /// `-Host`, `-Port`, `-For` headers (the scheme, so cookies get `Secure`
   /// behind TLS; the host and port; the client's address), from trusted
@@ -81,10 +98,103 @@ class ServerSettings {
   /// Sessions and their cookie (`session.*`).
   ServerSessionSettings session = ServerSessionSettings();
 
+  /// The pool of isolates that serve the port together (`isolates.*`).
+  ServerIsolatesSettings isolates = ServerIsolatesSettings();
+
   /// More media types of the static resources by file extension, on top
   /// of the built-in ones (`server.mime-mappings.wasm=application/wasm`);
   /// an extension listed here wins. The extension is matched in any case.
   Map<String, String> mimeMappings = {};
+}
+
+/// The `server.isolates.*` properties: how many isolates serve the port.
+///
+/// An isolate uses one processor core. With more than one, each runs the
+/// whole application (its own beans, its own memory) and the port is
+/// shared: a connection goes to one of them. What a bean keeps in memory
+/// (sessions, a cache, a counter) is then kept once per isolate; sharing
+/// it is the application's job (a database, a shared store).
+///
+/// Spring has no counterpart: Tomcat's threads (`server.tomcat.threads.*`)
+/// share one heap.
+class ServerIsolatesSettings {
+  /// How many isolates serve at the start: a number, or `auto` for one
+  /// per processor core. `1` (the default): the application's own
+  /// isolate only.
+  String count = '1';
+
+  /// How long an isolate that leaves the pool may finish its requests
+  /// before it is stopped anyway.
+  Duration drainTimeout = const Duration(seconds: 30);
+
+  /// Who changes the number of isolates while the server runs: `manual`
+  /// (the default: only the application, through the `IsolateScaler`
+  /// bean) or `auto` (the scaling policy too, between [min] and [max]).
+  IsolateScaling scaling = IsolateScaling.manual;
+
+  /// The fewest isolates scaling goes down to.
+  int min = 1;
+
+  /// The most isolates scaling goes up to; not set: the processor cores,
+  /// or [count] when that is more.
+  int? max;
+
+  /// How long the isolates must be late (see [scaleUpLag]) before the
+  /// policy adds some.
+  Duration scaleUpAfter = const Duration(seconds: 5);
+
+  /// How late the isolates' event loops run on average when the policy
+  /// calls them overloaded: requests wait about that long before they
+  /// are even looked at.
+  Duration scaleUpLag = const Duration(milliseconds: 5);
+
+  /// How long the isolates must be free before the policy removes one.
+  Duration scaleDownAfter = const Duration(minutes: 2);
+
+  /// The pause after a scaling step before the policy takes another.
+  Duration cooldown = const Duration(seconds: 15);
+}
+
+/// What [ServerIsolatesSettings] mean, worked out.
+extension ServerIsolatesCounts on ServerIsolatesSettings {
+  bool get _auto => count.trim().toLowerCase() == 'auto';
+
+  /// Whether a pool can exist: with one isolate, manual scaling and no
+  /// `max` above one, the port is not shared and nothing can be added.
+  bool get pooled =>
+      _auto ||
+      countFor(1) > 1 ||
+      scaling == IsolateScaling.auto ||
+      (max != null && max! > 1);
+
+  /// `count` as a number, [processors] for `auto`; `1` for anything else.
+  int countFor(int processors) {
+    if (_auto) {
+      return processors < 1 ? 1 : processors;
+    }
+    final number = int.tryParse(count.trim());
+    return number == null || number < 1 ? 1 : number;
+  }
+
+  /// The most isolates on a machine with [processors] cores: `max`, or
+  /// the cores, and never less than the count at the start.
+  int maxFor(int processors) {
+    final start = countFor(processors);
+    final most = max ?? (processors < 1 ? 1 : processors);
+    return most < start ? start : most;
+  }
+
+  /// The fewest isolates: `min`, at least one.
+  int get least => min < 1 ? 1 : min;
+}
+
+/// Who changes the number of isolates (`server.isolates.scaling`).
+enum IsolateScaling {
+  /// Only the application, through the `IsolateScaler` bean.
+  manual,
+
+  /// The scaling policy too.
+  auto,
 }
 
 /// The `server.forward-headers.*` properties.
@@ -398,6 +508,26 @@ class WebResourcesChainSettings {
   /// takes it (Brotli first), with `Content-Encoding` and `Vary:
   /// Accept-Encoding`.
   bool compressed = false;
+}
+
+/// The `spring.web.debug.*` properties: the web starter's debug features,
+/// each in the build only when asked for.
+@ConfigurationProperties('spring.web.debug')
+class WebDebugSettings {
+  /// Requests per second (`qps.*`).
+  WebDebugQpsSettings qps = WebDebugQpsSettings();
+}
+
+/// The `spring.web.debug.qps.*` properties.
+class WebDebugQpsSettings {
+  /// Whether the application counts its requests: with `true` the build
+  /// has the filter that counts them and `RequestRates`, which logs the
+  /// requests per second and answers the actuator's `qps` endpoint;
+  /// without it, none of that code. Read by the generator.
+  bool enabled = false;
+
+  /// The length of a window: how often the rate is worked out and logged.
+  Duration logInterval = const Duration(seconds: 10);
 }
 
 /// The `spring.main.*` properties of the web starter.

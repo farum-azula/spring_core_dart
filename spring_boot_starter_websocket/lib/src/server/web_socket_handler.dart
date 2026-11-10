@@ -346,8 +346,13 @@ final class WebSocketHandlerRegistration {
 ///   void announce(String text) => sessions.broadcast('/ws/chat', text);
 /// }
 /// ```
-final class WebSocketSessionRegistry {
+final class WebSocketSessionRegistry implements IsolateLocalState {
   final _sessions = <String, Set<ServerWebSocketSession>>{};
+
+  // With a pool of server isolates each has the sessions it accepted: a
+  // broadcast reaches those, not the others'.
+  @override
+  String get isolateLocalState => 'WebSocket sessions';
 
   /// The open sessions of the endpoint mapped to [pattern], written as on
   /// the endpoint (`/ws/rooms/{room}`, not `/ws/rooms/neon`); with no

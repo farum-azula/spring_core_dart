@@ -1757,13 +1757,13 @@ class ModuleEmitter {
   // signatures) and then calls `create` with the target and an invoker.
 
   // The factories of the foreign proxies by source; those of beans only in
-  // modules left out of a release under `!dart.vm.product`.
+  // modules under a condition (not in a release, one platform) under it.
   Expression _foreignProxies(List<ForeignProxyModel> proxies) {
     final available = [
       for (final foreign in proxies)
         if (foreign.proxy.unavailableReason == null) foreign,
     ];
-    if (!available.any((foreign) => foreign.notInRelease)) {
+    if (!available.any((foreign) => foreign.condition != null)) {
       return literalMap({
         for (final foreign in available)
           _str(foreign.source): _proxyFactory(foreign.proxy, foreign.element),
@@ -1773,8 +1773,7 @@ class ModuleEmitter {
       Block.of([
         const Code('{'),
         for (final foreign in available) ...[
-          if (foreign.notInRelease)
-            const Code("if (!const bool.fromEnvironment('dart.vm.product')) "),
+          if (foreign.condition case final condition?) Code('if ($condition) '),
           _str(foreign.source).code,
           const Code(': '),
           _proxyFactory(foreign.proxy, foreign.element).code,

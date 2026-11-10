@@ -23,12 +23,8 @@ const _source =
 ///   implementations with the `ObjectMapper`, the transport and every
 ///   [WebSocketHandshakeInterceptor] bean, and closes their connections
 ///   when the application stops.
-/// - `webSocketSessionRegistry`: the open server sessions, for
-///   broadcasting.
-/// - `webSocketHandlerMapping`: routes the handshakes of the server
-///   endpoints; the web starter's dispatcher uses it when
-///   `spring_boot_starter_web` is a dependency, and nothing does
-///   otherwise.
+///
+/// The server side is [webSocketServerAutoConfiguration].
 final webSocketAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<WebSocketTransport>(
     name: 'webSocketTransport',
@@ -62,8 +58,19 @@ final webSocketAutoConfiguration = <BeanDefinition<Object>>[
           const <WebSocketHandshakeInterceptor>[],
     ),
   ),
-  // The server side (with spring_boot_starter_web): the open sessions and
-  // the handshakes' mapping, which the web starter's dispatcher asks.
+];
+
+/// The server side of the starter, in
+/// `springBootStarterWebsocketServerAutoConfiguration`, a module only where
+/// a server can run:
+///
+/// - `webSocketSessionRegistry`: the open server sessions, for
+///   broadcasting.
+/// - `webSocketHandlerMapping`: routes the handshakes of the server
+///   endpoints; the web starter's dispatcher uses it when
+///   `spring_boot_starter_web` is a dependency, and nothing does
+///   otherwise.
+final webSocketServerAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<WebSocketSessionRegistry>(
     name: 'webSocketSessionRegistry',
     source: _source,

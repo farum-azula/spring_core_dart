@@ -48,6 +48,7 @@ export 'package:spring_web_dart/spring_web_dart.dart';
 
 export 'src/config/web_properties.dart';
 export 'src/cors.dart' hide addVary;
+export 'src/debug/request_rate.dart';
 export 'src/dispatcher.dart';
 export 'src/form_parameters.dart';
 export 'src/forwarded_headers.dart';
@@ -55,6 +56,10 @@ export 'src/handler_exception_resolver.dart';
 export 'src/handler_mapping_descriptions.dart';
 export 'src/handler_method.dart';
 export 'src/http_session.dart';
+export 'src/isolates/isolate_scaler.dart';
+export 'src/isolates/server_isolate_pool.dart'
+    show ServerIsolatePool, ServerIsolateWorker;
+export 'src/isolates/web_server_load.dart';
 export 'src/multipart_resolver.dart';
 export 'src/request_mapping.dart' hide absent, dispatcherCorsConfiguration;
 export 'src/response_writer.dart';

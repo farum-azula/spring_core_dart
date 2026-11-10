@@ -1,3 +1,9 @@
+## Unreleased
+
+- The `isolatesEndpoint` bean: the `isolates` endpoint over HTTP once exposed (`management.endpoints.web.exposure.include=isolates`).
+- The `qps` endpoint (`QpsEndpoint`, `GET /actuator/qps` and `/actuator/qps/now`) of the web starter's debug feature, in the build by the same property (`spring.web.debug.qps.enabled: true`); answered the same by every isolate of a pool.
+- The modules are only where a server can run (`ModulePlatform.native`).
+
 ## 0.7.3
 
 - The `jsonSchemasEndpoint` bean: the `jsonschemas` endpoint, over HTTP once exposed (`management.endpoints.web.exposure.include=jsonschemas`).

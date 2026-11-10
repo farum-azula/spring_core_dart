@@ -214,7 +214,7 @@ jobs:
       matrix:
         include:
           - part: server guide and core
-            directories: example/server_guide example/static_site/server spring_core_dart spring_boot_dart
+            directories: example/server_guide example/static_site/server tool/load_bench spring_core_dart spring_boot_dart
           - part: starters
             directories: spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_data spring_boot_starter_feign spring_boot_starter_websocket spring_boot_actuator spring_boot_starter_web spring_boot_starter_actuator spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security spring_search_dart
     steps:

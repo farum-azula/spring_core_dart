@@ -48,6 +48,9 @@ void main() {
         .withUserConfiguration(appModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
+        .withAutoConfiguration(
+          springBootStarterWebsocketServerAutoConfiguration,
+        )
         .withPropertyValues([
           'chat.url=ws://127.0.0.1:${server.port}/ws',
           'spring.websocket.client.config.chat.reconnect-delay=10ms',
@@ -99,6 +102,9 @@ void main() {
           .withUserConfiguration(appModule)
           .withAutoConfiguration(springBootAutoConfiguration)
           .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
+          .withAutoConfiguration(
+            springBootStarterWebsocketServerAutoConfiguration,
+          )
           .withPropertyValues([
             'chat.url=ws://127.0.0.1:${server.port}/ws',
             '$_clientConfig.chat.reconnect.delay=10ms',
@@ -154,6 +160,9 @@ void main() {
         .withUserConfiguration(appModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
+        .withAutoConfiguration(
+          springBootStarterWebsocketServerAutoConfiguration,
+        )
         .withPropertyValues(['chat.url=ws://127.0.0.1:1/ws']);
     await runner.runAsync((context) async {
       final transport =

@@ -321,21 +321,28 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     _i14.springBootStarterFeignAutoConfiguration,
     _i15.springBootStarterLoggingAutoConfiguration,
     _i16.springBootStarterOauth2ClientAutoConfiguration,
-    _i17.springBootStarterSecurityAutoConfiguration,
-    _i17.springBootStarterSecurityOAuth2ClientAutoConfiguration,
-    _i18.springBootStarterWebAutoConfiguration,
+    if (const bool.fromEnvironment('dart.library.io'))
+      _i17.springBootStarterSecurityAutoConfiguration,
+    if (const bool.fromEnvironment('dart.library.io'))
+      _i17.springBootStarterSecurityOAuth2ClientAutoConfiguration,
+    if (const bool.fromEnvironment('dart.library.io'))
+      _i18.springBootStarterWebAutoConfiguration,
     _i19.springBootStarterWebsocketAutoConfiguration,
+    if (const bool.fromEnvironment('dart.library.io'))
+      _i19.springBootStarterWebsocketServerAutoConfiguration,
     _i20.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
-    _i17.springBootStarterSecurityAutoConfiguration:
-        const _i2.AutoConfigurationModule(
-          after: ['springBootStarterOauth2ClientAutoConfiguration'],
-        ),
-    _i17.springBootStarterSecurityOAuth2ClientAutoConfiguration:
-        const _i2.AutoConfigurationModule(
-          before: ['springBootStarterOauth2ClientAutoConfiguration'],
-        ),
+    if (const bool.fromEnvironment('dart.library.io'))
+      _i17.springBootStarterSecurityAutoConfiguration:
+          const _i2.AutoConfigurationModule(
+            after: ['springBootStarterOauth2ClientAutoConfiguration'],
+          ),
+    if (const bool.fromEnvironment('dart.library.io'))
+      _i17.springBootStarterSecurityOAuth2ClientAutoConfiguration:
+          const _i2.AutoConfigurationModule(
+            before: ['springBootStarterOauth2ClientAutoConfiguration'],
+          ),
   },
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
@@ -383,7 +390,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '552545a7',
+  fingerprint: 'cb89ff84',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -830,7 +830,7 @@ class SpringBuilder implements Builder {
       for (final (:source, :beanName, :beanNames, :type)
           in await _deferredProxies(buildStep, assets, includeOwn: example)) {
         final build = proxyBuild[source];
-        if (build == _BuildChoice.never) {
+        if (build != null && build.condition == null) {
           continue; // a bean only of modules the build leaves out
         }
         if (scanner.foreignProxyModel(type) case final proxy?) {
@@ -841,7 +841,7 @@ class SpringBuilder implements Builder {
               beanNames: beanNames,
               proxy: proxy,
               element: type.element,
-              notInRelease: build == _BuildChoice.notInRelease,
+              condition: build?.condition,
             ),
           );
         }
@@ -1250,14 +1250,15 @@ class SpringBuilder implements Builder {
   // A module with `build: AutoConfigurationBuild(property)` is decided by
   // that property of the application's [configuration]: in, out (no code
   // at all), or in under `!dart.vm.product`, which a release build
-  // compiles away with everything only the module reaches. [proxies]: the
-  // build of the beans (by source) with a deferred proxy that are only in
-  // such modules, so their proxies leave with them; walked only when a
-  // module is decided so.
+  // compiles away with everything only the module reaches. A module with
+  // a `platform` is in under that platform's constant the same way.
+  // [proxies]: the build of the beans (by source) with a deferred proxy
+  // that are only in such modules, so their proxies leave with them;
+  // walked only when a module is decided so.
   static Future<
     ({
       List<(Expression, Expression?)> modules,
-      Map<String, _BuildChoice> proxies,
+      Map<String, _ProxyBuild> proxies,
       Set<String> excluded,
     })
   >
@@ -1267,8 +1268,10 @@ class SpringBuilder implements Builder {
     Map<String, String> configuration = const {},
   }) async {
     final root = buildStep.inputId.package;
-    final found = <(Expression?, String, String, String, _BuildChoice)>[];
-    final decided = <_BuildChoice, List<TopLevelVariableElement>>{};
+    final found = <(Expression?, String, String, String, List<String>)>[];
+    // Each module with the conditions it is in the build under: `null`
+    // when it is left out, none when it is always in.
+    final decided = <(TopLevelVariableElement, List<String>?)>[];
     String? Function(String key)? lookup;
     String? property(String key) {
       lookup ??= readPlatformEnvironment(
@@ -1310,24 +1313,22 @@ class SpringBuilder implements Builder {
             '${package.name}.${variable.name}',
             profiled: (key) => _profileSetting(configuration, key),
           );
-          (decided[choice] ??= []).add(variable);
           if (choice == _BuildChoice.never) {
+            decided.add((variable, null));
             continue;
           }
-          final ordering = _orderingOf(ConstantReader(annotation));
-          if (ordering != null && choice == _BuildChoice.notInRelease) {
-            log.warning(
-              '${package.name}.${variable.name}: a module the build puts in '
-              'only outside a release takes no order, before or after; '
-              'they are ignored.',
-            );
-          }
+          final conditions = [
+            if (choice == _BuildChoice.notInRelease)
+              "!const bool.fromEnvironment('dart.vm.product')",
+            ?_platformCondition(ConstantReader(annotation).peek('platform')),
+          ];
+          decided.add((variable, conditions));
           found.add((
-            choice == _BuildChoice.always ? ordering : null,
+            _orderingOf(ConstantReader(annotation)),
             package.name,
             variable.name!,
             'package:${package.name}/spring_auto_configuration.dart',
-            choice,
+            conditions,
           ));
         }
       }
@@ -1336,15 +1337,17 @@ class SpringBuilder implements Builder {
       final byPackage = a.$2.compareTo(b.$2);
       return byPackage != 0 ? byPackage : a.$3.compareTo(b.$3);
     });
+    // A module under a condition is a collection `if` in the list, and in
+    // the map of the orderings too (`if (...) module: ordering`).
     final modules = [
-      for (final (ordering, _, name, url, choice) in found)
+      for (final (ordering, _, name, url, conditions) in found)
         (
-          choice == _BuildChoice.always
+          conditions.isEmpty
               ? refer(name, url)
               : CodeExpression(
                   Code.scope(
                     (allocate) =>
-                        "if (!const bool.fromEnvironment('dart.vm.product')) "
+                        'if (${conditions.join(' && ')}) '
                         '${allocate(refer(name, url))}',
                   ),
                 ),
@@ -1355,41 +1358,62 @@ class SpringBuilder implements Builder {
       modules: modules,
       proxies: await _proxyBuild(buildStep.resolver, decided),
       excluded: {
-        for (final TopLevelVariableElement variable
-            in decided[_BuildChoice.never] ?? const [])
-          '${variable.library.uri}#${variable.name}',
+        for (final (variable, conditions) in decided)
+          if (conditions == null) '${variable.library.uri}#${variable.name}',
       },
     );
   }
 
+  // `AutoConfigurationModule.platform` as the constant the compilers know:
+  // true where the module works, so the other platform's build drops the
+  // module and all only it reaches.
+  static String? _platformCondition(ConstantReader? platform) {
+    if (platform == null || platform.isNull) {
+      return null;
+    }
+    return switch (platform.objectValue.variable?.name) {
+      'native' => "const bool.fromEnvironment('dart.library.io')",
+      'web' => "const bool.fromEnvironment('dart.library.js_interop')",
+      _ => null,
+    };
+  }
+
   // The beans with a deferred proxy that only modules left out of the
-  // build, or out of a release, define: `never` or `notInRelease` by
-  // source. A bean also in a module always built keeps its proxy.
-  static Future<Map<String, _BuildChoice>> _proxyBuild(
+  // build, or in it under a condition (not in a release, one platform),
+  // define, by source: left out, or the condition its proxy is under. A
+  // bean also in a module always built keeps its proxy as it is.
+  static Future<Map<String, _ProxyBuild>> _proxyBuild(
     Resolver resolver,
-    Map<_BuildChoice, List<TopLevelVariableElement>> decided,
+    List<(TopLevelVariableElement, List<String>?)> decided,
   ) async {
-    final never = decided[_BuildChoice.never] ?? const [];
-    final notInRelease = decided[_BuildChoice.notInRelease] ?? const [];
-    if (never.isEmpty && notInRelease.isEmpty) {
+    if (decided.every((entry) => entry.$2?.isEmpty ?? false)) {
       return const {};
     }
     final walker = _ModuleProxies(resolver);
-    Future<Set<String>> of(List<TopLevelVariableElement> modules) async => {
-      for (final module in modules) ...await walker.of(module),
-    };
-    final out = await of(never);
-    final debug = await of(notInRelease);
-    if (out.isEmpty && debug.isEmpty) {
-      return const {};
+    // By source: the conditions of each module that defines the bean.
+    final builds = <String, List<List<String>?>>{};
+    for (final (module, conditions) in decided) {
+      for (final source in await walker.of(module)) {
+        (builds[source] ??= []).add(conditions);
+      }
     }
-    final kept = await of(decided[_BuildChoice.always] ?? const []);
-    return {
-      for (final source in out.difference(kept).difference(debug))
-        source: _BuildChoice.never,
-      for (final source in debug.difference(kept))
-        source: _BuildChoice.notInRelease,
-    };
+    final result = <String, _ProxyBuild>{};
+    for (final MapEntry(key: source, value: all) in builds.entries) {
+      final built = [for (final conditions in all) ?conditions];
+      if (built.isEmpty) {
+        result[source] = const _ProxyBuild.never();
+      } else if (!built.any((conditions) => conditions.isEmpty)) {
+        final alternatives = {
+          for (final conditions in built) conditions.join(' && '),
+        };
+        result[source] = _ProxyBuild(
+          alternatives.length == 1
+              ? alternatives.single
+              : alternatives.map((one) => '($one)').join(' || '),
+        );
+      }
+    }
+    return result;
   }
 
   // The profile's configuration file (`application-web.yml`) that sets
@@ -2214,6 +2238,15 @@ class SpringPropertiesBuilder extends SpringBuilder {
 
 // Where the build puts an auto-configuration module.
 enum _BuildChoice { always, notInRelease, never }
+
+// How the proxy of a bean only conditional modules define is built: under
+// [condition], or not at all (`null`).
+final class _ProxyBuild {
+  const _ProxyBuild(String this.condition);
+  const _ProxyBuild.never() : condition = null;
+
+  final String? condition;
+}
 
 // The sources of the beans with a deferred proxy a module defines: those
 // of its initializer and of the top-level getters and variables it reads,

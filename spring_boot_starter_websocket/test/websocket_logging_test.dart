@@ -14,7 +14,8 @@ void main() {
   final runner = const ApplicationContextRunner()
       .withUserConfiguration(wsServerBeans)
       .withAutoConfiguration(springBootAutoConfiguration)
-      .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration);
+      .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
+      .withAutoConfiguration(springBootStarterWebsocketServerAutoConfiguration);
 
   late List<SpringLogRecord> records;
   late void Function() stop;

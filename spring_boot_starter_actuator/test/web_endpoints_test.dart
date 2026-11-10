@@ -50,6 +50,7 @@ void main() {
               'health',
               'health-path',
               'info',
+              'isolates',
               'jsonschemas',
               'jsonschemas-path',
               'mappings',

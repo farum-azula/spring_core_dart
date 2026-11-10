@@ -80,6 +80,7 @@ final class FlutterDebugProperties {
     this.frameMeter = const FlutterDebugFeatureProperties(),
     this.motion = const FlutterDebugFeatureProperties(),
     this.timeline = const FlutterDebugTimelineProperties(),
+    this.isolates = const FlutterDebugIsolatesProperties(),
     this.drag = const FlutterDebugFeatureProperties(),
     this.overlays = const FlutterDebugOverlaysProperties(),
   });
@@ -102,6 +103,11 @@ final class FlutterDebugProperties {
   /// (⌘⇧L, or six quick taps and a seventh held): in the build apart from
   /// the panel; with it, each bean's creation is measured too.
   final FlutterDebugTimelineProperties timeline;
+
+  /// The task manager of the app's isolates and the engine's threads,
+  /// `debug.isolates` (⌘⇧I, or seven quick taps and an eighth held): in
+  /// the build apart from the panel.
+  final FlutterDebugIsolatesProperties isolates;
 
   /// Moving the debug overlays by dragging them: in the build apart from
   /// the panel.
@@ -128,8 +134,31 @@ final class FlutterDebugTimelineProperties {
   final FrameMeterPosition position;
 }
 
+/// `spring.flutter.debug.isolates.*`.
+final class FlutterDebugIsolatesProperties {
+  /// Settings with these values.
+  const FlutterDebugIsolatesProperties({
+    this.enabled,
+    this.position = FrameMeterPosition.bottomRight,
+    this.interval = const Duration(seconds: 1),
+  });
+
+  /// Whether the app has the task manager: `true` in every build, `false`
+  /// in none (the build leaves its code out), not set in debug and
+  /// profile builds only (a release build compiles it away).
+  final bool? enabled;
+
+  /// The corner its table shows in.
+  final FrameMeterPosition position;
+
+  /// How often it reads the loads while its table or its tab shows;
+  /// nothing is read, or measured, while neither does.
+  final Duration interval;
+}
+
 /// `spring.flutter.debug.overlays.*`: the overlays of the debug features
-/// (the frame meter, the timeline) that show in one corner.
+/// (the frame meter, the timeline, the task manager) that show in one
+/// corner.
 final class FlutterDebugOverlaysProperties {
   /// Settings with these values.
   const FlutterDebugOverlaysProperties({

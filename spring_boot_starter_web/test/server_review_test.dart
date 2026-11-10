@@ -677,6 +677,7 @@ void main() {
         springBootStarterLoggingAutoConfiguration,
         springBootStarterWebAutoConfiguration,
         springBootStarterWebsocketAutoConfiguration,
+        springBootStarterWebsocketServerAutoConfiguration,
       ],
       bannerMode: BannerMode.off,
       out: out.add,

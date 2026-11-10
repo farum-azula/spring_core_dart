@@ -21,6 +21,9 @@ void main() {
         .withUserConfiguration(appModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
+        .withAutoConfiguration(
+          springBootStarterWebsocketServerAutoConfiguration,
+        )
         .withPropertyValues([
           'chat.url=ws://chat.test/ws',
           'spring.websocket.client.config.chat.reconnect.delay=5ms',

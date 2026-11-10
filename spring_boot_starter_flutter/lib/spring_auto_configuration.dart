@@ -13,6 +13,9 @@ import 'package:spring_boot_starter_flutter/src/asset_resource.dart';
 import 'package:spring_boot_starter_flutter/src/bean_reads.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_frame_meter.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_host.dart';
+import 'package:spring_boot_starter_flutter/src/debug/isolates/debug_isolates.dart';
+import 'package:spring_boot_starter_flutter/src/debug/isolates/isolates_section.dart';
+import 'package:spring_boot_starter_flutter/src/isolates/flutter_engine_loads.dart';
 import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_motion.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_panel.dart';
@@ -473,8 +476,8 @@ final BeanModule springBootStarterFlutterDebugFrameMeterAutoConfiguration =
     ]);
 
 /// The dock of the debug overlays, in every module of a feature that has
-/// one (the frame meter, the timeline): the first makes it, so it is in the
-/// build only with such a feature.
+/// one (the frame meter, the timeline, the task manager): the first makes
+/// it, so it is in the build only with such a feature.
 final List<BeanDefinition<Object>> _debugDock = [
   BeanDefinition<DebugDockCustomizer>(
     name: 'debugDock',
@@ -638,6 +641,61 @@ final BeanModule springBootStarterFlutterDebugTimelineAutoConfiguration =
         source: _debugSource,
         conditions: [_debugFeatureOn('timeline')],
         create: (r) => DebugTimelineSection(r.dependency<DebugTimeline>()),
+      ),
+      ..._debugDock,
+    ]);
+
+/// The task manager of the app's isolates and the engine's threads
+/// (`debugIsolates`), on and off by the action `debug.isolates` (⌘⇧I, or
+/// seven quick taps and an eighth held two seconds): a small table in the
+/// dock, and its tab in the debug panel with every value. The
+/// `flutterEngineLoads` bean is an `IsolateLoadSource`, so `isolateLoads`
+/// (and what else reads it: the actuator) has the engine's threads beside
+/// the isolates: `raster`, `platform`, `io`, and the frames' build times
+/// in `main`. Nothing is read or measured while neither the table nor the
+/// tab shows. The generator puts this module into the app by
+/// `spring.flutter.debug.isolates.enabled`: `true` always, `false` never
+/// (no code), not set debug and profile builds only.
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild('spring.flutter.debug.isolates.enabled'),
+)
+final BeanModule springBootStarterFlutterDebugIsolatesAutoConfiguration =
+    BeanModule('springBootStarterFlutterDebugIsolatesAutoConfiguration', [
+      BeanDefinition<FlutterEngineLoads>(
+        name: 'flutterEngineLoads',
+        types: const [FlutterEngineLoads, IsolateLoadSource],
+        source: _debugSource,
+        conditions: [_debugFeatureOn('isolates')],
+        preDestroy: (loads) => loads.stop(),
+        create: (_) => FlutterEngineLoads(),
+      ),
+      BeanDefinition<DebugIsolates>(
+        name: 'debugIsolates',
+        types: const [
+          DebugIsolates,
+          ChangeNotifier,
+          Listenable,
+          ShortcutHandler,
+          KeyedShortcutHandler,
+          DebugOverlay,
+        ],
+        source: _debugSource,
+        conditions: [_debugFeatureOn('isolates')],
+        create: (r) {
+          final isolates = r.dependency<FlutterDebugProperties>().isolates;
+          return DebugIsolates(
+            loads: r.dependency<IsolateLoads>(),
+            interval: isolates.interval,
+            position: isolates.position,
+          );
+        },
+      ),
+      BeanDefinition<DebugIsolatesSection>(
+        name: 'debugIsolatesSection',
+        types: const [DebugIsolatesSection, DebugPanelSection, Ordered],
+        source: _debugSource,
+        conditions: [_debugFeatureOn('isolates')],
+        create: (r) => DebugIsolatesSection(r.dependency<DebugIsolates>()),
       ),
       ..._debugDock,
     ]);

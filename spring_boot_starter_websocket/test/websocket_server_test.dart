@@ -48,7 +48,8 @@ void main() {
   final runner = const ApplicationContextRunner()
       .withUserConfiguration(wsServerBeans)
       .withAutoConfiguration(springBootAutoConfiguration)
-      .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration);
+      .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
+      .withAutoConfiguration(springBootStarterWebsocketServerAutoConfiguration);
 
   Future<void> withMapping(
     Future<void> Function(

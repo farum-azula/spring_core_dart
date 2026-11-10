@@ -21,6 +21,9 @@ Future<void> _withSocketApp(Future<void> Function(MockMvc mvc) body) =>
         .withAutoConfiguration(springBootStarterLoggingAutoConfiguration)
         .withAutoConfiguration(springBootStarterWebAutoConfiguration)
         .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
+        .withAutoConfiguration(
+          springBootStarterWebsocketServerAutoConfiguration,
+        )
         .withAutoConfiguration(springSecurityCoreAutoConfiguration)
         .withAutoConfiguration(springBootStarterSecurityAutoConfiguration)
         .withPropertyValues([

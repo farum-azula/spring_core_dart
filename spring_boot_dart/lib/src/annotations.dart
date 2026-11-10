@@ -190,6 +190,11 @@ class AutoConfiguration extends Configuration {
 /// For a feature only developers use (a debug panel), so a release does
 /// not ship it.
 ///
+/// [platform] keeps the module to where its code works: a module of
+/// [ModulePlatform.native] (a web server, isolates) is compiled away in a
+/// browser build with everything only it reaches, and one of
+/// [ModulePlatform.web] in every other build.
+///
 /// Spring (Java): the `META-INF/spring/...AutoConfiguration.imports` file
 /// of a starter, plus `@AutoConfigureOrder` and
 /// `@AutoConfiguration(before = ..., after = ...)`. Spring Boot reads the
@@ -204,6 +209,7 @@ class AutoConfigurationModule {
     this.before = const [],
     this.after = const [],
     this.build,
+    this.platform,
   });
 
   /// The position among the auto-configuration modules, lower first;
@@ -226,10 +232,28 @@ class AutoConfigurationModule {
   final String? requires;
 
   /// Whether the build puts the module into the application, by a property
-  /// of its configuration; `null` (the default): always. A module the
-  /// build puts in only on a condition takes no [order], [before] or
-  /// [after].
+  /// of its configuration; `null` (the default): always.
   final AutoConfigurationBuild? build;
+
+  /// Where the module's code works; `null` (the default): everywhere. On
+  /// another platform the compiler drops the module and all only it
+  /// reaches, so a browser build carries no server code and a server no
+  /// browser code.
+  final ModulePlatform? platform;
+}
+
+/// The platforms an [AutoConfigurationModule] can be kept to.
+///
+/// The generated application lists such a module under a constant the
+/// compiler knows (`dart.library.io`, `dart.library.js_interop`), so the
+/// other platform's build has none of its code.
+enum ModulePlatform {
+  /// Where `dart:io` exists: the Dart VM, an AOT executable, a Flutter app
+  /// on a phone or a desktop. Not a browser.
+  native,
+
+  /// A browser, compiled to JavaScript or WebAssembly.
+  web,
 }
 
 /// When the generator puts an [AutoConfigurationModule] into the

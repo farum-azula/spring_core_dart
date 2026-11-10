@@ -1,0 +1,849 @@
+{
+  "version": 1,
+  "package": "load_bench",
+  "properties": [
+    {
+      "name": "bench.directory",
+      "type": "String",
+      "description": "Where the files to download are generated and the uploads are written; the SQLite database is there too (`spring.datasource.url`). Created at startup.",
+      "default": "build/load_bench",
+      "deprecated": null,
+      "source": "package:load_bench/src/bench_properties.dart",
+      "line": 11,
+      "class": "BenchProperties"
+    },
+    {
+      "name": "bench.files.huge-size",
+      "type": "DataSize",
+      "description": "`huge.bin`: a sparse file (zeros that take no room on disk).",
+      "default": "512MB",
+      "deprecated": null,
+      "source": "package:load_bench/src/bench_properties.dart",
+      "line": 36,
+      "class": "BenchFilesProperties"
+    },
+    {
+      "name": "bench.files.medium-size",
+      "type": "DataSize",
+      "description": "`medium.bin`: pseudo-random bytes.",
+      "default": "10MB",
+      "deprecated": null,
+      "source": "package:load_bench/src/bench_properties.dart",
+      "line": 33,
+      "class": "BenchFilesProperties"
+    },
+    {
+      "name": "bench.files.small-size",
+      "type": "DataSize",
+      "description": "`small.bin`: pseudo-random bytes.",
+      "default": "4KB",
+      "deprecated": null,
+      "source": "package:load_bench/src/bench_properties.dart",
+      "line": 30,
+      "class": "BenchFilesProperties"
+    },
+    {
+      "name": "bench.json.items",
+      "type": "int",
+      "description": "How many objects `GET /json` answers.",
+      "default": 50,
+      "deprecated": null,
+      "source": "package:load_bench/src/bench_properties.dart",
+      "line": 51,
+      "class": "BenchJsonProperties"
+    },
+    {
+      "name": "bench.security.jwt-secret",
+      "type": "String",
+      "description": "The HMAC key (HS256, at least 32 bytes) that signs and checks the bearer token of `GET /secure/text`. The same on every isolate, so a token one of them issued is good for all.",
+      "default": "load-bench-secret-of-at-least-32-bytes",
+      "deprecated": null,
+      "source": "package:load_bench/src/bench_properties.dart",
+      "line": 59,
+      "class": "BenchSecurityProperties"
+    },
+    {
+      "name": "bench.security.token-lifetime",
+      "type": "Duration",
+      "description": "How long the token `GET /bench/info` hands out is valid.",
+      "default": "24h",
+      "deprecated": null,
+      "source": "package:load_bench/src/bench_properties.dart",
+      "line": 62,
+      "class": "BenchSecurityProperties"
+    },
+    {
+      "name": "bench.upload.max-size",
+      "type": "DataSize",
+      "description": "The largest body of `PUT /upload/raw`, instead of `server.max-http-request-body-size`; `-1` for no limit. The multipart uploads have `spring.web.multipart.max-file-size` and `max-request-size`.",
+      "default": "2GB",
+      "deprecated": null,
+      "source": "package:load_bench/src/bench_properties.dart",
+      "line": 45,
+      "class": "BenchUploadProperties"
+    }
+  ],
+  "hints": [],
+  "beans": [
+    {
+      "name": "benchDirectory",
+      "type": "BenchDirectory",
+      "types": [
+        "BenchDirectory",
+        "BeanFactoryPostProcessor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/bench_files.dart",
+      "line": 15,
+      "injects": [],
+      "members": [
+        {
+          "name": "path",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "postProcessBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ConfigurableListableBeanFactory beanFactory"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "benchFiles",
+      "type": "BenchFiles",
+      "types": [
+        "BenchFiles"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/bench_files.dart",
+      "line": 27,
+      "injects": [
+        {
+          "parameter": "_properties",
+          "type": "BenchProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "newUpload",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "path",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "prepare",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "ready",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "sizes",
+          "kind": "getter",
+          "type": "Map<String, int>"
+        }
+      ]
+    },
+    {
+      "name": "benchFilesRunner",
+      "type": "BenchFilesRunner",
+      "types": [
+        "BenchFilesRunner",
+        "ApplicationRunner"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/bench_files.dart",
+      "line": 97,
+      "injects": [
+        {
+          "parameter": "_files",
+          "type": "BenchFiles",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "run",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ApplicationArguments args"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "benchProperties",
+      "type": "BenchProperties",
+      "types": [
+        "BenchProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/bench_properties.dart",
+      "line": 7,
+      "injects": [],
+      "members": [
+        {
+          "name": "directory",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "files",
+          "kind": "field",
+          "type": "BenchFilesProperties"
+        },
+        {
+          "name": "json",
+          "kind": "field",
+          "type": "BenchJsonProperties"
+        },
+        {
+          "name": "security",
+          "kind": "field",
+          "type": "BenchSecurityProperties"
+        },
+        {
+          "name": "upload",
+          "kind": "field",
+          "type": "BenchUploadProperties"
+        }
+      ]
+    },
+    {
+      "name": "benchToken",
+      "type": "BenchToken",
+      "types": [
+        "BenchToken"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/security_config.dart",
+      "line": 46,
+      "injects": [
+        {
+          "parameter": "properties",
+          "type": "BenchProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "cpuController",
+      "type": "CpuController",
+      "types": [
+        "CpuController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/cpu_controller.dart",
+      "line": 10,
+      "injects": [
+        {
+          "parameter": "_isolate",
+          "type": "IsolateInfo",
+          "qualifier": null
+        },
+        {
+          "parameter": "_tasks",
+          "type": "IsolateTaskExecutor",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "inline",
+          "kind": "method",
+          "type": "CpuWork",
+          "parameters": [
+            "{int rounds}"
+          ]
+        },
+        {
+          "name": "slow",
+          "kind": "method",
+          "type": "Future<String>",
+          "parameters": [
+            "{int milliseconds}"
+          ]
+        },
+        {
+          "name": "task",
+          "kind": "method",
+          "type": "Future<CpuWork>",
+          "parameters": [
+            "{int rounds}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fileController",
+      "type": "FileController",
+      "types": [
+        "FileController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/file_controller.dart",
+      "line": 11,
+      "injects": [
+        {
+          "parameter": "_files",
+          "type": "BenchFiles",
+          "qualifier": null
+        },
+        {
+          "parameter": "_properties",
+          "type": "BenchProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "download",
+          "kind": "method",
+          "type": "Resource",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "multipart",
+          "kind": "method",
+          "type": "Uploaded",
+          "parameters": [
+            "MultipartFile file"
+          ]
+        },
+        {
+          "name": "raw",
+          "kind": "method",
+          "type": "Future<Uploaded>",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "isolatesController",
+      "type": "IsolatesController",
+      "types": [
+        "IsolatesController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/isolates_controller.dart",
+      "line": 8,
+      "injects": [
+        {
+          "parameter": "_isolate",
+          "type": "IsolateInfo",
+          "qualifier": null
+        },
+        {
+          "parameter": "_primary",
+          "type": "PrimaryIsolate",
+          "qualifier": null
+        },
+        {
+          "parameter": "_scaler",
+          "type": "IsolateScaler",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "scale",
+          "kind": "method",
+          "type": "Future<IsolatesState>",
+          "parameters": [
+            "int to"
+          ]
+        },
+        {
+          "name": "state",
+          "kind": "method",
+          "type": "Future<IsolatesState>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "itemController",
+      "type": "ItemController",
+      "types": [
+        "ItemController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/item.dart",
+      "line": 44,
+      "injects": [
+        {
+          "parameter": "_items",
+          "type": "ItemRepository",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "add",
+          "kind": "method",
+          "type": "Future<Item>",
+          "parameters": [
+            "NewItem item"
+          ]
+        },
+        {
+          "name": "find",
+          "kind": "method",
+          "type": "Future<Item>",
+          "parameters": [
+            "int id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "itemRepository",
+      "type": "ItemRepository",
+      "types": [
+        "ItemRepository",
+        "ListCrudRepository<Item, int>",
+        "CrudRepository<Item, int>",
+        "DataRepository<Item, int>",
+        "ListCrudRepository<dynamic, dynamic>",
+        "CrudRepository<dynamic, dynamic>",
+        "DataRepository<dynamic, dynamic>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/item.dart",
+      "line": 25,
+      "injects": [],
+      "members": [
+        {
+          "name": "count",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Item entity"
+          ]
+        },
+        {
+          "name": "deleteAll",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "deleteAllById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "deleteAllOf",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<Item> entities"
+          ]
+        },
+        {
+          "name": "deleteById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "existsById",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "findAll",
+          "kind": "method",
+          "type": "Future<List<Item>>",
+          "parameters": []
+        },
+        {
+          "name": "findAllById",
+          "kind": "method",
+          "type": "Future<List<Item>>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "findById",
+          "kind": "method",
+          "type": "Future<Item?>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "save",
+          "kind": "method",
+          "type": "Future<Item>",
+          "parameters": [
+            "Item entity"
+          ]
+        },
+        {
+          "name": "saveAll",
+          "kind": "method",
+          "type": "Future<List<Item>>",
+          "parameters": [
+            "Iterable<Item> entities"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "jsonController",
+      "type": "JsonController",
+      "types": [
+        "JsonController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/json_controller.dart",
+      "line": 8,
+      "injects": [
+        {
+          "parameter": "properties",
+          "type": "BenchProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "create",
+          "kind": "method",
+          "type": "Product",
+          "parameters": [
+            "NewProduct product"
+          ]
+        },
+        {
+          "name": "list",
+          "kind": "method",
+          "type": "List<Product>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "jwtDecoder",
+      "type": "NimbusJwtDecoder",
+      "types": [
+        "NimbusJwtDecoder",
+        "JwtDecoder"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/security_config.dart",
+      "line": 37,
+      "injects": [
+        {
+          "parameter": "properties",
+          "type": "BenchProperties",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "decode",
+          "kind": "method",
+          "type": "Future<Jwt>",
+          "parameters": [
+            "String token"
+          ]
+        },
+        {
+          "name": "jwsAlgorithms",
+          "kind": "field",
+          "type": "Set<JwsAlgorithm>?"
+        },
+        {
+          "name": "validator",
+          "kind": "field",
+          "type": "OAuth2TokenValidator<Jwt>"
+        }
+      ]
+    },
+    {
+      "name": "secureChain",
+      "type": "SecurityFilterChain",
+      "types": [
+        "SecurityFilterChain"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/security_config.dart",
+      "line": 22,
+      "injects": [
+        {
+          "parameter": "http",
+          "type": "HttpSecurity",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "filters",
+          "kind": "getter",
+          "type": "List<WebFilter>"
+        },
+        {
+          "name": "matches",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "secureController",
+      "type": "SecureController",
+      "types": [
+        "SecureController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/security_config.dart",
+      "line": 76,
+      "injects": [],
+      "members": [
+        {
+          "name": "text",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "Principal principal"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "securityConfig",
+      "type": "SecurityConfig",
+      "types": [
+        "SecurityConfig"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/security_config.dart",
+      "line": 16,
+      "injects": [],
+      "members": [
+        {
+          "name": "jwtDecoder",
+          "kind": "method",
+          "type": "JwtDecoder",
+          "parameters": [
+            "BenchProperties properties"
+          ]
+        },
+        {
+          "name": "secureChain",
+          "kind": "method",
+          "type": "SecurityFilterChain",
+          "parameters": [
+            "HttpSecurity http"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "textController",
+      "type": "TextController",
+      "types": [
+        "TextController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:load_bench/src/text_controller.dart",
+      "line": 10,
+      "injects": [
+        {
+          "parameter": "_files",
+          "type": "BenchFiles",
+          "qualifier": null
+        },
+        {
+          "parameter": "_token",
+          "type": "BenchToken",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "info",
+          "kind": "method",
+          "type": "BenchInfo",
+          "parameters": []
+        },
+        {
+          "name": "text",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    }
+  ],
+  "profiles": [],
+  "entities": [
+    {
+      "class": "Item",
+      "table": "items",
+      "source": "package:load_bench/src/item.dart",
+      "line": 8,
+      "id": "id",
+      "properties": [
+        {
+          "name": "id",
+          "type": "int?",
+          "kind": "column",
+          "column": "id",
+          "relation": null,
+          "source": "package:load_bench/src/item.dart",
+          "line": 17
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "kind": "column",
+          "column": "name",
+          "relation": null,
+          "source": "package:load_bench/src/item.dart",
+          "line": 19
+        },
+        {
+          "name": "price",
+          "type": "double",
+          "kind": "column",
+          "column": "price",
+          "relation": null,
+          "source": "package:load_bench/src/item.dart",
+          "line": 20
+        },
+        {
+          "name": "quantity",
+          "type": "int",
+          "kind": "column",
+          "column": "quantity",
+          "relation": null,
+          "source": "package:load_bench/src/item.dart",
+          "line": 21
+        }
+      ]
+    }
+  ],
+  "repositories": [
+    {
+      "name": "ItemRepository",
+      "entity": "Item",
+      "id": "int",
+      "source": "package:load_bench/src/item.dart",
+      "line": 25,
+      "methods": []
+    }
+  ]
+}

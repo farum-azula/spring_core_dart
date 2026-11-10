@@ -98,6 +98,7 @@ final schedulingAutoConfiguration = <BeanDefinition<Object>>[
       // named `taskScheduler` (others are picked with @Scheduled(scheduler:)).
       r.dependency<TaskScheduler>(name: 'taskScheduler'),
       r.dependency<Environment>(),
+      isolates: r.dependency<SchedulingProperties>().isolates,
     ),
   ),
 ];

@@ -23,9 +23,11 @@ export 'package:spring_security_core/spring_auto_configuration.dart';
 ///
 /// It comes after the OAuth2 client starter's module (`after`), whose
 /// `ClientRegistrationRepository` and `OAuth2AuthorizedClientService` its
-/// conditions look for.
+/// conditions look for. It secures a server, so it is only where one can
+/// run ([ModulePlatform.native]): a browser build has none of it.
 @AutoConfigurationModule(
   after: ['springBootStarterOauth2ClientAutoConfiguration'],
+  platform: ModulePlatform.native,
 )
 final BeanModule springBootStarterSecurityAutoConfiguration = BeanModule(
   'springBootStarterSecurityAutoConfiguration',
@@ -41,6 +43,7 @@ final BeanModule springBootStarterSecurityAutoConfiguration = BeanModule(
 /// `oauth2Login()` and the refresh of authorized clients.
 @AutoConfigurationModule(
   before: ['springBootStarterOauth2ClientAutoConfiguration'],
+  platform: ModulePlatform.native,
 )
 final BeanModule springBootStarterSecurityOAuth2ClientAutoConfiguration =
     BeanModule('springBootStarterSecurityOAuth2ClientAutoConfiguration', [

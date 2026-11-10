@@ -8,6 +8,9 @@ import 'package:spring_boot_starter_web/src/handler_exception_resolver.dart';
 import 'package:spring_boot_starter_web/src/handler_mapping_descriptions.dart';
 import 'package:spring_boot_starter_web/src/handler_method.dart';
 import 'package:spring_boot_starter_web/src/http_session.dart';
+import 'package:spring_boot_starter_web/src/isolates/isolate_scaler.dart';
+import 'package:spring_boot_starter_web/src/isolates/server_isolate_pool.dart';
+import 'package:spring_boot_starter_web/src/isolates/web_server_load.dart';
 import 'package:spring_boot_starter_web/src/multipart_resolver.dart';
 import 'package:spring_boot_starter_web/src/platform_web_server_stub.dart'
     if (dart.library.io) 'package:spring_boot_starter_web/src/platform_web_server_io.dart'
@@ -84,6 +87,11 @@ CorsConfigurationSource? _corsConfigurationSource(DependencyResolver r) {
 ///   `spring.mvc.static-path-pattern` (unless
 ///   `spring.web.resources.add-mappings=false`), the welcome page, the
 ///   mappings of the `WebMvcConfigurer` beans' `addResourceHandlers`;
+/// - `webServerLoadSource` — the requests in flight in the isolate's row
+///   of the task manager; `serverIsolatePool` (alias `isolateScaler`),
+///   with `server.isolates.*` asking for a pool — the isolates that serve
+///   the port together, and [IsolateScaler] to change their number; in
+///   each of them `serverIsolateWorker`, their side of it;
 /// - `httpSessionRepository`, `httpSessionManager`, `httpSessionFilter` —
 ///   `request.getSession()` (`server.session.*`), sessions in
 ///   memory unless the application declares an [HttpSessionRepository];
@@ -342,6 +350,73 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
       serverSettings: r.dependency<ServerSettings>(),
     ),
   ),
+  BeanDefinition<WebServerLoadSource>(
+    name: 'webServerLoadSource',
+    types: const [WebServerLoadSource, IsolateLoadSource],
+    source: _source,
+    create: (r) =>
+        WebServerLoadSource(r.dependency<WebServerStartStopLifecycle>()),
+  ),
+  BeanDefinition<ServerIsolatePool>(
+    name: 'serverIsolatePool',
+    aliases: const ['isolateScaler'],
+    types: const [
+      ServerIsolatePool,
+      IsolateScaler,
+      IsolateLoadSource,
+      SmartLifecycle,
+      Lifecycle,
+      AsyncStartup,
+      PrimaryIsolateHandler,
+    ],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.serverIsolatePool', [_OnIsolatePool()]),
+    ],
+    create: (r) {
+      final beans = r.dependency<ConfigurableListableBeanFactory>();
+      return createServerIsolatePool(
+        settings: r.dependency<ServerSettings>().isolates,
+        lifecycle: r.dependency<WebServerStartStopLifecycle>(),
+        reports: r.dependency<IsolateReports>(),
+        sampler: r.dependency<IsolateLoadSampler>(),
+        // Looked up when asked: the pool is one of its handlers.
+        primary: r.provider<PrimaryIsolate>().getIfAvailable,
+        launch: r.optionalDependency<ApplicationLaunch>(),
+        policy: r.optionalDependency<IsolateScalingPolicy>(),
+        // The beans that exist when the pool grows, whatever type they
+        // were declared with (an in-memory session repository is declared
+        // as a repository).
+        localState: () => [
+          for (final name in beans.singletonNames)
+            if (beans.getSingleton(name) case final IsolateLocalState bean)
+              bean,
+        ],
+      );
+    },
+  ),
+  BeanDefinition<ServerIsolateWorker>(
+    name: 'serverIsolateWorker',
+    // The same name in every isolate: the pool in the first, its side
+    // of it in the others.
+    aliases: const ['isolateScaler'],
+    types: const [
+      ServerIsolateWorker,
+      IsolateScaler,
+      SmartLifecycle,
+      Lifecycle,
+      ApplicationContextAware,
+    ],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.serverIsolateWorker', [_OnServerIsolate()]),
+    ],
+    create: (r) => createServerIsolateWorker(
+      lifecycle: r.dependency<WebServerStartStopLifecycle>(),
+      loads: r.dependency<IsolateLoads>(),
+      reports: r.dependency<IsolateReports>(),
+    ),
+  ),
   BeanDefinition<PortInUseFailureAnalyzer>(
     name: 'portInUseFailureAnalyzer',
     types: const [PortInUseFailureAnalyzer, FailureAnalyzer],
@@ -404,6 +479,32 @@ CacheControl? _cacheControl(WebResourcesCacheControlSettings settings) {
 // server.forward-headers-strategy=native or framework. The condition is
 // decided before any bean exists, so it binds the setting itself; another
 // value than none, native and framework stops the start.
+// The pool of isolates: in the application's first isolate, when
+// `server.isolates.*` ask for one.
+final class _OnIsolatePool implements Condition {
+  const _OnIsolatePool();
+
+  @override
+  bool matches(ConditionContext context) =>
+      IsolateInfo.current.primary &&
+      !isServerIsolate &&
+      bindServerSettings(context.environment).isolates.pooled;
+
+  @override
+  String toString() => 'server.isolates ask for a pool';
+}
+
+// The pool's side in an isolate a pool started.
+final class _OnServerIsolate implements Condition {
+  const _OnServerIsolate();
+
+  @override
+  bool matches(ConditionContext context) => isServerIsolate;
+
+  @override
+  String toString() => 'an isolate of the server pool';
+}
+
 final class _OnForwardHeaders implements Condition {
   const _OnForwardHeaders();
 

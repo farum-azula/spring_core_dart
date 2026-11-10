@@ -198,6 +198,46 @@ void main() {
     expect(clock.pendingTimers, 0);
   });
 
+  group('in an isolate of a server pool', () {
+    setUp(
+      () => IsolateInfo.current = const IsolateInfo(
+        name: 'isolate-1',
+        index: 1,
+        primary: false,
+      ),
+    );
+    tearDown(() => IsolateInfo.current = const IsolateInfo());
+
+    final beans = [
+      reportsDefinition({
+        'refresh': [const Scheduled(fixedRate: Duration(seconds: 1))],
+      }),
+    ];
+
+    test('nothing is scheduled by default: the primary runs the jobs', () {
+      runner(beans).run((context) {
+        final processor = context
+            .getBean<ScheduledAnnotationBeanPostProcessor>();
+        expect(processor.isolates, SchedulingIsolates.primary);
+        expect(processor.scheduledTasks, isEmpty);
+        clock.elapse(const Duration(seconds: 3));
+        expect(reportsOf(context).calls, isEmpty);
+      });
+    });
+
+    test('spring.task.scheduling.isolates=all: here too', () {
+      runner(beans)
+          .withPropertyValues(['spring.task.scheduling.isolates=all'])
+          .run((context) {
+            final processor = context
+                .getBean<ScheduledAnnotationBeanPostProcessor>();
+            expect(processor.scheduledTasks, hasLength(1));
+            clock.elapse(const Duration(seconds: 2));
+            expect(reportsOf(context).calls, isNotEmpty);
+          });
+    });
+  });
+
   test('a lazy bean is scheduled when it is created', () {
     runner([
       reportsDefinition({

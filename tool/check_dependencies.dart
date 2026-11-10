@@ -143,8 +143,15 @@ const allowedPackages = {
     'generator writes into applications that list sqlite3 themselves; the '
     "starter's runtime never depends on it. Also a dev dependency of the "
     'workspace root: `dart test` from the root builds only the native '
-    "assets of the root's dependencies.",
-    onlyIn: {'spring_boot_starter_data', 'spring_core_dart_workspace'},
+    "assets of the root's dependencies. And a dependency of load_bench "
+    '(tool/load_bench, not published): the application the load tests '
+    'measure lists it for its database scenarios, as any application on '
+    'SQLite does.',
+    onlyIn: {
+      'spring_boot_starter_data',
+      'spring_core_dart_workspace',
+      'load_bench',
+    },
   ),
   'very_good_analysis': AllowedPackage(
     "Lint rules of analysis_options.yaml (Very Good Ventures'), the "

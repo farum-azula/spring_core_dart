@@ -61,7 +61,8 @@ Future<void> _withApp(
       .withAutoConfiguration(springBootAutoConfiguration)
       .withAutoConfiguration(springBootStarterLoggingAutoConfiguration)
       .withAutoConfiguration(springBootStarterWebAutoConfiguration)
-      .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration);
+      .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
+      .withAutoConfiguration(springBootStarterWebsocketServerAutoConfiguration);
   if (secured) {
     runner = runner
         .withAutoConfiguration(springSecurityCoreAutoConfiguration)

@@ -26,6 +26,7 @@ workspace:
   - spring_boot_starter_security
   - example/server_guide
   - example/static_site/server
+  - tool/load_bench
   - extensions/language_server
 
 dev_dependencies:

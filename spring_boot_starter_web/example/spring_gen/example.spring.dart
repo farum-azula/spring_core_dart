@@ -222,8 +222,11 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     _i8.springBootAutoConfiguration,
     _i9.springBootStarterFeignAutoConfiguration,
     _i10.springBootStarterLoggingAutoConfiguration,
-    _i11.springBootStarterWebAutoConfiguration,
+    if (const bool.fromEnvironment('dart.library.io'))
+      _i11.springBootStarterWebAutoConfiguration,
     _i12.springBootStarterWebsocketAutoConfiguration,
+    if (const bool.fromEnvironment('dart.library.io'))
+      _i12.springBootStarterWebsocketServerAutoConfiguration,
   ],
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
@@ -275,7 +278,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '6d28b352',
+  fingerprint: 'e473d764',
 );
 
 /// Starts the application: config files, environment, context, runners

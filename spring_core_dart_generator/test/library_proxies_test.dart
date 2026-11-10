@@ -538,13 +538,16 @@ class SettingsAudit {
   }, timeout: const Timeout.factor(4));
 
   group('the proxies of a module the build decides go with it', () {
-    String starter({String also = ''}) =>
+    String starter({
+      String also = '',
+      String module = "build: AutoConfigurationBuild('starter.debug.enabled'),",
+    }) =>
         """
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:starter/spring_gen/beans.spring.dart';
 
 @AutoConfigurationModule(
-  build: AutoConfigurationBuild('starter.debug.enabled'),
+  $module
 )
 final BeanModule starterDebugAutoConfiguration = BeanModule(
   'starterDebugAutoConfiguration',
@@ -588,18 +591,77 @@ class TaskAudit {
   void audit(JoinPoint joinPoint) {}
 }
 """;
-    Future<String> output({String? config, String also = ''}) async {
+    Future<String> output({
+      String? config,
+      String also = '',
+      String? module,
+    }) async {
       final (_, output) = await _build(
         app: app,
         main: main,
         config: config,
         starter: {
           ...beans,
-          'lib/spring_auto_configuration.dart': starter(also: also),
+          'lib/spring_auto_configuration.dart': module == null
+              ? starter(also: also)
+              : starter(also: also, module: module),
         },
       );
       return output;
     }
+
+    test('a platform: the proxy registered only on it', () async {
+      final code = (await output(
+        module: 'platform: ModulePlatform.native,',
+      )).replaceAll(RegExp(r'\s'), '');
+      expect(code, contains(r'class_$TaskProxy'));
+      expect(
+        code,
+        contains(
+          "aopProxies:{if(constbool.fromEnvironment('dart.library.io'))"
+          "r'package:starter/task.dart#Task':",
+        ),
+      );
+      expect(code, isNot(contains('dart.vm.product')));
+    });
+
+    test('a platform and a build property not set: both', () async {
+      final code = (await output(
+        module:
+            "build: AutoConfigurationBuild('starter.debug.enabled'), "
+            'platform: ModulePlatform.web,',
+      )).replaceAll(RegExp(r'\s'), '');
+      expect(
+        code,
+        contains(
+          "aopProxies:{if(!constbool.fromEnvironment('dart.vm.product')&&"
+          "constbool.fromEnvironment('dart.library.js_interop'))"
+          "r'package:starter/task.dart#Task':",
+        ),
+      );
+    });
+
+    test('the bean in a module of each platform: under either', () async {
+      final code = (await output(
+        module: 'platform: ModulePlatform.native,',
+        also: r"""
+@AutoConfigurationModule(platform: ModulePlatform.web)
+final BeanModule starterWebAutoConfiguration = BeanModule(
+  'starterWebAutoConfiguration',
+  const [],
+  imports: [$starterBeans],
+);
+""",
+      )).replaceAll(RegExp(r'\s'), '');
+      expect(
+        code,
+        contains(
+          "aopProxies:{if((constbool.fromEnvironment('dart.library.io'))||"
+          "(constbool.fromEnvironment('dart.library.js_interop')))"
+          "r'package:starter/task.dart#Task':",
+        ),
+      );
+    });
 
     test('false: no proxy, no source, no import of the starter', () async {
       final code = await output(config: 'starter.debug.enabled=false');

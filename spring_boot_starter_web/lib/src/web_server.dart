@@ -62,6 +62,21 @@ abstract interface class WebServer {
   int get port;
 }
 
+/// What a [WebServer] tells about its work, when it counts it: the
+/// built-in server does. The task manager, the request rate and the
+/// scaling of the isolates read it.
+abstract interface class WebServerActivity {
+  /// The requests being answered now.
+  int get activeRequests;
+
+  /// The requests taken since the server started.
+  int get requestCount;
+
+  /// Those of them refused with a 503 because the server was full
+  /// (`server.max-connections`, `server.max-concurrent-requests`).
+  int get refusedCount;
+}
+
 /// Creates the [WebServer] of the application.
 ///
 /// The starter asks the `webServerFactory` bean for a server when the
@@ -238,6 +253,10 @@ enum ClientAuth {
 /// | `server.forward-headers-strategy` | `none`; `native` or `framework` applies the headers of trusted proxies (`ForwardedHeaderFilter`) |
 /// | `server.forward-headers.trusted-proxies` | loopback and private networks (addresses and CIDR ranges) |
 /// | `server.connection-timeout` | `60s` (`-1`, `0` or less: none): a request body that sends nothing for this long is a 408; also how long an idle connection stays open |
+/// | `server.max-connections` | none: the most connections an isolate keeps open; a request on one past it is a 503 and the connection is closed |
+/// | `server.max-concurrent-requests` | none: the most requests an isolate answers at a time (event streams not counted); one past it is a 503 with `Retry-After` at once |
+/// | `server.retry-after` | `1s`: the `Retry-After` of those 503 |
+/// | `server.isolates.*` | one isolate; see `ServerIsolatesSettings`: how many isolates serve the port, and their scaling |
 /// | `server.request-timeout` | none (`0` or less: none): the longest the filters and the handler may take to answer, else a 503; a deadline for the calls the request makes too (an extension: Spring has no such key) |
 /// | `server.websocket.max-text-message-size`, `server.websocket.max-binary-message-size` | `8KB` each (`-1`: no limit); a larger message closes the session with 1009 |
 /// | `server.websocket.send-buffer-size-limit` | `512KB` (`-1`: no limit): more waiting to be sent drops the connection (4500) |
@@ -260,6 +279,10 @@ final class ServerProperties {
     this.webSocketSendTimeLimit = const Duration(seconds: 10),
     this.connectionTimeout = const Duration(seconds: 60),
     this.requestTimeout,
+    this.shared = false,
+    this.maxConnections,
+    this.maxConcurrentRequests,
+    this.retryAfter = const Duration(seconds: 1),
   });
 
   /// Reads `server.*` from [environment] (binding [ServerSettings]).
@@ -358,6 +381,16 @@ final class ServerProperties {
         final timeout? when timeout > Duration.zero => timeout,
         _ => null,
       },
+      shared: settings.isolates.pooled,
+      maxConnections: switch (settings.maxConnections) {
+        final max? when max > 0 => max,
+        _ => null,
+      },
+      maxConcurrentRequests: switch (settings.maxConcurrentRequests) {
+        final max? when max > 0 => max,
+        _ => null,
+      },
+      retryAfter: settings.retryAfter,
     );
   }
 
@@ -479,6 +512,25 @@ final class ServerProperties {
   /// of Spring for Dart.
   final Duration? requestTimeout;
 
+  /// Whether the port may be bound again in this program: by the other
+  /// isolates of the server's pool (`server.isolates.*`), which then take
+  /// connections in turn. Without it a second bind fails as a port in
+  /// use.
+  final bool shared;
+
+  /// The most connections kept open (`server.max-connections`); `null`:
+  /// no limit. A request on a connection past it is answered 503 and the
+  /// connection closed.
+  final int? maxConnections;
+
+  /// The most requests answered at a time, event streams not counted
+  /// (`server.max-concurrent-requests`); `null`: no limit. A request past
+  /// it is answered 503 with `Retry-After` at once.
+  final int? maxConcurrentRequests;
+
+  /// The `Retry-After` of those 503 (`server.retry-after`).
+  final Duration retryAfter;
+
   /// A copy with the given settings changed and the others kept. A
   /// `null` argument keeps the old value, so [address], [ssl],
   /// [webSocketSendTimeLimit], [connectionTimeout] and [requestTimeout]
@@ -499,6 +551,10 @@ final class ServerProperties {
     Duration? webSocketSendTimeLimit,
     Duration? connectionTimeout,
     Duration? requestTimeout,
+    bool? shared,
+    int? maxConnections,
+    int? maxConcurrentRequests,
+    Duration? retryAfter,
   }) => ServerProperties(
     port: port ?? this.port,
     address: address ?? this.address,
@@ -520,6 +576,10 @@ final class ServerProperties {
         webSocketSendTimeLimit ?? this.webSocketSendTimeLimit,
     connectionTimeout: connectionTimeout ?? this.connectionTimeout,
     requestTimeout: requestTimeout ?? this.requestTimeout,
+    shared: shared ?? this.shared,
+    maxConnections: maxConnections ?? this.maxConnections,
+    maxConcurrentRequests: maxConcurrentRequests ?? this.maxConcurrentRequests,
+    retryAfter: retryAfter ?? this.retryAfter,
   );
 }
 

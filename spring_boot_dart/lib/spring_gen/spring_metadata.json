@@ -69,7 +69,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 306,
+      "line": 336,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -79,7 +79,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 310,
+      "line": 340,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -89,7 +89,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 314,
+      "line": 344,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -99,7 +99,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 318,
+      "line": 348,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -109,7 +109,7 @@
       "default": "always",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 202,
+      "line": 232,
       "class": "JsonProperties"
     },
     {
@@ -119,7 +119,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 257,
+      "line": 287,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -129,7 +129,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 260,
+      "line": 290,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -139,7 +139,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 263,
+      "line": 293,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -149,7 +149,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 266,
+      "line": 296,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -159,7 +159,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 289,
+      "line": 319,
       "class": "JsonMapperProperties"
     },
     {
@@ -169,7 +169,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 292,
+      "line": 322,
       "class": "JsonMapperProperties"
     },
     {
@@ -179,7 +179,7 @@
       "default": "LOWER_CAMEL_CASE",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 199,
+      "line": 229,
       "class": "JsonProperties"
     },
     {
@@ -189,7 +189,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 251,
+      "line": 281,
       "class": "JsonSchemasRegistryProperties"
     },
     {
@@ -199,7 +199,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 235,
+      "line": 265,
       "class": "JsonSchemaProperties"
     },
     {
@@ -209,7 +209,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 244,
+      "line": 274,
       "class": "JsonSchemaProperties"
     },
     {
@@ -219,7 +219,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 241,
+      "line": 271,
       "class": "JsonSchemaProperties"
     },
     {
@@ -229,7 +229,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 238,
+      "line": 268,
       "class": "JsonSchemaProperties"
     },
     {
@@ -239,7 +239,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 272,
+      "line": 302,
       "class": "JsonSerializationProperties"
     },
     {
@@ -249,7 +249,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 275,
+      "line": 305,
       "class": "JsonSerializationProperties"
     },
     {
@@ -259,7 +259,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 280,
+      "line": 310,
       "class": "JsonSerializationProperties"
     },
     {
@@ -269,7 +269,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 283,
+      "line": 313,
       "class": "JsonSerializationProperties"
     },
     {
@@ -279,7 +279,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 206,
+      "line": 236,
       "class": "JsonProperties"
     },
     {
@@ -349,7 +349,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 159,
+      "line": 189,
       "class": "MessagesProperties"
     },
     {
@@ -361,7 +361,7 @@
       ],
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 163,
+      "line": 193,
       "class": "MessagesProperties"
     },
     {
@@ -371,7 +371,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 168,
+      "line": 198,
       "class": "MessagesProperties"
     },
     {
@@ -381,7 +381,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 171,
+      "line": 201,
       "class": "MessagesProperties"
     },
     {
@@ -391,7 +391,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 174,
+      "line": 204,
       "class": "MessagesProperties"
     },
     {
@@ -401,7 +401,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 177,
+      "line": 207,
       "class": "MessagesProperties"
     },
     {
@@ -411,7 +411,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 180,
+      "line": 210,
       "class": "MessagesProperties"
     },
     {
@@ -421,7 +421,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 183,
+      "line": 213,
       "class": "MessagesProperties"
     },
     {
@@ -473,6 +473,66 @@
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
       "line": 111,
       "class": "ResourcesPrefetchProperties"
+    },
+    {
+      "name": "spring.task.execution.isolates.allow-core-timeout",
+      "type": "bool",
+      "description": "Whether the first `core-size` isolates are stopped when idle too.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 177,
+      "class": "TaskExecutionIsolatesProperties"
+    },
+    {
+      "name": "spring.task.execution.isolates.core-size",
+      "type": "int?",
+      "description": "The isolates started before tasks wait in the queue; not set: one less than the machine has processors (at least one).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 163,
+      "class": "TaskExecutionIsolatesProperties"
+    },
+    {
+      "name": "spring.task.execution.isolates.keep-alive",
+      "type": "Duration",
+      "description": "How long an idle isolate stays before it is stopped.",
+      "default": "60s",
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 170,
+      "class": "TaskExecutionIsolatesProperties"
+    },
+    {
+      "name": "spring.task.execution.isolates.max-size",
+      "type": "int?",
+      "description": "The most isolates, reached only when the queue is full; not set: as many as `core-size`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 167,
+      "class": "TaskExecutionIsolatesProperties"
+    },
+    {
+      "name": "spring.task.execution.isolates.name-prefix",
+      "type": "String",
+      "description": "The isolates' names in the logs, a number added: `task-1`; in an isolate of the web server's pool, after its name: `isolate-2-task-1`.",
+      "default": "task-",
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 182,
+      "class": "TaskExecutionIsolatesProperties"
+    },
+    {
+      "name": "spring.task.execution.isolates.queue-capacity",
+      "type": "int?",
+      "description": "How many tasks may wait for an isolate; not set: any number, so the pool never grows past `core-size`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 174,
+      "class": "TaskExecutionIsolatesProperties"
     },
     {
       "name": "trace",
@@ -878,6 +938,320 @@
       ]
     },
     {
+      "name": "isolateInfo",
+      "type": "IsolateInfo",
+      "types": [
+        "IsolateInfo"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(IsolateInfo)"
+      ],
+      "source": "package:spring_boot_dart/src/autoconfigure/isolate_auto_configuration.dart",
+      "line": 27,
+      "injects": [],
+      "members": [
+        {
+          "name": "index",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "name",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "primary",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "isolateLoadSampler",
+      "type": "IsolateLoadSampler",
+      "types": [
+        "IsolateLoadSampler",
+        "IsolateLoadSource"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(IsolateLoadSampler)"
+      ],
+      "source": "package:spring_boot_dart/src/autoconfigure/isolate_auto_configuration.dart",
+      "line": 38,
+      "injects": [],
+      "members": [
+        {
+          "name": "idleAfter",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "interval",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "isRunning",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "kind",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "load",
+          "kind": "method",
+          "type": "IsolateLoad",
+          "parameters": []
+        },
+        {
+          "name": "loads",
+          "kind": "method",
+          "type": "List<IsolateLoad>",
+          "parameters": []
+        },
+        {
+          "name": "stop",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "window",
+          "kind": "field",
+          "type": "Duration"
+        }
+      ]
+    },
+    {
+      "name": "isolateLoads",
+      "type": "IsolateLoads",
+      "types": [
+        "IsolateLoads"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(IsolateLoads)"
+      ],
+      "source": "package:spring_boot_dart/src/autoconfigure/isolate_auto_configuration.dart",
+      "line": 82,
+      "injects": [],
+      "members": [
+        {
+          "name": "all",
+          "kind": "method",
+          "type": "List<IsolateLoad>",
+          "parameters": []
+        },
+        {
+          "name": "sources",
+          "kind": "field",
+          "type": "List<IsolateLoadSource>"
+        },
+        {
+          "name": "track",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "String name",
+            "Future<T> work"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "isolateLoadsHandler",
+      "type": "IsolateLoadsHandler",
+      "types": [
+        "IsolateLoadsHandler",
+        "PrimaryIsolateHandler"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/autoconfigure/isolate_auto_configuration.dart",
+      "line": 108,
+      "injects": [],
+      "members": [
+        {
+          "name": "handle",
+          "kind": "method",
+          "type": "Future<Object?>",
+          "parameters": [
+            "Object? request"
+          ]
+        },
+        {
+          "name": "id",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "loads",
+          "kind": "field",
+          "type": "IsolateLoads"
+        },
+        {
+          "name": "reports",
+          "kind": "field",
+          "type": "IsolateReports"
+        }
+      ]
+    },
+    {
+      "name": "isolateReports",
+      "type": "IsolateReports",
+      "types": [
+        "IsolateReports"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(IsolateReports)"
+      ],
+      "source": "package:spring_boot_dart/src/autoconfigure/isolate_auto_configuration.dart",
+      "line": 117,
+      "injects": [],
+      "members": [
+        {
+          "name": "of",
+          "kind": "method",
+          "type": "Map<String, Object?>",
+          "parameters": [
+            "String id",
+            "{String own}"
+          ]
+        },
+        {
+          "name": "onRefresh",
+          "kind": "field",
+          "type": "Future<void> Function()?"
+        },
+        {
+          "name": "own",
+          "kind": "method",
+          "type": "Map<String, Object?>",
+          "parameters": []
+        },
+        {
+          "name": "put",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String isolate",
+            "Map<String, Object?> reports"
+          ]
+        },
+        {
+          "name": "refresh",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "remove",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String isolate"
+          ]
+        },
+        {
+          "name": "reporters",
+          "kind": "field",
+          "type": "List<IsolateReporter>"
+        }
+      ]
+    },
+    {
+      "name": "isolateTaskExecutor",
+      "type": "IsolateTaskExecutor",
+      "types": [
+        "IsolateTaskExecutor",
+        "IsolateLoadSource"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(IsolateTaskExecutor)"
+      ],
+      "source": "package:spring_boot_dart/src/autoconfigure/isolate_auto_configuration.dart",
+      "line": 52,
+      "injects": [],
+      "members": [
+        {
+          "name": "activeCount",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "loads",
+          "kind": "method",
+          "type": "List<IsolateLoad>",
+          "parameters": []
+        },
+        {
+          "name": "poolSize",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "queueSize",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "shutdown",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "submit",
+          "kind": "method",
+          "type": "Future<R>",
+          "parameters": [
+            "FutureOr<R> Function() task"
+          ]
+        },
+        {
+          "name": "submitWith",
+          "kind": "method",
+          "type": "Future<R>",
+          "parameters": [
+            "FutureOr<R> Function(M) task",
+            "M message"
+          ]
+        }
+      ]
+    },
+    {
       "name": "jacksonJsonMapper",
       "type": "ObjectMapper",
       "types": [
@@ -1105,7 +1479,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 188,
+      "line": 218,
       "injects": [],
       "members": [
         {
@@ -1539,7 +1913,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 157,
+      "line": 187,
       "injects": [],
       "members": [
         {
@@ -1744,7 +2118,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/spring_auto_configuration.dart",
-      "line": 62,
+      "line": 64,
       "injects": [],
       "members": [
         {
@@ -1767,6 +2141,39 @@
           "kind": "method",
           "type": "String",
           "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "primaryIsolate",
+      "type": "PrimaryIsolate",
+      "types": [
+        "PrimaryIsolate"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(PrimaryIsolate)"
+      ],
+      "source": "package:spring_boot_dart/src/autoconfigure/isolate_auto_configuration.dart",
+      "line": 95,
+      "injects": [],
+      "members": [
+        {
+          "name": "ask",
+          "kind": "method",
+          "type": "Future<Object?>",
+          "parameters": [
+            "String id",
+            "[Object? request]"
+          ]
+        },
+        {
+          "name": "handlers",
+          "kind": "field",
+          "type": "List<PrimaryIsolateHandler>"
         }
       ]
     },
@@ -1853,6 +2260,53 @@
           "name": "prefetch",
           "kind": "field",
           "type": "ResourcesPrefetchProperties"
+        }
+      ]
+    },
+    {
+      "name": "taskExecutionIsolatesProperties",
+      "type": "TaskExecutionIsolatesProperties",
+      "types": [
+        "TaskExecutionIsolatesProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 160,
+      "injects": [],
+      "members": [
+        {
+          "name": "allowCoreTimeout",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "coreSize",
+          "kind": "field",
+          "type": "int?"
+        },
+        {
+          "name": "keepAlive",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "maxSize",
+          "kind": "field",
+          "type": "int?"
+        },
+        {
+          "name": "namePrefix",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "queueCapacity",
+          "kind": "field",
+          "type": "int?"
         }
       ]
     }

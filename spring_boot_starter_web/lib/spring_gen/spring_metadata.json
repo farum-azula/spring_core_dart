@@ -9,7 +9,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 430,
+      "line": 560,
       "class": "LocalServerSettings"
     },
     {
@@ -29,7 +29,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 130,
+      "line": 240,
       "class": "ServerCompressionSettings"
     },
     {
@@ -48,7 +48,7 @@
       ],
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 134,
+      "line": 244,
       "class": "ServerCompressionSettings"
     },
     {
@@ -58,7 +58,7 @@
       "default": "2KB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 146,
+      "line": 256,
       "class": "ServerCompressionSettings"
     },
     {
@@ -88,7 +88,7 @@
       "default": "none",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 67,
+      "line": 84,
       "class": "ServerSettings"
     },
     {
@@ -98,8 +98,118 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 97,
+      "line": 207,
       "class": "ForwardHeadersSettings"
+    },
+    {
+      "name": "server.isolates.cooldown",
+      "type": "Duration",
+      "description": "The pause after a scaling step before the policy takes another.",
+      "default": "15s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 155,
+      "class": "ServerIsolatesSettings"
+    },
+    {
+      "name": "server.isolates.count",
+      "type": "String",
+      "description": "How many isolates serve at the start: a number, or `auto` for one per processor core. `1` (the default): the application's own isolate only.",
+      "default": "1",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 124,
+      "class": "ServerIsolatesSettings"
+    },
+    {
+      "name": "server.isolates.drain-timeout",
+      "type": "Duration",
+      "description": "How long an isolate that leaves the pool may finish its requests before it is stopped anyway.",
+      "default": "30s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 128,
+      "class": "ServerIsolatesSettings"
+    },
+    {
+      "name": "server.isolates.max",
+      "type": "int?",
+      "description": "The most isolates scaling goes up to; not set: the processor cores, or [count] when that is more.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 140,
+      "class": "ServerIsolatesSettings"
+    },
+    {
+      "name": "server.isolates.min",
+      "type": "int",
+      "description": "The fewest isolates scaling goes down to.",
+      "default": 1,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 136,
+      "class": "ServerIsolatesSettings"
+    },
+    {
+      "name": "server.isolates.scale-down-after",
+      "type": "Duration",
+      "description": "How long the isolates must be free before the policy removes one.",
+      "default": "2m",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 152,
+      "class": "ServerIsolatesSettings"
+    },
+    {
+      "name": "server.isolates.scale-up-after",
+      "type": "Duration",
+      "description": "How long the isolates must be late (see [scaleUpLag]) before the policy adds some.",
+      "default": "5s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 144,
+      "class": "ServerIsolatesSettings"
+    },
+    {
+      "name": "server.isolates.scale-up-lag",
+      "type": "Duration",
+      "description": "How late the isolates' event loops run on average when the policy calls them overloaded: requests wait about that long before they are even looked at.",
+      "default": "5ms",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 149,
+      "class": "ServerIsolatesSettings"
+    },
+    {
+      "name": "server.isolates.scaling",
+      "type": "IsolateScaling",
+      "description": "Who changes the number of isolates while the server runs: `manual` (the default: only the application, through the `IsolateScaler` bean) or `auto` (the scaling policy too, between [min] and [max]).",
+      "default": "manual",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 133,
+      "class": "ServerIsolatesSettings"
+    },
+    {
+      "name": "server.max-concurrent-requests",
+      "type": "int?",
+      "description": "The most requests one isolate answers at a time (event streams not counted); a request past it is answered 503 with `Retry-After` at once, instead of waiting behind the others; its connection stays open for the next try. Not set: no limit.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 74,
+      "class": "ServerSettings"
+    },
+    {
+      "name": "server.max-connections",
+      "type": "int?",
+      "description": "The most connections one isolate keeps open. While it has more, every request is answered 503 and its connection closed, until the number is back under the limit (counted at most every 100 ms). Not set: no limit. With a pool of isolates (`server.isolates.*`) each isolate has this many.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 68,
+      "class": "ServerSettings"
     },
     {
       "name": "server.max-http-request-body-size",
@@ -118,7 +228,7 @@
       "default": {},
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 87,
+      "line": 107,
       "class": "ServerSettings"
     },
     {
@@ -142,13 +252,23 @@
       "class": "ServerSettings"
     },
     {
+      "name": "server.retry-after",
+      "type": "Duration",
+      "description": "The `Retry-After` of a 503 for a server that is full ([maxConnections], [maxConcurrentRequests]).",
+      "default": "1s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 78,
+      "class": "ServerSettings"
+    },
+    {
       "name": "server.session.cookie.domain",
       "type": "String?",
       "description": "The domain of the session cookie. Default: none, so the cookie goes back only to the host that set it.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 194,
+      "line": 304,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -158,7 +278,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 200,
+      "line": 310,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -168,7 +288,7 @@
       "default": "JSESSIONID",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 190,
+      "line": 300,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -178,7 +298,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 197,
+      "line": 307,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -188,7 +308,7 @@
       "default": "lax",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 207,
+      "line": 317,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -198,7 +318,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 204,
+      "line": 314,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -208,7 +328,7 @@
       "default": 10000,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 180,
+      "line": 290,
       "class": "ServerSessionSettings"
     },
     {
@@ -218,7 +338,7 @@
       "default": "30m",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 177,
+      "line": 287,
       "class": "ServerSessionSettings"
     },
     {
@@ -238,7 +358,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 107,
+      "line": 217,
       "class": "ServerSslSettings"
     },
     {
@@ -248,7 +368,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 110,
+      "line": 220,
       "class": "ServerSslSettings"
     },
     {
@@ -258,7 +378,7 @@
       "default": "none",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 120,
+      "line": 230,
       "class": "ServerSslSettings"
     },
     {
@@ -268,7 +388,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 104,
+      "line": 214,
       "class": "ServerSslSettings"
     },
     {
@@ -278,7 +398,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 113,
+      "line": 223,
       "class": "ServerSslSettings"
     },
     {
@@ -288,7 +408,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 116,
+      "line": 226,
       "class": "ServerSslSettings"
     },
     {
@@ -298,7 +418,7 @@
       "default": "8KB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 158,
+      "line": 268,
       "class": "ServerWebSocketSettings"
     },
     {
@@ -308,7 +428,7 @@
       "default": "8KB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 155,
+      "line": 265,
       "class": "ServerWebSocketSettings"
     },
     {
@@ -318,7 +438,7 @@
       "default": "512KB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 164,
+      "line": 274,
       "class": "ServerWebSocketSettings"
     },
     {
@@ -328,7 +448,7 @@
       "default": "10s",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 168,
+      "line": 278,
       "class": "ServerWebSocketSettings"
     },
     {
@@ -338,7 +458,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 409,
+      "line": 539,
       "class": "WebMainSettings"
     },
     {
@@ -348,7 +468,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 271,
+      "line": 381,
       "class": "MvcAsyncSettings"
     },
     {
@@ -358,7 +478,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 249,
+      "line": 359,
       "class": "MvcSettings"
     },
     {
@@ -368,7 +488,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 279,
+      "line": 389,
       "class": "MvcSseSettings"
     },
     {
@@ -378,7 +498,7 @@
       "default": "/**",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 256,
+      "line": 366,
       "class": "MvcSettings"
     },
     {
@@ -388,8 +508,28 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 421,
+      "line": 551,
       "class": "WebTestSettings"
+    },
+    {
+      "name": "spring.web.debug.qps.enabled",
+      "type": "bool",
+      "description": "Whether the application counts its requests: with `true` the build has the filter that counts them and `RequestRates`, which logs the requests per second and answers the actuator's `qps` endpoint; without it, none of that code. Read by the generator.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 527,
+      "class": "WebDebugQpsSettings"
+    },
+    {
+      "name": "spring.web.debug.qps.log-interval",
+      "type": "Duration",
+      "description": "The length of a window: how often the rate is worked out and logged.",
+      "default": "10s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 530,
+      "class": "WebDebugQpsSettings"
     },
     {
       "name": "spring.web.multipart.enabled",
@@ -398,7 +538,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 217,
+      "line": 327,
       "class": "MultipartSettings"
     },
     {
@@ -408,7 +548,7 @@
       "default": "0B",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 234,
+      "line": 344,
       "class": "MultipartSettings"
     },
     {
@@ -418,7 +558,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 239,
+      "line": 349,
       "class": "MultipartSettings"
     },
     {
@@ -428,7 +568,7 @@
       "default": "1MB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 221,
+      "line": 331,
       "class": "MultipartSettings"
     },
     {
@@ -438,7 +578,7 @@
       "default": 50,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 230,
+      "line": 340,
       "class": "MultipartSettings"
     },
     {
@@ -448,7 +588,7 @@
       "default": "10MB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 225,
+      "line": 335,
       "class": "MultipartSettings"
     },
     {
@@ -458,7 +598,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 299,
+      "line": 409,
       "class": "WebResourcesSettings"
     },
     {
@@ -468,7 +608,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 372,
+      "line": 482,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -478,7 +618,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 369,
+      "line": 479,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -488,7 +628,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 354,
+      "line": 464,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -498,7 +638,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 363,
+      "line": 473,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -508,7 +648,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 357,
+      "line": 467,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -518,7 +658,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 360,
+      "line": 470,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -528,7 +668,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 366,
+      "line": 476,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -538,7 +678,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 375,
+      "line": 485,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -548,7 +688,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 390,
+      "line": 500,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -558,7 +698,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 385,
+      "line": 495,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -568,7 +708,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 380,
+      "line": 490,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -578,7 +718,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 334,
+      "line": 444,
       "class": "WebResourcesCacheSettings"
     },
     {
@@ -588,7 +728,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 338,
+      "line": 448,
       "class": "WebResourcesCacheSettings"
     },
     {
@@ -598,7 +738,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 400,
+      "line": 510,
       "class": "WebResourcesChainSettings"
     },
     {
@@ -608,7 +748,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 317,
+      "line": 427,
       "class": "WebResourcesSettings"
     },
     {
@@ -618,7 +758,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 307,
+      "line": 417,
       "class": "WebResourcesSettings"
     },
     {
@@ -631,7 +771,7 @@
       ],
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 294,
+      "line": 404,
       "class": "WebResourcesSettings"
     }
   ],
@@ -650,6 +790,19 @@
         {
           "value": "framework",
           "description": "The same here (Spring Boot: Spring's `ForwardedHeaderFilter`)."
+        }
+      ]
+    },
+    {
+      "name": "server.isolates.scaling",
+      "values": [
+        {
+          "value": "manual",
+          "description": "Only the application, through the `IsolateScaler` bean."
+        },
+        {
+          "value": "auto",
+          "description": "The scaling policy too."
         }
       ]
     },
@@ -749,7 +902,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 302,
+      "line": 310,
       "injects": [],
       "members": [
         {
@@ -819,7 +972,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 351,
+      "line": 426,
       "injects": [],
       "members": [
         {
@@ -856,7 +1009,7 @@
         "@_OnForwardHeaders()"
       ],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 277,
+      "line": 285,
       "injects": [],
       "members": [
         {
@@ -898,7 +1051,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 296,
+      "line": 304,
       "injects": [],
       "members": [
         {
@@ -935,7 +1088,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 266,
+      "line": 274,
       "injects": [],
       "members": [
         {
@@ -973,7 +1126,7 @@
         "@ConditionalOnMissingBean(HttpSessionRepository)"
       ],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 247,
+      "line": 255,
       "injects": [],
       "members": [
         {
@@ -1020,7 +1173,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 426,
+      "line": 556,
       "injects": [],
       "members": [
         {
@@ -1044,7 +1197,7 @@
         "@ConditionalOnMissingBean(MultipartResolver)"
       ],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 146,
+      "line": 154,
       "injects": [],
       "members": [
         {
@@ -1090,7 +1243,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 214,
+      "line": 324,
       "injects": [],
       "members": [
         {
@@ -1137,7 +1290,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 246,
+      "line": 356,
       "injects": [],
       "members": [
         {
@@ -1175,7 +1328,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 345,
+      "line": 420,
       "injects": [],
       "members": [
         {
@@ -1204,7 +1357,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 160,
+      "line": 168,
       "injects": [],
       "members": [
         {
@@ -1324,6 +1477,158 @@
       ]
     },
     {
+      "name": "requestRateFilter",
+      "type": "RequestRateFilter",
+      "types": [
+        "RequestRateFilter",
+        "WebFilter",
+        "Ordered",
+        "IsolateReporter"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/spring_auto_configuration.dart",
+      "line": 56,
+      "injects": [],
+      "members": [
+        {
+          "name": "counts",
+          "kind": "getter",
+          "type": "RequestCounts"
+        },
+        {
+          "name": "doFilter",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "WebFilterChain chain"
+          ]
+        },
+        {
+          "name": "id",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "report",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "requestRates",
+      "type": "RequestRates",
+      "types": [
+        "RequestRates",
+        "PrimaryIsolateHandler",
+        "SmartLifecycle",
+        "Lifecycle"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnPrimaryIsolate()"
+      ],
+      "source": "package:spring_boot_starter_web/spring_auto_configuration.dart",
+      "line": 62,
+      "injects": [],
+      "members": [
+        {
+          "name": "handle",
+          "kind": "method",
+          "type": "Future<Object?>",
+          "parameters": [
+            "Object? request"
+          ]
+        },
+        {
+          "name": "id",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "interval",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "isAutoStartup",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isPauseable",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isRunning",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "last",
+          "kind": "field",
+          "type": "RequestRateWindow?"
+        },
+        {
+          "name": "look",
+          "kind": "method",
+          "type": "Future<RequestRateWindow>",
+          "parameters": []
+        },
+        {
+          "name": "own",
+          "kind": "field",
+          "type": "RequestRateFilter"
+        },
+        {
+          "name": "phase",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "reports",
+          "kind": "field",
+          "type": "IsolateReports"
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "stop",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "stopWithCallback",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() callback"
+          ]
+        }
+      ]
+    },
+    {
       "name": "resourceHandlerMapping",
       "type": "ResourceHandlerMapping",
       "types": [
@@ -1338,7 +1643,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 198,
+      "line": 206,
       "injects": [],
       "members": [
         {
@@ -1409,7 +1714,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 131,
+      "line": 139,
       "injects": [],
       "members": [
         {
@@ -1503,6 +1808,230 @@
       ]
     },
     {
+      "name": "serverIsolatePool",
+      "type": "ServerIsolatePool",
+      "types": [
+        "ServerIsolatePool",
+        "IsolateScaler",
+        "IsolateLoadSource",
+        "SmartLifecycle",
+        "Lifecycle",
+        "AsyncStartup",
+        "PrimaryIsolateHandler"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnIsolatePool()"
+      ],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 360,
+      "injects": [],
+      "members": [
+        {
+          "name": "awaitStartup",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "count",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "handle",
+          "kind": "method",
+          "type": "FutureOr<Object?>",
+          "parameters": [
+            "Object? request"
+          ]
+        },
+        {
+          "name": "id",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "isAutoStartup",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isPauseable",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isRunning",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "loads",
+          "kind": "method",
+          "type": "List<IsolateLoad>",
+          "parameters": []
+        },
+        {
+          "name": "max",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "min",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "phase",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "refresh",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "scaleBy",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "int delta",
+            "{String reason}"
+          ]
+        },
+        {
+          "name": "scaleTo",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "int count",
+            "{String reason}"
+          ]
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "stop",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "stopWithCallback",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() callback"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "serverIsolateWorker",
+      "type": "ServerIsolateWorker",
+      "types": [
+        "ServerIsolateWorker",
+        "SmartLifecycle",
+        "Lifecycle",
+        "IsolateScaler"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnServerIsolate()"
+      ],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 398,
+      "injects": [],
+      "members": [
+        {
+          "name": "count",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "isAutoStartup",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isPauseable",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isRunning",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "max",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "min",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "phase",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "scaleBy",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "int delta",
+            "{String reason}"
+          ]
+        },
+        {
+          "name": "scaleTo",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "int count",
+            "{String reason}"
+          ]
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "stop",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "stopWithCallback",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() callback"
+          ]
+        }
+      ]
+    },
+    {
       "name": "serverSettings",
       "type": "ServerSettings",
       "types": [
@@ -1548,6 +2077,21 @@
           "type": "ForwardHeadersStrategy"
         },
         {
+          "name": "isolates",
+          "kind": "field",
+          "type": "ServerIsolatesSettings"
+        },
+        {
+          "name": "maxConcurrentRequests",
+          "kind": "field",
+          "type": "int?"
+        },
+        {
+          "name": "maxConnections",
+          "kind": "field",
+          "type": "int?"
+        },
+        {
           "name": "maxHttpRequestBodySize",
           "kind": "field",
           "type": "DataSize"
@@ -1566,6 +2110,11 @@
           "name": "requestTimeout",
           "kind": "field",
           "type": "Duration?"
+        },
+        {
+          "name": "retryAfter",
+          "kind": "field",
+          "type": "Duration"
         },
         {
           "name": "session",
@@ -1590,6 +2139,28 @@
       ]
     },
     {
+      "name": "webDebugSettings",
+      "type": "WebDebugSettings",
+      "types": [
+        "WebDebugSettings"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
+      "line": 516,
+      "injects": [],
+      "members": [
+        {
+          "name": "qps",
+          "kind": "field",
+          "type": "WebDebugQpsSettings"
+        }
+      ]
+    },
+    {
       "name": "webMainSettings",
       "type": "WebMainSettings",
       "types": [
@@ -1601,7 +2172,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 405,
+      "line": 535,
       "injects": [],
       "members": [
         {
@@ -1623,7 +2194,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 287,
+      "line": 397,
       "injects": [],
       "members": [
         {
@@ -1672,7 +2243,7 @@
         "@ConditionalOnMissingBean(WebServerFactory)"
       ],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 109,
+      "line": 117,
       "injects": [],
       "members": [
         {
@@ -1682,6 +2253,35 @@
           "parameters": [
             "HttpHandler handler"
           ]
+        }
+      ]
+    },
+    {
+      "name": "webServerLoadSource",
+      "type": "WebServerLoadSource",
+      "types": [
+        "WebServerLoadSource",
+        "IsolateLoadSource"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
+      "line": 353,
+      "injects": [],
+      "members": [
+        {
+          "name": "lifecycle",
+          "kind": "field",
+          "type": "WebServerStartStopLifecycle"
+        },
+        {
+          "name": "loads",
+          "kind": "method",
+          "type": "List<IsolateLoad>",
+          "parameters": []
         }
       ]
     },
@@ -1702,7 +2302,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/web_auto_configuration.dart",
-      "line": 323,
+      "line": 331,
       "injects": [],
       "members": [
         {
@@ -1823,7 +2423,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 414,
+      "line": 544,
       "injects": [],
       "members": [
         {

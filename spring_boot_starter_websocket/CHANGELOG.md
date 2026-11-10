@@ -1,3 +1,7 @@
+## Unreleased
+
+- The server side (`webSocketSessionRegistry`, `webSocketHandlerMapping`) is a module of its own, `springBootStarterWebsocketServerAutoConfiguration`, only where a server can run (`ModulePlatform.native`): a Flutter web app that uses the starter for its `@WebSocketClient`s carries no server code. A test that builds a context by hand and has server endpoints names both modules. `WebSocketSessionRegistry` is an `IsolateLocalState`: with a pool of server isolates a broadcast reaches the sessions of its own isolate, and the pool's warning says so.
+
 ## 0.7.3
 
 - No changes of its own; released with the family version 0.7.3.

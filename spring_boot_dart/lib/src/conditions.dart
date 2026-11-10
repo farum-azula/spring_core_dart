@@ -307,6 +307,32 @@ class ConditionalOnCloudPlatform implements Condition {
   String toString() => '@ConditionalOnCloudPlatform (${platform.name})';
 }
 
+/// Registers a bean only in the application's primary isolate: the first
+/// one, which is the only one unless the web server runs a pool of
+/// isolates (`server.isolates.count`).
+///
+/// In a pool every isolate runs the whole application with its own beans.
+/// Put it on what must exist once for the application: the bean that
+/// polls a queue, sends the nightly report, migrates the data.
+///
+/// ```dart
+/// @Component()
+/// @ConditionalOnPrimaryIsolate()
+/// class NightlyReport { ... }
+/// ```
+///
+/// Spring has no counterpart: a JVM's threads share their beans.
+class ConditionalOnPrimaryIsolate implements Condition {
+  /// Requires the primary isolate.
+  const ConditionalOnPrimaryIsolate();
+
+  @override
+  bool matches(ConditionContext context) => IsolateInfo.current.primary;
+
+  @override
+  String toString() => '@ConditionalOnPrimaryIsolate';
+}
+
 /// Which contexts [ConditionalOnBean] and [ConditionalOnMissingBean]
 /// search for beans, when contexts have parents.
 ///

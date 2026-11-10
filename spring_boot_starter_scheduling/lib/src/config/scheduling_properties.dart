@@ -10,6 +10,23 @@ class SchedulingProperties {
 
   /// What closing the context does with the runs going on.
   SchedulingShutdown shutdown = SchedulingShutdown();
+
+  /// Which isolates run the `@Scheduled` methods when the web server has
+  /// a pool of them (`server.isolates.count`): `primary` (the default),
+  /// so a job runs once for the application, or `all`, once in every
+  /// isolate, for what each isolate must do for itself (refreshing what
+  /// it keeps in memory).
+  SchedulingIsolates isolates = SchedulingIsolates.primary;
+}
+
+/// Which isolates run `@Scheduled` methods
+/// (`spring.task.scheduling.isolates`).
+enum SchedulingIsolates {
+  /// The application's first isolate only.
+  primary,
+
+  /// Every isolate.
+  all,
 }
 
 /// The `spring.task.scheduling.shutdown.*` properties.

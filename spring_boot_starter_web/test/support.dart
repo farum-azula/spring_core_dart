@@ -18,6 +18,9 @@ ApplicationContextRunner webRunner([List<String> properties = const []]) =>
         .withAutoConfiguration(springBootStarterLoggingAutoConfiguration)
         .withAutoConfiguration(springBootStarterWebAutoConfiguration)
         .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
+        .withAutoConfiguration(
+          springBootStarterWebsocketServerAutoConfiguration,
+        )
         .withPropertyValues([
           'spring.test.web-environment=random-port',
           'server.address=127.0.0.1',
@@ -96,5 +99,6 @@ final testApplication = SpringApplication(
     springBootStarterLoggingAutoConfiguration,
     springBootStarterWebAutoConfiguration,
     springBootStarterWebsocketAutoConfiguration,
+    springBootStarterWebsocketServerAutoConfiguration,
   ],
 );

@@ -33,4 +33,5 @@ export 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 export 'src/actuator_auto_configuration.dart' show healthEndpointGroupsOf;
 export 'src/config/web_endpoint_properties.dart';
+export 'src/web/qps_endpoint.dart';
 export 'src/web/web_endpoint_handler_mapping.dart';

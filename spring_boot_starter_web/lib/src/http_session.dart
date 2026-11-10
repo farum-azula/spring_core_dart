@@ -323,7 +323,8 @@ String newSessionId() {
 ///
 /// Spring (Java): WebFlux's `InMemoryWebSessionStore` (`maxSessions`,
 /// expired ones removed, then refused).
-final class InMemoryHttpSessionRepository implements HttpSessionRepository {
+final class InMemoryHttpSessionRepository
+    implements HttpSessionRepository, IsolateLocalState {
   /// A repository whose new sessions time out after [timeout], keeping at
   /// most [maxSessions] (`-1`: no limit). [clock] gives the current time;
   /// tests replace it.
@@ -345,6 +346,9 @@ final class InMemoryHttpSessionRepository implements HttpSessionRepository {
 
   /// How many sessions are kept, including expired ones not yet removed.
   int get size => _sessions.length;
+
+  @override
+  String get isolateLocalState => 'sessions';
 
   @override
   StoredHttpSession createSession() {

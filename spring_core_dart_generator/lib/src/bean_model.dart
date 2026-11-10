@@ -1811,13 +1811,14 @@ class ForeignProxyModel {
     required this.proxy,
     required this.element,
     this.beanNames = const [],
-    this.notInRelease = false,
+    this.condition,
   });
 
-  /// Whether the bean is only in modules the build puts in outside a
-  /// release (`AutoConfigurationBuild`): its factory is registered under
-  /// `!dart.vm.product`, so a release compiles the proxy away.
-  final bool notInRelease;
+  /// The condition of the modules the bean is only in (not in a release
+  /// by `AutoConfigurationBuild`, a platform by
+  /// `AutoConfigurationModule.platform`): its factory is registered under
+  /// it, so the other builds compile the proxy away. `null`: always.
+  final String? condition;
 
   /// The `source` of the bean's definition, the key of its factory.
   final String source;
