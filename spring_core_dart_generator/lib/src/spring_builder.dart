@@ -1371,11 +1371,19 @@ class SpringBuilder implements Builder {
     if (platform == null || platform.isNull) {
       return null;
     }
-    return switch (platform.objectValue.variable?.name) {
-      'native' => "const bool.fromEnvironment('dart.library.io')",
-      'web' => "const bool.fromEnvironment('dart.library.js_interop')",
+    final library = switch (platform.objectValue.variable?.name) {
+      'native' => 'dart.library.io',
+      'web' => 'dart.library.js_interop',
       _ => null,
     };
+    if (library == null) {
+      return null;
+    }
+    // A program that runs such a module on the other platform on purpose
+    // (server code checked as minified JavaScript under Node) is compiled
+    // with `-DSPRING_ALL_PLATFORMS=true`.
+    return "(const bool.fromEnvironment('$library') || "
+        "const bool.fromEnvironment('$allPlatformsDefine'))";
   }
 
   // The beans with a deferred proxy that only modules left out of the
@@ -2237,6 +2245,11 @@ class SpringPropertiesBuilder extends SpringBuilder {
 }
 
 // Where the build puts an auto-configuration module.
+/// The compile-time define that keeps every module of
+/// `AutoConfigurationModule(platform:)` whatever the platform:
+/// `dart compile js -DSPRING_ALL_PLATFORMS=true`.
+const allPlatformsDefine = 'SPRING_ALL_PLATFORMS';
+
 enum _BuildChoice { always, notInRelease, never }
 
 // How the proxy of a bean only conditional modules define is built: under

@@ -3840,7 +3840,8 @@ _i63.SpringApplication get springApplication => _i63.SpringApplication(
     _i71.springBootStarterOauth2ClientAutoConfiguration,
     _i72.springBootStarterSchedulingAutoConfiguration,
     _i73.springBootStarterWebsocketAutoConfiguration,
-    if (const bool.fromEnvironment('dart.library.io'))
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i73.springBootStarterWebsocketServerAutoConfiguration,
     _i74.springSecurityCoreAutoConfiguration,
   ],
@@ -5052,7 +5053,7 @@ _i63.SpringApplication get springApplication => _i63.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'c5554891',
+  fingerprint: '4ca66141',
 );
 
 /// Starts the application: config files, environment, context, runners

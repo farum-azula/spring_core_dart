@@ -639,7 +639,9 @@ jobs:
         if: needs.changes.outputs.server_guide == 'true'
         working-directory: example/server_guide
         run: |
-          dart compile js -O4 -o /tmp/release_check.js tool/release_check.dart
+          # The server's modules are left out of a JavaScript build
+          # (ModulePlatform.native); this check runs them on purpose.
+          dart compile js -O4 -DSPRING_ALL_PLATFORMS=true -o /tmp/release_check.js tool/release_check.dart
           # dart2js code expects the browser's `self` (timers of @Scheduled).
           node -e 'globalThis.self = globalThis; require("/tmp/release_check.js")'
 

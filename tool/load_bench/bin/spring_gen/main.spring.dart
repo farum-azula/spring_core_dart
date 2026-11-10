@@ -7,23 +7,28 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
+import 'dart:async' as _i8;
+import 'dart:io' as _i7;
+
 import 'package:load_bench/src/app.dart' as _i4;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i6;
-import 'package:spring_boot_starter_data/spring_auto_configuration.dart' as _i8;
+import 'package:postgres/postgres.dart' as _i6;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i10;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i9;
+import 'package:spring_boot_starter_data/spring_auto_configuration.dart'
+    as _i11;
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i2;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i9;
-import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i10;
-import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
-    as _i11;
-import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
     as _i12;
-import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i13;
+import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
+    as _i13;
+import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
+    as _i14;
+import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
+    as _i15;
+import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i16;
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart' as _i3;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i14;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i17;
 import 'package:sqlite3/sqlite3.dart' as _i5;
 
 /// Beans found by `@ComponentScan` in `lib/ and bin/`.
@@ -36,6 +41,13 @@ _i1.BeanModule get $application => _i1.BeanModule(
       types: const [_i2.JdbcDriver],
       conditions: [_i2.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
       create: (r) => _$sqlite3JdbcDriver(),
+    ),
+    _i1.BeanDefinition<_i2.JdbcDriver>(
+      name: r'postgresJdbcDriver',
+      source: r'package:spring_boot_starter_data#postgres',
+      types: const [_i2.JdbcDriver],
+      conditions: [_i2.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
+      create: (r) => _$postgresJdbcDriver(),
     ),
     _i1.BeanDefinition<_i3.HandlerExceptionResolver>(
       name: r'dataAccessExceptionResolver',
@@ -59,9 +71,12 @@ _i1.BeanModule get $application => _i1.BeanModule(
   imports: [_i4.appBeans],
   resources: const {
     r'application.properties': _i1.EmbeddedResource.text(
-      '# The load bench server: what every run shares. tool/load.dart passes the\n# port, the directories and anything given with --server-arg on the\n# command line (--server.port=18080, --bench.directory=...).\n\nspring.application.name=load-bench\n# Close the context on Ctrl+C / SIGTERM: the tool stops the server so.\nspring.main.register-shutdown-hook=true\nspring.main.banner-mode=off\n\n# --- The web server ---------------------------------------------------------\nserver.port=18080\nserver.address=127.0.0.1\n# Graceful, the default: an isolate that leaves the pool finishes its\n# requests first, which the scaling scenarios measure.\nserver.shutdown=graceful\nspring.lifecycle.timeout-per-shutdown-phase=5s\n# Uploads: the raw ones read the body as a stream with bench.upload.max-size\n# as their limit; the multipart ones use the two keys below.\nspring.web.multipart.max-file-size=2GB\nspring.web.multipart.max-request-size=2GB\n# lib/resources/static/hello.txt is GET /static/hello.txt.\nspring.mvc.static-path-pattern=/static/**\n\n# --- Security: a bearer token on /secure/** ----------------------------------\n# The server signs a token with this secret at startup (GET /bench/info\n# hands it to the load tool) and checks it on every request. A secret of\n# the bench only: it protects nothing.\nbench.security.jwt-secret=load-bench-secret-of-at-least-32-bytes\nbench.security.token-lifetime=24h\n\n# --- The database (spring_boot_starter_data on SQLite) -----------------------\n# A file, so every connection (and every server isolate) sees the same\n# rows; db/migration/V1__items.sql creates and fills the table.\nspring.datasource.url=sqlite:file:\${bench.directory}/load_bench.db\nspring.datasource.pool.max-size=4\n\n# --- The bench (BenchProperties) ----------------------------------------------\n# Where the files to download are generated and the uploads are written.\n# Relative to where the server runs; created at startup.\nbench.directory=build/load_bench\nbench.files.small-size=4KB\nbench.files.medium-size=10MB\nbench.files.huge-size=512MB\nbench.upload.max-size=2GB\nbench.json.items=50\n\n# Warnings only: a log line per request would be measured too.\nlogging.level.root=warn\n',
+      '# The load bench server: what every run shares. tool/load.dart passes the\n# port, the directories and anything given with --server-arg on the\n# command line (--server.port=18080, --bench.directory=...).\n\nspring.application.name=load-bench\n# Close the context on Ctrl+C / SIGTERM: the tool stops the server so.\nspring.main.register-shutdown-hook=true\nspring.main.banner-mode=off\n\n# --- The web server ---------------------------------------------------------\nserver.port=18080\nserver.address=127.0.0.1\n# Graceful, the default: an isolate that leaves the pool finishes its\n# requests first, which the scaling scenarios measure.\nserver.shutdown=graceful\nspring.lifecycle.timeout-per-shutdown-phase=5s\n# Uploads: the raw ones read the body as a stream with bench.upload.max-size\n# as their limit; the multipart ones use the two keys below.\nspring.web.multipart.max-file-size=2GB\nspring.web.multipart.max-request-size=2GB\n# lib/resources/static/hello.txt is GET /static/hello.txt.\nspring.mvc.static-path-pattern=/static/**\n\n# --- Security: a bearer token on /secure/** ----------------------------------\n# The server signs a token with this secret at startup (GET /bench/info\n# hands it to the load tool) and checks it on every request. A secret of\n# the bench only: it protects nothing.\nbench.security.jwt-secret=load-bench-secret-of-at-least-32-bytes\nbench.security.token-lifetime=24h\n\n# --- The database (spring_boot_starter_data on SQLite) -----------------------\n# A file, so every connection (and every server isolate) sees the same\n# rows; db/migration/V1__items.sql creates and fills the table.\nspring.datasource.url=sqlite:file:\${bench.directory}/load_bench.db\nspring.datasource.pool.max-size=4\n# The schema of each database: db/migration/sqlite or db/migration/postgresql.\n# PostgreSQL instead of the SQLite file, for example in Docker:\n#   --spring.datasource.url=postgresql://postgres:bench@localhost:55432/bench\nspring.sql.migration.locations=resources:db/migration/{vendor}\n\n# --- The bench (BenchProperties) ----------------------------------------------\n# Where the files to download are generated and the uploads are written.\n# Relative to where the server runs; created at startup.\nbench.directory=build/load_bench\nbench.files.small-size=4KB\nbench.files.medium-size=10MB\nbench.files.huge-size=512MB\nbench.upload.max-size=2GB\nbench.json.items=50\n\n# Warnings only: a log line per request would be measured too.\nlogging.level.root=warn\n',
     ),
-    r'db/migration/V1__items.sql': _i1.EmbeddedResource.text(
+    r'db/migration/postgresql/V1__items.sql': _i1.EmbeddedResource.text(
+      "-- The table of the database scenarios on PostgreSQL, with 1000 rows to\n-- read (GET /db/items/{id}); POST /db/items adds rows after them.\ncreate table items (\n  id integer generated by default as identity (start with 1001) primary key,\n  name text not null,\n  price double precision not null,\n  quantity integer not null\n);\n\ninsert into items (id, name, price, quantity)\nselect n, 'item ' || n, n * 1.5, n % 100 from generate_series(1, 1000) as n;\n",
+    ),
+    r'db/migration/sqlite/V1__items.sql': _i1.EmbeddedResource.text(
       "-- The table of the database scenarios, with 1000 rows to read\n-- (GET /db/items/{id}); POST /db/items adds rows after them.\ncreate table items (\n  id integer primary key,\n  name text not null,\n  price real not null,\n  quantity integer not null\n);\n\nwith recursive numbers (n) as (\n  select 1\n  union all\n  select n + 1 from numbers where n < 1000\n)\ninsert into items (id, name, price, quantity)\nselect n, 'item ' || n, n * 1.5, n % 100 from numbers;\n",
     ),
     r'static/hello.txt': _i1.EmbeddedResource.text(
@@ -186,6 +201,165 @@ T _$sqlite3Guard<T>(T Function() action) {
 _i2.JdbcDriver _$sqlite3JdbcDriver() =>
     _i2.SqliteJdbcDriver(const _$Sqlite3Binding());
 
+final class _$PostgresBinding implements _i2.PostgresBinding {
+  const _$PostgresBinding();
+
+  @override
+  Future<_i2.PostgresSession> open(_i2.PostgresEndpoint endpoint) =>
+      _$postgresGuard(() async {
+        final roots = endpoint.rootCertificate;
+        return _$PostgresSession(
+          await _i6.Connection.open(
+            _i6.Endpoint(
+              host: endpoint.host,
+              port: endpoint.port,
+              database: endpoint.database,
+              username: endpoint.username,
+              password: endpoint.password,
+            ),
+            settings: _i6.ConnectionSettings(
+              sslMode: switch (endpoint.sslMode) {
+                _i2.PostgresSslMode.disable => _i6.SslMode.disable,
+                _i2.PostgresSslMode.require => _i6.SslMode.require,
+                _i2.PostgresSslMode.verifyFull => _i6.SslMode.verifyFull,
+              },
+              securityContext: roots == null
+                  ? null
+                  : (_i7.SecurityContext(withTrustedRoots: false)
+                      ..setTrustedCertificates(roots)),
+              connectTimeout: endpoint.connectTimeout,
+              applicationName: endpoint.applicationName,
+            ),
+          ),
+        );
+      });
+}
+
+final class _$PostgresSession implements _i2.PostgresSession {
+  _$PostgresSession(this._connection);
+
+  final _i6.Connection _connection;
+
+  @override
+  bool get isOpen => _connection.isOpen;
+
+  @override
+  Future<_i2.PostgresResult> execute(
+    String sql, {
+    List<Object?> parameters = const [],
+    bool simple = false,
+    Duration? timeout,
+  }) => _$postgresGuard(() async {
+    final result = await _connection.execute(
+      sql,
+      parameters: parameters.isEmpty
+          ? null
+          : [for (final value in parameters) _$postgresParameter(value)],
+      queryMode: simple ? _i6.QueryMode.simple : null,
+      timeout: timeout,
+    );
+    final columns = _$postgresColumns(result.schema);
+    return _i2.PostgresResult(columns, [
+      for (final row in result) _$postgresValues(row),
+    ], result.affectedRows);
+  });
+
+  @override
+  Stream<_i2.PostgresRow> stream(
+    String sql, {
+    List<Object?> parameters = const [],
+    Duration? timeout,
+  }) async* {
+    final statement = await _$postgresGuard(() => _connection.prepare(sql));
+    try {
+      List<String>? columns;
+      await for (final row in statement.bind([
+        for (final value in parameters) _$postgresParameter(value),
+      ])) {
+        columns ??= _$postgresColumns(row.schema);
+        yield _i2.PostgresRow(columns, _$postgresValues(row));
+      }
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(_$postgresError(error), stackTrace);
+    } finally {
+      try {
+        await statement.dispose();
+      } on Object {
+        // The connection is gone: nothing is left to free.
+      }
+    }
+  }
+
+  @override
+  Future<void> close() => _$postgresGuard(_connection.close);
+}
+
+// The package writes a double that is not finite (`Infinity`, `NaN`) as a
+// quoted text the server refuses, unless it knows the type.
+Object? _$postgresParameter(Object? value) => value is double && !value.isFinite
+    ? _i6.TypedValue(_i6.Type.double, value)
+    : value;
+
+List<String> _$postgresColumns(_i6.ResultSchema schema) => [
+  for (final column in schema.columns) column.columnName ?? '',
+];
+
+// A value of a type the package does not decode (an enum, `citext`...) as
+// its text or bytes.
+List<Object?> _$postgresValues(_i6.ResultRow row) => [
+  for (final value in row)
+    value is _i6.UndecodedBytes
+        ? (value.isBinary ? value.bytes : value.asString)
+        : value,
+];
+
+// The exceptions of the package and of the socket as the SqlError the
+// driver understands: the message, the SQL state, the constraint's name;
+// never the DETAIL line (it holds values) and never the exception itself.
+Object _$postgresError(Object error) {
+  if (error is _i6.ServerException) {
+    return _i2.SqlError(
+      error.message,
+      sqlState: error.code,
+      constraint: error.constraintName,
+      connectionLost:
+          error.severity == _i6.Severity.fatal ||
+          error.severity == _i6.Severity.panic,
+    );
+  }
+  if (error is _i6.PgException) {
+    // The package names the value it cannot send.
+    final inference = error.message.startsWith('Could not infer');
+    return _i2.SqlError(
+      inference
+          ? 'A parameter value has a type the driver cannot send'
+          : error.message,
+      connectionLost: !inference,
+    );
+  }
+  if (error is _i7.SocketException || error is _i7.TlsException) {
+    return _i2.SqlError('$error', connectionLost: true);
+  }
+  if (error is _i8.TimeoutException) {
+    return _i2.SqlError(
+      error.message ?? 'The connection timed out',
+      connectionLost: true,
+    );
+  }
+  return error;
+}
+
+Future<T> _$postgresGuard<T>(Future<T> Function() action) async {
+  try {
+    return await action();
+  } on Object catch (error, stackTrace) {
+    Error.throwWithStackTrace(_$postgresError(error), stackTrace);
+  }
+}
+
+_i2.JdbcDriver _$postgresJdbcDriver() =>
+    _i2.PostgresJdbcDriver(const _$PostgresBinding());
+
 final class _$DataAccessExceptionResolver
     implements _i3.HandlerExceptionResolver {
   const _$DataAccessExceptionResolver();
@@ -306,31 +480,36 @@ _i3.WebMvcConfigurer _$pagingArgumentResolvers(_i1.Environment environment) =>
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i6.SpringApplication get springApplication => _i6.SpringApplication(
+_i9.SpringApplication get springApplication => _i9.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i7.springBootAutoConfiguration,
-    _i8.springBootStarterDataAutoConfiguration,
-    _i9.springBootStarterFeignAutoConfiguration,
-    _i10.springBootStarterLoggingAutoConfiguration,
-    _i11.springBootStarterOauth2ClientAutoConfiguration,
-    if (const bool.fromEnvironment('dart.library.io'))
-      _i12.springBootStarterSecurityAutoConfiguration,
-    if (const bool.fromEnvironment('dart.library.io'))
-      _i12.springBootStarterSecurityOAuth2ClientAutoConfiguration,
-    if (const bool.fromEnvironment('dart.library.io'))
-      _i13.springBootStarterWebAutoConfiguration,
-    _i14.springSecurityCoreAutoConfiguration,
+    _i10.springBootAutoConfiguration,
+    _i11.springBootStarterDataAutoConfiguration,
+    _i12.springBootStarterFeignAutoConfiguration,
+    _i13.springBootStarterLoggingAutoConfiguration,
+    _i14.springBootStarterOauth2ClientAutoConfiguration,
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
+      _i15.springBootStarterSecurityAutoConfiguration,
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
+      _i15.springBootStarterSecurityOAuth2ClientAutoConfiguration,
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
+      _i16.springBootStarterWebAutoConfiguration,
+    _i17.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
-    if (const bool.fromEnvironment('dart.library.io'))
-      _i12.springBootStarterSecurityAutoConfiguration:
-          const _i6.AutoConfigurationModule(
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
+      _i15.springBootStarterSecurityAutoConfiguration:
+          const _i9.AutoConfigurationModule(
             after: ['springBootStarterOauth2ClientAutoConfiguration'],
           ),
-    if (const bool.fromEnvironment('dart.library.io'))
-      _i12.springBootStarterSecurityOAuth2ClientAutoConfiguration:
-          const _i6.AutoConfigurationModule(
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
+      _i15.springBootStarterSecurityOAuth2ClientAutoConfiguration:
+          const _i9.AutoConfigurationModule(
             before: ['springBootStarterOauth2ClientAutoConfiguration'],
           ),
   },
@@ -420,6 +599,10 @@ _i6.SpringApplication get springApplication => _i6.SpringApplication(
     if (const bool.hasEnvironment('SPRING_PROFILES_INCLUDE'))
       'SPRING_PROFILES_INCLUDE': const String.fromEnvironment(
         'SPRING_PROFILES_INCLUDE',
+      ),
+    if (const bool.hasEnvironment('SPRING_SQL_MIGRATION_LOCATIONS'))
+      'SPRING_SQL_MIGRATION_LOCATIONS': const String.fromEnvironment(
+        'SPRING_SQL_MIGRATION_LOCATIONS',
       ),
     if (const bool.hasEnvironment('SPRING_WEB_MULTIPART_MAXFILESIZE'))
       'SPRING_WEB_MULTIPART_MAXFILESIZE': const String.fromEnvironment(
@@ -520,6 +703,10 @@ _i6.SpringApplication get springApplication => _i6.SpringApplication(
       'spring.profiles.include': const String.fromEnvironment(
         'spring.profiles.include',
       ),
+    if (const bool.hasEnvironment('spring.sql.migration.locations'))
+      'spring.sql.migration.locations': const String.fromEnvironment(
+        'spring.sql.migration.locations',
+      ),
     if (const bool.hasEnvironment('spring.web.multipart.max-file-size'))
       'spring.web.multipart.max-file-size': const String.fromEnvironment(
         'spring.web.multipart.max-file-size',
@@ -531,31 +718,31 @@ _i6.SpringApplication get springApplication => _i6.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '6dfb436b',
+  fingerprint: '115ad3ab',
 );
 
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i6.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i9.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i6.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i9.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i6.ConfigurableApplicationContext reloadApplication(
-  _i6.ConfigurableApplicationContext running, {
+_i9.ConfigurableApplicationContext reloadApplication(
+  _i9.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i6.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i6.ConfigurableApplicationContext running, {
+Future<_i9.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i9.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);

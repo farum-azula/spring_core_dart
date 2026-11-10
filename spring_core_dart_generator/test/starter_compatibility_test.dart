@@ -190,7 +190,8 @@ void main() {
         code,
         matches(
           RegExp(
-            r"if\(constbool\.fromEnvironment\('dart\.library\.io'\)\)"
+            r"if\(\(constbool\.fromEnvironment\('dart\.library\.io'\)\|\|"
+            r"constbool\.fromEnvironment\('SPRING_ALL_PLATFORMS'\)\)\)"
             r'_i\d+\.neonCacheAutoConfiguration',
           ),
         ),
@@ -204,7 +205,8 @@ void main() {
         code,
         matches(
           RegExp(
-            r"if\(constbool\.fromEnvironment\('dart\.library\.js_interop'\)\)"
+            r"if\(\(constbool\.fromEnvironment\('dart\.library\.js_interop'\)"
+            r"\|\|constbool\.fromEnvironment\('SPRING_ALL_PLATFORMS'\)\)\)"
             r'_i\d+\.neonCacheAutoConfiguration',
           ),
         ),
@@ -220,7 +222,8 @@ void main() {
         code,
         contains(
           "if(!constbool.fromEnvironment('dart.vm.product')&&"
-          "constbool.fromEnvironment('dart.library.io'))",
+          "(constbool.fromEnvironment('dart.library.io')||"
+          "constbool.fromEnvironment('SPRING_ALL_PLATFORMS')))",
         ),
       );
     });
@@ -240,8 +243,9 @@ void main() {
         code,
         matches(
           RegExp(
-            r"autoConfigurationMetadata:\{if\(constbool\.fromEnvironment\("
-            r"'dart\.library\.io'\)\)_i\d+\.neonCacheAutoConfiguration:"
+            r'autoConfigurationMetadata:\{if\(\(constbool\.fromEnvironment\('
+            r"'dart\.library\.io'\)\|\|constbool\.fromEnvironment\("
+            r"'SPRING_ALL_PLATFORMS'\)\)\)_i\d+\.neonCacheAutoConfiguration:"
             r'const_i\d+\.AutoConfigurationModule\(order:5,?\)',
           ),
         ),

@@ -96,24 +96,30 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     _i7.springBootStarterLoggingAutoConfiguration,
     _i8.springBootStarterOauth2ClientAutoConfiguration,
     _i9.springBootStarterSchedulingAutoConfiguration,
-    if (const bool.fromEnvironment('dart.library.io'))
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i10.springBootStarterSecurityAutoConfiguration,
-    if (const bool.fromEnvironment('dart.library.io'))
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i10.springBootStarterSecurityOAuth2ClientAutoConfiguration,
-    if (const bool.fromEnvironment('dart.library.io'))
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i11.springBootStarterWebAutoConfiguration,
     _i12.springBootStarterWebsocketAutoConfiguration,
-    if (const bool.fromEnvironment('dart.library.io'))
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i12.springBootStarterWebsocketServerAutoConfiguration,
     _i13.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
-    if (const bool.fromEnvironment('dart.library.io'))
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i10.springBootStarterSecurityAutoConfiguration:
           const _i3.AutoConfigurationModule(
             after: ['springBootStarterOauth2ClientAutoConfiguration'],
           ),
-    if (const bool.fromEnvironment('dart.library.io'))
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i10.springBootStarterSecurityOAuth2ClientAutoConfiguration:
           const _i3.AutoConfigurationModule(
             before: ['springBootStarterOauth2ClientAutoConfiguration'],
@@ -812,7 +818,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'dda66890',
+  fingerprint: '06f35410',
 );
 
 /// Starts the application: config files, environment, context, runners

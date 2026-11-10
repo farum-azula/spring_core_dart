@@ -238,7 +238,9 @@ class AutoConfigurationModule {
   /// Where the module's code works; `null` (the default): everywhere. On
   /// another platform the compiler drops the module and all only it
   /// reaches, so a browser build carries no server code and a server no
-  /// browser code.
+  /// browser code. A program that runs it on the other platform on purpose
+  /// (server code checked as minified JavaScript under Node) is compiled
+  /// with `-DSPRING_ALL_PLATFORMS=true`, which keeps every module.
   final ModulePlatform? platform;
 }
 

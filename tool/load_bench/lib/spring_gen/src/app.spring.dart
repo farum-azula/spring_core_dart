@@ -7,6 +7,9 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
+import 'dart:async' as _i23;
+import 'dart:io' as _i22;
+
 import 'package:load_bench/src/bench_files.dart' as _i15;
 import 'package:load_bench/src/bench_properties.dart' as _i8;
 import 'package:load_bench/src/cpu_controller.dart' as _i9;
@@ -16,6 +19,7 @@ import 'package:load_bench/src/item.dart' as _i2;
 import 'package:load_bench/src/json_controller.dart' as _i13;
 import 'package:load_bench/src/security_config.dart' as _i4;
 import 'package:load_bench/src/text_controller.dart' as _i14;
+import 'package:postgres/postgres.dart' as _i21;
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i1;
 import 'package:spring_boot_starter_data/src/annotations.dart' as _i19;
 import 'package:spring_boot_starter_data/src/repository/repository.dart'
@@ -822,6 +826,13 @@ _i3.BeanModule get $appBeans => _i3.BeanModule(
       conditions: [_i1.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
       create: (r) => _$sqlite3JdbcDriver(),
     ),
+    _i3.BeanDefinition<_i1.JdbcDriver>(
+      name: r'postgresJdbcDriver',
+      source: r'package:spring_boot_starter_data#postgres',
+      types: const [_i1.JdbcDriver],
+      conditions: [_i1.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
+      create: (r) => _$postgresJdbcDriver(),
+    ),
     _i3.BeanDefinition<_i11.HandlerExceptionResolver>(
       name: r'dataAccessExceptionResolver',
       source: r'package:spring_boot_starter_data#spring_boot_starter_web',
@@ -843,9 +854,12 @@ _i3.BeanModule get $appBeans => _i3.BeanModule(
   ],
   resources: const {
     r'application.properties': _i3.EmbeddedResource.text(
-      '# The load bench server: what every run shares. tool/load.dart passes the\n# port, the directories and anything given with --server-arg on the\n# command line (--server.port=18080, --bench.directory=...).\n\nspring.application.name=load-bench\n# Close the context on Ctrl+C / SIGTERM: the tool stops the server so.\nspring.main.register-shutdown-hook=true\nspring.main.banner-mode=off\n\n# --- The web server ---------------------------------------------------------\nserver.port=18080\nserver.address=127.0.0.1\n# Graceful, the default: an isolate that leaves the pool finishes its\n# requests first, which the scaling scenarios measure.\nserver.shutdown=graceful\nspring.lifecycle.timeout-per-shutdown-phase=5s\n# Uploads: the raw ones read the body as a stream with bench.upload.max-size\n# as their limit; the multipart ones use the two keys below.\nspring.web.multipart.max-file-size=2GB\nspring.web.multipart.max-request-size=2GB\n# lib/resources/static/hello.txt is GET /static/hello.txt.\nspring.mvc.static-path-pattern=/static/**\n\n# --- Security: a bearer token on /secure/** ----------------------------------\n# The server signs a token with this secret at startup (GET /bench/info\n# hands it to the load tool) and checks it on every request. A secret of\n# the bench only: it protects nothing.\nbench.security.jwt-secret=load-bench-secret-of-at-least-32-bytes\nbench.security.token-lifetime=24h\n\n# --- The database (spring_boot_starter_data on SQLite) -----------------------\n# A file, so every connection (and every server isolate) sees the same\n# rows; db/migration/V1__items.sql creates and fills the table.\nspring.datasource.url=sqlite:file:\${bench.directory}/load_bench.db\nspring.datasource.pool.max-size=4\n\n# --- The bench (BenchProperties) ----------------------------------------------\n# Where the files to download are generated and the uploads are written.\n# Relative to where the server runs; created at startup.\nbench.directory=build/load_bench\nbench.files.small-size=4KB\nbench.files.medium-size=10MB\nbench.files.huge-size=512MB\nbench.upload.max-size=2GB\nbench.json.items=50\n\n# Warnings only: a log line per request would be measured too.\nlogging.level.root=warn\n',
+      '# The load bench server: what every run shares. tool/load.dart passes the\n# port, the directories and anything given with --server-arg on the\n# command line (--server.port=18080, --bench.directory=...).\n\nspring.application.name=load-bench\n# Close the context on Ctrl+C / SIGTERM: the tool stops the server so.\nspring.main.register-shutdown-hook=true\nspring.main.banner-mode=off\n\n# --- The web server ---------------------------------------------------------\nserver.port=18080\nserver.address=127.0.0.1\n# Graceful, the default: an isolate that leaves the pool finishes its\n# requests first, which the scaling scenarios measure.\nserver.shutdown=graceful\nspring.lifecycle.timeout-per-shutdown-phase=5s\n# Uploads: the raw ones read the body as a stream with bench.upload.max-size\n# as their limit; the multipart ones use the two keys below.\nspring.web.multipart.max-file-size=2GB\nspring.web.multipart.max-request-size=2GB\n# lib/resources/static/hello.txt is GET /static/hello.txt.\nspring.mvc.static-path-pattern=/static/**\n\n# --- Security: a bearer token on /secure/** ----------------------------------\n# The server signs a token with this secret at startup (GET /bench/info\n# hands it to the load tool) and checks it on every request. A secret of\n# the bench only: it protects nothing.\nbench.security.jwt-secret=load-bench-secret-of-at-least-32-bytes\nbench.security.token-lifetime=24h\n\n# --- The database (spring_boot_starter_data on SQLite) -----------------------\n# A file, so every connection (and every server isolate) sees the same\n# rows; db/migration/V1__items.sql creates and fills the table.\nspring.datasource.url=sqlite:file:\${bench.directory}/load_bench.db\nspring.datasource.pool.max-size=4\n# The schema of each database: db/migration/sqlite or db/migration/postgresql.\n# PostgreSQL instead of the SQLite file, for example in Docker:\n#   --spring.datasource.url=postgresql://postgres:bench@localhost:55432/bench\nspring.sql.migration.locations=resources:db/migration/{vendor}\n\n# --- The bench (BenchProperties) ----------------------------------------------\n# Where the files to download are generated and the uploads are written.\n# Relative to where the server runs; created at startup.\nbench.directory=build/load_bench\nbench.files.small-size=4KB\nbench.files.medium-size=10MB\nbench.files.huge-size=512MB\nbench.upload.max-size=2GB\nbench.json.items=50\n\n# Warnings only: a log line per request would be measured too.\nlogging.level.root=warn\n',
     ),
-    r'db/migration/V1__items.sql': _i3.EmbeddedResource.text(
+    r'db/migration/postgresql/V1__items.sql': _i3.EmbeddedResource.text(
+      "-- The table of the database scenarios on PostgreSQL, with 1000 rows to\n-- read (GET /db/items/{id}); POST /db/items adds rows after them.\ncreate table items (\n  id integer generated by default as identity (start with 1001) primary key,\n  name text not null,\n  price double precision not null,\n  quantity integer not null\n);\n\ninsert into items (id, name, price, quantity)\nselect n, 'item ' || n, n * 1.5, n % 100 from generate_series(1, 1000) as n;\n",
+    ),
+    r'db/migration/sqlite/V1__items.sql': _i3.EmbeddedResource.text(
       "-- The table of the database scenarios, with 1000 rows to read\n-- (GET /db/items/{id}); POST /db/items adds rows after them.\ncreate table items (\n  id integer primary key,\n  name text not null,\n  price real not null,\n  quantity integer not null\n);\n\nwith recursive numbers (n) as (\n  select 1\n  union all\n  select n + 1 from numbers where n < 1000\n)\ninsert into items (id, name, price, quantity)\nselect n, 'item ' || n, n * 1.5, n % 100 from numbers;\n",
     ),
     r'static/hello.txt': _i3.EmbeddedResource.text(
@@ -1648,6 +1662,165 @@ T _$sqlite3Guard<T>(T Function() action) {
 
 _i1.JdbcDriver _$sqlite3JdbcDriver() =>
     _i1.SqliteJdbcDriver(const _$Sqlite3Binding());
+
+final class _$PostgresBinding implements _i1.PostgresBinding {
+  const _$PostgresBinding();
+
+  @override
+  Future<_i1.PostgresSession> open(_i1.PostgresEndpoint endpoint) =>
+      _$postgresGuard(() async {
+        final roots = endpoint.rootCertificate;
+        return _$PostgresSession(
+          await _i21.Connection.open(
+            _i21.Endpoint(
+              host: endpoint.host,
+              port: endpoint.port,
+              database: endpoint.database,
+              username: endpoint.username,
+              password: endpoint.password,
+            ),
+            settings: _i21.ConnectionSettings(
+              sslMode: switch (endpoint.sslMode) {
+                _i1.PostgresSslMode.disable => _i21.SslMode.disable,
+                _i1.PostgresSslMode.require => _i21.SslMode.require,
+                _i1.PostgresSslMode.verifyFull => _i21.SslMode.verifyFull,
+              },
+              securityContext: roots == null
+                  ? null
+                  : (_i22.SecurityContext(withTrustedRoots: false)
+                      ..setTrustedCertificates(roots)),
+              connectTimeout: endpoint.connectTimeout,
+              applicationName: endpoint.applicationName,
+            ),
+          ),
+        );
+      });
+}
+
+final class _$PostgresSession implements _i1.PostgresSession {
+  _$PostgresSession(this._connection);
+
+  final _i21.Connection _connection;
+
+  @override
+  bool get isOpen => _connection.isOpen;
+
+  @override
+  Future<_i1.PostgresResult> execute(
+    String sql, {
+    List<Object?> parameters = const [],
+    bool simple = false,
+    Duration? timeout,
+  }) => _$postgresGuard(() async {
+    final result = await _connection.execute(
+      sql,
+      parameters: parameters.isEmpty
+          ? null
+          : [for (final value in parameters) _$postgresParameter(value)],
+      queryMode: simple ? _i21.QueryMode.simple : null,
+      timeout: timeout,
+    );
+    final columns = _$postgresColumns(result.schema);
+    return _i1.PostgresResult(columns, [
+      for (final row in result) _$postgresValues(row),
+    ], result.affectedRows);
+  });
+
+  @override
+  Stream<_i1.PostgresRow> stream(
+    String sql, {
+    List<Object?> parameters = const [],
+    Duration? timeout,
+  }) async* {
+    final statement = await _$postgresGuard(() => _connection.prepare(sql));
+    try {
+      List<String>? columns;
+      await for (final row in statement.bind([
+        for (final value in parameters) _$postgresParameter(value),
+      ])) {
+        columns ??= _$postgresColumns(row.schema);
+        yield _i1.PostgresRow(columns, _$postgresValues(row));
+      }
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(_$postgresError(error), stackTrace);
+    } finally {
+      try {
+        await statement.dispose();
+      } on Object {
+        // The connection is gone: nothing is left to free.
+      }
+    }
+  }
+
+  @override
+  Future<void> close() => _$postgresGuard(_connection.close);
+}
+
+// The package writes a double that is not finite (`Infinity`, `NaN`) as a
+// quoted text the server refuses, unless it knows the type.
+Object? _$postgresParameter(Object? value) => value is double && !value.isFinite
+    ? _i21.TypedValue(_i21.Type.double, value)
+    : value;
+
+List<String> _$postgresColumns(_i21.ResultSchema schema) => [
+  for (final column in schema.columns) column.columnName ?? '',
+];
+
+// A value of a type the package does not decode (an enum, `citext`...) as
+// its text or bytes.
+List<Object?> _$postgresValues(_i21.ResultRow row) => [
+  for (final value in row)
+    value is _i21.UndecodedBytes
+        ? (value.isBinary ? value.bytes : value.asString)
+        : value,
+];
+
+// The exceptions of the package and of the socket as the SqlError the
+// driver understands: the message, the SQL state, the constraint's name;
+// never the DETAIL line (it holds values) and never the exception itself.
+Object _$postgresError(Object error) {
+  if (error is _i21.ServerException) {
+    return _i1.SqlError(
+      error.message,
+      sqlState: error.code,
+      constraint: error.constraintName,
+      connectionLost:
+          error.severity == _i21.Severity.fatal ||
+          error.severity == _i21.Severity.panic,
+    );
+  }
+  if (error is _i21.PgException) {
+    // The package names the value it cannot send.
+    final inference = error.message.startsWith('Could not infer');
+    return _i1.SqlError(
+      inference
+          ? 'A parameter value has a type the driver cannot send'
+          : error.message,
+      connectionLost: !inference,
+    );
+  }
+  if (error is _i22.SocketException || error is _i22.TlsException) {
+    return _i1.SqlError('$error', connectionLost: true);
+  }
+  if (error is _i23.TimeoutException) {
+    return _i1.SqlError(
+      error.message ?? 'The connection timed out',
+      connectionLost: true,
+    );
+  }
+  return error;
+}
+
+Future<T> _$postgresGuard<T>(Future<T> Function() action) async {
+  try {
+    return await action();
+  } on Object catch (error, stackTrace) {
+    Error.throwWithStackTrace(_$postgresError(error), stackTrace);
+  }
+}
+
+_i1.JdbcDriver _$postgresJdbcDriver() =>
+    _i1.PostgresJdbcDriver(const _$PostgresBinding());
 
 final class _$DataAccessExceptionResolver
     implements _i11.HandlerExceptionResolver {

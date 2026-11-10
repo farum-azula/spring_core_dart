@@ -1,6 +1,6 @@
 ## Unreleased
 
-- `AutoConfigurationModule(platform:)` with `ModulePlatform.native` or `ModulePlatform.web`: a module only where its code works; the generated application lists it under the compiler's constant of that platform, so a browser build has no server code and a server no browser code.
+- `AutoConfigurationModule(platform:)` with `ModulePlatform.native` or `ModulePlatform.web`: a module only where its code works; the generated application lists it under the compiler's constant of that platform, so a browser build has no server code and a server no browser code; `-DSPRING_ALL_PLATFORMS=true` keeps them all (server code run as JavaScript under Node on purpose).
 - `IsolateAutoConfiguration`: the beans `isolateInfo`, `isolateLoadSampler`, `isolateTaskExecutor` (`spring.task.execution.isolates.core-size`, `max-size`, `keep-alive`, `queue-capacity`, `allow-core-timeout`, `name-prefix`; shut down with the context), `isolateLoads`, `isolateReports` and `primaryIsolate` (with `isolateLoadsHandler`, which answers every isolate's load to any of them), each left out when the app declares its own.
 - `@ConditionalOnPrimaryIsolate`: a bean only in the application's first isolate, for what must exist once and not once per isolate of a server's pool.
 - `ApplicationLaunch` (the bean `springApplicationLaunch`, with `SpringApplication.run(hotReload:)`, which the generated `runApplication` passes): how the application was started, so the same one can be started in another isolate (`start`); kept across a hot reload.

@@ -134,8 +134,9 @@ const allowedPackages = {
     "list postgres themselves; the starter's runtime never depends on it. "
     'It is pure Dart: unlike sqlite3 it needs no entry for the workspace '
     'root. Its own dependencies (buffer, charcode, pool...) are allowed '
-    'through it only.',
-    onlyIn: {'spring_boot_starter_data'},
+    'through it only. And a dependency of load_bench (tool/load_bench, not '
+    'published): the database scenarios run on PostgreSQL too.',
+    onlyIn: {'spring_boot_starter_data', 'load_bench'},
   ),
   'sqlite3': AllowedPackage(
     'The SQLite driver (the owner allowed database drivers): only a dev '

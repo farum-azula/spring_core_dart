@@ -7,12 +7,14 @@ environment:
 
 resolution: workspace
 
-# The starters the scenarios go through, the SQLite driver the data
-# starter needs an application to list (the generator wires it), and
+# The starters the scenarios go through, the SQLite and PostgreSQL drivers
+# the data starter needs an application to list (the generator wires
+# them; spring.datasource.url picks one), and
 # crypto (the Dart team's) to sign the bearer token of the "secure"
 # scenario: the security starter checks tokens, it issues none.
 dependencies:
   crypto: ^3.0.0
+  postgres: ^3.5.0
   spring_boot_starter_data: ^0.7.3
   spring_boot_starter_security: ^0.7.3
   spring_boot_starter_web: ^0.7.3

@@ -1,6 +1,6 @@
 ## Unreleased
 
-- `AutoConfigurationModule(platform:)`: the module is listed under `const bool.fromEnvironment('dart.library.io')` (native) or `'dart.library.js_interop'` (web), together with the condition of its build property when it has one; the proxies of beans only such modules define are under the same condition, so they leave the other platform's build with the module.
+- `AutoConfigurationModule(platform:)`: the module is listed under `const bool.fromEnvironment('dart.library.io')` (native) or `'dart.library.js_interop'` (web), together with the condition of its build property when it has one; the proxies of beans only such modules define are under the same condition, so they leave the other platform's build with the module. Compiled with `-DSPRING_ALL_PLATFORMS=true` every such module stays.
 - A module under a condition (not in a release, a platform) keeps its `order`, `before` and `after`: the generated map of the orderings has the same condition.
 - The advisors of an auto-configuration module the build leaves out (`AutoConfigurationBuild` decided `never`) no longer keep proxies: a bean whose annotation only such an advisor matches gets no proxy class.
 - `spring.resources.prefetch.locations`: the build writes those files into one file, `lib/resources/spring_gen/prefetch/resources.json`, a line per piece, never embedded, with a warning when `pubspec.yaml` does not list the directory (`PrefetchBuilder`, `spring_prefetch` in `build.yaml`).

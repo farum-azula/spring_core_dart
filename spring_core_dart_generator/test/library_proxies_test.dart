@@ -618,7 +618,8 @@ class TaskAudit {
       expect(
         code,
         contains(
-          "aopProxies:{if(constbool.fromEnvironment('dart.library.io'))"
+          "aopProxies:{if((constbool.fromEnvironment('dart.library.io')||"
+          "constbool.fromEnvironment('SPRING_ALL_PLATFORMS')))"
           "r'package:starter/task.dart#Task':",
         ),
       );
@@ -635,7 +636,8 @@ class TaskAudit {
         code,
         contains(
           "aopProxies:{if(!constbool.fromEnvironment('dart.vm.product')&&"
-          "constbool.fromEnvironment('dart.library.js_interop'))"
+          "(constbool.fromEnvironment('dart.library.js_interop')||"
+          "constbool.fromEnvironment('SPRING_ALL_PLATFORMS')))"
           "r'package:starter/task.dart#Task':",
         ),
       );
@@ -656,8 +658,10 @@ final BeanModule starterWebAutoConfiguration = BeanModule(
       expect(
         code,
         contains(
-          "aopProxies:{if((constbool.fromEnvironment('dart.library.io'))||"
-          "(constbool.fromEnvironment('dart.library.js_interop')))"
+          "aopProxies:{if(((constbool.fromEnvironment('dart.library.io')||"
+          "constbool.fromEnvironment('SPRING_ALL_PLATFORMS')))||"
+          "((constbool.fromEnvironment('dart.library.js_interop')||"
+          "constbool.fromEnvironment('SPRING_ALL_PLATFORMS'))))"
           "r'package:starter/task.dart#Task':",
         ),
       );

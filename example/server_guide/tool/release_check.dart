@@ -1,6 +1,7 @@
 // Release-mode check, run in CI as minified JavaScript:
 //
-//   dart compile js -O4 -o /tmp/release_check.js tool/release_check.dart
+//   dart compile js -O4 -DSPRING_ALL_PLATFORMS=true \
+//     -o /tmp/release_check.js tool/release_check.dart
 //   node -e 'globalThis.self = globalThis; require("/tmp/release_check.js")'
 //
 // (dart2js output uses the browser's `self`, e.g. for the timers of
@@ -10,7 +11,8 @@
 // annotations or properties by name at runtime would silently stop working
 // here. The whole application starts (without a web server: JavaScript has
 // no server sockets) and its AOP, cache, method security, scheduling, JSON,
-// messages and SpEL are checked.
+// messages and SpEL are checked. The server's modules (web, security) are
+// left out of a JavaScript build unless SPRING_ALL_PLATFORMS is defined.
 
 // A command line tool: the result goes to the console.
 // ignore_for_file: avoid_print
