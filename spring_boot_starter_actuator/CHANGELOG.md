@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.4
 
 - The `isolatesEndpoint` bean: the `isolates` endpoint over HTTP once exposed (`management.endpoints.web.exposure.include=isolates`).
 - The `qps` endpoint (`QpsEndpoint`, `GET /actuator/qps` and `/actuator/qps/now`) of the web starter's debug feature, in the build by the same property (`spring.web.debug.qps.enabled: true`); answered the same by every isolate of a pool.

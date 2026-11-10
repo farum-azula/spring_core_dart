@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.4
 
 - The `isolates` endpoint (`IsolatesEndpoint`): every isolate of the application with its load (busy share, event-loop lag, requests in flight, the process's memory), asked from the application's first isolate, so whichever isolate of a pool takes the request answers them all.
 

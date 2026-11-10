@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.4
 
 - `AutoConfigurationModule(platform:)`: the module is listed under `const bool.fromEnvironment('dart.library.io')` (native) or `'dart.library.js_interop'` (web), together with the condition of its build property when it has one; the proxies of beans only such modules define are under the same condition, so they leave the other platform's build with the module. Compiled with `-DSPRING_ALL_PLATFORMS=true` every such module stays.
 - A module under a condition (not in a release, a platform) keeps its `order`, `before` and `after`: the generated map of the orderings has the same condition.

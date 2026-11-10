@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.4
 
 - `LanguageChangedEvent` names itself (`eventName`), readable in a release build's debug timeline.
 

@@ -19,12 +19,12 @@ Spring Boot's starters work too: `spring-boot-starter-web` brings
 ```yaml
 # A server with a REST API: the web starter alone.
 dependencies:
-  spring_boot_starter_web: ^0.7.3
+  spring_boot_starter_web: ^0.7.4
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.3
-  spring_boot_starter_test: ^0.7.3
+  spring_core_dart_generator: ^0.7.4
+  spring_boot_starter_test: ^0.7.4
   test: ^1.33.0
 ```
 

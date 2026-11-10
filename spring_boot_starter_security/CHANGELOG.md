@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.4
 
 - The modules are only where a server can run (`ModulePlatform.native`): a browser build has none of their code.
 

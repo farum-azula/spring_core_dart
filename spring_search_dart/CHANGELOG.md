@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.4
 
 - `SearchIndexInvalidatedEvent` names itself (`eventName`), readable in a release build.
 

@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.4
 
 - A pool of isolates serves the port (`server.isolates.count`: a number or `auto`, one per core): each isolate runs the whole application with its own beans, the first one (`main`) starts the others (`isolate-1`, …), restarts one that ends unexpectedly and stops them with the context; every start, scaling step and failure is logged. One warning names the beans that keep state per isolate (`IsolateLocalState`: the in-memory sessions). The `IsolateScaler` bean (`scaleTo`, `scaleBy`; in every isolate, the pool itself in the first and a bean that hands the step to it in the others) changes their number while the server runs, an isolate that leaves finishing its requests first (`server.isolates.drain-timeout`); `server.isolates.scaling: auto` lets a policy do it between `min` and `max` (`LagScalingPolicy`: by how late the isolates' event loops run; `scale-up-lag`, `scale-up-after`, `scale-down-after`, `cooldown`; an `IsolateScalingPolicy` bean replaces it).
 - The requests in flight and taken are in the isolate's row of the task manager (`WebServerLoadSource`, `WebServerActivity`).

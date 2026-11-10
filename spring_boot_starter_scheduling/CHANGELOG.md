@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.4
 
 - `spring.task.scheduling.isolates`: with a pool of server isolates the `@Scheduled` methods run in the application's first isolate only (`primary`, the default), or in every isolate (`all`).
 

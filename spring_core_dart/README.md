@@ -75,11 +75,11 @@ The runtime is split into libraries. Import one of them, or
 
 ```yaml
 dependencies:
-  spring_core_dart: ^0.7.3
+  spring_core_dart: ^0.7.4
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.3
+  spring_core_dart_generator: ^0.7.4
 ```
 
 The generator has two options, set in your package's `build.yaml`. They

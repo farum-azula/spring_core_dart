@@ -16,7 +16,7 @@ controllers, which read the annotations, need
 
 ```yaml
 dependencies:
-  spring_web_dart: ^0.7.3
+  spring_web_dart: ^0.7.4
 ```
 
 ## Run it
