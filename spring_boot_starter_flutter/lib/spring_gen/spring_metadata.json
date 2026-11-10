@@ -1300,7 +1300,8 @@
       "type": "DebugDockCustomizer",
       "types": [
         "DebugDockCustomizer",
-        "FlutterAppCustomizer"
+        "FlutterAppCustomizer",
+        "Ordered"
       ],
       "scope": "singleton",
       "primary": false,
@@ -1325,6 +1326,11 @@
           "name": "hiddenWhile",
           "kind": "field",
           "type": "ValueListenable<bool>?"
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
         },
         {
           "name": "overlays",
@@ -2206,7 +2212,8 @@
       "type": "DebugTimelineCustomizer",
       "types": [
         "DebugTimelineCustomizer",
-        "FlutterAppCustomizer"
+        "FlutterAppCustomizer",
+        "Ordered"
       ],
       "scope": "singleton",
       "primary": false,
@@ -2224,6 +2231,11 @@
           "parameters": [
             "FlutterAppSettings app"
           ]
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
         },
         {
           "name": "timeline",
@@ -2246,7 +2258,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 631,
+      "line": 635,
       "injects": [],
       "members": [
         {

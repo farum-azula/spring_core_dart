@@ -287,6 +287,8 @@ _i17.SpringApplication get springApplication => _i17.SpringApplication(
       _i20.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
     if (!const bool.fromEnvironment('dart.vm.product'))
       _i20.springBootStarterFlutterDebugMotionAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i20.springBootStarterFlutterDebugTimelineAutoConfiguration,
     _i21.springBootStarterFlutterNavigationAutoConfiguration,
     _i22.springBootStarterLoggingAutoConfiguration,
   ],
@@ -1131,7 +1133,7 @@ _i17.SpringApplication get springApplication => _i17.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '94c324a3',
+  fingerprint: '673394c9',
 );
 
 /// Starts the application: config files, environment, context, runners
