@@ -19,7 +19,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
-      "line": 129,
+      "line": 137,
       "class": "SupabaseAuthProperties"
     },
     {
@@ -29,7 +29,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
-      "line": 106,
+      "line": 114,
       "class": "SupabaseAuthProperties"
     },
     {
@@ -39,7 +39,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
-      "line": 115,
+      "line": 123,
       "class": "SupabaseAuthProperties"
     },
     {
@@ -49,7 +49,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
-      "line": 121,
+      "line": 129,
       "class": "SupabaseAuthProperties"
     },
     {
@@ -59,7 +59,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
-      "line": 125,
+      "line": 133,
       "class": "SupabaseAuthProperties"
     },
     {
@@ -69,7 +69,7 @@
       "default": [],
       "deprecated": null,
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
-      "line": 111,
+      "line": 119,
       "class": "SupabaseAuthProperties"
     },
     {
@@ -79,7 +79,7 @@
       "default": "30s",
       "deprecated": null,
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
-      "line": 132,
+      "line": 140,
       "class": "SupabaseAuthProperties"
     },
     {
@@ -89,7 +89,7 @@
       "default": [],
       "deprecated": null,
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
-      "line": 174,
+      "line": 182,
       "class": "SupabaseCacheProperties"
     },
     {
@@ -101,6 +101,16 @@
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
       "line": 38,
       "class": "SupabaseProperties"
+    },
+    {
+      "name": "spring.supabase.db.max-rows",
+      "type": "int",
+      "description": "The most rows the REST API returns in one answer: the project's \"Max rows\" (API settings), `max_rows` of the local stack. An answer that long may have been cut there, without any sign of it, so a query that asks for more (or for everything) reads on in further calls, ordered by the id. Set it to the project's value when that one was changed: with a larger number here a cut answer is taken for whole.",
+      "default": 1000,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 105,
+      "class": "SupabaseDbProperties"
     },
     {
       "name": "spring.supabase.db.rls",
@@ -139,7 +149,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
-      "line": 161,
+      "line": 169,
       "class": "SupabaseFunctionsProperties"
     },
     {
@@ -149,7 +159,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
-      "line": 164,
+      "line": 172,
       "class": "SupabaseFunctionsProperties"
     },
     {
@@ -159,7 +169,7 @@
       "default": "rate_limit_acquire",
       "deprecated": null,
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
-      "line": 184,
+      "line": 192,
       "class": "SupabaseRateLimitProperties"
     },
     {
@@ -169,7 +179,7 @@
       "default": "25s",
       "deprecated": null,
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
-      "line": 139,
+      "line": 147,
       "class": "SupabaseRealtimeProperties"
     },
     {
@@ -179,7 +189,7 @@
       "default": "4MB",
       "deprecated": null,
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
-      "line": 146,
+      "line": 154,
       "class": "SupabaseRealtimeProperties"
     },
     {
@@ -189,7 +199,7 @@
       "default": "10s",
       "deprecated": null,
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
-      "line": 142,
+      "line": 150,
       "class": "SupabaseRealtimeProperties"
     },
     {
@@ -209,7 +219,7 @@
       "default": "1h",
       "deprecated": null,
       "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
-      "line": 153,
+      "line": 161,
       "class": "SupabaseStorageProperties"
     },
     {
@@ -263,7 +273,7 @@
         "@ConditionalOnMissingBean(CallTemplates)"
       ],
       "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
-      "line": 158,
+      "line": 164,
       "injects": [],
       "members": [
         {
@@ -311,7 +321,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
-      "line": 210,
+      "line": 216,
       "injects": [],
       "members": [
         {
@@ -395,7 +405,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
-      "line": 199,
+      "line": 205,
       "injects": [],
       "members": [
         {
@@ -485,7 +495,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
-      "line": 186,
+      "line": 192,
       "injects": [],
       "members": [
         {
@@ -540,7 +550,7 @@
         "@ConditionalOnMissingBean(StorageTemplate)"
       ],
       "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
-      "line": 174,
+      "line": 180,
       "injects": [],
       "members": [
         {
@@ -1131,7 +1141,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
-      "line": 236,
+      "line": 242,
       "injects": [],
       "members": [
         {
@@ -1174,7 +1184,7 @@
         "@ConditionalOnMissingBean(CachingConfigurer)"
       ],
       "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
-      "line": 246,
+      "line": 252,
       "injects": [],
       "members": [
         {
@@ -1227,7 +1237,7 @@
         "@ConditionalOnMissingBean(SupabaseCredentials)"
       ],
       "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
-      "line": 59,
+      "line": 64,
       "injects": [],
       "members": [
         {
@@ -1274,7 +1284,7 @@
         "@ConditionalOnMissingBean(PostgrestDataStore)"
       ],
       "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
-      "line": 90,
+      "line": 95,
       "injects": [],
       "members": [
         {
@@ -1412,6 +1422,11 @@
           ]
         },
         {
+          "name": "maxRows",
+          "kind": "field",
+          "type": "int"
+        },
+        {
           "name": "name",
           "kind": "field",
           "type": "String"
@@ -1447,7 +1462,7 @@
         "@ConditionalOnMissingBean(SupabaseHttp)"
       ],
       "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
-      "line": 74,
+      "line": 79,
       "injects": [],
       "members": [
         {
@@ -1537,7 +1552,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
-      "line": 230,
+      "line": 236,
       "injects": [],
       "members": [
         {
@@ -1639,6 +1654,7 @@
       "type": "SupabaseRateLimitStore",
       "types": [
         "SupabaseRateLimitStore",
+        "VerifiableRateLimitStore",
         "RateLimitStore"
       ],
       "scope": "singleton",
@@ -1649,7 +1665,7 @@
         "@ConditionalOnRateLimitStore('procedure', byDefault: _OnRestPath())"
       ],
       "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
-      "line": 108,
+      "line": 114,
       "injects": [],
       "members": [
         {
@@ -1676,6 +1692,12 @@
             "RateLimit limit",
             "{int permits}"
           ]
+        },
+        {
+          "name": "verify",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
         }
       ]
     },
@@ -1790,7 +1812,7 @@
         "@ConditionalOnProperty('spring.supabase.db.rls', havingValue: 'user')"
       ],
       "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
-      "line": 143,
+      "line": 149,
       "injects": [],
       "members": [
         {
@@ -1848,6 +1870,11 @@
       "members": [
         {
           "name": "dataPath",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "dataSourceUrl",
           "kind": "field",
           "type": "String?"
         },

@@ -584,7 +584,10 @@ final class PhoenixChannelSession {
   /// event the server does not answer (`{:noreply, socket}`); completes
   /// when it was handed to the connection, after the join when the
   /// channel is joining. Fails as [push] does when the channel ends
-  /// first.
+  /// first, and with a [TimeoutException] when the channel has not joined
+  /// within the socket's push timeout: the event is then dropped, so a
+  /// server that is away for long does not get every event of the outage
+  /// at once when it is back.
   ///
   /// ```dart
   /// await room.send('typing', {'user': 'ann'});
@@ -893,9 +896,22 @@ final class PhoenixChannelSession {
   void _submit(_Push push) {
     if (_state == PhoenixChannelState.joined) {
       _transmit(push);
-    } else {
-      _buffer.add(push);
+      return;
     }
+    // A push that waits for its reply has its time limit already. One
+    // without a reply gets it here, for its wait in the buffer: without
+    // it the buffer would grow for as long as the channel cannot join.
+    final limit = socket.config.phoenix.pushTimeout;
+    push.timer ??= Timer(limit, () {
+      _buffer.remove(push);
+      push.fail(
+        TimeoutException(
+          '"${push.event}" was not sent on $topic in time',
+          limit,
+        ),
+      );
+    });
+    _buffer.add(push);
   }
 
   void _transmit(_Push push) {
@@ -917,6 +933,9 @@ final class PhoenixChannelSession {
     push.ref = ref;
     if (push.reply != null) {
       _pending[ref] = push;
+    } else {
+      // Nothing more to wait for: the limit was for the buffer.
+      push.timer?.cancel();
     }
     push.sent?.complete();
   }

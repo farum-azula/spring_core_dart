@@ -131,6 +131,92 @@ void main() {
     expect(query(1), 'list_id=eq.l1&select=id&limit=0');
   });
 
+  group('an answer as long as the API returns at most is read on', () {
+    // A table of [total] rows behind an API that returns three at most.
+    void table(int total) =>
+        transport.when(HttpMethod.get, '/rest/v1/todos').respondWith((request) {
+          final query = request.url.queryParameters;
+          final offset = int.parse(query['offset'] ?? '0');
+          final limit = int.parse(query['limit'] ?? '$total');
+          final count = [
+            limit,
+            3,
+            total - offset,
+          ].reduce((a, b) => a < b ? a : b);
+          return HttpResponse(
+            200,
+            headers: HttpHeaders()
+              ..set('Content-Type', 'application/json')
+              ..set('Content-Range', '*/$total'),
+            body: utf8.encode(
+              jsonEncode([
+                for (var i = 0; i < count; i++)
+                  _row(offset + i + 1, 'todo ${offset + i + 1}'),
+              ]),
+            ),
+          );
+        });
+
+    Future<void> withCappedTodos(Future<void> Function(Todos todos) body) =>
+        appRunner(transport, ['spring.supabase.db.max-rows=3']).runAsync((
+          context,
+        ) async {
+          expect(context.startupFailure, isNull);
+          await body(context.getBean<Todos>());
+        });
+
+    test('every row of a table longer than that, ordered by the id', () async {
+      table(8);
+      await withCappedTodos((todos) async {
+        expect((await todos.findAll()).map((t) => t.id), [
+          for (var id = 1; id <= 8; id++) id,
+        ]);
+      });
+      expect(
+        [for (var i = 0; i < 4; i++) query(i)],
+        [
+          '',
+          'order=id',
+          'order=id&offset=3',
+          'order=id&offset=6',
+        ],
+      );
+      expect(transport.requests, hasLength(4));
+    });
+
+    test('an order of the query keeps going first, the id after it', () async {
+      table(4);
+      await withCappedTodos((todos) async {
+        expect(await todos.findByDoneOrderByCreatedAtDesc(false), hasLength(4));
+      });
+      expect(
+        [for (var i = 0; i < 3; i++) query(i)],
+        [
+          'done=eq.false&order=created_at.desc',
+          'done=eq.false&order=created_at.desc,id',
+          'done=eq.false&order=created_at.desc,id&offset=3',
+        ],
+      );
+    });
+
+    test('a shorter answer is whole: one call', () async {
+      table(2);
+      await withCappedTodos((todos) async {
+        expect(await todos.findAll(), hasLength(2));
+      });
+      expect(transport.requests, hasLength(1));
+    });
+
+    test('a page within the most is one call', () async {
+      table(8);
+      await withCappedTodos((todos) async {
+        final found = await todos.findByListId('l1', PageRequest.of(0, 3));
+        expect(found.content, hasLength(3));
+      });
+      expect(query(0), 'list_id=eq.l1&order=id&limit=3');
+    });
+  });
+
   test('count, exists and delete by a condition', () async {
     transport
         .when(HttpMethod.get, '/rest/v1/todos')

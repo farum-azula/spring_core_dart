@@ -300,6 +300,87 @@ void main() {
     await endless.future.timeout(const Duration(seconds: 5));
   });
 
+  group('abort', () {
+    late io.ServerSocket silent;
+    late Completer<void> closed;
+
+    // A server that reads the request and never answers.
+    setUp(() async {
+      silent = await io.ServerSocket.bind(io.InternetAddress.loopbackIPv4, 0);
+      closed = Completer<void>();
+      silent.listen((socket) {
+        void close() {
+          if (!closed.isCompleted) {
+            closed.complete();
+          }
+          socket.destroy();
+        }
+
+        socket.listen((_) {}, onError: (Object _) => close(), onDone: close);
+      });
+    });
+
+    tearDown(() => silent.close());
+
+    test('while waiting for the headers closes the connection', () async {
+      final abort = Completer<void>();
+      final answer = transport.stream(
+        HttpRequest(
+          method: HttpMethod.get,
+          url: Uri.parse('http://127.0.0.1:${silent.port}/'),
+          abort: abort.future,
+        ),
+      );
+      final failure = expectLater(
+        answer,
+        throwsA(
+          isA<HttpTransportException>()
+              .having((e) => e.message, 'message', 'request aborted')
+              .having((e) => e.isTimeout, 'isTimeout', isFalse),
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(closed.isCompleted, isFalse);
+      abort.complete();
+      await failure;
+      await closed.future.timeout(const Duration(seconds: 1));
+    });
+
+    test('given before the connection is open: nothing is sent', () async {
+      await expectLater(
+        transport.send(
+          HttpRequest(
+            method: HttpMethod.get,
+            url: Uri.parse('http://127.0.0.1:${silent.port}/'),
+            abort: Future<void>.value(),
+          ),
+        ),
+        throwsA(
+          isA<HttpTransportException>().having(
+            (e) => e.message,
+            'message',
+            'request aborted',
+          ),
+        ),
+      );
+      await closed.future.timeout(const Duration(seconds: 1));
+    });
+
+    test('after the response has no effect', () async {
+      final abort = Completer<void>();
+      final response = await transport.stream(
+        HttpRequest(
+          method: HttpMethod.get,
+          url: base.resolve('/events'),
+          abort: abort.future,
+        ),
+      );
+      abort.complete();
+      final events = await response.body.transform(const SseDecoder()).toList();
+      expect(events, hasLength(3));
+    });
+  });
+
   test('platformHttpTransport is the dart:io one here', () {
     final platform = platformHttpTransport(
       connectTimeout: const Duration(seconds: 1),

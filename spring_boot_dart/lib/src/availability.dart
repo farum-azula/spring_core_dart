@@ -36,10 +36,11 @@ enum LivenessState implements AvailabilityState {
 /// Whether the application is ready to take requests.
 ///
 /// `SpringApplication` sets it to [acceptingTraffic] once the runners are
-/// done (with `ApplicationReadyEvent`). Code that is busy for a while (a
-/// cache being rebuilt, a migration) publishes [refusingTraffic] and then
-/// [acceptingTraffic] again, so a load balancer sends the requests
-/// elsewhere meanwhile.
+/// done (with `ApplicationReadyEvent`), and to [refusingTraffic] when its
+/// context begins to close, before the lifecycle beans (the web server)
+/// stop. Code that is busy for a while (a cache being rebuilt, a
+/// migration) publishes [refusingTraffic] and then [acceptingTraffic]
+/// again, so a load balancer sends the requests elsewhere meanwhile.
 ///
 /// Spring Boot (Java): `ReadinessState` (`ACCEPTING_TRAFFIC`,
 /// `REFUSING_TRAFFIC`).

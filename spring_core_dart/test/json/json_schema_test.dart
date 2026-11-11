@@ -183,6 +183,63 @@ void main() {
       _valid(schema, '[1, true]');
     });
 
+    test('uniqueItems: what is equal as JSON is a duplicate', () {
+      const schema = {'uniqueItems': true};
+      String? duplicate(String json) =>
+          _problems(schema, json).map((p) => p.split('(').last).firstOrNull;
+      expect(duplicate('[1, 2, 3, 2]'), 'items 1 and 3 are equal)');
+      expect(duplicate('["a", "b", "a"]'), 'items 0 and 2 are equal)');
+      expect(duplicate('[1, 1.0]'), 'items 0 and 1 are equal)');
+      expect(duplicate('[0, -0.0]'), 'items 0 and 1 are equal)');
+      expect(duplicate('[null, 0, null]'), 'items 0 and 2 are equal)');
+      expect(duplicate('[[1, [2, 3]], [1, [2.0, 3]]]'), contains('0 and 1'));
+      expect(
+        duplicate(
+          '[{"a": 1, "b": {"c": [1], "d": null}}, 7, '
+          '{"b": {"d": null, "c": [1.0]}, "a": 1}]',
+        ),
+        'items 0 and 2 are equal)',
+      );
+      // The pair a comparison of every item with every later one finds
+      // first, not the first repeat met.
+      expect(duplicate('["a", "b", "b", "a"]'), 'items 0 and 3 are equal)');
+      expect(duplicate('[1, 1, 1]'), 'items 0 and 1 are equal)');
+      for (final json in [
+        '[]',
+        '[1]',
+        '[1, 2, 3]',
+        '[1, "1", true, [1], {"1": 1}]',
+        '[0, false, null, "", [], {}]',
+        '[1, true]',
+        '[[1, 2], [2, 1]]',
+        '[{"a": 1}, {"a": 2}, {"b": 1}, {"a": 1, "b": 1}]',
+        '[{"a": null}, {}]',
+      ]) {
+        _valid(schema, json);
+      }
+    });
+
+    test('uniqueItems of a large array takes time in its size', () {
+      final schema = JsonSchema.parse('{"uniqueItems": true}');
+      final numbers = [for (var i = 0; i < 50000; i++) i];
+      final objects = [
+        for (var i = 0; i < 50000; i++)
+          {
+            'id': i,
+            'tags': ['t${i % 7}', i],
+          },
+      ];
+      final watch = Stopwatch()..start();
+      expect(schema.validate(numbers).violations, isEmpty);
+      expect(schema.validate(objects).violations, isEmpty);
+      expect(
+        schema.validate([...numbers, 49999.0]).violations.single.message,
+        contains('items 49999 and 50000 are equal'),
+      );
+      // In pairs this is over a billion comparisons, several seconds.
+      expect(watch.elapsed, lessThan(const Duration(seconds: 1)));
+    });
+
     test('contains, minContains, maxContains', () {
       final schema = {
         'contains': {'type': 'string'},

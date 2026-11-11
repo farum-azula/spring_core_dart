@@ -21,45 +21,111 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 final class RateLimit {
   /// [count] permits every [period]; `burst` is the size of the bucket
   /// when it is not [count].
+  ///
+  /// All three must be positive, and [count] and the burst at most
+  /// [maxCount]. A constant cannot check that, so a limit that is not
+  /// valid is refused where it is used: [refillPerSecond], [fullAfter]
+  /// and [TokenBucket] throw an [ArgumentError] ([requireValid]).
   const RateLimit(this.count, this.period, {this._burst});
 
   /// Reads `<count>/<duration>`: `5/1m`, `120/1m`, `10/s`, `1000/1h`,
-  /// `3/500ms`. The duration is written as every duration of the
-  /// configuration (`ms`, `s`, `m`, `h`, `d`; a unit alone is one of it).
-  /// Throws a [FormatException] for anything else, and for a count or a
-  /// duration that is not positive.
+  /// `3/500ms`. The count is decimal digits, 1 to [maxCount]. The
+  /// duration is a number of `ms`, `s`, `m`, `h` or `d`, a year at most; a
+  /// unit alone is one of it. The unit is required: `100/60` would be 100
+  /// every 60 milliseconds, a limit that never limits, where `100/60s` or
+  /// `100/1m` was meant.
+  ///
+  /// Throws a [FormatException] for anything else, and for a burst that
+  /// is not 1 to [maxCount].
   factory RateLimit.parse(String text, {int? burst}) {
+    Never refuse(String why) => throw FormatException(
+      'A rate limit is <count>/<duration>, such as 5/1m or 120/1m: $why',
+      text,
+    );
     final slash = text.indexOf('/');
-    final count = slash < 0
-        ? null
-        : int.tryParse(text.substring(0, slash).trim());
-    var per = slash < 0 ? '' : text.substring(slash + 1).trim();
-    if (per.isNotEmpty && int.tryParse(per[0]) == null) {
-      per = '1$per';
+    if (slash < 0) {
+      refuse('there is no "/"');
     }
-    Duration? period;
-    try {
-      period = per.isEmpty ? null : DurationStyle.parse(per);
-    } on Object {
-      period = null;
+    final counted = text.substring(0, slash).trim();
+    final per = text.substring(slash + 1).trim();
+    if (!_digits.hasMatch(counted)) {
+      refuse('the count is a whole number in decimal digits');
     }
-    if (count == null || count < 1 || period == null) {
-      throw FormatException(
-        'A rate limit is <count>/<duration>, such as 5/1m or 120/1m',
-        text,
+    final count = counted.length > 10 ? 0 : int.parse(counted);
+    if (count < 1 || count > maxCount) {
+      refuse('the count is 1 to $maxCount');
+    }
+    if (_digits.hasMatch(per)) {
+      refuse(
+        'the duration needs a unit (ms, s, m, h, d), '
+        'write $count/${per}s or $count/${per}m',
       );
     }
-    return RateLimit(count, period, burst: burst)._checked(text);
+    final amount = _period.firstMatch(per);
+    if (amount == null) {
+      refuse('the duration is a number and a unit (ms, s, m, h, d)');
+    }
+    final number = amount[1]!.isEmpty ? 1 : int.parse(amount[1]!);
+    final period = switch (amount[2]!.toLowerCase()) {
+      'ms' => Duration(milliseconds: number),
+      's' => Duration(seconds: number),
+      'm' => Duration(minutes: number),
+      'h' => Duration(hours: number),
+      _ => Duration(days: number),
+    };
+    if (period <= Duration.zero || period > _longest) {
+      refuse('the duration is more than nothing and a year at most');
+    }
+    if (burst != null && (burst < 1 || burst > maxCount)) {
+      refuse('the burst is 1 to $maxCount, not $burst');
+    }
+    return RateLimit(count, period, burst: burst);
   }
 
-  RateLimit _checked(String text) {
-    if (period <= Duration.zero || capacity < 1) {
-      throw FormatException(
-        'A rate limit needs a positive duration and burst',
-        text,
+  /// The largest [count] and burst: a thousand million. Beyond it the
+  /// arithmetic of a bucket is no longer exact, and no server serves as
+  /// much.
+  static const maxCount = 1000000000;
+
+  static final _digits = RegExp(r'^[0-9]+$');
+
+  // At most seven digits: no number of days that is read overflows.
+  static final _period = RegExp(
+    r'^([0-9]{0,7})\s*(ms|s|m|h|d)$',
+    caseSensitive: false,
+  );
+
+  static const _longest = Duration(days: 366);
+
+  /// Throws an [ArgumentError] unless the limit can be used: [count] and
+  /// [capacity] from 1 to [maxCount], and a [period] that is positive.
+  ///
+  /// The stores that work a bucket out themselves call it (or read
+  /// [refillPerSecond], which does) before they change anything. A limit
+  /// of nothing, or every no time, has no rate: its bucket would hold
+  /// "not a number" of tokens from then on.
+  void requireValid() {
+    if (count < 1 || count > maxCount) {
+      throw ArgumentError.value(
+        count,
+        'count',
+        'A rate limit counts 1 to $maxCount permits',
       );
     }
-    return this;
+    if (period <= Duration.zero) {
+      throw ArgumentError.value(
+        period,
+        'period',
+        'A rate limit needs a positive period',
+      );
+    }
+    if (capacity < 1 || capacity > maxCount) {
+      throw ArgumentError.value(
+        capacity,
+        'burst',
+        'A rate limit has a burst of 1 to $maxCount',
+      );
+    }
   }
 
   /// The permits added in one [period].
@@ -74,12 +140,16 @@ final class RateLimit {
   /// unless a burst was given.
   int get capacity => _burst ?? count;
 
-  /// The permits added in a second.
-  double get refillPerSecond =>
-      count * Duration.microsecondsPerSecond / period.inMicroseconds;
+  /// The permits added in a second. Throws an [ArgumentError] for a limit
+  /// that is not valid ([requireValid]).
+  double get refillPerSecond {
+    requireValid();
+    return count * Duration.microsecondsPerSecond / period.inMicroseconds;
+  }
 
   /// How long an empty bucket takes to be full again. A key not used for
-  /// that long has a full bucket, so a store may forget it.
+  /// that long has a full bucket, so a store may forget it. Throws an
+  /// [ArgumentError] for a limit that is not valid ([requireValid]).
   Duration get fullAfter =>
       Duration(microseconds: (capacity / refillPerSecond * 1e6).ceil());
 
@@ -217,9 +287,10 @@ final class TokenBucket {
   /// A bucket with [tokens] at [updatedMicros].
   TokenBucket(this.tokens, this.updatedMicros);
 
-  /// A full bucket of [limit] at [nowMicros].
+  /// A full bucket of [limit] at [nowMicros]. Throws an [ArgumentError]
+  /// for a limit that is not valid ([RateLimit.requireValid]).
   TokenBucket.full(RateLimit limit, int nowMicros)
-    : this(limit.capacity.toDouble(), nowMicros);
+    : this((limit..requireValid()).capacity.toDouble(), nowMicros);
 
   /// The tokens in the bucket at [updatedMicros].
   double tokens;
@@ -229,6 +300,10 @@ final class TokenBucket {
 
   /// Fills the bucket for the time since [updatedMicros], then takes
   /// [permits] when they are there. A clock that went back fills nothing.
+  ///
+  /// Throws an [ArgumentError] for a limit that is not valid
+  /// ([RateLimit.requireValid]), before anything changes: the bucket is
+  /// as it was.
   RateLimitDecision tryAcquire(
     RateLimit limit,
     int nowMicros, {
@@ -259,4 +334,40 @@ final class TokenBucket {
       (limit.capacity - tokens) /
           limit.refillPerSecond *
           Duration.microsecondsPerSecond;
+}
+
+/// A [RateLimitStore] that can say, when the application starts, whether
+/// what it keeps its buckets in is there: a table, a database function, a
+/// binding.
+///
+/// Without the check a forgotten migration shows only at the first
+/// request under a limit, as a 503 (`on-store-failure: deny`) or as no
+/// limit at all (`allow`). The web starter calls [verify] once at startup
+/// (`spring.web.rate-limit.verify-store`, on by default).
+///
+/// Differs from Spring: Spring has no rate limiter; Spring Cloud
+/// Gateway's `RedisRateLimiter` checks nothing at startup.
+abstract interface class VerifiableRateLimitStore implements RateLimitStore {
+  /// Completes when the store can count.
+  ///
+  /// Throws a [RateLimitStoreSetupException] when what it needs is not
+  /// there and will not come by itself: the application does not start.
+  /// Any other error means the store could not be asked now (the database
+  /// is down, the network): the start goes on with a warning, and
+  /// `on-store-failure` decides for each request until it answers.
+  Future<void> verify();
+}
+
+/// What a [VerifiableRateLimitStore] needs is missing: the table or the
+/// function of a migration that was not run, a binding that is not
+/// declared. The message says what to do.
+final class RateLimitStoreSetupException implements Exception {
+  /// The setup problem [message] tells.
+  const RateLimitStoreSetupException(this.message);
+
+  /// What is missing, and how to get it.
+  final String message;
+
+  @override
+  String toString() => 'RateLimitStoreSetupException: $message';
 }

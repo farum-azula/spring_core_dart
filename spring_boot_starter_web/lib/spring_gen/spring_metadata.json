@@ -905,7 +905,7 @@
         "@ConditionalOnRateLimiting()"
       ],
       "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
-      "line": 207,
+      "line": 237,
       "injects": [],
       "members": [
         {
@@ -1223,7 +1223,7 @@
         "@ConditionalOnRateLimitStore('memory')"
       ],
       "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
-      "line": 115,
+      "line": 116,
       "injects": [],
       "members": [
         {
@@ -1458,7 +1458,7 @@
         "@ConditionalOnRateLimitStore('primary-isolate', byDefault: OnServerIsolates())"
       ],
       "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
-      "line": 96,
+      "line": 97,
       "injects": [],
       "members": [
         {
@@ -1493,7 +1493,7 @@
         "@ConditionalOnMissingBean(ClientAddressResolver)"
       ],
       "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
-      "line": 129,
+      "line": 130,
       "injects": [],
       "members": [
         {
@@ -1522,7 +1522,7 @@
         "@ConditionalOnRateLimiting()"
       ],
       "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
-      "line": 194,
+      "line": 224,
       "injects": [],
       "members": [
         {
@@ -1568,7 +1568,7 @@
         "@ConditionalOnPrimaryIsolate()"
       ],
       "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
-      "line": 80,
+      "line": 81,
       "injects": [],
       "members": [
         {
@@ -1592,6 +1592,41 @@
       ]
     },
     {
+      "name": "rateLimitStoreVerifier",
+      "type": "RateLimitStoreVerifier",
+      "types": [
+        "RateLimitStoreVerifier",
+        "ApplicationRunner"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnRateLimiting()",
+        "@ConditionalOnProperty('spring.web.rate-limit.verify-store', havingValue: 'true', matchIfMissing: true)",
+        "@ConditionalOnMissingBean(RateLimitStoreVerifier)"
+      ],
+      "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
+      "line": 164,
+      "injects": [],
+      "members": [
+        {
+          "name": "run",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ApplicationArguments args"
+          ]
+        },
+        {
+          "name": "store",
+          "kind": "field",
+          "type": "RateLimitStore"
+        }
+      ]
+    },
+    {
       "name": "rateLimitWebMvcConfigurer",
       "type": "RateLimitWebMvcConfigurer",
       "types": [
@@ -1606,7 +1641,7 @@
         "@ConditionalOnRateLimiting()"
       ],
       "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
-      "line": 237,
+      "line": 267,
       "injects": [],
       "members": [
         {
@@ -1663,7 +1698,7 @@
         "@_OnRateLimitingNeverSet()"
       ],
       "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
-      "line": 249,
+      "line": 279,
       "injects": [],
       "members": [
         {
@@ -1695,7 +1730,7 @@
         "@ConditionalOnRateLimiting()"
       ],
       "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
-      "line": 222,
+      "line": 252,
       "injects": [],
       "members": [
         {
@@ -1954,7 +1989,7 @@
         "@ConditionalOnMissingBean(RequestRateLimiter)"
       ],
       "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
-      "line": 153,
+      "line": 183,
       "injects": [],
       "members": [
         {

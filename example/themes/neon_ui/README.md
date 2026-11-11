@@ -53,7 +53,7 @@ All of the look is in this one commented file:
 | `background` | the picture with a veil, drifting, and the `stage` screen |
 
 The widgets read it as `context.theme.*`, typed, from the library's own
-generated `lib/spring_gen/theme.spring.dart` (a `part` of
+generated `lib/spring_gen/theme.spring.keys.dart` (a `part` of
 `lib/spring_gen/spring_auto_configuration.spring.dart`). The generated keys are the
 library's: an app has its own `context.theme` for its own YAML and never sees
 these. A theme used with these widgets has to hold the keys they read, so
@@ -112,7 +112,7 @@ python3 tool/neon_background.py assets/images/neon-background.jpg   # numpy, pil
 
 ```bash
 flutter pub get
-dart run build_runner build     # lib/spring_gen/theme.spring.dart, lib/spring_gen/spring_auto_configuration.spring.dart (checked in)
+dart run build_runner build     # lib/spring_gen/theme.spring.keys.dart, lib/spring_gen/spring_auto_configuration.spring.dart (checked in)
 flutter test
 flutter analyze --fatal-infos
 ```

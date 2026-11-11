@@ -127,6 +127,7 @@ final class CsrfCookieHttpTransport implements HttpTransport {
       timeout: request.timeout,
       readTimeout: request.readTimeout,
       followRedirects: request.followRedirects,
+      abort: request.abort,
     );
   }
 }

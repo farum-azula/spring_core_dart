@@ -258,6 +258,25 @@ void main() {
     });
   });
 
+  group('a stored JSON string is the value, not a document', () {
+    final converter = EntityConverter();
+
+    test('a BigInt written as a string keeps every digit', () {
+      const text = '123456789012345678901234567890';
+      expect(
+        converter.fromJsonTree(text, const ClassType<BigInt>()),
+        BigInt.parse(text),
+      );
+    });
+
+    test('the text of a document is still read as the document', () {
+      expect(
+        converter.fromJsonTree('[1,2]', const ListType<int>(ClassType<int>())),
+        [1, 2],
+      );
+    });
+  });
+
   group('SqlGenerator', () {
     final doc = _doc(docIntrospection());
     final converter = EntityConverter();

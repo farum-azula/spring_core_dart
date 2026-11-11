@@ -249,7 +249,7 @@ class JsonProperties {
   JsonDatatypeProperties datatype = JsonDatatypeProperties();
 
   /// The JSON Schemas of the app: the build writes a class for each of
-  /// their objects (`lib/spring_gen/json_schemas.spring.dart`) and keeps a
+  /// their objects (`lib/spring_gen/json_schemas.spring.classes.dart`) and keeps a
   /// remote one as a resource; the `jsonSchemaRegistry` bean has them.
   List<JsonSchemaProperties> schemas = [];
 

@@ -2060,21 +2060,21 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i28.springBootStarterSecurityAutoConfiguration:
           const _i1.AutoConfigurationModule(
-            after: ['springBootStarterOauth2ClientAutoConfiguration'],
+            after: [r'springBootStarterOauth2ClientAutoConfiguration'],
           ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i28.springBootStarterSecurityOAuth2ClientAutoConfiguration:
           const _i1.AutoConfigurationModule(
-            before: ['springBootStarterOauth2ClientAutoConfiguration'],
+            before: [r'springBootStarterOauth2ClientAutoConfiguration'],
           ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i29.springBootStarterWebRateLimitAutoConfiguration:
           const _i1.AutoConfigurationModule(
             after: [
-              'springBootStarterDataAutoConfiguration',
-              'springBootStarterSupabaseAutoConfiguration',
+              r'springBootStarterDataAutoConfiguration',
+              r'springBootStarterSupabaseAutoConfiguration',
             ],
           ),
   },
@@ -2153,6 +2153,10 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
       ),
     if (const bool.hasEnvironment('SPRING_SUPABASE_DB'))
       'SPRING_SUPABASE_DB': const String.fromEnvironment('SPRING_SUPABASE_DB'),
+    if (const bool.hasEnvironment('SPRING_SUPABASE_DB_MAXROWS'))
+      'SPRING_SUPABASE_DB_MAXROWS': const String.fromEnvironment(
+        'SPRING_SUPABASE_DB_MAXROWS',
+      ),
     if (const bool.hasEnvironment('SPRING_SUPABASE_DB_RLS'))
       'SPRING_SUPABASE_DB_RLS': const String.fromEnvironment(
         'SPRING_SUPABASE_DB_RLS',
@@ -2294,6 +2298,10 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
       ),
     if (const bool.hasEnvironment('spring.supabase.db'))
       'spring.supabase.db': const String.fromEnvironment('spring.supabase.db'),
+    if (const bool.hasEnvironment('spring.supabase.db.max-rows'))
+      'spring.supabase.db.max-rows': const String.fromEnvironment(
+        'spring.supabase.db.max-rows',
+      ),
     if (const bool.hasEnvironment('spring.supabase.db.rls'))
       'spring.supabase.db.rls': const String.fromEnvironment(
         'spring.supabase.db.rls',
@@ -2364,7 +2372,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'f3f9ff94',
+  fingerprint: '56c85bd8',
 );
 
 /// Starts the application: config files, environment, context, runners

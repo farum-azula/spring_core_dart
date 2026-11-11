@@ -747,6 +747,50 @@ void main() {
     expect(typing[4], {'user': 'ann'});
   });
 
+  test('send while the channel cannot join: fails after the push timeout '
+      'and is not sent later', () async {
+    final socket = socketOf(pushTimeout: _ms * 40);
+    final room = socket.channel('room:42');
+    room.join().ignore();
+    final server = await PhoenixServer.next(sockets);
+    // The server does not answer the join.
+    await server.take('phx_join');
+    final watch = Stopwatch()..start();
+    final dropped = [
+      for (var n = 0; n < 3; n++) room.send('typing', {'n': n}),
+    ];
+    for (final sent in dropped) {
+      await expectLater(
+        sent,
+        throwsA(
+          isA<TimeoutException>().having(
+            (e) => e.message,
+            'message',
+            '"typing" was not sent on room:42 in time',
+          ),
+        ),
+      );
+    }
+    expect(watch.elapsedMilliseconds, greaterThanOrEqualTo(35));
+    expect(watch.elapsedMilliseconds, lessThan(1000));
+
+    // The channel joins at last: only what is still waiting is sent.
+    final join = await server.take('phx_join');
+    final waiting = room.send('typing', {'n': 9});
+    server.reply(join);
+    await waiting;
+    await pump();
+    expect(
+      [for (final frame in server.framesOf('typing')) frame[4]],
+      [
+        {'n': 9},
+      ],
+    );
+    // Its time limit ended with the send.
+    await Future<void>.delayed(_ms * 60);
+    expect(room.state, PhoenixChannelState.joined);
+  });
+
   test('the first wire format end to end', () async {
     final socket = socketOf(serializer: const PhoenixSerializerV1());
     final room = socket.channel('room:42');

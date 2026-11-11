@@ -140,7 +140,8 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_synchroniza
 /// the writes of a transaction when it commits (in the order it made
 /// them, a row written twice once, with its last state), nothing of one
 /// that rolls back, the rows a cascade removed or changed too. The
-/// criteria are applied by the store itself. [clear] reports nothing.
+/// criteria are applied by the store itself. [clear] reports the delete of
+/// every committed row it removes.
 ///
 /// Logging, under `spring.data.memory.InMemoryDataStore`: each operation at
 /// debug (the table and the counts), the transaction statements (`begin`,
@@ -213,10 +214,22 @@ final class InMemoryDataStore
   int get waitingCount => _locks.waiting;
 
   /// Removes every committed row of every table and starts the ids again
-  /// from 1.
+  /// from 1. Each removed row is reported to [changes] as a delete.
   void clear() {
+    final removed = <_CommittedChange>[
+      for (final MapEntry(key: table, value: _Table(:rows)) in _tables.entries)
+        if (_listeners.containsKey(table))
+          for (final MapEntry(key: id, value: before) in rows.entries)
+            (table: table, id: id, before: before, after: null),
+    ];
     _tables.clear();
     _log.debug('$name: cleared');
+    // After the rows are gone, so a listener that reads finds none.
+    for (final change in removed) {
+      for (final listener in [...?_listeners[change.table]]) {
+        listener(change);
+      }
+    }
   }
 
   // --------------------------------------------------------- transactions

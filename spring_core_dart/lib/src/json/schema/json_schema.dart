@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:spring_core_dart/src/json/json_exception.dart';
@@ -710,17 +711,11 @@ final class _Evaluator {
       fail('maxItems', 'must have at most ${_n(limit, 'item')}');
     }
     if (schema['uniqueItems'] == true) {
-      outer:
-      for (var i = 0; i < items.length; i++) {
-        for (var j = i + 1; j < items.length; j++) {
-          if (_equal(items[i], items[j])) {
-            fail(
-              'uniqueItems',
-              'must not have duplicate items (items $i and $j are equal)',
-            );
-            break outer;
-          }
-        }
+      if (_duplicate(items) case (final i, final j)) {
+        fail(
+          'uniqueItems',
+          'must not have duplicate items (items $i and $j are equal)',
+        );
       }
     }
     if (schema.containsKey('contains')) {
@@ -1031,6 +1026,34 @@ final class _Evaluator {
 
   static String _show(Object? value) =>
       value is String ? value : jsonEncode(value);
+
+  // The first two equal items of [items], or `null` when all differ: the
+  // pair that comparing every item with every later one finds first.
+  //
+  // One pass over a hash table of the items, so the time grows with the
+  // size of the array and not with its square: the array is a request's,
+  // and 20,000 items compared in pairs keep the isolate for a second.
+  static (int, int)? _duplicate(List<Object?> items) {
+    final seen = HashMap<Object?, int>(equals: _equal, hashCode: _hash);
+    (int, int)? found;
+    for (var j = 0; j < items.length; j++) {
+      final i = seen.putIfAbsent(items[j], () => j);
+      if (i != j && (found == null || i < found.$1)) {
+        found = (i, j);
+      }
+    }
+    return found;
+  }
+
+  // A hash that is the same for what [_equal] calls equal: 1 and 1.0, and
+  // objects with their keys in any order.
+  static int _hash(Object? value) => switch (value) {
+    final List<Object?> items => Object.hashAll(items.map(_hash)),
+    final Map<Object?, Object?> members => Object.hashAllUnordered(
+      members.entries.map((e) => Object.hash(e.key, _hash(e.value))),
+    ),
+    _ => value.hashCode,
+  };
 
   static bool _equal(Object? a, Object? b) {
     if (a is List<Object?> && b is List<Object?>) {

@@ -112,6 +112,33 @@ void main() {
       expect(cookies['headers'], isNot(contains('set-cookie')));
     });
 
+    test('what cannot be a request is answered 400, not a failure', () async {
+      // A Host that would add a user, a path or a query to the address.
+      for (final host in ['a@evil.example', 'evil.example/x?', 'a b']) {
+        final result = await client.invoke(
+          lambdaEvent('GET', '/hello', headers: {'host': host}),
+        );
+        expect(result['statusCode'], 400, reason: host);
+      }
+      // A method the runtime refuses to make a request of.
+      final trace = lambdaEvent('GET', '/hello');
+      ((trace['requestContext']! as Map)['http']! as Map)['method'] = 'TRACE';
+      expect((await client.invoke(trace))['statusCode'], 400);
+      // And the function lives.
+      expect(
+        (await client.invoke(lambdaEvent('GET', '/hello')))['statusCode'],
+        200,
+      );
+    });
+
+    test('a "?" in a path given decoded stays in the path', () async {
+      final event = lambdaEvent('GET', '/files/a')
+        ..['rawPath'] = '/files/a?name=x';
+      final result = await client.invoke(event);
+      // The segment, not a query: the file is named with the mark.
+      expect(result['body'], 'file a?name=x');
+    });
+
     test('the cookies of the event are the Cookie header', () async {
       final event = lambdaEvent(
         'POST',

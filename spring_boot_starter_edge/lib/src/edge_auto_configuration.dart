@@ -121,6 +121,7 @@ final edgeAutoConfiguration = <BeanDefinition<Object>>[
       return D1RateLimitStore(
         () => bindings.d1(binding),
         table: settings.table,
+        environmentLoaded: () => bindings.loaded,
       );
     },
   ),

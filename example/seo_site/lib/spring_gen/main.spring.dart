@@ -23,8 +23,8 @@ import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i8;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
 
-part 'messages.spring.dart';
-part 'theme.spring.dart';
+part 'messages.spring.keys.dart';
+part 'theme.spring.keys.dart';
 
 /// Beans found by `@ComponentScan` in `lib/`.
 _i1.BeanModule get $application => _i1.BeanModule(
@@ -399,7 +399,7 @@ _i4.SpringApplication get springApplication => _i4.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'eb711cbe',
+  fingerprint: '903f7024',
 );
 
 /// Starts the application: config files, environment, context, runners

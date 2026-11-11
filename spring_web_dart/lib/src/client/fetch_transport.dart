@@ -30,6 +30,9 @@ import 'package:spring_web_dart/src/http_headers.dart';
 /// - `timeout` (the whole exchange) and `readTimeout` (each wait for
 ///   data) abort the request through an `AbortController`, and an
 ///   [HttpTransportException] with `isTimeout` is thrown.
+/// - When `abort` completes before the status and headers arrive, the
+///   request is aborted the same way and an [HttpTransportException] is
+///   thrown.
 /// - Non-2xx responses are ordinary responses. Network failures,
 ///   including a request the browser blocks for CORS, throw an
 ///   [HttpTransportException].
@@ -162,6 +165,18 @@ class FetchHttpTransport implements HttpTransport {
     final controller = _AbortController();
     final timer = _Deadline(request.timeout, () => controller.abort());
     final wait = _Deadline(request.readTimeout, () => controller.abort());
+    // The caller gave the request up (HttpRequest.abort) before the
+    // response arrived; later the body's subscription aborts it.
+    var aborted = false;
+    var answered = false;
+    unawaited(
+      request.abort?.then((_) {
+        if (!answered) {
+          aborted = true;
+          controller.abort();
+        }
+      }),
+    );
     try {
       final headers = JSObject();
       request.headers.toMap().forEach(
@@ -186,6 +201,7 @@ class FetchHttpTransport implements HttpTransport {
               credentials: credentials.value.toJS,
             );
       final response = await _fetch(request.url.toString().toJS, init).toDart;
+      answered = true;
       wait.cancel();
       final responseHeaders = HttpHeaders();
       response.headers.forEach(
@@ -204,6 +220,8 @@ class FetchHttpTransport implements HttpTransport {
             : wait.timedOut
             ? 'no data within ${request.readTimeout!.inMilliseconds} ms '
                   '(read timeout)'
+            : aborted
+            ? 'request aborted'
             : 'request failed: $error',
         request: request,
         cause: error,

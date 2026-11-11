@@ -395,34 +395,34 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i15.springBootStarterSecurityAutoConfiguration:
           const _i8.AutoConfigurationModule(
-            after: ['springBootStarterOauth2ClientAutoConfiguration'],
+            after: [r'springBootStarterOauth2ClientAutoConfiguration'],
           ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i15.springBootStarterSecurityOAuth2ClientAutoConfiguration:
           const _i8.AutoConfigurationModule(
-            before: ['springBootStarterOauth2ClientAutoConfiguration'],
+            before: [r'springBootStarterOauth2ClientAutoConfiguration'],
           ),
     _i16.springBootStarterSupabaseAutoConfiguration:
         const _i8.AutoConfigurationModule(
           after: [
-            'springBootStarterFeignAutoConfiguration',
-            'springBootStarterWebsocketAutoConfiguration',
-            'springBootStarterDataAutoConfiguration',
-            'springSecurityCoreAutoConfiguration',
+            r'springBootStarterFeignAutoConfiguration',
+            r'springBootStarterWebsocketAutoConfiguration',
+            r'springBootStarterDataAutoConfiguration',
+            r'springSecurityCoreAutoConfiguration',
           ],
         ),
     _i16.springBootStarterSupabaseDataAutoConfiguration:
         const _i8.AutoConfigurationModule(
-          before: ['springBootStarterDataAutoConfiguration'],
+          before: [r'springBootStarterDataAutoConfiguration'],
         ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i16.springBootStarterSupabaseServerAutoConfiguration:
           const _i8.AutoConfigurationModule(
             before: [
-              'springBootStarterSecurityAutoConfiguration',
-              'springBootStarterSecurityOAuth2ClientAutoConfiguration',
+              r'springBootStarterSecurityAutoConfiguration',
+              r'springBootStarterSecurityOAuth2ClientAutoConfiguration',
             ],
           ),
     if ((const bool.fromEnvironment('dart.library.io') ||
@@ -430,8 +430,8 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
       _i17.springBootStarterWebRateLimitAutoConfiguration:
           const _i8.AutoConfigurationModule(
             after: [
-              'springBootStarterDataAutoConfiguration',
-              'springBootStarterSupabaseAutoConfiguration',
+              r'springBootStarterDataAutoConfiguration',
+              r'springBootStarterSupabaseAutoConfiguration',
             ],
           ),
   },
@@ -575,7 +575,7 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'c86a4ae0',
+  fingerprint: '835624e4',
 );
 
 /// Starts the application: config files, environment, context, runners

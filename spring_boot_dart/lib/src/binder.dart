@@ -854,10 +854,7 @@ final class BindContext {
   ) {
     final left = <String>{};
     final position = name.numberOfElements;
-    for (final candidate in source.names) {
-      if (!name.isAncestorOf(candidate)) {
-        continue;
-      }
+    for (final candidate in source.descendantsOf(name)) {
       final index = int.tryParse(candidate.getElement(position));
       if (index != null && index >= bound) {
         left.add('${name.append('[$index]')}');
@@ -944,10 +941,7 @@ final class BindContext {
     final entries = <Object?, Object?>{};
     final seen = <String>{};
     for (final source in scope) {
-      for (final candidate in source.names) {
-        if (!name.isAncestorOf(candidate)) {
-          continue;
-        }
+      for (final candidate in source.descendantsOf(name)) {
         final entryName = _entryName(name, candidate, kind);
         final key = [
           for (
@@ -1024,8 +1018,34 @@ final class BindSource {
   /// The value of [name] in any relaxed spelling (`app.max-size`,
   /// `app.maxSize`, `APP_MAXSIZE`, ...), or `null` when the source does
   /// not have it.
-  Object? valueOf(ConfigurationPropertyName name) =>
-      ConfigurationPropertySources.getProperty(source, name);
+  ///
+  /// For OS environment variables, a dash of [name] may also be written
+  /// as an underscore at any element, list elements included:
+  /// `APP_MAIN_SERVERS_0_READ_TIMEOUT` is `app.main-servers[0].read-timeout`.
+  /// The spelling without the underscore (`APP_MAINSERVERS_0_READTIMEOUT`)
+  /// wins when both are set.
+  Object? valueOf(ConfigurationPropertyName name) {
+    final value = ConfigurationPropertySources.getProperty(source, name);
+    if (value != null || source is! SystemEnvironmentPropertySource) {
+      return value;
+    }
+    final words = _words(name);
+    if (words == null) {
+      return null;
+    }
+    for (final candidate in names) {
+      if (_spelled(name, words, candidate) == candidate.numberOfElements) {
+        final found = ConfigurationPropertySources.getProperty(
+          source,
+          candidate,
+        );
+        if (found != null) {
+          return found;
+        }
+      }
+    }
+    return null;
+  }
 
   /// Whether the source has a property below [name], which tells whether
   /// a nested object at [name] is worth binding.
@@ -1033,39 +1053,121 @@ final class BindSource {
   /// For OS environment variables, the dashes of [name] also count as
   /// dots, so `APP_MAIN_SERVER_HOST` is below `app.main-server`, as with
   /// Spring Boot's legacy check in `SystemEnvironmentPropertyMapper`.
-  bool containsDescendantOf(ConfigurationPropertyName name) {
-    if (names.any(name.isAncestorOf)) {
-      return true;
+  bool containsDescendantOf(ConfigurationPropertyName name) =>
+      descendantsOf(name).isNotEmpty;
+
+  /// The properties of the source below [name], each named as a
+  /// descendant of [name]; empty when the source cannot list its names.
+  ///
+  /// Maps and lists find their entries and indexes with it. For OS
+  /// environment variables a dash of [name] may be written as an
+  /// underscore, which the variable's own name reads as one more
+  /// element: `APP_MAIN_SERVERS_0_HOST` is `app.main.servers[0].host`
+  /// there, and `app.main-servers[0].host` here, so that it is found
+  /// below `app.main-servers` and [valueOf] reads it back.
+  Iterable<ConfigurationPropertyName> descendantsOf(
+    ConfigurationPropertyName name,
+  ) sync* {
+    final words = source is SystemEnvironmentPropertySource
+        ? _words(name)
+        : null;
+    for (final candidate in names) {
+      if (name.isAncestorOf(candidate)) {
+        yield candidate;
+        continue;
+      }
+      if (words == null) {
+        continue;
+      }
+      final spelled = _spelled(name, words, candidate);
+      if (spelled == null || spelled >= candidate.numberOfElements) {
+        continue;
+      }
+      final below = _below(name, candidate, spelled);
+      if (below != null) {
+        yield below;
+      }
     }
-    if (source is! SystemEnvironmentPropertySource) {
-      return false;
-    }
-    final legacy = _legacyName(name);
-    return legacy != null && names.any(legacy.isAncestorOf);
   }
 
-  // `app.main-server[0]` → `app.main.server[0]`; `null` without dashes.
-  static ConfigurationPropertyName? _legacyName(
-    ConfigurationPropertyName name,
-  ) {
-    var dashed = false;
-    final parts = <String>[];
+  // The words of each element of [name] that has a dash (`main-server`
+  // → `main`, `server`), by the element's position; `null` when no
+  // element has one, so every spelling is found by the name itself.
+  static Map<int, List<String>>? _words(ConfigurationPropertyName name) {
+    Map<int, List<String>>? words;
     for (var i = 0; i < name.numberOfElements; i++) {
       if (name.isIndexed(i)) {
-        parts.add('[${name.getElement(i)}]');
         continue;
       }
       final element = name.getElement(
         i,
         form: ConfigurationPropertyNameForm.dashed,
       );
-      dashed = dashed || element.contains('-');
-      parts.add(
-        '${parts.isEmpty ? '' : '.'}'
-        '${element.split('-').where((part) => part.isNotEmpty).join('.')}',
-      );
+      if (!element.contains('-')) {
+        continue;
+      }
+      final parts = [
+        for (final part in element.split('-'))
+          if (part.isNotEmpty) part,
+      ];
+      if (parts.length > 1) {
+        (words ??= {})[i] = parts;
+      }
     }
-    return dashed ? ConfigurationPropertyName.ofIfValid(parts.join()) : null;
+    return words;
+  }
+
+  // How many of the first elements of [candidate], the name of an
+  // environment variable, spell the whole of [name]: an element of
+  // [name] is one element of the variable (`MAINSERVER`) or, with dashes,
+  // one for each of its [words] (`MAIN_SERVER`). `null` when the variable
+  // is neither [name] nor below it.
+  static int? _spelled(
+    ConfigurationPropertyName name,
+    Map<int, List<String>> words,
+    ConfigurationPropertyName candidate,
+  ) {
+    const uniform = ConfigurationPropertyNameForm.uniform;
+    final length = candidate.numberOfElements;
+    var at = 0;
+    for (var i = 0; i < name.numberOfElements; i++) {
+      if (at >= length) {
+        return null;
+      }
+      if (candidate.getElement(at, form: uniform) ==
+          name.getElement(i, form: uniform)) {
+        at++;
+        continue;
+      }
+      final parts = words[i];
+      if (parts == null || at + parts.length > length) {
+        return null;
+      }
+      for (final part in parts) {
+        if (candidate.getElement(at++, form: uniform) != part) {
+          return null;
+        }
+      }
+    }
+    return at;
+  }
+
+  // [name] followed by the elements of [candidate] from [from]; `null`
+  // when one of them cannot be written in a canonical name.
+  static ConfigurationPropertyName? _below(
+    ConfigurationPropertyName name,
+    ConfigurationPropertyName candidate,
+    int from,
+  ) {
+    final text = StringBuffer('$name');
+    for (var i = from; i < candidate.numberOfElements; i++) {
+      final element = candidate.getElement(
+        i,
+        form: ConfigurationPropertyNameForm.dashed,
+      );
+      text.write(candidate.isIndexed(i) ? '[$element]' : '.$element');
+    }
+    return ConfigurationPropertyName.ofIfValid('$text');
   }
 
   /// The names of every property of the source; empty when the source

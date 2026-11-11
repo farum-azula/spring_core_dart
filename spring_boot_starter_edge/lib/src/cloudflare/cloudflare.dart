@@ -35,6 +35,11 @@ abstract interface class CloudflareBindings {
   /// Whether the Worker has a binding named [binding].
   bool has(String binding);
 
+  /// Whether the Worker's environment is there: the platform gives it
+  /// with a request (or a scheduled run), so before the first one no
+  /// binding can be told from a missing one.
+  bool get loaded;
+
   /// The KV namespace bound as [binding]. Throws a [StateError] when the
   /// Worker has no such binding.
   KvNamespace kv(String binding);
@@ -84,9 +89,13 @@ abstract interface class D1Database {
 /// returning`), atomic in the database and on its clock: the statement of
 /// the data starter's SQLite store. The table ([table], `rate_limit` by
 /// default) is created before the first statement.
-final class D1RateLimitStore implements RateLimitStore {
+final class D1RateLimitStore implements VerifiableRateLimitStore {
   /// A store in the database [database] gives when it is first asked.
-  D1RateLimitStore(this.database, {this.table = 'rate_limit'}) {
+  D1RateLimitStore(
+    this.database, {
+    this.table = 'rate_limit',
+    this.environmentLoaded,
+  }) {
     if (!RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(table)) {
       throw ArgumentError.value(table, 'table', 'Not the name of a table');
     }
@@ -97,6 +106,10 @@ final class D1RateLimitStore implements RateLimitStore {
 
   /// The table of the buckets.
   final String table;
+
+  /// Whether the Worker's environment is there (`CloudflareBindings.loaded`):
+  /// [verify] asks nothing before it is. Not given: it is.
+  final bool Function()? environmentLoaded;
 
   Future<void>? _created;
 
@@ -117,6 +130,35 @@ create table if not exists $table (
     );
     // Buckets that are full again.
     await db.execute('delete from $table where expires_at < $_now');
+  }
+
+  /// Asks for the database and creates the table. A binding the Worker
+  /// does not have is a [RateLimitStoreSetupException]; a database that
+  /// does not answer is thrown as it is. Before the Worker's environment
+  /// is there (a start without a request) nothing can be asked: the first
+  /// acquisition then finds out.
+  @override
+  Future<void> verify() async {
+    if (!(environmentLoaded?.call() ?? true)) {
+      return;
+    }
+    final D1Database db;
+    try {
+      db = database();
+    } on StateError catch (error) {
+      throw RateLimitStoreSetupException(
+        'The rate limiter has no D1 database (${error.message}). Declare '
+        'the binding of spring.edge.cloudflare.rate-limit.database under '
+        '[[d1_databases]] in wrangler.toml; the store creates its table '
+        'itself',
+      );
+    }
+    try {
+      await (_created ??= _create(db));
+    } on Object {
+      _created = null;
+      rethrow;
+    }
   }
 
   @override

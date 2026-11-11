@@ -421,8 +421,8 @@ lib/
   main.dart                 # yours, with @ComponentScan (or @SpringBootApplication)
   spring_gen/
     main.spring.dart        # generated: the beans; it has the `part` lines
-    theme.spring.dart       # generated: part of main.spring.dart, context.theme
-    messages.spring.dart    # generated: part of main.spring.dart, context.messages
+    theme.spring.keys.dart       # generated: part of main.spring.dart, context.theme
+    messages.spring.keys.dart    # generated: part of main.spring.dart, context.messages
 ```
 
 Import `spring_gen/main.spring.dart` in your widgets to get `context.theme` and
@@ -481,14 +481,14 @@ file).
   with any other key it is a group.
 
 ```dart
-// lib/spring_gen/theme.spring.dart (generated; part of main.spring.dart)
+// lib/spring_gen/theme.spring.keys.dart (generated; part of main.spring.dart)
 extension SpringThemeKeys on BuildContext {
   AppTheme get theme => AppTheme._(ThemeKeyReader(SpringTheme.of(this)));
 }
 final class AppThemeSpacing {
   double get m => _values.spacing('m');
 }
-// lib/spring_gen/messages.spring.dart (generated)
+// lib/spring_gen/messages.spring.keys.dart (generated)
 extension SpringMessageKeys on BuildContext {
   AppMessages get messages => AppMessages._(this);
 }
@@ -518,7 +518,7 @@ that is neither built in nor declared in the package or a dependency (its
 between loaders of one kind stop the build, with a "did you mean".
 
 ```dart
-// lib/spring_gen/theme.spring.dart (generated)
+// lib/spring_gen/theme.spring.keys.dart (generated)
 final class DoorsLoaderProps {
   const DoorsLoaderProps._(this.values);
   final LoaderValues values;
@@ -782,7 +782,7 @@ names; applications do not import it.
 | `springFlutterWebBuilder` | the `web_dev_config.yaml` builder, no options | `spring_flutter_web`: `auto_apply: dependents`, `build_to: source`, `$package$` → no declared output (writes `web_dev_config.yaml` itself) |
 | `springFlutterSeoBuilder` | the site's pages, no options | `spring_flutter_seo`: `auto_apply: dependents`, `build_to: source`, `$package$` → no declared output (writes the pages into `web/` itself, after `spring_metadata` and `spring_flutter_page_loader`) |
 | `springFlutterDeepLinksBuilder` | the deep links, no options | `spring_flutter_deep_links`: `auto_apply: dependents`, `build_to: source`, `$package$` → no declared output (writes its blocks into `Info.plist`, `Runner.entitlements`, `AndroidManifest.xml` and the domain files itself) |
-| `springFlutterKeysBuilder` | the typed keys of the theme and messages, no options | `spring_flutter_keys`: `auto_apply: dependents`, `build_to: source`, `$package$` → `lib/spring_gen/theme.spring.dart`, `lib/spring_gen/messages.spring.dart` |
+| `springFlutterKeysBuilder` | the typed keys of the theme and messages, no options | `spring_flutter_keys`: `auto_apply: dependents`, `build_to: source`, `$package$` → `lib/spring_gen/theme.spring.keys.dart`, `lib/spring_gen/messages.spring.keys.dart` |
 | `springMetadataBuilder` | the metadata for editors, no options | `spring_metadata`: `auto_apply: dependents`, `build_to: source`, `$package$` → `lib/spring_gen/spring_metadata.json` (before `spring_flutter_seo`) |
 
 ## Dependencies

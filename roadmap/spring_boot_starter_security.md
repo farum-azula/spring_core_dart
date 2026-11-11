@@ -95,6 +95,14 @@ Left:
 
 ## Next
 
+- **A build warning for a bean that remembers the user**: the generator
+  knows every bean and its scope, so a singleton with a field that is
+  not `final` and holds an `Authentication`, a `SecurityContext`, a `Jwt`
+  or a `UserDetails` is the mistake that hands one user's identity to
+  the next request, found before the application runs. It does not find
+  a user kept in a `Map` or as text: `withMockUsersAtOnce` is for those.
+  The run-time half is done (`ProgramWideAuthenticationMonitor`, the
+  `securityContext` health indicator).
 - **Remove `pointycastle`** (third-party, [docs/dependencies.md](../docs/dependencies.md#pointycastle-third-party-to-be-removed)):
   rewrite `lib/src/jwt/signature_primitives.dart` on a Dart team (or
   Google) package once one verifies RSA and ECDSA without third-party

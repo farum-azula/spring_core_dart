@@ -26,7 +26,7 @@ import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 import 'package:static_site_app/src/pages.dart' as _i5;
 import 'package:static_site_app/src/server_info.dart' as _i1;
 
-part 'theme.spring.dart';
+part 'theme.spring.keys.dart';
 
 /// `NetworkConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
@@ -331,7 +331,7 @@ _i6.SpringApplication get springApplication => _i6.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '56aee4dc',
+  fingerprint: '2d5929d8',
 );
 
 /// Starts the application: config files, environment, context, runners

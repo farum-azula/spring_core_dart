@@ -89,8 +89,9 @@ describes how the tests show it.
 - The host, the operating system and the Dart VM. Among the VM's
   behaviours: `dart:io`'s HTTP server accepts a request with both
   `Content-Length` and `Transfer-Encoding: chunked` and reads the body
-  as chunked, where RFC 9112 asks to refuse it (Tomcat answers 400).
-  Behind a proxy that reads such a request by its `Content-Length`,
+  as chunked, where RFC 9112 asks to refuse it (Tomcat answers 400);
+  the starter answers 400 only in the spellings where `dart:io` still
+  shows both headers. Behind a proxy that reads such a request by its `Content-Length`,
   requests can be smuggled past the proxy's rules; use a proxy that
   refuses or normalizes them (most do). It also parses the request
   target before the server sees it, with no raw form left: a raw `\`

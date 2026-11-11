@@ -15,8 +15,8 @@
 /// - A test file with `@SpringBootTest` classes gets a
 ///   `test/spring_gen/<name>.test.spring.dart` file with `runSpringTests()`.
 /// - A Flutter app with `spring.flutter.theme.*` properties or message
-///   files in `lib/resources/` gets `lib/spring_gen/theme.spring.dart` and
-///   `lib/spring_gen/messages.spring.dart`, parts of the `@ComponentScan`
+///   files in `lib/resources/` gets `lib/spring_gen/theme.spring.keys.dart` and
+///   `lib/spring_gen/messages.spring.keys.dart`, parts of the `@ComponentScan`
 ///   library's `.spring.dart` with the typed `context.theme` and
 ///   `context.messages`.
 /// - Every package with Spring code gets `lib/spring_gen/spring_metadata.json`:
@@ -309,8 +309,8 @@ Builder springFlutterDeepLinksBuilder(BuilderOptions options) =>
 Builder springFlutterPageLoaderBuilder(BuilderOptions options) =>
     WebPageLoaderBuilder();
 
-/// Creates the builder of the typed keys, `lib/spring_gen/theme.spring.dart`
-/// and `lib/spring_gen/messages.spring.dart` ([FlutterKeysBuilder]),
+/// Creates the builder of the typed keys, `lib/spring_gen/theme.spring.keys.dart`
+/// and `lib/spring_gen/messages.spring.keys.dart` ([FlutterKeysBuilder]),
 /// registered in `build.yaml` as `spring_flutter_keys`.
 ///
 /// For an app that depends on `spring_boot_starter_flutter` it writes the
@@ -331,7 +331,7 @@ Builder springFlutterPageLoaderBuilder(BuilderOptions options) =>
 Builder springFlutterKeysBuilder(BuilderOptions options) =>
     FlutterKeysBuilder();
 
-/// The builder of `lib/spring_gen/json_schemas.spring.dart`: the classes
+/// The builder of `lib/spring_gen/json_schemas.spring.classes.dart`: the classes
 /// of the JSON Schemas of `spring.json.schemas` ([JsonSchemasBuilder]).
 Builder springJsonSchemasBuilder(BuilderOptions options) =>
     JsonSchemasBuilder();

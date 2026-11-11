@@ -50,8 +50,8 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       _i6.springBootStarterWebRateLimitAutoConfiguration:
           const _i3.AutoConfigurationModule(
             after: [
-              'springBootStarterDataAutoConfiguration',
-              'springBootStarterSupabaseAutoConfiguration',
+              r'springBootStarterDataAutoConfiguration',
+              r'springBootStarterSupabaseAutoConfiguration',
             ],
           ),
   },
@@ -171,7 +171,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'e293c44b',
+  fingerprint: 'e5b4e25d',
 );
 
 /// Starts the application: config files, environment, context, runners

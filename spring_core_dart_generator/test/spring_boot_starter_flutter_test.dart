@@ -204,7 +204,13 @@ Future<PackageConfig> _packageConfig() async {
 }
 
 /// Builds [beans] (a library of `pkg` under the scan).
-Future<TestBuilderResult> _build(String beans) async {
+Future<TestBuilderResult> _build(String beans) => _buildSources({
+  'pkg|lib/src/beans.dart': _scan,
+  'pkg|lib/src/app.dart': '$_header$beans',
+});
+
+/// Builds [sources] next to the stubs.
+Future<TestBuilderResult> _buildSources(Map<String, Object> sources) async {
   final readerWriter = TestReaderWriter(
     rootPackage: 'pkg',
     flattenOutput: true,
@@ -212,11 +218,7 @@ Future<TestBuilderResult> _build(String beans) async {
   await readerWriter.testing.loadIsolateSources();
   return await testBuilder(
     SpringBuilder(),
-    {
-      'pkg|lib/src/beans.dart': _scan,
-      'pkg|lib/src/app.dart': '$_header$beans',
-      ..._stubs,
-    },
+    {...sources, ..._stubs},
     rootPackage: 'pkg',
     readerWriter: readerWriter,
     packageConfig: await _packageConfig(),
@@ -315,6 +317,85 @@ class FogLoader extends ThemeLoaderWidget<LoaderValues> {
             "ThemeLoaderKinds.register<LoaderValues>(r'neon-fog', "
             'widget: FogLoader());',
           ),
+        ),
+      );
+    });
+
+    test('a typed kind in a nested @ComponentScan is a build error that '
+        'says where to declare it; one of LoaderValues builds', () async {
+      const nested = r'''
+import 'package:spring_core_dart/spring_core_dart.dart';
+import 'package:pkg/spring_gen/src/loaders/loaders.spring.dart';
+
+@ComponentScan()
+final BeanModule loaderBeans = $loaderBeans;
+''';
+      Future<TestBuilderResult> build(String loader) => _buildSources({
+        'pkg|lib/src/beans.dart': _scan,
+        'pkg|lib/src/loaders/loaders.dart': nested,
+        'pkg|lib/src/loaders/doors.dart': '$_header$loader',
+      });
+      final typed = await build('''
+@ThemeLoaderKind('doors')
+class DoorsLoader extends ThemeLoaderPainter<DoorsLoaderProps> {
+  @override
+  void paint(Canvas canvas, Size size, LoaderFrame<DoorsLoaderProps> frame) {}
+}
+''');
+      expect(
+        typed.errors.join('\n'),
+        allOf(
+          contains("@ThemeLoaderKind('doors') on DoorsLoader"),
+          contains('DoorsLoaderProps'),
+          contains('lib/src/beans.dart'),
+          contains('lib/src/loaders/loaders.dart'),
+          contains('LoaderValues'),
+        ),
+      );
+      expect(
+        typed.outputs.where(
+          (o) => o.path == 'lib/spring_gen/src/loaders/loaders.spring.dart',
+        ),
+        isEmpty,
+      );
+      final plain = await build('''
+@ThemeLoaderKind('doors')
+class DoorsLoader extends ThemeLoaderPainter<LoaderValues> {
+  @override
+  void paint(Canvas canvas, Size size, LoaderFrame<LoaderValues> frame) {}
+}
+''');
+      expect(plain.errors, isEmpty);
+      expect(
+        _normalize(
+          plain.readerWriter.testing.readString(
+            plain.outputs.singleWhere(
+              (o) => o.path == 'lib/spring_gen/src/loaders/loaders.spring.dart',
+            ),
+          ),
+        ),
+        _has(
+          "ThemeLoaderKinds.register<LoaderValues>(r'doors', "
+          'painter: DoorsLoader());',
+        ),
+      );
+    });
+
+    test('a typed kind whose name is no string literal is a build error: '
+        'the typed keys read the annotation as written', () async {
+      expect(
+        await _errors('''
+const doors = 'doors';
+
+@ThemeLoaderKind(doors)
+class DoorsLoader extends ThemeLoaderPainter<DoorsLoaderProps> {
+  @override
+  void paint(Canvas canvas, Size size, LoaderFrame<DoorsLoaderProps> frame) {}
+}
+'''),
+        allOf(
+          contains("@ThemeLoaderKind('doors') on DoorsLoader"),
+          contains('string literal'),
         ),
       );
     });

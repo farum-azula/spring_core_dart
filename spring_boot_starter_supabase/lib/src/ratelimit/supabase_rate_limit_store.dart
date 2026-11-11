@@ -33,7 +33,7 @@ import 'package:spring_boot_starter_supabase/src/supabase_credentials.dart';
 ///
 /// Spring (Java): Spring Cloud Gateway's `RedisRateLimiter` runs a Lua
 /// script in Redis the same way: the arithmetic next to the data.
-final class SupabaseRateLimitStore implements RateLimitStore {
+final class SupabaseRateLimitStore implements VerifiableRateLimitStore {
   /// A store that calls [function] of [store] as the service role of
   /// [credentials]. Throws an [ArgumentError] when [function] is no
   /// function name.
@@ -59,6 +59,36 @@ final class SupabaseRateLimitStore implements RateLimitStore {
 
   /// The name of the database function.
   final String function;
+
+  /// The key of the acquisition [verify] makes: a bucket of its own.
+  static const verifyKey = 'spring:verify';
+
+  /// Calls the function once, for a bucket of its own ([verifyKey]). A
+  /// function (or its table) the project does not have, one that answers
+  /// something else, or a service role that may not call it, is a
+  /// [RateLimitStoreSetupException] with the migration to run. A project
+  /// that cannot be reached is thrown as it is.
+  @override
+  Future<void> verify() async {
+    String setup(Object error) =>
+        'The rate limiter cannot call the database function $function of '
+        'the Supabase project ($error). Run sql/rate_limit.sql of '
+        'spring_boot_starter_supabase as a migration of the project (it '
+        'creates the table and the function, for the service role only), '
+        'or name the function with spring.supabase.rate-limit.function; '
+        'the store needs spring.supabase.service-role-key';
+    try {
+      await tryAcquire(verifyKey, const RateLimit(1, Duration(seconds: 1)));
+    } on InvalidDataAccessResourceUsageException catch (error) {
+      throw RateLimitStoreSetupException(setup(error.message));
+    } on PermissionDeniedDataAccessException catch (error) {
+      throw RateLimitStoreSetupException(setup(error.message));
+    } on InvalidDataAccessApiUsageException catch (error) {
+      throw RateLimitStoreSetupException(setup(error.message));
+    } on StateError catch (error) {
+      throw RateLimitStoreSetupException(setup(error.message));
+    }
+  }
 
   @override
   Future<RateLimitDecision> tryAcquire(

@@ -371,9 +371,11 @@ the interface in one message. So does a missing or wrong URL, an unknown
   name of the method called, so one interface serves every room; a topic
   without one needs no parameters. `${...}` in the topic and the URL are
   resolved from the `Environment` at startup. Each topic is one channel:
-  joined on its first listener or push, left when its last listener
-  cancels or `leave` is called. A topic that was only pushed to stays
-  joined until `leave`.
+  joined on its first listener or push, and left by `leave` or once it
+  stayed unused, with no listener and no push on its way, for the push
+  timeout (`phoenix.push-timeout`). So pushing to many rooms does not
+  keep a channel per room, and a client that pushes now and then keeps
+  its channel between two pushes.
 - **One connection.** Interfaces with the same name and address share a
   socket. It connects when the first topic is joined and closes when the
   last one is left, and when the application stops.

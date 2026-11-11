@@ -947,7 +947,48 @@ As the code behaves today:
   `UserDetailsService` bean do.
 - With only `issuer-uri`, `jws-algorithms` is ignored (see above).
 
+## An authentication that outlives its request
+
+Every request runs in a security context of its own, which ends with
+it. Code that runs outside a request has none unless it opens one: a
+`@Scheduled` method, a timer, a listener of a stream opened at startup.
+An authentication it sets
+(`SecurityContextHolder.getContext().authentication = ...`) goes to the
+one context of the whole program and stays there: everything else
+outside a request then acts as that user.
+
+- **The log.** Each time it happens from a new place in the code, a WARN
+  on `spring.security.context.ProgramWideAuthentication` names the place
+  and the kind of authentication (never the user). Nothing is refused;
+  an application that means it (one system user for all the background
+  work) sets that logger to `error`.
+- **The health.** With `management.health.securityContext.enabled=true`,
+  `/actuator/health` has `securityContext`, always `UP`, with
+  `programWideAuthentication` (whether there is one now) and
+  `setOutsideRequests` (how many times since the start). It is off by
+  default: the health of an application is Spring Boot's unless it asks
+  for more.
+- **The fix** is a scope for the work:
+
+  ```dart
+  await SecurityContextHolder.runWithContext(
+    () => reports.sendFor(user),
+    SecurityContextImpl(authentication),
+  );
+  ```
+
+What neither sees is what is no authentication any more: a user's rows
+in a cache, a result in a field. For those, test with requests of
+several users at the same time: `withMockUsersAtOnce` of
+`package:spring_boot_starter_security/testing.dart`
+([spring_security_core](../spring_security_core/README.md#one-user-never-sees-anothers)).
+
 ## Differences from Spring Security
+
+- `ProgramWideAuthenticationMonitor` and `SecurityContextHealthIndicator`
+  (see above) have no counterpart in Spring Security or Spring Boot. The
+  indicator is off unless `management.health.securityContext.enabled` is
+  `true`.
 
 Checked by sending the same requests to this starter and to Spring
 Security 7.1 ([tool/security_reference](../tool/security_reference/README.md),

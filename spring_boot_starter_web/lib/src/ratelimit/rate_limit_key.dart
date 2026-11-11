@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
@@ -89,8 +90,37 @@ abstract interface class RateLimitKeyResolver {
   bool beforeAuthentication(String key);
 
   /// Who [request] is counted as under [key]; `null` to count it by the
-  /// client's address.
+  /// client's address. Throws a [RateLimitKeyException] when the key
+  /// itself is at fault, whatever the request.
   FutureOr<RateLimitSubject?> resolve(String key, RateLimitRequest request);
+}
+
+/// The error of a rule key that cannot give a value because of how it is
+/// written, not because of the request: an expression that reads a
+/// property nothing has.
+///
+/// A [RateLimitKeyResolver] throws it from `resolve`. The limiter then
+/// counts the request by the client's address, as for a key without a
+/// value, and says so once per rule at WARN on `spring.web.ratelimit`: a
+/// rule that silently counts by something else than it says is a limit
+/// nobody has. A value that is only missing in one request (a header the
+/// client did not send, no user) is no error: `resolve` answers `null`.
+///
+/// ```dart
+/// @override
+/// RateLimitSubject? resolve(String key, RateLimitRequest request) =>
+///     throw const RateLimitKeyException('no tenant table is configured');
+/// ```
+final class RateLimitKeyException implements Exception {
+  /// A key at fault for the reason [message], which must not hold a
+  /// value of the request: it is logged.
+  const RateLimitKeyException(this.message);
+
+  /// What is wrong with the key.
+  final String message;
+
+  @override
+  String toString() => 'RateLimitKeyException: $message';
 }
 
 /// The key `ip`: the client's address ([RateLimitRequest.address]),
@@ -138,16 +168,23 @@ final class UserRateLimitKeyResolver implements RateLimitKeyResolver {
 
 /// A key written as a SpEL expression in `#{...}`, after authentication.
 ///
-/// The expression reads `request` (its `path`, `method`, `remoteAddress`),
-/// `headers` (a map, names in lower case), `principal` and
+/// The expression reads `request` (its `path`, `method`, `remoteAddress`,
+/// `headers`), `headers` (a map of the request's headers, whose names
+/// are found in any case, as HTTP has them), `principal` and
 /// `authentication` (the authenticated user, `null` without one: write
 /// `authentication?.name`), `address` (the client's address), `method`
-/// and `path`; properties of `@Introspected` classes can be read. A
-/// result of `null` or an empty text, and an expression that fails on a
-/// missing value, count the request by its address.
+/// and `path`; properties of `@Introspected` classes can be read.
+///
+/// A result of `null` or an empty text, and an expression that fails on
+/// a missing value (a header the request does not have, no user), count
+/// the request by its address: that is what a key without a value means.
+/// An expression that fails for another reason (it reads a property or
+/// calls a method that does not exist) throws a [RateLimitKeyException]:
+/// the request is counted by its address too, and the limiter warns once
+/// for the rule.
 ///
 /// ```yaml
-/// key: "#{headers['x-api-key']}"
+/// key: "#{request.headers['X-Api-Key']}"
 /// ```
 ///
 /// ```dart
@@ -190,18 +227,55 @@ final class ExpressionRateLimitKeyResolver implements RateLimitKeyResolver {
     Object? value;
     try {
       value = _expression(key).getValue(context);
-    } on Object catch (error) {
+    } on SpelEvaluationException catch (error) {
+      if (!_missingValue.contains(error.messageCode) &&
+          !_missingHeader(error)) {
+        throw RateLimitKeyException(_reason(error));
+      }
       // The value of the key is not logged: it may name a user.
       _log.debug(
         () =>
             'A rate limit key expression gave no value '
-            '(${error.runtimeType}): counted by address',
+            '(${error.messageCode.name}): counted by address',
       );
       return null;
+    } on Object catch (error) {
+      throw RateLimitKeyException('${error.runtimeType}');
     }
     final text = value?.toString() ?? '';
     return text.isEmpty ? null : RateLimitSubject('key', text);
   }
+
+  // The failures of a request without the value: something is read from
+  // a null. Every other failure is the expression's own.
+  static const Set<SpelMessage> _missingValue = {
+    SpelMessage.propertyOrFieldNotReadableOnNull,
+    SpelMessage.methodCallOnNullObjectNotAllowed,
+    SpelMessage.cannotIndexIntoNullValue,
+  };
+
+  // `headers.name` of a header the request does not have: a map has no
+  // property of a key it does not hold. The request is without the
+  // value, as with `headers['name']`; the expression is not at fault.
+  static bool _missingHeader(SpelEvaluationException error) =>
+      error.messageCode == SpelMessage.propertyOrFieldNotReadable &&
+      error.inserts.lastOrNull == _Headers;
+
+  // The failures whose message names only what the expression names (a
+  // property, a method, a type): safe to log. Of the others only the
+  // code is given, as their message may quote a value of the request.
+  static const Set<SpelMessage> _named = {
+    SpelMessage.propertyOrFieldNotReadable,
+    SpelMessage.methodNotFound,
+    SpelMessage.functionNotDefined,
+    SpelMessage.typeNotFound,
+    SpelMessage.indexingNotSupportedForType,
+  };
+
+  static String _reason(SpelEvaluationException error) =>
+      _named.contains(error.messageCode)
+      ? error.simpleMessage
+      : error.messageCode.name;
 
   static final _rootAccessor = FunctionPropertyAccessor<_Root>(
     getters: {
@@ -221,6 +295,7 @@ final class ExpressionRateLimitKeyResolver implements RateLimitKeyResolver {
       'method': (request) => request.method.value,
       'remoteAddress': (request) => request.remoteAddress,
       'principal': (request) => request.principal,
+      'headers': (request) => _Headers(request.headers),
     },
   );
 
@@ -234,8 +309,23 @@ final class _Root {
 
   final RateLimitRequest request;
 
-  late final Map<String, String> headers = {
-    for (final name in request.request.headers.names)
-      name.toLowerCase(): request.request.headers[name] ?? '',
-  };
+  late final headers = _Headers(request.request.headers);
+}
+
+// The headers of a request as the map an expression reads: a name is
+// found in any case (`headers['X-Api-Key']`, `headers['x-api-key']`),
+// as HTTP header names are, and also as a property (`headers.host`).
+final class _Headers extends UnmodifiableMapBase<String, String> {
+  _Headers(this._headers);
+
+  final HttpHeaders _headers;
+
+  @override
+  Iterable<String> get keys => _headers.names;
+
+  @override
+  String? operator [](Object? key) => key is String ? _headers[key] : null;
+
+  @override
+  bool containsKey(Object? key) => key is String && _headers.contains(key);
 }

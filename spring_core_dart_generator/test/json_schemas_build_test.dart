@@ -66,7 +66,7 @@ Future<TestBuilderResult> _classes(Map<String, Object> sources) async {
 String _part(TestBuilderResult result) =>
     result.readerWriter.testing.readString(
       result.outputs.singleWhere(
-        (o) => o.path == 'lib/spring_gen/json_schemas.spring.dart',
+        (o) => o.path == 'lib/spring_gen/json_schemas.spring.classes.dart',
       ),
     );
 
@@ -118,7 +118,7 @@ void main() {
         (o) => o.path == 'lib/spring_gen/main.spring.dart',
       ),
     );
-    expect(module, contains("part 'json_schemas.spring.dart';"));
+    expect(module, contains("part 'json_schemas.spring.classes.dart';"));
     expect(
       module,
       contains(
@@ -157,11 +157,31 @@ void main() {
     expect(_part(result), contains('class User {'));
   });
 
+  test('a schema of resources: changed between two builds of one process '
+      '(build_runner watch) gives new classes; the remote one is downloaded '
+      'once', () async {
+    final remote = _remote('watch');
+    final first = await _classes(_sources(remote));
+    expect(_part(first), contains('class Purchase {'));
+    final second = await _classes({
+      ..._sources(remote),
+      'pkg|lib/resources/schemas/order.json': _order.replaceAll(
+        'Purchase',
+        'Invoice',
+      ),
+    });
+    final part = _part(second);
+    expect(part, contains('class Invoice {'));
+    expect(part, isNot(contains('class Purchase {')));
+    expect(part, contains('class User {'));
+    expect(fetched, [Uri.parse(remote)]);
+  });
+
   test('no spring.json.schemas: nothing is written', () async {
     final result = await _classes({'pkg|lib/main.dart': _main});
     expect(
       result.outputs.where(
-        (o) => o.path == 'lib/spring_gen/json_schemas.spring.dart',
+        (o) => o.path == 'lib/spring_gen/json_schemas.spring.classes.dart',
       ),
       isEmpty,
     );

@@ -26,7 +26,8 @@ const fetchContextAttribute = 'spring.edge.fetchContext';
 /// - an error nobody handled is a 500 without details, logged;
 /// - a response is complete (with its `Content-Length`) unless the
 ///   handler flushed it or wrote a stream: then the body is sent while it
-///   is produced (server-sent events, downloads);
+///   is produced (server-sent events, downloads), and no faster than the
+///   client takes it;
 /// - a `HEAD` request gets the headers of the answer without its body.
 ///
 /// What the platform does instead of it: TLS, HTTP/2, compression,
@@ -120,7 +121,15 @@ final class FetchWebServer implements WebServer, WebServerActivity {
       if (response.isCommitted) {
         response.abort(error);
       } else {
-        await response.problem(HttpStatus.internalServerError, null);
+        try {
+          await response.problem(HttpStatus.internalServerError, null);
+        } on Object {
+          // What the handler set cannot be sent either: an answer without
+          // any of it. Nothing may escape from here: an uncaught error
+          // ends the whole instance on some platforms.
+          response.reset();
+          await response.problem(HttpStatus.internalServerError, null);
+        }
       }
     } finally {
       try {
@@ -286,6 +295,8 @@ final class FetchServerHttpResponse implements ServerHttpResponse {
   final _committed = Completer<FetchResponse>();
   final _done = Completer<void>();
   StreamController<Uint8List>? _stream;
+  // Completed when the platform asks for more of the body.
+  Completer<void>? _wanted;
   var _closed = false;
   var _bodiless = false;
 
@@ -320,27 +331,33 @@ final class FetchServerHttpResponse implements ServerHttpResponse {
   // fail here, before anything is sent, and the header is dropped so the
   // error answer that follows can be written.
   void _checkHeaders() {
+    // Every header and cookie that cannot be sent is dropped before the
+    // first of them is reported: the error answer that follows is then
+    // written at the first try, whatever else was wrong.
+    FormatException? problem;
     for (final name in headers.names.toList()) {
       if (!_isToken(name)) {
         headers.remove(name);
-        throw FormatException('Invalid response header name "$name"');
+        problem ??= FormatException('Invalid response header name "$name"');
+        continue;
       }
-      for (final value in headers.getAll(name)) {
-        if (!_isFieldValue(value)) {
-          headers.remove(name);
-          // The value is not shown: it may be a secret.
-          throw FormatException(
-            'Invalid value of the response header "$name": only visible '
-            'US-ASCII characters, spaces and tabs can be sent',
-          );
-        }
+      if (!headers.getAll(name).every(_isFieldValue)) {
+        headers.remove(name);
+        // The value is not shown: it may be a secret.
+        problem ??= FormatException(
+          'Invalid value of the response header "$name": only visible '
+          'US-ASCII characters, spaces and tabs can be sent',
+        );
       }
     }
     for (final cookie in _cookies.toList()) {
       if (!_isFieldValue(cookie.toString())) {
         _cookies.remove(cookie);
-        throw FormatException('Invalid cookie "${cookie.name}"');
+        problem ??= FormatException('Invalid cookie "${cookie.name}"');
       }
+    }
+    if (problem != null) {
+      throw problem;
     }
   }
 
@@ -402,9 +419,12 @@ final class FetchServerHttpResponse implements ServerHttpResponse {
     }
     final (status, out) = _head(null);
     final controller = StreamController<Uint8List>(
+      onListen: _want,
+      onResume: _want,
       onCancel: () {
         // The client went away: nothing more is wanted.
         _closed = true;
+        _want();
         if (!_done.isCompleted) {
           _done.complete();
         }
@@ -420,10 +440,38 @@ final class FetchServerHttpResponse implements ServerHttpResponse {
       FetchResponse(status, out, stream: silent ? null : controller.stream),
     );
     if (silent) {
-      // Nobody reads it: what is written is dropped.
+      // Nobody reads it, and nobody can say they went away: the response
+      // is over now, so a writer that waits for its end (an event stream)
+      // stops, and what is still written is dropped.
       controller.stream.drain<void>().ignore();
+      _closed = true;
+      if (!_done.isCompleted) {
+        _done.complete();
+      }
     }
     return controller;
+  }
+
+  void _want() {
+    final wanted = _wanted;
+    _wanted = null;
+    if (wanted != null && !wanted.isCompleted) {
+      wanted.complete();
+    }
+  }
+
+  // Completes when the platform has taken what was written and asks for
+  // more: a client that reads slowly holds the writer back here, and the
+  // body is not kept in the memory of the instance meanwhile.
+  Future<void> _taken() {
+    final stream = _stream;
+    if (stream == null ||
+        _closed ||
+        stream.isClosed ||
+        (stream.hasListener && !stream.isPaused)) {
+      return Future.value();
+    }
+    return (_wanted ??= Completer<void>()).future;
   }
 
   @override
@@ -448,6 +496,7 @@ final class FetchServerHttpResponse implements ServerHttpResponse {
   Future<void> flush() async {
     if (!_closed) {
       _streaming();
+      await _taken();
     }
   }
 
@@ -463,6 +512,7 @@ final class FetchServerHttpResponse implements ServerHttpResponse {
           break;
         }
         controller.add(chunk is Uint8List ? chunk : Uint8List.fromList(chunk));
+        await _taken();
       }
     } on Object catch (error, stackTrace) {
       if (!controller.isClosed) {

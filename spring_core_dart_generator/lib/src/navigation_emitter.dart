@@ -288,7 +288,11 @@ String _routeIdentifier(String name, ScreenRouteModel screen) {
       '${part[0].toUpperCase()}${part.substring(1)}',
   ].join();
   final className = screen.element.name ?? '';
-  if (identifier.isEmpty || RegExp('^[0-9]').hasMatch(identifier)) {
+  // A reserved word names no constant, and a private name no parameter of
+  // `to()`.
+  if (identifier.isEmpty ||
+      RegExp('^[0-9_]').hasMatch(identifier) ||
+      DartNames.isReserved(identifier)) {
     throw InvalidGenerationSource(
       'The value "$name" of the screen $className makes no Dart name for its '
       'constant; rename it.',

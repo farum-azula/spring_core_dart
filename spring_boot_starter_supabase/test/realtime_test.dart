@@ -8,6 +8,7 @@ import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
 import 'realtime_support.dart';
+import 'support.dart';
 
 const _ms = Duration(milliseconds: 1);
 
@@ -1197,15 +1198,19 @@ void main() {
   });
 
   group('the access token', () {
-    test('a change of the login is sent to every joined channel, '
-        'without joining again; a logout sends the anon key', () async {
+    test('a new token of the same user is sent to every joined '
+        'channel, without joining again', () async {
+      final tokens = [
+        for (var n = 1; n <= 2; n++) unsignedToken({'sub': 'ann', 'iat': n}),
+      ];
+      login.token = tokens.first;
       realtime.channel('a').broadcast('x').listen(null);
       realtime.channel('b').broadcast('x').listen(null);
       final server = await RealtimeServer.next(sockets);
       final joins = [await server.acceptJoin(), await server.acceptJoin()];
-      expect(RealtimeServer.tokenOf(joins.first), 'anon-key');
+      expect(RealtimeServer.tokenOf(joins.first), tokens.first);
 
-      login.signIn('user-token-1');
+      login.signIn(tokens.last);
       final first = [
         await server.take('access_token'),
         await server.take('access_token'),
@@ -1220,45 +1225,120 @@ void main() {
       expect(
         [for (final frame in first) frame['payload']],
         [
-          {'access_token': 'user-token-1'},
-          {'access_token': 'user-token-1'},
+          {'access_token': tokens.last},
+          {'access_token': tokens.last},
         ],
       );
       expect(first.first['join_ref'], joins.first['ref']);
 
       // The same token again: nothing to send.
-      login.signIn('user-token-1');
+      login.signIn(tokens.last);
       await pump(10);
       expect(server.framesOf('access_token'), hasLength(2));
-
-      login.signOut();
-      final last = await server.take('access_token');
-      expect(last['payload'], {'access_token': 'anon-key'});
-      await pump(10);
-      expect(server.framesOf('access_token'), hasLength(4));
       expect(server.framesOf('phx_join'), hasLength(2));
       expect(server.framesOf('phx_leave'), isEmpty);
     });
 
-    test('a channel that is not joined yet gets the new token with '
-        'its join, not twice', () async {
+    test('another user, and nobody after a logout: the channel is joined '
+        "again with the new token, and nothing of the user before's "
+        'arrives', () async {
+      final ann = unsignedToken({'sub': 'ann'});
+      final bob = unsignedToken({'sub': 'bob'});
+      void accept(RealtimeServer server, Map<String, Object?> join) {
+        final asked =
+            RealtimeServer.configOf(join)['postgres_changes']! as List<Object?>;
+        server.reply(
+          join,
+          response: {
+            'postgres_changes': [
+              for (final subscription in asked)
+                {...subscription! as Map<String, Object?>, 'id': 7},
+            ],
+          },
+        );
+      }
+
+      final rows = <Object?>[];
+      login.token = ann;
+      realtime
+          .channel('db')
+          .postgresChanges(table: 'todos')
+          .listen((change) => rows.add(change.record['id']));
+      final server = await RealtimeServer.next(sockets);
+      expect(RealtimeServer.tokenOf(await server.acceptJoin(ids: [7])), ann);
+      server.change('db', [7], 'INSERT', record: {'id': 'of ann'});
+      await pump();
+
+      login.signIn(bob, name: 'bob');
+      // The leave first: the server ends what it sends for Ann.
+      await server.take('phx_leave');
+      final asBob = await server.take('phx_join');
+      expect(RealtimeServer.tokenOf(asBob), bob);
+      // Still on its way when the join arrives: a row Ann may read.
+      server.change('db', [7], 'INSERT', record: {'id': 'of ann, late'});
+      await pump();
+      accept(server, asBob);
+      await pump();
+      server.change('db', [7], 'INSERT', record: {'id': 'of bob'});
+      await pump();
+      expect(rows, ['of ann', 'of bob']);
+
+      login.signOut();
+      await server.take('phx_leave');
+      final asNobody = await server.take('phx_join');
+      expect(RealtimeServer.tokenOf(asNobody), 'anon-key');
+      server.change('db', [7], 'INSERT', record: {'id': 'of bob, late'});
+      await pump();
+      accept(server, asNobody);
+      await pump();
+      server.change('db', [7], 'INSERT', record: {'id': 'public'});
+      await pump();
+      expect(rows, ['of ann', 'of bob', 'public']);
+      // A token is never sent to a channel joined as someone else.
+      expect(server.framesOf('access_token'), isEmpty);
+      expect(server.framesOf('phx_join'), hasLength(3));
+    });
+
+    test('a login that changes while a channel is being joined reaches '
+        'it right after the join: the same user as a token, another as a '
+        'new join', () async {
+      final ann = [
+        for (var n = 1; n <= 2; n++) unsignedToken({'sub': 'ann', 'iat': n}),
+      ];
+      final bob = unsignedToken({'sub': 'bob'});
+      login.token = ann.first;
       realtime.channel('a').broadcast('x').listen(null);
       final server = await RealtimeServer.next(sockets);
       final join = await server.take('phx_join');
-      login.signIn('user-token-1');
+      login.signIn(ann.last);
       await pump(10);
-      expect(server.framesOf('access_token'), isEmpty);
       // The join was sent with the old token: the new one follows it.
-      expect(RealtimeServer.tokenOf(join), 'anon-key');
+      expect(server.framesOf('access_token'), isEmpty);
+      expect(RealtimeServer.tokenOf(join), ann.first);
       server.reply(
         join,
         response: {'postgres_changes': <Object?>[]},
       );
-      await pump();
-      await realtime.refreshAuth();
-      expect(server.framesOf('access_token').single['payload'], {
-        'access_token': 'user-token-1',
-      });
+      final frame = await server.take('access_token');
+      expect(frame['payload'], {'access_token': ann.last});
+      await pump(10);
+      expect(server.framesOf('access_token'), hasLength(1));
+
+      // Bob signs in while the channel is joined again after a crash.
+      server.send('a', 'phx_error', const <String, Object?>{});
+      final again = await server.take('phx_join');
+      expect(RealtimeServer.tokenOf(again), ann.last);
+      login.signIn(bob, name: 'bob');
+      await pump(10);
+      server.reply(
+        again,
+        response: {'postgres_changes': <Object?>[]},
+      );
+      await server.take('phx_leave');
+      expect(RealtimeServer.tokenOf(await server.acceptJoin()), bob);
+      await pump(10);
+      expect(server.framesOf('access_token'), hasLength(1));
+      expect(server.framesOf('phx_join'), hasLength(3));
     });
 
     test('a token that was refreshed reaches the channels at the next '

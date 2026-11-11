@@ -2496,7 +2496,7 @@ from the `SpringThemes` bean:
 
 The string keys above fail at run time when a property is renamed. With the
 generator (`dart run build_runner build`) the Flutter app gets
-`lib/spring_gen/theme.spring.dart`, where `context.theme` has a getter for every key your
+`lib/spring_gen/theme.spring.keys.dart`, where `context.theme` has a getter for every key your
 properties declare under `spring.flutter.theme`, in any theme. The file is a
 part of `lib/spring_gen/main.spring.dart`, so import that one in your widgets:
 
@@ -2541,7 +2541,7 @@ another fails the build, naming both properties.
   are typed too.
 - Two generated files, both parts of the `.spring.dart` file of your
   `@ComponentScan` library (or `@SpringBootApplication` class):
-  `lib/spring_gen/theme.spring.dart` and `lib/spring_gen/messages.spring.dart`. A library such as a
+  `lib/spring_gen/theme.spring.keys.dart` and `lib/spring_gen/messages.spring.keys.dart`. A library such as a
   design-system package gets its own pair, and an app never sees the
   library's `context.theme`. The parent is the `@SpringBootApplication`
   library if there is one, else the outermost `@ComponentScan` (nested scans
@@ -2675,7 +2675,7 @@ testWidgets('the dark theme', (tester) async {
 forgotten argument at run time. The generator reads the same message files
 (`lib/resources/messages.properties`, `messages_ja.properties`, ... or the
 bases of `spring.messages.basename`) and writes `context.messages` into
-`lib/spring_gen/messages.spring.dart` (import `spring_gen/main.spring.dart`):
+`lib/spring_gen/messages.spring.keys.dart` (import `spring_gen/main.spring.dart`):
 
 ```properties
 # messages.properties
@@ -4622,9 +4622,11 @@ spring.web.multipart.location=/var/tmp/shop-uploads
 | `spring.web.rate-limit.enabled` | bool | not set: on when `rules` has a rule | Whether requests are rate limited. An application that only uses `@RateLimiter` sets it to `true` (the start fails when a controller has the annotation and nothing turned the limiter on); `false` turns the rules and the annotations off. This starter's own keys: Spring Boot has no rate limiter (see [Rate limiting](#rate-limiting)) |
 | `spring.web.rate-limit.store` | `memory` / `primary-isolate` / `jdbc` / `procedure`, or the name of another library's store | not set: the most specific the application has | Where the buckets are kept: `procedure` (a database function through the REST API; Supabase starter, the default on its REST path), `jdbc` (a table of the primary `DataSource`; data starter, the default with one), `primary-isolate` (the first isolate, for all of a pool; the default with `server.isolates.*`), `memory` (this isolate). A `RateLimitStore` bean of the application wins over all. A store the application does not have fails the start |
 | `spring.web.rate-limit.on-store-failure` | `deny` / `allow` | `deny` | When the store cannot be reached: `deny` answers 503 with `Retry-After`, `allow` lets the request through, not counted. One WARN line on `spring.web.ratelimit` (at most every 10 s) names the rule, never the key |
+| `spring.web.rate-limit.verify-store` | bool | `true` | Whether the store is asked at startup that its table, database function or binding is there: without it the application does not start, and says what to run. A store that cannot be reached then is a WARN. `false` skips the check and its one call |
 | `spring.web.rate-limit.store-failure-retry-after` | duration | `5s` | The `Retry-After` of that 503 |
 | `spring.web.rate-limit.trusted-proxies` | list of addresses and CIDR ranges (IPv4, IPv6) | empty | The reverse proxies in front of the server. Only a connection from one of them has `client-address-header` read; the client is the entry the first trusted proxy added, counting from the right, and everything to the left of it is ignored. Empty: no header is ever read, the client is the connection's own address |
 | `spring.web.rate-limit.client-address-header` | header name | `X-Forwarded-For` | The header a trusted proxy puts the client's address in: a list read from the right, or one address (`CF-Connecting-IP`) |
+| `spring.web.rate-limit.ipv6-prefix-length` | int, 1 to 128 | `64` | How many bits of an IPv6 address say who a client is: the client is counted by that prefix, the rest zeroed, so every address of one /64 (the network a provider gives one client, who may change the other 64 bits at every request) shares a bucket. `128` counts every address by itself. IPv4 addresses, also mapped into IPv6 (`::ffff:a.b.c.d`), are counted whole; the trusted proxies are compared by their whole address. Outside 1..128 fails the start |
 | `spring.web.rate-limit.hash-addresses` | bool | `false` | Stores the keys made of an address as their HMAC-SHA-256 under `hash-secret`, so the store holds no address in clear |
 | `spring.web.rate-limit.hash-secret` | string | — | The secret of `hash-addresses` (required with it; the same on every server that shares a store) |
 | `spring.web.rate-limit.headers` | bool | `true` | Whether the answers carry `RateLimit-Limit`, `RateLimit-Remaining` and `RateLimit-Reset` (seconds) of the rule that leaves the least |
@@ -4632,7 +4634,7 @@ spring.web.multipart.location=/var/tmp/shop-uploads
 | `spring.web.rate-limit.rules[n].name` | string | `rule-<n+1>` | The rule's name: the first part of its keys in the store (`<name>:ip:<address>`, `<name>:user:<name>`) and what the logs call it |
 | `spring.web.rate-limit.rules[n].path` | path pattern | `/**` | The paths the rule is for, inside the context path |
 | `spring.web.rate-limit.rules[n].methods` | list of HTTP methods | empty: all | The methods the rule is for |
-| `spring.web.rate-limit.rules[n].key` | `user` / `ip` / `#{...}` / a key of a `RateLimitKeyResolver` bean | `user` | Who a bucket belongs to: `user` is the authenticated user, else the client's address (decided right after the security filter chain); `ip` is the client's address (decided before any authentication); `#{...}` is a SpEL expression over `request`, `headers` (names in lower case), `principal`, `authentication`, `address`, `method`, `path`, which counts by address when it gives nothing |
+| `spring.web.rate-limit.rules[n].key` | `user` / `ip` / `#{...}` / a key of a `RateLimitKeyResolver` bean | `user` | Who a bucket belongs to: `user` is the authenticated user, else the client's address (decided right after the security filter chain); `ip` is the client's address (decided before any authentication); `#{...}` is a SpEL expression over `request`, `headers` (also `request.headers`; a name is found in any case: `#{request.headers['X-Api-Key']}`), `principal`, `authentication`, `address`, `method`, `path`, which counts by address when it gives nothing (a header the request does not have, no user). An expression that cannot be parsed fails the start naming the rule; one that reads what does not exist (`request.header`) counts by address and logs one WARN line for the rule on `spring.web.ratelimit`, once |
 | `spring.web.rate-limit.rules[n].limit` | `<count>/<duration>` | — (required) | The limit: `5/1m`, `120/1m`, `10/s`. A token bucket: `count` requests at once, refilled evenly over the duration |
 | `spring.web.rate-limit.rules[n].burst` | int | the count of `limit` | The most requests at once, when it is not the count |
 | `spring.web.rate-limit.rules[n].on-store-failure` | `deny` / `allow` | `spring.web.rate-limit.on-store-failure` | The same for this rule |
@@ -4869,6 +4871,7 @@ management.info.git.mode=full
 | `management.health.defaults.enabled` | bool | `true` | The default of every indicator's `enabled` |
 | `management.health.<name>.enabled` | bool | `defaults.enabled` | Whether the indicator `ping`, `diskspace` or `db` exists |
 | `management.health.livenessstate.enabled` / `readinessstate.enabled` | bool | `false` | The availability indicators without the probes |
+| `management.health.securityContext.enabled` | bool | `false` | The security starter's `securityContext` indicator: whether an authentication is set outside every request now (`programWideAuthentication`) and how many times one was (`setOutsideRequests`); always `UP`. Not in Spring Boot |
 | `management.health.diskspace.path` | path | `.` | The path whose file system is checked |
 | `management.health.diskspace.threshold` | data size | `10MB` | The least free space that is `UP` |
 
@@ -5371,6 +5374,7 @@ spring.supabase.cache.shared=catalog
 | `spring.supabase.db.url` | `postgresql://` URL | none | The PostgreSQL address of the project or of a pooler. Set: the repositories use SQL over it (it becomes the default of `spring.datasource.url`). Not set: they use the REST API (`spring.data.store` defaults to `supabase`). In a Flutter app it is warned about at startup |
 | `spring.supabase.db.rls` | `off`, `user` | `off` | As whom SQL runs: the user of `db.url`, or (`user`) the current user, with the role `authenticated` or `anon` and the token's claims in every transaction and statement. `user` through the transaction pooler (port 6543) fails the start |
 | `spring.supabase.db.schema` | string | the API's (`public`) | The schema the REST API reads and writes |
+| `spring.supabase.db.max-rows` | int | `1000` | The most rows the REST API returns in one answer (the project's "Max rows"); an answer that long is read on in further calls |
 | `spring.supabase.auth.enabled` | bool | `true` | Whether Supabase Auth is plugged into Spring Security: the resource server's defaults on a server, the `supabaseAuth` and `supabaseAuthAdmin` beans |
 | `spring.supabase.auth.redirect-urls` | list | empty | Where a login through a provider, a magic link or a password reset may come back to; the first is the default, any other address is refused |
 | `spring.supabase.auth.issuer` | string | `<url>/auth/v1` | The issuer of the project's tokens |

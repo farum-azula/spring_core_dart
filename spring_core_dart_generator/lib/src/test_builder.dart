@@ -151,7 +151,7 @@ class SpringTestBuilder implements Builder {
     }
     final applications = <String>[];
     await for (final asset in buildStep.findAssets(Glob('{bin,lib}/**.dart'))) {
-      if (asset.path.endsWith('.spring.dart')) {
+      if (isGeneratedSource(asset.path)) {
         continue;
       }
       final source = await buildStep.readAsString(asset);

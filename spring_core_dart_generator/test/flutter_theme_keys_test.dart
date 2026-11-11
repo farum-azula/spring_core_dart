@@ -496,7 +496,7 @@ final BeanModule appBeans = $appBeans;
       return run(
         {...resources, 'app|lib/main.dart': scan},
         outputs: {
-          'app|lib/spring_gen/theme.spring.dart': decodedMatches(
+          'app|lib/spring_gen/theme.spring.keys.dart': decodedMatches(
             allOf(
               startsWith('// GENERATED CODE - DO NOT MODIFY BY HAND'),
               contains("part of 'main.spring.dart';"),
@@ -505,7 +505,7 @@ final BeanModule appBeans = $appBeans;
               isNot(contains('import ')),
             ),
           ),
-          'app|lib/spring_gen/messages.spring.dart': decodedMatches(
+          'app|lib/spring_gen/messages.spring.keys.dart': decodedMatches(
             allOf(
               startsWith('// GENERATED CODE - DO NOT MODIFY BY HAND'),
               contains("part of 'main.spring.dart';"),
@@ -524,7 +524,7 @@ final BeanModule appBeans = $appBeans;
           'app|lib/spring_auto_configuration.dart': scan,
         },
         outputs: {
-          'app|lib/spring_gen/messages.spring.dart': decodedMatches(
+          'app|lib/spring_gen/messages.spring.keys.dart': decodedMatches(
             contains("part of 'spring_auto_configuration.spring.dart';"),
           ),
         },
@@ -556,7 +556,7 @@ spring.flutter.theme.themes.ice:
             'name: app\ndependencies:\n  spring_boot_starter_flutter: any\n'
             '  neon: any\n  other: any\n',
         outputs: {
-          'app|lib/spring_gen/theme.spring.dart': decodedMatches(
+          'app|lib/spring_gen/theme.spring.keys.dart': decodedMatches(
             allOf(
               contains('AppThemeTokensNeon'),
               contains("tokenColor('neon.accent')"),
@@ -578,7 +578,7 @@ spring.flutter.theme.themes.ice:
           'app|lib/main.dart': scan,
         },
         outputs: {
-          'app|lib/spring_gen/theme.spring.dart': decodedMatches(
+          'app|lib/spring_gen/theme.spring.keys.dart': decodedMatches(
             contains('spacing'),
           ),
         },
@@ -590,10 +590,10 @@ spring.flutter.theme.themes.ice:
       return run(
         {...resources, 'app|lib/src/app/root.dart': scan},
         outputs: {
-          'app|lib/spring_gen/theme.spring.dart': decodedMatches(
+          'app|lib/spring_gen/theme.spring.keys.dart': decodedMatches(
             contains("part of 'src/app/root.spring.dart';"),
           ),
-          'app|lib/spring_gen/messages.spring.dart': decodedMatches(
+          'app|lib/spring_gen/messages.spring.keys.dart': decodedMatches(
             contains("part of 'src/app/root.spring.dart';"),
           ),
         },
@@ -607,7 +607,7 @@ spring.flutter.theme.themes.ice:
           'app|lib/main.dart': scan,
         },
         outputs: {
-          'app|lib/spring_gen/messages.spring.dart': decodedMatches(
+          'app|lib/spring_gen/messages.spring.keys.dart': decodedMatches(
             contains('AppMessages'),
           ),
         },
@@ -648,10 +648,10 @@ void main(List<String> args) {}
 ''',
         },
         outputs: {
-          'app|lib/spring_gen/theme.spring.dart': decodedMatches(
+          'app|lib/spring_gen/theme.spring.keys.dart': decodedMatches(
             contains("part of 'main.spring.dart';"),
           ),
-          'app|lib/spring_gen/messages.spring.dart': decodedMatches(
+          'app|lib/spring_gen/messages.spring.keys.dart': decodedMatches(
             contains('part of'),
           ),
         },
@@ -671,10 +671,10 @@ void main(List<String> args) {}
           'app|lib/src/feature/feature.dart': scan,
         },
         outputs: {
-          'app|lib/spring_gen/theme.spring.dart': decodedMatches(
+          'app|lib/spring_gen/theme.spring.keys.dart': decodedMatches(
             contains("part of 'main.spring.dart';"),
           ),
-          'app|lib/spring_gen/messages.spring.dart': decodedMatches(
+          'app|lib/spring_gen/messages.spring.keys.dart': decodedMatches(
             contains('part of'),
           ),
         },
@@ -689,10 +689,10 @@ void main(List<String> args) {}
           'app|lib/main.dart': scan,
         },
         outputs: {
-          'app|lib/spring_gen/theme.spring.dart': decodedMatches(
+          'app|lib/spring_gen/theme.spring.keys.dart': decodedMatches(
             contains("part of 'main.spring.dart';"),
           ),
-          'app|lib/spring_gen/messages.spring.dart': decodedMatches(
+          'app|lib/spring_gen/messages.spring.keys.dart': decodedMatches(
             contains('part of'),
           ),
         },
@@ -718,10 +718,10 @@ void main(List<String> args) {}
           'app|lib/notes.dart': '// @ComponentScan() is on main.dart\n',
         },
         outputs: {
-          'app|lib/spring_gen/theme.spring.dart': decodedMatches(
+          'app|lib/spring_gen/theme.spring.keys.dart': decodedMatches(
             contains('part of'),
           ),
-          'app|lib/spring_gen/messages.spring.dart': decodedMatches(
+          'app|lib/spring_gen/messages.spring.keys.dart': decodedMatches(
             contains('part of'),
           ),
         },
@@ -752,10 +752,10 @@ spring.flutter.theme.tokens.a.x: $nope.y
             'name: app\ndependencies:\n'
             '  spring_boot_starter_flutter_security: any\n',
         outputs: {
-          'app|lib/spring_gen/theme.spring.dart': decodedMatches(
+          'app|lib/spring_gen/theme.spring.keys.dart': decodedMatches(
             contains('AppTheme'),
           ),
-          'app|lib/spring_gen/messages.spring.dart': decodedMatches(
+          'app|lib/spring_gen/messages.spring.keys.dart': decodedMatches(
             contains('AppMessages'),
           ),
         },
@@ -806,8 +806,8 @@ final BeanModule appBeans = $appBeans;
             'spring.flutter.theme.spacing.m=16\n',
         'lib/resources/messages.properties': 'a=A\n',
       });
-      expect(source, contains("part 'messages.spring.dart';"));
-      expect(source, contains("part 'theme.spring.dart';"));
+      expect(source, contains("part 'messages.spring.keys.dart';"));
+      expect(source, contains("part 'theme.spring.keys.dart';"));
       expect(source, contains("import 'package:flutter/widgets.dart';"));
       expect(
         source,
@@ -825,8 +825,8 @@ final BeanModule appBeans = $appBeans;
         'lib/resources/application.properties':
             'spring.flutter.theme.spacing.m=16\n',
       });
-      expect(source, contains("part 'theme.spring.dart';"));
-      expect(source, isNot(contains('messages.spring.dart')));
+      expect(source, contains("part 'theme.spring.keys.dart';"));
+      expect(source, isNot(contains('messages.spring.keys.dart')));
     });
 
     test('no part for a theme with an error', () async {
@@ -844,7 +844,7 @@ final BeanModule appBeans = $appBeans;
         'lib/resources/application.properties':
             'spring.flutter.theme.spacing.m=16\n',
       }, output: 'lib/spring_gen/src/root.spring.dart');
-      expect(source, contains("part '../theme.spring.dart';"));
+      expect(source, contains("part '../theme.spring.keys.dart';"));
     });
 
     test('an @SpringBootApplication app declares its parts', () async {
@@ -858,7 +858,7 @@ void main(List<String> args) {}
         'lib/resources/application.properties':
             'spring.flutter.theme.spacing.m=16\n',
       });
-      expect(source, contains("part 'theme.spring.dart';"));
+      expect(source, contains("part 'theme.spring.keys.dart';"));
     });
 
     test('a nested @ComponentScan does not stop the parts', () async {
@@ -868,7 +868,7 @@ void main(List<String> args) {}
         'lib/resources/application.properties':
             'spring.flutter.theme.spacing.m=16\n',
       });
-      expect(source, contains("part 'theme.spring.dart';"));
+      expect(source, contains("part 'theme.spring.keys.dart';"));
     });
 
     test('the nested scan itself has no parts', () async {
@@ -904,7 +904,7 @@ void main(List<String> args) {}
         'lib/resources/application.properties':
             'spring.flutter.theme.spacing.m=16\n',
       });
-      expect(source, contains("part 'theme.spring.dart';"));
+      expect(source, contains("part 'theme.spring.keys.dart';"));
     });
 
     test('no parts without the Flutter starter', () async {

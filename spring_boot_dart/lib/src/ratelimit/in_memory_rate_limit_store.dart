@@ -27,10 +27,23 @@ final class InMemoryRateLimitStore
     implements RateLimitStore, IsolateLocalState {
   /// A store of at most [maxEntries] keys; [clockMicros] is the time in
   /// microseconds (default: a clock that never goes back).
+  ///
+  /// Throws an [ArgumentError] for [maxEntries] below 1: a store with
+  /// room for no key would forget every bucket at the next key, and so
+  /// limit nothing without a word.
   InMemoryRateLimitStore({
     this.maxEntries = 100000,
     int Function()? clockMicros,
-  }) : _clock = clockMicros ?? _monotonic();
+  }) : _clock = clockMicros ?? _monotonic() {
+    if (maxEntries < 1) {
+      throw ArgumentError.value(
+        maxEntries,
+        'maxEntries',
+        'The rate limiter keeps at least one key in memory '
+            '(spring.web.rate-limit.memory.max-entries)',
+      );
+    }
+  }
 
   static int Function() _monotonic() {
     final watch = Stopwatch()..start();
@@ -57,10 +70,14 @@ final class InMemoryRateLimitStore
     String key,
     RateLimit limit, {
     int permits = 1,
-  }) => Future.value(acquire(key, limit, permits: permits));
+  }) => Future.sync(() => acquire(key, limit, permits: permits));
 
   /// [tryAcquire] without a future, for code that is in the isolate.
+  ///
+  /// Throws an [ArgumentError] for a limit that is not valid
+  /// ([RateLimit.requireValid]); the buckets are as they were.
   RateLimitDecision acquire(String key, RateLimit limit, {int permits = 1}) {
+    limit.requireValid();
     final now = _clock();
     var entry = _buckets.remove(key);
     if (entry == null) {
@@ -83,7 +100,7 @@ final class InMemoryRateLimitStore
       _sweptAt = now;
       _buckets.removeWhere((_, e) => e.bucket.isFullAt(e.limit, now));
     }
-    while (_buckets.length >= maxEntries && _buckets.isNotEmpty) {
+    while (_buckets.length >= maxEntries) {
       _buckets.remove(_buckets.keys.first);
     }
   }

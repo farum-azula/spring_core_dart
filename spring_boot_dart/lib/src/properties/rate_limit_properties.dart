@@ -56,6 +56,14 @@ class RateLimitProperties {
   /// may say otherwise for itself.
   RateLimitStoreFailure onStoreFailure = RateLimitStoreFailure.deny;
 
+  /// Whether the store is asked at startup that what it keeps its buckets
+  /// in is there (the table or the function of its migration, its
+  /// binding): the application does not start without it, and says what to
+  /// run. A store that cannot be reached at that moment is a warning, not
+  /// a failed start. `false` skips the check (and its one call to the
+  /// store).
+  bool verifyStore = true;
+
   /// The `Retry-After` of the 503 a request gets when the store cannot be
   /// reached and the failure denies.
   Duration storeFailureRetryAfter = const Duration(seconds: 5);
@@ -71,6 +79,14 @@ class RateLimitProperties {
   /// `X-Forwarded-For` (a list, read from the right), or a header with
   /// one address such as `CF-Connecting-IP`.
   String clientAddressHeader = 'X-Forwarded-For';
+
+  /// How many bits of an IPv6 address say who a client is, 1 to 128: a
+  /// client is counted by that prefix of its address, the rest zeroed.
+  /// 64 (the default) is the network a provider gives one client, who
+  /// chooses the other 64 bits and may change them for every request;
+  /// 128 counts every address by itself. IPv4 addresses are counted
+  /// whole, and the trusted proxies are compared by their whole address.
+  int ipv6PrefixLength = 64;
 
   /// Whether keys made of an address are stored as their HMAC-SHA-256
   /// under [hashSecret], so that the store holds no address in clear.
@@ -123,9 +139,11 @@ class RateLimitRuleProperties {
   /// Who a bucket belongs to: `user` (the authenticated user, else the
   /// client's address; the default), `ip` (the client's address, decided
   /// before any authentication work), or a SpEL expression in `#{...}`
-  /// over `request`, `principal`, `authentication`, `address`, `method`
-  /// and `path` (`#{request.headers['X-Api-Key']}`); an expression that
-  /// gives nothing counts by address.
+  /// over `request`, `headers`, `principal`, `authentication`, `address`,
+  /// `method` and `path` (`#{request.headers['X-Api-Key']}`, header
+  /// names in any case); an expression that gives nothing counts by
+  /// address. One that cannot be parsed fails the start; one that names
+  /// what does not exist counts by address too, with one warning.
   String? key;
 
   /// The limit as `<count>/<duration>`: `5/1m`, `120/1m`, `10/s`.

@@ -23,3 +23,20 @@ AssetId generatedId(AssetId source) =>
 /// Whether [path] is in a root that gets generated files.
 bool hasGeneratedRoot(String path) =>
     generatedRoots.any((root) => path.startsWith('$root/'));
+
+/// The ending of the typed keys written beside a generated library
+/// (`theme.spring.keys.dart`, `messages.spring.keys.dart`), and of the
+/// classes of JSON Schemas (`json_schemas.spring.classes.dart`). Not
+/// `.spring.dart`: that is the generated file of a source of the same name
+/// (`lib/theme.dart`), which the build would refuse as written twice.
+const generatedKeysExtension = '.spring.keys.dart';
+
+/// See [generatedKeysExtension].
+const generatedClassesExtension = '.spring.classes.dart';
+
+/// Whether [path] is a file the generator writes: never a source to read
+/// beans, keys or tests from.
+bool isGeneratedSource(String path) =>
+    path.endsWith('.spring.dart') ||
+    path.endsWith(generatedKeysExtension) ||
+    path.endsWith(generatedClassesExtension);

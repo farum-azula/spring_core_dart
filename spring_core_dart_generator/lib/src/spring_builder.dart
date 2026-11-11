@@ -32,14 +32,15 @@ import 'package:spring_core_dart_generator/src/json_schema_classes.dart';
 import 'package:spring_core_dart_generator/src/module_emitter.dart';
 import 'package:spring_core_dart_generator/src/package_directory.dart';
 import 'package:spring_core_dart_generator/src/spring_key_files.dart';
+import 'package:spring_core_dart_generator/src/theme_references.dart'
+    show canonicalName;
 import 'package:spring_core_dart_generator/src/typed_theme_keys.dart'
-    show KeysDiagnostics;
+    show KeysDiagnostics, LoaderKinds;
 import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart'
     show readPlatformEnvironment;
 import 'package:yaml/yaml.dart';
 
 // Suffix of generated files; also used to skip them as scan inputs.
-const _outputExtension = '.spring.dart';
 
 const _bootUrl = 'package:spring_boot_dart/spring_boot_dart.dart';
 
@@ -244,8 +245,7 @@ class SpringBuilder implements Builder {
   @override
   Future<void> build(BuildStep buildStep) async {
     final input = buildStep.inputId;
-    if (input.path.endsWith(_outputExtension) ||
-        !hasGeneratedRoot(input.path)) {
+    if (isGeneratedSource(input.path) || !hasGeneratedRoot(input.path)) {
       return;
     }
     // Cheap text check before resolving every library in the package.
@@ -384,6 +384,7 @@ class SpringBuilder implements Builder {
       scanner.collectErrors,
       packageDirectories: _packageDirectories,
     );
+    await _checkLoaderKinds(buildStep, module, scanner.collectErrors);
     scanner.throwErrors();
 
     // In a library package any module may import this one, so its beans
@@ -454,8 +455,71 @@ class SpringBuilder implements Builder {
     );
   }
 
-  /// The generated key files (`theme.spring.dart`, `messages.spring.dart`)
-  /// that are `part of` the output of the input: when the package uses the
+  /// Checks that the props class of every `@ThemeLoaderKind` of [module]
+  /// that takes one (`DoorsLoaderProps`) is a class the module can name:
+  /// the keys builder writes it into `theme.spring.keys.dart`, a part of
+  /// the output of [SpringKeyFiles.parentLibrary] only, for the kinds
+  /// [SpringKeyFiles.loaderKinds] finds in the source text. A kind in
+  /// another module (a nested `@ComponentScan`, a `bin/` application), or
+  /// one the text does not show (a name that is no string literal), is a
+  /// build error instead of generated code that does not compile.
+  static Future<void> _checkLoaderKinds(
+    BuildStep buildStep,
+    ModuleModel module,
+    void Function(void Function() action) collectErrors,
+  ) async {
+    final typed = [
+      for (final kind in module.loaderKinds)
+        if (kind.typedProps) kind,
+    ];
+    if (typed.isEmpty) {
+      return;
+    }
+    final input = buildStep.inputId;
+    final choice = SpringKeyFiles.parentLibrary(
+      await SpringKeyFiles.scanLibraries(buildStep),
+    );
+    final known = (await SpringKeyFiles.loaderKinds(buildStep)).own;
+    for (final kind in typed) {
+      final props = LoaderKinds.propsClass(kind.name);
+      final what =
+          "@ThemeLoaderKind('${kind.name}') on ${kind.element.name ?? '?'}";
+      collectErrors(() {
+        if (choice.parent != input) {
+          final where = switch (choice.parent) {
+            final parent? =>
+              'a part of the generated library of ${parent.path}, which '
+                  'the module of ${input.path} cannot use: move the class '
+                  'into the module of ${parent.path}',
+            null =>
+              'a part of the generated library of the '
+                  "package's @SpringBootApplication in lib/ (else of its "
+                  'outermost @ComponentScan there), and there is none '
+                  '(${choice.error ?? 'no library of lib/ has either'}): '
+                  'declare one over the class',
+          };
+          throw InvalidGenerationSource(
+            '$what: its props class $props is written into '
+            '${SpringKeyFiles.themeFile}, $where, or take LoaderValues.',
+            element: kind.element,
+          );
+        }
+        if (!known.containsKey(canonicalName(kind.name))) {
+          throw InvalidGenerationSource(
+            '$what: its props class $props is written from the annotation '
+            'as the source has it, before anything is resolved, and no '
+            'class there has this kind: write the name as a string literal '
+            "(@ThemeLoaderKind('${kind.name}')), or take LoaderValues.",
+            element: kind.element,
+          );
+        }
+      });
+    }
+  }
+
+  /// The generated key files (`theme.spring.keys.dart`,
+  /// `messages.spring.keys.dart`) that are `part of` the output of the
+  /// input: when the package uses the
   /// Flutter starter, the input is the parent library
   /// ([SpringKeyFiles.parentLibrary]), and
   /// the keys builder writes them (it decides with the same
@@ -488,7 +552,7 @@ class SpringBuilder implements Builder {
     ];
   }
 
-  /// The classes of `spring.json.schemas` (`json_schemas.spring.dart`)
+  /// The classes of `spring.json.schemas` (`json_schemas.spring.classes.dart`)
   /// when the input is the library their part belongs to: the part, the
   /// import it needs, its list of introspections, and the downloaded
   /// schemas as resources of the app (`JsonSchemaLocations.resourceOf`).
@@ -834,6 +898,7 @@ class SpringBuilder implements Builder {
       scanner.collectErrors,
       packageDirectories: _packageDirectories,
     );
+    await _checkLoaderKinds(buildStep, module, scanner.collectErrors);
     scanner.throwErrors();
 
     final (
@@ -1076,7 +1141,18 @@ class SpringBuilder implements Builder {
     );
     // The hash of the generated code (with the placeholder in it) replaces
     // the placeholder; same length, so the formatting is unchanged.
-    return source.replaceFirst(_fingerprintPlaceholder, _fnv1a(source));
+    // The argument itself, the last one in the file: the same digits may be
+    // anywhere before it (an embedded resource, a colour, a constant).
+    const argument = "fingerprint: '$_fingerprintPlaceholder'";
+    final at = source.lastIndexOf(argument);
+    if (at < 0) {
+      return source;
+    }
+    return source.replaceRange(
+      at,
+      at + argument.length,
+      "fingerprint: '${_fnv1a(source)}'",
+    );
   }
 
   static const _fingerprintPlaceholder = '00000000';
@@ -1263,7 +1339,7 @@ class SpringBuilder implements Builder {
         for (final name
             in annotation.peek('excludeName')?.listValue ??
                 const <DartObject>[])
-          literalString(ConstantReader(name).stringValue),
+          literalString(ConstantReader(name).stringValue, raw: true),
       ],
     );
   }
@@ -1643,7 +1719,7 @@ class SpringBuilder implements Builder {
     }
     List<Expression> names(List<DartObject> values) => [
       for (final value in values)
-        literalString(ConstantReader(value).stringValue),
+        literalString(ConstantReader(value).stringValue, raw: true),
     ];
     return refer('AutoConfigurationModule', _bootUrl).constInstance([], {
       if (order != 0) 'order': literalNum(order),
@@ -1733,7 +1809,7 @@ class SpringBuilder implements Builder {
       for (final root in roots)
         ...await buildStep
             .findAssets(Glob('${Glob.quote(root)}/**.dart'))
-            .where((asset) => !asset.path.endsWith(_outputExtension))
+            .where((asset) => !isGeneratedSource(asset.path))
             .toList(),
     }.toList()..sort((a, b) => a.path.compareTo(b.path));
 
@@ -1900,8 +1976,7 @@ class SpringBuilder implements Builder {
         ...await buildStep
             .findAssets(Glob('$directory/**.dart'))
             .where(
-              (asset) =>
-                  !asset.path.endsWith('.spring.dart') && !own.contains(asset),
+              (asset) => !isGeneratedSource(asset.path) && !own.contains(asset),
             )
             .toList(),
     ];
@@ -2296,13 +2371,32 @@ final class _ModuleProxies {
   _ModuleProxies(this.resolver);
 
   final Resolver resolver;
-  final _seen = <Element, Set<String>>{};
+
+  // What each declaration has itself; what it reaches is put together at
+  // every call, so declarations that read each other give the same set
+  // whichever is asked first.
+  final _own = <Element, ({Set<String> proxies, Set<Element> reads})>{};
 
   Future<Set<String>> of(Element element) async {
-    if (_seen[element] case final found?) {
-      return found; // done, or being walked (a cycle)
+    final found = <String>{};
+    final seen = <Element>{};
+    final pending = [element];
+    while (pending.isNotEmpty) {
+      final next = pending.removeLast();
+      if (!seen.add(next)) {
+        continue;
+      }
+      final (:proxies, :reads) = _own[next] ??= await _read(next);
+      found.addAll(proxies);
+      pending.addAll(reads);
     }
-    final found = _seen[element] = <String>{};
+    return found;
+  }
+
+  Future<({Set<String> proxies, Set<Element> reads})> _read(
+    Element element,
+  ) async {
+    const none = (proxies: <String>{}, reads: <Element>{});
     final fragment = switch (element) {
       GetterElement(isOriginDeclaration: true) => element.firstFragment,
       GetterElement(:final variable) => variable.firstFragment,
@@ -2310,19 +2404,18 @@ final class _ModuleProxies {
       _ => null,
     };
     if (fragment == null || element.library?.uri.scheme != 'package') {
-      return found;
+      return none;
     }
     final node = await resolver.astNodeFor(fragment, resolve: true);
     if (node == null) {
-      return found;
+      return none;
     }
     final visitor = _ModuleReferences();
     node.accept(visitor);
-    found.addAll([for (final proxy in visitor.found) proxy.source]);
-    for (final read in visitor.reads) {
-      found.addAll(await of(read));
-    }
-    return found;
+    return (
+      proxies: {for (final proxy in visitor.found) proxy.source},
+      reads: visitor.reads,
+    );
   }
 }
 

@@ -16,7 +16,8 @@ import 'package:spring_boot_starter_websocket/src/web_socket_url.dart';
 /// `@OnEvent` methods give typed streams of a topic's events, `@Push`
 /// methods push and return the reply, `leave` leaves. Each topic the
 /// calls name is one [PhoenixChannelSession], joined on its first
-/// listener or push and left when its last listener cancels. The
+/// listener or push and left a while after its last listener cancelled
+/// and its last push ended (the push timeout). The
 /// `PhoenixChannelFactory` creates one handler per interface;
 /// applications do not use it directly. Every method, the topic and the
 /// URL are checked when the bean is created, so a method the starter
@@ -120,6 +121,8 @@ final class PhoenixChannelInvocationHandler implements InvocationHandler {
     // A closed one ended a moment ago: its entry is about to go.
     if (existing != null &&
         existing.session.state != PhoenixChannelState.closed) {
+      // Used again in time: it is not left.
+      existing.keep();
       return existing;
     }
     final session = socket.channel(
@@ -132,6 +135,7 @@ final class PhoenixChannelInvocationHandler implements InvocationHandler {
   }
 
   void _forget(_Topic topic) {
+    topic.keep();
     if (identical(_topics[topic.name], topic)) {
       _topics.remove(topic.name);
     }
@@ -155,7 +159,7 @@ final class PhoenixChannelInvocationHandler implements InvocationHandler {
   }
 
   // The events named [event] of [topic] as a Stream<T>; listening joins
-  // the topic, the last cancel leaves it.
+  // the topic, the last cancel leaves it (after the pushes on their way).
   Stream<T> _events<T>(
     _Payloads<T> payloads,
     String topic,
@@ -198,9 +202,9 @@ final class PhoenixChannelInvocationHandler implements InvocationHandler {
         unawaited(subscription?.cancel());
         final current = joined;
         joined = null;
-        if (current != null && --current.listeners == 0) {
-          _forget(current);
-          current.session.leave().ignore();
+        if (current != null) {
+          current.listeners--;
+          _release(current);
         }
       },
     );
@@ -208,7 +212,11 @@ final class PhoenixChannelInvocationHandler implements InvocationHandler {
   }
 
   // Pushes [event] on [topic], joining it first, and gives the reply's
-  // response as [result] reads it.
+  // response as [result] reads it. The topic is in use until the push
+  // ended, with its reply or a failure; a topic only pushes used is then
+  // left (see _release), or pushes to `room:{id}` over many ids would
+  // keep a joined channel per id, each joined again at every
+  // reconnection.
   Future<Object?> _push(
     String topic,
     Push push,
@@ -217,18 +225,51 @@ final class PhoenixChannelInvocationHandler implements InvocationHandler {
     _Payloads<Object?>? result,
   ) async {
     final tree = _write(payload, 'the payload of ${push.event}');
-    final session = _topic(topic, joinPayload).session;
-    await session.join();
-    if (!push.reply) {
-      await session.send(push.event, tree);
-      return null;
+    final joined = _topic(topic, joinPayload);
+    final session = joined.session;
+    joined.pushes++;
+    try {
+      await session.join();
+      if (!push.reply) {
+        await session.send(push.event, tree);
+        return null;
+      }
+      final reply = await session.push(push.event, tree);
+      return result?.read(reply.response);
+    } finally {
+      joined.pushes--;
+      _release(joined);
     }
-    final reply = await session.push(push.event, tree);
-    return result?.read(reply.response);
+  }
+
+  // Leaves [topic] when nothing uses it any more: no stream listens to
+  // it and no push is on its way. A joined topic is left only after it
+  // stayed unused for the socket's push timeout, so a client that pushes
+  // now and then (or cancels a stream and listens again) keeps its
+  // channel and its connection instead of joining for every push. One
+  // that is not joined (its join failed) has nothing to keep.
+  void _release(_Topic topic) {
+    if (!topic.isUnused) {
+      return;
+    }
+    void leave() {
+      if (topic.isUnused) {
+        _forget(topic);
+        topic.session.leave().ignore();
+      }
+    }
+
+    if (topic.session.state == PhoenixChannelState.joined) {
+      topic.leaveLater(socket.config.phoenix.pushTimeout, leave);
+    } else {
+      leave();
+    }
   }
 
   Future<void> _leave(String topic) async {
-    await _topics.remove(topic)?.session.leave();
+    final left = _topics.remove(topic);
+    left?.keep();
+    await left?.session.leave();
   }
 
   // [value] as JSON: null as an empty object, a String and a Map of JSON
@@ -269,14 +310,33 @@ final class PhoenixChannelInvocationHandler implements InvocationHandler {
       _plans[method]!(arguments);
 }
 
-/// One topic the calls of an interface joined, and how many streams
-/// listen to it.
+/// One topic the calls of an interface joined, and who uses it: how many
+/// streams listen to it and how many pushes are on their way.
 final class _Topic {
   _Topic(this.name, this.session);
 
   final String name;
   final PhoenixChannelSession session;
   int listeners = 0;
+  int pushes = 0;
+
+  // Leaves the topic when it stayed unused.
+  Timer? _idle;
+
+  /// Whether the topic can be left.
+  bool get isUnused => listeners == 0 && pushes == 0;
+
+  /// Calls [leave] after [linger], unless [keep] is called first.
+  void leaveLater(Duration linger, void Function() leave) {
+    _idle?.cancel();
+    _idle = Timer(linger, leave);
+  }
+
+  /// The topic is used again, or has ended: no leave is pending.
+  void keep() {
+    _idle?.cancel();
+    _idle = null;
+  }
 }
 
 /// What a method's parameters mean: which fill the topic, which is the

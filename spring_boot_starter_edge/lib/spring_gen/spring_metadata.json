@@ -96,6 +96,11 @@
           "parameters": [
             "String binding"
           ]
+        },
+        {
+          "name": "loaded",
+          "kind": "getter",
+          "type": "bool"
         }
       ]
     },
@@ -189,7 +194,7 @@
         "@ConditionalOnProperty('spring.edge.warnings', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_edge/src/edge_auto_configuration.dart",
-      "line": 170,
+      "line": 171,
       "injects": [],
       "members": [
         {
@@ -271,7 +276,7 @@
         "@ConditionalOnProperty('spring.edge.supabase.anon-key-as-anonymous', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_edge/src/edge_auto_configuration.dart",
-      "line": 127,
+      "line": 128,
       "injects": [],
       "members": [
         {

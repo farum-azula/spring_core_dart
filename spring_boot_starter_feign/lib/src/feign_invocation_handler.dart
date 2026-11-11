@@ -164,51 +164,124 @@ final class FeignInvocationHandler implements InvocationHandler {
   // The body of one listener of a byte stream method, as it arrives: one
   // request per listener, limited like a call up to the status and the
   // headers, never reconnected (a file read half cannot be continued).
-  Stream<List<int>> _openBytes(_Plan plan, List<Object?> arguments) async* {
-    final response = await _connectEvents(plan, arguments, null);
-    yield* response.body;
+  //
+  // A controller, not an `async*` function: that one cannot be cancelled
+  // while it waits for the response, so a listener that left early (a
+  // `timeout`, a `first` that failed) kept the connection open until the
+  // server answered, and its `cancel()` waited as long.
+  Stream<List<int>> _openBytes(_Plan plan, List<Object?> arguments) {
+    final cancellation = _Cancellation();
+    StreamSubscription<List<int>>? body;
+    late final StreamController<List<int>> out;
+    out = StreamController<List<int>>(
+      onListen: () async {
+        final StreamedHttpResponse response;
+        try {
+          response = await _connectEvents(plan, arguments, null, cancellation);
+        } on Object catch (error, stackTrace) {
+          // Nobody listens to a cancelled stream, and its request fails
+          // because it was given up.
+          if (!cancellation.isCancelled) {
+            out.addError(error, stackTrace);
+            unawaited(out.close());
+          }
+          return;
+        }
+        if (cancellation.isCancelled) {
+          // A transport that could not give the request up answered.
+          unawaited(response.discard());
+          return;
+        }
+        body = response.body.listen(
+          out.add,
+          onError: out.addError,
+          onDone: out.close,
+        );
+        if (out.isPaused) {
+          body?.pause();
+        }
+      },
+      onPause: () => body?.pause(),
+      onResume: () => body?.resume(),
+      onCancel: () {
+        cancellation.cancel();
+        return body?.cancel();
+      },
+    );
+    return out.stream;
   }
 
-  // The raw events of one listener of an event stream method.
+  // The raw events of one listener of an event stream method. Cancelling
+  // it also gives up a connection that is still being opened, which
+  // connectServerSentEvents alone would only drop once the server answers.
   Stream<ServerSentEvent<String>> _openEvents(
     _Plan plan,
     List<Object?> arguments,
-  ) => connectServerSentEvents(
-    (lastEventId) => _connectEvents(plan, arguments, lastEventId),
-    reconnect: SseReconnect(
-      enabled: config.eventStreamReconnect,
-      delay: config.eventStreamReconnectDelay,
-      maxAttempts: config.eventStreamMaxAttempts,
-      retryIf: (error) =>
-          error is RetryableException || error is HttpTransportException,
-    ),
-    onReconnect: (error, delay, attempt) {
-      if (config.loggerLevel != FeignLoggerLevel.none) {
-        _log.debug(
-          '---> RECONNECTING ${plan.methodKey} (attempt $attempt) in '
-          '${delay.inMilliseconds} ms${error == null ? '' : ' after $error'}',
-          fields: {'client': client.name},
-        );
-      }
-    },
-  );
+  ) {
+    final cancellation = _Cancellation();
+    final events = connectServerSentEvents(
+      (lastEventId) =>
+          _connectEvents(plan, arguments, lastEventId, cancellation),
+      reconnect: SseReconnect(
+        enabled: config.eventStreamReconnect,
+        delay: config.eventStreamReconnectDelay,
+        maxAttempts: config.eventStreamMaxAttempts,
+        retryIf: (error) =>
+            error is RetryableException || error is HttpTransportException,
+      ),
+      onReconnect: (error, delay, attempt) {
+        if (config.loggerLevel != FeignLoggerLevel.none) {
+          _log.debug(
+            '---> RECONNECTING ${plan.methodKey} (attempt $attempt) in '
+            '${delay.inMilliseconds} ms${error == null ? '' : ' after $error'}',
+            fields: {'client': client.name},
+          );
+        }
+      },
+    );
+    StreamSubscription<ServerSentEvent<String>>? source;
+    late final StreamController<ServerSentEvent<String>> out;
+    out = StreamController<ServerSentEvent<String>>(
+      sync: true,
+      onListen: () => source = events.listen(
+        out.add,
+        onError: out.addError,
+        onDone: out.close,
+      ),
+      onPause: () => source?.pause(),
+      onResume: () => source?.resume(),
+      onCancel: () {
+        cancellation.cancel();
+        return source?.cancel();
+      },
+    );
+    return out.stream;
+  }
 
   // Each connection of an event stream is limited like a call: by
   // `call-timeout` and the enclosing deadline, up to the status and
-  // headers; the stream itself is not.
+  // headers; the stream itself is not. [cancellation] is the listener's:
+  // once it left, the request is not sent, or given up while it waits.
   Future<StreamedHttpResponse> _connectEvents(
     _Plan plan,
     List<Object?> arguments,
     String? lastEventId,
+    _Cancellation cancellation,
   ) => _limited(
-    (enclosing) =>
-        _connectEventsWithin(plan, arguments, lastEventId, enclosing),
+    (enclosing) => _connectEventsWithin(
+      plan,
+      arguments,
+      lastEventId,
+      cancellation,
+      enclosing,
+    ),
   );
 
   Future<StreamedHttpResponse> _connectEventsWithin(
     _Plan plan,
     List<Object?> arguments,
     String? lastEventId,
+    _Cancellation cancellation,
     bool enclosing,
   ) async {
     final deadline = RequestDeadline.current;
@@ -218,6 +291,10 @@ final class FeignInvocationHandler implements InvocationHandler {
       await plan.multipart(arguments),
       lastEventId: lastEventId,
     );
+    if (cancellation.isCancelled) {
+      // The listener left while the interceptors ran: nothing is sent.
+      throw const _StreamCancelled();
+    }
     if (deadline != null && deadline.isExpired) {
       throw _timedOut(
         plan,
@@ -226,7 +303,7 @@ final class FeignInvocationHandler implements InvocationHandler {
         enclosing: enclosing,
       );
     }
-    final request = _request(template, deadline);
+    final request = _request(template, deadline, cancellation.attempt());
     final watch = Stopwatch()..start();
     _logRequest(request);
     final StreamedHttpResponse response;
@@ -303,7 +380,11 @@ final class FeignInvocationHandler implements InvocationHandler {
   // the deadline of the code that makes it): the exchange as a whole, the
   // connect included, may not take longer than what is left of it, nor a
   // wait for data.
-  HttpRequest _request(RequestTemplate template, [RequestDeadline? deadline]) {
+  HttpRequest _request(
+    RequestTemplate template, [
+    RequestDeadline? deadline,
+    Future<void>? abort,
+  ]) {
     final left = deadline?.remaining;
     final readTimeout = config.readTimeout;
     return HttpRequest(
@@ -316,6 +397,7 @@ final class FeignInvocationHandler implements InvocationHandler {
           ? readTimeout
           : (readTimeout == null || left < readTimeout ? left : readTimeout),
       followRedirects: config.followRedirects,
+      abort: abort,
     );
   }
 
@@ -1544,6 +1626,40 @@ final class _EntityFactory implements TypeInfoVisitor<ResponseEntity<Object?>> {
   @override
   ResponseEntity<Object?> visitDynamic(DynamicType type) =>
       ResponseEntity<Object?>(status, body: body, headers: headers);
+}
+
+/// Whether the listener of a streamed answer (bytes or events) has left,
+/// for the requests made on its behalf: one that is not sent yet is not
+/// sent, and the one waiting for its response is given up through
+/// `HttpRequest.abort`, so its connection closes at once.
+final class _Cancellation {
+  Completer<void>? _waiting;
+
+  /// Whether the listener cancelled its subscription.
+  bool isCancelled = false;
+
+  /// The `abort` of the next request. Each request has its own, so a
+  /// stream that reconnects for days does not keep its finished requests.
+  Future<void> attempt() => (_waiting = Completer<void>()).future;
+
+  /// The listener left.
+  void cancel() {
+    isCancelled = true;
+    final waiting = _waiting;
+    _waiting = null;
+    if (waiting != null && !waiting.isCompleted) {
+      waiting.complete();
+    }
+  }
+}
+
+/// A request that was not sent because the listener had left. Nobody
+/// sees it: the stream it would fail is cancelled.
+final class _StreamCancelled implements Exception {
+  const _StreamCancelled();
+
+  @override
+  String toString() => 'the stream was cancelled before its request';
 }
 
 /// Builds the `EventStream<T>` of an event stream method with the data

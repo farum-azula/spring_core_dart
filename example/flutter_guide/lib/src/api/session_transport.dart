@@ -84,4 +84,5 @@ HttpRequest _copy(HttpRequest request, HttpHeaders headers) => HttpRequest(
   timeout: request.timeout,
   readTimeout: request.readTimeout,
   followRedirects: request.followRedirects,
+  abort: request.abort,
 );

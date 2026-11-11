@@ -206,6 +206,26 @@ void main() {
       expect(network.requests.last.headers['X-XSRF-TOKEN'], 'token-2');
     });
 
+    test('the request with the token keeps the rest, abort included', () async {
+      final abort = Future<void>.value();
+      await transport.send(
+        HttpRequest(
+          method: HttpMethod.post,
+          url: Uri.parse('http://localhost:8080/api/orders'),
+          timeout: const Duration(seconds: 3),
+          readTimeout: const Duration(seconds: 2),
+          followRedirects: false,
+          abort: abort,
+        ),
+      );
+      final sent = network.requests.last;
+      expect(sent.headers['X-XSRF-TOKEN'], 'token-1');
+      expect(sent.abort, same(abort));
+      expect(sent.timeout, const Duration(seconds: 3));
+      expect(sent.readTimeout, const Duration(seconds: 2));
+      expect(sent.followRedirects, isFalse);
+    });
+
     test('without the cookie, or with a header of its own: as it is', () async {
       page.cookies.clear();
       final post = await sent(

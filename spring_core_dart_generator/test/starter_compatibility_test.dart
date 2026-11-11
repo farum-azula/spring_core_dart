@@ -302,8 +302,8 @@ void main() {
             // Other starters of the workspace (the security starter)
             // have constraints of their own in the same map.
             r'autoConfigurationMetadata:\{_i\d+\.neonCacheAutoConfiguration:'
-            r"const_i\d+\.AutoConfigurationModule\(order:5,before:\['a'\],"
-            r"after:\['b','c'\],\),",
+            r"const_i\d+\.AutoConfigurationModule\(order:5,before:\[r'a'\],"
+            r"after:\[r'b',r'c'\],\),",
           ),
         ),
       );
@@ -325,7 +325,7 @@ void main() {
     () async {
       final result = await _build(
         '^$springBootVersion',
-        app: '''
+        app: r'''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'spring_gen/main.spring.dart';
 
@@ -333,7 +333,7 @@ class CacheAutoConfiguration {}
 
 @SpringBootApplication(
   exclude: [CacheAutoConfiguration],
-  excludeName: ['neonCache', 'other'],
+  excludeName: ['neonCache', r'a$b', r'c\'],
 )
 void main(List<String> args) => runApplication(args);
 ''',
@@ -344,7 +344,11 @@ void main(List<String> args) => runApplication(args);
         output,
         matches(RegExp(r'exclude:\[_i\d+\.CacheAutoConfiguration\]')),
       );
-      expect(output, contains("excludeName:['neonCache','other']"));
+      // Raw: a name is text, whatever it has in it.
+      expect(
+        output,
+        contains(r"excludeName:[r'neonCache',r'a$b',r'c\'"),
+      );
     },
   );
 }

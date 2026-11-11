@@ -1,5 +1,5 @@
 // Typed keys of the configuration: context.theme and context.messages
-// (lib/spring_gen/theme.spring.dart, lib/spring_gen/messages.spring.dart).
+// (lib/spring_gen/theme.spring.keys.dart, lib/spring_gen/messages.spring.keys.dart).
 
 import 'package:spring_core_dart_generator/src/dart_names.dart';
 import 'package:spring_core_dart_generator/src/spring_key_files.dart';

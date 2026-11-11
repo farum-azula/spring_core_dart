@@ -162,6 +162,7 @@ spring:
 | `spring.supabase.db.url` | string | none | The PostgreSQL address of the project (`postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres`, or a pooler's). Set: the repositories use SQL over it. Not set: they use the REST API |
 | `spring.supabase.db.rls` | `off`, `user` | `off` | As whom SQL runs: the user of `db.url` (`off`), or the current user, with the role `authenticated` (or `anon`) and the token's claims (`user`) |
 | `spring.supabase.db.schema` | string | the API's (`public`) | The schema the REST API reads and writes (`Accept-Profile` / `Content-Profile`) |
+| `spring.supabase.db.max-rows` | int | `1000` | The most rows the REST API returns in one answer (the project's "Max rows"); an answer that long is read on in further calls |
 | `spring.supabase.auth.enabled` | bool | `true` | Whether the starter plugs Supabase Auth into Spring Security: the server's defaults, and the `supabaseAuth` and `supabaseAuthAdmin` beans |
 | `spring.supabase.auth.redirect-urls` | list | empty | The addresses a login through a provider, a magic link or a password reset may come back to; the first is the default. Any other `redirectTo` is refused before a request is made |
 | `spring.supabase.auth.issuer` | string | `<url>/auth/v1` | The issuer of the project's tokens (their `iss`) |
@@ -501,7 +502,10 @@ reaches the database:
 
 Both do the whole arithmetic in one statement on the database's clock, so
 every server and every function instance shares the limits. The table
-and the function come from a migration of the project. Copy
+and the function come from a migration of the project: the REST API
+cannot create them, so the application does not start without them (it
+calls the function once at startup and says what to run;
+`spring.web.rate-limit.verify-store: false` skips the call). Copy
 `lib/sql/rate_limit.sql` of this package
 (`package:spring_boot_starter_supabase/sql/rate_limit.sql`) into
 `supabase/migrations/`:
@@ -730,8 +734,9 @@ The channel's name, its `presenceKey` and a filter take `${property}`,
 `{parameter}` and SpEL in `#{...}`; each name that comes out is one
 channel, joined when first used and left when its last stream is
 cancelled and nothing is tracked. A value put into a filter is one value
-(quoted when it has a `,`, `(`, `)`, `"` or `\`), never a part of the
-filter.
+(quoted when it has a `,`, `(`, `)`, `{`, `}`, `"` or `\`, or is the
+word `null`), never a part of the filter; an empty value is refused,
+since a filter of Realtime cannot say it.
 
 In code, `realtime.channel(name, private:, self:, ack:, presenceKey:)`
 gives a `RealtimeChannelSession` (`postgresChanges`, `broadcast`,
@@ -746,9 +751,12 @@ of a table on a channel of their own.
   and no update that takes a row out of the filter; deletes are not
   checked against row-level security (they carry only the key).
 - **Tokens.** Every channel is joined with the access token of
-  `SupabaseCredentials`. When the login changes, the new token is sent to
-  the joined channels without joining again; a refreshed token is sent at
-  the next heartbeat. A channel acts as the application itself (its
+  `SupabaseCredentials`. A new token of the same user is sent to the
+  joined channels without joining again (a refreshed one at the next
+  heartbeat). When another user signs in, or the user signs out, the
+  channels are joined again with the new token (the anon key for nobody):
+  the streams go on, nothing the server still sent for the user before
+  arrives, and a message of that moment is missed. A channel acts as the application itself (its
   login, or the anon key): it never takes the token of a server's
   request. A channel asked inside `asServiceRole` is joined as the
   service role.
@@ -936,9 +944,9 @@ wants it (`keyGenerator: 'supabaseKeyGenerator'`).
 ## Tests
 
 A test needs no project: the starter talks through the application's
-`HttpTransport` and `WebSocketTransport` beans, and `spring_web_dart`
+`HttpTransport` and `WebSocketTransport` beans, and the test starter
 has fakes of both (`MockHttpTransport`, `MockWebSocketTransport` in
-`package:spring_web_dart/testing.dart`).
+`package:spring_boot_starter_test/spring_boot_starter_test.dart`).
 
 ```dart
 final transport = MockHttpTransport();

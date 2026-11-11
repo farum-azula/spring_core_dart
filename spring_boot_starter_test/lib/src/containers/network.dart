@@ -50,26 +50,56 @@ final class Network {
 
   /// The network's id, creating it on the daemon of [docker] at the first
   /// call.
-  Future<String> create(DockerClient docker) => _id ??= () {
+  ///
+  /// A creation that fails is not remembered: who asked gets the daemon's
+  /// error, and the next call tries again. One refusal of the daemon
+  /// would otherwise fail every later container of the network with it.
+  Future<String> create(DockerClient docker) {
+    if (_id case final known?) {
+      return known;
+    }
+    late final Future<String> creating;
+    Future<String> run() async {
+      try {
+        return await docker.createNetwork(
+          name,
+          labels: ContainerRuntime.instance.labels,
+        );
+      } on Object {
+        // Unless the network was closed and asked for again meanwhile.
+        if (identical(_id, creating)) {
+          _id = null;
+        }
+        rethrow;
+      }
+    }
+
     _docker = docker;
-    return docker.createNetwork(
-      name,
-      labels: ContainerRuntime.instance.labels,
-    );
-  }();
+    return _id = creating = run();
+  }
 
   /// Whether the network was created (and not closed since).
   bool get isCreated => _id != null;
 
   /// Removes the network; its containers must have stopped. A network
-  /// that was never created, or is gone, is no error.
+  /// that was never created, could not be created, or is gone, is no
+  /// error.
   Future<void> close() async {
-    final id = _id;
+    final pending = _id;
     final docker = _docker;
     _id = null;
-    if (id != null && docker != null) {
-      await docker.removeNetwork(await id);
+    if (pending == null || docker == null) {
+      return;
     }
+    final String id;
+    try {
+      id = await pending;
+    } on Object {
+      // Its creation was under way and failed: there is nothing to
+      // remove, and who asked for the network has the error.
+      return;
+    }
+    await docker.removeNetwork(id);
   }
 
   @override

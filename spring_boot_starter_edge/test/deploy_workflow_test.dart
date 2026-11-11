@@ -11,7 +11,7 @@ void main() {
       name: 'api',
       directory: 'functions/shop',
     );
-    expect(supabase, contains('working-directory: functions/shop'));
+    expect(supabase, contains('working-directory: "functions/shop"'));
     expect(
       supabase,
       contains(
@@ -32,7 +32,21 @@ void main() {
     expect(cloudflare, contains('--name shop --target wasm'));
     expect(cloudflare, contains('wrangler@4 deploy'));
 
-    final aws = deployWorkflow(platform: EdgePlatform.aws, name: 'api');
+    final aws = deployWorkflow(
+      platform: EdgePlatform.aws,
+      name: 'api',
+      streaming: true,
+    );
+    expect(aws, contains('--name api --streaming\n'));
+    // What goes into the YAML as it is cannot break out of its value.
+    expect(
+      () => deployWorkflow(
+        platform: EdgePlatform.aws,
+        name: 'api',
+        branch: 'main]\n  evil: [x',
+      ),
+      throwsArgumentError,
+    );
     expect(aws, contains('id-token: write'));
     expect(aws, contains('aws lambda update-function-code'));
   });
@@ -84,7 +98,7 @@ void main() {
     final first = run(['--platform', 'cloudflare', '-n', 'shop']);
     expect(first.exitCode, 0, reason: '${first.stderr}');
     final file = File('${root.path}/.github/workflows/deploy-shop.yml');
-    expect(file.readAsStringSync(), contains('working-directory: apps/shop'));
+    expect(file.readAsStringSync(), contains('working-directory: "apps/shop"'));
     // Yours once written.
     expect(run(['--platform', 'cloudflare', '-n', 'shop']).exitCode, 64);
     expect(

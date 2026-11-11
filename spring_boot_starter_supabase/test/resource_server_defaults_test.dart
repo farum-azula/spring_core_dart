@@ -161,6 +161,71 @@ void main() {
       expect(() => data('nonsense'), throwsStateError);
     });
 
+    test('port 6543 is a transaction pooler on any address', () {
+      // The dedicated pooler of a project, a self-hosted one: the host
+      // does not have to say so.
+      for (final host in ['db.abcd.supabase.co', 'pgbouncer.internal']) {
+        final properties = SupabaseProperties()
+          ..url = projectUrl
+          ..db.url = 'postgresql://postgres:secret@$host:6543/postgres';
+        final startup = SupabaseStartup(properties);
+        expect(startup.dataPath, contains('transaction pooler'), reason: host);
+        expect(startup.warnings.single, contains('port 6543'), reason: host);
+        expect(
+          () => SupabaseStartup(properties..db.rls = SupabaseRls.user),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              allOf(contains('transaction pooler'), isNot(contains('secret'))),
+            ),
+          ),
+          reason: host,
+        );
+      }
+    });
+
+    test('rls: user needs the data source to be that database', () {
+      const direct =
+          'postgresql://postgres:secret@db.abcd.supabase.co/postgres';
+      const pooler =
+          'postgresql://postgres.abcd:secret@aws-0-eu.pooler.supabase.com:5432/postgres';
+      SupabaseStartup start(String? dataSource, {bool asUser = true}) =>
+          SupabaseStartup(
+            SupabaseProperties()
+              ..url = projectUrl
+              ..db.url = direct
+              ..db.rls = asUser ? SupabaseRls.user : SupabaseRls.off,
+            dataSourceUrl: dataSource,
+          );
+      // The starter's default, the same address spelled out, none.
+      expect(start(direct).dataPath, contains('direct connection'));
+      expect(
+        start('jdbc:postgresql://other:pw@db.abcd.supabase.co:5432/postgres')
+            .dataPath,
+        isNotNull,
+      );
+      expect(start(null).dataPath, isNotNull);
+      // Another address of the same database: the hook would not run.
+      expect(
+        () => start(pooler),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('spring.datasource.url is another address'),
+              contains('aws-0-eu.pooler.supabase.com:5432'),
+              isNot(contains('secret')),
+            ),
+          ),
+        ),
+      );
+      expect(() => start('nonsense://'), throwsStateError);
+      // Without rls: user the application's data source is its business.
+      expect(start(pooler, asUser: false).dataPath, isNotNull);
+    });
+
     test('a client application is warned about what ships in it', () {
       final all = SupabaseProperties()
         ..url = projectUrl

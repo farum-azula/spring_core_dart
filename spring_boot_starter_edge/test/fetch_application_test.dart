@@ -198,6 +198,40 @@ void main() {
       expect(response.header('x-bad'), isNull);
     });
 
+    test('several headers that cannot be sent: one 500, nothing escapes', () {
+      // An error that escaped would fail this test as an uncaught one.
+      return runZonedGuarded(() async {
+        final response = await call('GET', '/bad-headers');
+        expect(response.status, 500);
+        expect(response.headers.map((h) => h.$1), isNot(contains('x-bad-2')));
+      }, (error, stack) => fail('uncaught: $error'));
+    });
+
+    test('a client that does not read holds the writer back', () async {
+      final before = (await jsonOf(await call('GET', '/produced')))! as int;
+      final response = await call('GET', '/endless');
+      expect(response.stream, isNotNull);
+      // Nobody reads: the handler must not go on producing the body.
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      final after = (await jsonOf(await call('GET', '/produced')))! as int;
+      expect(after - before, lessThan(4));
+      // A reader that takes three chunks and leaves ends the handler.
+      final seen = await response.stream!.take(3).toList();
+      expect(seen, hasLength(3));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      final end = (await jsonOf(await call('GET', '/produced')))! as int;
+      expect(end - before, lessThan(8));
+    });
+
+    test('HEAD of an event stream ends its writer at once', () async {
+      final server = function.context!.getBean<FetchWebServerFactory>().server!;
+      final response = await call('HEAD', '/events');
+      expect(response.status, 200);
+      expect(response.stream, isNull);
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      expect(server.activeRequests, 0);
+    });
+
     test('a method nobody knows: 501', () async {
       expect((await call('BREW', '/hello')).status, 501);
     });

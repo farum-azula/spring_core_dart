@@ -138,7 +138,7 @@ Container(
 ### Typed keys: `context.theme`
 
 The build generator reads your properties and writes
-`lib/spring_gen/theme.spring.dart`. From it, `context.theme` has a getter for
+`lib/spring_gen/theme.spring.keys.dart`. From it, `context.theme` has a getter for
 every key you declare, so a renamed property is a compile error and not a
 surprise at run time:
 

@@ -42,7 +42,8 @@ final class HttpRequest {
   /// A request for [method] on [url]. Without [headers] it starts with an
   /// empty, writable set. [timeout] covers sending the request and reading
   /// the whole response; [readTimeout] covers each wait for data. Both
-  /// are `null` (no limit) by default, and redirects are followed.
+  /// are `null` (no limit) by default, and redirects are followed. [abort]
+  /// lets the caller give the request up while it waits for the response.
   HttpRequest({
     required this.method,
     required this.url,
@@ -51,6 +52,7 @@ final class HttpRequest {
     this.timeout,
     this.readTimeout,
     this.followRedirects = true,
+    this.abort,
   }) : headers = headers ?? HttpHeaders();
 
   /// The HTTP method, such as [HttpMethod.get].
@@ -82,6 +84,32 @@ final class HttpRequest {
   /// returned (in a browser: an opaque response with status 0). Feign's
   /// `Request.Options.isFollowRedirects()`.
   final bool followRedirects;
+
+  /// Completes when the caller no longer wants the response, or `null`
+  /// when it always waits for it. A transport that is still waiting for
+  /// the status and headers then gives the request up: it closes the
+  /// connection, so the server stops working on an answer nobody reads,
+  /// and fails with an `HttpTransportException`. Once the headers have
+  /// arrived it has no effect: cancel the subscription of the streamed
+  /// body instead.
+  ///
+  /// Without it a caller that stops waiting (a stream cancelled before
+  /// its first byte) would leave the request running until the server
+  /// answers. It must not complete with an error. A transport that does
+  /// not know it ignores it, so the caller still drops a response that
+  /// arrives late.
+  ///
+  /// ```dart
+  /// final gaveUp = Completer<void>();
+  /// final answer = transport.stream(
+  ///   HttpRequest(method: HttpMethod.get, url: url, abort: gaveUp.future),
+  /// );
+  /// // The user closed the page before the server answered.
+  /// gaveUp.complete();
+  /// ```
+  ///
+  /// In a browser this is the `signal` of `fetch`, an `AbortSignal`.
+  final Future<void>? abort;
 
   @override
   String toString() => '${method.value} $url';

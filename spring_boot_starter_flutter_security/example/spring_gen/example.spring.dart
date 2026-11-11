@@ -156,10 +156,10 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     _i10.springBootStarterFlutterSecurityAutoConfiguration:
         const _i2.AutoConfigurationModule(
           before: [
-            'springBootStarterOauth2ClientAutoConfiguration',
-            'springBootStarterFeignAutoConfiguration',
+            r'springBootStarterOauth2ClientAutoConfiguration',
+            r'springBootStarterFeignAutoConfiguration',
           ],
-          after: ['springBootStarterFlutterNavigationAutoConfiguration'],
+          after: [r'springBootStarterFlutterNavigationAutoConfiguration'],
         ),
   },
   dartDefines: {
@@ -208,7 +208,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '13bb11f5',
+  fingerprint: '8eadec81',
 );
 
 /// Starts the application: config files, environment, context, runners

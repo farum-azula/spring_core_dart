@@ -19,12 +19,14 @@ Writes a GitHub Actions workflow that builds and deploys the function.
   --name, -n       the function's name (default: api)
   --branch         the branch whose pushes deploy (default: main)
   --target, -t     js (default) | wasm
+  --streaming      aws: build the response-streaming handler
   --force          replace the workflow when it exists
 ''';
 
 void main(List<String> args) {
   final options = <String, String>{};
   var force = false;
+  var streaming = false;
   const short = {'-p': '--platform', '-n': '--name', '-t': '--target'};
   for (var i = 0; i < args.length; i++) {
     var arg = args[i];
@@ -34,6 +36,10 @@ void main(List<String> args) {
     }
     if (arg == '--force') {
       force = true;
+      continue;
+    }
+    if (arg == '--streaming') {
+      streaming = true;
       continue;
     }
     arg = short[arg] ?? arg;
@@ -89,6 +95,7 @@ void main(List<String> args) {
       directory: directory,
       branch: options['branch'] ?? 'main',
       target: target,
+      streaming: streaming,
     );
   } on ArgumentError catch (error) {
     _fail('${error.message}');

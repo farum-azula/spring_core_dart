@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart' hide Resource;
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
@@ -19,16 +21,16 @@ typedef KeyParts = ({String? theme, String? messages});
 typedef ScanLibrary = ({AssetId id, bool boot});
 
 /// What the two builders agree on about the typed key files
-/// (`lib/spring_gen/theme.spring.dart`, `lib/spring_gen/messages.spring.dart`): which of them
+/// (`lib/spring_gen/theme.spring.keys.dart`, `lib/spring_gen/messages.spring.keys.dart`): which of them
 /// exist for the resources of a package, and which library is their
 /// parent, so the main builder writes the `part` directives of exactly the
 /// files the keys builder writes.
 abstract final class SpringKeyFiles {
   /// The part with `context.theme`.
-  static const themeFile = 'lib/spring_gen/theme.spring.dart';
+  static const themeFile = 'lib/spring_gen/theme.spring.keys.dart';
 
   /// The part with `context.messages`.
-  static const messagesFile = 'lib/spring_gen/messages.spring.dart';
+  static const messagesFile = 'lib/spring_gen/messages.spring.keys.dart';
 
   /// The imports the parts need, which the parent writes for them.
   static const imports = [
@@ -86,8 +88,8 @@ extension SpringMessageKeys on BuildContext {
 ''';
 
   /// The loader kinds the keys know: the `@ThemeLoaderKind` classes of
-  /// the package's own `lib/` (found in the source text, as
-  /// [scanLibraries] finds its annotations) and the `loaderKinds` of the
+  /// the package's own `lib/` (found in the source text:
+  /// [scanLoaderKinds]) and the `loaderKinds` of the
   /// `spring_metadata.json` of the packages it depends on.
   static Future<LoaderKinds> loaderKinds(BuildStep buildStep) async {
     final package = buildStep.inputId.package;
@@ -95,14 +97,11 @@ extension SpringMessageKeys on BuildContext {
     final assets = await buildStep
         .findAssets(Glob('lib/**.dart'))
         .where((asset) => asset.package == package)
-        .where((asset) => !asset.path.endsWith('.spring.dart'))
+        .where((asset) => !isGeneratedSource(asset.path))
         .toList();
     assets.sort((a, b) => a.path.compareTo(b.path));
     for (final asset in assets) {
       final text = await buildStep.readAsString(asset);
-      if (!text.contains('@ThemeLoaderKind')) {
-        continue;
-      }
       for (final kind in scanLoaderKinds(text)) {
         own.putIfAbsent(
           canonicalName(kind.name),
@@ -137,24 +136,40 @@ extension SpringMessageKeys on BuildContext {
     return LoaderKinds(own: own, foreign: foreign);
   }
 
-  static final _loaderKind = RegExp(
-    r'@ThemeLoaderKind\(\s*([\x27"])([^\x27"]+)\1\s*\)\s*'
-    r'(?:@\w+(?:\([^)]*\))?\s*)*(?:(?:final|base|abstract|interface)\s+)*'
-    r'class\s+(\w+)',
-  );
-
   /// The `@ThemeLoaderKind('name') class X` declarations in the source
-  /// [text], with the 1-based line of each.
+  /// [text], with the 1-based line of each annotation. The text is read as
+  /// syntax (nothing is resolved: the keys are written before the
+  /// libraries are), so the name must be a string literal; the module's
+  /// builder reports a kind this does not find.
   static List<({String name, String className, int line})> scanLoaderKinds(
     String text,
-  ) => [
-    for (final match in _loaderKind.allMatches(text))
-      (
-        name: match[2]!,
-        className: match[3]!,
-        line: '\n'.allMatches(text.substring(0, match.start)).length + 1,
-      ),
-  ];
+  ) {
+    if (!text.contains('ThemeLoaderKind')) {
+      return const [];
+    }
+    final parsed = parseString(content: text, throwIfDiagnostics: false);
+    return [
+      for (final declaration in parsed.unit.declarations)
+        if (declaration is ClassDeclaration)
+          for (final annotation in declaration.metadata)
+            if (_annotationName(annotation) == 'ThemeLoaderKind')
+              if (annotation.arguments?.arguments.firstOrNull
+                  case StringLiteral(:final stringValue?))
+                (
+                  name: stringValue,
+                  className: declaration.namePart.typeName.lexeme,
+                  line: parsed.lineInfo
+                      .getLocation(annotation.offset)
+                      .lineNumber,
+                ),
+    ];
+  }
+
+  static String _annotationName(Annotation annotation) =>
+      switch (annotation.name) {
+        PrefixedIdentifier(:final identifier) => identifier.name,
+        final name => name.name,
+      };
 
   // The names in `loaderKinds` of a spring_metadata.json.
   static List<String> _kindsOfMetadata(String json) {
@@ -186,7 +201,7 @@ extension SpringMessageKeys on BuildContext {
     final assets = await buildStep
         .findAssets(Glob('lib/**.dart'))
         .where((asset) => asset.package == package)
-        .where((asset) => !asset.path.endsWith('.spring.dart'))
+        .where((asset) => !isGeneratedSource(asset.path))
         .toList();
     assets.sort((a, b) => a.path.compareTo(b.path));
     for (final asset in assets) {

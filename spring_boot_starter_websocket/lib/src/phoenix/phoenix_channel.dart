@@ -43,8 +43,9 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 ///
 /// The `{id}` of the [topic] is filled from the parameter named `id` of
 /// each method, so one interface serves every room; each topic is one
-/// channel, joined on its first listener or push and left when its last
-/// listener cancels or `leave` is called. Interfaces with the same [name]
+/// channel, joined on its first listener or push, and left by `leave` or
+/// once it stayed without a listener and without a push on its way for
+/// the push timeout. Interfaces with the same [name]
 /// and address share one connection, kept and reconnected like a
 /// `@WebSocketClient`'s; after a reconnection every topic is joined
 /// again and the streams go on. What a join sends comes from a parameter

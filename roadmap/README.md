@@ -136,7 +136,7 @@ What comes next, in order:
      `spring.sql.migration.locations`, ...); `classpath:` is not a location.
    Then **0.6.3: themes without Dart** (done, unreleased; the owner, November 2026; branch
    `theme`; [spring_boot_starter_flutter.md](spring_boot_starter_flutter.md#themes-without-dart-063-the-owner-november-2026)):
-   the generated keys in `lib/spring_gen/theme.spring.dart` / `lib/spring_gen/messages.spring.dart`
+   the generated keys in `lib/spring_gen/theme.spring.keys.dart` / `lib/spring_gen/messages.spring.keys.dart`
    as parts of the main `.spring.dart`; references (`$colors.primary`) and
    color objects; nested tokens; `styles.*` with states and
    `ThemeStates`; typed motion and `animations.*` with `ThemeAnimation`;

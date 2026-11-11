@@ -394,64 +394,70 @@ void _$set166(_i4.RateLimitProperties bean, Object? value) =>
 Object? _$get167(_i4.RateLimitProperties bean) => bean.onStoreFailure;
 void _$set168(_i4.RateLimitProperties bean, Object? value) =>
     bean.onStoreFailure = (value as _i4.RateLimitStoreFailure);
-Object? _$get169(_i4.RateLimitProperties bean) => bean.storeFailureRetryAfter;
+Object? _$get169(_i4.RateLimitProperties bean) => bean.verifyStore;
 void _$set170(_i4.RateLimitProperties bean, Object? value) =>
-    bean.storeFailureRetryAfter = (value as Duration);
-Object? _$get171(_i4.RateLimitProperties bean) => bean.trustedProxies;
+    bean.verifyStore = (value as bool);
+Object? _$get171(_i4.RateLimitProperties bean) => bean.storeFailureRetryAfter;
 void _$set172(_i4.RateLimitProperties bean, Object? value) =>
-    bean.trustedProxies = (value as List<String>);
-Object? _$get173(_i4.RateLimitProperties bean) => bean.clientAddressHeader;
+    bean.storeFailureRetryAfter = (value as Duration);
+Object? _$get173(_i4.RateLimitProperties bean) => bean.trustedProxies;
 void _$set174(_i4.RateLimitProperties bean, Object? value) =>
-    bean.clientAddressHeader = (value as String);
-Object? _$get175(_i4.RateLimitProperties bean) => bean.hashAddresses;
+    bean.trustedProxies = (value as List<String>);
+Object? _$get175(_i4.RateLimitProperties bean) => bean.clientAddressHeader;
 void _$set176(_i4.RateLimitProperties bean, Object? value) =>
-    bean.hashAddresses = (value as bool);
-Object? _$get177(_i4.RateLimitProperties bean) => bean.hashSecret;
+    bean.clientAddressHeader = (value as String);
+Object? _$get177(_i4.RateLimitProperties bean) => bean.ipv6PrefixLength;
 void _$set178(_i4.RateLimitProperties bean, Object? value) =>
-    bean.hashSecret = (value as String?);
-Object? _$get179(_i4.RateLimitProperties bean) => bean.headers;
+    bean.ipv6PrefixLength = (value as int);
+Object? _$get179(_i4.RateLimitProperties bean) => bean.hashAddresses;
 void _$set180(_i4.RateLimitProperties bean, Object? value) =>
-    bean.headers = (value as bool);
-Object? _$get181(_i4.RateLimitProperties bean) => bean.memory;
+    bean.hashAddresses = (value as bool);
+Object? _$get181(_i4.RateLimitProperties bean) => bean.hashSecret;
 void _$set182(_i4.RateLimitProperties bean, Object? value) =>
-    bean.memory = (value as _i4.RateLimitMemoryProperties);
-Object? _$get183(_i4.RateLimitProperties bean) => bean.rules;
+    bean.hashSecret = (value as String?);
+Object? _$get183(_i4.RateLimitProperties bean) => bean.headers;
 void _$set184(_i4.RateLimitProperties bean, Object? value) =>
+    bean.headers = (value as bool);
+Object? _$get185(_i4.RateLimitProperties bean) => bean.memory;
+void _$set186(_i4.RateLimitProperties bean, Object? value) =>
+    bean.memory = (value as _i4.RateLimitMemoryProperties);
+Object? _$get187(_i4.RateLimitProperties bean) => bean.rules;
+void _$set188(_i4.RateLimitProperties bean, Object? value) =>
     bean.rules = (value as List<_i4.RateLimitRuleProperties>);
-Object? _$get185(_i4.RateLimitProperties bean) => bean.isOn;
-_i4.RateLimitProperties _$create186(
+Object? _$get189(_i4.RateLimitProperties bean) => bean.isOn;
+_i4.RateLimitProperties _$create190(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i4.RateLimitProperties();
-Object? _$get187(_i4.RateLimitMemoryProperties bean) => bean.maxEntries;
-void _$set188(_i4.RateLimitMemoryProperties bean, Object? value) =>
+Object? _$get191(_i4.RateLimitMemoryProperties bean) => bean.maxEntries;
+void _$set192(_i4.RateLimitMemoryProperties bean, Object? value) =>
     bean.maxEntries = (value as int);
-_i4.RateLimitMemoryProperties _$create189(
+_i4.RateLimitMemoryProperties _$create193(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i4.RateLimitMemoryProperties();
-Object? _$get190(_i4.RateLimitRuleProperties bean) => bean.name;
-void _$set191(_i4.RateLimitRuleProperties bean, Object? value) =>
-    bean.name = (value as String?);
-Object? _$get192(_i4.RateLimitRuleProperties bean) => bean.path;
-void _$set193(_i4.RateLimitRuleProperties bean, Object? value) =>
-    bean.path = (value as String);
-Object? _$get194(_i4.RateLimitRuleProperties bean) => bean.methods;
+Object? _$get194(_i4.RateLimitRuleProperties bean) => bean.name;
 void _$set195(_i4.RateLimitRuleProperties bean, Object? value) =>
-    bean.methods = (value as List<String>);
-Object? _$get196(_i4.RateLimitRuleProperties bean) => bean.key;
+    bean.name = (value as String?);
+Object? _$get196(_i4.RateLimitRuleProperties bean) => bean.path;
 void _$set197(_i4.RateLimitRuleProperties bean, Object? value) =>
-    bean.key = (value as String?);
-Object? _$get198(_i4.RateLimitRuleProperties bean) => bean.limit;
+    bean.path = (value as String);
+Object? _$get198(_i4.RateLimitRuleProperties bean) => bean.methods;
 void _$set199(_i4.RateLimitRuleProperties bean, Object? value) =>
-    bean.limit = (value as String?);
-Object? _$get200(_i4.RateLimitRuleProperties bean) => bean.burst;
+    bean.methods = (value as List<String>);
+Object? _$get200(_i4.RateLimitRuleProperties bean) => bean.key;
 void _$set201(_i4.RateLimitRuleProperties bean, Object? value) =>
-    bean.burst = (value as int?);
-Object? _$get202(_i4.RateLimitRuleProperties bean) => bean.onStoreFailure;
+    bean.key = (value as String?);
+Object? _$get202(_i4.RateLimitRuleProperties bean) => bean.limit;
 void _$set203(_i4.RateLimitRuleProperties bean, Object? value) =>
+    bean.limit = (value as String?);
+Object? _$get204(_i4.RateLimitRuleProperties bean) => bean.burst;
+void _$set205(_i4.RateLimitRuleProperties bean, Object? value) =>
+    bean.burst = (value as int?);
+Object? _$get206(_i4.RateLimitRuleProperties bean) => bean.onStoreFailure;
+void _$set207(_i4.RateLimitRuleProperties bean, Object? value) =>
     bean.onStoreFailure = (value as _i4.RateLimitStoreFailure?);
-_i4.RateLimitRuleProperties _$create204(
+_i4.RateLimitRuleProperties _$create208(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i4.RateLimitRuleProperties();
@@ -1117,6 +1123,12 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             returnType: r'RateLimitStoreFailure',
           ),
           _i1.MethodSignature.of(
+            r'verifyStore',
+            _$target12,
+            kind: _i1.MemberKind.getter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
             r'storeFailureRetryAfter',
             _$target12,
             kind: _i1.MemberKind.getter,
@@ -1133,6 +1145,12 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             _$target12,
             kind: _i1.MemberKind.getter,
             returnType: r'String',
+          ),
+          _i1.MethodSignature.of(
+            r'ipv6PrefixLength',
+            _$target12,
+            kind: _i1.MemberKind.getter,
+            returnType: r'int',
           ),
           _i1.MethodSignature.of(
             r'hashAddresses',
@@ -1198,6 +1216,12 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             returnType: r'RateLimitStoreFailure',
           ),
           _i1.MethodSignature.of(
+            r'verifyStore',
+            _$target12,
+            kind: _i1.MemberKind.setter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
             r'storeFailureRetryAfter',
             _$target12,
             kind: _i1.MemberKind.setter,
@@ -1214,6 +1238,12 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             _$target12,
             kind: _i1.MemberKind.setter,
             returnType: r'String',
+          ),
+          _i1.MethodSignature.of(
+            r'ipv6PrefixLength',
+            _$target12,
+            kind: _i1.MemberKind.setter,
+            returnType: r'int',
           ),
           _i1.MethodSignature.of(
             r'hashAddresses',
@@ -2023,66 +2053,82 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           set: _$set168,
         ),
         _i1.BeanProperty<_i4.RateLimitProperties>(
-          r'storeFailureRetryAfter',
-          typeInfo: _i1.ClassType<Duration>(),
+          r'verifyStore',
+          typeInfo: _i1.ClassType<bool>(),
+          hasInitialValue: true,
+          initialValue: true,
           get: _$get169,
           set: _$set170,
         ),
         _i1.BeanProperty<_i4.RateLimitProperties>(
-          r'trustedProxies',
-          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          r'storeFailureRetryAfter',
+          typeInfo: _i1.ClassType<Duration>(),
           get: _$get171,
           set: _$set172,
+        ),
+        _i1.BeanProperty<_i4.RateLimitProperties>(
+          r'trustedProxies',
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get173,
+          set: _$set174,
         ),
         _i1.BeanProperty<_i4.RateLimitProperties>(
           r'clientAddressHeader',
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'X-Forwarded-For',
-          get: _$get173,
-          set: _$set174,
+          get: _$get175,
+          set: _$set176,
+        ),
+        _i1.BeanProperty<_i4.RateLimitProperties>(
+          r'ipv6PrefixLength',
+          typeInfo: _i1.ClassType<int>(),
+          hasInitialValue: true,
+          initialValue: 64,
+          get: _$get177,
+          set: _$set178,
         ),
         _i1.BeanProperty<_i4.RateLimitProperties>(
           r'hashAddresses',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get175,
-          set: _$set176,
+          get: _$get179,
+          set: _$set180,
         ),
         _i1.BeanProperty<_i4.RateLimitProperties>(
           r'hashSecret',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get177,
-          set: _$set178,
+          get: _$get181,
+          set: _$set182,
         ),
         _i1.BeanProperty<_i4.RateLimitProperties>(
           r'headers',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: _$get179,
-          set: _$set180,
+          get: _$get183,
+          set: _$set184,
         ),
         _i1.BeanProperty<_i4.RateLimitProperties>(
           r'memory',
           typeInfo: _i1.ClassType<_i4.RateLimitMemoryProperties>(),
-          get: _$get181,
-          set: _$set182,
+          get: _$get185,
+          set: _$set186,
         ),
         _i1.BeanProperty<_i4.RateLimitProperties>(
           r'rules',
           typeInfo: _i1.ListType<_i4.RateLimitRuleProperties>(
             _i1.ClassType<_i4.RateLimitRuleProperties>(),
           ),
-          get: _$get183,
-          set: _$set184,
+          get: _$get187,
+          set: _$set188,
         ),
         _i1.BeanProperty<_i4.RateLimitProperties>(
           r'isOn',
           typeInfo: _i1.ClassType<bool>(),
-          get: _$get185,
+          get: _$get189,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.web.rate-limit')],
@@ -2090,7 +2136,7 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       instantiate: _i4.RateLimitProperties.new,
       constructor: _i1.BeanConstructor<_i4.RateLimitProperties>(
         parameters: [],
-        create: _$create186,
+        create: _$create190,
       ),
     ),
     const _i1.BeanIntrospection<_i4.RateLimitMemoryProperties>(
@@ -2101,14 +2147,14 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<int>(),
           hasInitialValue: true,
           initialValue: 100000,
-          get: _$get187,
-          set: _$set188,
+          get: _$get191,
+          set: _$set192,
         ),
       ],
       instantiate: _i4.RateLimitMemoryProperties.new,
       constructor: _i1.BeanConstructor<_i4.RateLimitMemoryProperties>(
         parameters: [],
-        create: _$create189,
+        create: _$create193,
       ),
     ),
     const _i1.BeanIntrospection<_i4.RateLimitRuleProperties>(
@@ -2118,43 +2164,43 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           r'name',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get190,
-          set: _$set191,
+          get: _$get194,
+          set: _$set195,
         ),
         _i1.BeanProperty<_i4.RateLimitRuleProperties>(
           r'path',
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'/**',
-          get: _$get192,
-          set: _$set193,
+          get: _$get196,
+          set: _$set197,
         ),
         _i1.BeanProperty<_i4.RateLimitRuleProperties>(
           r'methods',
           typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get194,
-          set: _$set195,
+          get: _$get198,
+          set: _$set199,
         ),
         _i1.BeanProperty<_i4.RateLimitRuleProperties>(
           r'key',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get196,
-          set: _$set197,
+          get: _$get200,
+          set: _$set201,
         ),
         _i1.BeanProperty<_i4.RateLimitRuleProperties>(
           r'limit',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get198,
-          set: _$set199,
+          get: _$get202,
+          set: _$set203,
         ),
         _i1.BeanProperty<_i4.RateLimitRuleProperties>(
           r'burst',
           nullable: true,
           typeInfo: _i1.ClassType<int>(nullable: true),
-          get: _$get200,
-          set: _$set201,
+          get: _$get204,
+          set: _$set205,
         ),
         _i1.BeanProperty<_i4.RateLimitRuleProperties>(
           r'onStoreFailure',
@@ -2163,14 +2209,14 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             _i4.RateLimitStoreFailure.values,
             nullable: true,
           ),
-          get: _$get202,
-          set: _$set203,
+          get: _$get206,
+          set: _$set207,
         ),
       ],
       instantiate: _i4.RateLimitRuleProperties.new,
       constructor: _i1.BeanConstructor<_i4.RateLimitRuleProperties>(
         parameters: [],
-        create: _$create204,
+        create: _$create208,
       ),
     ),
   ],

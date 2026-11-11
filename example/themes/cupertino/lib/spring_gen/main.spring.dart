@@ -41,8 +41,8 @@ import 'package:theme_showcase_cupertino/src/pages/transitions_page.dart'
     as _i17;
 import 'package:theme_showcase_cupertino/src/pages/type_page.dart' as _i18;
 
-part 'messages.spring.dart';
-part 'theme.spring.dart';
+part 'messages.spring.keys.dart';
+part 'theme.spring.keys.dart';
 
 const _$knownAdvisors0 = {
   r'package:spring_boot_dart',
@@ -3529,7 +3529,7 @@ _i19.SpringApplication get springApplication => _i19.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '925ae183',
+  fingerprint: 'cfdd8801',
 );
 
 /// Starts the application: config files, environment, context, runners

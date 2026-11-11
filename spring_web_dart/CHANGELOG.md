@@ -1,5 +1,6 @@
 ## Unreleased
 
+- `HttpRequest(abort:)`: a future that completes when the caller no longer wants the response. `IoHttpTransport` and `FetchHttpTransport` then give up a request that still waits for the status and headers (the connection closes, the call fails with an `HttpTransportException`, `request aborted`); once the headers arrived it has no effect, the body's subscription is cancelled instead. A transport of your own that wraps another one copies it to the request it passes on; one that ignores it keeps working, the request then runs until the server answers.
 - `WebSocketTransport.connect(url, maxTextMessageSize:, maxBinaryMessageSize:)`: the largest messages this one connection receives, in bytes (`-1`: no limit); `null`, the default, keeps the transport's own limits. `IoWebSocketTransport` uses them for the session it opens, the browser (which has no limit) ignores them, and a `MockWebSocket` keeps them (`maxTextMessageSize`, `maxBinaryMessageSize`) and closes with 1009 when the test pushes a larger message. A class that implements `WebSocketTransport` adds the two parameters to its `connect`.
 
 ## 0.7.3

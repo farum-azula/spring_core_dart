@@ -74,6 +74,7 @@ export 'package:spring_boot_starter_security/src/web/entry_points.dart';
 export 'package:spring_boot_starter_security/src/web/filter_chain.dart';
 export 'package:spring_boot_starter_security/src/web/firewall.dart';
 export 'package:spring_boot_starter_security/src/web/headers.dart';
+export 'package:spring_boot_starter_security/src/web/program_wide_authentication.dart';
 export 'package:spring_boot_starter_security/src/web/request_cache.dart';
 export 'package:spring_boot_starter_security/src/web/request_matcher.dart';
 export 'package:spring_boot_starter_security/src/web/session_registry.dart';

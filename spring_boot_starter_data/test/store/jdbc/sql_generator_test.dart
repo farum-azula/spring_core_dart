@@ -835,6 +835,38 @@ void main() {
     );
 
     test(
+      'ignore case folds text only: a number, a date or a boolean is '
+      'ordered as it is',
+      () => run(() async {
+        expect(
+          pg.orderBy(
+            books,
+            Sort.byOrders([
+              const SortOrder.asc('id').ignoringCase(),
+              const SortOrder.desc('year').ignoringCase(),
+              const SortOrder.asc('rating').ignoringCase(),
+              const SortOrder.asc('subtitle').ignoringCase(),
+            ]),
+            tieBreak: false,
+          ),
+          ' order by "id" ASC NULLS LAST, "year" DESC NULLS FIRST, '
+          '"rating" ASC NULLS LAST, lower("subtitle") ASC NULLS LAST',
+        );
+        // A name the entity does not have (a column of a @Query): unknown,
+        // so folded as asked.
+        expect(
+          pg.orderBy(
+            books,
+            Sort.byOrders([const SortOrder.asc('nope').ignoringCase()]),
+            tieBreak: false,
+            free: (name) => '"$name"',
+          ),
+          ' order by lower("nope") ASC NULLS LAST',
+        );
+      }),
+    );
+
+    test(
       'a property that is not a column is refused unless named freely',
       () => run(() async {
         expect(

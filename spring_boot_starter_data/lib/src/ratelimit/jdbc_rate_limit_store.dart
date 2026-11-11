@@ -226,7 +226,7 @@ String _indexName(String table) => '${table.replaceAll('.', '_')}_expires_at';
 /// Spring (Java): Bucket4j's `PostgreSQLadvisoryLockBasedProxyManager`
 /// and Spring Cloud Gateway's `RedisRateLimiter` (a Lua script) keep
 /// shared buckets the same way: one atomic step in the store.
-final class JdbcRateLimitStore implements RateLimitStore {
+final class JdbcRateLimitStore implements VerifiableRateLimitStore {
   /// A store over [dataSource]; [statements] come before the built-in
   /// ones. Throws an [ArgumentError] when [table] is no table name and a
   /// [StateError] when no statements know the database.
@@ -318,6 +318,34 @@ final class JdbcRateLimitStore implements RateLimitStore {
     final connection = await dataSource.getConnection();
     try {
       return await work(connection);
+    } finally {
+      await dataSource.releaseConnection(connection);
+    }
+  }
+
+  /// Creates the table when [createTable] says so, then asks the database
+  /// for it: a table that is not there is a
+  /// [RateLimitStoreSetupException] with the migration to run. A database
+  /// that gives no connection is thrown as it is.
+  @override
+  Future<void> verify() async {
+    final connection = await dataSource.getConnection();
+    try {
+      if (createTable) {
+        await (_ready ??= _prepare());
+      }
+      try {
+        await connection.query('select 1 from $table where 1 = 0');
+      } on Object catch (error) {
+        throw RateLimitStoreSetupException(
+          'The rate limit table $table cannot be read ($error). Create it '
+          'with a migration (sql/rate_limit/postgresql.sql or '
+          'sql/rate_limit/sqlite.sql of spring_boot_starter_data), set '
+          'spring.data.jdbc.rate-limit.create-table=true for the store to '
+          'create it, or name the table with '
+          'spring.data.jdbc.rate-limit.table',
+        );
+      }
     } finally {
       await dataSource.releaseConnection(connection);
     }

@@ -251,4 +251,84 @@ spring.flutter.theme:
       expect(ink, isNot(contains('ThemeSplashData')));
     });
   });
+
+  group('the @ThemeLoaderKind classes of a source text', () {
+    List<(String, String)> scan(String text) => [
+      for (final kind in SpringKeyFiles.scanLoaderKinds(text))
+        (kind.name, kind.className),
+    ];
+
+    test('every way to write a class and its annotation', () {
+      expect(
+        scan('''
+@ThemeLoaderKind('a')
+class A extends ThemeLoaderPainter<ALoaderProps> {}
+
+@ThemeLoaderKind(
+  "b",
+)
+final class B extends ThemeLoaderPainter<BLoaderProps> {}
+
+@ThemeLoaderKind('c')
+// The doors.
+/// Closes and opens.
+base class C extends ThemeLoaderPainter<CLoaderProps> {}
+
+@ThemeLoaderKind('d')
+mixin class D {}
+
+@ThemeLoaderKind('e')
+@Deprecated(message('x'))
+base mixin class E {}
+
+@f.ThemeLoaderKind(r'f')
+class F {}
+
+/// Doc.
+@ThemeLoaderKind('g')
+class const G() extends ThemeLoaderWidget<GLoaderProps> {}
+'''),
+        [
+          ('a', 'A'),
+          ('b', 'B'),
+          ('c', 'C'),
+          ('d', 'D'),
+          ('e', 'E'),
+          ('f', 'F'),
+          ('g', 'G'),
+        ],
+      );
+    });
+
+    test("the line is the annotation's", () {
+      final kind = SpringKeyFiles.scanLoaderKinds('''
+// One.
+
+/// Doc.
+@ThemeLoaderKind('doors')
+final class DoorsLoader {}
+''').single;
+      expect(kind.line, 4);
+    });
+
+    test('a comment, a string and a name that is no literal give none', () {
+      expect(
+        scan("""
+const kind = 'x';
+
+// @ThemeLoaderKind('a')
+// class A {}
+
+const text = '''
+@ThemeLoaderKind('b')
+class B {}
+''';
+
+@ThemeLoaderKind(kind)
+class C {}
+"""),
+        isEmpty,
+      );
+    });
+  });
 }

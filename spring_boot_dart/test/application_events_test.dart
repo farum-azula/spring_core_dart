@@ -180,12 +180,15 @@ void main() {
           .runAsync(const [], systemEnvironment: const {}),
       throwsA(isA<StateError>()),
     );
-    expect(events.sublist(events.length - 6), [
+    // A context that closes refuses traffic first, as Boot's does
+    // whenever it closes while active (here it never accepted any).
+    expect(events.sublist(events.length - 7), [
       'ApplicationStartedEvent',
       'AvailabilityChangeEvent<LivenessState>',
       'runner',
       'ApplicationFailedEvent',
       'report',
+      'AvailabilityChangeEvent<ReadinessState>',
       'ContextClosedEvent',
     ]);
     expect(audit.seen, ['ApplicationStartedEvent', 'ApplicationFailedEvent']);

@@ -613,6 +613,43 @@ void _suite(String store) {
     );
 
     test(
+      'ignoring the case of a property that is no text is a plain order',
+      () => run(() async {
+        // As text '900' would come after '1965', and PostgreSQL has no
+        // lower(bigint): a client's `?sort=year,ignorecase` must not fail.
+        await books.save(Book(title: 'Beowulf', year: 900, rating: 10));
+        for (final property in const [
+          'id',
+          'year',
+          'rating',
+          'released',
+          'inStock',
+        ]) {
+          for (final direction in Direction.values) {
+            final order = SortOrder(property, direction: direction);
+            expect(
+              ids(
+                await books.findAllSorted(
+                  Sort.byOrders([order.ignoringCase()]),
+                ),
+              ),
+              ids(await books.findAllSorted(Sort.byOrders([order]))),
+              reason: '$property $direction',
+            );
+          }
+        }
+        expect(
+          ids(
+            await books.findAllSorted(
+              Sort.byOrders([const SortOrder.asc('year').ignoringCase()]),
+            ),
+          ).first,
+          9,
+        );
+      }),
+    );
+
+    test(
       'equal keys keep the order of the table',
       () => run(() async {
         await books.save(Book(title: 'Dune', year: 1965));

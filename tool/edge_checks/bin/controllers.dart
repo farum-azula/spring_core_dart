@@ -78,6 +78,33 @@ class PublicController {
   ResponseEntity<String> badHeader() =>
       ResponseEntity.status(200).header('x-bad', ['line\nbreak']).body('never');
 
+  // Several things at once that cannot be sent.
+  @GetMapping('/bad-headers')
+  ResponseEntity<String> badHeaders(ServerHttpResponse response) {
+    response.addCookie(ResponseCookie('c', 'ok'));
+    return ResponseEntity.status(200)
+        .header('x-bad-1', ['line\nbreak'])
+        .header('x-bad-2', ['caf\u00e9'])
+        .header('x-bad-3', ['\u0001'])
+        .body('never');
+  }
+
+  // A body as long as the client reads: a megabyte a chunk.
+  @GetMapping('/endless')
+  Stream<List<int>> endless() async* {
+    final chunk = Uint8List(1024 * 1024);
+    for (var i = 0; i < 4096; i++) {
+      produced++;
+      yield chunk;
+    }
+  }
+
+  /// The chunks [endless] has produced.
+  static int produced = 0;
+
+  @GetMapping('/produced')
+  int producedCount() => produced;
+
   @PostMapping('/later')
   String later() {
     runtime.waitUntil(

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io' as io;
 import 'dart:typed_data';
@@ -91,6 +92,16 @@ final class IoWebServerFactory implements ConfigurableWebServerFactory {
 /// `max-connections`, 8192): put a proxy in front, or rely on the
 /// system's limit of open files.
 ///
+/// A response the client does not take is given up after the same
+/// timeout: when none of its bytes leave for `server.connection-timeout`
+/// the connection is dropped and the request is over, so a client that
+/// asks and never reads cannot hold a place of
+/// `server.max-concurrent-requests`, nor the body in memory, nor a
+/// graceful stop. The time is counted per 64 KB of the body, and only
+/// while bytes wait for the client: a download of any size that keeps
+/// moving, however slowly, and a stream that is quiet between two
+/// events are not cut.
+///
 /// When a handler fails after the response was committed (the status
 /// and headers are out), the connection is dropped without finishing the
 /// response (no final chunk), as Tomcat does, so the client sees a
@@ -103,11 +114,15 @@ final class IoWebServerFactory implements ConfigurableWebServerFactory {
 /// finish within the timeout; event streams and WebSocket sessions are
 /// closed at once in both modes.
 ///
-/// `dart:io` itself accepts a request with both `Content-Length` and
-/// `Transfer-Encoding: chunked` (it reads the body as chunked), where
-/// RFC 9112 asks a server to refuse it; behind a proxy that reads such a
-/// request differently, requests can be smuggled. Put a proxy in front
-/// that refuses them (most do).
+/// A request that shows both `Content-Length` and `Transfer-Encoding`
+/// is answered 400 and its connection closed (RFC 9112 §6.3). `dart:io`
+/// shows both only when the length comes first and the encoding is not
+/// written exactly `chunked` (`Chunked`, `gzip, chunked`); in every
+/// other case it drops the `Content-Length` before the server sees the
+/// request, and reads the body as chunked, as the RFC allows. Such a
+/// request cannot be told from a chunked one here and is served: behind
+/// a proxy that reads it differently, requests can be smuggled. Put a
+/// proxy in front that refuses them (most do).
 ///
 /// The `Server` header is not sent, nor `X-XSS-Protection`; `dart:io`'s
 /// `X-Frame-Options: SAMEORIGIN` and `X-Content-Type-Options: nosniff`
@@ -132,6 +147,13 @@ final class IoWebServer implements WebServer, WebServerActivity {
   final ServerProperties settings;
 
   io.HttpServer? _server;
+
+  // The listening socket of a server without TLS (dart:io keeps the one
+  // of a TLS server to itself).
+  _Accepting? _accepting;
+
+  // Stopping gracefully: every answer closes its connection.
+  var _leaving = false;
   final _exchanges = <_Exchange>{};
   final _sessions = <IoWebSocketSession>{};
 
@@ -201,14 +223,22 @@ final class IoWebServer implements WebServer, WebServerActivity {
   Future<void>? _starting;
 
   Future<void> _bind() async {
+    _leaving = false;
     final address = await _address(settings.address);
     final ssl = settings.ssl;
     try {
       _server = ssl == null
-          ? await io.HttpServer.bind(
-              address,
-              settings.port,
-              shared: settings.shared,
+          // The socket is this server's own, so that a stop can end
+          // accepting first and let the open connections finish
+          // ([_Accepting]); dart:io's bind does the same two steps.
+          ? io.HttpServer.listenOn(
+              _accepting = _Accepting(
+                await io.ServerSocket.bind(
+                  address,
+                  settings.port,
+                  shared: settings.shared,
+                ),
+              ),
             )
           : await io.HttpServer.bindSecure(
               address,
@@ -269,9 +299,19 @@ final class IoWebServer implements WebServer, WebServerActivity {
       return;
     }
     _server = null;
-    // No new connections; open event streams and WebSockets end now
-    // (they would never finish by themselves).
-    final closing = server.close();
+    final accepting = _accepting;
+    _accepting = null;
+    final graceful = settings.shutdown == Shutdown.graceful;
+    if (graceful && accepting != null) {
+      // No new connections, while the open ones still work: closing the
+      // server at once would end every idle connection, and with it the
+      // request a client has just sent on one (a keep-alive connection
+      // looks idle until its next request is read).
+      _leaving = true;
+      await accepting.refuse();
+    }
+    // Open event streams and WebSockets end now (they would never finish
+    // by themselves).
     for (final session in _sessions.toList()) {
       unawaited(
         session
@@ -284,8 +324,14 @@ final class IoWebServer implements WebServer, WebServerActivity {
         unawaited(exchange.abort());
       }
     }
-    if (settings.shutdown == Shutdown.graceful) {
-      final limit = timeout ?? const Duration(seconds: 30);
+    final limit = timeout ?? const Duration(seconds: 30);
+    if (_leaving) {
+      await _letConnectionsLeave(server, limit);
+    }
+    final closing = server.close().whenComplete(
+      () => accepting?.close() ?? Future<void>.value(),
+    );
+    if (graceful) {
       final active = _exchanges.isNotEmpty;
       if (active) {
         _log.info('Commencing graceful shutdown. Waiting for active requests');
@@ -316,10 +362,42 @@ final class IoWebServer implements WebServer, WebServerActivity {
     await closing;
   }
 
+  // Waits, while the server is leaving, for its connections to close: each
+  // does with its next answer (`Connection: close`). One that sends nothing
+  // would be waited for in vain, so a short while without any request ends
+  // the wait, and [limit] (five seconds at most) does in any case.
+  Future<void> _letConnectionsLeave(
+    io.HttpServer server,
+    Duration limit,
+  ) async {
+    const step = Duration(milliseconds: 5);
+    const quiet = Duration(milliseconds: 30);
+    const most = Duration(seconds: 5);
+    final watch = Stopwatch()..start();
+    final sinceRequest = Stopwatch()..start();
+    var requests = _requests;
+    while (watch.elapsed < limit && watch.elapsed < most) {
+      if (server.connectionsInfo().total == 0) {
+        return;
+      }
+      if (_requests != requests || _exchanges.isNotEmpty) {
+        requests = _requests;
+        sinceRequest.reset();
+      } else if (sinceRequest.elapsed >= quiet) {
+        return;
+      }
+      await Future<void>.delayed(step);
+    }
+  }
+
   Future<void> _serve(io.HttpRequest ioRequest) async {
     final exchange = _Exchange(this, ioRequest);
     _exchanges.add(exchange);
     _requests++;
+    if (_leaving) {
+      exchange.response.headers.set('Connection', 'close');
+      ioRequest.response.persistentConnection = false;
+    }
     try {
       final server = _server;
       if (server != null) {
@@ -363,6 +441,14 @@ final class IoWebServer implements WebServer, WebServerActivity {
         return;
       }
       if (requestTargetProblem(ioRequest.uri) case final problem?) {
+        await exchange.response.problem(HttpStatus.badRequest, problem);
+        return;
+      }
+      if (_framingProblem(ioRequest) case final problem?) {
+        // The two disagree about where the request ends: nothing after
+        // it on this connection can be trusted (RFC 9112 §6.3).
+        exchange.response.headers.set('Connection', 'close');
+        ioRequest.response.persistentConnection = false;
         await exchange.response.problem(HttpStatus.badRequest, problem);
         return;
       }
@@ -421,6 +507,19 @@ final class IoWebServer implements WebServer, WebServerActivity {
       }
     }
     return null;
+  }
+
+  // A request with both Content-Length and Transfer-Encoding: two ways
+  // to say where its body ends, which a proxy in front may read the other
+  // way (request smuggling). dart:io reads the body as chunked and, for
+  // the plain `Transfer-Encoding: chunked`, removes the Content-Length
+  // itself; this sees the requests where it left both.
+  static String? _framingProblem(io.HttpRequest request) {
+    final headers = request.headers;
+    return headers[io.HttpHeaders.transferEncodingHeader] != null &&
+            headers[io.HttpHeaders.contentLengthHeader] != null
+        ? 'A request cannot have both Content-Length and Transfer-Encoding'
+        : null;
   }
 
   static HttpMethod? _method(String value) {
@@ -876,6 +975,35 @@ final class _IoResponse implements ServerHttpResponse {
   // Whether the status, once committed, allows no body: 1xx, 204, 304.
   var _bodiless = false;
 
+  // How much of a body is handed to dart:io at a time when the client
+  // is watched ([_watched]): the client has `server.connection-timeout`
+  // for each slice, so 64 KB in a minute is the slowest download that
+  // is still served.
+  static const int _sliceSize = 64 * 1024;
+
+  // What dart:io has taken since it last said that everything was with
+  // the socket: at most a slice, so a small answer goes out as before,
+  // without a flush of its own, and [close] has one slice to wait for.
+  var _handed = 0;
+
+  // The rest of a body larger than that, and what is written while
+  // dart:io is busy: sent in slices by [flush], [addStream] and [close].
+  // dart:io itself would take it all at once and then never tell how
+  // much of it the client took.
+  final _queue = Queue<List<int>>();
+
+  // Set while a flush, a stream or the queue is on its way to the
+  // socket: dart:io takes nothing else meanwhile.
+  Completer<void>? _busy;
+
+  // Whether the connection was dropped because the client stopped
+  // reading ([_drop]); [_gone] completes then, for whoever waits for
+  // dart:io, which may never answer for a connection it destroyed.
+  var _dropped = false;
+  final _gone = Completer<void>();
+
+  Duration? get _timeout => _settings.effectiveConnectionTimeout;
+
   /// Called once, just before the status and headers go out.
   void Function()? beforeCommit;
 
@@ -1086,12 +1214,28 @@ final class _IoResponse implements ServerHttpResponse {
       return;
     }
     if (_gzip == null) {
-      _io.add(bytes);
+      _out(bytes);
     } else {
       final out = _compressed(bytes);
       if (out.isNotEmpty) {
-        _io.add(out);
+        _out(out);
       }
+    }
+  }
+
+  // The bytes as they go on the wire: to dart:io at once while they fit
+  // in a slice (the usual answer), else to the queue.
+  void _out(List<int> bytes) {
+    if (_dropped) {
+      return;
+    }
+    if (_busy == null &&
+        _queue.isEmpty &&
+        _handed + bytes.length <= _sliceSize) {
+      _handed += bytes.length;
+      _io.add(bytes);
+    } else {
+      _queue.add(bytes);
     }
   }
 
@@ -1110,10 +1254,21 @@ final class _IoResponse implements ServerHttpResponse {
     if (_gzip != null) {
       final out = _compressed(const [], flush: true);
       if (out.isNotEmpty) {
-        _io.add(out);
+        _out(out);
       }
     }
-    return _io.flush();
+    return _exclusive(() async {
+      // Nothing is awaited before dart:io is asked when there is no
+      // queue, as for every small answer: a turn later it may never
+      // complete the flush of a connection whose client just went away.
+      if (_queue.isNotEmpty) {
+        await _sendQueued();
+      }
+      if (!_dropped) {
+        await _within(_io.flush());
+        _handed = 0;
+      }
+    });
   }
 
   @override
@@ -1122,18 +1277,28 @@ final class _IoResponse implements ServerHttpResponse {
     if (_bodiless) {
       return stream.drain<void>();
     }
-    if (_gzip == null) {
-      return _io.addStream(stream);
-    }
-    return _io.addStream(
-      stream.map(_compressed).where((chunk) => chunk.isNotEmpty),
-    );
+    // After a drop there is no encoder, and nobody to send to.
+    List<int> encoded(List<int> chunk) =>
+        _gzip == null ? const [] : _compressed(chunk);
+    final source = _gzip == null
+        ? stream
+        : stream.map(encoded).where((chunk) => chunk.isNotEmpty);
+    return _exclusive(() async {
+      if (_queue.isNotEmpty) {
+        await _sendQueued();
+      }
+      if (!_dropped && _handed > 0) {
+        await _within(_io.flush());
+        _handed = 0;
+      }
+      await _pipe(source);
+    });
   }
 
   @override
   Future<void> close() async {
     if (_closed) {
-      return await _io.done.then((_) {}, onError: (_) {});
+      return await done;
     }
     if (isCommitted && (failed?.call() ?? false)) {
       return await abort();
@@ -1141,21 +1306,28 @@ final class _IoResponse implements ServerHttpResponse {
     _closed = true;
     _commit();
     if (_gzip != null) {
-      _io.add(_compressed(const [], end: true));
+      _out(_compressed(const [], end: true));
       _gzip = null;
     }
     await beforeClose?.call();
+    if (_busy != null || _queue.isNotEmpty) {
+      await _exclusive(_sendQueued);
+    }
+    if (_dropped) {
+      return;
+    }
     if (_bodiless) {
       // dart:io adds Content-Length: 0 to an answer whose headers are
       // still unwritten at close (except to a HEAD request); an empty
       // stream writes them first.
       await _io.addStream(const Stream<List<int>>.empty());
     }
-    await _io.close();
+    await _within(_io.close());
   }
 
   @override
-  Future<void> get done => _io.done.then((_) {}, onError: (_) {});
+  Future<void> get done =>
+      _unlessDropped(_io.done.then((_) {}, onError: (_) {}));
 
   /// Drops the connection without finishing the response: no final chunk
   /// (nor gzip trailer), so the client sees that the response broke off.
@@ -1166,6 +1338,13 @@ final class _IoResponse implements ServerHttpResponse {
     }
     _closed = true;
     _gzip = null;
+    _queue.clear();
+    if (_busy != null) {
+      // dart:io is in the middle of a stream or a flush and takes
+      // neither an error nor a close: the connection goes directly.
+      _destroy();
+      return;
+    }
     try {
       // An error added to dart:io's response destroys the connection.
       _io.addError(const _Aborted());
@@ -1173,6 +1352,228 @@ final class _IoResponse implements ServerHttpResponse {
       // A stream is being added: its own failure ends the connection.
     }
     await _io.close().then((_) {}, onError: (Object _) {});
+  }
+
+  // One sender at a time: dart:io refuses a write, a flush or a stream
+  // while another flush or stream is under way. What is written meanwhile
+  // waits in the queue.
+  Future<void> _exclusive(Future<void> Function() send) async {
+    for (var busy = _busy; busy != null; busy = _busy) {
+      await busy.future;
+    }
+    final mine = _busy = Completer<void>();
+    try {
+      await send();
+    } finally {
+      _busy = null;
+      mine.complete();
+    }
+  }
+
+  // Sends the queue, after what dart:io took before it.
+  Future<void> _sendQueued() async {
+    if (_queue.isEmpty || _dropped) {
+      return;
+    }
+    if (_handed > 0) {
+      await _within(_io.flush());
+      _handed = 0;
+    }
+    await _pipe(Stream.fromIterable(_queued()));
+  }
+
+  // The queue, emptied as it is read: a chunk is let go once dart:io has
+  // it, and what is written meanwhile follows.
+  Iterable<List<int>> _queued() sync* {
+    while (_queue.isNotEmpty) {
+      yield _queue.removeFirst();
+    }
+  }
+
+  // Hands [source] to dart:io, watched.
+  Future<void> _pipe(Stream<List<int>> source) {
+    if (_dropped) {
+      source.listen(null).cancel().ignore();
+      return Future.value();
+    }
+    return _unlessDropped(_io.addStream(_watched(source)));
+  }
+
+  /// [source] in slices of at most [_sliceSize], with the client watched:
+  /// `dart:io` pauses the stream while a slice waits for room in the
+  /// socket, that is, for the client to read. A pause longer than
+  /// `server.connection-timeout` means a client that takes nothing, and
+  /// the connection is dropped. Only that time counts: neither how long
+  /// the whole body takes, nor how long [source] is quiet between two
+  /// chunks (an event stream).
+  Stream<List<int>> _watched(Stream<List<int>> source) {
+    final timeout = _timeout;
+    late final StreamSubscription<List<int>> upstream;
+    late final StreamController<List<int>> controller;
+    // The chunk being sliced and how far it went.
+    List<int>? chunk;
+    var offset = 0;
+    var held = false;
+    var pumping = false;
+    Timer? stall;
+
+    // The source waits while its last chunk is not all taken.
+    void hold() {
+      final wanted = chunk != null || controller.isPaused;
+      if (wanted && !held) {
+        held = true;
+        upstream.pause();
+      } else if (!wanted && held) {
+        held = false;
+        upstream.resume();
+      }
+    }
+
+    void pump() {
+      if (pumping) {
+        return;
+      }
+      pumping = true;
+      while (!controller.isPaused && !controller.isClosed) {
+        final bytes = chunk;
+        if (bytes == null) {
+          break;
+        }
+        final end = offset + _sliceSize < bytes.length
+            ? offset + _sliceSize
+            : bytes.length;
+        final List<int> slice;
+        if (offset == 0 && end == bytes.length) {
+          slice = bytes;
+        } else if (bytes is Uint8List) {
+          slice = Uint8List.sublistView(bytes, offset, end);
+        } else {
+          slice = bytes.sublist(offset, end);
+        }
+        if (end == bytes.length) {
+          chunk = null;
+        }
+        offset = end;
+        controller.add(slice);
+      }
+      pumping = false;
+      hold();
+    }
+
+    controller = StreamController<List<int>>(
+      sync: true,
+      onListen: () {
+        upstream = source.listen(
+          (bytes) {
+            chunk = bytes;
+            offset = 0;
+            pump();
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            if (!controller.isClosed) {
+              controller.addError(error, stackTrace);
+            }
+          },
+          onDone: () {
+            if (!controller.isClosed) {
+              unawaited(controller.close());
+            }
+          },
+        );
+      },
+      onPause: () {
+        hold();
+        if (timeout != null) {
+          stall ??= Timer(timeout, () {
+            chunk = null;
+            upstream.cancel().ignore();
+            _drop();
+          });
+        }
+      },
+      onResume: () {
+        stall?.cancel();
+        stall = null;
+        // Not from within the resume: dart:io's own subscription is
+        // still in its callback then and would keep every slice added
+        // now as a pending event, all of them at once, with no pause to
+        // tell that the client took none.
+        scheduleMicrotask(pump);
+      },
+      onCancel: () {
+        stall?.cancel();
+        stall = null;
+        chunk = null;
+        return upstream.cancel();
+      },
+    );
+    return controller.stream;
+  }
+
+  // [sending] (a flush or the close of at most a slice), given up when
+  // the client does not take it in `server.connection-timeout`.
+  Future<void> _within(Future<void> sending) {
+    final timeout = _timeout;
+    if (timeout == null) {
+      return sending;
+    }
+    final result = Completer<void>();
+    final stall = Timer(timeout, () {
+      _drop();
+      if (!result.isCompleted) {
+        result.complete();
+      }
+    });
+    unawaited(
+      sending.then(
+        (_) {
+          stall.cancel();
+          if (!result.isCompleted) {
+            result.complete();
+          }
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          stall.cancel();
+          if (!result.isCompleted) {
+            result.completeError(error, stackTrace);
+          }
+        },
+      ),
+    );
+    return result.future;
+  }
+
+  // [sending], or nothing more once the connection was dropped: dart:io
+  // may never complete what it was doing for a connection it destroyed.
+  Future<void> _unlessDropped(Future<void> sending) =>
+      _dropped ? Future.value() : Future.any([sending, _gone.future]);
+
+  // The client took nothing for `server.connection-timeout`: the
+  // connection goes, and with it the rest of the response. Whoever
+  // writes afterwards writes to nobody, as to a client that went away
+  // (dart:io reports no error then either); [done] completes.
+  void _drop() {
+    if (_dropped) {
+      return;
+    }
+    _log.debug(
+      'A response was given up: its client read nothing of it for '
+      '${_timeout?.inMilliseconds} ms (server.connection-timeout)',
+    );
+    _destroy();
+  }
+
+  void _destroy() {
+    _dropped = true;
+    _closed = true;
+    _gzip = null;
+    _queue.clear();
+    // The one way dart:io gives to destroy the connection of a response
+    // whose headers are out: a deadline that is over.
+    _io.deadline = Duration.zero;
+    if (!_gone.isCompleted) {
+      _gone.complete();
+    }
   }
 }
 
@@ -1182,4 +1583,60 @@ final class _Aborted implements Exception {
 
   @override
   String toString() => 'The response was aborted after an error';
+}
+
+/// The listening socket of a server, which can stop accepting without
+/// closing: dart:io's `HttpServer.close()` ends every idle connection with
+/// the socket, and a keep-alive connection is idle until its next request
+/// is read. [refuse] ends the accepting only; the stream never ends by
+/// itself, since the HTTP server stops delivering requests when it does.
+final class _Accepting extends Stream<io.Socket> implements io.ServerSocket {
+  _Accepting(this._socket);
+
+  final io.ServerSocket _socket;
+  late final StreamController<io.Socket> _sockets = StreamController(
+    onListen: () => _accepted = _socket.listen(
+      _sockets.add,
+      onError: _sockets.addError,
+    ),
+    onPause: () => _accepted?.pause(),
+    onResume: () => _accepted?.resume(),
+    onCancel: refuse,
+  );
+  StreamSubscription<io.Socket>? _accepted;
+  Future<void>? _refused;
+
+  @override
+  int get port => _socket.port;
+
+  @override
+  io.InternetAddress get address => _socket.address;
+
+  /// Accepts no connection more; those accepted go on.
+  Future<void> refuse() => _refused ??= () async {
+    await _accepted?.cancel();
+    await _socket.close();
+  }();
+
+  @override
+  Future<io.ServerSocket> close() async {
+    await refuse();
+    if (!_sockets.isClosed) {
+      unawaited(_sockets.close());
+    }
+    return this;
+  }
+
+  @override
+  StreamSubscription<io.Socket> listen(
+    void Function(io.Socket socket)? onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) => _sockets.stream.listen(
+    onData,
+    onError: onError,
+    onDone: onDone,
+    cancelOnError: cancelOnError,
+  );
 }

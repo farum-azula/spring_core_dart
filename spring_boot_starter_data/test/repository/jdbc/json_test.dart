@@ -293,6 +293,13 @@ void _refusals(Jdbc j, List<Object> annotations) {
     ),
     _usage('cannot sort by the @Json property UserProfile.settings'),
   );
+  // A sort often comes from a request (?sort=settings): refused as a
+  // property that does not exist is (a 400 in the web starter's answers),
+  // and from the Future, not thrown at the call.
+  final refused = operations.findAllPaged(
+    PageRequest.of(0, 5, Sort.by(['settings'])),
+  );
+  expect(refused, throwsA(isA<PropertyReferenceException>()));
 }
 
 void _suite({required bool postgres}) {

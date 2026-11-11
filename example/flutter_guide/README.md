@@ -109,8 +109,8 @@ lib/
   main.dart                    @SpringBootApplication, SpringApplicationWidget
   spring_gen/                  generated, do not edit
     main.spring.dart           the beans, proxies, Feign clients, context getters, `log`
-    theme.spring.dart          typed context.theme
-    messages.spring.dart       typed context.messages
+    theme.spring.keys.dart          typed context.theme
+    messages.spring.keys.dart       typed context.messages
   resources/                   the resources: application*.properties, application.yml,
                                themes/*.yml, messages*.properties
   src/app/                     the home (sections), app properties, language, lifecycle and route logs

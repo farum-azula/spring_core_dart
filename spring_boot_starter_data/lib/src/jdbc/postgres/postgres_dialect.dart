@@ -81,6 +81,29 @@ final class PostgresDialect extends SqlDialect {
         'from unnest(cast(? as text[])) as element))';
   }
 
+  /// The driver writes an array of booleans, of numbers, of texts or of
+  /// instants, all of one kind (it tells the kind from the elements); a
+  /// `BigInt` goes as its text, as a single one does. It has no array of
+  /// bytes, nor of values of several kinds: those get a marker each.
+  @override
+  bool bindsAsArray(Iterable<Object?> values) {
+    Type? kind;
+    for (final value in values) {
+      final sent = switch (toDatabase(value)) {
+        null => null,
+        bool() => bool,
+        num() => num,
+        String() => String,
+        DateTime() => DateTime,
+        _ => Object,
+      };
+      if (sent == Object || (sent != null && (kind ??= sent) != sent)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   @override
   bool get supportsFunctions => true;
 
@@ -287,11 +310,17 @@ final class PostgresDialect extends SqlDialect {
 
   /// A list of simple values (texts, numbers, booleans, instants) is an
   /// array column (`text[]`, `double precision[]`), which the application
-  /// creates: the driver binds a list as an array and reads one back. A
-  /// `Set` and a `Map` are not.
+  /// creates: the driver binds a list as an array and reads one back, and
+  /// each element is converted as a single value is ([toDatabase],
+  /// [fromDatabase]). A `Set` and a `Map` are not, and neither is a list
+  /// of bytes (`List<Uint8List>`): the driver sends no array of them.
+  ///
+  /// A `List<BigInt>` wants a `bigint[]` or a `text[]` column: the driver
+  /// reads no `numeric[]`.
   @override
   bool storesCollection(TypeInfo<Object?> type) =>
-      type is ListType<Object?> && _Kind.of(type.element) != null;
+      type is ListType<Object?> &&
+      !const {null, _Kind.bytes}.contains(_Kind.of(type.element));
 
   @override
   String? columnType(TypeInfo<Object?> type) => switch (_Kind.of(type)) {
@@ -350,11 +379,16 @@ final class PostgresDialect extends SqlDialect {
 
   // --------------------------------------------------------------- values
 
+  /// A `DateTime` in UTC, a `BigInt` as its text, a `List<int>` as bytes
+  /// (the `bytea` of a property declared so); any other list is an array,
+  /// whose elements are converted as single values are.
   @override
   Object? toDatabase(Object? value) => switch (value) {
     DateTime() => value.toUtc(),
     BigInt() => value.toString(),
-    List<int>() when value is! Uint8List => Uint8List.fromList(value),
+    Uint8List() => value,
+    List<int>() => Uint8List.fromList(value),
+    List<Object?>() => [for (final element in value) toDatabase(element)],
     _ => value,
   };
 
@@ -406,6 +440,12 @@ final class PostgresDialect extends SqlDialect {
       return value is List<int> && value is! Uint8List
           ? Uint8List.fromList(value)
           : value;
+    }
+    if (type is ListType<Object?> && value is List<Object?>) {
+      // An array column: each element as a single value of its type.
+      return [
+        for (final element in value) fromDatabase(element, type.element),
+      ];
     }
     if (wanted == String && value is! String && value is! Uint8List) {
       return '$value';

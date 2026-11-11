@@ -512,21 +512,21 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i15.springBootStarterSecurityAutoConfiguration:
           const _i9.AutoConfigurationModule(
-            after: ['springBootStarterOauth2ClientAutoConfiguration'],
+            after: [r'springBootStarterOauth2ClientAutoConfiguration'],
           ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i15.springBootStarterSecurityOAuth2ClientAutoConfiguration:
           const _i9.AutoConfigurationModule(
-            before: ['springBootStarterOauth2ClientAutoConfiguration'],
+            before: [r'springBootStarterOauth2ClientAutoConfiguration'],
           ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i16.springBootStarterWebRateLimitAutoConfiguration:
           const _i9.AutoConfigurationModule(
             after: [
-              'springBootStarterDataAutoConfiguration',
-              'springBootStarterSupabaseAutoConfiguration',
+              r'springBootStarterDataAutoConfiguration',
+              r'springBootStarterSupabaseAutoConfiguration',
             ],
           ),
   },
@@ -735,7 +735,7 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '4447269f',
+  fingerprint: 'f39bd08d',
 );
 
 /// Starts the application: config files, environment, context, runners

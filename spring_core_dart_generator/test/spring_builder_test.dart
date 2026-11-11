@@ -2439,6 +2439,30 @@ class DbProps { String url = ''; }
       },
     );
 
+    test(
+      'the same digits earlier in the file are not the fingerprint',
+      () async {
+        final result = await _build({
+          'bin/main.dart': '''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'spring_gen/main.spring.dart';
+
+@SpringBootApplication()
+void main(List<String> args) => runApplication(args);
+''',
+          'lib/resources/application.properties':
+              'app.tenant=00000000-0000-0000-0000-000000000000\n',
+        });
+        expect(result.errors, isEmpty);
+        final output = result.readerWriter.testing.readString(
+          result.outputs.single,
+        );
+        expect(output, contains('00000000-0000-0000-0000-000000000000'));
+        expect(output, isNot(contains("fingerprint: '00000000'")));
+        expect(output, matches(RegExp("fingerprint: '[0-9a-f]{8}'")));
+      },
+    );
+
     test('the fingerprint is stable and changes with the beans', () async {
       Future<String> fingerprint(String beans) async {
         final result = await _build({

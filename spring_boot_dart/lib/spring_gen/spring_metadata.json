@@ -541,7 +541,7 @@
       "default": "X-Forwarded-For",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
-      "line": 73,
+      "line": 81,
       "class": "RateLimitProperties"
     },
     {
@@ -561,7 +561,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
-      "line": 77,
+      "line": 93,
       "class": "RateLimitProperties"
     },
     {
@@ -571,7 +571,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
-      "line": 81,
+      "line": 97,
       "class": "RateLimitProperties"
     },
     {
@@ -581,7 +581,17 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
-      "line": 85,
+      "line": 101,
+      "class": "RateLimitProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.ipv6-prefix-length",
+      "type": "int",
+      "description": "How many bits of an IPv6 address say who a client is, 1 to 128: a client is counted by that prefix of its address, the rest zeroed. 64 (the default) is the network a provider gives one client, who chooses the other 64 bits and may change them for every request; 128 counts every address by itself. IPv4 addresses are counted whole, and the trusted proxies are compared by their whole address.",
+      "default": 64,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 89,
       "class": "RateLimitProperties"
     },
     {
@@ -591,7 +601,7 @@
       "default": 100000,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
-      "line": 105,
+      "line": 121,
       "class": "RateLimitMemoryProperties"
     },
     {
@@ -611,17 +621,17 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
-      "line": 136,
+      "line": 154,
       "class": "RateLimitRuleProperties"
     },
     {
       "name": "spring.web.rate-limit.rules[*].key",
       "type": "String?",
-      "description": "Who a bucket belongs to: `user` (the authenticated user, else the client's address; the default), `ip` (the client's address, decided before any authentication work), or a SpEL expression in `#{...}` over `request`, `principal`, `authentication`, `address`, `method` and `path` (`#{request.headers['X-Api-Key']}`); an expression that gives nothing counts by address.",
+      "description": "Who a bucket belongs to: `user` (the authenticated user, else the client's address; the default), `ip` (the client's address, decided before any authentication work), or a SpEL expression in `#{...}` over `request`, `headers`, `principal`, `authentication`, `address`, `method` and `path` (`#{request.headers['X-Api-Key']}`, header names in any case); an expression that gives nothing counts by address. One that cannot be parsed fails the start; one that names what does not exist counts by address too, with one warning.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
-      "line": 129,
+      "line": 147,
       "class": "RateLimitRuleProperties"
     },
     {
@@ -631,7 +641,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
-      "line": 132,
+      "line": 150,
       "class": "RateLimitRuleProperties"
     },
     {
@@ -641,7 +651,7 @@
       "default": [],
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
-      "line": 121,
+      "line": 137,
       "class": "RateLimitRuleProperties"
     },
     {
@@ -651,7 +661,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
-      "line": 114,
+      "line": 130,
       "class": "RateLimitRuleProperties"
     },
     {
@@ -661,7 +671,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
-      "line": 140,
+      "line": 158,
       "class": "RateLimitRuleProperties"
     },
     {
@@ -671,7 +681,7 @@
       "default": "/**",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
-      "line": 118,
+      "line": 134,
       "class": "RateLimitRuleProperties"
     },
     {
@@ -691,7 +701,7 @@
       "default": "5s",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
-      "line": 61,
+      "line": 69,
       "class": "RateLimitProperties"
     },
     {
@@ -701,7 +711,17 @@
       "default": [],
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
-      "line": 68,
+      "line": 76,
+      "class": "RateLimitProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.verify-store",
+      "type": "bool",
+      "description": "Whether the store is asked at startup that what it keeps its buckets in is there (the table or the function of its migration, its binding): the application does not start without it, and says what to run. A store that cannot be reached at that moment is a warning, not a failed start. `false` skips the check (and its one call to the store).",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 65,
       "class": "RateLimitProperties"
     },
     {
@@ -2494,6 +2514,11 @@
           "type": "bool"
         },
         {
+          "name": "ipv6PrefixLength",
+          "kind": "field",
+          "type": "int"
+        },
+        {
           "name": "isOn",
           "kind": "getter",
           "type": "bool"
@@ -2527,6 +2552,11 @@
           "name": "trustedProxies",
           "kind": "field",
           "type": "List<String>"
+        },
+        {
+          "name": "verifyStore",
+          "kind": "field",
+          "type": "bool"
         }
       ]
     },

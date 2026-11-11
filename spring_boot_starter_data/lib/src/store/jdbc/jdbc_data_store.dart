@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/annotations.dart';
@@ -647,7 +648,8 @@ final class JdbcDataStore
   /// dialect writes the call (`select * from "name"("argument" => ?)`),
   /// through the store's template: on the connection of the running
   /// transaction, logged, its errors translated. A list is bound as one
-  /// array argument (it is not expanded as for `in (:ids)`).
+  /// array argument (it is not expanded as for `in (:ids)`), a `List<int>`
+  /// too (an integer array); only a `Uint8List` is bytes.
   ///
   /// Throws an `InvalidDataAccessResourceUsageException` when the dialect
   /// has no functions (see [capabilities]).
@@ -668,9 +670,21 @@ final class JdbcDataStore
     final names = arguments.keys.toList();
     return jdbc.queryForMaps(
       dialect.functionCall(name, names),
-      BoundParameters(arguments.values.toList(), names),
+      BoundParameters([
+        for (final argument in arguments.values) _functionArgument(argument),
+      ], names),
     );
   }
+
+  // A function has no property whose type says what a `List<int>` is, so
+  // the value says it: a `Uint8List` is bytes (`bytea`), any other list of
+  // integers an array (`bigint[]`, `integer[]`). The copy is not a
+  // `List<int>`, which the dialect binds as the bytes of an entity's
+  // `List<int>` property.
+  static Object? _functionArgument(Object? argument) =>
+      argument is List<int> && argument is! Uint8List
+      ? List<Object?>.of(argument)
+      : argument;
 
   // -------------------------------------------------------------- reading
 

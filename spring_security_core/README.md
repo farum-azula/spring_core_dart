@@ -273,7 +273,48 @@ anonymous user a web request without a login has. Spring's counterparts
 are the `@WithMockUser`, `@WithSecurityContext` and `@WithAnonymousUser`
 annotations.
 
+### One user never sees another's
+
+A server runs every request on one event loop: at each `await` another
+request goes on. A user is kept apart from the others only while
+everything that knows the user lives in the request's scope. A bean that
+remembers the user in a field, a cache whose key has no user in it, a
+result shared between callers: each of them hands one user what belongs
+to another, and only when two requests overlap.
+`withMockUsersAtOnce` makes them overlap:
+
+```dart
+test('everybody gets their own orders', () async {
+  final found = await withMockUsersAtOnce(
+    ['ada', 'bob', 'eve'],
+    (username) => orders.mine(),
+  );
+  for (final MapEntry(key: username, value: results) in found.entries) {
+    for (final orders in results) {
+      expect(orders.map((o) => o.owner).toSet(), {username});
+    }
+  }
+  expect(programWideAuthentication(), isNull);
+});
+```
+
+It runs the body as each user `rounds` times (10 by default), all at
+the same time, the calls starting a few turns of the event loop apart
+in a changing pattern, and returns what every call gave, by user. With
+`MockMvc`, make the request in the body
+(`mvc.perform(... ..with_(user(username)))`).
+`programWideAuthentication()` is the authentication left outside every
+scope: `null` on a server unless the application means otherwise.
+Spring's test support has no counterpart: a thread per request hides
+what a single event loop shows.
+
 ## Differences from Spring Security
+
+- `ZoneSecurityContextHolderStrategy.onProgramWideAuthentication` and
+  `programWideAuthentication` report an authentication set outside every
+  scope; Spring has no such report (a `ThreadLocal` left set on a pooled
+  thread is found there with a debugger). Nothing is refused: setting it
+  works as before.
 
 - **BCrypt** (Spring's default `{bcrypt}`) is not available: there is no
   vetted Dart implementation, and cryptography is not written here by

@@ -262,6 +262,43 @@ void main() {
       await subscription.cancel();
     });
 
+    test('clear reports the delete of every row it removes', () async {
+      await books.saveAll([
+        book('Dune', Genre.science),
+        book('Emma', Genre.fiction),
+      ]);
+      final seen = <RowChange<Book>>[];
+      final science = <RowChange<Book>>[];
+      final subscription = memory.changes<Book>(entity).listen(seen.add);
+      final filtered = memory
+          .changes<Book>(
+            entity,
+            criteria: Criteria(_byGenre.predicate, [Genre.science]),
+          )
+          .listen(science.add);
+      final lists = <List<String>>[];
+      final watching = books
+          .watch(_all, const [])
+          .listen((rows) => lists.add([for (final b in rows) b.title]));
+      await _settle();
+      memory.clear();
+      await _settle();
+      expect(seen.map((c) => (c.kind, c.previous?.title, c.row)), [
+        (RowChangeKind.delete, 'Dune', null),
+        (RowChangeKind.delete, 'Emma', null),
+      ]);
+      expect(science.map((c) => c.previous?.title), ['Dune']);
+      expect(lists.last, isEmpty);
+      // The ids start again, and the next change is reported as before.
+      final again = await books.save(book('Cosmos', Genre.science));
+      await _settle();
+      expect(again.id, 1);
+      expect(seen.last.kind, RowChangeKind.insert);
+      await subscription.cancel();
+      await filtered.cancel();
+      await watching.cancel();
+    });
+
     test('a write that fails reports nothing', () async {
       final seen = <RowChange<Book>>[];
       final subscription = memory.changes<Book>(entity).listen(seen.add);
@@ -401,6 +438,61 @@ void main() {
         ['Cosmos', 'Dune'],
         ['Dune'],
       ]);
+      await subscription.cancel();
+    });
+
+    test('listened to in a transaction, it reads the committed rows only, '
+        'and goes on after the transaction ended', () async {
+      await books.save(book('Dune', Genre.science));
+      final lists = <List<String>>[];
+      final errors = <Object>[];
+      late StreamSubscription<List<Book>> subscription;
+      await expectLater(
+        TransactionTemplate(memory.transactionManager).execute((_) async {
+          await books.save(book('Cosmos', Genre.science));
+          subscription = books
+              .watch(_watchByGenre, [Genre.science])
+              .listen(
+                (rows) => lists.add([for (final b in rows) b.title]),
+                onError: errors.add,
+              );
+          await _settle();
+          // Its own uncommitted row is seen by the transaction only.
+          expect(await books.count(), 2);
+          throw StateError('no');
+        }),
+        throwsStateError,
+      );
+      await _settle();
+      expect(errors, isEmpty);
+      expect(lists, [
+        ['Dune'],
+      ]);
+      // The transaction is over: a later change queries again.
+      await books.save(book('Arrival', Genre.science));
+      await _settle();
+      expect(errors, isEmpty);
+      expect(lists, [
+        ['Dune'],
+        ['Arrival', 'Dune'],
+      ]);
+      // Paused and resumed from another transaction: committed rows too.
+      subscription.pause();
+      await TransactionTemplate(memory.transactionManager).execute((_) async {
+        await books.save(book('Brave', Genre.science));
+      });
+      await expectLater(
+        TransactionTemplate(memory.transactionManager).execute((_) async {
+          await books.save(book('Zero', Genre.science));
+          subscription.resume();
+          await _settle();
+          throw StateError('no');
+        }),
+        throwsStateError,
+      );
+      await _settle();
+      expect(errors, isEmpty);
+      expect(lists.last, ['Arrival', 'Brave', 'Dune']);
       await subscription.cancel();
     });
 

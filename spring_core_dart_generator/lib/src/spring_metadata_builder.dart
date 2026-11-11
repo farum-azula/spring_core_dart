@@ -6,7 +6,9 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/generated_path.dart';
 import 'package:spring_core_dart_generator/src/metadata_beans.dart';
+import 'package:spring_core_dart_generator/src/metadata_locations.dart';
 import 'package:spring_core_dart_generator/src/metadata_properties.dart';
 import 'package:spring_core_dart_generator/src/metadata_read_keys.dart';
 import 'package:spring_core_dart_generator/src/package_directory.dart';
@@ -102,7 +104,7 @@ final class SpringMetadataBuilder implements Builder {
             .where(
               (a) =>
                   a.package == buildStep.inputId.package &&
-                  !a.path.endsWith('.spring.dart') &&
+                  !isGeneratedSource(a.path) &&
                   !p.url.split(a.path).contains('spring_gen'),
             )
             .toList()
@@ -142,7 +144,7 @@ final class SpringMetadataBuilder implements Builder {
         loaderKinds.add({
           'name': kind.name,
           'class': kind.className,
-          'source': 'package:$package/${asset.path.substring('lib/'.length)}',
+          'source': sourceOfUri(asset.uri),
           'line': kind.line,
         });
       }

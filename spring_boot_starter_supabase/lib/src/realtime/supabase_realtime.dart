@@ -40,9 +40,14 @@ const _log = SpringLog('spring.supabase.realtime');
 ///
 /// Every channel is joined with the access token of
 /// `SupabaseCredentials`, asked again at each join. When the application
-/// has a `LoginSession`, each change of the login sends the new token to
-/// the joined channels (the anon key after a logout), without joining
-/// again; a token that was refreshed is sent at the next heartbeat.
+/// has a `LoginSession`, each change of the login reaches the channels
+/// in use: a new token of the same user is sent to the joined channel,
+/// without joining again (a token that was refreshed is sent at the next
+/// heartbeat); for another user, or nobody after a logout, the channel
+/// is joined again with the new token (the anon key for nobody), and
+/// what the server still sent for the user before is dropped. The
+/// streams go on; as with any new join, a message of that moment is
+/// missed.
 ///
 /// A channel acts as the application itself: its login, or the anon key.
 /// It outlives a server's request, so it never takes the token of the
@@ -201,8 +206,10 @@ final class SupabaseRealtime implements DisposableBean {
     '${filter == null ? '' : ':$filter'}',
   ).postgresChanges(schema: schema, table: table, filter: filter, kind: kind);
 
-  /// Sends the current access token to every joined channel that was
-  /// joined with another one, without joining again.
+  /// Brings every joined channel in line with the current access token:
+  /// another token of the same user is sent to it, without joining
+  /// again; with the token of another user, or of nobody, the channel is
+  /// joined again.
   ///
   /// Called by itself when the application's `LoginSession` changes and
   /// at every heartbeat (so a refreshed token reaches the channels before
@@ -783,10 +790,18 @@ abstract interface class _Feature {
   void end();
 }
 
+// Whose token it is: the user of a token of Auth (its `sub`); null for a
+// key, which is nobody's (the anon key) or the service role's.
+String? _userOf(String? token) =>
+    switch (token == null ? null : supabaseTokenClaims(token)?['sub']) {
+      final String subject when subject.isNotEmpty => subject,
+      _ => null,
+    };
+
 /// One join of a channel: the Phoenix session with the configuration
 /// it was made for.
 final class _Join {
-  _Join(this.session, this.config);
+  _Join(this.session, this.config, {this.replied = true});
 
   final PhoenixChannelSession session;
   // The configuration as JSON text, to tell when another one is needed.
@@ -795,6 +810,10 @@ final class _Join {
   // Messages that came before the reply of the join was read.
   final held = <PhoenixMessage>[];
   bool ready = false;
+  // Whether the server has answered this join. False at first for a join
+  // that takes the place of another user's: what comes before the answer
+  // is still of that one, and is dropped.
+  bool replied;
   // The token the server has for this join.
   String? token;
 
@@ -857,8 +876,9 @@ final class _Channel {
   }
 
   // The join with the configuration wanted now: the one in force, or a
-  // new one in its place.
-  _Join _open() {
+  // new one in its place; always a new one with [asAnother], when the
+  // token is another user's.
+  _Join _open({bool asAnother = false}) {
     final config = <String, Object?>{};
     for (final feature in features) {
       feature.configure(config);
@@ -866,7 +886,7 @@ final class _Channel {
     config['private'] = handle.private;
     final encoded = jsonEncode(config);
     final current = _join;
-    if (current != null && current.config == encoded) {
+    if (current != null && current.config == encoded && !asAnother) {
       return current;
     }
     late final _Join join;
@@ -878,7 +898,7 @@ final class _Channel {
         return {'config': config, 'access_token': token};
       },
     );
-    join = _join = _Join(session, encoded);
+    join = _join = _Join(session, encoded, replied: !asAnother);
     for (final feature in features) {
       feature.opened();
     }
@@ -936,7 +956,9 @@ final class _Channel {
       return;
     }
     // The reply of this join: until it is read, messages wait.
-    join.ready = false;
+    join
+      ..ready = false
+      ..replied = true;
     unawaited(
       join.session.join().then((response) {
         if (!identical(join, _join)) {
@@ -951,12 +973,14 @@ final class _Channel {
         for (final message in held) {
           _receive(join, message);
         }
+        // The login may have changed while the join was on its way.
+        unawaited(refreshToken());
       }, onError: (Object _) {}),
     );
   }
 
   void _message(_Join join, PhoenixMessage message) {
-    if (!identical(join, _join)) {
+    if (!identical(join, _join) || !join.replied) {
       return;
     }
     if (join.ready) {
@@ -1041,8 +1065,12 @@ final class _Channel {
     }
   }
 
-  // Sends the access token to the server when it is not the one of the
-  // join any more.
+  // Brings the join in line with the access token when it is not the
+  // one of the join any more: sent to the server when it is the same
+  // user's, a new join when it is another user's or nobody's. The server
+  // takes a token for a joined channel whoever it names, but goes on
+  // sending the rows of the user before for a moment, and nothing here
+  // could tell them from the new user's.
   Future<void> refreshToken() async {
     final join = _join;
     if (join == null || join.session.state != PhoenixChannelState.joined) {
@@ -1061,6 +1089,14 @@ final class _Channel {
     if (!identical(join, _join) ||
         join.session.state != PhoenixChannelState.joined ||
         join.token == token) {
+      return;
+    }
+    if (_userOf(join.token) != _userOf(token)) {
+      try {
+        _open(asAnother: true);
+      } on Object catch (error, stackTrace) {
+        fail(error, stackTrace);
+      }
       return;
     }
     join.token = token;

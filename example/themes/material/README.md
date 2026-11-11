@@ -99,7 +99,7 @@ the not-found page.
   `print`).
 - `lib/src/pages/`: the eleven pages, each a `@ScreenRoute('/<page>')`
   screen; they read `context.theme.*` from the
-  generated `lib/spring_gen/theme.spring.dart` (import `spring_gen/main.spring.dart`).
+  generated `lib/spring_gen/theme.spring.keys.dart` (import `spring_gen/main.spring.dart`).
 - `lib/src/widgets/styled_widgets.dart`: the widgets of our own, built with
   `ThemeStates` and `ThemeAnimation`.
 

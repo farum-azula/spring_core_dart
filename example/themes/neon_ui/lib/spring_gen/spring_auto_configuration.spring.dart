@@ -15,7 +15,7 @@ import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
 
-part 'theme.spring.dart';
+part 'theme.spring.keys.dart';
 
 /// Beans found by `@ComponentScan` in `lib`.
 _i1.BeanModule get $neonUiAutoConfiguration {

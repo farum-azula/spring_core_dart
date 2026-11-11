@@ -12,6 +12,7 @@ import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/aop_analysis.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
+import 'package:spring_core_dart_generator/src/dart_names.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/json_annotation_checker.dart';
 import 'package:spring_core_dart_generator/src/log_scanning.dart';

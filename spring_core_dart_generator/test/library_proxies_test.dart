@@ -710,5 +710,59 @@ final BeanModule starterAutoConfiguration = BeanModule(
       expect(code, contains("aopProxies:{r'package:starter/task.dart#Task':"));
       expect(code, isNot(contains('starterDebugAutoConfiguration')));
     });
+
+    test(
+      'false, the beans behind two variables that read each other: a '
+      'module always built that reads the second one keeps the proxy',
+      () async {
+        // The module left out is walked first: it reads `shared`, which reads
+        // `other` (in a closure, so the two initialize) before the beans, and
+        // `other` reads `shared` back. The module always built reads `other`.
+        final (_, output) = await _build(
+          app: app,
+          main: main,
+          config: 'starter.debug.enabled=false',
+          starter: {
+            ...beans,
+            'lib/spring_auto_configuration.dart': r"""
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:starter/spring_gen/beans.spring.dart';
+
+List<BeanModule> later(BeanModule Function() module) => const [];
+
+final BeanModule shared = BeanModule(
+  'shared',
+  const [],
+  imports: [...later(() => other), $starterBeans],
+);
+
+final BeanModule other = BeanModule('other', const [], imports: [shared]);
+
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild('starter.debug.enabled'),
+)
+final BeanModule aDebugAutoConfiguration = BeanModule(
+  'aDebugAutoConfiguration',
+  const [],
+  imports: [shared],
+);
+
+@AutoConfigurationModule()
+final BeanModule starterAutoConfiguration = BeanModule(
+  'starterAutoConfiguration',
+  const [],
+  imports: [other],
+);
+""",
+          },
+        );
+        final code = output.replaceAll(RegExp(r'\s'), '');
+        expect(
+          code,
+          contains("aopProxies:{r'package:starter/task.dart#Task':"),
+        );
+        expect(code, isNot(contains('aDebugAutoConfiguration')));
+      },
+    );
   });
 }

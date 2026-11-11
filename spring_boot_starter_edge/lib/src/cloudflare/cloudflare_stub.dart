@@ -10,6 +10,9 @@ final class _NoBindings implements CloudflareBindings {
   bool has(String binding) => false;
 
   @override
+  bool get loaded => false;
+
+  @override
   KvNamespace kv(String binding) => throw _none(binding);
 
   @override

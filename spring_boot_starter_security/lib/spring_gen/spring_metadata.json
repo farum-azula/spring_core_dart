@@ -253,7 +253,7 @@
         "@ConditionalOnMissingBean(PrincipalRoleChecker)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 447,
+      "line": 486,
       "injects": [],
       "members": [
         {
@@ -282,7 +282,7 @@
         "@ConditionalOnMissingBean(OAuth2AuthorizedClientRepository)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 399,
+      "line": 400,
       "injects": [],
       "members": [
         {
@@ -334,7 +334,7 @@
         "@ConditionalOnMissingBean(CookieSigner)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 241,
+      "line": 242,
       "injects": [],
       "members": [
         {
@@ -374,7 +374,7 @@
         "@ConditionalOnMissingBean(SecurityFilterChain)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 372,
+      "line": 373,
       "injects": [],
       "members": [
         {
@@ -404,7 +404,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 226,
+      "line": 227,
       "injects": [],
       "members": [
         {
@@ -618,7 +618,7 @@
         "@_OnNoClientRegistrationsOrUserProperties()"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 323,
+      "line": 324,
       "injects": [],
       "members": [
         {
@@ -686,7 +686,7 @@
         "@ConditionalOnMissingBean(JwtAuthenticationConverter)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 311,
+      "line": 312,
       "injects": [],
       "members": [
         {
@@ -724,7 +724,7 @@
         "@_OnResourceServerProperties()"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 255,
+      "line": 256,
       "injects": [],
       "members": [
         {
@@ -750,7 +750,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 439,
+      "line": 478,
       "injects": [],
       "members": [
         {
@@ -778,7 +778,7 @@
         "@ConditionalOnMissingBean(OidcIdTokenDecoder)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 508,
+      "line": 547,
       "injects": [],
       "members": [
         {
@@ -789,6 +789,75 @@
             "ClientRegistration registration",
             "String tokenValue"
           ]
+        }
+      ]
+    },
+    {
+      "name": "programWideAuthenticationMonitor",
+      "type": "ProgramWideAuthenticationMonitor",
+      "types": [
+        "ProgramWideAuthenticationMonitor",
+        "DisposableBean"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(ProgramWideAuthenticationMonitor)"
+      ],
+      "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
+      "line": 436,
+      "injects": [],
+      "members": [
+        {
+          "name": "count",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "current",
+          "kind": "getter",
+          "type": "Authentication?"
+        },
+        {
+          "name": "destroy",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "securityContextHealthIndicator",
+      "type": "SecurityContextHealthIndicator",
+      "types": [
+        "SecurityContextHealthIndicator",
+        "HealthIndicator",
+        "HealthContributor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('management.health.securityContext.enabled', havingValue: 'true')",
+        "@ConditionalOnMissingBean(SecurityContextHealthIndicator)"
+      ],
+      "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
+      "line": 448,
+      "injects": [],
+      "members": [
+        {
+          "name": "health",
+          "kind": "method",
+          "type": "Health",
+          "parameters": []
+        },
+        {
+          "name": "monitor",
+          "kind": "field",
+          "type": "ProgramWideAuthenticationMonitor"
         }
       ]
     },
@@ -806,7 +875,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 417,
+      "line": 418,
       "injects": [],
       "members": [
         {
@@ -895,7 +964,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 433,
+      "line": 472,
       "injects": [],
       "members": [
         {

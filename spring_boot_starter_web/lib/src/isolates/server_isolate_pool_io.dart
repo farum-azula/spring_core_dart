@@ -16,30 +16,92 @@ const _isFlutter = bool.fromEnvironment('dart.library.ui');
 
 // The way back to the pool, in an isolate the pool started: set before
 // the application starts there.
-_Link? _link;
+PrimaryIsolateLink? _link;
 
 /// Whether this isolate was started by a pool.
 bool get isServerIsolate => _link != null;
 
-// An isolate's line to the first one: what it tells the pool, and the
-// questions it asks with their answers.
-final class _Link {
-  _Link(this.toPrimary) {
+/// An isolate's line to the first one: what it tells the pool, and the
+/// questions it asks with their answers.
+///
+/// A question is answered within [timeout] or fails with a
+/// [TimeoutException] that names it: the first isolate may be stopping,
+/// or its handler may never answer, and whoever asked (a request, a
+/// scaling step) must not wait for ever. [close] fails the questions
+/// that still wait.
+final class PrimaryIsolateLink {
+  /// A line to the pool behind [toPrimary].
+  PrimaryIsolateLink(this.toPrimary, {this.timeout = defaultTimeout}) {
     _answers.listen(_answered);
   }
 
+  /// How long a question waits for its answer unless it says otherwise.
+  static const defaultTimeout = Duration(minutes: 1);
+
+  /// The pool's port in the first isolate.
   final SendPort toPrimary;
+
+  /// How long a question waits for its answer.
+  final Duration timeout;
+
   final _answers = ReceivePort();
   final _waiting = <int, Completer<Object?>>{};
   var _asked = 0;
+  var _closed = false;
 
-  // `[ask, number, id, request, where to answer]`.
-  Future<Object?> ask(String id, Object? request) {
+  /// Asks the handler [id] of the first isolate, as
+  /// `[ask, number, id, request, where to answer]`; the answer within
+  /// [timeout] (this line's unless given), else a [TimeoutException].
+  Future<Object?> ask(String id, Object? request, {Duration? timeout}) {
+    if (_closed) {
+      return Future.error(_closedError(id), StackTrace.current);
+    }
     final number = ++_asked;
-    final answer = _waiting[number] = Completer<Object?>();
-    toPrimary.send(['ask', number, id, request, _answers.sendPort]);
-    return answer.future;
+    final answer = Completer<Object?>();
+    try {
+      toPrimary.send(['ask', number, id, request, _answers.sendPort]);
+    } on Object catch (error, stackTrace) {
+      // A request that cannot cross isolates.
+      return Future.error(error, stackTrace);
+    }
+    _waiting[number] = answer;
+    final limit = timeout ?? this.timeout;
+    final timer = Timer(limit, () {
+      if (identical(_waiting[number], answer)) {
+        _waiting.remove(number);
+        answer.completeError(
+          TimeoutException(
+            'The first isolate did not answer "$id", asked in '
+            '${IsolateInfo.current.name}',
+            limit,
+          ),
+          StackTrace.current,
+        );
+      }
+    });
+    return answer.future.whenComplete(timer.cancel);
   }
+
+  /// Ends the line: the questions that wait fail with a [StateError], and
+  /// so does every later one.
+  void close() {
+    if (_closed) {
+      return;
+    }
+    _closed = true;
+    _answers.close();
+    final waiting = [..._waiting.values];
+    _waiting.clear();
+    for (final answer in waiting) {
+      answer.completeError(_closedError(null), StackTrace.current);
+    }
+  }
+
+  StateError _closedError(String? id) => StateError(
+    'The line to the first isolate is closed in '
+    '${IsolateInfo.current.name}'
+    '${id == null ? '' : ': "$id" was not asked'}',
+  );
 
   // `[answer, number, result, the error's text or null]`.
   void _answered(Object? message) {
@@ -72,7 +134,7 @@ Future<void> _serverIsolateMain(_Start start) async {
     index: start.index,
     primary: false,
   );
-  final link = _link = _Link(start.toPrimary);
+  final link = _link = PrimaryIsolateLink(start.toPrimary);
   // Questions for the first isolate go there from now on.
   PrimaryIsolate.remote = link.ask;
   try {
@@ -746,6 +808,12 @@ final class ServerIsolateWorker
   /// This isolate's reports.
   final IsolateReports reports;
 
+  /// How long a scaling step asked here waits for the pool: the time an
+  /// isolate may take to start, and the time any question may take. A
+  /// step that is not done by then fails here with a `TimeoutException`;
+  /// the pool goes on with it.
+  static const scaleTimeout = Duration(minutes: 3);
+
   ApplicationContext? _context;
   ReceivePort? _commands;
   var _running = false;
@@ -782,10 +850,14 @@ final class ServerIsolateWorker
     if (link == null) {
       throw StateError('Not an isolate of a server pool');
     }
-    final result = await link.ask(ServerIsolatePool.scaleHandlerId, {
-      'to': count,
-      'reason': '$reason, asked in ${IsolateInfo.current.name}',
-    });
+    final result = await link.ask(
+      ServerIsolatePool.scaleHandlerId,
+      {
+        'to': count,
+        'reason': '$reason, asked in ${IsolateInfo.current.name}',
+      },
+      timeout: scaleTimeout,
+    );
     return (result! as num).toInt();
   }
 
@@ -836,6 +908,7 @@ final class ServerIsolateWorker
         await context.closeAsync();
       }
     } finally {
+      _link?.close();
       Isolate.exit();
     }
   }

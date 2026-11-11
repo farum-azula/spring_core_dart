@@ -110,6 +110,30 @@ void main() {
       });
     });
 
+    test('more rows than the API returns in one answer (max_rows = 1000) '
+        'are all read', () async {
+      await ada.run(() async {
+        final prefix = Stack.unique('cap');
+        final saved = await ada.todos.saveAll([
+          for (var i = 1; i <= 1100; i++)
+            Todo(title: '$prefix $i', listId: 'cap'),
+        ]);
+        try {
+          final found = await ada.todos.findByTitleStartingWithIgnoreCase(
+            prefix,
+          );
+          expect(found, hasLength(1100));
+          expect(found.map((t) => t.id).toSet(), hasLength(1100));
+        } finally {
+          for (var i = 0; i < saved.length; i += 100) {
+            await ada.todos.deleteAllById([
+              for (final todo in saved.skip(i).take(100)) todo.id!,
+            ]);
+          }
+        }
+      });
+    }, timeout: const Timeout(Duration(minutes: 2)));
+
     test('row-level security: another user neither sees nor changes the '
         'rows', () async {
       final listId = Stack.unique('l');

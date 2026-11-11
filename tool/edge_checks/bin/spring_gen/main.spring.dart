@@ -142,14 +142,20 @@ Object? _$invoke9(_i1.PublicController bean, List<Object?> arguments) =>
 Object? _$invoke10(_i1.PublicController bean, List<Object?> arguments) =>
     bean.badHeader();
 Object? _$invoke11(_i1.PublicController bean, List<Object?> arguments) =>
-    bean.later();
+    bean.badHeaders((arguments[0] as _i5.ServerHttpResponse));
 Object? _$invoke12(_i1.PublicController bean, List<Object?> arguments) =>
-    bean.laterCount();
+    bean.endless();
 Object? _$invoke13(_i1.PublicController bean, List<Object?> arguments) =>
-    bean.limited();
+    bean.producedCount();
 Object? _$invoke14(_i1.PublicController bean, List<Object?> arguments) =>
+    bean.later();
+Object? _$invoke15(_i1.PublicController bean, List<Object?> arguments) =>
+    bean.laterCount();
+Object? _$invoke16(_i1.PublicController bean, List<Object?> arguments) =>
+    bean.limited();
+Object? _$invoke17(_i1.PublicController bean, List<Object?> arguments) =>
     bean.file((arguments[0] as String));
-const _$knownAdvisors15 = {
+const _$knownAdvisors18 = {
   r'package:spring_boot_dart',
   r'package:spring_boot_starter_cache',
   r'package:spring_boot_starter_edge',
@@ -161,38 +167,38 @@ const _$knownAdvisors15 = {
   r'package:spring_boot_starter_web',
   r'package:spring_security_core',
 };
-Object? _$invoke16(_i1.AccountController bean, List<Object?> arguments) =>
+Object? _$invoke19(_i1.AccountController bean, List<Object?> arguments) =>
     bean.me((arguments[0] as _i6.Authentication));
-Object? _$invoke17(_i1.AccountController bean, List<Object?> arguments) =>
+Object? _$invoke20(_i1.AccountController bean, List<Object?> arguments) =>
     bean.admin();
-Object? _$invoke18(_i1.Rates bean, List<Object?> arguments) {
+Object? _$invoke21(_i1.Rates bean, List<Object?> arguments) {
   bean.refresh();
   return null;
 }
 
-const _$target19 = _i2.AopTarget(
+const _$target22 = _i2.AopTarget(
   r'Rates',
   types: [r'Rates'],
   annotations: [_i2.Service()],
   annotationTypes: [r'Service'],
 );
-Object? _$invoke20(_i1.RatesController bean, List<Object?> arguments) =>
+Object? _$invoke23(_i1.RatesController bean, List<Object?> arguments) =>
     bean.rate((arguments[0] as String));
-Object? _$invoke21(_i1.BindingsController bean, List<Object?> arguments) =>
-    bean.warned();
-Object? _$invoke22(_i1.BindingsController bean, List<Object?> arguments) =>
-    bean.scheduled();
-Object? _$invoke23(_i1.BindingsController bean, List<Object?> arguments) =>
-    bean.put((arguments[0] as String), (arguments[1] as String));
 Object? _$invoke24(_i1.BindingsController bean, List<Object?> arguments) =>
-    bean.get((arguments[0] as String));
+    bean.warned();
 Object? _$invoke25(_i1.BindingsController bean, List<Object?> arguments) =>
-    bean.note((arguments[0] as String));
+    bean.scheduled();
 Object? _$invoke26(_i1.BindingsController bean, List<Object?> arguments) =>
+    bean.put((arguments[0] as String), (arguments[1] as String));
+Object? _$invoke27(_i1.BindingsController bean, List<Object?> arguments) =>
+    bean.get((arguments[0] as String));
+Object? _$invoke28(_i1.BindingsController bean, List<Object?> arguments) =>
+    bean.note((arguments[0] as String));
+Object? _$invoke29(_i1.BindingsController bean, List<Object?> arguments) =>
     bean.buckets();
-Object? _$invoke27(_i1.AdminReports bean, List<Object?> arguments) =>
+Object? _$invoke30(_i1.AdminReports bean, List<Object?> arguments) =>
     bean.all();
-const _$target28 = _i2.AopTarget(
+const _$target31 = _i2.AopTarget(
   r'AdminReports',
   types: [r'AdminReports'],
   annotations: [_i2.Service()],
@@ -363,21 +369,51 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
         annotations: [_i5.GetMapping(r'/bad-header')],
       ),
       const _i2.BeanMethod<_i1.PublicController>(
+        r'badHeaders',
+        parameterTypes: [_i5.ServerHttpResponse],
+        parameters: [
+          _i2.BeanParameter(
+            r'response',
+            type: _i2.ClassType<_i5.ServerHttpResponse>(),
+            isRequired: true,
+          ),
+        ],
+        returnTypeInfo: _i2.GenericType<_i5.ResponseEntity<String>>([
+          _i2.ClassType<String>(),
+        ]),
+        invoke: _$invoke11,
+        annotations: [_i5.GetMapping(r'/bad-headers')],
+      ),
+      const _i2.BeanMethod<_i1.PublicController>(
+        r'endless',
+        returnTypeInfo: _i2.GenericType<_i8.Stream<List<int>>>([
+          _i2.ListType<int>(_i2.ClassType<int>()),
+        ]),
+        invoke: _$invoke12,
+        annotations: [_i5.GetMapping(r'/endless')],
+      ),
+      const _i2.BeanMethod<_i1.PublicController>(
+        r'producedCount',
+        returnTypeInfo: _i2.ClassType<int>(),
+        invoke: _$invoke13,
+        annotations: [_i5.GetMapping(r'/produced')],
+      ),
+      const _i2.BeanMethod<_i1.PublicController>(
         r'later',
         returnTypeInfo: _i2.ClassType<String>(),
-        invoke: _$invoke11,
+        invoke: _$invoke14,
         annotations: [_i5.PostMapping(r'/later')],
       ),
       const _i2.BeanMethod<_i1.PublicController>(
         r'laterCount',
         returnTypeInfo: _i2.ClassType<int>(),
-        invoke: _$invoke12,
+        invoke: _$invoke15,
         annotations: [_i5.GetMapping(r'/later')],
       ),
       const _i2.BeanMethod<_i1.PublicController>(
         r'limited',
         returnTypeInfo: _i2.ClassType<String>(),
-        invoke: _$invoke13,
+        invoke: _$invoke16,
         annotations: [
           _i5.GetMapping(r'/limited'),
           _i5.RateLimiter(r'2/1m', key: "#{headers['x-client']}"),
@@ -395,13 +431,13 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           ),
         ],
         returnTypeInfo: _i2.ClassType<String>(),
-        invoke: _$invoke14,
+        invoke: _$invoke17,
         annotations: [_i5.GetMapping(r'/files/{name}')],
       ),
     ],
     annotations: const [_i5.RestController()],
     aopProxy: const _i2.AopProxyFactory.pruned(
-      knownAdvisors: _$knownAdvisors15,
+      knownAdvisors: _$knownAdvisors18,
     ),
   ),
   _i2.BeanDefinition<_i1.AccountController>(
@@ -425,19 +461,19 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           _i2.ClassType<String>(),
           _i2.DynamicType(),
         ),
-        invoke: _$invoke16,
+        invoke: _$invoke19,
         annotations: [_i5.GetMapping(r'/me')],
       ),
       const _i2.BeanMethod<_i1.AccountController>(
         r'admin',
         returnTypeInfo: _i2.ClassType<String>(),
-        invoke: _$invoke17,
+        invoke: _$invoke20,
         annotations: [_i5.GetMapping(r'/admin')],
       ),
     ],
     annotations: const [_i5.RestController(), _i5.RequestMapping(r'/api')],
     aopProxy: const _i2.AopProxyFactory.pruned(
-      knownAdvisors: _$knownAdvisors15,
+      knownAdvisors: _$knownAdvisors18,
     ),
   ),
   _i2.BeanDefinition<_i1.Rates>(
@@ -448,7 +484,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       const _i2.BeanMethod<_i1.Rates>(
         r'refresh',
         isVoid: true,
-        invoke: _$invoke18,
+        invoke: _$invoke21,
         annotations: [
           _i10.Scheduled(fixedRateString: r'1h', initialDelayString: r'1h'),
         ],
@@ -459,7 +495,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       signatures: const [
         _i2.MethodSignature.of(
           r'rate',
-          _$target19,
+          _$target22,
           returnType: r'int',
           parameterTypes: [r'String'],
           parameterNames: [r'currency'],
@@ -467,7 +503,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           annotationTypes: [r'Cacheable'],
         ),
       ],
-      knownAdvisors: _$knownAdvisors15,
+      knownAdvisors: _$knownAdvisors18,
       advise: (bean, invoker) =>
           bean is _$RatesProxy ? (bean..aopInvoker = invoker) : null,
     ),
@@ -490,13 +526,13 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           ),
         ],
         returnTypeInfo: _i2.ClassType<int>(),
-        invoke: _$invoke20,
+        invoke: _$invoke23,
         annotations: [_i5.GetMapping(r'/rates/{currency}')],
       ),
     ],
     annotations: const [_i5.RestController()],
     aopProxy: const _i2.AopProxyFactory.pruned(
-      knownAdvisors: _$knownAdvisors15,
+      knownAdvisors: _$knownAdvisors18,
     ),
   ),
   _i2.BeanDefinition<_i1.ScheduleLog>(
@@ -506,7 +542,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
     create: (r) => _i1.ScheduleLog(),
     annotations: const [_i2.Component()],
     aopProxy: const _i2.AopProxyFactory.pruned(
-      knownAdvisors: _$knownAdvisors15,
+      knownAdvisors: _$knownAdvisors18,
     ),
   ),
   _i2.BeanDefinition<_i1.BindingsController>(
@@ -530,13 +566,13 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       const _i2.BeanMethod<_i1.BindingsController>(
         r'warned',
         returnTypeInfo: _i2.ListType<String>(_i2.ClassType<String>()),
-        invoke: _$invoke21,
+        invoke: _$invoke24,
         annotations: [_i5.GetMapping(r'/warnings')],
       ),
       const _i2.BeanMethod<_i1.BindingsController>(
         r'scheduled',
         returnTypeInfo: _i2.ListType<String>(_i2.ClassType<String>()),
-        invoke: _$invoke22,
+        invoke: _$invoke25,
         annotations: [_i5.GetMapping(r'/scheduled')],
       ),
       const _i2.BeanMethod<_i1.BindingsController>(
@@ -558,7 +594,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
         ],
         returnTypeInfo: _i2.ListType<String>(_i2.ClassType<String>()),
         isFuture: true,
-        invoke: _$invoke23,
+        invoke: _$invoke26,
         annotations: [_i5.PutMapping(r'/kv/{key}')],
       ),
       const _i2.BeanMethod<_i1.BindingsController>(
@@ -577,7 +613,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           _i2.DynamicType(),
         ),
         isFuture: true,
-        invoke: _$invoke24,
+        invoke: _$invoke27,
         annotations: [_i5.GetMapping(r'/kv/{key}')],
       ),
       const _i2.BeanMethod<_i1.BindingsController>(
@@ -596,7 +632,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           _i2.DynamicType(),
         ),
         isFuture: true,
-        invoke: _$invoke25,
+        invoke: _$invoke28,
         annotations: [_i5.PostMapping(r'/d1/notes')],
       ),
       const _i2.BeanMethod<_i1.BindingsController>(
@@ -608,13 +644,13 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           ),
         ),
         isFuture: true,
-        invoke: _$invoke26,
+        invoke: _$invoke29,
         annotations: [_i5.GetMapping(r'/d1/buckets')],
       ),
     ],
     annotations: const [_i5.RestController()],
     aopProxy: const _i2.AopProxyFactory.pruned(
-      knownAdvisors: _$knownAdvisors15,
+      knownAdvisors: _$knownAdvisors18,
     ),
   ),
   _i2.BeanDefinition<_i1.AdminReports>(
@@ -625,7 +661,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       const _i2.BeanMethod<_i1.AdminReports>(
         r'all',
         returnTypeInfo: _i2.ClassType<String>(),
-        invoke: _$invoke27,
+        invoke: _$invoke30,
         annotations: [_i6.PreAuthorize("hasRole('ADMIN')")],
       ),
     ],
@@ -634,7 +670,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
       signatures: const [
         _i2.MethodSignature.of(
           r'all',
-          _$target28,
+          _$target31,
           returnType: r'String',
           annotations: [_i6.PreAuthorize("hasRole('ADMIN')")],
           annotationTypes: [r'PreAuthorize'],
@@ -664,7 +700,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
     ) as _$SecurityConfigConfiguration)._$apiChain(r),
     annotations: const [_i2.Bean()],
     aopProxy: const _i2.AopProxyFactory.pruned(
-      knownAdvisors: _$knownAdvisors15,
+      knownAdvisors: _$knownAdvisors18,
     ),
   ),
 ]);
@@ -699,31 +735,31 @@ _i15.SpringApplication get springApplication => _i15.SpringApplication(
     _i18.springBootStarterEdgeAutoConfiguration:
         const _i15.AutoConfigurationModule(
           before: [
-            'springBootStarterWebAutoConfiguration',
-            'springBootStarterSupabaseDataAutoConfiguration',
-            'springBootStarterSupabaseAutoConfiguration',
-            'springBootStarterSupabaseServerAutoConfiguration',
+            r'springBootStarterWebAutoConfiguration',
+            r'springBootStarterSupabaseDataAutoConfiguration',
+            r'springBootStarterSupabaseAutoConfiguration',
+            r'springBootStarterSupabaseServerAutoConfiguration',
           ],
         ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i23.springBootStarterSecurityAutoConfiguration:
           const _i15.AutoConfigurationModule(
-            after: ['springBootStarterOauth2ClientAutoConfiguration'],
+            after: [r'springBootStarterOauth2ClientAutoConfiguration'],
           ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i23.springBootStarterSecurityOAuth2ClientAutoConfiguration:
           const _i15.AutoConfigurationModule(
-            before: ['springBootStarterOauth2ClientAutoConfiguration'],
+            before: [r'springBootStarterOauth2ClientAutoConfiguration'],
           ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i24.springBootStarterWebRateLimitAutoConfiguration:
           const _i15.AutoConfigurationModule(
             after: [
-              'springBootStarterDataAutoConfiguration',
-              'springBootStarterSupabaseAutoConfiguration',
+              r'springBootStarterDataAutoConfiguration',
+              r'springBootStarterSupabaseAutoConfiguration',
             ],
           ),
   },
@@ -773,7 +809,7 @@ _i15.SpringApplication get springApplication => _i15.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'a444c340',
+  fingerprint: '3d60d8ae',
 );
 
 /// Starts the application: config files, environment, context, runners

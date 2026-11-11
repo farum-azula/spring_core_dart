@@ -47,6 +47,91 @@ void main() {
       }
       expect(() => RateLimit.parse('5/1m', burst: 0), throwsFormatException);
     });
+
+    test('a duration without a unit is refused, with what to write', () {
+      // Milliseconds otherwise: 100 every 60 ms never limits.
+      expect(
+        () => RateLimit.parse('100/60'),
+        throwsA(
+          isA<FormatException>()
+              .having((e) => e.message, 'message', contains('needs a unit'))
+              .having((e) => e.message, 'message', contains('100/60s'))
+              .having((e) => e.source, 'source', '100/60'),
+        ),
+      );
+      expect(() => RateLimit.parse('5/1'), throwsFormatException);
+      expect(() => RateLimit.parse('5/ 1000 '), throwsFormatException);
+    });
+
+    test('the count is decimal digits, with a bound', () {
+      for (final text in [
+        '0x10/1m',
+        '+5/1m',
+        '5e2/1m',
+        '5.0/1m',
+        '1 0/1m',
+        '9223372036854775807/1s',
+        '99999999999999999999999999/1s',
+        '${RateLimit.maxCount + 1}/1s',
+      ]) {
+        expect(
+          () => RateLimit.parse(text),
+          throwsFormatException,
+          reason: text,
+        );
+      }
+      final most = RateLimit.parse('${RateLimit.maxCount}/1s');
+      expect(most.count, RateLimit.maxCount);
+      expect(most.refillPerSecond, RateLimit.maxCount);
+      expect(RateLimit.parse('007/1m').count, 7);
+      expect(
+        () => RateLimit.parse('5/1m', burst: RateLimit.maxCount + 1),
+        throwsFormatException,
+      );
+    });
+
+    test('the duration is a number of ms, s, m, h or d, a year at most', () {
+      expect(RateLimit.parse('5/1D').period, const Duration(days: 1));
+      expect(RateLimit.parse('5/366d').period, const Duration(days: 366));
+      expect(RateLimit.parse('5/ms').period, const Duration(milliseconds: 1));
+      for (final text in [
+        '5/367d',
+        '5/9999999d',
+        '5/99999999999999999999d',
+        '5/-1s',
+        '5/+1s',
+        '5/1.5s',
+        '5/PT1M',
+        '5/1w',
+        '5/0ms',
+      ]) {
+        expect(
+          () => RateLimit.parse(text),
+          throwsFormatException,
+          reason: text,
+        );
+      }
+    });
+
+    test('a limit that is not valid cannot be used', () {
+      const minute = Duration(minutes: 1);
+      for (final limit in const [
+        RateLimit(0, minute),
+        RateLimit(-1, minute),
+        RateLimit(5, Duration.zero),
+        RateLimit(5, Duration(seconds: -1)),
+        RateLimit(5, minute, burst: 0),
+        RateLimit(9223372036854775807, Duration(seconds: 1)),
+        RateLimit(5, minute, burst: RateLimit.maxCount + 1),
+      ]) {
+        expect(limit.requireValid, throwsArgumentError, reason: '$limit');
+        expect(() => limit.refillPerSecond, throwsArgumentError);
+        expect(() => limit.fullAfter, throwsArgumentError);
+        expect(() => TokenBucket.full(limit, 0), throwsArgumentError);
+      }
+      const RateLimit(1, Duration(microseconds: 1)).requireValid();
+      const RateLimit(RateLimit.maxCount, minute, burst: 1).requireValid();
+    });
   });
 
   group('TokenBucket', () {
@@ -109,6 +194,24 @@ void main() {
       final bucket = TokenBucket(0, 100 * _second);
       expect(bucket.tryAcquire(limit, 50 * _second).allowed, isFalse);
       expect(bucket.tokens, 0);
+    });
+
+    test('a limit that is not valid leaves the bucket as it was', () {
+      final bucket = TokenBucket.full(limit, 0);
+      expect(bucket.tryAcquire(limit, 0).allowed, isTrue);
+      for (final broken in const [
+        RateLimit(0, Duration(minutes: 1)),
+        RateLimit(5, Duration.zero),
+      ]) {
+        expect(() => bucket.tryAcquire(broken, _second), throwsArgumentError);
+        expect(() => bucket.isFullAt(broken, _second), throwsArgumentError);
+      }
+      expect(bucket.tokens, 4);
+      expect(bucket.updatedMicros, 0);
+      // And it goes on with a limit that is one.
+      final next = bucket.tryAcquire(limit, 0);
+      expect(next.allowed, isTrue);
+      expect(next.remaining, 3);
     });
 
     test('a burst apart from the rate', () {
@@ -185,6 +288,52 @@ void main() {
       // a kept its empty bucket; b starts anew.
       expect(store.acquire('a', limit).allowed, isFalse);
       expect(store.acquire('b', limit).remaining, 4);
+    });
+
+    test('refuses a size that keeps no key', () {
+      for (final size in [0, -1]) {
+        expect(
+          () => InMemoryRateLimitStore(maxEntries: size),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => '${e.message}',
+              'message',
+              contains('spring.web.rate-limit.memory.max-entries'),
+            ),
+          ),
+        );
+      }
+    });
+
+    test('with room for one key it still limits that key', () {
+      final store = InMemoryRateLimitStore(maxEntries: 1, clockMicros: () => 0);
+      const one = RateLimit(1, Duration(minutes: 1));
+      expect(store.acquire('a', one).allowed, isTrue);
+      expect(store.acquire('a', one).allowed, isFalse);
+      expect(store.length, 1);
+    });
+
+    test('a limit that is not valid changes no bucket', () async {
+      var now = 0;
+      final store = InMemoryRateLimitStore(
+        maxEntries: 2,
+        clockMicros: () => now,
+      );
+      const one = RateLimit(1, Duration(minutes: 1));
+      const none = RateLimit(0, Duration(minutes: 1));
+      expect(store.acquire('a', one).allowed, isTrue);
+      expect(() => store.acquire('a', none), throwsArgumentError);
+      expect(() => store.acquire('b', none), throwsArgumentError);
+      // In the future, not thrown at the caller.
+      await expectLater(store.tryAcquire('b', none), throwsArgumentError);
+      expect(store.length, 1);
+      // The store works on: the sweep of a full store reads every
+      // bucket's limit.
+      now = 2 * _second;
+      expect(store.acquire('b', one).allowed, isTrue);
+      expect(store.acquire('c', one).allowed, isTrue);
+      expect(store.acquire('a', one).allowed, isTrue);
+      expect(store.length, 2);
     });
 
     test('names what it keeps for the warning of a pool', () {

@@ -57,7 +57,7 @@ import 'package:supabase_example_app/src/profile/profile_card.dart' as _i14;
 import 'package:supabase_example_app/src/todos/todo.dart' as _i10;
 import 'package:supabase_example_app/src/todos/todo_list.dart' as _i11;
 
-part 'theme.spring.dart';
+part 'theme.spring.keys.dart';
 
 /// Implements `Avatars` through an `InvocationHandler`.
 class _$AvatarsImpl implements _i1.Avatars {
@@ -541,31 +541,31 @@ _i17.SpringApplication get springApplication => _i17.SpringApplication(
     _i24.springBootStarterFlutterSecurityAutoConfiguration:
         const _i17.AutoConfigurationModule(
           before: [
-            'springBootStarterOauth2ClientAutoConfiguration',
-            'springBootStarterFeignAutoConfiguration',
+            r'springBootStarterOauth2ClientAutoConfiguration',
+            r'springBootStarterFeignAutoConfiguration',
           ],
-          after: ['springBootStarterFlutterNavigationAutoConfiguration'],
+          after: [r'springBootStarterFlutterNavigationAutoConfiguration'],
         ),
     _i27.springBootStarterSupabaseAutoConfiguration:
         const _i17.AutoConfigurationModule(
           after: [
-            'springBootStarterFeignAutoConfiguration',
-            'springBootStarterWebsocketAutoConfiguration',
-            'springBootStarterDataAutoConfiguration',
-            'springSecurityCoreAutoConfiguration',
+            r'springBootStarterFeignAutoConfiguration',
+            r'springBootStarterWebsocketAutoConfiguration',
+            r'springBootStarterDataAutoConfiguration',
+            r'springSecurityCoreAutoConfiguration',
           ],
         ),
     _i27.springBootStarterSupabaseDataAutoConfiguration:
         const _i17.AutoConfigurationModule(
-          before: ['springBootStarterDataAutoConfiguration'],
+          before: [r'springBootStarterDataAutoConfiguration'],
         ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i27.springBootStarterSupabaseServerAutoConfiguration:
           const _i17.AutoConfigurationModule(
             before: [
-              'springBootStarterSecurityAutoConfiguration',
-              'springBootStarterSecurityOAuth2ClientAutoConfiguration',
+              r'springBootStarterSecurityAutoConfiguration',
+              r'springBootStarterSecurityOAuth2ClientAutoConfiguration',
             ],
           ),
   },
@@ -695,7 +695,7 @@ _i17.SpringApplication get springApplication => _i17.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '7a18514d',
+  fingerprint: 'afec7709',
 );
 
 /// Starts the application: config files, environment, context, runners

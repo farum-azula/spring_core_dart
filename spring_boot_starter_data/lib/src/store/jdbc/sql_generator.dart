@@ -1,4 +1,5 @@
-import 'package:spring_boot_dart/spring_boot_dart.dart' show LogFormatUtils;
+import 'package:spring_boot_dart/spring_boot_dart.dart'
+    show EnumType, LogFormatUtils;
 import 'package:spring_boot_starter_data/src/exceptions.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_template.dart';
 import 'package:spring_boot_starter_data/src/jdbc/json_storage.dart';
@@ -383,9 +384,11 @@ final class SqlGenerator {
 
   /// The `order by` clause (with its leading space) of [sort]: each key
   /// with its direction and explicit null placement, `lower(...)` for an
-  /// order that ignores case, and the id last (when [tieBreak] and the
-  /// entity has an id) so equal keys keep a stable order; [alwaysTieBreak]
-  /// adds it without a sort too.
+  /// order that ignores case (of a `String` or enum property only: any
+  /// other is ordered as it is, as the in-memory store does; Spring Data
+  /// JDBC folds blindly and lets the database fail), and the id last (when
+  /// [tieBreak] and the entity has an id) so equal keys keep a stable
+  /// order; [alwaysTieBreak] adds it without a sort too.
   ///
   /// A property of the sort that is no column of [entity] is an
   /// `InvalidDataAccessApiUsageException`, unless [free] is given: it then
@@ -402,8 +405,13 @@ final class SqlGenerator {
     for (final order in sort.orders) {
       final property = entity.property(order.property);
       final String column;
+      // Only text has a case: `lower` of a number or a date is an error
+      // in PostgreSQL, and a request may ask for it
+      // (`?sort=id,ignorecase`).
+      var fold = order.ignoreCase;
       if (property != null && !property.isMappedCollection) {
         column = _q(property.columnName);
+        fold = fold && _isText(property);
       } else if (free != null) {
         column = free(order.property);
       } else {
@@ -418,7 +426,7 @@ final class SqlGenerator {
         NullHandling.native => order.isDescending,
       };
       terms.add(
-        '${order.ignoreCase ? dialect.lower(column) : column} '
+        '${fold ? dialect.lower(column) : column} '
         '${order.isDescending ? 'DESC' : 'ASC'} '
         'NULLS ${nullsFirst ? 'FIRST' : 'LAST'}',
       );
@@ -468,6 +476,11 @@ final class SqlGenerator {
     }
     return property;
   }
+
+  // Whether the column of [property] holds text: a `String` or an enum.
+  static bool _isText(PersistentProperty property) =>
+      !property.isJson &&
+      (property.type is EnumType || property.type.type == String);
 
   static const _never = '1 = 0';
   static const _always = '1 = 1';
@@ -596,7 +609,7 @@ final class SqlGenerator {
           if (values.isEmpty) {
             return _never;
           }
-          final array = _array(column, ic, false, values.length);
+          final array = _array(column, ic, false, values);
           if (array != null) {
             parameters.add(name, values);
             return array;
@@ -611,7 +624,7 @@ final class SqlGenerator {
           // `x not in (..., null)` is never true.
           return _never;
         }
-        final array = _array(column, ic, true, elements.length);
+        final array = _array(column, ic, true, elements);
         if (array != null) {
           parameters.add(name, elements);
           return array;
@@ -622,18 +635,25 @@ final class SqlGenerator {
     }
   }
 
-  // The condition that binds [count] values as one array parameter, or null
-  // when the dialect writes a marker for each; a list a dialect without
-  // arrays cannot bind is refused here, clearly.
-  String? _array(String column, bool ignoreCase, bool negate, int count) {
+  // The condition that binds [values] as one array parameter, or null
+  // when each gets a marker: the dialect has no array parameters, or its
+  // driver sends no array of such values (bytes). A list too long for
+  // markers is refused here, clearly.
+  String? _array(
+    String column,
+    bool ignoreCase,
+    bool negate,
+    List<Object?> values,
+  ) {
     final array = dialect.arrayMembership(
       column,
       ignoreCase: ignoreCase,
       negate: negate,
     );
-    if (array != null) {
+    if (array != null && dialect.bindsAsArray(values)) {
       return array;
     }
+    final count = values.length;
     final limit = dialect.maxBoundParameters;
     if (limit != null && count > limit) {
       throw InvalidDataArgumentException(

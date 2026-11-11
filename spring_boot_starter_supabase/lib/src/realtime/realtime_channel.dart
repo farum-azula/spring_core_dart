@@ -187,10 +187,14 @@ class PostgresChanges {
 }
 
 /// Values of a Postgres Changes filter: a value cannot add a condition
-/// or close a list. One with a `,`, `(`, `)`, `"` or `\` in it (or
-/// nothing in it, or a blank at an end) is put in double quotes, as
-/// PostgREST writes it; a list gives its values separated by commas, for
-/// `in.({ids})`. No value at all and control characters are refused.
+/// or close a list. One with a `,`, `(`, `)`, `{`, `}`, `"` or `\` in
+/// it, a blank at an end, or the word `null` is put in double quotes,
+/// as PostgREST writes it: Realtime reads the values of `in.(…)` as an
+/// array of PostgreSQL, where a brace ends the array and `null` is no
+/// value. A list gives its values separated by commas, for
+/// `in.({ids})`. No value at all, an empty one (Realtime's filter has
+/// no way to write it: `""` matches no row) and control characters are
+/// refused.
 ///
 /// ```dart
 /// // 'title=eq.{title}' with title = 'a,b' gives title=eq."a,b"
@@ -200,7 +204,7 @@ final class PostgresFilterEncoder implements TemplateEncoder {
   /// The encoder.
   const PostgresFilterEncoder();
 
-  static final _reserved = RegExp(r'[,()"\\]');
+  static final _reserved = RegExp(r'[,(){}"\\]');
 
   @override
   String literal(String text) => text;
@@ -218,10 +222,18 @@ final class PostgresFilterEncoder implements TemplateEncoder {
       final Enum value => value.name,
       _ => '$value',
     };
+    if (text.isEmpty) {
+      throw ArgumentError(
+        '$expression gave an empty value, which a filter of Realtime cannot '
+        'say: subscribe without the filter and test the rows',
+      );
+    }
     if (text.runes.any((rune) => rune < 0x20 || rune == 0x7f)) {
       throw ArgumentError('$expression gave a value with a control character');
     }
-    if (text.isNotEmpty && text == text.trim() && !_reserved.hasMatch(text)) {
+    if (text == text.trim() &&
+        !_reserved.hasMatch(text) &&
+        text.toLowerCase() != 'null') {
       return text;
     }
     return '"${text.replaceAll(r'\', r'\\').replaceAll('"', r'\"')}"';

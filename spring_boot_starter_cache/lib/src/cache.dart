@@ -296,3 +296,20 @@ final class SimpleCacheManager implements CacheManager, IsolateLocalState {
   @override
   String toString() => 'SimpleCacheManager(${_caches.keys.join(', ')})';
 }
+
+/// A [Cache] that keeps an entry under another key than the one it is
+/// asked with: one that adds who calls, a tenant, a version.
+///
+/// `@Cacheable(sync: true)` lets the callers that miss the same key at once
+/// share one run of the method. What "the same key" is, is this cache's to
+/// say: two callers with one key and different [storedKey]s each run the
+/// method, as they each get their own entry.
+///
+/// Differs from Spring: Spring's `Cache.get(key, Callable)` leaves the
+/// locking to the cache itself; here the interceptor keeps the calls in
+/// flight and asks the cache only for the key.
+abstract interface class KeyScopingCache implements Cache {
+  /// The key the entry of [key] is kept under. It needs `==` and
+  /// `hashCode`.
+  Object? storedKey(Object? key);
+}

@@ -496,11 +496,11 @@ class GenericContainer implements WaitTarget {
     final id = _id;
     _id = null;
     _state = null;
-    if (id == null) {
-      return;
-    }
+    // The reaper is released also when no container was created (the
+    // network or the daemon refused): the start counted it already, and
+    // a count that stays keeps the reaper's connection for the whole run.
     try {
-      if (remove) {
+      if (id != null && remove) {
         await _docker?.removeContainer(id);
       }
     } finally {

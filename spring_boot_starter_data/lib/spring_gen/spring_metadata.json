@@ -2159,6 +2159,7 @@
       "type": "JdbcRateLimitStore",
       "types": [
         "JdbcRateLimitStore",
+        "VerifiableRateLimitStore",
         "RateLimitStore"
       ],
       "scope": "singleton",
@@ -2212,6 +2213,12 @@
             "RateLimit limit",
             "{int permits}"
           ]
+        },
+        {
+          "name": "verify",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
         }
       ]
     },

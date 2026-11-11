@@ -22,6 +22,7 @@ import 'package:spring_boot_starter_data/src/store/row_change.dart';
 import 'package:spring_boot_starter_data/src/transaction/platform_transaction_manager.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_exceptions.dart';
+import 'package:spring_boot_starter_data/src/transaction/transaction_synchronization_manager.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_template.dart';
 
 /// The engine behind one repository interface: the generated class calls
@@ -334,15 +335,17 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
   /// Every aggregate, ordered by [sort].
   Future<List<T>> findAllSorted(Sort sort) {
     _called('findAllSorted', const ['sort'], [sort]);
-    _refuseJson('findAllSorted', const [], sort);
-    return _guarded(() => store.find<T>(entity, sort: sort));
+    return _guarded(() {
+      _refuseJson('findAllSorted', const [], sort);
+      return store.find<T>(entity, sort: sort);
+    });
   }
 
   /// One page of aggregates, as [pageable] asks; the page knows the total.
   Future<Page<T>> findAllPaged(Pageable pageable) {
     _called('findAllPaged', const ['pageable'], [pageable]);
-    _refuseJson('findAllPaged', const [], pageable.sort);
     return _guarded(() async {
+      _refuseJson('findAllPaged', const [], pageable.sort);
       final window = _Window.of(pageable, null);
       final content = await store.find<T>(
         entity,
@@ -792,8 +795,13 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
       do {
         stale = false;
         try {
+          // Outside the transaction of the code that listens, resumes or
+          // commits: the committed rows, also after that transaction ended.
           final rows = await _guarded(
-            () => _rows(tree, arguments, sort: sort, pageable: pageable),
+            () => TransactionSynchronizationManager.runInScope(() {
+              TransactionSynchronizationManager.isolate();
+              return _rows(tree, arguments, sort: sort, pageable: pageable);
+            }),
           );
           if (!cancelled) {
             controller.add(rows);
@@ -1101,8 +1109,13 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
     }
     for (final order in sort.orders) {
       if (_jsonProperties.contains(order.property)) {
-        throw InvalidDataAccessApiUsageException(
-          refused('sort by', order.property),
+        // A sort often comes from a request (?sort=meta): a property the
+        // caller may not sort by, as one that does not exist (a 400 in
+        // the web starter's answers).
+        throw PropertyReferenceException(
+          order.property,
+          entity.introspection.className,
+          hint: refused('sort by', order.property),
         );
       }
     }

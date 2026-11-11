@@ -767,6 +767,28 @@ spring.flutter.theme:
       ]);
     });
 
+    test('a kind of bin/ names its file as the beans of bin/ do', () async {
+      final result = await _run({
+        'bin/main.dart':
+            '''
+$_header
+class ThemeLoaderKind {
+  const ThemeLoaderKind(this.name);
+  final String name;
+}
+
+@ThemeLoaderKind('doors')
+final class DoorsLoader {}
+
+@Component()
+class Shop {}
+''',
+      });
+      final kind = _list(result.json!, 'loaderKinds').single;
+      expect(kind['source'], 'bin/main.dart');
+      expect(_named(result.json!, 'beans', 'shop')['source'], 'bin/main.dart');
+    });
+
     test('a package without loader kinds has no entry', () async {
       final result = await _run({'lib/shop.dart': _properties});
       expect(result.json!.containsKey('loaderKinds'), isFalse);

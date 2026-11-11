@@ -21,7 +21,10 @@ import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 /// `name`. [read] does the reverse and the conversions databases make
 /// necessary: an enum's name to the constant, an `int` to a `double`
 /// property, an `int` 0/1 (SQLite) to a `bool`, an ISO-8601 `String` (or
-/// epoch milliseconds) to a `DateTime`, a `List<int>` to `Uint8List`.
+/// epoch milliseconds) to a `DateTime`, a `List<int>` to `Uint8List`. The
+/// elements of a `List` or a `Set` that is a column (an array of
+/// PostgreSQL, anything in the in-memory store) are written and read as
+/// single values of their type are.
 ///
 /// A [Json] property is the exception to the plain values: [write] gives
 /// its decoded JSON (what `jsonDecode` returns: maps, lists, numbers,
@@ -156,8 +159,15 @@ class EntityConverter {
     }
     Object? json = tree;
     if (tree is String && !type.isInstance(tree)) {
+      // The text of a JSON document, from a store that gave the column as
+      // it is. Only a document: a JSON string that happens to parse (a
+      // BigInt written as "123...", the text "null") is the value itself,
+      // and reading it as a number would lose digits without an error.
       try {
-        json = jsonDecode(tree);
+        if (jsonDecode(tree) case final Object decoded
+            when decoded is Map || decoded is List) {
+          json = decoded;
+        }
       } on FormatException {
         // No JSON text: a JSON string (an enum's name); the mapper judges.
       }
@@ -198,11 +208,31 @@ class EntityConverter {
 
   /// [value] as a column holds it: an `AggregateReference` as its id, an
   /// enum as its `name`, anything else unchanged.
+  ///
+  /// The elements of a `List` or a `Set` are converted as single values
+  /// are (an array column and the list of an `in` hold what a column of
+  /// one value holds): a new collection when an element changed, else
+  /// [value] itself. Bytes (`List<int>`, `Uint8List`) are one value, not
+  /// a collection.
+  ///
+  /// ```dart
+  /// converter.toColumnValue(Color.red); // 'red'
+  /// converter.toColumnValue([Color.red, null]); // ['red', null]
+  /// ```
   Object? toColumnValue(Object? value) => switch (value) {
     final AggregateReference<Object?, Object?> ref => toColumnValue(ref.id),
     final Enum e => e.name,
+    List<int>() => value,
+    final List<Object?> list =>
+      _changes(list) ? [for (final item in list) toColumnValue(item)] : list,
+    final Set<Object?> set =>
+      _changes(set) ? {for (final item in set) toColumnValue(item)} : set,
     _ => value,
   };
+
+  // Whether an element of [items] is written as something else.
+  bool _changes(Iterable<Object?> items) =>
+      items.any((item) => !identical(toColumnValue(item), item));
 
   // ----------------------------------------------------------------- read
 
@@ -406,11 +436,18 @@ class EntityConverter {
   }
 
   Object _collectionOf(TypeInfo<Object?> type, Object value, String where) {
+    if (value is TypedData && !type.isInstance(value)) {
+      // Bytes are one value (what a driver gives for a column it does not
+      // decode), never the elements of a collection of something else.
+      throw MappingException(
+        '$where: cannot use a ${value.runtimeType} as $type',
+      );
+    }
     switch (type) {
       case final ListType<Object?> list when value is Iterable<Object?>:
-        return list.create(value);
+        return list.create(_elements(type, list.element, value, where));
       case final SetType<Object?> set when value is Iterable<Object?>:
-        return set.create(value);
+        return set.create(_elements(type, set.element, value, where));
       case final MapType<Object?, Object?> map
           when value is Map<Object?, Object?>:
         return map.create(value.entries);
@@ -420,6 +457,23 @@ class EntityConverter {
         );
     }
   }
+
+  // The elements of [value] as a collection of [type] holds them: each
+  // converted as a single value of the [element] type is (an enum's name
+  // of a `text[]` to the constant, a number to a `BigInt`), unless
+  // [value] is such a collection already (bytes, the entities of a mapped
+  // collection, a list read by the property's own type).
+  Iterable<Object?> _elements(
+    TypeInfo<Object?> type,
+    TypeInfo<Object?> element,
+    Iterable<Object?> value,
+    String where,
+  ) => type.isInstance(value)
+      ? value
+      : [
+          for (final (index, item) in value.indexed)
+            fromColumnValue(item, element, where: '$where[$index]'),
+        ];
 
   // ------------------------------------------------------ id and version
 

@@ -66,76 +66,79 @@ void _$set29(_i2.SupabaseDbProperties bean, Object? value) =>
 Object? _$get30(_i2.SupabaseDbProperties bean) => bean.schema;
 void _$set31(_i2.SupabaseDbProperties bean, Object? value) =>
     bean.schema = (value as String?);
-_i2.SupabaseDbProperties _$create32(
+Object? _$get32(_i2.SupabaseDbProperties bean) => bean.maxRows;
+void _$set33(_i2.SupabaseDbProperties bean, Object? value) =>
+    bean.maxRows = (value as int);
+_i2.SupabaseDbProperties _$create34(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SupabaseDbProperties();
-Object? _$get33(_i2.SupabaseAuthProperties bean) => bean.enabled;
-void _$set34(_i2.SupabaseAuthProperties bean, Object? value) =>
-    bean.enabled = (value as bool);
-Object? _$get35(_i2.SupabaseAuthProperties bean) => bean.redirectUrls;
+Object? _$get35(_i2.SupabaseAuthProperties bean) => bean.enabled;
 void _$set36(_i2.SupabaseAuthProperties bean, Object? value) =>
-    bean.redirectUrls = (value as List<String>);
-Object? _$get37(_i2.SupabaseAuthProperties bean) => bean.issuer;
+    bean.enabled = (value as bool);
+Object? _$get37(_i2.SupabaseAuthProperties bean) => bean.redirectUrls;
 void _$set38(_i2.SupabaseAuthProperties bean, Object? value) =>
-    bean.issuer = (value as String?);
-Object? _$get39(_i2.SupabaseAuthProperties bean) => bean.jwtSecret;
+    bean.redirectUrls = (value as List<String>);
+Object? _$get39(_i2.SupabaseAuthProperties bean) => bean.issuer;
 void _$set40(_i2.SupabaseAuthProperties bean, Object? value) =>
-    bean.jwtSecret = (value as String?);
-Object? _$get41(_i2.SupabaseAuthProperties bean) => bean.persistSession;
+    bean.issuer = (value as String?);
+Object? _$get41(_i2.SupabaseAuthProperties bean) => bean.jwtSecret;
 void _$set42(_i2.SupabaseAuthProperties bean, Object? value) =>
-    bean.persistSession = (value as bool);
-Object? _$get43(_i2.SupabaseAuthProperties bean) => bean.autoRefresh;
+    bean.jwtSecret = (value as String?);
+Object? _$get43(_i2.SupabaseAuthProperties bean) => bean.persistSession;
 void _$set44(_i2.SupabaseAuthProperties bean, Object? value) =>
-    bean.autoRefresh = (value as bool);
-Object? _$get45(_i2.SupabaseAuthProperties bean) => bean.refreshMargin;
+    bean.persistSession = (value as bool);
+Object? _$get45(_i2.SupabaseAuthProperties bean) => bean.autoRefresh;
 void _$set46(_i2.SupabaseAuthProperties bean, Object? value) =>
+    bean.autoRefresh = (value as bool);
+Object? _$get47(_i2.SupabaseAuthProperties bean) => bean.refreshMargin;
+void _$set48(_i2.SupabaseAuthProperties bean, Object? value) =>
     bean.refreshMargin = (value as Duration);
-_i2.SupabaseAuthProperties _$create47(
+_i2.SupabaseAuthProperties _$create49(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SupabaseAuthProperties();
-Object? _$get48(_i2.SupabaseRealtimeProperties bean) => bean.heartbeatInterval;
-void _$set49(_i2.SupabaseRealtimeProperties bean, Object? value) =>
-    bean.heartbeatInterval = (value as Duration);
-Object? _$get50(_i2.SupabaseRealtimeProperties bean) => bean.timeout;
+Object? _$get50(_i2.SupabaseRealtimeProperties bean) => bean.heartbeatInterval;
 void _$set51(_i2.SupabaseRealtimeProperties bean, Object? value) =>
-    bean.timeout = (value as Duration);
-Object? _$get52(_i2.SupabaseRealtimeProperties bean) => bean.maxMessageSize;
+    bean.heartbeatInterval = (value as Duration);
+Object? _$get52(_i2.SupabaseRealtimeProperties bean) => bean.timeout;
 void _$set53(_i2.SupabaseRealtimeProperties bean, Object? value) =>
+    bean.timeout = (value as Duration);
+Object? _$get54(_i2.SupabaseRealtimeProperties bean) => bean.maxMessageSize;
+void _$set55(_i2.SupabaseRealtimeProperties bean, Object? value) =>
     bean.maxMessageSize = (value as _i1.DataSize);
-_i2.SupabaseRealtimeProperties _$create54(
+_i2.SupabaseRealtimeProperties _$create56(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SupabaseRealtimeProperties();
-Object? _$get55(_i2.SupabaseStorageProperties bean) => bean.signedUrlExpiry;
-void _$set56(_i2.SupabaseStorageProperties bean, Object? value) =>
+Object? _$get57(_i2.SupabaseStorageProperties bean) => bean.signedUrlExpiry;
+void _$set58(_i2.SupabaseStorageProperties bean, Object? value) =>
     bean.signedUrlExpiry = (value as Duration);
-_i2.SupabaseStorageProperties _$create57(
+_i2.SupabaseStorageProperties _$create59(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SupabaseStorageProperties();
-Object? _$get58(_i2.SupabaseFunctionsProperties bean) => bean.region;
-void _$set59(_i2.SupabaseFunctionsProperties bean, Object? value) =>
-    bean.region = (value as String?);
-Object? _$get60(_i2.SupabaseFunctionsProperties bean) => bean.timeout;
+Object? _$get60(_i2.SupabaseFunctionsProperties bean) => bean.region;
 void _$set61(_i2.SupabaseFunctionsProperties bean, Object? value) =>
+    bean.region = (value as String?);
+Object? _$get62(_i2.SupabaseFunctionsProperties bean) => bean.timeout;
+void _$set63(_i2.SupabaseFunctionsProperties bean, Object? value) =>
     bean.timeout = (value as Duration?);
-_i2.SupabaseFunctionsProperties _$create62(
+_i2.SupabaseFunctionsProperties _$create64(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SupabaseFunctionsProperties();
-Object? _$get63(_i2.SupabaseCacheProperties bean) => bean.shared;
-void _$set64(_i2.SupabaseCacheProperties bean, Object? value) =>
+Object? _$get65(_i2.SupabaseCacheProperties bean) => bean.shared;
+void _$set66(_i2.SupabaseCacheProperties bean, Object? value) =>
     bean.shared = (value as List<String>);
-_i2.SupabaseCacheProperties _$create65(
+_i2.SupabaseCacheProperties _$create67(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SupabaseCacheProperties();
-Object? _$get66(_i2.SupabaseRateLimitProperties bean) => bean.function;
-void _$set67(_i2.SupabaseRateLimitProperties bean, Object? value) =>
+Object? _$get68(_i2.SupabaseRateLimitProperties bean) => bean.function;
+void _$set69(_i2.SupabaseRateLimitProperties bean, Object? value) =>
     bean.function = (value as String);
-_i2.SupabaseRateLimitProperties _$create68(
+_i2.SupabaseRateLimitProperties _$create70(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SupabaseRateLimitProperties();
@@ -412,11 +415,19 @@ _i1.BeanModule get $supabaseConfigBeans => _i1.BeanModule(
           get: _$get30,
           set: _$set31,
         ),
+        _i1.BeanProperty<_i2.SupabaseDbProperties>(
+          r'maxRows',
+          typeInfo: _i1.ClassType<int>(),
+          hasInitialValue: true,
+          initialValue: 1000,
+          get: _$get32,
+          set: _$set33,
+        ),
       ],
       instantiate: _i2.SupabaseDbProperties.new,
       constructor: _i1.BeanConstructor<_i2.SupabaseDbProperties>(
         parameters: [],
-        create: _$create32,
+        create: _$create34,
       ),
     ),
     const _i1.BeanIntrospection<_i2.SupabaseAuthProperties>(
@@ -427,39 +438,31 @@ _i1.BeanModule get $supabaseConfigBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: _$get33,
-          set: _$set34,
-        ),
-        _i1.BeanProperty<_i2.SupabaseAuthProperties>(
-          r'redirectUrls',
-          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
           get: _$get35,
           set: _$set36,
         ),
         _i1.BeanProperty<_i2.SupabaseAuthProperties>(
-          r'issuer',
-          nullable: true,
-          typeInfo: _i1.ClassType<String>(nullable: true),
+          r'redirectUrls',
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
           get: _$get37,
           set: _$set38,
         ),
         _i1.BeanProperty<_i2.SupabaseAuthProperties>(
-          r'jwtSecret',
+          r'issuer',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
           get: _$get39,
           set: _$set40,
         ),
         _i1.BeanProperty<_i2.SupabaseAuthProperties>(
-          r'persistSession',
-          typeInfo: _i1.ClassType<bool>(),
-          hasInitialValue: true,
-          initialValue: true,
+          r'jwtSecret',
+          nullable: true,
+          typeInfo: _i1.ClassType<String>(nullable: true),
           get: _$get41,
           set: _$set42,
         ),
         _i1.BeanProperty<_i2.SupabaseAuthProperties>(
-          r'autoRefresh',
+          r'persistSession',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
@@ -467,16 +470,24 @@ _i1.BeanModule get $supabaseConfigBeans => _i1.BeanModule(
           set: _$set44,
         ),
         _i1.BeanProperty<_i2.SupabaseAuthProperties>(
-          r'refreshMargin',
-          typeInfo: _i1.ClassType<Duration>(),
+          r'autoRefresh',
+          typeInfo: _i1.ClassType<bool>(),
+          hasInitialValue: true,
+          initialValue: true,
           get: _$get45,
           set: _$set46,
+        ),
+        _i1.BeanProperty<_i2.SupabaseAuthProperties>(
+          r'refreshMargin',
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get47,
+          set: _$set48,
         ),
       ],
       instantiate: _i2.SupabaseAuthProperties.new,
       constructor: _i1.BeanConstructor<_i2.SupabaseAuthProperties>(
         parameters: [],
-        create: _$create47,
+        create: _$create49,
       ),
     ),
     const _i1.BeanIntrospection<_i2.SupabaseRealtimeProperties>(
@@ -485,26 +496,26 @@ _i1.BeanModule get $supabaseConfigBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.SupabaseRealtimeProperties>(
           r'heartbeatInterval',
           typeInfo: _i1.ClassType<Duration>(),
-          get: _$get48,
-          set: _$set49,
-        ),
-        _i1.BeanProperty<_i2.SupabaseRealtimeProperties>(
-          r'timeout',
-          typeInfo: _i1.ClassType<Duration>(),
           get: _$get50,
           set: _$set51,
         ),
         _i1.BeanProperty<_i2.SupabaseRealtimeProperties>(
-          r'maxMessageSize',
-          typeInfo: _i1.ClassType<_i1.DataSize>(),
+          r'timeout',
+          typeInfo: _i1.ClassType<Duration>(),
           get: _$get52,
           set: _$set53,
+        ),
+        _i1.BeanProperty<_i2.SupabaseRealtimeProperties>(
+          r'maxMessageSize',
+          typeInfo: _i1.ClassType<_i1.DataSize>(),
+          get: _$get54,
+          set: _$set55,
         ),
       ],
       instantiate: _i2.SupabaseRealtimeProperties.new,
       constructor: _i1.BeanConstructor<_i2.SupabaseRealtimeProperties>(
         parameters: [],
-        create: _$create54,
+        create: _$create56,
       ),
     ),
     const _i1.BeanIntrospection<_i2.SupabaseStorageProperties>(
@@ -513,14 +524,14 @@ _i1.BeanModule get $supabaseConfigBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.SupabaseStorageProperties>(
           r'signedUrlExpiry',
           typeInfo: _i1.ClassType<Duration>(),
-          get: _$get55,
-          set: _$set56,
+          get: _$get57,
+          set: _$set58,
         ),
       ],
       instantiate: _i2.SupabaseStorageProperties.new,
       constructor: _i1.BeanConstructor<_i2.SupabaseStorageProperties>(
         parameters: [],
-        create: _$create57,
+        create: _$create59,
       ),
     ),
     const _i1.BeanIntrospection<_i2.SupabaseFunctionsProperties>(
@@ -530,21 +541,21 @@ _i1.BeanModule get $supabaseConfigBeans => _i1.BeanModule(
           r'region',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get58,
-          set: _$set59,
+          get: _$get60,
+          set: _$set61,
         ),
         _i1.BeanProperty<_i2.SupabaseFunctionsProperties>(
           r'timeout',
           nullable: true,
           typeInfo: _i1.ClassType<Duration>(nullable: true),
-          get: _$get60,
-          set: _$set61,
+          get: _$get62,
+          set: _$set63,
         ),
       ],
       instantiate: _i2.SupabaseFunctionsProperties.new,
       constructor: _i1.BeanConstructor<_i2.SupabaseFunctionsProperties>(
         parameters: [],
-        create: _$create62,
+        create: _$create64,
       ),
     ),
     const _i1.BeanIntrospection<_i2.SupabaseCacheProperties>(
@@ -553,14 +564,14 @@ _i1.BeanModule get $supabaseConfigBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.SupabaseCacheProperties>(
           r'shared',
           typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get63,
-          set: _$set64,
+          get: _$get65,
+          set: _$set66,
         ),
       ],
       instantiate: _i2.SupabaseCacheProperties.new,
       constructor: _i1.BeanConstructor<_i2.SupabaseCacheProperties>(
         parameters: [],
-        create: _$create65,
+        create: _$create67,
       ),
     ),
     const _i1.BeanIntrospection<_i2.SupabaseRateLimitProperties>(
@@ -571,14 +582,14 @@ _i1.BeanModule get $supabaseConfigBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'rate_limit_acquire',
-          get: _$get66,
-          set: _$set67,
+          get: _$get68,
+          set: _$set69,
         ),
       ],
       instantiate: _i2.SupabaseRateLimitProperties.new,
       constructor: _i1.BeanConstructor<_i2.SupabaseRateLimitProperties>(
         parameters: [],
-        create: _$create68,
+        create: _$create70,
       ),
     ),
   ],

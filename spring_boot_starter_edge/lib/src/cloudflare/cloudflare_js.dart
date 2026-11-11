@@ -28,6 +28,9 @@ final class _Bindings implements CloudflareBindings {
   bool has(String binding) => _find(binding) != null;
 
   @override
+  bool get loaded => platformEnvironment != null;
+
+  @override
   KvNamespace kv(String binding) => _Kv(_need(binding) as _KvNamespace);
 
   @override

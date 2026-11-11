@@ -384,8 +384,16 @@ void main() {
     expect(value('a,b'), '"a,b"');
     expect(value('1),id=gt.(0'), '"1),id=gt.(0"');
     expect(value(r'say "hi" \ bye'), r'"say \"hi\" \\ bye"');
-    expect(value(''), '""');
     expect(value(' padded'), '" padded"');
+    // In a list Realtime reads an array of PostgreSQL: a brace would end
+    // it, and the word null would be no value.
+    expect(value('a}b'), '"a}b"');
+    expect(value('{a}'), '"{a}"');
+    expect(value(['x', 'NULL', 'null']), 'x,"NULL","null"');
+    expect(value('nullable'), 'nullable');
+    // Nothing a filter of Realtime can say.
+    expect(() => value(''), throwsArgumentError);
+    expect(() => value(['ok', '']), throwsArgumentError);
     expect(value([1, 2, 3]), '1,2,3');
     expect(value(['a', 'b,c']), 'a,"b,c"');
     expect(() => value(null), throwsArgumentError);

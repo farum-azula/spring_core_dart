@@ -126,11 +126,45 @@ final class ZoneSecurityContextHolderStrategy
   /// strategy; `false` means it uses the program-wide context.
   bool get isScoped => Zone.current[_key] is _Holder;
 
-  @override
-  SecurityContext getContext() => _holder.context ??= createEmptyContext();
+  /// Told each time an authentication is put into the program-wide
+  /// context (set outside every scope), with where it was set; nothing is
+  /// told by default.
+  ///
+  /// In a Flutter app that is the login. On a server it is rarely meant:
+  /// the authentication stays after the work that set it, and all the code
+  /// that runs outside a request (scheduled work, listeners, timers) then
+  /// acts as that user. The security starter logs it through this.
+  ///
+  /// Differs from Spring: Spring has no such report; a `ThreadLocal` left
+  /// set on a pooled thread is found there with a debugger.
+  void Function(Authentication authentication, StackTrace where)?
+  onProgramWideAuthentication;
+
+  /// The authentication of the program-wide context: who all the code
+  /// outside a scope acts as; `null` when nobody.
+  Authentication? get programWideAuthentication =>
+      _global.context?.authentication;
+
+  void _reportProgramWide(Authentication authentication) =>
+      onProgramWideAuthentication?.call(authentication, StackTrace.current);
 
   @override
-  void setContext(SecurityContext context) => _holder.context = context;
+  SecurityContext getContext() {
+    final holder = _holder;
+    return holder.context ??= identical(holder, _global)
+        ? _ProgramWideContext(this)
+        : createEmptyContext();
+  }
+
+  @override
+  void setContext(SecurityContext context) {
+    final holder = _holder..context = context;
+    if (identical(holder, _global)) {
+      if (context.authentication case final authentication?) {
+        _reportProgramWide(authentication);
+      }
+    }
+  }
 
   @override
   void clearContext() => _holder.context = null;
@@ -141,6 +175,22 @@ final class ZoneSecurityContextHolderStrategy
   @override
   R runWithContext<R>(R Function() body, [SecurityContext? context]) =>
       runZoned(body, zoneValues: {_key: _Holder()..context = context});
+}
+
+// The context outside every scope: an authentication put into it is
+// reported.
+final class _ProgramWideContext extends SecurityContextImpl {
+  _ProgramWideContext(this._strategy);
+
+  final ZoneSecurityContextHolderStrategy _strategy;
+
+  @override
+  set authentication(Authentication? value) {
+    super.authentication = value;
+    if (value != null) {
+      _strategy._reportProgramWide(value);
+    }
+  }
 }
 
 /// A strategy with exactly one context for the whole program.

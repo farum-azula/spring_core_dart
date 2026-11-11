@@ -243,6 +243,183 @@ void main() {
     });
   });
 
+  group('a topic nobody uses is left after the push timeout', () {
+    // The lobby's listener keeps the connection while the rooms come and
+    // go.
+    Future<PhoenixServer> withLobby(Lobby lobby) async {
+      lobby.ticks().listen(null);
+      final server = await PhoenixServer.next(sockets);
+      expect((await server.acceptJoin())[2], 'lobby');
+      return server;
+    }
+
+    test('pushes to many rooms: every room is left', () async {
+      await runner.runAsync((context) async {
+        final room = context.getBean<Room>();
+        final server = await withLobby(context.getBean<Lobby>());
+        final joins = <Object?, Object?>{};
+        for (final id in ['1', '2', '3']) {
+          final sent = room.send(id, const ChatMessage(from: 'a', text: 'b'));
+          final join = await server.acceptJoin();
+          expect(join[2], 'room:$id');
+          joins[join[2]] = join[1];
+          server.reply(await server.take('new_msg'), response: {'id': 1});
+          await sent;
+        }
+        expect(server.framesOf('phx_leave'), isEmpty, reason: 'not at once');
+        for (final id in ['1', '2', '3']) {
+          final leave = await server.take('phx_leave');
+          expect(leave[2], 'room:$id');
+          expect(leave[0], joins['room:$id']);
+          server.reply(leave);
+        }
+        await pump();
+        final socket = context.getBean<PhoenixSocketFactory>().socket(
+          'chat',
+          url: Uri.parse('ws://chat.test/socket/websocket'),
+        );
+        expect(
+          [for (final channel in socket.channels) channel.topic],
+          [
+            'lobby',
+          ],
+        );
+        expect(server.socket.isClosed, isFalse);
+      });
+    });
+
+    test('a push or a listener in time keeps the topic', () async {
+      await runner.runAsync((context) async {
+        final room = context.getBean<Room>();
+        final server = await withLobby(context.getBean<Lobby>());
+        Future<void> push({bool joins = false}) async {
+          final sent = room.send('1', const ChatMessage(from: 'a', text: 'b'));
+          if (joins) {
+            expect((await server.acceptJoin())[2], 'room:1');
+          }
+          server.reply(await server.take('new_msg'), response: {'id': 1});
+          await sent;
+        }
+
+        await push(joins: true);
+        // Each use is within the 150 ms of the one before; together they
+        // take longer.
+        const pause = Duration(milliseconds: 100);
+        await Future<void>.delayed(pause);
+        await push();
+        await Future<void>.delayed(pause);
+        final listener = room.messages('1').listen(null);
+        await Future<void>.delayed(pause);
+        await listener.cancel();
+        await Future<void>.delayed(pause);
+        await push();
+        await Future<void>.delayed(pause);
+        expect(server.framesOf('phx_leave'), isEmpty);
+        expect(
+          [for (final join in server.framesOf('phx_join')) join[2]],
+          ['lobby', 'room:1'],
+          reason: 'joined once',
+        );
+        expect((await server.take('phx_leave'))[2], 'room:1');
+      });
+    });
+
+    test('closing the context with a leave pending is silent', () async {
+      late PhoenixServer server;
+      await runner.runAsync((context) async {
+        final room = context.getBean<Room>();
+        server = await withLobby(context.getBean<Lobby>());
+        final sent = room.send('1', const ChatMessage(from: 'a', text: 'b'));
+        await server.acceptJoin();
+        server.reply(await server.take('new_msg'), response: {'id': 1});
+        await sent;
+      });
+      // Past the time the leave was due.
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      expect(server.framesOf('phx_leave'), isEmpty);
+      expect(server.socket.isClosed, isTrue);
+    });
+
+    test('after a push without a reply, and after one that failed', () async {
+      await runner.runAsync((context) async {
+        final room = context.getBean<Room>();
+        final server = await withLobby(context.getBean<Lobby>());
+
+        final typing = room.typing('1');
+        await server.acceptJoin();
+        await typing;
+        expect((await server.take('phx_leave'))[2], 'room:1');
+
+        final unanswered = room.seen('2', {'upTo': 1});
+        await server.acceptJoin();
+        await expectLater(unanswered, throwsA(isA<TimeoutException>()));
+        expect((await server.take('phx_leave'))[2], 'room:2');
+
+        // A topic that could not be joined is given up at once: its join
+        // is not tried again.
+        final refused = room.seen('3', {'upTo': 1});
+        server.reply(await server.take('phx_join'), status: 'error');
+        await expectLater(refused, throwsA(isA<PhoenixJoinException>()));
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        expect(
+          [for (final join in server.framesOf('phx_join')) join[2]],
+          ['lobby', 'room:1', 'room:2', 'room:3'],
+        );
+      });
+    });
+
+    test('pushes at the same time share the topic, left after the last '
+        'of them', () async {
+      await runner.runAsync((context) async {
+        final room = context.getBean<Room>();
+        final server = await withLobby(context.getBean<Lobby>());
+        final first = room.send('5', const ChatMessage(from: 'a', text: '1'));
+        final second = room.seen('5', {'upTo': 1});
+        expect((await server.acceptJoin())[2], 'room:5');
+        final firstPush = await server.take('new_msg');
+        final secondPush = server.framesOf('seen').single;
+        expect(
+          [for (final join in server.framesOf('phx_join')) join[2]],
+          ['lobby', 'room:5'],
+          reason: 'one join for both',
+        );
+        server.reply(firstPush, response: {'id': 1});
+        await first;
+        await pump(20);
+        expect(server.framesOf('phx_leave'), isEmpty, reason: 'one is left');
+        server.reply(secondPush);
+        await second;
+        expect((await server.take('phx_leave'))[2], 'room:5');
+      });
+    });
+
+    test('a topic with a listener stays joined; the last cancel waits for '
+        'the push on its way', () async {
+      await runner.runAsync((context) async {
+        final room = context.getBean<Room>();
+        final server = await withLobby(context.getBean<Lobby>());
+        final listener = room.messages('42').listen(null);
+        expect((await server.acceptJoin())[2], 'room:42');
+
+        final sent = room.send('42', const ChatMessage(from: 'a', text: 'b'));
+        server.reply(await server.take('new_msg'), response: {'id': 1});
+        await sent;
+        await pump(20);
+        expect(server.framesOf('phx_leave'), isEmpty, reason: 'one listens');
+
+        final seen = room.seen('42', {'upTo': 1});
+        final push = await server.take('seen');
+        await listener.cancel();
+        await pump(20);
+        expect(server.framesOf('phx_leave'), isEmpty, reason: 'a push waits');
+        server.reply(push);
+        await seen;
+        expect((await server.take('phx_leave'))[2], 'room:42');
+        expect(server.framesOf('phx_join'), hasLength(2), reason: 'no rejoin');
+      });
+    });
+  });
+
   test('@JoinPayload and the interceptors make the join payload, fresh '
       'on every join', () async {
     final interceptor = TokenJoinInterceptor();

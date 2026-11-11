@@ -5,6 +5,8 @@ library;
 // PostgreSQL: the call with named notation, its rows as the method's result,
 // the transaction it runs in, the permission error, and a setting a
 // JdbcSessionHook makes for a transaction and for the work outside one.
+import 'dart:typed_data';
+
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:test/test.dart';
 
@@ -35,6 +37,19 @@ const _among = ProcedureMethod(
   shape: QueryShape.stream,
   element: ClassType<Author>(),
 );
+const _byIds = ProcedureMethod(
+  'byIds',
+  Procedure('authors_by_ids'),
+  parameters: ['ids'],
+  element: ClassType<Author>(),
+);
+const _byteCount = ProcedureMethod(
+  'byteCount',
+  Procedure('byte_count'),
+  parameters: ['data'],
+  shape: QueryShape.single,
+  element: ClassType<int>(),
+);
 const _forbidden = ProcedureMethod('forbidden', Procedure('forbidden'));
 const _whoami = ProcedureMethod(
   'whoami',
@@ -61,6 +76,14 @@ create function authors_in(names text[]) returns setof authors
 language sql stable as $$
   select * from authors where name = any(names) order by id
 $$''',
+  r'''
+create function authors_by_ids(ids bigint[]) returns setof authors
+language sql stable as $$
+  select * from authors where id = any(ids) order by id
+$$''',
+  r'''
+create function byte_count(data bytea) returns int
+language sql immutable as $$ select length(data) $$''',
   r'''
 create function forbidden() returns void language plpgsql as $$
 begin
@@ -130,6 +153,8 @@ void _tests() {
             _count,
             _rename,
             _among,
+            _byIds,
+            _byteCount,
             _forbidden,
             _whoami,
           ],
@@ -175,6 +200,29 @@ void _tests() {
       ['Austen', 'Herbert', 'Nobody'],
     ]).toList();
     expect(found.map((a) => a.name), ['Herbert', 'Austen']);
+  });
+
+  test('a List<int> is an integer array argument, also empty or with a '
+      'null; a Uint8List is bytes', () async {
+    final all = await authors.findAll();
+    final ids = <int>[all[2].id!, all[0].id!];
+    final found = await authors.procedure<List<Author>>(_byIds, [ids]);
+    expect(found.map((a) => a.name), ['Herbert', 'Austen']);
+    expect(await authors.procedure<List<Author>>(_byIds, [<int>[]]), isEmpty);
+    expect(
+      (await authors.procedure<List<Author>>(_byIds, [
+        <int?>[null, all[1].id],
+      ])).map((a) => a.name),
+      ['Heinlein'],
+    );
+
+    expect(
+      await authors.procedure<int>(_byteCount, [
+        Uint8List.fromList([1, 2, 3]),
+      ]),
+      3,
+    );
+    expect(await authors.procedure<int>(_byteCount, [Uint8List(0)]), 0);
   });
 
   test('the call runs in the transaction of the caller', () async {

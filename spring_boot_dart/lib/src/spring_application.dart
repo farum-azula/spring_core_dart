@@ -1901,6 +1901,23 @@ final class _RunListeners {
 
   void contextLoaded(ConfigurableApplicationContext context) {
     application._listeners.forEach(context.addApplicationListener);
+    // Like Boot's web contexts at the start of doClose: readiness is
+    // refused when the close begins. `ContextClosedEvent` is the first
+    // thing a closing context does, before its lifecycle beans (the web
+    // server) stop, so a readiness probe sees it while the requests in
+    // flight are still served. First among the listeners of the event:
+    // they see the state they are closing in. A child's close comes
+    // here too, and is not this context's.
+    context.addApplicationListener(
+      ApplicationListenerAdapter.of<ContextClosedEvent>((event) {
+        if (identical(event.applicationContext, context)) {
+          AvailabilityChangeEvent.publish(
+            context,
+            ReadinessState.refusingTraffic,
+          );
+        }
+      }, order: Ordered.highestPrecedence),
+    );
     _multicaster.multicastEvent(
       ApplicationPreparedEvent(application, args, context),
     );

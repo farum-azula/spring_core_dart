@@ -416,6 +416,23 @@ class %s extends StatelessWidget {
       );
     });
 
+    test('a value named like a reserved word or a private name', () async {
+      for (final variable in ['class', '_page']) {
+        expect(
+          await _errors('''
+@ScreenRoute('/docs/{$variable}')
+class Doc extends StatelessWidget {
+  const Doc({super.key});
+  @override
+  Widget build(BuildContext context) => this;
+}
+'''),
+          contains('makes no Dart name'),
+          reason: variable,
+        );
+      }
+    });
+
     test('a value named like a constant of the extension', () async {
       expect(
         await _errors('''

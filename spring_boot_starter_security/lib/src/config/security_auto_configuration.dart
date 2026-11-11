@@ -4,7 +4,7 @@
 import 'dart:math';
 
 import 'package:spring_boot_actuator/spring_boot_actuator.dart'
-    show PrincipalRoleChecker;
+    show HealthContributor, HealthIndicator, PrincipalRoleChecker;
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
     show
         ClientRegistrationRepository,
@@ -25,6 +25,7 @@ import 'package:spring_boot_starter_security/src/web/cookie_signer.dart';
 import 'package:spring_boot_starter_security/src/web/endpoint_request.dart';
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart';
 import 'package:spring_boot_starter_security/src/web/firewall.dart';
+import 'package:spring_boot_starter_security/src/web/program_wide_authentication.dart';
 import 'package:spring_boot_starter_security/src/web/request_matcher.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:spring_security_core/spring_security_core.dart';
@@ -429,6 +430,44 @@ final securityAutoConfiguration = <BeanDefinition<Object>>[
         order: properties.filterOrder,
       );
     },
+  ),
+  // An authentication set outside every request: logged, and shown in the
+  // health of the application.
+  BeanDefinition<ProgramWideAuthenticationMonitor>(
+    name: 'programWideAuthenticationMonitor',
+    factoryMethodName: 'programWideAuthenticationMonitor',
+    types: const [ProgramWideAuthenticationMonitor, DisposableBean],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.programWideAuthenticationMonitor', [
+        ConditionalOnMissingBean(ProgramWideAuthenticationMonitor),
+      ]),
+    ],
+    create: (_) => ProgramWideAuthenticationMonitor(),
+  ),
+  BeanDefinition<SecurityContextHealthIndicator>(
+    name: 'securityContextHealthIndicator',
+    factoryMethodName: 'securityContextHealthIndicator',
+    types: const [
+      SecurityContextHealthIndicator,
+      HealthIndicator,
+      HealthContributor,
+    ],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.securityContextHealthIndicator', [
+        // Off unless asked for: the health of an application stays what
+        // Spring Boot's is.
+        ConditionalOnProperty(
+          'management.health.securityContext.enabled',
+          havingValue: 'true',
+        ),
+        ConditionalOnMissingBean(SecurityContextHealthIndicator),
+      ]),
+    ],
+    create: (r) => SecurityContextHealthIndicator(
+      r.dependency<ProgramWideAuthenticationMonitor>(),
+    ),
   ),
   BeanDefinition<WebMvcConfigurer>(
     name: 'securityWebMvcConfigurer',

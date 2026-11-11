@@ -964,7 +964,7 @@ second).
 |---|---|---|
 | `user` (the default) | the authenticated user (`request.principal`), else the client's address | right after the security filter chain |
 | `ip` | the client's address | before the sessions and the security filter chain |
-| `#{...}` | a SpEL expression over `request`, `headers` (a map, names in lower case), `principal`, `authentication`, `address`, `method`, `path`; nothing or an empty text counts by address | right after the security filter chain |
+| `#{...}` | a SpEL expression over `request`, `headers` (the request's headers, also `request.headers`; a name is found in any case), `principal`, `authentication`, `address`, `method`, `path`; nothing or an empty text counts by address | right after the security filter chain |
 | a name of your own | a `RateLimitKeyResolver` bean that `supports` it | as the resolver says |
 
 So a rule keyed by `ip` refuses a flood before a session is looked up or
@@ -975,6 +975,14 @@ security chain at -100). A request the chain answered itself (a 401, a
 403) does not reach the rules keyed by the user: limit those by `ip`.
 `@RateLimiter` runs in an interceptor, after both filters and before the
 method's arguments are bound.
+
+An expression such as `#{request.headers['X-Api-Key']}` counts a request
+without the header by its address: a key without a value always does.
+A mistake in the expression is not that case. One that cannot be parsed
+fails the start, naming the rule. One that reads what does not exist
+(`request.header`, a property the user's class does not have) is only
+found with a request: the rule then counts by address, and one WARN line
+on `spring.web.ratelimit` says so, once for the rule.
 
 **The client's address** is the connection's own. Behind reverse proxies,
 name them:
@@ -995,6 +1003,15 @@ client cannot choose its bucket. (With `server.forward-headers-strategy`
 the address is already the forwarded one when the limiter looks.) To keep
 no address in clear in the store, set `hash-addresses: true` and a
 `hash-secret`: the keys of addresses are then their HMAC-SHA-256.
+
+An IPv6 client is counted by its network, the first 64 bits of its
+address: a provider gives one client a whole /64, and the client may use
+another address of it for every request. `2001:db8:1:2::1` and
+`2001:db8:1:2:aaaa:bbbb:cccc:dddd` share the bucket `2001:db8:1:2:0:0:0:0`.
+`spring.web.rate-limit.ipv6-prefix-length` changes the length (`56` or
+`48` for providers that give out more, `128` to count every address by
+itself). IPv4 addresses are counted whole, and the trusted proxies are
+compared by their whole address.
 
 **The store** of the buckets is one interface, `RateLimitStore`, with one
 atomic operation. The default is the most specific the application has:
@@ -1024,6 +1041,15 @@ When the store cannot be reached, the request is refused with a 503 and
 must not open when the database is down); `allow` lets it through, not
 counted. Both can be set for one rule. One WARN line on
 `spring.web.ratelimit` names the rule, never the key.
+
+A store in a database needs its table or its function, which usually
+come from a migration. The application asks the store for them when it
+starts: one that is missing fails the start and says what to run,
+instead of showing as a 503 on the first request under a limit. A store
+that cannot be reached at that moment is only a WARN (the rule above
+then decides for each request). `spring.web.rate-limit.verify-store:
+false` skips the check; a store of your own takes part by implementing
+`VerifiableRateLimitStore`.
 
 Every key is in the
 [configuration reference](../docs/configuration.md#rate-limiting).
@@ -1462,11 +1488,14 @@ same `spring.security.cookie.secret`.
   `?id=%FF`) is a 400. A `%` without two hex digits after it is read as
   a plain `%` by `dart:io` (`/a%G1` is the path `/a%25G1`), where Tomcat
   answers 400; it can never decode to a separator.
-- **`Content-Length` and `Transfer-Encoding` together:** `dart:io`
-  accepts such a request and reads the body as chunked, where RFC 9112
-  asks a server to refuse it (Tomcat answers 400). Behind a proxy that
-  reads it the other way, requests can be smuggled: use a proxy that
-  refuses these requests (most do), or none.
+- **`Content-Length` and `Transfer-Encoding` together:** RFC 9112 asks
+  a server to refuse such a request (Tomcat answers 400). The server
+  answers 400 and closes the connection when it sees both headers, but
+  `dart:io` shows both only in some spellings (the length first and the
+  encoding not written exactly `chunked`); in the others it drops the
+  `Content-Length` itself and reads the body as chunked. Behind a proxy
+  that reads such a request by its length, requests can then be
+  smuggled: use a proxy that refuses these requests (most do), or none.
 
 To change the settings in code, declare a `WebServerFactoryCustomizer`
 bean. To replace the server entirely, declare your own

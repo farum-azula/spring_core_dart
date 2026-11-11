@@ -294,7 +294,7 @@ flush.
 with the theme from a URL and the components' states below still to come.
 
 As built (differs from the sketch below): one builder, `spring_flutter_keys`,
-writes `lib/spring_gen/theme.spring.dart` and `lib/spring_gen/messages.spring.dart` (the extensions
+writes `lib/spring_gen/theme.spring.keys.dart` and `lib/spring_gen/messages.spring.keys.dart` (the extensions
 `SpringThemeKeys` and `SpringMessageKeys` on `BuildContext`, with `theme` and
 `messages`). The classes are `AppTheme` (`colors`, `spacing`,
 `typography`, `tokens`), `AppThemes` (static constants for
@@ -594,7 +594,7 @@ code is right):
   `example/themes/neon_ui`, the NEON design system as a library (theme and
   components), moved onto 0.6.3.
 
-### Generated files: `lib/spring_gen/theme.spring.dart`, `lib/spring_gen/messages.spring.dart`
+### Generated files: `lib/spring_gen/theme.spring.keys.dart`, `lib/spring_gen/messages.spring.keys.dart`
 
 Generated code is always `*.spring.dart` and lies in `lib/spring_gen/`, which mirrors the source path:
 
@@ -603,12 +603,12 @@ lib/
   main.dart                         # the app's, with @ComponentScan
   spring_gen/
     main.spring.dart                # generated: beans, the context
-    theme.spring.dart               # generated: part of main.spring.dart, context.theme
-    messages.spring.dart            # generated: part of main.spring.dart, context.messages
+    theme.spring.keys.dart               # generated: part of main.spring.dart, context.theme
+    messages.spring.keys.dart            # generated: part of main.spring.dart, context.messages
 ```
 
-- `spring_flutter_keys` writes `lib/spring_gen/theme.spring.dart` and
-  `lib/spring_gen/messages.spring.dart` as `part of '<parent>.spring.dart'`; the
+- `spring_flutter_keys` writes `lib/spring_gen/theme.spring.keys.dart` and
+  `lib/spring_gen/messages.spring.keys.dart` as `part of '<parent>.spring.dart'`; the
   parent is the `.spring.dart` of the package's `@ComponentScan` library
   (`spring_gen/main.spring.dart` in an app, `spring_gen/spring_auto_configuration.spring.dart`
   in a library such as `neon_ui`). The main builder writes the `part`

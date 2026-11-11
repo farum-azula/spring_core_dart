@@ -957,6 +957,13 @@ written as functions.
 - The database and store of a repository: `@UseDataSource('analytics')`,
   `@UseStore('memory')`.
 - Every method is asynchronous (`Future` or `Stream`).
+- An order that ignores case (`SortOrder.ignoreCase`,
+  `?sort=name,ignorecase`) lowers the column only for a `String` or an
+  enum property; for any other property it is a plain order, so a client
+  cannot get a database error out of `?sort=id,ignorecase` on PostgreSQL.
+  Spring Data JPA lowers `String` properties only. A sort name of a
+  `@Query` method that is no property of the entity is still lowered as
+  asked.
 - References: `AggregateReference` or `@Reference(Author) int authorId`
   (Spring Data JDBC has only the first), with foreign keys, `@OnDelete`
   (Hibernate's name) and `@Unique` / `@UniqueConstraint` (JPA's names);

@@ -317,7 +317,10 @@ final class DispatcherHandler implements HttpHandler {
         _handle(request, guarded).then(
           (_) {
             timer.cancel();
-            if (!outcome.isCompleted) {
+            // After the deadline the timeout answer completes the
+            // outcome, when it is written: a handler that ends before
+            // that must not complete it first.
+            if (!outcome.isCompleted && !guarded.abandoned) {
               outcome.complete();
             }
           },

@@ -225,44 +225,44 @@ _i5.SpringApplication get springApplication => _i5.SpringApplication(
     _i9.springBootStarterEdgeAutoConfiguration:
         const _i5.AutoConfigurationModule(
           before: [
-            'springBootStarterWebAutoConfiguration',
-            'springBootStarterSupabaseDataAutoConfiguration',
-            'springBootStarterSupabaseAutoConfiguration',
-            'springBootStarterSupabaseServerAutoConfiguration',
+            r'springBootStarterWebAutoConfiguration',
+            r'springBootStarterSupabaseDataAutoConfiguration',
+            r'springBootStarterSupabaseAutoConfiguration',
+            r'springBootStarterSupabaseServerAutoConfiguration',
           ],
         ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i13.springBootStarterSecurityAutoConfiguration:
           const _i5.AutoConfigurationModule(
-            after: ['springBootStarterOauth2ClientAutoConfiguration'],
+            after: [r'springBootStarterOauth2ClientAutoConfiguration'],
           ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i13.springBootStarterSecurityOAuth2ClientAutoConfiguration:
           const _i5.AutoConfigurationModule(
-            before: ['springBootStarterOauth2ClientAutoConfiguration'],
+            before: [r'springBootStarterOauth2ClientAutoConfiguration'],
           ),
     _i14.springBootStarterSupabaseAutoConfiguration:
         const _i5.AutoConfigurationModule(
           after: [
-            'springBootStarterFeignAutoConfiguration',
-            'springBootStarterWebsocketAutoConfiguration',
-            'springBootStarterDataAutoConfiguration',
-            'springSecurityCoreAutoConfiguration',
+            r'springBootStarterFeignAutoConfiguration',
+            r'springBootStarterWebsocketAutoConfiguration',
+            r'springBootStarterDataAutoConfiguration',
+            r'springSecurityCoreAutoConfiguration',
           ],
         ),
     _i14.springBootStarterSupabaseDataAutoConfiguration:
         const _i5.AutoConfigurationModule(
-          before: ['springBootStarterDataAutoConfiguration'],
+          before: [r'springBootStarterDataAutoConfiguration'],
         ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i14.springBootStarterSupabaseServerAutoConfiguration:
           const _i5.AutoConfigurationModule(
             before: [
-              'springBootStarterSecurityAutoConfiguration',
-              'springBootStarterSecurityOAuth2ClientAutoConfiguration',
+              r'springBootStarterSecurityAutoConfiguration',
+              r'springBootStarterSecurityOAuth2ClientAutoConfiguration',
             ],
           ),
     if ((const bool.fromEnvironment('dart.library.io') ||
@@ -270,8 +270,8 @@ _i5.SpringApplication get springApplication => _i5.SpringApplication(
       _i15.springBootStarterWebRateLimitAutoConfiguration:
           const _i5.AutoConfigurationModule(
             after: [
-              'springBootStarterDataAutoConfiguration',
-              'springBootStarterSupabaseAutoConfiguration',
+              r'springBootStarterDataAutoConfiguration',
+              r'springBootStarterSupabaseAutoConfiguration',
             ],
           ),
   },
@@ -373,7 +373,7 @@ _i5.SpringApplication get springApplication => _i5.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '4ef7e7fd',
+  fingerprint: '730733b3',
 );
 
 /// Starts the application: config files, environment, context, runners

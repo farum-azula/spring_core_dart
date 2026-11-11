@@ -16,7 +16,7 @@
       "profiles": [],
       "conditions": [],
       "source": "bin/controllers.dart",
-      "line": 104,
+      "line": 131,
       "injects": [
         {
           "parameter": "reports",
@@ -58,7 +58,7 @@
       "profiles": [],
       "conditions": [],
       "source": "bin/controllers.dart",
-      "line": 226,
+      "line": 253,
       "injects": [],
       "members": [
         {
@@ -81,7 +81,7 @@
       "profiles": [],
       "conditions": [],
       "source": "bin/controllers.dart",
-      "line": 234,
+      "line": 261,
       "injects": [
         {
           "parameter": "http",
@@ -117,7 +117,7 @@
       "profiles": [],
       "conditions": [],
       "source": "bin/controllers.dart",
-      "line": 164,
+      "line": 191,
       "injects": [
         {
           "parameter": "schedule",
@@ -229,6 +229,14 @@
           "parameters": []
         },
         {
+          "name": "badHeaders",
+          "kind": "method",
+          "type": "ResponseEntity<String>",
+          "parameters": [
+            "ServerHttpResponse response"
+          ]
+        },
+        {
           "name": "boom",
           "kind": "method",
           "type": "String",
@@ -256,6 +264,12 @@
             "Map<String, Object?> body",
             "String? trace"
           ]
+        },
+        {
+          "name": "endless",
+          "kind": "method",
+          "type": "Stream<List<int>>",
+          "parameters": []
         },
         {
           "name": "environment",
@@ -310,6 +324,12 @@
           "parameters": []
         },
         {
+          "name": "producedCount",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        },
+        {
           "name": "runtime",
           "kind": "field",
           "type": "EdgeRuntime"
@@ -345,7 +365,7 @@
       "profiles": [],
       "conditions": [],
       "source": "bin/controllers.dart",
-      "line": 125,
+      "line": 152,
       "injects": [],
       "members": [
         {
@@ -376,7 +396,7 @@
       "profiles": [],
       "conditions": [],
       "source": "bin/controllers.dart",
-      "line": 136,
+      "line": 163,
       "injects": [
         {
           "parameter": "rates",
@@ -413,7 +433,7 @@
       "profiles": [],
       "conditions": [],
       "source": "bin/controllers.dart",
-      "line": 149,
+      "line": 176,
       "injects": [],
       "members": [
         {
@@ -443,7 +463,7 @@
       "profiles": [],
       "conditions": [],
       "source": "bin/controllers.dart",
-      "line": 232,
+      "line": 259,
       "injects": [],
       "members": [
         {

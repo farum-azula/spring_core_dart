@@ -239,8 +239,8 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
       _i11.springBootStarterWebRateLimitAutoConfiguration:
           const _i2.AutoConfigurationModule(
             after: [
-              'springBootStarterDataAutoConfiguration',
-              'springBootStarterSupabaseAutoConfiguration',
+              r'springBootStarterDataAutoConfiguration',
+              r'springBootStarterSupabaseAutoConfiguration',
             ],
           ),
   },
@@ -294,7 +294,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'fed591a9',
+  fingerprint: 'a68d4543',
 );
 
 /// Starts the application: config files, environment, context, runners

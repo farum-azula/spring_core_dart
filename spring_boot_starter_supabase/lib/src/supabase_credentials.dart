@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:spring_boot_starter_supabase/src/config/supabase_properties.dart';
 import 'package:spring_security_core/spring_security_core.dart';
+import 'package:spring_web_dart/spring_web_dart.dart' show RequestContextHolder;
 
 /// As whom a call to Supabase is made.
 enum SupabaseRole {
@@ -115,6 +116,20 @@ final class DefaultSupabaseCredentials implements SupabaseCredentials {
 
   bool get _isServiceRole => Zone.current[_serviceRole] == true;
 
+  // The application's own login (SupabaseAuth), which is one for the
+  // whole process: the user of a client application. Never while a server
+  // handles a request: there the caller is whoever sent the request, and
+  // a login made in the process (an endpoint that signs a user in, a
+  // session restored at start) must not become the caller of everybody
+  // else's requests.
+  LoginSession? get _login {
+    if (RequestContextHolder.currentRequest != null) {
+      return null;
+    }
+    final session = _session?.call();
+    return session != null && session.isLoggedIn ? session : null;
+  }
+
   String get _anonKey => switch (properties.anonKey?.trim()) {
     final key? when key.isNotEmpty => key,
     _ => throw StateError(
@@ -154,12 +169,18 @@ final class DefaultSupabaseCredentials implements SupabaseCredentials {
     if (_isServiceRole) {
       return _serviceKey;
     }
-    final session = _session?.call();
-    if (session != null && session.isLoggedIn) {
+    final session = _login;
+    if (session != null) {
       final token = await session.accessToken();
       if (token != null) {
         return token;
       }
+      // Signed in when the call began, and the session ended while its
+      // token was asked for (the refresh was refused): the call was a
+      // user's, and must not go on as nobody's with the anon key.
+      throw CredentialsExpiredException(
+        'The session ended while the call was made: sign in again',
+      );
     }
     return _requestToken()?.token ?? _anonKey;
   }
@@ -169,8 +190,8 @@ final class DefaultSupabaseCredentials implements SupabaseCredentials {
     if (_isServiceRole) {
       return const SupabaseCaller.service();
     }
-    final session = _session?.call();
-    if (session != null && session.isLoggedIn) {
+    final session = _login;
+    if (session != null) {
       final name = session.authentication?.name;
       if (name != null && name.isNotEmpty) {
         return SupabaseCaller.user(name);

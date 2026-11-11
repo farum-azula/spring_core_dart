@@ -52,11 +52,53 @@ final class _RecordingStore implements RateLimitStore {
   }
 }
 
+// The keys of the rules of the configuration: the test controller's own
+// `@RateLimiter` (the rule `limited`) counts every request too.
+extension on _RecordingStore {
+  List<String> get ruleKeys => [
+    for (final key in keys)
+      if (!key.startsWith('limited:')) key,
+  ];
+}
+
 final _authentication = BeanModule('authentication', [
   BeanDefinition<_Authentication>(
     name: 'authentication',
     types: const [_Authentication, WebFilter, Ordered],
     create: (_) => _Authentication(),
+  ),
+]);
+
+// A store that is asked at startup, and answers with [problem].
+final class _VerifiedStore implements VerifiableRateLimitStore {
+  _VerifiedStore(this.problem);
+
+  final Object? problem;
+  int verified = 0;
+
+  @override
+  Future<void> verify() async {
+    verified++;
+    if (problem case final problem?) {
+      // The problem of the test, whatever it is.
+      // ignore: only_throw_errors
+      throw problem;
+    }
+  }
+
+  @override
+  Future<RateLimitDecision> tryAcquire(
+    String key,
+    RateLimit limit, {
+    int permits = 1,
+  }) async => const RateLimitDecision(allowed: true, remaining: 1);
+}
+
+BeanModule _verifiedStore([Object? problem]) => BeanModule('verifiedStore', [
+  BeanDefinition<_VerifiedStore>(
+    name: 'verifiedStore',
+    types: const [_VerifiedStore, RateLimitStore],
+    create: (_) => _VerifiedStore(problem),
   ),
 ]);
 
@@ -204,6 +246,7 @@ void main() {
     test('IPv6: ranges, brackets, ports and one spelling per address', () {
       final addresses = TrustedProxyClientAddressResolver(
         trustedProxies: ['2400:cb00::/32', '::1'],
+        ipv6PrefixLength: 128,
       );
       expect(addresses.isTrusted('2400:cb00:1234::1'), isTrue);
       expect(addresses.isTrusted('2400:cb01::1'), isFalse);
@@ -228,6 +271,96 @@ void main() {
         ),
         '198.51.100.7',
       );
+    });
+
+    test('an IPv6 client is its /64: the addresses of one share a key', () {
+      final addresses = TrustedProxyClientAddressResolver();
+      String? of(String peer) => addresses.resolve(_request(peer));
+      expect(of('2001:db8:1:2:aaaa:bbbb:cccc:dddd'), '2001:db8:1:2:0:0:0:0');
+      expect(of('2001:db8:1:2::1'), '2001:db8:1:2:0:0:0:0');
+      expect(
+        of('[2001:DB8:1:2:ffff:ffff:ffff:ffff]:443'),
+        of('2001:db8:1:2::1'),
+      );
+      // Another /64, one bit away.
+      expect(of('2001:db8:1:3::1'), '2001:db8:1:3:0:0:0:0');
+      expect(of('2001:db8:1:2::1'), isNot(of('2001:db8:1:3::1')));
+    });
+
+    test('the prefix length: 128 is every address, others cut inside a '
+        'byte', () {
+      String? of(int prefix, String peer) => TrustedProxyClientAddressResolver(
+        ipv6PrefixLength: prefix,
+      ).resolve(_request(peer));
+      expect(of(128, '2001:db8:1:2::1'), '2001:db8:1:2:0:0:0:1');
+      expect(of(128, '2001:db8:1:2::2'), '2001:db8:1:2:0:0:0:2');
+      expect(of(56, '2001:db8:1:2ff:a::1'), '2001:db8:1:200:0:0:0:0');
+      expect(of(48, '2001:db8:1:2::1'), '2001:db8:1:0:0:0:0:0');
+      expect(of(60, '2001:db8:1:12f::1'), '2001:db8:1:120:0:0:0:0');
+      expect(of(1, 'ffff::1'), '8000:0:0:0:0:0:0:0');
+      expect(of(127, '2001:db8::3'), '2001:db8:0:0:0:0:0:2');
+      for (final prefix in [0, -1, 129]) {
+        expect(
+          () => TrustedProxyClientAddressResolver(ipv6PrefixLength: prefix),
+          throwsArgumentError,
+        );
+      }
+    });
+
+    test('IPv4 addresses, mapped into IPv6 too, are counted whole', () {
+      for (final prefix in [1, 64, 128]) {
+        final addresses = TrustedProxyClientAddressResolver(
+          ipv6PrefixLength: prefix,
+        );
+        expect(addresses.resolve(_request('198.51.100.7')), '198.51.100.7');
+        expect(addresses.resolve(_request('198.51.100.8')), '198.51.100.8');
+        expect(
+          addresses.resolve(_request('::ffff:198.51.100.7')),
+          '198.51.100.7',
+        );
+        expect(
+          addresses.resolve(_request('[::ffff:198.51.100.8]:4711')),
+          '198.51.100.8',
+        );
+      }
+    });
+
+    test('the trusted proxies are compared by their whole address', () {
+      // One address of a /64 is the proxy; its neighbours are clients.
+      final addresses = TrustedProxyClientAddressResolver(
+        trustedProxies: ['2001:db8:1:2::1'],
+      );
+      // From the proxy: the forwarded client, as its /64.
+      expect(
+        addresses.resolve(
+          _request('2001:db8:1:2::1', {
+            'X-Forwarded-For': '2001:db8:9:9:1:2:3:4',
+          }),
+        ),
+        '2001:db8:9:9:0:0:0:0',
+      );
+      // From its neighbour in the same /64: not trusted, the header is
+      // not read.
+      expect(
+        addresses.resolve(
+          _request('2001:db8:1:2::2', {
+            'X-Forwarded-For': '2001:db8:9:9:1:2:3:4',
+          }),
+        ),
+        '2001:db8:1:2:0:0:0:0',
+      );
+      // A forwarded entry in the proxy's /64 that is not the proxy ends
+      // the walk: it is the client.
+      expect(
+        addresses.resolve(
+          _request('2001:db8:1:2::1', {
+            'X-Forwarded-For': '203.0.113.5, 2001:db8:1:2::2',
+          }),
+        ),
+        '2001:db8:1:2:0:0:0:0',
+      );
+      expect(addresses.isTrusted('2001:db8:1:2::1'), isTrue);
+      expect(addresses.isTrusted('2001:db8:1:2::2'), isFalse);
     });
 
     test('a configured header with one address', () {
@@ -503,6 +636,102 @@ void main() {
       });
     });
 
+    test('an IPv6 client is counted by its /64, an IPv4 one by its '
+        'address', () async {
+      await _runner([
+        ..._rule(0, {'path': '/limited/plain', 'key': 'ip', 'limit': '2/1m'}),
+      ]).runAsync((context) async {
+        final mvc = MockMvc.of(context.context);
+        Future<void> from(String address, int status) => mvc
+            .perform(_from('/limited/plain', address: address))
+            .andExpect(status: status);
+        // A client that changes its address inside its /64 at every
+        // request is one client.
+        await from('2001:db8:1:2::1', 200);
+        await from('2001:db8:1:2:aaaa:bbbb:cccc:dddd', 200);
+        await from('2001:db8:1:2:1111:2222:3333:4444', 429);
+        // Another /64 has its own bucket.
+        await from('2001:db8:1:3::1', 200);
+        // IPv4, and IPv4 mapped into IPv6: by address.
+        await from('198.51.100.7', 200);
+        await from('::ffff:198.51.100.7', 200);
+        await from('198.51.100.7', 429);
+        await from('198.51.100.8', 200);
+        await from('::ffff:198.51.100.9', 200);
+      });
+    });
+
+    test('ipv6-prefix-length: 128 counts every address; outside 1..128 '
+        'stops the start', () async {
+      await _runner([
+        'spring.web.rate-limit.ipv6-prefix-length=128',
+        ..._rule(0, {'path': '/limited/plain', 'key': 'ip', 'limit': '1/1m'}),
+      ]).runAsync((context) async {
+        final mvc = MockMvc.of(context.context);
+        Future<void> from(String address, int status) => mvc
+            .perform(_from('/limited/plain', address: address))
+            .andExpect(status: status);
+        await from('2001:db8:1:2::1', 200);
+        await from('2001:db8:1:2::2', 200);
+        await from('2001:db8:1:2::1', 429);
+        await from('2001:DB8:1:2:0:0:0:2', 429);
+      });
+      for (final length in ['0', '129']) {
+        final failure = await _runner([
+          'spring.web.rate-limit.ipv6-prefix-length=$length',
+          ..._rule(0, {'path': '/**', 'key': 'ip', 'limit': '1/1m'}),
+        ]).runAsync((context) async => context.startupFailure);
+        expect('$failure', contains('ipv6-prefix-length=$length'));
+      }
+    });
+
+    test('a header is found in any case, as headers and as '
+        'request.headers', () async {
+      for (final key in [
+        "#{request.headers['X-Api-Key']}",
+        "#{headers['X-Api-Key']}",
+        "#{headers['x-api-key']}",
+        "#{request.headers['x-API-key']}",
+      ]) {
+        await _runner(
+          [
+            ..._rule(0, {
+              'name': 'api',
+              'path': '/limited/plain',
+              'key': key,
+              'limit': '1/1m',
+            }),
+          ],
+          beans: [_recordingStore],
+        ).runAsync((context) async {
+          final mvc = MockMvc.of(context.context);
+          final store = context.getBean<_RecordingStore>();
+          MockRequestBuilder as_(
+            String? apiKey, {
+            String header = 'X-Api-Key',
+            String address = '1.1.1.1',
+          }) => _from(
+            '/limited/plain',
+            address: address,
+            headers: {header: ?apiKey},
+          );
+          await mvc.perform(as_('k-1')).andExpect(status: 200);
+          // The same key from another address, sent in another case.
+          await mvc
+              .perform(as_('k-1', header: 'x-api-key', address: '2.2.2.2'))
+              .andExpect(status: 429);
+          await mvc
+              .perform(as_('k-2', header: 'X-API-KEY'))
+              .andExpect(status: 200);
+          expect(store.ruleKeys, [
+            'api:key:k-1',
+            'api:key:k-1',
+            'api:key:k-2',
+          ], reason: key);
+        });
+      }
+    });
+
     test('a rule of some methods and of a named rule', () async {
       await _runner(
         [
@@ -531,6 +760,83 @@ void main() {
           'limited:ip:198.51.100.7',
           'writes:ip:198.51.100.7',
         });
+      });
+    });
+  });
+
+  group('the store is asked at startup that it is set up', () {
+    final logs = captureLogs();
+    const on = ['spring.web.rate-limit.enabled=true'];
+    final arguments = ApplicationArguments(const []);
+
+    test('a store that is set up: asked once, the start goes on', () async {
+      await _runner(on, beans: [_verifiedStore()]).runAsync((context) async {
+        expect(context.startupFailure, isNull);
+        final verifier = context.getBean<RateLimitStoreVerifier>();
+        expect(verifier, isA<ApplicationRunner>());
+        await verifier.run(arguments);
+        expect(context.getBean<_VerifiedStore>().verified, 1);
+        expect(logs.atLevel(SpringLogLevel.warning), isEmpty);
+      });
+    });
+
+    test(
+      'what it needs is missing: the start fails with what to run',
+      () async {
+        const missing = RateLimitStoreSetupException('run the migration');
+        await _runner(on, beans: [_verifiedStore(missing)]).runAsync((
+          context,
+        ) async {
+          await expectLater(
+            context.getBean<RateLimitStoreVerifier>().run(arguments),
+            throwsA(
+              isA<RateLimitStoreSetupException>().having(
+                (e) => '$e',
+                'text',
+                contains('run the migration'),
+              ),
+            ),
+          );
+        });
+      },
+    );
+
+    test('a store that cannot be reached now: a warning, the start goes '
+        'on', () async {
+      await _runner(on, beans: [_verifiedStore(StateError('down'))]).runAsync((
+        context,
+      ) async {
+        await context.getBean<RateLimitStoreVerifier>().run(arguments);
+        expect(
+          logs.atLevel(SpringLogLevel.warning).single.message,
+          allOf(
+            contains('could not be checked at startup'),
+            contains('on-store-failure'),
+          ),
+        );
+      });
+    });
+
+    test('a store that cannot be asked is not; verify-store: false and no '
+        'rate limiter turned off leave the check out', () async {
+      await _runner(on, beans: [_recordingStore]).runAsync((context) async {
+        await context.getBean<RateLimitStoreVerifier>().run(arguments);
+        expect(context.getBean<_RecordingStore>().keys, isEmpty);
+      });
+      await _runner(
+        [...on, 'spring.web.rate-limit.verify-store=false'],
+        beans: [_verifiedStore()],
+      ).runAsync((context) async {
+        expect(context.startupFailure, isNull);
+        expect(context.containsBean('rateLimitStoreVerifier'), isFalse);
+      });
+      await _runner(
+        const ['spring.web.rate-limit.enabled=false'],
+        beans: [_verifiedStore()],
+      ).runAsync((
+        context,
+      ) async {
+        expect(context.containsBean('rateLimitStoreVerifier'), isFalse);
       });
     });
   });
@@ -781,6 +1087,172 @@ void main() {
         await failure({'limit': '1/1m', 'key': '#{1 +}'}),
         isNot('null'),
       );
+    });
+
+    test('an expression that cannot be parsed stops the start, with the '
+        "rule's name", () async {
+      Future<String> failure(Map<String, String> rule) async {
+        final failure = await _runner(
+          _rule(0, {'limit': '1/1m', ...rule}),
+        ).runAsync((context) async => context.startupFailure);
+        return '$failure';
+      }
+
+      final named = await failure({
+        'name': 'api-keys',
+        'key': "#{request.headers['X-Api-Key'}",
+      });
+      expect(named, contains('The rate limit rule api-keys'));
+      expect(named, contains("#{request.headers['X-Api-Key'}"));
+      expect(
+        await failure({'key': '#{1 +}'}),
+        contains('The rate limit rule rule-1'),
+      );
+      // Before authentication or after: both filters check their rules.
+      expect(
+        await failure({'name': 'open', 'key': '#{headers['}),
+        contains('The rate limit rule open'),
+      );
+    });
+
+    test('@RateLimiter with an expression that cannot be parsed stops the '
+        'start', () {
+      final limiter = RequestRateLimiter(
+        store: InMemoryRateLimitStore(),
+        addresses: TrustedProxyClientAddressResolver(),
+      );
+      expect(
+        () => limiter.validate(
+          RateLimitRule(
+            name: 'ReportController.export',
+            key: '#{authentication.}',
+            limit: RateLimit.parse('1/1m'),
+          ),
+        ),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('The rate limit rule ReportController.export'),
+          ),
+        ),
+      );
+    });
+  });
+
+  group('an expression key that names what does not exist', () {
+    late List<SpringLogRecord> records;
+    late void Function() stop;
+
+    setUp(() {
+      records = [];
+      stop = SpringLog.listen((record) {
+        if (record.loggerName == 'spring.web.ratelimit' &&
+            record.level.index >= SpringLogLevel.warning.index) {
+          records.add(record);
+        }
+      });
+    });
+
+    tearDown(() => stop());
+
+    test('warns once per rule and counts by address', () async {
+      await _runner(
+        [
+          ..._rule(0, {
+            'name': 'api',
+            'path': '/limited/plain',
+            'key': "#{request.header['X-Api-Key']}",
+            'limit': '2/1m',
+          }),
+          ..._rule(1, {
+            'name': 'tenants',
+            'path': '/limited/plain',
+            'key': '#{tenant}',
+            'limit': '100/1m',
+          }),
+        ],
+        beans: [_recordingStore],
+      ).runAsync((context) async {
+        final mvc = MockMvc.of(context.context);
+        final store = context.getBean<_RecordingStore>();
+        MockRequestBuilder as_(String apiKey, {String address = '1.1.1.1'}) =>
+            _from(
+              '/limited/plain',
+              address: address,
+              headers: {'X-Api-Key': apiKey},
+            );
+        // The fallback is the address: the header changes nothing.
+        await mvc.perform(as_('secret-1')).andExpect(status: 200);
+        await mvc.perform(as_('secret-2')).andExpect(status: 200);
+        await mvc.perform(as_('secret-3')).andExpect(status: 429);
+        await mvc
+            .perform(as_('secret-1', address: '2.2.2.2'))
+            .andExpect(status: 200);
+        expect(store.ruleKeys.toSet(), {
+          'api:ip:1.1.1.1',
+          'tenants:ip:1.1.1.1',
+          'api:ip:2.2.2.2',
+          'tenants:ip:2.2.2.2',
+        });
+        // Four requests, two rules: one line each.
+        expect(records, hasLength(2));
+        final api = records.first.message;
+        expect(api, contains('rate limit rule api '));
+        expect(api, contains("#{request.header['X-Api-Key']}"));
+        expect(api, contains("'header'"));
+        expect(api, contains('counts by the address of the client'));
+        expect(records.last.message, contains('rate limit rule tenants '));
+        expect(records.last.message, contains("'tenant'"));
+        for (final record in records) {
+          expect(record.level, SpringLogLevel.warning);
+          expect(record.message, isNot(contains('secret')));
+          expect(record.message, isNot(contains('1.1.1.1')));
+        }
+      });
+    });
+
+    test('a header or a user the request does not have is no mistake: no '
+        'warning', () async {
+      await _runner(
+        [
+          ..._rule(0, {
+            'name': 'api',
+            'path': '/limited/plain',
+            'key': "#{request.headers['X-Api-Key']}",
+            'limit': '5/1m',
+          }),
+          ..._rule(1, {
+            'name': 'users',
+            'path': '/limited/plain',
+            'key': '#{authentication.name}',
+            'limit': '5/1m',
+          }),
+          ..._rule(2, {
+            'name': 'hosts',
+            'path': '/limited/plain',
+            'key': '#{headers.tenant.trim()}',
+            'limit': '5/1m',
+          }),
+        ],
+        beans: [_recordingStore],
+      ).runAsync((context) async {
+        final mvc = MockMvc.of(context.context);
+        final store = context.getBean<_RecordingStore>();
+        await mvc.perform(_from('/limited/plain')).andExpect(status: 200);
+        await mvc
+            .perform(_from('/limited/plain', headers: {'Tenant': ' neon '}))
+            .andExpect(status: 200);
+        expect(store.ruleKeys, [
+          'api:ip:198.51.100.7',
+          'users:ip:198.51.100.7',
+          'hosts:ip:198.51.100.7',
+          'api:ip:198.51.100.7',
+          'users:ip:198.51.100.7',
+          'hosts:key:neon',
+        ]);
+        expect(records, isEmpty);
+      });
     });
   });
 

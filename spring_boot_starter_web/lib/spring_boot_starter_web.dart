@@ -67,6 +67,7 @@ export 'src/ratelimit/rate_limit_auto_configuration.dart'
     show OnServerIsolates, RateLimitWebMvcConfigurer, rateLimitRules;
 export 'src/ratelimit/rate_limit_filter.dart';
 export 'src/ratelimit/rate_limit_key.dart';
+export 'src/ratelimit/rate_limit_store_verifier.dart';
 export 'src/ratelimit/rate_limiter.dart';
 export 'src/request_mapping.dart' hide absent, dispatcherCorsConfiguration;
 export 'src/request_target.dart';

@@ -104,8 +104,8 @@ import 'package:spring_boot_starter_websocket/src/web_socket_handshake.dart'
 import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
 import 'package:spring_security_core/spring_auto_configuration.dart' as _i74;
 
-part 'messages.spring.dart';
-part 'theme.spring.dart';
+part 'messages.spring.keys.dart';
+part 'theme.spring.keys.dart';
 
 class _$SessionProxy extends _i1.Session
     with _i2.ChangeNotifier, _i3.AdvisedSubclass {
@@ -3849,10 +3849,10 @@ _i63.SpringApplication get springApplication => _i63.SpringApplication(
     _i69.springBootStarterFlutterSecurityAutoConfiguration:
         const _i63.AutoConfigurationModule(
           before: [
-            'springBootStarterOauth2ClientAutoConfiguration',
-            'springBootStarterFeignAutoConfiguration',
+            r'springBootStarterOauth2ClientAutoConfiguration',
+            r'springBootStarterFeignAutoConfiguration',
           ],
-          after: ['springBootStarterFlutterNavigationAutoConfiguration'],
+          after: [r'springBootStarterFlutterNavigationAutoConfiguration'],
         ),
   },
   dartDefines: {
@@ -5053,7 +5053,7 @@ _i63.SpringApplication get springApplication => _i63.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '4ca66141',
+  fingerprint: 'f0ba1629',
 );
 
 /// Starts the application: config files, environment, context, runners

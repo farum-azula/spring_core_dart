@@ -7,12 +7,12 @@ import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
 /// Writes the typed keys of a Flutter app's configuration, so a renamed key
 /// is a compile error instead of a run-time failure:
 ///
-/// - `lib/spring_gen/theme.spring.dart` (see `TypedThemeKeys`):
+/// - `lib/spring_gen/theme.spring.keys.dart` (see `TypedThemeKeys`):
 ///   `context.theme`, the
 ///   colors, spacing, text styles, tokens, styles, motion, animations and
 ///   background declared under `spring.flutter.theme.*`, and `AppThemes`
 ///   with the theme names;
-/// - `lib/spring_gen/messages.spring.dart` (see `TypedMessageKeys`):
+/// - `lib/spring_gen/messages.spring.keys.dart` (see `TypedMessageKeys`):
 ///   `context.messages`, the keys of `messages*.properties`.
 ///
 /// Both are `part of` the `.spring.dart` of the package's only
@@ -76,8 +76,8 @@ final class FlutterKeysBuilder implements Builder {
       log.warning(
         'No library of $package has a @ComponentScan or '
         '@SpringBootApplication, so the typed keys of lib/resources/ have no '
-        'library to be a part of: lib/spring_gen/theme.spring.dart and '
-        'lib/spring_gen/messages.spring.dart are not written.',
+        'library to be a part of: lib/spring_gen/theme.spring.keys.dart and '
+        'lib/spring_gen/messages.spring.keys.dart are not written.',
       );
       return;
     }

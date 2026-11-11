@@ -39,6 +39,30 @@ void rateLimitStoreContract(
     expect((await store.tryAcquire('other', five)).remaining, 4);
   });
 
+  test('verify: a table that is not there says what to run; created or '
+      'there, it passes', () async {
+    final missing = await newStore(createTable: false, table: 'no_limits');
+    await expectLater(
+      missing.verify(),
+      throwsA(
+        isA<RateLimitStoreSetupException>().having(
+          (e) => e.message,
+          'message',
+          allOf(
+            contains('no_limits'),
+            contains('sql/rate_limit/'),
+            contains('spring.data.jdbc.rate-limit.create-table'),
+          ),
+        ),
+      ),
+    );
+    final created = await newStore(table: 'made_limits');
+    await created.verify();
+    expect((await created.tryAcquire('k', five)).allowed, isTrue);
+    // There already, and not the store's to create.
+    await (await newStore(createTable: false, table: 'made_limits')).verify();
+  });
+
   test('the bucket is filled again by the clock of the database', () async {
     final store = await newStore();
     const fast = RateLimit(20, Duration(seconds: 1), burst: 2);

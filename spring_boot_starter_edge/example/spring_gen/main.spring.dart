@@ -248,31 +248,31 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     _i11.springBootStarterEdgeAutoConfiguration:
         const _i2.AutoConfigurationModule(
           before: [
-            'springBootStarterWebAutoConfiguration',
-            'springBootStarterSupabaseDataAutoConfiguration',
-            'springBootStarterSupabaseAutoConfiguration',
-            'springBootStarterSupabaseServerAutoConfiguration',
+            r'springBootStarterWebAutoConfiguration',
+            r'springBootStarterSupabaseDataAutoConfiguration',
+            r'springBootStarterSupabaseAutoConfiguration',
+            r'springBootStarterSupabaseServerAutoConfiguration',
           ],
         ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i15.springBootStarterSecurityAutoConfiguration:
           const _i2.AutoConfigurationModule(
-            after: ['springBootStarterOauth2ClientAutoConfiguration'],
+            after: [r'springBootStarterOauth2ClientAutoConfiguration'],
           ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i15.springBootStarterSecurityOAuth2ClientAutoConfiguration:
           const _i2.AutoConfigurationModule(
-            before: ['springBootStarterOauth2ClientAutoConfiguration'],
+            before: [r'springBootStarterOauth2ClientAutoConfiguration'],
           ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i16.springBootStarterWebRateLimitAutoConfiguration:
           const _i2.AutoConfigurationModule(
             after: [
-              'springBootStarterDataAutoConfiguration',
-              'springBootStarterSupabaseAutoConfiguration',
+              r'springBootStarterDataAutoConfiguration',
+              r'springBootStarterSupabaseAutoConfiguration',
             ],
           ),
   },
@@ -322,7 +322,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'f2773df2',
+  fingerprint: '9f8ab68a',
 );
 
 /// Starts the application: config files, environment, context, runners

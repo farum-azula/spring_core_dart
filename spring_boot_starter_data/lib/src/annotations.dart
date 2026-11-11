@@ -519,6 +519,12 @@ class Modifying {
 /// function is also the way to do several writes atomically on a store
 /// without transactions.
 ///
+/// A list is one array argument: a `List<int>` an integer array
+/// (`bigint[]`, `integer[]`), its elements converted as single values are
+/// (an enum to its name). Bytes (`bytea`) are a `Uint8List` argument. An
+/// entity's property differs: there a `List<int>` is bytes too, as its
+/// column is.
+///
 /// The store must have database functions (PostgreSQL through the SQL
 /// store); on a store without them the repository fails when it is
 /// created.

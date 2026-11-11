@@ -244,6 +244,61 @@ void main() {
       expect(code, contains('final int? defaultValue;'));
     });
 
+    test('names of types and of members of an enum get a suffix', () {
+      final code = JsonSchemaClasses.code([
+        at(
+          'resources:a.json',
+          '{"title": "Cell", "type": "object", "properties": { '
+              '"int": {"type": "integer"}, "bool": {"type": "boolean"}, '
+              '"kind": {"enum": ["index", "name", "values", "plain"]}}}',
+        ),
+      ], report: false)!;
+      expect(code, contains('final int? intValue;'));
+      expect(code, contains('final bool? boolValue;'));
+      expect(code, contains('valueIndex,'));
+      expect(code, contains('valueName,'));
+      expect(code, contains('valueValues,'));
+      expect(code, contains('plain,'));
+    });
+
+    test('a value with a line break of either kind stays text', () {
+      for (final lineBreak in [r'\n', r'\r']) {
+        final code = JsonSchemaClasses.code([
+          at(
+            'resources:a.json',
+            '{"title": "Cell", "type": "object", "properties": { '
+                '"kind": {"enum": ["a${lineBreak}b; } void stolen() {", '
+                '"c"]}}}',
+          ),
+        ], report: false)!;
+        // In a comment or within a string of one line, never code.
+        for (final line in const LineSplitter().convert(code)) {
+          if (line.contains('stolen')) {
+            expect(
+              line.trimLeft(),
+              anyOf(startsWith('///'), contains(r'"a\')),
+              reason: line,
+            );
+          }
+        }
+        expect('stolen'.allMatches(code), hasLength(greaterThan(1)));
+      }
+    });
+
+    test(r'a nullable definition is nullable at every $ref to it', () {
+      final code = JsonSchemaClasses.code([
+        at(
+          'resources:a.json',
+          '{"title": "Pair", "type": "object", "required": ["a", "b"], '
+              r'"properties": {"a": {"$ref": "#/$defs/Mode"}, '
+              r'"b": {"$ref": "#/$defs/Mode"}}, "$defs": {"Mode": '
+              '{"type": ["string", "null"], "enum": ["x", "y"]}}}',
+        ),
+      ], report: false)!;
+      expect(code, contains('final Mode? a;'));
+      expect(code, contains('final Mode? b;'));
+    });
+
     test('the name of a class of Spring is warned about', () {
       final warnings = <String>[];
       JsonSchemaClasses.code(

@@ -34,6 +34,10 @@ abstract final class DartNames {
 
   static final _valid = RegExp(r'^[A-Za-z0-9$]+$');
 
+  /// Whether [name] cannot name a member or a parameter: a reserved word,
+  /// or a member of every object.
+  static bool isReserved(String name) => _reserved.contains(name);
+
   /// The Dart member name of [key] (one segment, without dots), or `null`
   /// when it cannot be written as a Dart name.
   static String? member(String key) {

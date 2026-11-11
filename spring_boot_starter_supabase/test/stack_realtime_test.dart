@@ -382,6 +382,68 @@ void main() {
         }
       });
 
+      test('the values of a filter (PostgresFilterEncoder) are read by '
+          'the server as they were given', () async {
+        const encoder = PostgresFilterEncoder();
+        final u = Stack.unique('v');
+        final listId = Stack.unique('l');
+        Recorder<RealtimeRowChange> filtered(String filter) => Recorder(
+          ada.realtime.postgresChanges(table: 'todos', filter: filter),
+        );
+        final titles = [
+          'a,b $u',
+          'a(b) $u',
+          'c}d $u',
+          '{e} $u',
+          'say "hi" \\ $u',
+          ' padded $u',
+          'a.b:c $u',
+        ];
+        final listed = ['null', 'NULL', 'c}d $u', 'a,b $u', '{e} $u'];
+        // Rows no filter here names, a quoted title among them.
+        final others = ['"a,b $u"', 'b $u', 'other $u'];
+        final one = {
+          for (final title in titles)
+            title: filtered('title=eq.${encoder.value(title, '{title}')}'),
+        };
+        final many = filtered(
+          'title=in.(${encoder.value(listed, '{titles}')})',
+        );
+        final all = [...one.values, many];
+        Set<Object?> titlesOf(Recorder<RealtimeRowChange> changes) => {
+          for (final change in changes.events)
+            if (change.record['list_id'] == listId) change.record['title'],
+        };
+        bool complete() =>
+            one.entries.every((e) => titlesOf(e.value).contains(e.key)) &&
+            titlesOf(many).containsAll(listed);
+        try {
+          // Until every subscription is in force: each then got its row.
+          for (var round = 0; round < 15 && !complete(); round++) {
+            for (final title in {...titles, ...listed, ...others}) {
+              await save(ada, Todo(title: title, listId: listId));
+            }
+            await Future<void>.delayed(const Duration(seconds: 2));
+          }
+          for (final MapEntry(key: title, value: changes) in one.entries) {
+            expect(titlesOf(changes), {title}, reason: 'eq of "$title"');
+          }
+          expect(titlesOf(many), listed.toSet());
+          expect([for (final changes in all) ...changes.errors], isEmpty);
+        } finally {
+          for (final changes in all) {
+            await changes.cancel();
+          }
+          await ada.credentials.asServiceRole(
+            () => ada.rest(
+              HttpMethod.delete,
+              '/todos',
+              query: {'list_id': 'eq.$listId'},
+            ),
+          );
+        }
+      }, timeout: const Timeout(Duration(minutes: 2)));
+
       test('a declared channel with a filter (@PostgresChanges) gets the '
           'rows of its room from every user who may be read', () async {
         final room = Stack.unique('room');
@@ -558,6 +620,86 @@ void main() {
           await delete(ada, rows);
         }
       });
+
+      test('another user signs in, then nobody: the channel is joined '
+          "again as them, and the rows of the user before don't "
+          'arrive', () async {
+        final app = await StackApp.start(recordSockets: true);
+        final writer = await StackApp.start();
+        final listId = Stack.unique('l');
+        Recorder<RealtimeRowChange>? changes;
+        Future<void> joinedWith(String token, String what) => app.sockets!.next(
+          (frame) =>
+              frame.event == 'phx_join' &&
+              frame.payload is Map &&
+              (frame.payload! as Map)['access_token'] == token,
+          what: what,
+        );
+        try {
+          final one = await app.signInAsNewUser();
+          await writer.signIn(one);
+          final seen = changes = Recorder(
+            app.realtime.postgresChanges(table: 'todos'),
+          );
+          await seen.provoke(
+            (n) => save(writer, Todo(title: 'before $n', listId: listId)),
+            (change) => change.record['list_id'] == listId,
+            what: 'a row of the first user',
+          );
+
+          final two = await app.createUser();
+          await app.signIn(two);
+          await joinedWith(
+            (await app.session())!.accessToken,
+            'the join as the second user',
+          );
+          final asTwo = seen.events.length;
+          // The first user goes on writing; the second one's row comes.
+          await seen.provoke(
+            (n) async {
+              await save(writer, Todo(title: 'of one $n', listId: listId));
+              await save(app, Todo(title: 'of two $n', listId: listId));
+            },
+            (change) => change.record['owner'] == two.id,
+            what: 'a row of the second user',
+          );
+          expect(
+            seen.events.skip(asTwo).where((c) => c.record['owner'] == one.id),
+            isEmpty,
+          );
+          expect(
+            app.sockets!.sent.where((frame) => frame.event == 'access_token'),
+            isEmpty,
+          );
+
+          await app.run(() => app.auth.logout());
+          await joinedWith(Stack.anonKey, 'the join as nobody');
+          final asNobody = seen.events.length;
+          for (var n = 0; n < 4; n++) {
+            await save(writer, Todo(title: 'later $n', listId: listId));
+            await Future<void>.delayed(const Duration(seconds: 1));
+          }
+          // Nobody may read the table: at most the server's word that a
+          // change was not theirs to see, without the row.
+          expect(
+            seen.events.skip(asNobody).where((c) => c.record.isNotEmpty),
+            isEmpty,
+          );
+          expect(seen.errors, isEmpty);
+          expect(seen.isDone, isFalse);
+        } finally {
+          await changes?.cancel();
+          await writer.credentials.asServiceRole(
+            () => writer.rest(
+              HttpMethod.delete,
+              '/todos',
+              query: {'list_id': 'eq.$listId'},
+            ),
+          );
+          await writer.close();
+          await app.close();
+        }
+      }, timeout: const Timeout(Duration(minutes: 2)));
 
       // Last: it drops the connection every channel of Ada is on.
       test('after a lost connection the channel is joined again and the '

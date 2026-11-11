@@ -9,8 +9,10 @@ import 'package:spring_boot_starter_supabase/src/config/supabase_properties.dart
 ///   are made from it.
 /// - How the repositories reach the database is said once (the REST API,
 ///   or SQL and over which kind of connection), without any password.
-///   The transaction pooler is warned about, and refused together with
-///   `spring.supabase.db.rls: user`.
+///   A transaction pooler (port 6543, whatever the host) is warned about,
+///   and refused together with `spring.supabase.db.rls: user`; so is a
+///   `spring.datasource.url` that is another address than
+///   `spring.supabase.db.url`.
 /// - In a client application (Flutter), a key or a password that ships in
 ///   the app is warned about, once each: `service-role-key`, `db.url`,
 ///   `auth.jwt-secret`. Nothing is forbidden (an internal tool, an admin
@@ -20,6 +22,7 @@ final class SupabaseStartup {
   /// in a client application (Flutter) rather than on a server.
   SupabaseStartup(
     this.properties, {
+    this.dataSourceUrl,
     bool isClientApplication = const bool.fromEnvironment('dart.library.ui'),
     SpringLog log = const SpringLog('spring.supabase'),
   }) {
@@ -97,7 +100,10 @@ final class SupabaseStartup {
     }
     final port = database.hasPort ? database.port : 5432;
     final pooler = database.host.endsWith('.pooler.supabase.com');
-    final transactionPooler = pooler && port == 6543;
+    // Port 6543 is a pooler in transaction mode on every address of a
+    // project (the shared pooler, the dedicated one on db.<ref>, a
+    // self-hosted one by convention): the host does not have to say so.
+    final transactionPooler = port == 6543;
     final kind = transactionPooler
         ? 'transaction pooler'
         : pooler
@@ -107,7 +113,7 @@ final class SupabaseStartup {
     if (transactionPooler) {
       if (asUser) {
         throw StateError(
-          'spring.supabase.db.rls: user cannot be used through the '
+          'spring.supabase.db.rls: user cannot be used through a '
           'transaction pooler (${database.host}:6543): it keeps no session '
           'between statements, so a role set for one user could be used '
           "by another's statement. Use the session pooler (port 5432) or "
@@ -122,6 +128,9 @@ final class SupabaseStartup {
       warnings.add(warning);
       log.warning(warning);
     }
+    if (asUser) {
+      _checkDataSource(database);
+    }
     final who = asUser
         ? 'as the current user (row-level security applies)'
         : 'as the user of the address (row-level security is passed; '
@@ -129,8 +138,44 @@ final class SupabaseStartup {
     log.info('Supabase: the repositories use $dataPath, $who');
   }
 
+  // With `db.rls: user` the statements run as the caller only on the
+  // data source of `spring.supabase.db.url`. An application that points
+  // `spring.datasource.url` somewhere else (the same database through
+  // another address) would run every statement as the user of that
+  // address, past row-level security, while believing it applies:
+  // refused, with both addresses and no password.
+  void _checkDataSource(Uri database) {
+    final text = dataSourceUrl?.trim() ?? '';
+    if (text.isEmpty) {
+      return;
+    }
+    final source = Uri.tryParse(
+      text.startsWith('jdbc:') ? text.substring(5) : text,
+    );
+    int port(Uri uri) => uri.hasPort ? uri.port : 5432;
+    if (source == null ||
+        source.host != database.host ||
+        port(source) != port(database) ||
+        source.path != database.path) {
+      throw StateError(
+        'spring.supabase.db.rls: user applies to the database of '
+        'spring.supabase.db.url (${database.host}:${port(database)}'
+        '${database.path}), and spring.datasource.url is another address'
+        '${source == null ? '' : ' (${source.host}:${port(source)}'
+                  '${source.path})'}: the statements would run as the '
+        'user of that address, past row-level security. Leave '
+        'spring.datasource.url unset, or give both the same address',
+      );
+    }
+  }
+
   /// The `spring.supabase.*` properties.
   final SupabaseProperties properties;
+
+  /// `spring.datasource.url` as the application has it: the address the
+  /// SQL really goes to. By default it is `spring.supabase.db.url`; an
+  /// application may set its own.
+  final String? dataSourceUrl;
 
   /// How the repositories reach the database (`the REST API of <host>`,
   /// `SQL over <host>:<port> (<kind of connection>)`); `null` without a

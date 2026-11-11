@@ -829,7 +829,7 @@ theme: [the Flutter guide, 3. Themes](https://github.com/farum-azula/spring_core
 
 ### Typed keys
 
-`dart run build_runner build` also writes `lib/spring_gen/theme.spring.dart` (a part of
+`dart run build_runner build` also writes `lib/spring_gen/theme.spring.keys.dart` (a part of
 `lib/spring_gen/main.spring.dart`: import that one in your widgets) with
 `context.theme`: a getter for every colour, spacing, text style and token
 that the properties declare under `spring.flutter.theme` (in any theme), and
@@ -1095,7 +1095,7 @@ A missing code throws a `NoSuchMessageException`, unless you pass
 ### Typed messages
 
 The generator (`spring_core_dart_generator`) writes `context.messages` from
-the same files into `lib/spring_gen/messages.spring.dart` (import `spring_gen/main.spring.dart`): a getter for a message without
+the same files into `lib/spring_gen/messages.spring.keys.dart` (import `spring_gen/main.spring.dart`): a getter for a message without
 arguments, a method for one with `{0}`, `{1}`, ... (`Object?` parameters,
 formatted by the same message source, in the current language):
 

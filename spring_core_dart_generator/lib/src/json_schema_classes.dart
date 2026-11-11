@@ -31,7 +31,7 @@ typedef LoadedJsonSchema = ({
 });
 
 /// The classes of the JSON Schemas an app lists in `spring.json.schemas`,
-/// written at build time to `lib/spring_gen/json_schemas.spring.dart`, a
+/// written at build time to `lib/spring_gen/json_schemas.spring.classes.dart`, a
 /// part of the app's `.spring.dart` (as the theme's typed keys are):
 ///
 /// ```yaml
@@ -76,7 +76,7 @@ typedef LoadedJsonSchema = ({
 /// Spring has no counterpart; jsonschema2pojo does the same for Java.
 abstract final class JsonSchemaClasses {
   /// The file the classes are written to.
-  static const file = 'lib/spring_gen/json_schemas.spring.dart';
+  static const file = 'lib/spring_gen/json_schemas.spring.classes.dart';
 
   /// The name of the list of the classes' introspections in the part.
   static const introspections = r'_$jsonSchemaIntrospections';
@@ -87,14 +87,18 @@ abstract final class JsonSchemaClasses {
   /// The import of the parent library the part needs.
   static const import = 'package:spring_core_dart/spring_core_dart.dart';
 
-  static final _memo = <String, Future<List<LoadedJsonSchema>>>{};
+  // The downloads of this process, by package and entry: a remote schema
+  // is downloaded once for every builder and every build of a watch. A
+  // schema of `resources:` is read at every call, so a changed file gives
+  // new classes and the build knows the file as an input of the step.
+  static final _memo = <String, Future<String?>>{};
 
   /// How a remote schema is downloaded when no `fetch` is given: the
   /// network (`null`). Tests set their own.
   static WebLoaderFetch? defaultFetch;
 
-  /// Forgets the schemas read in this process, so the next build reads
-  /// them again; for tests.
+  /// Forgets the schemas downloaded in this process, so the next build
+  /// downloads them again; for tests.
   static void reset() => _memo.clear();
 
   /// The entries of `spring.json.schemas` in the configuration [texts]
@@ -125,30 +129,18 @@ abstract final class JsonSchemaClasses {
     ];
   }
 
-  /// The schemas of [entries], read once a build for every builder that
-  /// asks (the classes builder and the module's builder decide the same).
-  /// Problems are logged; a schema that cannot be read is left out.
+  /// The schemas of [entries] for every builder that asks (the classes
+  /// builder and the module's builder decide the same): one of `resources:`
+  /// is read through [buildStep] at every call, a remote one is downloaded
+  /// once a process. Problems are logged; a schema that cannot be read is
+  /// left out.
   static Future<List<LoadedJsonSchema>> load(
     BuildStep buildStep,
     List<JsonSchemaEntry> entries, {
     WebLoaderFetch? fetch,
-  }) {
+  }) async {
     final package = buildStep.inputId.package;
-    final key = '$package\n${[for (final e in entries) '$e'].join('\n')}';
-    return _memo[key] ??= _load(
-      buildStep,
-      package,
-      entries,
-      fetch ?? defaultFetch,
-    );
-  }
-
-  static Future<List<LoadedJsonSchema>> _load(
-    BuildStep buildStep,
-    String package,
-    List<JsonSchemaEntry> entries,
-    WebLoaderFetch? fetch,
-  ) async {
+    fetch ??= defaultFetch;
     final loaded = <LoadedJsonSchema>[];
     for (final entry in entries) {
       final location = entry.location;
@@ -178,24 +170,12 @@ abstract final class JsonSchemaClasses {
           log.severe('spring.json.schemas: ${error.message} ($location).');
           continue;
         }
-        final directory =
-            PackageDirectories.current
-                .file(AssetId(package, 'pubspec.yaml'))
-                ?.parent
-                .path ??
-            Directory.current.path;
-        final read = await WebLoaderDownload(
-          cache: Directory('$directory/.dart_tool/spring/json_schemas'),
-          fetch: fetch,
-          extension: '.json',
-          pinProperty: 'spring.json.schemas[].sha256',
-        ).read(address.uri, entry.sha256);
-        if (read.problem != null) {
-          (read.text == null ? log.severe : log.warning)(
-            'spring.json.schemas: ${read.problem}.',
-          );
-        }
-        text = read.text;
+        text = await (_memo['$package\n$entry'] ??= _download(
+          package,
+          address.uri,
+          entry.sha256,
+          fetch,
+        ));
         if (text == null) {
           continue;
         }
@@ -219,6 +199,32 @@ abstract final class JsonSchemaClasses {
       ));
     }
     return loaded;
+  }
+
+  static Future<String?> _download(
+    String package,
+    Uri uri,
+    String? sha256,
+    WebLoaderFetch? fetch,
+  ) async {
+    final directory =
+        PackageDirectories.current
+            .file(AssetId(package, 'pubspec.yaml'))
+            ?.parent
+            .path ??
+        Directory.current.path;
+    final read = await WebLoaderDownload(
+      cache: Directory('$directory/.dart_tool/spring/json_schemas'),
+      fetch: fetch,
+      extension: '.json',
+      pinProperty: 'spring.json.schemas[].sha256',
+    ).read(uri, sha256);
+    if (read.problem != null) {
+      (read.text == null ? log.severe : log.warning)(
+        'spring.json.schemas: ${read.problem}.',
+      );
+    }
+    return read.text;
   }
 
   /// The part's code for [schemas] (its `part of` is written by the
@@ -351,7 +357,7 @@ final class JsonSchemaPart {
   }
 }
 
-/// Writes `lib/spring_gen/json_schemas.spring.dart`, the classes of the
+/// Writes `lib/spring_gen/json_schemas.spring.classes.dart`, the classes of the
 /// JSON Schemas of `spring.json.schemas` ([JsonSchemaClasses]): a part of
 /// the package's `@SpringBootApplication` library (else its outermost
 /// `@ComponentScan`), whose module the main builder gives their
@@ -637,13 +643,32 @@ final class _Model {
     return (_typeOf(node, schema, pointer, name), type == 'null');
   }
 
+  // Whether [node] allows null, as [_typeOfNullable] finds for a schema it
+  // reads the first time: a type read before is asked only this.
+  static bool _allowsNull(Object? node) {
+    if (node is! Map<String, Object?>) {
+      return true;
+    }
+    final type = node['type'];
+    if (type == 'null' || (type is List && type.contains('null'))) {
+      return true;
+    }
+    for (final union in const ['anyOf', 'oneOf']) {
+      if (node[union] case final List<Object?> options
+          when options.any((o) => o is Map && o['type'] == 'null')) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   (_Type, bool) _ref(String ref, LoadedJsonSchema schema, String name) {
     if (ref.startsWith('#')) {
       final key = '${schema.entry.location}$ref';
-      if (_byPointer[key] case final known?) {
-        return (known, false);
-      }
       final target = _at(schema, ref);
+      if (_byPointer[key] case final known?) {
+        return (known, _allowsNull(target));
+      }
       final defName = ref.split('/').last;
       return _typeOfNullable(
         target,
@@ -667,7 +692,7 @@ final class _Model {
         final pointer = '#$fragment';
         final key = '${other.entry.location}$pointer';
         if (_byPointer[key] case final known?) {
-          return (known, false);
+          return (known, _allowsNull(_at(other, pointer)));
         }
         return _typeOfNullable(
           _at(other, pointer),
@@ -714,7 +739,9 @@ final class _Model {
       final used = <String>{};
       for (final value in enumValues.cast<String>()) {
         var dart = _camel(value);
-        if (dart.isEmpty || _keywords.contains(dart) || dart == 'values') {
+        if (dart.isEmpty ||
+            _keywords.contains(dart) ||
+            const {'values', 'index', 'name'}.contains(dart)) {
           dart = 'value${_pascal(dart)}';
         }
         var unique = dart;
@@ -901,7 +928,7 @@ final class _Model {
       _doc(out, e.description, '');
       w('enum ${e.name} {');
       for (final (dart, json) in e.values) {
-        w('  /// `${json.replaceAll('`', "'")}`.');
+        _doc(out, '`${json.replaceAll('`', "'")}`.', '  ');
         w('  $dart,');
       }
       w('}\n');
@@ -1028,10 +1055,12 @@ final class _Model {
 
 // A Dart raw string of [text].
 String _raw(String text) {
-  if (!text.contains("'") && !text.contains('\n')) {
+  // A line break of either kind ends a string of one line.
+  final oneLine = !text.contains('\n') && !text.contains('\r');
+  if (oneLine && !text.contains("'")) {
     return "r'$text'";
   }
-  if (!text.contains('"') && !text.contains('\n')) {
+  if (oneLine && !text.contains('"')) {
     return 'r"$text"';
   }
   return jsonEncode(text).replaceAll(r'$', r'\$');
@@ -1086,6 +1115,8 @@ const _keywords = {
   'super', 'switch', 'sync', 'this', 'throw', 'true', 'try', 'type',
   'typedef', 'var', 'void', 'when', 'while', 'with', 'yield', 'hashCode',
   'toString', 'runtimeType', 'noSuchMethod',
+  // The types a class of a schema declares its fields with.
+  'int', 'double', 'num', 'bool',
 };
 
 // Names an app imports with Spring for Dart, which a class of a schema

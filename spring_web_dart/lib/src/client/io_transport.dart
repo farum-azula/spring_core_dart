@@ -28,6 +28,9 @@ import 'package:spring_web_dart/src/http_headers.dart';
 ///   chunk of the body) and `timeout` the whole exchange. When one runs
 ///   out the request is aborted and an [HttpTransportException] with
 ///   `isTimeout` is thrown.
+/// - When `abort` completes before the status and headers arrive, the
+///   request is aborted, which closes its connection, and an
+///   [HttpTransportException] is thrown.
 /// - Socket and other I/O errors become an [HttpTransportException]
 ///   whose `cause` is the original error.
 ///
@@ -138,11 +141,29 @@ class IoHttpTransport implements HttpTransport {
     read,
   ) async {
     io.HttpClientRequest? pending;
+    // The caller gave the request up (HttpRequest.abort): aborting closes
+    // the connection instead of leaving it open until the server answers.
+    // Once the response is there, the body's subscription does that.
+    var aborted = false;
+    var answered = false;
+    unawaited(
+      request.abort?.then((_) {
+        aborted = true;
+        if (!answered) {
+          pending?.abort(const _Aborted());
+        }
+      }),
+    );
     Future<T> exchange() async {
       final outgoing = (pending = await _client.openUrl(
         request.method.value,
         request.url,
       ))..followRedirects = request.followRedirects;
+      if (aborted) {
+        // Given up while the connection was opening: nothing is sent.
+        outgoing.abort(const _Aborted());
+        await outgoing.close();
+      }
       // The request's headers replace HttpClient's defaults (User-Agent,
       // Accept-Encoding); further values of the same name are added.
       request.headers.forEach((name, values) {
@@ -167,7 +188,9 @@ class IoHttpTransport implements HttpTransport {
               readTimeout,
               onTimeout: () => throw _ReadTimeout(readTimeout),
             );
-      return await read(incoming, outgoing);
+      final result = await read(incoming, outgoing);
+      answered = true;
+      return result;
     }
 
     final timeout = request.timeout;
@@ -182,6 +205,12 @@ class IoHttpTransport implements HttpTransport {
         request: request,
         cause: error,
         isTimeout: true,
+      );
+    } on _Aborted catch (error) {
+      throw HttpTransportException(
+        'request aborted',
+        request: request,
+        cause: error,
       );
     } on TimeoutException catch (error) {
       pending?.abort(error);
@@ -219,6 +248,14 @@ class IoHttpTransport implements HttpTransport {
 
   @override
   void close() => _client.close(force: true);
+}
+
+/// The caller gave the request up before the response arrived.
+final class _Aborted implements Exception {
+  const _Aborted();
+
+  @override
+  String toString() => 'the request was aborted by its caller';
 }
 
 /// The read timeout of a request ran out: no data for [timeout].

@@ -209,6 +209,10 @@ int _seconds(Duration time) {
 /// - throws a [TooManyRequestsException] when a rule refuses: the request
 ///   passes only when every rule allows it (the rules before the one
 ///   that refused have counted it);
+/// - when a rule's key cannot be resolved because of how it is written
+///   ([RateLimitKeyException]: an expression that reads a property
+///   nothing has), counts by the client's address and logs one line at
+///   WARN for the rule, once;
 /// - when the store fails, does what the rule's `on-store-failure` says:
 ///   `deny` throws a [RateLimitUnavailableException] (503), `allow` lets
 ///   the request go on, not counted. Either way one line is logged at
@@ -271,6 +275,7 @@ final class RequestRateLimiter {
 
   final List<int>? _hashKey;
   DateTime? _warnedAt;
+  final _warnedKeys = <String>{};
 
   static const _context = 'spring.web.rateLimit.clientAddress';
   static const _tightest = 'spring.web.rateLimit.remaining';
@@ -290,11 +295,23 @@ final class RequestRateLimiter {
       resolverOf(rule.key).beforeAuthentication(rule.key);
 
   /// Checks [rule] now, so that a mistake stops the start: its key has a
-  /// resolver, its expression parses.
+  /// resolver, its expression parses. Throws a [StateError] that names
+  /// the rule.
+  ///
+  /// What an expression reads is only known with a request: a property
+  /// that does not exist is found at the first one, and warned about
+  /// once ([acquire]).
   void validate(RateLimitRule rule) {
     final resolver = resolverOf(rule.key);
     if (resolver is ExpressionRateLimitKeyResolver) {
-      resolver.validate(rule.key);
+      try {
+        resolver.validate(rule.key);
+      } on ExpressionException catch (error) {
+        throw StateError(
+          'The rate limit rule ${rule.name}: its key ${rule.key} is not '
+          'an expression that can be read: ${error.simpleMessage}',
+        );
+      }
     }
   }
 
@@ -380,9 +397,14 @@ final class RequestRateLimiter {
   }
 
   Future<String> _key(RateLimitRule rule, RateLimitRequest request) async {
+    RateLimitSubject? resolved;
+    try {
+      resolved = await resolverOf(rule.key).resolve(rule.key, request);
+    } on RateLimitKeyException catch (error) {
+      _warnKey(rule, error);
+    }
     final subject =
-        await resolverOf(rule.key).resolve(rule.key, request) ??
-        RateLimitSubject.address(request.address ?? 'unknown');
+        resolved ?? RateLimitSubject.address(request.address ?? 'unknown');
     var value = subject.value;
     final hashKey = _hashKey;
     if (subject.isAddress && hashKey != null) {
@@ -391,6 +413,19 @@ final class RequestRateLimiter {
       value = Sha256.hex(Sha256.digest(utf8.encode(value)));
     }
     return '${rule.name}:${subject.kind}:$value';
+  }
+
+  // Once per rule, not per request: whoever sends the requests must not
+  // be the one who decides how much is logged.
+  void _warnKey(RateLimitRule rule, RateLimitKeyException error) {
+    if (!_warnedKeys.add(rule.name)) {
+      return;
+    }
+    _log.warning(
+      'The key ${rule.key} of the rate limit rule ${rule.name} cannot be '
+      'resolved (${error.message}): the rule counts by the address of '
+      'the client instead. This is logged once',
+    );
   }
 
   // The rule and the kind of error, never the key: it names a client.

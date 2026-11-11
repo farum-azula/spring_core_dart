@@ -300,7 +300,14 @@ final class CacheInterceptor implements MethodInterceptor {
     (String, Object?)? inFlightKey;
     final single = cacheables.singleOrNull;
     if (isAsync && hit == null && single != null && single.sync) {
-      inFlightKey = (call.caches(single).first.name, keys[single]);
+      // The key as the cache keeps it: one that adds the caller to it
+      // must not hand one caller the answer another one is waiting for.
+      final cache = call.caches(single).first;
+      final key = keys[single];
+      inFlightKey = (
+        cache.name,
+        cache is KeyScopingCache ? cache.storedKey(key) : key,
+      );
       if (_inFlight[inFlightKey] case final pending?) {
         return pending;
       }
@@ -530,7 +537,7 @@ final class _Call {
         error,
         stackTrace,
         cache,
-        key,
+        cache is KeyScopingCache ? cache.storedKey(key) : key,
       );
       return null; // handled: a miss
     }
@@ -544,7 +551,7 @@ final class _Call {
         error,
         stackTrace,
         cache,
-        key,
+        cache is KeyScopingCache ? cache.storedKey(key) : key,
         value,
       );
     }

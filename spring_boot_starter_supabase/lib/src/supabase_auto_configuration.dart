@@ -54,7 +54,12 @@ final supabaseAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<SupabaseStartup>(
     name: 'supabaseStartup',
     source: _source,
-    create: (r) => SupabaseStartup(r.dependency<SupabaseProperties>()),
+    create: (r) => SupabaseStartup(
+      r.dependency<SupabaseProperties>(),
+      dataSourceUrl: r.dependency<Environment>().getProperty(
+        'spring.datasource.url',
+      ),
+    ),
   ),
   BeanDefinition<SupabaseCredentials>(
     name: 'supabaseCredentials',
@@ -102,6 +107,7 @@ final supabaseAutoConfiguration = <BeanDefinition<Object>>[
       http: r.dependency<SupabaseHttp>(),
       converter: r.dependency<EntityConverter>(),
       schema: r.dependency<SupabaseProperties>().db.schema,
+      maxRows: r.dependency<SupabaseProperties>().db.maxRows,
       changes: _changes(r.optionalDependency<SupabaseRealtime>()),
     ),
   ),

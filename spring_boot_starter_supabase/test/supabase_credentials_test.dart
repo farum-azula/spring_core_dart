@@ -4,6 +4,8 @@ library;
 import 'dart:async';
 
 import 'package:spring_boot_starter_supabase/spring_boot_starter_supabase.dart';
+import 'package:spring_boot_starter_test/spring_boot_starter_test.dart'
+    show MockServerHttpRequest;
 import 'package:test/test.dart';
 
 import 'support.dart';
@@ -38,6 +40,16 @@ final class _Session implements LoginSession {
   Future<void> logout() async => token = null;
 }
 
+final class _EndingSession extends _Session {
+  _EndingSession() : super('user-token');
+
+  @override
+  Future<String?> accessToken() async {
+    token = null;
+    return null;
+  }
+}
+
 Authentication _bearer(Map<String, Object?> claims) =>
     TestingAuthenticationToken('p', TestToken(unsignedToken(claims)));
 
@@ -64,6 +76,44 @@ void main() {
     expect(await c.accessToken(), 'anon-key');
     expect(c.caller, const SupabaseCaller.anon());
     expect(c.caller.key, 'anon');
+  });
+
+  test('a session that ends while its token is asked for: no anon call', () {
+    // The refresh was refused: signed in at the start, no token after.
+    final session = _EndingSession();
+    final c = credentials(session: session);
+    expect(c.accessToken(), throwsA(isA<CredentialsExpiredException>()));
+  });
+
+  group('while a server handles a request', () {
+    // Whatever is signed in in the process (an endpoint signed a user in,
+    // a session was restored at start) is not the caller of a request.
+    R inRequest<R>(R Function() body) => RequestContextHolder.runWith(
+      MockServerHttpRequest(HttpMethod.get, '/api/todos'),
+      body,
+    );
+
+    test("the request's user, not the login of the process", () async {
+      final session = _Session('token-of-the-process');
+      final c = credentials(session: session, request: _bearer(user));
+      await inRequest(() async {
+        expect(await c.accessToken(), unsignedToken(user));
+        expect(c.caller, const SupabaseCaller.user('user-7'));
+      });
+      expect(session.asked, 0);
+    });
+
+    test('a request without a token is anonymous, also then', () async {
+      final session = _Session('token-of-the-process');
+      final c = credentials(session: session);
+      await inRequest(() async {
+        expect(await c.accessToken(), 'anon-key');
+        expect(c.caller, const SupabaseCaller.anon());
+      });
+      expect(session.asked, 0);
+      // Outside a request (a client application) the login is the caller.
+      expect(await c.accessToken(), 'token-of-the-process');
+    });
   });
 
   test('a signed-in user of the application: their fresh token', () async {

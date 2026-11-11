@@ -7,6 +7,7 @@ import 'package:spring_boot_starter_web/src/isolates/server_isolate_pool.dart';
 import 'package:spring_boot_starter_web/src/ratelimit/client_address.dart';
 import 'package:spring_boot_starter_web/src/ratelimit/rate_limit_filter.dart';
 import 'package:spring_boot_starter_web/src/ratelimit/rate_limit_key.dart';
+import 'package:spring_boot_starter_web/src/ratelimit/rate_limit_store_verifier.dart';
 import 'package:spring_boot_starter_web/src/ratelimit/rate_limiter.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
@@ -138,10 +139,19 @@ final rateLimitAutoConfiguration = <BeanDefinition<Object>>[
     ],
     create: (r) {
       final properties = r.dependency<RateLimitProperties>();
+      final prefix = properties.ipv6PrefixLength;
+      if (prefix < 1 || prefix > 128) {
+        throw StateError(
+          'spring.web.rate-limit.ipv6-prefix-length=$prefix: an IPv6 '
+          'prefix length is 1 to 128 (64 by default; 128 counts every '
+          'address by itself)',
+        );
+      }
       try {
         return TrustedProxyClientAddressResolver(
           trustedProxies: properties.trustedProxies,
           header: properties.clientAddressHeader,
+          ipv6PrefixLength: prefix,
         );
       } on ArgumentError catch (error) {
         throw StateError(
@@ -149,6 +159,26 @@ final rateLimitAutoConfiguration = <BeanDefinition<Object>>[
         );
       }
     },
+  ),
+  // The store's table, function or binding, asked for at startup.
+  BeanDefinition<RateLimitStoreVerifier>(
+    name: 'rateLimitStoreVerifier',
+    factoryMethodName: 'rateLimitStoreVerifier',
+    types: const [RateLimitStoreVerifier, ApplicationRunner],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.rateLimitStoreVerifier', [
+        ConditionalOnRateLimiting(),
+        ConditionalOnProperty(
+          'spring.web.rate-limit.verify-store',
+          havingValue: 'true',
+          matchIfMissing: true,
+        ),
+        ConditionalOnMissingBean(RateLimitStoreVerifier),
+      ]),
+    ],
+    create: (r) =>
+        RateLimitStoreVerifier(r.dependency<RequestRateLimiter>().store),
   ),
   BeanDefinition<RequestRateLimiter>(
     name: 'requestRateLimiter',

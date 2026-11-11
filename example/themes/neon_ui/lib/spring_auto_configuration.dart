@@ -1,7 +1,7 @@
 /// The auto-configuration of neon_ui: it embeds `lib/resources/` (the theme
 /// `themes/neon.yml`) so an app imports it with
 /// `spring.config.import: resources:themes/neon.yml`, and it generates the
-/// typed theme keys of the library (`lib/spring_gen/theme.spring.dart`).
+/// typed theme keys of the library (`lib/spring_gen/theme.spring.keys.dart`).
 library;
 
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';

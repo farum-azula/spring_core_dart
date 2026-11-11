@@ -704,6 +704,14 @@ entry 1.2 seconds later; now it is gone. So, to test expiry:
   `CompletableFuture`).
 - The `sync` wait is shared per cache and key, so two different `sync`
   methods with the same cache and key share one pending result.
+- Spring leaves the waiting of `sync` to the cache
+  (`Cache.get(key, Callable)`). `Cache` has no value loader here: the
+  interceptor keeps the calls that are running, by the cache's name and
+  the key. A cache that keeps its entries under another key than the one
+  it is asked with (one that adds the caller or a tenant) implements
+  `KeyScopingCache`, whose `storedKey(key)` is then what the calls are
+  shared by; without it two callers that the cache keeps apart would
+  share one answer. `KeyScopingCache` is this starter's own interface.
 - Built-in store: memory, with time to live and size limit. Spring's
   `ConcurrentMapCacheManager` has neither; it needs Caffeine for that.
 - `spring.cache.simple.time-to-live`, `spring.cache.simple.max-size` and

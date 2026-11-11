@@ -82,7 +82,7 @@ checks that every quoted line is in the resources.
   logging beans.
 - `lib/src/pages/`: the ten pages (`@ScreenRoute`) and the not-found
   page; they read `context.theme.*` from the
-  generated `lib/spring_gen/theme.spring.dart`. The app's keys include the library's
+  generated `lib/spring_gen/theme.spring.keys.dart`. The app's keys include the library's
   theme: the generator follows `spring.config.import: resources:...` into
   the packages the app depends on.
 - `lib/src/widgets/`: the frame of a page, a section, a code box

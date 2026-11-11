@@ -2,7 +2,9 @@
 // root pubspec.yaml, example included) twice: from the package directory,
 // as `dart test` is usually run, and from the workspace root, as IDEs and
 // `dart test <dir>` do, so nothing may depend on the working directory.
-// New packages are picked up automatically.
+// New packages are picked up automatically. The generator, whose tests are
+// builds in memory that take most of the time, runs from the root only when
+// both passes run.
 //
 //   dart run tool/test_all.dart            # both passes
 //   dart run tool/test_all.dart --packages # only from the package directories
@@ -105,13 +107,23 @@ Future<void> main(List<String> args) async {
     ])
       if (enabled)
         for (final package in packages)
-          ..._runs(
-            package,
-            files[package]!,
-            fromRoot: pass == 'root',
-            shards: _slow.contains(package) ? shards : 1,
-            filters: filters,
-          ),
+          // In-memory builds read nothing relative to the directory they
+          // run from: with both passes, the second one only doubles the
+          // longest runs.
+          if (pass == 'root' || !options.rootRun || !_slow.contains(package))
+            ..._runs(
+              package,
+              files[package]!,
+              fromRoot: pass == 'root',
+              shards: _slow.contains(package) ? shards : 1,
+              // The shards together take the processors, not each of them
+              // (a suite is an isolate with an analyzer of its own): more
+              // only makes the builds time out.
+              concurrency: _slow.contains(package)
+                  ? math.max(2, cpus ~/ shards)
+                  : null,
+              filters: filters,
+            ),
   ];
   final runs = _part(all, options.job, options.jobs)
     // Slow ones first, so they don't end up last in the queue.
@@ -181,6 +193,7 @@ List<_Run> _runs(
   required bool fromRoot,
   required int shards,
   required List<String> filters,
+  int? concurrency,
 }) {
   final where = fromRoot ? 'from the root' : 'in';
   final weight =
@@ -198,6 +211,7 @@ List<_Run> _runs(
           for (final file in files)
             if (fromRoot) '$package/$file' else file,
           if (shards > 1) ...['--total-shards=$shards', '--shard-index=$shard'],
+          if (concurrency != null) '--concurrency=$concurrency',
           ...filters,
         ],
         failure: fromRoot

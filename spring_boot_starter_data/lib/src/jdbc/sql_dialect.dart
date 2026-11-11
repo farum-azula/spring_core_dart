@@ -101,6 +101,13 @@ abstract class SqlDialect implements ColumnValueReader {
     required bool negate,
   }) => null;
 
+  /// Whether the driver sends [values] (column values, as
+  /// `EntityConverter.toColumnValue` gives them; nulls among them) as the
+  /// one array parameter of [arrayMembership]. False (the default, and of
+  /// a dialect with arrays for values its driver has no array of, such as
+  /// bytes) makes the generator write one marker per value.
+  bool bindsAsArray(Iterable<Object?> values) => false;
+
   /// How the database takes the row locks of a `@Lock` query.
   LockStrategy get lockStrategy;
 
@@ -140,7 +147,8 @@ abstract class SqlDialect implements ColumnValueReader {
   /// array column. False by default: the store then refuses such a
   /// property when its repository is created (`CollectionColumns`), with
   /// the fix. Bytes (`List<int>`) are no collection here: [columnType]
-  /// names their column.
+  /// names their column. A dialect that answers true converts the
+  /// elements in [toDatabase] and [fromDatabase] as it does single values.
   bool storesCollection(TypeInfo<Object?> type) => false;
 
   /// Whether a column declared with [declared] (as the database reports

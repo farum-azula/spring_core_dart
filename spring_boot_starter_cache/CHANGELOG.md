@@ -1,5 +1,6 @@
 ## 0.7.4
 
+- `KeyScopingCache`: a `Cache` that keeps its entries under another key than the one it is asked with (one that adds the caller or a tenant) says so with `storedKey`. **Fixed** with it: `@Cacheable(sync: true)` shared one run of the method between every call that missed the same key of the annotation at once, also when the cache keeps that key apart per caller, so one caller could get the answer of another.
 - `InMemoryCacheManager` (the default) and `SimpleCacheManager` are `IsolateLocalState`: a pool of server isolates names them in its warning, each isolate having its own cached values.
 
 ## 0.7.3

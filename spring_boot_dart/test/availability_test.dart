@@ -21,6 +21,27 @@ class FixedAvailability implements ApplicationAvailability {
   getLastChangeEvent<S extends AvailabilityState>() => null;
 }
 
+/// A server: what it stops in, it notes.
+class Server with SmartLifecycle {
+  Server(this.availability, this.seen);
+
+  final ApplicationAvailability availability;
+  final List<Object> seen;
+  var _running = false;
+
+  @override
+  bool get isRunning => _running;
+
+  @override
+  void start() => _running = true;
+
+  @override
+  void stop() {
+    seen.add(availability.readinessState);
+    _running = false;
+  }
+}
+
 /// A state that is neither liveness nor readiness.
 enum Maintenance implements AvailabilityState { on, off }
 
@@ -58,6 +79,77 @@ void main() {
       availability.getLastChangeEvent<LivenessState>()?.state,
       LivenessState.broken,
     );
+  });
+
+  group('a context that closes refuses traffic', () {
+    ConfigurableApplicationContext server(
+      List<Object> seen,
+    ) => SpringApplication(
+      [
+        BeanModule('app', [
+          BeanDefinition<Server>(
+            name: 'server',
+            types: const [Server, SmartLifecycle, Lifecycle],
+            create: (factory) =>
+                Server(factory.getBean<ApplicationAvailability>(), seen),
+          ),
+        ]),
+      ],
+      autoConfigurations: [springBootAutoConfiguration],
+      out: (_) {},
+      listeners: [
+        // Before the server stops, and after the state changed.
+        ApplicationListenerAdapter.of<ContextClosedEvent>(
+          (event) => seen.add('closed'),
+        ),
+        ApplicationListenerAdapter.of<AvailabilityChangeEvent<ReadinessState>>(
+          (event) => seen.add('event ${event.state.name}'),
+        ),
+      ],
+    ).run(const [], systemEnvironment: const {});
+
+    const expected = [
+      'event acceptingTraffic',
+      'event refusingTraffic',
+      'closed',
+      ReadinessState.refusingTraffic,
+    ];
+
+    test('before its lifecycle beans stop', () {
+      final seen = <Object>[];
+      final context = server(seen);
+      final availability = context.getBean<ApplicationAvailability>();
+      expect(availability.readinessState, ReadinessState.acceptingTraffic);
+      context.close();
+      expect(seen, expected);
+      expect(availability.readinessState, ReadinessState.refusingTraffic);
+      expect(availability.livenessState, LivenessState.correct);
+      expect(
+        availability.getLastChangeEvent<ReadinessState>()?.source,
+        same(context),
+      );
+    });
+
+    test('with closeAsync too', () async {
+      final seen = <Object>[];
+      final context = server(seen);
+      final closing = context.closeAsync();
+      // Already at the call, before anything is awaited.
+      expect(
+        context.getBean<ApplicationAvailability>().readinessState,
+        ReadinessState.refusingTraffic,
+      );
+      await closing;
+      expect(seen, expected);
+    });
+
+    test('once: a second close publishes nothing', () {
+      final seen = <Object>[];
+      server(seen)
+        ..close()
+        ..close();
+      expect(seen, expected);
+    });
   });
 
   test('states of other kinds are kept too', () {

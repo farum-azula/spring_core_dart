@@ -67,8 +67,8 @@ builders:
     auto_apply: dependents
     build_to: source
     runs_before: ["spring_core_dart_generator:spring_flutter_seo"]
-  # Writes lib/spring_gen/theme.spring.dart (context.theme) and
-  # lib/spring_gen/messages.spring.dart
+  # Writes lib/spring_gen/theme.spring.keys.dart (context.theme) and
+  # lib/spring_gen/messages.spring.keys.dart
   # (context.messages), the typed keys of spring.flutter.theme.* and
   # messages*.properties, as parts of the .spring.dart of the package's
   # @ComponentScan library. Only for a package that depends on
@@ -76,7 +76,7 @@ builders:
   spring_flutter_keys:
     import: "package:spring_core_dart_generator/builder.dart"
     builder_factories: ["springFlutterKeysBuilder"]
-    build_extensions: {"$package$": ["lib/spring_gen/theme.spring.dart", "lib/spring_gen/messages.spring.dart"]}
+    build_extensions: {"$package$": ["lib/spring_gen/theme.spring.keys.dart", "lib/spring_gen/messages.spring.keys.dart"]}
     auto_apply: dependents
     build_to: source
   # Writes lib/spring_gen/spring_metadata.json (properties, beans, profiles,
@@ -85,7 +85,7 @@ builders:
   spring_json_schemas:
     import: "package:spring_core_dart_generator/builder.dart"
     builder_factories: ["springJsonSchemasBuilder"]
-    build_extensions: {"$package$": ["lib/spring_gen/json_schemas.spring.dart"]}
+    build_extensions: {"$package$": ["lib/spring_gen/json_schemas.spring.classes.dart"]}
     auto_apply: dependents
     build_to: source
   # Writes the search index of spring.search.markdown, a file per language,

@@ -82,6 +82,7 @@ final class PostgrestDataStore
     this.schema,
     this._changes,
     this.name = storeName,
+    this.maxRows = 1000,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now,
        _query = PostgrestQuery(converter);
@@ -97,6 +98,10 @@ final class PostgrestDataStore
 
   /// The schema of the tables; the API's default (`public`) when `null`.
   final String? schema;
+
+  /// The most rows the API returns in one answer
+  /// (`spring.supabase.db.max-rows`): an answer that long is read on.
+  final int maxRows;
 
   final PostgrestChanges? _changes;
   final DateTime Function() _clock;
@@ -320,16 +325,60 @@ final class PostgrestDataStore
         ((offset != null && offset > 0) || limit != null
             ? entity.idProperty?.columnName
             : null);
-    final rows = await _rows(
+    final filters = _query.filters(entity, criteria);
+    final first = offset != null && offset > 0 ? offset : 0;
+    Future<List<Map<String, Object?>>> window(
+      String? order,
+      int offset,
+      int? limit,
+    ) => _rows(
       HttpMethod.get,
       entity,
       query: [
-        ..._query.filters(entity, criteria),
+        ...filters,
         if (order != null) MapEntry('order', order),
-        if (offset != null && offset > 0) MapEntry('offset', '$offset'),
+        if (offset > 0) MapEntry('offset', '$offset'),
         if (limit != null) MapEntry('limit', '$limit'),
       ],
     );
+
+    var rows = await window(order, first, limit);
+    // The API cuts an answer at its "Max rows" and says nothing: one that
+    // long, when more was asked for, is read again in windows, in an order
+    // that is the same in each of them (the id last).
+    if (maxRows > 0 &&
+        rows.length >= maxRows &&
+        (limit == null || rows.length < limit)) {
+      final id = entity.idProperty?.columnName;
+      if (id == null) {
+        throw InvalidDataAccessApiUsageException(
+          'The ${entity.type} has no id, and the REST API returned '
+          '${rows.length} rows, as many as it returns at most '
+          '(spring.supabase.db.max-rows): the rest cannot be read in a '
+          'stable order. Ask for a page, or use the SQL path '
+          '(spring.supabase.db.url)',
+        );
+      }
+      final stable = order == null
+          ? id
+          : order.split(',').any((o) => o.split('.').first == id)
+          ? order
+          : '$order,$id';
+      if (stable != order) {
+        rows = await window(stable, first, limit);
+      }
+      while (rows.length >= maxRows && (limit == null || rows.length < limit)) {
+        final next = await window(
+          stable,
+          first + rows.length,
+          limit == null ? null : limit - rows.length,
+        );
+        rows.addAll(next);
+        if (next.length < maxRows) {
+          break;
+        }
+      }
+    }
     return [for (final row in rows) converter.read<T>(entity, row)];
   }
 

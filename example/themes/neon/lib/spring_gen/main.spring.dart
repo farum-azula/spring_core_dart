@@ -38,8 +38,8 @@ import 'package:theme_showcase_neon/src/pages/themes_page.dart' as _i6;
 import 'package:theme_showcase_neon/src/pages/tokens_page.dart' as _i15;
 import 'package:theme_showcase_neon/src/pages/transitions_page.dart' as _i16;
 
-part 'messages.spring.dart';
-part 'theme.spring.dart';
+part 'messages.spring.keys.dart';
+part 'theme.spring.keys.dart';
 
 const _$knownAdvisors0 = {
   r'package:neon_ui',
@@ -1135,7 +1135,7 @@ _i17.SpringApplication get springApplication => _i17.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'bbfba4fe',
+  fingerprint: 'd6073b00',
 );
 
 /// Starts the application: config files, environment, context, runners

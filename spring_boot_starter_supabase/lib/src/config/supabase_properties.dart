@@ -95,6 +95,14 @@ class SupabaseDbProperties {
   /// `Accept-Profile` / `Content-Profile`). Default: the API's own default
   /// (`public`).
   String? schema;
+
+  /// The most rows the REST API returns in one answer: the project's
+  /// "Max rows" (API settings), `max_rows` of the local stack. An answer
+  /// that long may have been cut there, without any sign of it, so a query
+  /// that asks for more (or for everything) reads on in further calls,
+  /// ordered by the id. Set it to the project's value when that one was
+  /// changed: with a larger number here a cut answer is taken for whole.
+  int maxRows = 1000;
 }
 
 /// Auth (`spring.supabase.auth.*`).

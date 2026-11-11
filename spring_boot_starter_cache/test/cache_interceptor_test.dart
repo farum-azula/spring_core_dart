@@ -184,6 +184,33 @@ void main() {
       expect(proxy.count('fetchShared'), 1);
     });
 
+    test('sync: true shares no call between the scopes of a cache that '
+        'keeps its keys apart', () async {
+      var scope = 'ada';
+      final scoped = CacheInterceptor(
+        cacheResolver: _ScopedResolver(manager, () => scope),
+      );
+      final books = booksProxyFactory.createProxy(Books(), [
+        DefaultPointcutAdvisor(const CacheAnnotationPointcut(), scoped),
+      ]) as Books;
+      final first = books.fetchShared('1');
+      final mine = books.pending['1']!;
+      scope = 'bob';
+      final second = books.fetchShared('1');
+      expect(books.count('fetchShared'), 2);
+      mine.complete('of ada');
+      books.pending['1']!.complete('of bob');
+      expect(await first, 'of ada');
+      expect(await second, 'of bob');
+      // The same scope still shares.
+      final third = books.fetchShared('2');
+      final fourth = books.fetchShared('2');
+      expect(books.count('fetchShared'), 3);
+      books.pending['2']!.complete('shared');
+      expect(await third, 'shared');
+      expect(await fourth, 'shared');
+    });
+
     test('sync: true after an error lets the next call try again', () async {
       final failing = proxy.fetchShared('2');
       proxy.pending['2']!.completeError(StateError('down'));
@@ -228,4 +255,53 @@ void main() {
       );
     });
   });
+}
+
+// The caches of a call keep their entries apart per scope.
+final class _ScopedResolver implements CacheResolver {
+  _ScopedResolver(this.manager, this.scope);
+
+  final CacheManager manager;
+  final String Function() scope;
+
+  @override
+  Iterable<Cache> resolveCaches(CacheOperationInvocationContext context) => [
+    for (final name in context.operation.cacheNames)
+      _ScopedCache(manager.getCache(name)!, scope()),
+  ];
+}
+
+final class _ScopedCache implements KeyScopingCache {
+  _ScopedCache(this.cache, this.scope);
+
+  final Cache cache;
+  final String scope;
+
+  @override
+  String get name => cache.name;
+
+  @override
+  Object? storedKey(Object? key) => (scope, key);
+
+  @override
+  ValueWrapper? get(Object? key) => cache.get(storedKey(key));
+
+  @override
+  void put(Object? key, Object? value) => cache.put(storedKey(key), value);
+
+  @override
+  ValueWrapper? putIfAbsent(Object? key, Object? value) =>
+      cache.putIfAbsent(storedKey(key), value);
+
+  @override
+  void evict(Object? key) => cache.evict(storedKey(key));
+
+  @override
+  bool evictIfPresent(Object? key) => cache.evictIfPresent(storedKey(key));
+
+  @override
+  void clear() => cache.clear();
+
+  @override
+  bool invalidate() => cache.invalidate();
 }

@@ -155,13 +155,17 @@ final class Jwt implements OAuth2Token {
   /// The claim [name], seconds since the epoch (an RFC 7519
   /// `NumericDate`), as a UTC time; `null` when absent.
   ///
-  /// Throws a [FormatException] when the value is not a finite number.
+  /// Throws a [FormatException] when the value is not a finite number, or
+  /// too large for a date.
   DateTime? getClaimAsInstant(String name) {
     final value = claims[name];
     if (value == null) {
       return null;
     }
-    if (value is! num || !value.isFinite) {
+    // The range of a DateTime: 100,000,000 days around the epoch. A
+    // number outside it is no date (and must not overflow the
+    // multiplication, or throw a RangeError past the token's checks).
+    if (value is! num || !value.isFinite || value.abs() > 8.64e12) {
       throw FormatException('The $name claim is not a NumericDate');
     }
     return DateTime.fromMillisecondsSinceEpoch(

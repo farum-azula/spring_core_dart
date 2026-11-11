@@ -196,6 +196,9 @@ an Application Load Balancer.
   balancer, the last address of `X-Forwarded-For`, which the balancer
   adds itself.
 - `process.env` is the application's environment.
+- Behind a load balancer, turn on multi-value headers for the target
+  group: without them the balancer reads one value per header, and a
+  response with several cookies delivers only the last.
 - A response is buffered by default: an event stream arrives when it
   ended. `--streaming` writes a response-streaming handler for a function
   URL with `InvokeMode: RESPONSE_STREAM`; then the body is sent while it
@@ -224,7 +227,9 @@ none of this: the application runs there as the ordinary server it is.
 | Start | once, when the process starts | once per instance, with its first request (Supabase, AWS: while it loads) |
 | TLS, HTTP/2, compression, connection limits | `server.*` | the platform |
 | `server.max-http-request-body-size`, `server.request-timeout` | applied | applied |
-| A target with `%2F`, `%5C`, `%00`, `.` or `..` | 400 | 400 (`requestTargetProblem`, the same check) |
+| A target with `%2F`, `%5C` or `%00` | 400 | 400 (`requestTargetProblem`, the same check) |
+| A target with `.` or `..` segments | 400 | resolved by the platform before the function sees it (`/a/../b` arrives as `/b`), then routed and secured as that path; a rule in front of the function (a gateway route, a WAF) must be written with that in mind |
+| `server.max-connections`, `server.max-concurrent-requests` | applied | not applied: the platform decides how many requests an instance takes |
 | The address of the client | the peer of the socket | what the platform names; never a header a client can set |
 | Server-sent events, downloads | streamed | streamed (AWS: with `--streaming`) |
 | WebSocket endpoints | yes | no: `UnsupportedError` |
@@ -311,6 +316,15 @@ Supabase starter the default store is the project's database function
 database (`spring.edge.cloudflare.rate-limit.database`); elsewhere declare
 a `RateLimitStore` bean. When the store fails, the request is refused
 (`on-store-failure: deny`, the default).
+
+The store is checked when the function starts, which is the first
+request of an instance: the database function of the Supabase project is
+called once, the D1 binding is asked for and its table created. A
+function that was never migrated (`sql/rate_limit.sql` of the Supabase
+starter) or a binding missing from `wrangler.toml` fails the start: the
+request is answered 500, the log says what to run, and the next request
+tries again. It costs one call to the store per cold start;
+`spring.web.rate-limit.verify-store: false` skips it.
 
 ## Properties
 

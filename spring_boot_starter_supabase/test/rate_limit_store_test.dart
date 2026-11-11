@@ -151,6 +151,84 @@ void main() {
     });
   });
 
+  group('asked at startup', () {
+    Future<void> verify(MockHttpTransport transport) async {
+      late Future<void> asked;
+      await appRunner(transport, on).runAsync((context) async {
+        final store = context.getBean<SupabaseRateLimitStore>();
+        expect(store, isA<VerifiableRateLimitStore>());
+        asked = store.verify();
+        await asked.then<void>((_) {}, onError: (Object _) {});
+      });
+      await asked;
+    }
+
+    MockHttpTransport answering(int status, Object? json) =>
+        MockHttpTransport()
+          ..when(
+            HttpMethod.post,
+            '/rest/v1/rpc/rate_limit_acquire',
+          ).respond(status, json: json);
+
+    Matcher setup(String text) => throwsA(
+      isA<RateLimitStoreSetupException>().having(
+        (e) => e.message,
+        'message',
+        allOf(
+          contains(text),
+          contains('sql/rate_limit.sql'),
+          contains('rate_limit_acquire'),
+        ),
+      ),
+    );
+
+    test('the function is there: one call for a bucket of its own', () async {
+      final transport = answering(200, [
+        {'allowed': true, 'remaining': 0, 'retry_after_ms': 0},
+      ]);
+      await verify(transport);
+      final request = transport.requests.single;
+      expect(request.headers['Authorization'], 'Bearer service-key');
+      expect(
+        (jsonDecode(utf8.decode(request.body!)) as Map)['p_key'],
+        SupabaseRateLimitStore.verifyKey,
+      );
+    });
+
+    test('no such function, no table behind it, something else answered, '
+        'or not allowed: what to run', () async {
+      await expectLater(
+        verify(
+          answering(404, {'code': 'PGRST202', 'message': 'no such function'}),
+        ),
+        setup('no such function'),
+      );
+      await expectLater(
+        verify(
+          answering(404, {
+            'code': '42P01',
+            'message': 'relation "public.rate_limit" does not exist',
+          }),
+        ),
+        setup('does not exist'),
+      );
+      await expectLater(verify(answering(200, 7)), setup('did not answer'));
+      await expectLater(
+        verify(
+          answering(403, {'code': '42501', 'message': 'permission denied'}),
+        ),
+        setup('permission denied'),
+      );
+    });
+
+    test('a project that cannot be reached is no setup problem', () async {
+      await expectLater(
+        verify(answering(503, {'message': 'down'})),
+        throwsA(isA<DataAccessResourceFailureException>()),
+      );
+    });
+  });
+
   group('which store', () {
     test('the database function on the REST path, when the rate limiter '
         'is on (a property or a rule)', () async {

@@ -69,6 +69,13 @@ final class SupabaseKeyGenerator implements KeyGenerator {
 ///
 /// A cache named in `spring.supabase.cache.shared` is the exception: its
 /// entries are the same for everyone, and no key of it carries a caller.
+///
+/// The caches of one call have one caller, who calls when they are asked
+/// for: what the call looks up and what it stores go under that caller's
+/// key. A call whose caller is another one when its answer is there (the
+/// login of a client application changed meanwhile) stores nothing: the
+/// token of its requests was read in between, and the answer may be
+/// either caller's.
 final class SupabaseCacheResolver implements CacheResolver {
   /// A resolver over [cacheManager], asking [credentials] who calls;
   /// [properties] name the shared caches.
@@ -87,8 +94,6 @@ final class SupabaseCacheResolver implements CacheResolver {
   /// The names of the caches whose entries are the same for everyone.
   final Set<String> shared;
 
-  final _caches = <String, Cache>{};
-
   @override
   Iterable<Cache> resolveCaches(CacheOperationInvocationContext context) => [
     for (final name in context.operation.cacheNames) _cache(name, context),
@@ -102,29 +107,78 @@ final class SupabaseCacheResolver implements CacheResolver {
         '${context.operation.description}',
       );
     }
-    final scoped = _caches[name];
-    if (scoped is _CallerCache && identical(scoped.cache, cache)) {
-      return scoped;
-    }
-    return _caches[name] = _CallerCache(
-      cache,
-      credentials,
-      shared: shared.contains(name),
-    );
+    return shared.contains(name)
+        ? _SharedCache(cache)
+        : _CallerCache(cache, credentials, credentials.caller.key);
   }
 }
 
-// A cache whose keys carry the caller (or, for a shared cache, never do).
-final class _CallerCache implements Cache {
-  _CallerCache(this.cache, this.credentials, {required this.shared});
+// A cache for one call, whose keys carry the caller of the call.
+final class _CallerCache implements KeyScopingCache {
+  _CallerCache(this.cache, this.credentials, this.caller);
 
   final Cache cache;
   final SupabaseCredentials credentials;
-  final bool shared;
+  // Who called when the caches of the call were asked for.
+  final String caller;
+
+  @override
+  Object? storedKey(Object? key) => _key(key);
+
+  SupabaseCacheKey _key(Object? key) => switch (key) {
+    final SupabaseCacheKey scoped => scoped,
+    _ => SupabaseCacheKey(caller, key),
+  };
+
+  // Whether the caller of [key] still calls: else the answer was read
+  // while the login changed, and is nobody's to keep.
+  bool _current(SupabaseCacheKey key) => key.caller == credentials.caller.key;
+
+  @override
+  String get name => cache.name;
+
+  @override
+  ValueWrapper? get(Object? key) => cache.get(_key(key));
+
+  @override
+  void put(Object? key, Object? value) {
+    final scoped = _key(key);
+    if (_current(scoped)) {
+      cache.put(scoped, value);
+    }
+  }
+
+  @override
+  ValueWrapper? putIfAbsent(Object? key, Object? value) {
+    final scoped = _key(key);
+    return _current(scoped)
+        ? cache.putIfAbsent(scoped, value)
+        : cache.get(scoped);
+  }
+
+  @override
+  void evict(Object? key) => cache.evict(_key(key));
+
+  @override
+  bool evictIfPresent(Object? key) => cache.evictIfPresent(_key(key));
+
+  @override
+  void clear() => cache.clear();
+
+  @override
+  bool invalidate() => cache.invalidate();
+}
+
+// A cache whose entries are the same for everyone: no key of it carries
+// a caller.
+final class _SharedCache implements Cache {
+  _SharedCache(this.cache);
+
+  final Cache cache;
 
   Object? _key(Object? key) => switch (key) {
-    final SupabaseCacheKey scoped => shared ? scoped.key : scoped,
-    _ => shared ? key : SupabaseCacheKey(credentials.caller.key, key),
+    final SupabaseCacheKey scoped => scoped.key,
+    _ => key,
   };
 
   @override

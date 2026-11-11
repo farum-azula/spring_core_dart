@@ -86,49 +86,87 @@ void main() {
   });
 
   test('one user never reads what was cached for another', () {
-    final todos = cache('todos');
+    // The caches are asked for at each call, as the interceptor does.
+    Cache todos() => cache('todos');
     credentials.who = const SupabaseCaller.user('u1');
-    todos.put(generator.generate(target, method, ['list']), 'rows of u1');
+    todos().put(generator.generate(target, method, ['list']), 'rows of u1');
     credentials.who = const SupabaseCaller.user('u2');
-    expect(todos.get(generator.generate(target, method, ['list'])), isNull);
+    expect(todos().get(generator.generate(target, method, ['list'])), isNull);
     credentials.who = const SupabaseCaller.anon();
-    expect(todos.get(generator.generate(target, method, ['list'])), isNull);
+    expect(todos().get(generator.generate(target, method, ['list'])), isNull);
     credentials.who = const SupabaseCaller.user('u1');
     expect(
-      todos.get(generator.generate(target, method, ['list']))?.value,
+      todos().get(generator.generate(target, method, ['list']))?.value,
       'rows of u1',
     );
   });
 
   test('an answer read as the service role stays with it', () {
-    final todos = cache('todos');
     credentials.who = const SupabaseCaller.service();
-    todos.put(generator.generate(target, method, const []), 'every row');
+    cache(
+      'todos',
+    ).put(generator.generate(target, method, const []), 'every row');
     credentials.who = const SupabaseCaller.user('u1');
-    expect(todos.get(generator.generate(target, method, const [])), isNull);
+    expect(
+      cache('todos').get(generator.generate(target, method, const [])),
+      isNull,
+    );
   });
 
   test('an explicit key (no generator) is kept apart per caller too', () {
-    final todos = cache('todos');
+    Cache todos() => cache('todos');
     credentials.who = const SupabaseCaller.user('u1');
-    todos.put('list', 'rows of u1');
-    expect(todos.putIfAbsent('list', 'x')?.value, 'rows of u1');
+    todos().put('list', 'rows of u1');
+    expect(todos().putIfAbsent('list', 'x')?.value, 'rows of u1');
     credentials.who = const SupabaseCaller.user('u2');
-    expect(todos.get('list'), isNull);
-    todos
+    expect(todos().get('list'), isNull);
+    todos()
       ..put('list', 'rows of u2')
       ..evict('list');
-    expect(todos.get('list'), isNull);
+    expect(todos().get('list'), isNull);
     credentials.who = const SupabaseCaller.user('u1');
-    expect(todos.get('list')?.value, 'rows of u1');
-    expect(todos.evictIfPresent('list'), isTrue);
+    expect(todos().get('list')?.value, 'rows of u1');
+    expect(todos().evictIfPresent('list'), isTrue);
+  });
+
+  test('a call has one caller, from its lookup to what it stores: the '
+      'answer of a call during which the login changed is not kept', () {
+    // With an explicit key: looked up as u1, who is gone when the rows
+    // are there; whose rows they are depends on when the token was read.
+    credentials.who = const SupabaseCaller.user('u1');
+    final call = cache('todos');
+    expect(call.get('list'), isNull);
+    credentials.who = const SupabaseCaller.user('u2');
+    call.put('list', 'rows of one of them');
+    expect(call.putIfAbsent('list', 'rows of one of them'), isNull);
+    expect(cache('todos').get('list'), isNull);
+    credentials.who = const SupabaseCaller.user('u1');
+    expect(cache('todos').get('list'), isNull);
+
+    // With a generated key, which names u1.
+    final key = generator.generate(target, method, ['list']);
+    final other = cache('todos');
+    expect(other.get(key), isNull);
+    credentials.who = const SupabaseCaller.anon();
+    other.put(key, 'rows of one of them');
+    expect(other.putIfAbsent(key, 'rows of one of them'), isNull);
+    credentials.who = const SupabaseCaller.user('u1');
+    expect(cache('todos').get(key), isNull);
+
+    // The same caller all along: kept, and a later call of theirs
+    // evicts it whoever is signed in when it resolved its caches.
+    final kept = cache('todos')..put('list', 'rows of u1');
+    expect(cache('todos').get('list')?.value, 'rows of u1');
+    credentials.who = const SupabaseCaller.user('u2');
+    kept.evict('list');
+    credentials.who = const SupabaseCaller.user('u1');
+    expect(cache('todos').get('list'), isNull);
   });
 
   test('a key is never scoped twice', () {
-    final todos = cache('todos');
     credentials.who = const SupabaseCaller.user('u1');
     final key = generator.generate(target, method, ['list']);
-    todos.put(key, 'v');
+    cache('todos').put(key, 'v');
     expect(manager.getCache('todos')!.get(key)?.value, 'v');
   });
 
@@ -148,13 +186,12 @@ void main() {
   });
 
   test('clear empties the cache for everyone', () {
-    final todos = cache('todos');
     credentials.who = const SupabaseCaller.user('u1');
-    todos.put('k', 'v');
+    cache('todos').put('k', 'v');
     credentials.who = const SupabaseCaller.user('u2');
-    todos.clear();
+    cache('todos').clear();
     credentials.who = const SupabaseCaller.user('u1');
-    expect(todos.get('k'), isNull);
+    expect(cache('todos').get('k'), isNull);
   });
 
   test('a cache that does not exist is an error naming it', () {
