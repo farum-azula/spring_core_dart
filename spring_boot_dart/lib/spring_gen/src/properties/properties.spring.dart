@@ -7,9 +7,11 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/src/annotations.dart' as _i4;
+import 'package:spring_boot_dart/src/annotations.dart' as _i5;
 import 'package:spring_boot_dart/src/banner.dart' as _i3;
 import 'package:spring_boot_dart/src/properties/boot_properties.dart' as _i2;
+import 'package:spring_boot_dart/src/properties/rate_limit_properties.dart'
+    as _i4;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
 
 const _$target0 = _i1.AopTarget(
@@ -84,299 +86,375 @@ const _$target11 = _i1.AopTarget(
   annotations: [_i1.ConfigurationProperties(r'spring.json')],
   annotationTypes: [r'ConfigurationProperties'],
 );
-Object? _$get12(_i2.MainProperties bean) => bean.allowBeanDefinitionOverriding;
-void _$set13(_i2.MainProperties bean, Object? value) =>
+const _$target12 = _i1.AopTarget(
+  r'RateLimitProperties',
+  types: [r'RateLimitProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.web.rate-limit')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+Object? _$get13(_i2.MainProperties bean) => bean.allowBeanDefinitionOverriding;
+void _$set14(_i2.MainProperties bean, Object? value) =>
     bean.allowBeanDefinitionOverriding = (value as bool);
-Object? _$get14(_i2.MainProperties bean) => bean.bannerMode;
-void _$set15(_i2.MainProperties bean, Object? value) =>
+Object? _$get15(_i2.MainProperties bean) => bean.bannerMode;
+void _$set16(_i2.MainProperties bean, Object? value) =>
     bean.bannerMode = (value as _i3.BannerMode);
-Object? _$get16(_i2.MainProperties bean) => bean.lazyInitialization;
-void _$set17(_i2.MainProperties bean, Object? value) =>
+Object? _$get17(_i2.MainProperties bean) => bean.lazyInitialization;
+void _$set18(_i2.MainProperties bean, Object? value) =>
     bean.lazyInitialization = (value as bool);
-Object? _$get18(_i2.MainProperties bean) => bean.logStartupInfo;
-void _$set19(_i2.MainProperties bean, Object? value) =>
+Object? _$get19(_i2.MainProperties bean) => bean.logStartupInfo;
+void _$set20(_i2.MainProperties bean, Object? value) =>
     bean.logStartupInfo = (value as bool);
-Object? _$get20(_i2.MainProperties bean) => bean.registerShutdownHook;
-void _$set21(_i2.MainProperties bean, Object? value) =>
+Object? _$get21(_i2.MainProperties bean) => bean.registerShutdownHook;
+void _$set22(_i2.MainProperties bean, Object? value) =>
     bean.registerShutdownHook = (value as bool);
-_i2.MainProperties _$create22(
+_i2.MainProperties _$create23(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.MainProperties();
-Object? _$get23(_i2.AutoconfigureProperties bean) => bean.exclude;
-void _$set24(_i2.AutoconfigureProperties bean, Object? value) =>
+Object? _$get24(_i2.AutoconfigureProperties bean) => bean.exclude;
+void _$set25(_i2.AutoconfigureProperties bean, Object? value) =>
     bean.exclude = (value as List<String>?);
-_i2.AutoconfigureProperties _$create25(
+_i2.AutoconfigureProperties _$create26(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.AutoconfigureProperties();
-Object? _$get26(_i2.ApplicationProperties bean) => bean.json;
-void _$set27(_i2.ApplicationProperties bean, Object? value) =>
+Object? _$get27(_i2.ApplicationProperties bean) => bean.json;
+void _$set28(_i2.ApplicationProperties bean, Object? value) =>
     bean.json = (value as String?);
-Object? _$get28(_i2.ApplicationProperties bean) => bean.name;
-void _$set29(_i2.ApplicationProperties bean, Object? value) =>
+Object? _$get29(_i2.ApplicationProperties bean) => bean.name;
+void _$set30(_i2.ApplicationProperties bean, Object? value) =>
     bean.name = (value as String?);
-_i2.ApplicationProperties _$create30(
+_i2.ApplicationProperties _$create31(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.ApplicationProperties();
-Object? _$get31(_i2.BannerProperties bean) => bean.location;
-void _$set32(_i2.BannerProperties bean, Object? value) =>
+Object? _$get32(_i2.BannerProperties bean) => bean.location;
+void _$set33(_i2.BannerProperties bean, Object? value) =>
     bean.location = (value as String);
-_i2.BannerProperties _$create33(
+_i2.BannerProperties _$create34(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.BannerProperties();
-Object? _$get34(_i2.DevtoolsRestartProperties bean) => bean.enabled;
-void _$set35(_i2.DevtoolsRestartProperties bean, Object? value) =>
+Object? _$get35(_i2.DevtoolsRestartProperties bean) => bean.enabled;
+void _$set36(_i2.DevtoolsRestartProperties bean, Object? value) =>
     bean.enabled = (value as bool);
-_i2.DevtoolsRestartProperties _$create36(
+_i2.DevtoolsRestartProperties _$create37(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.DevtoolsRestartProperties();
-Object? _$get37(_i2.LifecycleProperties bean) => bean.timeoutPerShutdownPhase;
-void _$set38(_i2.LifecycleProperties bean, Object? value) =>
+Object? _$get38(_i2.LifecycleProperties bean) => bean.timeoutPerShutdownPhase;
+void _$set39(_i2.LifecycleProperties bean, Object? value) =>
     bean.timeoutPerShutdownPhase = (value as Duration);
-_i2.LifecycleProperties _$create39(
+_i2.LifecycleProperties _$create40(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.LifecycleProperties();
-Object? _$get40(_i2.DebugProperties bean) => bean.debug;
-void _$set41(_i2.DebugProperties bean, Object? value) =>
+Object? _$get41(_i2.DebugProperties bean) => bean.debug;
+void _$set42(_i2.DebugProperties bean, Object? value) =>
     bean.debug = (value as String?);
-Object? _$get42(_i2.DebugProperties bean) => bean.trace;
-void _$set43(_i2.DebugProperties bean, Object? value) =>
+Object? _$get43(_i2.DebugProperties bean) => bean.trace;
+void _$set44(_i2.DebugProperties bean, Object? value) =>
     bean.trace = (value as String?);
-_i2.DebugProperties _$create44(
+_i2.DebugProperties _$create45(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.DebugProperties();
-Object? _$get45(_i2.ResourcesProperties bean) => bean.embed;
-void _$set46(_i2.ResourcesProperties bean, Object? value) =>
+Object? _$get46(_i2.ResourcesProperties bean) => bean.embed;
+void _$set47(_i2.ResourcesProperties bean, Object? value) =>
     bean.embed = (value as _i2.ResourcesEmbedProperties);
-Object? _$get47(_i2.ResourcesProperties bean) => bean.prefetch;
-void _$set48(_i2.ResourcesProperties bean, Object? value) =>
+Object? _$get48(_i2.ResourcesProperties bean) => bean.prefetch;
+void _$set49(_i2.ResourcesProperties bean, Object? value) =>
     bean.prefetch = (value as _i2.ResourcesPrefetchProperties);
-_i2.ResourcesProperties _$create49(
+_i2.ResourcesProperties _$create50(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.ResourcesProperties();
-Object? _$get50(_i2.ResourcesEmbedProperties bean) => bean.exclude;
-void _$set51(_i2.ResourcesEmbedProperties bean, Object? value) =>
+Object? _$get51(_i2.ResourcesEmbedProperties bean) => bean.exclude;
+void _$set52(_i2.ResourcesEmbedProperties bean, Object? value) =>
     bean.exclude = (value as List<String>);
-_i2.ResourcesEmbedProperties _$create52(
+_i2.ResourcesEmbedProperties _$create53(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.ResourcesEmbedProperties();
-Object? _$get53(_i2.ResourcesPrefetchProperties bean) => bean.locations;
-void _$set54(_i2.ResourcesPrefetchProperties bean, Object? value) =>
+Object? _$get54(_i2.ResourcesPrefetchProperties bean) => bean.locations;
+void _$set55(_i2.ResourcesPrefetchProperties bean, Object? value) =>
     bean.locations = (value as List<String>);
-Object? _$get55(_i2.ResourcesPrefetchProperties bean) => bean.stage;
-void _$set56(_i2.ResourcesPrefetchProperties bean, Object? value) =>
+Object? _$get56(_i2.ResourcesPrefetchProperties bean) => bean.stage;
+void _$set57(_i2.ResourcesPrefetchProperties bean, Object? value) =>
     bean.stage = (value as _i2.ResourcesPrefetchStage);
-Object? _$get57(_i2.ResourcesPrefetchProperties bean) => bean.delay;
-void _$set58(_i2.ResourcesPrefetchProperties bean, Object? value) =>
+Object? _$get58(_i2.ResourcesPrefetchProperties bean) => bean.delay;
+void _$set59(_i2.ResourcesPrefetchProperties bean, Object? value) =>
     bean.delay = (value as Duration);
-_i2.ResourcesPrefetchProperties _$create59(
+_i2.ResourcesPrefetchProperties _$create60(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.ResourcesPrefetchProperties();
-Object? _$get60(_i2.ObservationsProperties bean) => bean.annotations;
-void _$set61(_i2.ObservationsProperties bean, Object? value) =>
+Object? _$get61(_i2.ObservationsProperties bean) => bean.annotations;
+void _$set62(_i2.ObservationsProperties bean, Object? value) =>
     bean.annotations = (value as _i2.ObservationsAnnotationsProperties);
-_i2.ObservationsProperties _$create62(
+_i2.ObservationsProperties _$create63(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.ObservationsProperties();
-Object? _$get63(_i2.ObservationsAnnotationsProperties bean) => bean.enabled;
-void _$set64(_i2.ObservationsAnnotationsProperties bean, Object? value) =>
+Object? _$get64(_i2.ObservationsAnnotationsProperties bean) => bean.enabled;
+void _$set65(_i2.ObservationsAnnotationsProperties bean, Object? value) =>
     bean.enabled = (value as bool);
-_i2.ObservationsAnnotationsProperties _$create65(
+_i2.ObservationsAnnotationsProperties _$create66(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.ObservationsAnnotationsProperties();
-Object? _$get66(_i2.TaskExecutionIsolatesProperties bean) => bean.coreSize;
-void _$set67(_i2.TaskExecutionIsolatesProperties bean, Object? value) =>
+Object? _$get67(_i2.TaskExecutionIsolatesProperties bean) => bean.coreSize;
+void _$set68(_i2.TaskExecutionIsolatesProperties bean, Object? value) =>
     bean.coreSize = (value as int?);
-Object? _$get68(_i2.TaskExecutionIsolatesProperties bean) => bean.maxSize;
-void _$set69(_i2.TaskExecutionIsolatesProperties bean, Object? value) =>
+Object? _$get69(_i2.TaskExecutionIsolatesProperties bean) => bean.maxSize;
+void _$set70(_i2.TaskExecutionIsolatesProperties bean, Object? value) =>
     bean.maxSize = (value as int?);
-Object? _$get70(_i2.TaskExecutionIsolatesProperties bean) => bean.keepAlive;
-void _$set71(_i2.TaskExecutionIsolatesProperties bean, Object? value) =>
+Object? _$get71(_i2.TaskExecutionIsolatesProperties bean) => bean.keepAlive;
+void _$set72(_i2.TaskExecutionIsolatesProperties bean, Object? value) =>
     bean.keepAlive = (value as Duration);
-Object? _$get72(_i2.TaskExecutionIsolatesProperties bean) => bean.queueCapacity;
-void _$set73(_i2.TaskExecutionIsolatesProperties bean, Object? value) =>
+Object? _$get73(_i2.TaskExecutionIsolatesProperties bean) => bean.queueCapacity;
+void _$set74(_i2.TaskExecutionIsolatesProperties bean, Object? value) =>
     bean.queueCapacity = (value as int?);
-Object? _$get74(_i2.TaskExecutionIsolatesProperties bean) =>
+Object? _$get75(_i2.TaskExecutionIsolatesProperties bean) =>
     bean.allowCoreTimeout;
-void _$set75(_i2.TaskExecutionIsolatesProperties bean, Object? value) =>
+void _$set76(_i2.TaskExecutionIsolatesProperties bean, Object? value) =>
     bean.allowCoreTimeout = (value as bool);
-Object? _$get76(_i2.TaskExecutionIsolatesProperties bean) => bean.namePrefix;
-void _$set77(_i2.TaskExecutionIsolatesProperties bean, Object? value) =>
+Object? _$get77(_i2.TaskExecutionIsolatesProperties bean) => bean.namePrefix;
+void _$set78(_i2.TaskExecutionIsolatesProperties bean, Object? value) =>
     bean.namePrefix = (value as String);
-_i2.TaskExecutionIsolatesProperties _$create78(
+_i2.TaskExecutionIsolatesProperties _$create79(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.TaskExecutionIsolatesProperties();
-Object? _$get79(_i2.MessagesProperties bean) => bean.alwaysUseMessageFormat;
-void _$set80(_i2.MessagesProperties bean, Object? value) =>
+Object? _$get80(_i2.MessagesProperties bean) => bean.alwaysUseMessageFormat;
+void _$set81(_i2.MessagesProperties bean, Object? value) =>
     bean.alwaysUseMessageFormat = (value as bool);
-Object? _$get81(_i2.MessagesProperties bean) => bean.basename;
-void _$set82(_i2.MessagesProperties bean, Object? value) =>
+Object? _$get82(_i2.MessagesProperties bean) => bean.basename;
+void _$set83(_i2.MessagesProperties bean, Object? value) =>
     bean.basename = (value as List<String>);
-Object? _$get83(_i2.MessagesProperties bean) => bean.cacheDuration;
-void _$set84(_i2.MessagesProperties bean, Object? value) =>
+Object? _$get84(_i2.MessagesProperties bean) => bean.cacheDuration;
+void _$set85(_i2.MessagesProperties bean, Object? value) =>
     bean.cacheDuration = (value as Duration?);
-Object? _$get85(_i2.MessagesProperties bean) => bean.commonMessages;
-void _$set86(_i2.MessagesProperties bean, Object? value) =>
+Object? _$get86(_i2.MessagesProperties bean) => bean.commonMessages;
+void _$set87(_i2.MessagesProperties bean, Object? value) =>
     bean.commonMessages = (value as List<String>?);
-Object? _$get87(_i2.MessagesProperties bean) => bean.defaultLocale;
-void _$set88(_i2.MessagesProperties bean, Object? value) =>
+Object? _$get88(_i2.MessagesProperties bean) => bean.defaultLocale;
+void _$set89(_i2.MessagesProperties bean, Object? value) =>
     bean.defaultLocale = (value as String?);
-Object? _$get89(_i2.MessagesProperties bean) => bean.encoding;
-void _$set90(_i2.MessagesProperties bean, Object? value) =>
+Object? _$get90(_i2.MessagesProperties bean) => bean.encoding;
+void _$set91(_i2.MessagesProperties bean, Object? value) =>
     bean.encoding = (value as String?);
-Object? _$get91(_i2.MessagesProperties bean) => bean.fallbackToSystemLocale;
-void _$set92(_i2.MessagesProperties bean, Object? value) =>
+Object? _$get92(_i2.MessagesProperties bean) => bean.fallbackToSystemLocale;
+void _$set93(_i2.MessagesProperties bean, Object? value) =>
     bean.fallbackToSystemLocale = (value as bool);
-Object? _$get93(_i2.MessagesProperties bean) => bean.useCodeAsDefaultMessage;
-void _$set94(_i2.MessagesProperties bean, Object? value) =>
+Object? _$get94(_i2.MessagesProperties bean) => bean.useCodeAsDefaultMessage;
+void _$set95(_i2.MessagesProperties bean, Object? value) =>
     bean.useCodeAsDefaultMessage = (value as bool);
-_i2.MessagesProperties _$create95(
+_i2.MessagesProperties _$create96(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.MessagesProperties();
-Object? _$get96(_i2.JsonProperties bean) => bean.propertyNamingStrategy;
-void _$set97(_i2.JsonProperties bean, Object? value) =>
+Object? _$get97(_i2.JsonProperties bean) => bean.propertyNamingStrategy;
+void _$set98(_i2.JsonProperties bean, Object? value) =>
     bean.propertyNamingStrategy = (value as String);
-Object? _$get98(_i2.JsonProperties bean) => bean.defaultPropertyInclusion;
-void _$set99(_i2.JsonProperties bean, Object? value) =>
+Object? _$get99(_i2.JsonProperties bean) => bean.defaultPropertyInclusion;
+void _$set100(_i2.JsonProperties bean, Object? value) =>
     bean.defaultPropertyInclusion = (value as _i1.JsonInclusion);
-Object? _$get100(_i2.JsonProperties bean) => bean.timeZone;
-void _$set101(_i2.JsonProperties bean, Object? value) =>
+Object? _$get101(_i2.JsonProperties bean) => bean.timeZone;
+void _$set102(_i2.JsonProperties bean, Object? value) =>
     bean.timeZone = (value as String?);
-Object? _$get102(_i2.JsonProperties bean) => bean.deserialization;
-void _$set103(_i2.JsonProperties bean, Object? value) =>
+Object? _$get103(_i2.JsonProperties bean) => bean.deserialization;
+void _$set104(_i2.JsonProperties bean, Object? value) =>
     bean.deserialization = (value as _i2.JsonDeserializationProperties);
-Object? _$get104(_i2.JsonProperties bean) => bean.serialization;
-void _$set105(_i2.JsonProperties bean, Object? value) =>
+Object? _$get105(_i2.JsonProperties bean) => bean.serialization;
+void _$set106(_i2.JsonProperties bean, Object? value) =>
     bean.serialization = (value as _i2.JsonSerializationProperties);
-Object? _$get106(_i2.JsonProperties bean) => bean.mapper;
-void _$set107(_i2.JsonProperties bean, Object? value) =>
+Object? _$get107(_i2.JsonProperties bean) => bean.mapper;
+void _$set108(_i2.JsonProperties bean, Object? value) =>
     bean.mapper = (value as _i2.JsonMapperProperties);
-Object? _$get108(_i2.JsonProperties bean) => bean.datatype;
-void _$set109(_i2.JsonProperties bean, Object? value) =>
+Object? _$get109(_i2.JsonProperties bean) => bean.datatype;
+void _$set110(_i2.JsonProperties bean, Object? value) =>
     bean.datatype = (value as _i2.JsonDatatypeProperties);
-Object? _$get110(_i2.JsonProperties bean) => bean.schemas;
-void _$set111(_i2.JsonProperties bean, Object? value) =>
+Object? _$get111(_i2.JsonProperties bean) => bean.schemas;
+void _$set112(_i2.JsonProperties bean, Object? value) =>
     bean.schemas = (value as List<_i2.JsonSchemaProperties>);
-Object? _$get112(_i2.JsonProperties bean) => bean.schemasRegistry;
-void _$set113(_i2.JsonProperties bean, Object? value) =>
+Object? _$get113(_i2.JsonProperties bean) => bean.schemasRegistry;
+void _$set114(_i2.JsonProperties bean, Object? value) =>
     bean.schemasRegistry = (value as _i2.JsonSchemasRegistryProperties);
-_i2.JsonProperties _$create114(
+_i2.JsonProperties _$create115(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.JsonProperties();
-Object? _$get115(_i2.JsonDeserializationProperties bean) =>
+Object? _$get116(_i2.JsonDeserializationProperties bean) =>
     bean.acceptFloatAsInt;
-void _$set116(_i2.JsonDeserializationProperties bean, Object? value) =>
+void _$set117(_i2.JsonDeserializationProperties bean, Object? value) =>
     bean.acceptFloatAsInt = (value as bool);
-Object? _$get117(_i2.JsonDeserializationProperties bean) =>
+Object? _$get118(_i2.JsonDeserializationProperties bean) =>
     bean.failOnNullForPrimitives;
-void _$set118(_i2.JsonDeserializationProperties bean, Object? value) =>
+void _$set119(_i2.JsonDeserializationProperties bean, Object? value) =>
     bean.failOnNullForPrimitives = (value as bool);
-Object? _$get119(_i2.JsonDeserializationProperties bean) =>
+Object? _$get120(_i2.JsonDeserializationProperties bean) =>
     bean.failOnUnknownProperties;
-void _$set120(_i2.JsonDeserializationProperties bean, Object? value) =>
+void _$set121(_i2.JsonDeserializationProperties bean, Object? value) =>
     bean.failOnUnknownProperties = (value as bool);
-Object? _$get121(_i2.JsonDeserializationProperties bean) =>
+Object? _$get122(_i2.JsonDeserializationProperties bean) =>
     bean.readDateTimestampsAsNanoseconds;
-void _$set122(_i2.JsonDeserializationProperties bean, Object? value) =>
+void _$set123(_i2.JsonDeserializationProperties bean, Object? value) =>
     bean.readDateTimestampsAsNanoseconds = (value as bool);
-_i2.JsonDeserializationProperties _$create123(
+_i2.JsonDeserializationProperties _$create124(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.JsonDeserializationProperties();
-Object? _$get124(_i2.JsonSerializationProperties bean) => bean.indentOutput;
-void _$set125(_i2.JsonSerializationProperties bean, Object? value) =>
+Object? _$get125(_i2.JsonSerializationProperties bean) => bean.indentOutput;
+void _$set126(_i2.JsonSerializationProperties bean, Object? value) =>
     bean.indentOutput = (value as bool);
-Object? _$get126(_i2.JsonSerializationProperties bean) =>
+Object? _$get127(_i2.JsonSerializationProperties bean) =>
     bean.writeDateTimestampsAsNanoseconds;
-void _$set127(_i2.JsonSerializationProperties bean, Object? value) =>
+void _$set128(_i2.JsonSerializationProperties bean, Object? value) =>
     bean.writeDateTimestampsAsNanoseconds = (value as bool);
-Object? _$get128(_i2.JsonSerializationProperties bean) =>
+Object? _$get129(_i2.JsonSerializationProperties bean) =>
     bean.writeDatesAsTimestamps;
-void _$set129(_i2.JsonSerializationProperties bean, Object? value) =>
+void _$set130(_i2.JsonSerializationProperties bean, Object? value) =>
     bean.writeDatesAsTimestamps = (value as bool);
-Object? _$get130(_i2.JsonSerializationProperties bean) =>
+Object? _$get131(_i2.JsonSerializationProperties bean) =>
     bean.writeDurationsAsTimestamps;
-void _$set131(_i2.JsonSerializationProperties bean, Object? value) =>
+void _$set132(_i2.JsonSerializationProperties bean, Object? value) =>
     bean.writeDurationsAsTimestamps = (value as bool);
-_i2.JsonSerializationProperties _$create132(
+_i2.JsonSerializationProperties _$create133(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.JsonSerializationProperties();
-Object? _$get133(_i2.JsonMapperProperties bean) => bean.defaultViewInclusion;
-void _$set134(_i2.JsonMapperProperties bean, Object? value) =>
+Object? _$get134(_i2.JsonMapperProperties bean) => bean.defaultViewInclusion;
+void _$set135(_i2.JsonMapperProperties bean, Object? value) =>
     bean.defaultViewInclusion = (value as bool);
-Object? _$get135(_i2.JsonMapperProperties bean) =>
+Object? _$get136(_i2.JsonMapperProperties bean) =>
     bean.sortPropertiesAlphabetically;
-void _$set136(_i2.JsonMapperProperties bean, Object? value) =>
+void _$set137(_i2.JsonMapperProperties bean, Object? value) =>
     bean.sortPropertiesAlphabetically = (value as bool);
-_i2.JsonMapperProperties _$create137(
+_i2.JsonMapperProperties _$create138(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.JsonMapperProperties();
-Object? _$get138(_i2.JsonDatatypeProperties bean) => bean.datetime;
-void _$set139(_i2.JsonDatatypeProperties bean, Object? value) =>
+Object? _$get139(_i2.JsonDatatypeProperties bean) => bean.datetime;
+void _$set140(_i2.JsonDatatypeProperties bean, Object? value) =>
     bean.datetime = (value as _i2.JsonDatetimeProperties);
-_i2.JsonDatatypeProperties _$create140(
+_i2.JsonDatatypeProperties _$create141(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.JsonDatatypeProperties();
-Object? _$get141(_i2.JsonDatetimeProperties bean) =>
+Object? _$get142(_i2.JsonDatetimeProperties bean) =>
     bean.readDateTimestampsAsNanoseconds;
-void _$set142(_i2.JsonDatetimeProperties bean, Object? value) =>
+void _$set143(_i2.JsonDatetimeProperties bean, Object? value) =>
     bean.readDateTimestampsAsNanoseconds = (value as bool?);
-Object? _$get143(_i2.JsonDatetimeProperties bean) =>
+Object? _$get144(_i2.JsonDatetimeProperties bean) =>
     bean.writeDateTimestampsAsNanoseconds;
-void _$set144(_i2.JsonDatetimeProperties bean, Object? value) =>
+void _$set145(_i2.JsonDatetimeProperties bean, Object? value) =>
     bean.writeDateTimestampsAsNanoseconds = (value as bool?);
-Object? _$get145(_i2.JsonDatetimeProperties bean) =>
+Object? _$get146(_i2.JsonDatetimeProperties bean) =>
     bean.writeDatesAsTimestamps;
-void _$set146(_i2.JsonDatetimeProperties bean, Object? value) =>
+void _$set147(_i2.JsonDatetimeProperties bean, Object? value) =>
     bean.writeDatesAsTimestamps = (value as bool?);
-Object? _$get147(_i2.JsonDatetimeProperties bean) =>
+Object? _$get148(_i2.JsonDatetimeProperties bean) =>
     bean.writeDurationsAsTimestamps;
-void _$set148(_i2.JsonDatetimeProperties bean, Object? value) =>
+void _$set149(_i2.JsonDatetimeProperties bean, Object? value) =>
     bean.writeDurationsAsTimestamps = (value as bool?);
-_i2.JsonDatetimeProperties _$create149(
+_i2.JsonDatetimeProperties _$create150(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.JsonDatetimeProperties();
-Object? _$get150(_i2.JsonSchemaProperties bean) => bean.location;
-void _$set151(_i2.JsonSchemaProperties bean, Object? value) =>
+Object? _$get151(_i2.JsonSchemaProperties bean) => bean.location;
+void _$set152(_i2.JsonSchemaProperties bean, Object? value) =>
     bean.location = (value as String?);
-Object? _$get152(_i2.JsonSchemaProperties bean) => bean.sha256;
-void _$set153(_i2.JsonSchemaProperties bean, Object? value) =>
+Object? _$get153(_i2.JsonSchemaProperties bean) => bean.sha256;
+void _$set154(_i2.JsonSchemaProperties bean, Object? value) =>
     bean.sha256 = (value as String?);
-Object? _$get154(_i2.JsonSchemaProperties bean) => bean.prefix;
-void _$set155(_i2.JsonSchemaProperties bean, Object? value) =>
+Object? _$get155(_i2.JsonSchemaProperties bean) => bean.prefix;
+void _$set156(_i2.JsonSchemaProperties bean, Object? value) =>
     bean.prefix = (value as String?);
-Object? _$get156(_i2.JsonSchemaProperties bean) => bean.name;
-void _$set157(_i2.JsonSchemaProperties bean, Object? value) =>
+Object? _$get157(_i2.JsonSchemaProperties bean) => bean.name;
+void _$set158(_i2.JsonSchemaProperties bean, Object? value) =>
     bean.name = (value as String?);
-_i2.JsonSchemaProperties _$create158(
+_i2.JsonSchemaProperties _$create159(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.JsonSchemaProperties();
-Object? _$get159(_i2.JsonSchemasRegistryProperties bean) => bean.properties;
-void _$set160(_i2.JsonSchemasRegistryProperties bean, Object? value) =>
+Object? _$get160(_i2.JsonSchemasRegistryProperties bean) => bean.properties;
+void _$set161(_i2.JsonSchemasRegistryProperties bean, Object? value) =>
     bean.properties = (value as bool);
-_i2.JsonSchemasRegistryProperties _$create161(
+_i2.JsonSchemasRegistryProperties _$create162(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.JsonSchemasRegistryProperties();
+Object? _$get163(_i4.RateLimitProperties bean) => bean.enabled;
+void _$set164(_i4.RateLimitProperties bean, Object? value) =>
+    bean.enabled = (value as bool?);
+Object? _$get165(_i4.RateLimitProperties bean) => bean.store;
+void _$set166(_i4.RateLimitProperties bean, Object? value) =>
+    bean.store = (value as String?);
+Object? _$get167(_i4.RateLimitProperties bean) => bean.onStoreFailure;
+void _$set168(_i4.RateLimitProperties bean, Object? value) =>
+    bean.onStoreFailure = (value as _i4.RateLimitStoreFailure);
+Object? _$get169(_i4.RateLimitProperties bean) => bean.storeFailureRetryAfter;
+void _$set170(_i4.RateLimitProperties bean, Object? value) =>
+    bean.storeFailureRetryAfter = (value as Duration);
+Object? _$get171(_i4.RateLimitProperties bean) => bean.trustedProxies;
+void _$set172(_i4.RateLimitProperties bean, Object? value) =>
+    bean.trustedProxies = (value as List<String>);
+Object? _$get173(_i4.RateLimitProperties bean) => bean.clientAddressHeader;
+void _$set174(_i4.RateLimitProperties bean, Object? value) =>
+    bean.clientAddressHeader = (value as String);
+Object? _$get175(_i4.RateLimitProperties bean) => bean.hashAddresses;
+void _$set176(_i4.RateLimitProperties bean, Object? value) =>
+    bean.hashAddresses = (value as bool);
+Object? _$get177(_i4.RateLimitProperties bean) => bean.hashSecret;
+void _$set178(_i4.RateLimitProperties bean, Object? value) =>
+    bean.hashSecret = (value as String?);
+Object? _$get179(_i4.RateLimitProperties bean) => bean.headers;
+void _$set180(_i4.RateLimitProperties bean, Object? value) =>
+    bean.headers = (value as bool);
+Object? _$get181(_i4.RateLimitProperties bean) => bean.memory;
+void _$set182(_i4.RateLimitProperties bean, Object? value) =>
+    bean.memory = (value as _i4.RateLimitMemoryProperties);
+Object? _$get183(_i4.RateLimitProperties bean) => bean.rules;
+void _$set184(_i4.RateLimitProperties bean, Object? value) =>
+    bean.rules = (value as List<_i4.RateLimitRuleProperties>);
+Object? _$get185(_i4.RateLimitProperties bean) => bean.isOn;
+_i4.RateLimitProperties _$create186(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i4.RateLimitProperties();
+Object? _$get187(_i4.RateLimitMemoryProperties bean) => bean.maxEntries;
+void _$set188(_i4.RateLimitMemoryProperties bean, Object? value) =>
+    bean.maxEntries = (value as int);
+_i4.RateLimitMemoryProperties _$create189(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i4.RateLimitMemoryProperties();
+Object? _$get190(_i4.RateLimitRuleProperties bean) => bean.name;
+void _$set191(_i4.RateLimitRuleProperties bean, Object? value) =>
+    bean.name = (value as String?);
+Object? _$get192(_i4.RateLimitRuleProperties bean) => bean.path;
+void _$set193(_i4.RateLimitRuleProperties bean, Object? value) =>
+    bean.path = (value as String);
+Object? _$get194(_i4.RateLimitRuleProperties bean) => bean.methods;
+void _$set195(_i4.RateLimitRuleProperties bean, Object? value) =>
+    bean.methods = (value as List<String>);
+Object? _$get196(_i4.RateLimitRuleProperties bean) => bean.key;
+void _$set197(_i4.RateLimitRuleProperties bean, Object? value) =>
+    bean.key = (value as String?);
+Object? _$get198(_i4.RateLimitRuleProperties bean) => bean.limit;
+void _$set199(_i4.RateLimitRuleProperties bean, Object? value) =>
+    bean.limit = (value as String?);
+Object? _$get200(_i4.RateLimitRuleProperties bean) => bean.burst;
+void _$set201(_i4.RateLimitRuleProperties bean, Object? value) =>
+    bean.burst = (value as int?);
+Object? _$get202(_i4.RateLimitRuleProperties bean) => bean.onStoreFailure;
+void _$set203(_i4.RateLimitRuleProperties bean, Object? value) =>
+    bean.onStoreFailure = (value as _i4.RateLimitStoreFailure?);
+_i4.RateLimitRuleProperties _$create204(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i4.RateLimitRuleProperties();
 
 /// Beans found by `@ComponentScan` in `lib/src/properties`.
 _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
@@ -774,7 +852,7 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             _$target10,
             kind: _i1.MemberKind.getter,
             returnType: r'Duration',
-            annotations: [_i4.DurationUnit(_i1.ChronoUnit.seconds)],
+            annotations: [_i5.DurationUnit(_i1.ChronoUnit.seconds)],
             annotationTypes: [r'DurationUnit'],
           ),
           _i1.MethodSignature.of(
@@ -824,7 +902,7 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             _$target10,
             kind: _i1.MemberKind.setter,
             returnType: r'Duration',
-            annotations: [_i4.DurationUnit(_i1.ChronoUnit.seconds)],
+            annotations: [_i5.DurationUnit(_i1.ChronoUnit.seconds)],
             annotationTypes: [r'DurationUnit'],
           ),
           _i1.MethodSignature.of(
@@ -1002,6 +1080,174 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
         ],
       ),
     ),
+    _i1.BeanDefinition<_i4.RateLimitProperties>(
+      name: r'rateLimitProperties',
+      source: r'package:spring_boot_dart/src/properties/rate_limit_properties.dart#RateLimitProperties',
+      create: (r) => _i4.RateLimitProperties(),
+      annotations: const [
+        _i1.ConfigurationProperties(r'spring.web.rate-limit'),
+      ],
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target12,
+            kind: _i1.MemberKind.getter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'store',
+            _$target12,
+            kind: _i1.MemberKind.getter,
+            returnType: r'String',
+            annotations: [
+              _i1.PropertyValues([
+                r'memory',
+                r'primary-isolate',
+                r'jdbc',
+                r'procedure',
+              ]),
+            ],
+            annotationTypes: [r'PropertyValues'],
+          ),
+          _i1.MethodSignature.of(
+            r'onStoreFailure',
+            _$target12,
+            kind: _i1.MemberKind.getter,
+            returnType: r'RateLimitStoreFailure',
+          ),
+          _i1.MethodSignature.of(
+            r'storeFailureRetryAfter',
+            _$target12,
+            kind: _i1.MemberKind.getter,
+            returnType: r'Duration',
+          ),
+          _i1.MethodSignature.of(
+            r'trustedProxies',
+            _$target12,
+            kind: _i1.MemberKind.getter,
+            returnType: r'List',
+          ),
+          _i1.MethodSignature.of(
+            r'clientAddressHeader',
+            _$target12,
+            kind: _i1.MemberKind.getter,
+            returnType: r'String',
+          ),
+          _i1.MethodSignature.of(
+            r'hashAddresses',
+            _$target12,
+            kind: _i1.MemberKind.getter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'hashSecret',
+            _$target12,
+            kind: _i1.MemberKind.getter,
+            returnType: r'String',
+          ),
+          _i1.MethodSignature.of(
+            r'headers',
+            _$target12,
+            kind: _i1.MemberKind.getter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'memory',
+            _$target12,
+            kind: _i1.MemberKind.getter,
+            returnType: r'RateLimitMemoryProperties',
+          ),
+          _i1.MethodSignature.of(
+            r'rules',
+            _$target12,
+            kind: _i1.MemberKind.getter,
+            returnType: r'List',
+          ),
+          _i1.MethodSignature.of(
+            r'isOn',
+            _$target12,
+            kind: _i1.MemberKind.getter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target12,
+            kind: _i1.MemberKind.setter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'store',
+            _$target12,
+            kind: _i1.MemberKind.setter,
+            returnType: r'String',
+            annotations: [
+              _i1.PropertyValues([
+                r'memory',
+                r'primary-isolate',
+                r'jdbc',
+                r'procedure',
+              ]),
+            ],
+            annotationTypes: [r'PropertyValues'],
+          ),
+          _i1.MethodSignature.of(
+            r'onStoreFailure',
+            _$target12,
+            kind: _i1.MemberKind.setter,
+            returnType: r'RateLimitStoreFailure',
+          ),
+          _i1.MethodSignature.of(
+            r'storeFailureRetryAfter',
+            _$target12,
+            kind: _i1.MemberKind.setter,
+            returnType: r'Duration',
+          ),
+          _i1.MethodSignature.of(
+            r'trustedProxies',
+            _$target12,
+            kind: _i1.MemberKind.setter,
+            returnType: r'List',
+          ),
+          _i1.MethodSignature.of(
+            r'clientAddressHeader',
+            _$target12,
+            kind: _i1.MemberKind.setter,
+            returnType: r'String',
+          ),
+          _i1.MethodSignature.of(
+            r'hashAddresses',
+            _$target12,
+            kind: _i1.MemberKind.setter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'hashSecret',
+            _$target12,
+            kind: _i1.MemberKind.setter,
+            returnType: r'String',
+          ),
+          _i1.MethodSignature.of(
+            r'headers',
+            _$target12,
+            kind: _i1.MemberKind.setter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'memory',
+            _$target12,
+            kind: _i1.MemberKind.setter,
+            returnType: r'RateLimitMemoryProperties',
+          ),
+          _i1.MethodSignature.of(
+            r'rules',
+            _$target12,
+            kind: _i1.MemberKind.setter,
+            returnType: r'List',
+          ),
+        ],
+      ),
+    ),
   ],
   introspections: [
     const _i1.BeanIntrospection<_i2.MainProperties>(
@@ -1012,40 +1258,40 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get12,
-          set: _$set13,
+          get: _$get13,
+          set: _$set14,
         ),
         _i1.BeanProperty<_i2.MainProperties>(
           r'bannerMode',
           typeInfo: _i1.EnumType<_i3.BannerMode>(_i3.BannerMode.values),
           hasInitialValue: true,
           initialValue: _i3.BannerMode.console,
-          get: _$get14,
-          set: _$set15,
+          get: _$get15,
+          set: _$set16,
         ),
         _i1.BeanProperty<_i2.MainProperties>(
           r'lazyInitialization',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get16,
-          set: _$set17,
+          get: _$get17,
+          set: _$set18,
         ),
         _i1.BeanProperty<_i2.MainProperties>(
           r'logStartupInfo',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: _$get18,
-          set: _$set19,
+          get: _$get19,
+          set: _$set20,
         ),
         _i1.BeanProperty<_i2.MainProperties>(
           r'registerShutdownHook',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get20,
-          set: _$set21,
+          get: _$get21,
+          set: _$set22,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.main')],
@@ -1053,7 +1299,7 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       instantiate: _i2.MainProperties.new,
       constructor: _i1.BeanConstructor<_i2.MainProperties>(
         parameters: [],
-        create: _$create22,
+        create: _$create23,
       ),
     ),
     const _i1.BeanIntrospection<_i2.AutoconfigureProperties>(
@@ -1066,8 +1312,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             _i1.ClassType<String>(),
             nullable: true,
           ),
-          get: _$get23,
-          set: _$set24,
+          get: _$get24,
+          set: _$set25,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.autoconfigure')],
@@ -1075,7 +1321,7 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       instantiate: _i2.AutoconfigureProperties.new,
       constructor: _i1.BeanConstructor<_i2.AutoconfigureProperties>(
         parameters: [],
-        create: _$create25,
+        create: _$create26,
       ),
     ),
     const _i1.BeanIntrospection<_i2.ApplicationProperties>(
@@ -1085,15 +1331,15 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           r'json',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get26,
-          set: _$set27,
+          get: _$get27,
+          set: _$set28,
         ),
         _i1.BeanProperty<_i2.ApplicationProperties>(
           r'name',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get28,
-          set: _$set29,
+          get: _$get29,
+          set: _$set30,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.application')],
@@ -1101,7 +1347,7 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       instantiate: _i2.ApplicationProperties.new,
       constructor: _i1.BeanConstructor<_i2.ApplicationProperties>(
         parameters: [],
-        create: _$create30,
+        create: _$create31,
       ),
     ),
     const _i1.BeanIntrospection<_i2.BannerProperties>(
@@ -1112,8 +1358,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'resources:banner.txt',
-          get: _$get31,
-          set: _$set32,
+          get: _$get32,
+          set: _$set33,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.banner')],
@@ -1121,7 +1367,7 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       instantiate: _i2.BannerProperties.new,
       constructor: _i1.BeanConstructor<_i2.BannerProperties>(
         parameters: [],
-        create: _$create33,
+        create: _$create34,
       ),
     ),
     const _i1.BeanIntrospection<_i2.DevtoolsRestartProperties>(
@@ -1132,8 +1378,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: _$get34,
-          set: _$set35,
+          get: _$get35,
+          set: _$set36,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.devtools.restart')],
@@ -1141,7 +1387,7 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       instantiate: _i2.DevtoolsRestartProperties.new,
       constructor: _i1.BeanConstructor<_i2.DevtoolsRestartProperties>(
         parameters: [],
-        create: _$create36,
+        create: _$create37,
       ),
     ),
     const _i1.BeanIntrospection<_i2.LifecycleProperties>(
@@ -1150,8 +1396,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.LifecycleProperties>(
           r'timeoutPerShutdownPhase',
           typeInfo: _i1.ClassType<Duration>(),
-          get: _$get37,
-          set: _$set38,
+          get: _$get38,
+          set: _$set39,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.lifecycle')],
@@ -1159,7 +1405,7 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       instantiate: _i2.LifecycleProperties.new,
       constructor: _i1.BeanConstructor<_i2.LifecycleProperties>(
         parameters: [],
-        create: _$create39,
+        create: _$create40,
       ),
     ),
     const _i1.BeanIntrospection<_i2.DebugProperties>(
@@ -1169,15 +1415,15 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           r'debug',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get40,
-          set: _$set41,
+          get: _$get41,
+          set: _$set42,
         ),
         _i1.BeanProperty<_i2.DebugProperties>(
           r'trace',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get42,
-          set: _$set43,
+          get: _$get43,
+          set: _$set44,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'')],
@@ -1185,7 +1431,7 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       instantiate: _i2.DebugProperties.new,
       constructor: _i1.BeanConstructor<_i2.DebugProperties>(
         parameters: [],
-        create: _$create44,
+        create: _$create45,
       ),
     ),
     const _i1.BeanIntrospection<_i2.ResourcesProperties>(
@@ -1194,14 +1440,14 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.ResourcesProperties>(
           r'embed',
           typeInfo: _i1.ClassType<_i2.ResourcesEmbedProperties>(),
-          get: _$get45,
-          set: _$set46,
+          get: _$get46,
+          set: _$set47,
         ),
         _i1.BeanProperty<_i2.ResourcesProperties>(
           r'prefetch',
           typeInfo: _i1.ClassType<_i2.ResourcesPrefetchProperties>(),
-          get: _$get47,
-          set: _$set48,
+          get: _$get48,
+          set: _$set49,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.resources')],
@@ -1209,7 +1455,7 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       instantiate: _i2.ResourcesProperties.new,
       constructor: _i1.BeanConstructor<_i2.ResourcesProperties>(
         parameters: [],
-        create: _$create49,
+        create: _$create50,
       ),
     ),
     const _i1.BeanIntrospection<_i2.ResourcesEmbedProperties>(
@@ -1218,15 +1464,15 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.ResourcesEmbedProperties>(
           r'exclude',
           typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get50,
-          set: _$set51,
+          get: _$get51,
+          set: _$set52,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
       instantiate: _i2.ResourcesEmbedProperties.new,
       constructor: _i1.BeanConstructor<_i2.ResourcesEmbedProperties>(
         parameters: [],
-        create: _$create52,
+        create: _$create53,
       ),
     ),
     const _i1.BeanIntrospection<_i2.ResourcesPrefetchProperties>(
@@ -1235,8 +1481,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.ResourcesPrefetchProperties>(
           r'locations',
           typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get53,
-          set: _$set54,
+          get: _$get54,
+          set: _$set55,
         ),
         _i1.BeanProperty<_i2.ResourcesPrefetchProperties>(
           r'stage',
@@ -1245,21 +1491,21 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           ),
           hasInitialValue: true,
           initialValue: _i2.ResourcesPrefetchStage.app,
-          get: _$get55,
-          set: _$set56,
+          get: _$get56,
+          set: _$set57,
         ),
         _i1.BeanProperty<_i2.ResourcesPrefetchProperties>(
           r'delay',
           typeInfo: _i1.ClassType<Duration>(),
-          get: _$get57,
-          set: _$set58,
+          get: _$get58,
+          set: _$set59,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
       instantiate: _i2.ResourcesPrefetchProperties.new,
       constructor: _i1.BeanConstructor<_i2.ResourcesPrefetchProperties>(
         parameters: [],
-        create: _$create59,
+        create: _$create60,
       ),
     ),
     const _i1.BeanIntrospection<_i2.ObservationsProperties>(
@@ -1268,8 +1514,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.ObservationsProperties>(
           r'annotations',
           typeInfo: _i1.ClassType<_i2.ObservationsAnnotationsProperties>(),
-          get: _$get60,
-          set: _$set61,
+          get: _$get61,
+          set: _$set62,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.observations')],
@@ -1277,7 +1523,7 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       instantiate: _i2.ObservationsProperties.new,
       constructor: _i1.BeanConstructor<_i2.ObservationsProperties>(
         parameters: [],
-        create: _$create62,
+        create: _$create63,
       ),
     ),
     const _i1.BeanIntrospection<_i2.ObservationsAnnotationsProperties>(
@@ -1288,15 +1534,15 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get63,
-          set: _$set64,
+          get: _$get64,
+          set: _$set65,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
       instantiate: _i2.ObservationsAnnotationsProperties.new,
       constructor: _i1.BeanConstructor<_i2.ObservationsAnnotationsProperties>(
         parameters: [],
-        create: _$create65,
+        create: _$create66,
       ),
     ),
     const _i1.BeanIntrospection<_i2.TaskExecutionIsolatesProperties>(
@@ -1306,44 +1552,44 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           r'coreSize',
           nullable: true,
           typeInfo: _i1.ClassType<int>(nullable: true),
-          get: _$get66,
-          set: _$set67,
+          get: _$get67,
+          set: _$set68,
         ),
         _i1.BeanProperty<_i2.TaskExecutionIsolatesProperties>(
           r'maxSize',
           nullable: true,
           typeInfo: _i1.ClassType<int>(nullable: true),
-          get: _$get68,
-          set: _$set69,
+          get: _$get69,
+          set: _$set70,
         ),
         _i1.BeanProperty<_i2.TaskExecutionIsolatesProperties>(
           r'keepAlive',
           typeInfo: _i1.ClassType<Duration>(),
-          get: _$get70,
-          set: _$set71,
+          get: _$get71,
+          set: _$set72,
         ),
         _i1.BeanProperty<_i2.TaskExecutionIsolatesProperties>(
           r'queueCapacity',
           nullable: true,
           typeInfo: _i1.ClassType<int>(nullable: true),
-          get: _$get72,
-          set: _$set73,
+          get: _$get73,
+          set: _$set74,
         ),
         _i1.BeanProperty<_i2.TaskExecutionIsolatesProperties>(
           r'allowCoreTimeout',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: _$get74,
-          set: _$set75,
+          get: _$get75,
+          set: _$set76,
         ),
         _i1.BeanProperty<_i2.TaskExecutionIsolatesProperties>(
           r'namePrefix',
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'task-',
-          get: _$get76,
-          set: _$set77,
+          get: _$get77,
+          set: _$set78,
         ),
       ],
       annotations: [
@@ -1353,7 +1599,7 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       instantiate: _i2.TaskExecutionIsolatesProperties.new,
       constructor: _i1.BeanConstructor<_i2.TaskExecutionIsolatesProperties>(
         parameters: [],
-        create: _$create78,
+        create: _$create79,
       ),
     ),
     const _i1.BeanIntrospection<_i2.MessagesProperties>(
@@ -1364,22 +1610,22 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get79,
-          set: _$set80,
+          get: _$get80,
+          set: _$set81,
         ),
         _i1.BeanProperty<_i2.MessagesProperties>(
           r'basename',
           typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get81,
-          set: _$set82,
+          get: _$get82,
+          set: _$set83,
         ),
         _i1.BeanProperty<_i2.MessagesProperties>(
           r'cacheDuration',
           nullable: true,
           typeInfo: _i1.ClassType<Duration>(nullable: true),
-          get: _$get83,
-          set: _$set84,
-          annotations: [_i4.DurationUnit(_i1.ChronoUnit.seconds)],
+          get: _$get84,
+          set: _$set85,
+          annotations: [_i5.DurationUnit(_i1.ChronoUnit.seconds)],
         ),
         _i1.BeanProperty<_i2.MessagesProperties>(
           r'commonMessages',
@@ -1388,38 +1634,38 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
             _i1.ClassType<String>(),
             nullable: true,
           ),
-          get: _$get85,
-          set: _$set86,
+          get: _$get86,
+          set: _$set87,
         ),
         _i1.BeanProperty<_i2.MessagesProperties>(
           r'defaultLocale',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get87,
-          set: _$set88,
+          get: _$get88,
+          set: _$set89,
         ),
         _i1.BeanProperty<_i2.MessagesProperties>(
           r'encoding',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get89,
-          set: _$set90,
+          get: _$get90,
+          set: _$set91,
         ),
         _i1.BeanProperty<_i2.MessagesProperties>(
           r'fallbackToSystemLocale',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: _$get91,
-          set: _$set92,
+          get: _$get92,
+          set: _$set93,
         ),
         _i1.BeanProperty<_i2.MessagesProperties>(
           r'useCodeAsDefaultMessage',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get93,
-          set: _$set94,
+          get: _$get94,
+          set: _$set95,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.messages')],
@@ -1427,7 +1673,7 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       instantiate: _i2.MessagesProperties.new,
       constructor: _i1.BeanConstructor<_i2.MessagesProperties>(
         parameters: [],
-        create: _$create95,
+        create: _$create96,
       ),
     ),
     const _i1.BeanIntrospection<_i2.JsonProperties>(
@@ -1438,8 +1684,8 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'LOWER_CAMEL_CASE',
-          get: _$get96,
-          set: _$set97,
+          get: _$get97,
+          set: _$set98,
           annotations: [
             _i1.PropertyValues([
               r'SNAKE_CASE',
@@ -1457,53 +1703,53 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           typeInfo: _i1.EnumType<_i1.JsonInclusion>(_i1.JsonInclusion.values),
           hasInitialValue: true,
           initialValue: _i1.JsonInclusion.always,
-          get: _$get98,
-          set: _$set99,
+          get: _$get99,
+          set: _$set100,
         ),
         _i1.BeanProperty<_i2.JsonProperties>(
           r'timeZone',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get100,
-          set: _$set101,
+          get: _$get101,
+          set: _$set102,
         ),
         _i1.BeanProperty<_i2.JsonProperties>(
           r'deserialization',
           typeInfo: _i1.ClassType<_i2.JsonDeserializationProperties>(),
-          get: _$get102,
-          set: _$set103,
+          get: _$get103,
+          set: _$set104,
         ),
         _i1.BeanProperty<_i2.JsonProperties>(
           r'serialization',
           typeInfo: _i1.ClassType<_i2.JsonSerializationProperties>(),
-          get: _$get104,
-          set: _$set105,
+          get: _$get105,
+          set: _$set106,
         ),
         _i1.BeanProperty<_i2.JsonProperties>(
           r'mapper',
           typeInfo: _i1.ClassType<_i2.JsonMapperProperties>(),
-          get: _$get106,
-          set: _$set107,
+          get: _$get107,
+          set: _$set108,
         ),
         _i1.BeanProperty<_i2.JsonProperties>(
           r'datatype',
           typeInfo: _i1.ClassType<_i2.JsonDatatypeProperties>(),
-          get: _$get108,
-          set: _$set109,
+          get: _$get109,
+          set: _$set110,
         ),
         _i1.BeanProperty<_i2.JsonProperties>(
           r'schemas',
           typeInfo: _i1.ListType<_i2.JsonSchemaProperties>(
             _i1.ClassType<_i2.JsonSchemaProperties>(),
           ),
-          get: _$get110,
-          set: _$set111,
+          get: _$get111,
+          set: _$set112,
         ),
         _i1.BeanProperty<_i2.JsonProperties>(
           r'schemasRegistry',
           typeInfo: _i1.ClassType<_i2.JsonSchemasRegistryProperties>(),
-          get: _$get112,
-          set: _$set113,
+          get: _$get113,
+          set: _$set114,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.json')],
@@ -1511,7 +1757,7 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
       instantiate: _i2.JsonProperties.new,
       constructor: _i1.BeanConstructor<_i2.JsonProperties>(
         parameters: [],
-        create: _$create114,
+        create: _$create115,
       ),
     ),
     const _i1.BeanIntrospection<_i2.JsonDeserializationProperties>(
@@ -1522,39 +1768,39 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: _$get115,
-          set: _$set116,
+          get: _$get116,
+          set: _$set117,
         ),
         _i1.BeanProperty<_i2.JsonDeserializationProperties>(
           r'failOnNullForPrimitives',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: _$get117,
-          set: _$set118,
+          get: _$get118,
+          set: _$set119,
         ),
         _i1.BeanProperty<_i2.JsonDeserializationProperties>(
           r'failOnUnknownProperties',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get119,
-          set: _$set120,
+          get: _$get120,
+          set: _$set121,
         ),
         _i1.BeanProperty<_i2.JsonDeserializationProperties>(
           r'readDateTimestampsAsNanoseconds',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: _$get121,
-          set: _$set122,
+          get: _$get122,
+          set: _$set123,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
       instantiate: _i2.JsonDeserializationProperties.new,
       constructor: _i1.BeanConstructor<_i2.JsonDeserializationProperties>(
         parameters: [],
-        create: _$create123,
+        create: _$create124,
       ),
     ),
     const _i1.BeanIntrospection<_i2.JsonSerializationProperties>(
@@ -1565,39 +1811,39 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get124,
-          set: _$set125,
+          get: _$get125,
+          set: _$set126,
         ),
         _i1.BeanProperty<_i2.JsonSerializationProperties>(
           r'writeDateTimestampsAsNanoseconds',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: _$get126,
-          set: _$set127,
+          get: _$get127,
+          set: _$set128,
         ),
         _i1.BeanProperty<_i2.JsonSerializationProperties>(
           r'writeDatesAsTimestamps',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get128,
-          set: _$set129,
+          get: _$get129,
+          set: _$set130,
         ),
         _i1.BeanProperty<_i2.JsonSerializationProperties>(
           r'writeDurationsAsTimestamps',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get130,
-          set: _$set131,
+          get: _$get131,
+          set: _$set132,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
       instantiate: _i2.JsonSerializationProperties.new,
       constructor: _i1.BeanConstructor<_i2.JsonSerializationProperties>(
         parameters: [],
-        create: _$create132,
+        create: _$create133,
       ),
     ),
     const _i1.BeanIntrospection<_i2.JsonMapperProperties>(
@@ -1608,23 +1854,23 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: false,
-          get: _$get133,
-          set: _$set134,
+          get: _$get134,
+          set: _$set135,
         ),
         _i1.BeanProperty<_i2.JsonMapperProperties>(
           r'sortPropertiesAlphabetically',
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: _$get135,
-          set: _$set136,
+          get: _$get136,
+          set: _$set137,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
       instantiate: _i2.JsonMapperProperties.new,
       constructor: _i1.BeanConstructor<_i2.JsonMapperProperties>(
         parameters: [],
-        create: _$create137,
+        create: _$create138,
       ),
     ),
     const _i1.BeanIntrospection<_i2.JsonDatatypeProperties>(
@@ -1633,15 +1879,15 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.JsonDatatypeProperties>(
           r'datetime',
           typeInfo: _i1.ClassType<_i2.JsonDatetimeProperties>(),
-          get: _$get138,
-          set: _$set139,
+          get: _$get139,
+          set: _$set140,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
       instantiate: _i2.JsonDatatypeProperties.new,
       constructor: _i1.BeanConstructor<_i2.JsonDatatypeProperties>(
         parameters: [],
-        create: _$create140,
+        create: _$create141,
       ),
     ),
     const _i1.BeanIntrospection<_i2.JsonDatetimeProperties>(
@@ -1651,36 +1897,36 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           r'readDateTimestampsAsNanoseconds',
           nullable: true,
           typeInfo: _i1.ClassType<bool>(nullable: true),
-          get: _$get141,
-          set: _$set142,
+          get: _$get142,
+          set: _$set143,
         ),
         _i1.BeanProperty<_i2.JsonDatetimeProperties>(
           r'writeDateTimestampsAsNanoseconds',
           nullable: true,
           typeInfo: _i1.ClassType<bool>(nullable: true),
-          get: _$get143,
-          set: _$set144,
+          get: _$get144,
+          set: _$set145,
         ),
         _i1.BeanProperty<_i2.JsonDatetimeProperties>(
           r'writeDatesAsTimestamps',
           nullable: true,
           typeInfo: _i1.ClassType<bool>(nullable: true),
-          get: _$get145,
-          set: _$set146,
+          get: _$get146,
+          set: _$set147,
         ),
         _i1.BeanProperty<_i2.JsonDatetimeProperties>(
           r'writeDurationsAsTimestamps',
           nullable: true,
           typeInfo: _i1.ClassType<bool>(nullable: true),
-          get: _$get147,
-          set: _$set148,
+          get: _$get148,
+          set: _$set149,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
       instantiate: _i2.JsonDatetimeProperties.new,
       constructor: _i1.BeanConstructor<_i2.JsonDatetimeProperties>(
         parameters: [],
-        create: _$create149,
+        create: _$create150,
       ),
     ),
     const _i1.BeanIntrospection<_i2.JsonSchemaProperties>(
@@ -1690,36 +1936,36 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           r'location',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get150,
-          set: _$set151,
+          get: _$get151,
+          set: _$set152,
         ),
         _i1.BeanProperty<_i2.JsonSchemaProperties>(
           r'sha256',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get152,
-          set: _$set153,
+          get: _$get153,
+          set: _$set154,
         ),
         _i1.BeanProperty<_i2.JsonSchemaProperties>(
           r'prefix',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get154,
-          set: _$set155,
+          get: _$get155,
+          set: _$set156,
         ),
         _i1.BeanProperty<_i2.JsonSchemaProperties>(
           r'name',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get156,
-          set: _$set157,
+          get: _$get157,
+          set: _$set158,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
       instantiate: _i2.JsonSchemaProperties.new,
       constructor: _i1.BeanConstructor<_i2.JsonSchemaProperties>(
         parameters: [],
-        create: _$create158,
+        create: _$create159,
       ),
     ),
     const _i1.BeanIntrospection<_i2.JsonSchemasRegistryProperties>(
@@ -1730,15 +1976,201 @@ _i1.BeanModule get $bootPropertiesBeans => _i1.BeanModule(
           typeInfo: _i1.ClassType<bool>(),
           hasInitialValue: true,
           initialValue: true,
-          get: _$get159,
-          set: _$set160,
+          get: _$get160,
+          set: _$set161,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
       instantiate: _i2.JsonSchemasRegistryProperties.new,
       constructor: _i1.BeanConstructor<_i2.JsonSchemasRegistryProperties>(
         parameters: [],
-        create: _$create161,
+        create: _$create162,
+      ),
+    ),
+    const _i1.BeanIntrospection<_i4.RateLimitProperties>(
+      className: r'RateLimitProperties',
+      properties: [
+        _i1.BeanProperty<_i4.RateLimitProperties>(
+          r'enabled',
+          nullable: true,
+          typeInfo: _i1.ClassType<bool>(nullable: true),
+          get: _$get163,
+          set: _$set164,
+        ),
+        _i1.BeanProperty<_i4.RateLimitProperties>(
+          r'store',
+          nullable: true,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get165,
+          set: _$set166,
+          annotations: [
+            _i1.PropertyValues([
+              r'memory',
+              r'primary-isolate',
+              r'jdbc',
+              r'procedure',
+            ]),
+          ],
+        ),
+        _i1.BeanProperty<_i4.RateLimitProperties>(
+          r'onStoreFailure',
+          typeInfo: _i1.EnumType<_i4.RateLimitStoreFailure>(
+            _i4.RateLimitStoreFailure.values,
+          ),
+          hasInitialValue: true,
+          initialValue: _i4.RateLimitStoreFailure.deny,
+          get: _$get167,
+          set: _$set168,
+        ),
+        _i1.BeanProperty<_i4.RateLimitProperties>(
+          r'storeFailureRetryAfter',
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get169,
+          set: _$set170,
+        ),
+        _i1.BeanProperty<_i4.RateLimitProperties>(
+          r'trustedProxies',
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get171,
+          set: _$set172,
+        ),
+        _i1.BeanProperty<_i4.RateLimitProperties>(
+          r'clientAddressHeader',
+          typeInfo: _i1.ClassType<String>(),
+          hasInitialValue: true,
+          initialValue: r'X-Forwarded-For',
+          get: _$get173,
+          set: _$set174,
+        ),
+        _i1.BeanProperty<_i4.RateLimitProperties>(
+          r'hashAddresses',
+          typeInfo: _i1.ClassType<bool>(),
+          hasInitialValue: true,
+          initialValue: false,
+          get: _$get175,
+          set: _$set176,
+        ),
+        _i1.BeanProperty<_i4.RateLimitProperties>(
+          r'hashSecret',
+          nullable: true,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get177,
+          set: _$set178,
+        ),
+        _i1.BeanProperty<_i4.RateLimitProperties>(
+          r'headers',
+          typeInfo: _i1.ClassType<bool>(),
+          hasInitialValue: true,
+          initialValue: true,
+          get: _$get179,
+          set: _$set180,
+        ),
+        _i1.BeanProperty<_i4.RateLimitProperties>(
+          r'memory',
+          typeInfo: _i1.ClassType<_i4.RateLimitMemoryProperties>(),
+          get: _$get181,
+          set: _$set182,
+        ),
+        _i1.BeanProperty<_i4.RateLimitProperties>(
+          r'rules',
+          typeInfo: _i1.ListType<_i4.RateLimitRuleProperties>(
+            _i1.ClassType<_i4.RateLimitRuleProperties>(),
+          ),
+          get: _$get183,
+          set: _$set184,
+        ),
+        _i1.BeanProperty<_i4.RateLimitProperties>(
+          r'isOn',
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get185,
+        ),
+      ],
+      annotations: [_i1.ConfigurationProperties(r'spring.web.rate-limit')],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i4.RateLimitProperties.new,
+      constructor: _i1.BeanConstructor<_i4.RateLimitProperties>(
+        parameters: [],
+        create: _$create186,
+      ),
+    ),
+    const _i1.BeanIntrospection<_i4.RateLimitMemoryProperties>(
+      className: r'RateLimitMemoryProperties',
+      properties: [
+        _i1.BeanProperty<_i4.RateLimitMemoryProperties>(
+          r'maxEntries',
+          typeInfo: _i1.ClassType<int>(),
+          hasInitialValue: true,
+          initialValue: 100000,
+          get: _$get187,
+          set: _$set188,
+        ),
+      ],
+      instantiate: _i4.RateLimitMemoryProperties.new,
+      constructor: _i1.BeanConstructor<_i4.RateLimitMemoryProperties>(
+        parameters: [],
+        create: _$create189,
+      ),
+    ),
+    const _i1.BeanIntrospection<_i4.RateLimitRuleProperties>(
+      className: r'RateLimitRuleProperties',
+      properties: [
+        _i1.BeanProperty<_i4.RateLimitRuleProperties>(
+          r'name',
+          nullable: true,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get190,
+          set: _$set191,
+        ),
+        _i1.BeanProperty<_i4.RateLimitRuleProperties>(
+          r'path',
+          typeInfo: _i1.ClassType<String>(),
+          hasInitialValue: true,
+          initialValue: r'/**',
+          get: _$get192,
+          set: _$set193,
+        ),
+        _i1.BeanProperty<_i4.RateLimitRuleProperties>(
+          r'methods',
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get194,
+          set: _$set195,
+        ),
+        _i1.BeanProperty<_i4.RateLimitRuleProperties>(
+          r'key',
+          nullable: true,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get196,
+          set: _$set197,
+        ),
+        _i1.BeanProperty<_i4.RateLimitRuleProperties>(
+          r'limit',
+          nullable: true,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get198,
+          set: _$set199,
+        ),
+        _i1.BeanProperty<_i4.RateLimitRuleProperties>(
+          r'burst',
+          nullable: true,
+          typeInfo: _i1.ClassType<int>(nullable: true),
+          get: _$get200,
+          set: _$set201,
+        ),
+        _i1.BeanProperty<_i4.RateLimitRuleProperties>(
+          r'onStoreFailure',
+          nullable: true,
+          typeInfo: _i1.EnumType<_i4.RateLimitStoreFailure>(
+            _i4.RateLimitStoreFailure.values,
+            nullable: true,
+          ),
+          get: _$get202,
+          set: _$set203,
+        ),
+      ],
+      instantiate: _i4.RateLimitRuleProperties.new,
+      constructor: _i1.BeanConstructor<_i4.RateLimitRuleProperties>(
+        parameters: [],
+        create: _$create204,
       ),
     ),
   ],

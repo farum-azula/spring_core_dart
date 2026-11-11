@@ -18,8 +18,8 @@ import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:test/test.dart';
 
 const _scan = r'''
-import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:pkg/spring_gen/src/beans.spring.dart';
+import 'package:spring_core_dart/spring_core_dart.dart';
 
 @ComponentScan()
 final BeanModule pkgBeans = $pkgBeans;
@@ -95,6 +95,7 @@ Future<TestBuilderResult> _build(
   ProxyMode proxyMode = ProxyMode.none,
   String header = _header,
   String entities = _entities,
+  Map<String, String> files = const {},
 }) async {
   final readerWriter = TestReaderWriter(
     rootPackage: 'pkg',
@@ -106,6 +107,7 @@ Future<TestBuilderResult> _build(
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/model.dart': '$header$entities$model',
+      for (final MapEntry(:key, :value) in files.entries) 'pkg|$key': value,
     },
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -126,12 +128,14 @@ Future<String> _generate(
   ProxyMode proxyMode = ProxyMode.none,
   String header = _header,
   String entities = _entities,
+  Map<String, String> files = const {},
 }) async {
   final result = await _build(
     model,
     proxyMode: proxyMode,
     header: header,
     entities: entities,
+    files: files,
   );
   expect(result.errors, isEmpty);
   return result.readerWriter.testing.readString(
@@ -140,8 +144,10 @@ Future<String> _generate(
 }
 
 /// The build errors for [model].
-Future<String> _errors(String model) async =>
-    (await _build(model)).errors.join('\n');
+Future<String> _errors(
+  String model, {
+  Map<String, String> files = const {},
+}) async => (await _build(model, files: files)).errors.join('\n');
 
 /// An interface `BookRepository` with [methods] as its body.
 String _bookRepository(String methods) =>
@@ -448,7 +454,7 @@ class Rules {
 class OutOfStock implements Exception {}
 
 @Repository('library')
-@UseStore('memory')
+@UseStore('jdbc')
 abstract interface class BookRepository
     implements
         ListCrudRepository<Book, int>,
@@ -582,15 +588,31 @@ class _$AuthorRepositoryImpl extends SimpleRepository<Author, int>
         _has('''
 operations<Book, int>(
   r'BookRepository',
-  annotations: const [Repository(r'library'), UseStore(r'memory')],
+  annotations: const [Repository(r'library'), UseStore(r'jdbc')],
   queries: [
     _cards, _cardStream, _findByEverything, _purge, _bump, _pageAfter,
     _sliceAfter,
     _pageCounted, _sorted, _viaPlaceholder, _viaExpressions, _titles, _titleOf,
     _statusOf, _total,
   ],
-)'''),
+  requirements: const ['''),
       );
+    });
+
+    test('what the methods need of the store is passed: a lock, a '
+        'query', () {
+      final written = _normalize(books);
+      for (final requirement in [
+        "StoreRequirement(r'findById', DataStoreCapability.locks)",
+        "StoreRequirement(r'findOneByYearAndTitle', DataStoreCapability.locks)",
+        "StoreRequirement(r'cards', DataStoreCapability.queries)",
+        "StoreRequirement(r'total', DataStoreCapability.queries)",
+      ]) {
+        expect(written, _has(requirement), reason: requirement);
+      }
+      // A derived find without a lock needs nothing.
+      expect(written, isNot(_has("StoreRequirement(r'findByTitleAndYear'")));
+      expect(authors, isNot(contains('requirements:')));
     });
 
     test('the bean has the name, types and creation of the interface', () {
@@ -610,7 +632,7 @@ types: const [
       expect(
         output,
         _has(
-          "annotations: const [Repository(r'library'), UseStore(r'memory')]",
+          "annotations: const [Repository(r'library'), UseStore(r'jdbc')]",
         ),
       );
     });
@@ -1275,8 +1297,9 @@ abstract interface class AuthorRepository
         'Future<List<Book>> fetchByTitle(String t);',
         'BookRepository.fetchByTitle: not a CRUD method of the repository '
             'interfaces and not a derived query: a query method starts with '
-            'find, read, get, query, search, stream, count, exists, delete or '
-            'remove, then By and the conditions (findByTitle)',
+            'find, read, get, query, search, stream, watch, changes, count, '
+            'exists, delete or remove, then By and the conditions '
+            '(findByTitle)',
       ),
       (
         'Future<List<Book>> findbyTitle(String t);',
@@ -1560,6 +1583,117 @@ abstract interface class AuthorRepository
         'BookRepository.findAll: @Lock is for the derived find methods '
             '(findByTitle) and findById: a lock is taken by reading rows',
       ),
+      // @Procedure: a database function, with the rules of a @Query's result.
+      (
+        "@Procedure('f') int plain();",
+        'BookRepository.plain: a repository method is asynchronous: return '
+            'a Future (Future<int>) or a Stream',
+      ),
+      (
+        "@Procedure('') Future<int> unnamed();",
+        'BookRepository.unnamed: @Procedure has no function name',
+      ),
+      (
+        "@Procedure('f') @Query('select 1') Future<int> both();",
+        'BookRepository.both: @Procedure and @Query on one method: it calls a '
+            'database function or runs SQL, not both',
+      ),
+      (
+        "@Procedure('f') @Modifying() Future<int> changing();",
+        'BookRepository.changing: @Modifying is for a @Query: a function '
+            'changes what it changes; return what it returns, or nothing '
+            '(Future<void>)',
+      ),
+      (
+        "@Procedure('f') @Lock(LockMode.pessimisticWrite) "
+            'Future<Book?> locked();',
+        'BookRepository.locked: @Lock is for the derived find methods and '
+            'findById: a function takes its own locks',
+      ),
+      (
+        "@Procedure('f') Future<List<Book>> windowed(Pageable page);",
+        "BookRepository.windowed: the parameter 'page' is a Pageable: every "
+            'parameter of a @Procedure method is an argument of the function; '
+            'give the function a limit, an offset or an order as arguments '
+            'of its own',
+      ),
+      (
+        "@Procedure('f') Future<Page<Book>> paged();",
+        'BookRepository.paged: @Procedure cannot return a page: a function is '
+            'not windowed; return a List, or give the function a limit and an '
+            'offset as arguments',
+      ),
+      (
+        "@Procedure('f') Future<Stream<Book>> deferred();",
+        'BookRepository.deferred: a Stream is already asynchronous: return '
+            'Stream<Book>, not a Future of it',
+      ),
+      (
+        "@Procedure('f') Future<Uri> odd();",
+        'BookRepository.odd: Uri cannot be built from rows: it is no column '
+            'type, no Map<String, Object?> and no class of yours; return '
+            'the entity, a class of yours, a column type or a Map\n',
+      ),
+      // watch...By and changes...By: streams of one type each.
+      (
+        'Future<List<Book>> watchByTitle(String t);',
+        'BookRepository.watchByTitle: a watch method keeps the result of '
+            'its query up to date: it returns Stream<List<Book>>, not '
+            'Future<List<Book>>',
+      ),
+      (
+        'Stream<Book> watchByYear(int y);',
+        'BookRepository.watchByYear: a watch method keeps the result of its '
+            'query up to date: it returns Stream<List<Book>>, not '
+            'Stream<Book>',
+      ),
+      (
+        'Stream<List<Book?>> watchByOrigin(String o);',
+        'BookRepository.watchByOrigin: a watch method keeps the result of '
+            'its query up to date: it returns Stream<List<Book>>, not '
+            'Stream<List<Book?>>',
+      ),
+      (
+        '@Lock(LockMode.pessimisticRead) '
+            'Stream<List<Book>> watchByIsbn(String i);',
+        'BookRepository.watchByIsbn: @Lock is for the derived find methods '
+            'and findById: a watch method reads outside the transaction of '
+            'its caller',
+      ),
+      (
+        'Stream<List<Book>> watchByTitel(String t);',
+        "BookRepository.watchByTitel: No property 'titel' found for type "
+            "'Book'; did you mean 'title'?",
+      ),
+      (
+        'Stream<List<Book>> changesByTitle(String t);',
+        'BookRepository.changesByTitle: a changes method reports the '
+            'changes of the rows its conditions match: it returns '
+            'Stream<RowChange<Book>>, not Stream<List<Book>>',
+      ),
+      (
+        'Stream<RowChange<Author>> changesByOrigin(String o);',
+        'BookRepository.changesByOrigin: a changes method reports the '
+            'changes of the rows its conditions match: it returns '
+            'Stream<RowChange<Book>>, not Stream<RowChange<Author>>',
+      ),
+      (
+        'Stream<RowChange<Book>> changesTop3ByYear(int y);',
+        'BookRepository.changesTop3ByYear: a changes method reports '
+            'changes, not a result: no First, Top, Distinct or OrderBy in '
+            'its name, and no Sort or Pageable parameter (a watch method '
+            'has them)',
+      ),
+      (
+        'Stream<RowChange<Book>> changesByIsbn(String i, Sort sort);',
+        'BookRepository.changesByIsbn: a changes method reports changes, '
+            'not a result',
+      ),
+      (
+        'Stream<RowChange<Book>> changesByYear(int a, int b);',
+        'BookRepository.changesByYear: the name needs 1 parameter(s) besides '
+            'Sort and Pageable, but the method declares 2',
+      ),
       // What the generated class cannot implement.
       (
         'Future<int> twice() async => 2;',
@@ -1616,6 +1750,668 @@ abstract interface class AuthorRepository
       );
       expect(one, contains("No property 'titel' found"));
       expect(one, isNot(contains('yeer')));
+    });
+  });
+
+  group('@Json properties', () {
+    const model = '''
+class Settings {
+  Settings(this.theme);
+  String theme;
+}
+
+@Table('accounts')
+class Account {
+  Account({required this.name, required this.settings, this.id});
+  @Id()
+  int? id;
+  String name;
+  @Json()
+  Settings settings;
+}
+
+abstract interface class AccountRepository
+    implements ListCrudRepository<Account, int> {
+  METHODS
+}
+''';
+    const fix =
+        'it is a @Json property, one JSON value no derived query compares; '
+        "use @Query with the database's JSON operators on a SQL store, or "
+        '@Procedure';
+
+    test('a condition on one is a build error that says the fix', () async {
+      final message = await _errors(
+        model.replaceFirst(
+          'METHODS',
+          'Future<List<Account>> findBySettings(Settings settings);',
+        ),
+      );
+      expect(
+        message,
+        contains(
+          "AccountRepository.findBySettings: property 'settings' cannot be "
+          'used in a condition: $fix',
+        ),
+      );
+    });
+
+    test('an order by one is a build error that says the fix', () async {
+      final message = await _errors(
+        model.replaceFirst(
+          'METHODS',
+          'Future<List<Account>> findByNameOrderBySettingsDesc(String name);',
+        ),
+      );
+      expect(
+        message,
+        contains(
+          'AccountRepository.findByNameOrderBySettingsDesc: property '
+          "'settings' cannot be used in OrderBy: $fix",
+        ),
+      );
+    });
+
+    test('the other properties, and @Query, stay usable', () async {
+      final output = await _generate(
+        model.replaceFirst('METHODS', '''
+  Future<List<Account>> findByName(String name);
+  @Query("select * from accounts where settings ->> 'theme' = :theme")
+  Future<List<Account>> themed(String theme);'''),
+      );
+      expect(output, contains('findByName'));
+      expect(_normalize(output), _has('BeanIntrospection<Settings>('));
+    });
+  });
+
+  group('collections without @Json', () {
+    // Every kind of collection property: the ones no SQL database has a
+    // column for, and the ones that are columns, JSON or tables.
+    String parcels(String annotations) =>
+        '''
+enum Size { small, large }
+
+class Stamp {
+  Stamp(this.country);
+  String country;
+}
+
+@Table('lines')
+class Line {
+  Line({required this.sku, this.options = const {}});
+  String sku;
+  Map<String, String> options;
+}
+
+@Table('parcels')
+class Parcel {
+  Parcel({
+    required this.meta,
+    required this.labels,
+    required this.stamps,
+    required this.tags,
+    required this.sizes,
+    required this.bytes,
+    required this.kept,
+    required this.lines,
+    this.id,
+    this.extra,
+    this.scratch = const {},
+  });
+  @Id()
+  int? id;
+  Map<String, Object?> meta;
+  Set<String> labels;
+  List<Stamp> stamps;
+  Map<String, int>? extra;
+  // Columns, or left to the store: an array of simple values.
+  List<String> tags;
+  List<Size> sizes;
+  List<int> bytes;
+  @Json()
+  Map<String, Object?> kept;
+  @MappedCollection()
+  List<Line> lines;
+  @Transient()
+  Map<String, Object?> scratch;
+}
+
+$annotations
+abstract interface class Parcels implements CrudRepository<Parcel, int> {}
+''';
+
+    String refused(String where, String type) =>
+        '  - $where: a $type property without @Json has no column on a SQL '
+        'store: add @Json() to keep it as JSON, or @MappedCollection for '
+        'rows of a child table';
+
+    test('on the SQL store a Map, a Set and a List of classes are build '
+        'errors naming the entity, the property and the fix; bytes, lists '
+        'of simple values, @Json, @MappedCollection and @Transient are '
+        'not', () async {
+      for (final annotations in [
+        "@UseStore('jdbc')",
+        "@UseDataSource('stats')",
+      ]) {
+        final message = await _errors(parcels(annotations));
+        expect(
+          message,
+          contains(
+            'Invalid repository Parcels:\n'
+            '${refused('Parcel.meta', 'Map<String, Object?>')}\n'
+            '${refused('Parcel.labels', 'Set<String>')}\n'
+            '${refused('Parcel.stamps', 'List<Stamp>')}\n'
+            '${refused('Parcel.extra', 'Map<String, int>')}\n'
+            '${refused('Line.options', 'Map<String, String>')}',
+          ),
+          reason: annotations,
+        );
+        expect('\n  - '.allMatches(message), hasLength(5), reason: message);
+      }
+    });
+
+    test('the SQL store as the default (spring.datasource.url) refuses '
+        'them too', () async {
+      final message = await _errors(
+        parcels(''),
+        files: const {
+          'lib/resources/application.yml':
+              'spring:\n  datasource:\n    url: sqlite:app.db\n',
+        },
+      );
+      expect(message, contains(refused('Parcel.meta', 'Map<String, Object?>')));
+    });
+
+    test('the memory store, and a store the build does not know, keep '
+        'them', () async {
+      for (final annotations in ["@UseStore('memory')", '']) {
+        final result = await _build(parcels(annotations));
+        expect(result.errors, isEmpty, reason: annotations);
+      }
+    });
+  });
+
+  group('functions, changes and what the store must do', () {
+    // A store of the application's own package, declared as a starter
+    // declares its store: in a library that
+    // `lib/spring_auto_configuration.dart` exports.
+    const documents = {
+      'lib/spring_auto_configuration.dart': "export 'src/stores.dart';\n",
+      'lib/src/stores.dart': '''
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
+
+@DataStoreDeclaration()
+const documentStore = DataStoreDescriptor(
+  'documents',
+  capabilities: DataStoreCapabilities(changes: true),
+  defaultWhen: DataStoreDefault(
+    whenProperty: ['documents.url'],
+    unlessProperty: ['spring.datasource.url', 'spring.data.store'],
+  ),
+  fixes: {
+    DataStoreCapability.transactions:
+        'set documents.sql-url to keep the documents in SQL',
+  },
+);
+''',
+    };
+
+    // Everything a store may be asked: a lock, SQL, a function, changes,
+    // a transaction (on a method and, for Shelves, on the interface).
+    String demanding(String annotations) =>
+        '''
+$annotations
+abstract interface class Notes implements CrudRepository<Book, int> {
+  @Lock(LockMode.pessimisticWrite)
+  Future<Book?> findByTitle(String title);
+
+  @Query('select * from books')
+  Future<List<Book>> all();
+
+  @Procedure('book_total')
+  Future<int> total();
+
+  Stream<List<Book>> watchByYear(int year);
+
+  Stream<RowChange<Book>> changesByYear(int year);
+
+  @Transactional()
+  Future<List<Book>> findByIsbn(String isbn);
+}
+
+@Transactional()
+$annotations
+abstract interface class Shelves implements CrudRepository<Book, int> {}
+''';
+
+    const services = '''
+@Service()
+class Checkout {
+  @Transactional()
+  Future<void> place() async {}
+
+  Future<void> look() async {}
+}
+
+@Service()
+@Transactional()
+class Billing {
+  Future<void> charge() async {}
+}
+
+@Service()
+class Reports {
+  @Transactional(transactionManager: 'reportsTransactionManager')
+  Future<void> run() async {}
+}
+''';
+
+    const lockOnDocuments =
+        'Notes.findByTitle: @Lock needs a store with row locks, and the '
+        "documents store is none: use a SQL store (@UseStore('jdbc') with "
+        'spring.datasource.url), or remove @Lock (a @Version checks '
+        'concurrent writes without a lock)';
+
+    test('@Procedure, watch and changes methods are written, with what every '
+        'method needs of the store', () async {
+      const model = '''
+@UseStore('jdbc')
+abstract interface class Ledger implements CrudRepository<Book, int> {
+  @Procedure('books_over')
+  Future<List<Book>> over(int minYear);
+
+  @Procedure('book_total')
+  Future<int> total();
+
+  @Procedure('archive')
+  Future<void> archive(int olderThan, {bool dryRun = false});
+
+  @Procedure('books_of')
+  Stream<Book> streamOf(String title);
+
+  @Procedure('best')
+  Future<Book?> best();
+
+  @Procedure('cards')
+  Future<Set<BookCard>> cards();
+
+  // A name that would be derived: @Procedure wins, and is never parsed.
+  @Procedure('by_anything')
+  Future<List<Book>> findByAnything(String x);
+
+  @Transactional()
+  Future<Book?> findByIsbn(String isbn);
+}
+
+@Transactional()
+abstract interface class LiveBooks implements CrudRepository<Book, int> {
+  Stream<List<Book>> watchByTitle(String title);
+
+  Stream<List<Book>> watchTop3ByYearGreaterThanOrderByTitleAsc(
+    int year,
+    Pageable page,
+  );
+
+  Stream<List<Book>> watchAllBy(Sort sort);
+
+  Stream<RowChange<Book>> changesByTitleAndYear(String title, int year);
+
+  Stream<RowChange<Book>> changesAllBy();
+}
+
+// A store the build does not know: left to the run time.
+@UseStore('cassandra')
+abstract interface class Elsewhere implements CrudRepository<Book, int> {
+  @Lock(LockMode.pessimisticWrite)
+  Future<Book?> findByTitle(String title);
+
+  @Procedure('f')
+  Future<int> total();
+
+  Stream<List<Book>> watchByYear(int year);
+}
+''';
+      final raw = await _generate(model);
+      final output = _normalize(raw);
+      for (final code in [
+        // The descriptors.
+        """
+static const _over = ProcedureMethod(
+  r'over',
+  Procedure(r'books_over'),
+  parameters: [r'minYear'],
+  element: ClassType<Book>(),
+);""",
+        """
+static const _total = ProcedureMethod(
+  r'total',
+  Procedure(r'book_total'),
+  shape: QueryShape.single,
+  element: ClassType<int>(),
+);""",
+        """
+static const _archive = ProcedureMethod(
+  r'archive',
+  Procedure(r'archive'),
+  parameters: [r'olderThan', r'dryRun'],
+);""",
+        """
+static const _streamOf = ProcedureMethod(
+  r'streamOf',
+  Procedure(r'books_of'),
+  parameters: [r'title'],
+  shape: QueryShape.stream,
+  element: ClassType<Book>(),
+);""",
+        """
+static const _best = ProcedureMethod(
+  r'best',
+  Procedure(r'best'),
+  shape: QueryShape.single,
+  element: ClassType<Book>(nullable: true),
+);""",
+        """
+static const _cards = ProcedureMethod(
+  r'cards',
+  Procedure(r'cards'),
+  shape: QueryShape.set,
+  element: ClassType<BookCard>(),
+);""",
+        // The calls.
+        '''Future<List<Book>> over(int minYear) => this.operations.procedure<List<Book>>(_over, [minYear]);''',
+        '''Future<int> total() => this.operations.procedure<int>(_total, const []);''',
+        '''Future<void> archive(int olderThan, {bool dryRun = false}) => this.operations.procedure<void>(_archive, [olderThan, dryRun]);''',
+        '''Stream<Book> streamOf(String title) => this.operations.procedureStream<Book>(_streamOf, [title]);''',
+        '''Future<Book?> best() => this.operations.procedure<Book?>(_best, const []);''',
+        '''Future<Set<BookCard>> cards() => this.operations.procedure<Set<BookCard>>(_cards, const []);''',
+        '''Future<List<Book>> findByAnything(String x) => this.operations.procedure<List<Book>>(_findByAnything, [x]);''',
+        // What the factory is given.
+        """
+operations<Book, int>(
+  r'Ledger',
+  annotations: const [UseStore(r'jdbc')],
+  functions: [
+    _over, _total, _archive, _streamOf, _best, _cards, _findByAnything,
+  ],
+  requirements: const [
+    StoreRequirement(r'over', DataStoreCapability.functions),
+    StoreRequirement(r'total', DataStoreCapability.functions),
+    StoreRequirement(r'archive', DataStoreCapability.functions),
+    StoreRequirement(r'streamOf', DataStoreCapability.functions),
+    StoreRequirement(r'best', DataStoreCapability.functions),
+    StoreRequirement(r'cards', DataStoreCapability.functions),
+    StoreRequirement(r'findByAnything', DataStoreCapability.functions),
+    StoreRequirement(r'findByIsbn', DataStoreCapability.transactions),
+  ],
+)""",
+        // The interface's own @Transactional is among its annotations.
+        """
+operations<Book, int>(
+  r'LiveBooks',
+  annotations: const [Transactional()],
+  requirements: const [
+    StoreRequirement(r'watchByTitle', DataStoreCapability.changes),
+    StoreRequirement(
+      r'watchTop3ByYearGreaterThanOrderByTitleAsc',
+      DataStoreCapability.changes,
+    ),
+    StoreRequirement(r'watchAllBy', DataStoreCapability.changes),
+    StoreRequirement(r'changesByTitleAndYear', DataStoreCapability.changes),
+    StoreRequirement(r'changesAllBy', DataStoreCapability.changes),
+  ],
+)""",
+        // The streams that follow the store.
+        """
+static const _watchTop3ByYearGreaterThanOrderByTitleAsc = PartTree(
+  r'watchTop3ByYearGreaterThanOrderByTitleAsc',
+  [
+    OrPart([Part(r'year', PartType.greaterThan)]),
+  ],
+  subject: Subject(SubjectKind.find, maxResults: 3),
+  sort: Sort([SortOrder.asc(r'title')]),
+);""",
+        "static const _watchAllBy = PartTree(r'watchAllBy', []);",
+        '''Stream<List<Book>> watchByTitle(String title) => this.operations.watch(_watchByTitle, [title]);''',
+        '''this.operations.watch(_watchTop3ByYearGreaterThanOrderByTitleAsc, [year], pageable: page)''',
+        '''Stream<List<Book>> watchAllBy(Sort sort) => this.operations.watch(_watchAllBy, const [], sort: sort);''',
+        '''Stream<RowChange<Book>> changesByTitleAndYear(String title, int year) => this.operations.changes(_changesByTitleAndYear, [title, year]);''',
+        '''Stream<RowChange<Book>> changesAllBy() => this.operations.changes(_changesAllBy, const []);''',
+        // The store nothing describes: written, and checked at startup.
+        """
+operations<Book, int>(
+  r'Elsewhere',
+  annotations: const [UseStore(r'cassandra')],
+  functions: [_total],
+  requirements: const [
+    StoreRequirement(r'findByTitle', DataStoreCapability.locks),
+    StoreRequirement(r'total', DataStoreCapability.functions),
+    StoreRequirement(r'watchByYear', DataStoreCapability.changes),
+  ],
+)""",
+      ]) {
+        expect(output, _has(code), reason: code);
+      }
+      // The class a function's rows become is described, as a @Query's.
+      expect(output, _has('EntityIntrospection<BookCard>('));
+      final errors = await resolveSources<List<String>>(
+        {
+          'pkg|lib/src/beans.dart': _scan,
+          'pkg|lib/src/model.dart': '$_header$_entities$model',
+          'pkg|lib/spring_gen/src/beans.spring.dart': raw,
+        },
+        (resolver) async {
+          final library = await resolver.libraryFor(
+            AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
+          );
+          final result = await library.session.getErrors(
+            library.firstFragment.source.fullName,
+          );
+          return [
+            if (result case ErrorsResult(:final diagnostics))
+              for (final diagnostic in diagnostics)
+                if (diagnostic.severity == Severity.error) diagnostic.message,
+          ];
+        },
+        rootPackage: 'pkg',
+        resolverFor: 'pkg|lib/spring_gen/src/beans.spring.dart',
+        readAllSourcesFromFilesystem: true,
+      );
+      expect(errors, isEmpty);
+    });
+
+    test("@UseStore('memory'): SQL and functions are refused, locks, "
+        'changes and transactions are not', () async {
+      final message = await _errors(demanding("@UseStore('memory')"));
+      expect('Invalid repository'.allMatches(message), hasLength(1));
+      expect(
+        message,
+        contains(
+          'Invalid repository Notes:\n'
+          '  - Notes.all: @Query needs a SQL store, and the memory store is '
+          'none: set spring.datasource.url and add a driver '
+          "(@UseStore('jdbc')), or write a derived query\n"
+          '  - Notes.total: @Procedure needs a store with database functions, '
+          'and the memory store is none: use a store whose database has them '
+          '(PostgreSQL), or write the work as repository calls\n',
+        ),
+      );
+      expect('\n  - '.allMatches(message), hasLength(2));
+    });
+
+    test("@UseStore('jdbc'): changes are refused, the rest is not; a "
+        '@UseDataSource alone is the SQL store too', () async {
+      for (final annotations in [
+        "@UseStore('jdbc')",
+        "@UseDataSource('stats')",
+      ]) {
+        final message = await _errors(demanding(annotations));
+        expect('Invalid repository'.allMatches(message), hasLength(1));
+        expect(
+          message,
+          contains(
+            '  - Notes.watchByYear: a stream of changes needs a store that '
+            'reports the changes of its rows, and the jdbc store is none: '
+            'use a store that does (the memory store), or return a Future '
+            'and query again when the data may have changed\n'
+            '  - Notes.changesByYear: a stream of changes needs',
+          ),
+          reason: annotations,
+        );
+        expect('\n  - '.allMatches(message), hasLength(2));
+      }
+    });
+
+    test('a store of another package, by @UseStore: every capability it '
+        'lacks, with its own fix first; the services are not its '
+        'business', () async {
+      final message = await _errors(
+        '${demanding("@UseStore('documents')")}$services',
+        files: documents,
+      );
+      expect('Invalid repository'.allMatches(message), hasLength(2));
+      expect(
+        message,
+        contains(
+          'Invalid repository Notes:\n'
+          '  - $lockOnDocuments\n'
+          '  - Notes.all: @Query needs a SQL store, and the documents store '
+          'is none: set spring.datasource.url and add a driver '
+          "(@UseStore('jdbc')), or write a derived query\n"
+          '  - Notes.total: @Procedure needs a store with database functions, '
+          'and the documents store is none: use a store whose database has '
+          'them (PostgreSQL), or write the work as repository calls\n'
+          '  - Notes.findByIsbn: @Transactional needs a store with '
+          'transactions, and the documents store is none: set '
+          'documents.sql-url to keep the documents in SQL, or use a SQL '
+          "store (@UseStore('jdbc') with spring.datasource.url), or remove "
+          '@Transactional and do the atomic work in one database function '
+          '(@Procedure)\n',
+        ),
+      );
+      expect(
+        message,
+        contains(
+          'Invalid repository Shelves:\n'
+          '  - Shelves: @Transactional needs a store with transactions, and '
+          'the documents store is none: set documents.sql-url',
+        ),
+      );
+      // It reports changes: the two streams are fine.
+      expect(message, isNot(contains('watchByYear')));
+      expect(message, isNot(contains('changesByYear')));
+      // The default store is not known: the services are left alone.
+      expect(message, isNot(contains('Checkout')));
+    });
+
+    test('by spring.data.store: the repositories without @UseStore, and '
+        'the @Transactional of the services', () async {
+      final message = await _errors(
+        '''
+${demanding('')}
+@UseStore('memory')
+abstract interface class Kept implements CrudRepository<Book, int> {
+  @Lock(LockMode.pessimisticWrite)
+  Future<Book?> findByTitle(String title);
+}
+$services''',
+        files: {
+          ...documents,
+          'lib/resources/application.properties':
+              'spring.data.store=documents\n',
+        },
+      );
+      expect(message, contains('Invalid repository Notes:\n'));
+      expect(message, contains('  - $lockOnDocuments\n'));
+      expect(message, contains('Invalid repository Shelves:\n'));
+      expect(message, isNot(contains('Kept')));
+      expect(
+        message,
+        contains(
+          'Checkout.place: @Transactional needs a store with transactions, '
+          'and the default store of the application, documents, has none: '
+          'set documents.sql-url to keep the documents in SQL, or select a '
+          'store with transactions (spring.data.store, or the property of '
+          'its starter), or name the transaction manager of another store '
+          "(@Transactional(transactionManager: 'x')), or do the atomic "
+          'work in one database function (@Procedure)',
+        ),
+      );
+      expect(
+        message,
+        contains('Billing: @Transactional needs a store with transactions'),
+      );
+      // A named transaction manager is the application's own business.
+      expect(message, isNot(contains('Reports')));
+      expect(message, isNot(contains('Checkout.look')));
+    });
+
+    test('by the rule of the store: its property is set', () async {
+      final message = await _errors(
+        '${demanding('')}$services',
+        files: {
+          ...documents,
+          'lib/resources/application.yml':
+              'documents:\n  url: \${DOCUMENTS_URL}\n',
+        },
+      );
+      expect(message, contains('  - $lockOnDocuments\n'));
+      expect(message, contains('Checkout.place: @Transactional needs'));
+    });
+
+    test('the rule does not hold: another store is the default, and what '
+        'that one can do is accepted', () async {
+      // spring.datasource.url: the SQL store's own rule holds, the
+      // documents' does not.
+      final files = {
+        ...documents,
+        'lib/resources/application.yml':
+            'documents:\n  url: http://documents\n'
+            'spring:\n  datasource:\n    url: sqlite:file:app.db\n',
+      };
+      final message = await _errors(
+        '${demanding('')}$services',
+        files: files,
+      );
+      expect(message, isNot(contains('documents store')));
+      expect(message, isNot(contains('@Lock')));
+      expect(message, isNot(contains('@Transactional')));
+      expect(
+        message,
+        contains('Notes.watchByYear: a stream of changes needs a store'),
+      );
+      expect(message, contains('the jdbc store is none'));
+      expect('Invalid repository'.allMatches(message), hasLength(1));
+    });
+
+    test('no rule holds and nothing is said: the store is not known, and '
+        'everything is left to the run time', () async {
+      final result = await _build(
+        '${demanding('')}$services',
+        files: documents,
+      );
+      expect(result.errors, isEmpty);
+    });
+
+    test('a @DataStoreDeclaration on anything else is refused', () async {
+      final message = await _errors(
+        demanding(''),
+        files: {
+          'lib/spring_auto_configuration.dart': '''
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
+
+@DataStoreDeclaration()
+const documentStore = 'documents';
+''',
+        },
+      );
+      expect(
+        message,
+        contains(
+          '@DataStoreDeclaration is for a constant DataStoreDescriptor: '
+          'documentStore of package:pkg/spring_auto_configuration.dart is '
+          'none.',
+        ),
+      );
     });
   });
 

@@ -619,6 +619,7 @@ class BookRepositoryTest {
   the test process dies, even with `kill -9`
   (`TESTCONTAINERS_RYUK_DISABLED=true` switches it off).
 - **`withReuse(true)`** keeps a container for the next run (never in CI).
+- **`Network.newNetwork()`** with `withNetwork(network)` and `withNetworkAliases(['db'])` lets the containers of a test reach each other by name (an API and its database); `withExtraHost(host, address)` adds a line to a container's hosts file.
 - **Modules:** `PostgresContainer` and `KeycloakContainer` know their
   `@ServiceConnection` properties; `GenericContainer` covers the rest.
 - **`@DataTest(replaceDatabase: false)`** with such a `PostgresContainer`

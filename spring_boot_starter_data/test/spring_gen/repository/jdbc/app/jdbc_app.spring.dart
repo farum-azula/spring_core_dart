@@ -2123,6 +2123,80 @@ class _$SqlBooksImpl extends _i1.SimpleRepository<_i2.Book, int>
         _shouted,
         _bySubtitleText,
       ],
+      requirements: const [
+        _i1.StoreRequirement(r'byYear', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'aroundYear', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'byIds', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'byTitle', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'byTitleLike', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'byGenre', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'byAuthor', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'byStock', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'sameTitle', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(
+          r'byFirstArgument',
+          _i1.DataStoreCapability.queries,
+        ),
+        _i1.StoreRequirement(r'sinceCutoff', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'yearBefore', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(
+          r'afterConfiguredCutoff',
+          _i1.DataStoreCapability.queries,
+        ),
+        _i1.StoreRequirement(r'afterSum', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'broken', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'viaEntityName', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'firstPage', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'byAuthorName', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'withAuthor', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'missingColumn', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'countAfter', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'titleOf', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(
+          r'requiredTitleOf',
+          _i1.DataStoreCapability.queries,
+        ),
+        _i1.StoreRequirement(r'titlesAfter', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'yearsAfter', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'inStockOf', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'ratingOf', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'releasedOf', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'genreOf', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'one', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'requiredOne', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'theOnlyOne', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'asMap', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'afterSorted', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(
+          r'afterSortedAndOrdered',
+          _i1.DataStoreCapability.queries,
+        ),
+        _i1.StoreRequirement(r'afterWindow', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'pageAfter', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(
+          r'pageWithAuthor',
+          _i1.DataStoreCapability.queries,
+        ),
+        _i1.StoreRequirement(r'sliceAfter', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'streamAfter', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'streamTitles', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(
+          r'streamWithAuthor',
+          _i1.DataStoreCapability.queries,
+        ),
+        _i1.StoreRequirement(r'shift', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'deleteOlder', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'retitle', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(
+          r'authorsWithBooks',
+          _i1.DataStoreCapability.queries,
+        ),
+        _i1.StoreRequirement(r'shouted', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(
+          r'bySubtitleText',
+          _i1.DataStoreCapability.queries,
+        ),
+      ],
     ),
   );
 
@@ -2739,6 +2813,10 @@ class _$SqlOrdersImpl extends _i1.SimpleRepository<_i2.PurchaseOrder, int>
       r'SqlOrders',
       annotations: const [_i6.UseStore(r'jdbc')],
       queries: [_viaQuery, _withoutId],
+      requirements: const [
+        _i1.StoreRequirement(r'viaQuery', _i1.DataStoreCapability.queries),
+        _i1.StoreRequirement(r'withoutId', _i1.DataStoreCapability.queries),
+      ],
     ),
   );
 
@@ -2963,6 +3041,14 @@ class _$SqlStocksImpl extends _i1.SimpleRepository<_i2.Stock, int>
     r.dependency<_i1.RepositoryFactory>().operations<_i2.Stock, int>(
       r'SqlStocks',
       annotations: const [_i6.UseStore(r'jdbc')],
+      requirements: const [
+        _i1.StoreRequirement(r'findBySku', _i1.DataStoreCapability.locks),
+        _i1.StoreRequirement(
+          r'findByQuantityLessThan',
+          _i1.DataStoreCapability.locks,
+        ),
+        _i1.StoreRequirement(r'findById', _i1.DataStoreCapability.locks),
+      ],
     ),
   );
 
@@ -3052,6 +3138,9 @@ class _$SqlFansImpl extends _i1.SimpleRepository<_i2.Fan, int>
       r'SqlFans',
       annotations: const [_i6.UseStore(r'jdbc')],
       queries: [_byClub],
+      requirements: const [
+        _i1.StoreRequirement(r'byClub', _i1.DataStoreCapability.queries),
+      ],
     ),
   );
 
@@ -3542,6 +3631,91 @@ class _$SqlGaugesImpl extends _i1.SimpleRepository<_i2.Gauge, int>
   );
 }
 
+/// Implements `MemoryProfiles`: `SimpleRepository` has the CRUD methods.
+class _$MemoryProfilesImpl extends _i1.SimpleRepository<_i2.UserProfile, int>
+    implements _i2.MemoryProfiles {
+  _$MemoryProfilesImpl(super.operations);
+
+  static const _findByName = _i1.PartTree(r'findByName', [
+    _i1.OrPart([_i1.Part(r'name')]),
+  ]);
+
+  static _$MemoryProfilesImpl $create(_i3.DependencyResolver r) =>
+      _$MemoryProfilesImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.UserProfile, int>(
+          r'MemoryProfiles',
+          annotations: const [_i6.UseStore(r'memory')],
+        ),
+      );
+
+  @override
+  _i4.Future<List<_i2.UserProfile>> findByName(String name) =>
+      this.operations.list(_findByName, [name]);
+}
+
+/// Implements `SqlProfiles`: `SimpleRepository` has the CRUD methods.
+class _$SqlProfilesImpl extends _i1.SimpleRepository<_i2.UserProfile, int>
+    implements _i2.SqlProfiles {
+  _$SqlProfilesImpl(super.operations);
+
+  static const _findByName = _i1.PartTree(r'findByName', [
+    _i1.OrPart([_i1.Part(r'name')]),
+  ]);
+
+  static const _named = _i1.QueryMethod(
+    r'named',
+    _i6.Query(r'select * from profiles where name = :name'),
+    parameters: [r'name'],
+    shape: _i1.QueryShape.single,
+    element: _i3.ClassType<_i2.UserProfile>(nullable: true),
+  );
+
+  static const _themed = _i1.QueryMethod(
+    r'themed',
+    _i6.Query(
+      "select * from profiles where settings ->> 'theme' = :theme order by id",
+    ),
+    parameters: [r'theme'],
+    element: _i3.ClassType<_i2.UserProfile>(),
+  );
+
+  static const _cards = _i1.QueryMethod(
+    r'cards',
+    _i6.Query(r'select name, settings from profiles order by id'),
+    element: _i3.ClassType<_i2.ProfileCard>(),
+  );
+
+  static _$SqlProfilesImpl $create(_i3.DependencyResolver r) =>
+      _$SqlProfilesImpl(
+        r.dependency<_i1.RepositoryFactory>().operations<_i2.UserProfile, int>(
+          r'SqlProfiles',
+          annotations: const [_i6.UseStore(r'jdbc')],
+          queries: [_named, _themed, _cards],
+          requirements: const [
+            _i1.StoreRequirement(r'named', _i1.DataStoreCapability.queries),
+            _i1.StoreRequirement(r'themed', _i1.DataStoreCapability.queries),
+            _i1.StoreRequirement(r'cards', _i1.DataStoreCapability.queries),
+          ],
+        ),
+      );
+
+  @override
+  _i4.Future<List<_i2.UserProfile>> findByName(String name) =>
+      this.operations.list(_findByName, [name]);
+
+  @override
+  _i4.Future<_i2.UserProfile?> named(String name) =>
+      this.operations.query<_i2.UserProfile?>(_named, [name]);
+
+  @override
+  _i4.Future<List<_i2.UserProfile>> themed(String theme) =>
+      this.operations.query<List<_i2.UserProfile>>(_themed, [theme]);
+
+  @override
+  _i4.Future<List<_i2.ProfileCard>> cards() =>
+      this.operations.query<List<_i2.ProfileCard>>(_cards, const []);
+}
+
 const _$knownAdvisors0 = {
   r'package:spring_boot_dart',
   r'package:spring_boot_starter_cache',
@@ -3562,6 +3736,40 @@ Object? _$invoke5(_i2.Years bean, List<Object?> arguments) =>
     Function.apply(bean.before, arguments);
 _i2.Years _$create6(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i2.Years();
+Object? _$get7(_i2.Settings bean) => bean.theme;
+void _$set8(_i2.Settings bean, Object? value) => bean.theme = (value as String);
+Object? _$get9(_i2.Settings bean) => bean.fontSize;
+void _$set10(_i2.Settings bean, Object? value) =>
+    bean.fontSize = (value as int);
+Object? _$get11(_i2.Settings bean) => bean.layout;
+void _$set12(_i2.Settings bean, Object? value) =>
+    bean.layout = (value as _i2.Layout?);
+_i2.Settings _$create13(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i2.Settings(
+      theme: (named[#theme] as String),
+      fontSize: named.argumentOr(#fontSize, 12),
+      layout: named.argumentOr(#layout, null),
+    );
+Object? _$get14(_i2.Layout bean) => bean.columns;
+void _$set15(_i2.Layout bean, Object? value) => bean.columns = (value as int);
+Object? _$get16(_i2.Layout bean) => bean.pinned;
+void _$set17(_i2.Layout bean, Object? value) =>
+    bean.pinned = (value as List<String>);
+_i2.Layout _$create18(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i2.Layout(
+      columns: (named[#columns] as int),
+      pinned: named.argumentOr(#pinned, const <String>[]),
+    );
+Object? _$get19(_i2.Address bean) => bean.street;
+void _$set20(_i2.Address bean, Object? value) =>
+    bean.street = (value as String);
+Object? _$get21(_i2.Address bean) => bean.city;
+void _$set22(_i2.Address bean, Object? value) => bean.city = (value as String?);
+_i2.Address _$create23(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i2.Address(
+      street: (named[#street] as String),
+      city: named.argumentOr(#city, null),
+    );
 
 /// Beans found by `@ComponentScan` in `lib/ and test/repository/jdbc/app/`.
 _i3.BeanModule get $application => _i3.BeanModule(
@@ -4431,6 +4639,42 @@ _i3.BeanModule get $application => _i3.BeanModule(
         _i8.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlGaugesImpl.$create(r),
+      annotations: const [_i6.UseStore(r'jdbc')],
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
+    ),
+    _i3.BeanDefinition<_i2.MemoryProfiles>(
+      name: r'memoryProfiles',
+      source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryProfiles',
+      types: const [
+        _i2.MemoryProfiles,
+        _i8.ListCrudRepository<_i2.UserProfile, int>,
+        _i8.CrudRepository<_i2.UserProfile, int>,
+        _i8.DataRepository<_i2.UserProfile, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
+      ],
+      create: (r) => _$MemoryProfilesImpl.$create(r),
+      annotations: const [_i6.UseStore(r'memory')],
+      aopProxy: const _i3.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
+    ),
+    _i3.BeanDefinition<_i2.SqlProfiles>(
+      name: r'sqlProfiles',
+      source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlProfiles',
+      types: const [
+        _i2.SqlProfiles,
+        _i8.ListCrudRepository<_i2.UserProfile, int>,
+        _i8.CrudRepository<_i2.UserProfile, int>,
+        _i8.DataRepository<_i2.UserProfile, int>,
+        _i8.ListCrudRepository<dynamic, dynamic>,
+        _i8.CrudRepository<dynamic, dynamic>,
+        _i8.DataRepository<dynamic, dynamic>,
+      ],
+      create: (r) => _$SqlProfilesImpl.$create(r),
       annotations: const [_i6.UseStore(r'jdbc')],
       aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
@@ -5700,6 +5944,100 @@ _i3.BeanModule get $application => _i3.BeanModule(
             authorName: v[2] as String,
           ),
         ),
+        _i1.EntityIntrospection<_i2.UserProfile>(
+          r'UserProfile',
+          const [
+            _i1.EntityProperty(
+              r'id',
+              _i3.ClassType<int>(nullable: true),
+              annotations: [_i6.Id()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'name',
+              _i3.ClassType<String>(),
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'settings',
+              _i3.ClassType<_i2.Settings>(),
+              annotations: [_i6.Json()],
+              parameter: true,
+              writable: true,
+            ),
+            _i1.EntityProperty(
+              r'raw',
+              _i3.MapType<String, dynamic>(
+                _i3.ClassType<String>(),
+                _i3.DynamicType(),
+              ),
+              annotations: [_i6.Json(binary: false)],
+              parameter: true,
+              writable: true,
+              hasDefaultValue: true,
+              defaultValue: <String, Object?>{},
+            ),
+            _i1.EntityProperty(
+              r'addresses',
+              _i3.ListType<_i2.Address>(
+                _i3.ClassType<_i2.Address>(),
+                nullable: true,
+              ),
+              annotations: [_i6.Json()],
+              parameter: true,
+              writable: true,
+            ),
+          ],
+          annotations: const [_i6.Table(r'profiles')],
+          get: (e, i) => switch (i) {
+            0 => e.id,
+            1 => e.name,
+            2 => e.settings,
+            3 => e.raw,
+            _ => e.addresses,
+          },
+          create: (v) => _i2.UserProfile(
+            name: v[1] as String,
+            settings: v[2] as _i2.Settings,
+            raw: v[3] as Map<String, Object?>,
+            addresses: v[4] as List<_i2.Address>?,
+            id: v[0] as int?,
+          ),
+          write: (e, i, v) => switch (i) {
+            0 => e.id = v as int?,
+            1 => e.name = v as String,
+            2 => e.settings = v as _i2.Settings,
+            3 => e.raw = v as Map<String, Object?>,
+            4 => e.addresses = v as List<_i2.Address>?,
+            _ => null,
+          },
+        ),
+        _i1.EntityIntrospection<_i2.ProfileCard>(
+          r'ProfileCard',
+          const [
+            _i1.EntityProperty(
+              r'name',
+              _i3.ClassType<String>(),
+              parameter: true,
+            ),
+            _i1.EntityProperty(
+              r'settings',
+              _i3.ClassType<_i2.Settings>(),
+              annotations: [_i6.Json()],
+              parameter: true,
+            ),
+          ],
+          get: (e, i) => switch (i) {
+            0 => e.name,
+            _ => e.settings,
+          },
+          create: (v) => _i2.ProfileCard(
+            name: v[0] as String,
+            settings: v[1] as _i2.Settings,
+          ),
+        ),
       ]),
     ),
     _i3.BeanDefinition<_i1.JdbcDriver>(
@@ -5771,6 +6109,125 @@ _i3.BeanModule get $application => _i3.BeanModule(
       constructor: _i3.BeanConstructor<_i2.Years>(
         parameters: [],
         create: _$create6,
+      ),
+    ),
+    const _i3.BeanIntrospection<_i2.Settings>(
+      className: r'Settings',
+      properties: [
+        _i3.BeanProperty<_i2.Settings>(
+          r'theme',
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get7,
+          set: _$set8,
+        ),
+        _i3.BeanProperty<_i2.Settings>(
+          r'fontSize',
+          typeInfo: _i3.ClassType<int>(),
+          get: _$get9,
+          set: _$set10,
+        ),
+        _i3.BeanProperty<_i2.Settings>(
+          r'layout',
+          nullable: true,
+          typeInfo: _i3.ClassType<_i2.Layout>(nullable: true),
+          get: _$get11,
+          set: _$set12,
+        ),
+      ],
+      parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+      constructor: _i3.BeanConstructor<_i2.Settings>(
+        parameters: [
+          _i3.BeanParameter(
+            r'theme',
+            type: _i3.ClassType<String>(),
+            symbol: #theme,
+            isRequired: true,
+          ),
+          _i3.BeanParameter(
+            r'fontSize',
+            type: _i3.ClassType<int>(),
+            symbol: #fontSize,
+            hasDefaultValue: true,
+            defaultValue: 12,
+          ),
+          _i3.BeanParameter(
+            r'layout',
+            type: _i3.ClassType<_i2.Layout>(nullable: true),
+            symbol: #layout,
+          ),
+        ],
+        create: _$create13,
+      ),
+    ),
+    const _i3.BeanIntrospection<_i2.Layout>(
+      className: r'Layout',
+      properties: [
+        _i3.BeanProperty<_i2.Layout>(
+          r'columns',
+          typeInfo: _i3.ClassType<int>(),
+          get: _$get14,
+          set: _$set15,
+        ),
+        _i3.BeanProperty<_i2.Layout>(
+          r'pinned',
+          typeInfo: _i3.ListType<String>(_i3.ClassType<String>()),
+          get: _$get16,
+          set: _$set17,
+        ),
+      ],
+      parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+      constructor: _i3.BeanConstructor<_i2.Layout>(
+        parameters: [
+          _i3.BeanParameter(
+            r'columns',
+            type: _i3.ClassType<int>(),
+            symbol: #columns,
+            isRequired: true,
+          ),
+          _i3.BeanParameter(
+            r'pinned',
+            type: _i3.ListType<String>(_i3.ClassType<String>()),
+            symbol: #pinned,
+            hasDefaultValue: true,
+            defaultValue: <String>[],
+          ),
+        ],
+        create: _$create18,
+      ),
+    ),
+    const _i3.BeanIntrospection<_i2.Address>(
+      className: r'Address',
+      properties: [
+        _i3.BeanProperty<_i2.Address>(
+          r'street',
+          typeInfo: _i3.ClassType<String>(),
+          get: _$get19,
+          set: _$set20,
+        ),
+        _i3.BeanProperty<_i2.Address>(
+          r'city',
+          nullable: true,
+          typeInfo: _i3.ClassType<String>(nullable: true),
+          get: _$get21,
+          set: _$set22,
+        ),
+      ],
+      parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+      constructor: _i3.BeanConstructor<_i2.Address>(
+        parameters: [
+          _i3.BeanParameter(
+            r'street',
+            type: _i3.ClassType<String>(),
+            symbol: #street,
+            isRequired: true,
+          ),
+          _i3.BeanParameter(
+            r'city',
+            type: _i3.ClassType<String>(nullable: true),
+            symbol: #city,
+          ),
+        ],
+        create: _$create23,
       ),
     ),
   ],
@@ -6179,6 +6636,18 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'SPRING_DATA_JDBC_FORMATSQL': const String.fromEnvironment(
         'SPRING_DATA_JDBC_FORMATSQL',
       ),
+    if (const bool.hasEnvironment('SPRING_DATA_JDBC_RATELIMIT'))
+      'SPRING_DATA_JDBC_RATELIMIT': const String.fromEnvironment(
+        'SPRING_DATA_JDBC_RATELIMIT',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_JDBC_RATELIMIT_CREATETABLE'))
+      'SPRING_DATA_JDBC_RATELIMIT_CREATETABLE': const String.fromEnvironment(
+        'SPRING_DATA_JDBC_RATELIMIT_CREATETABLE',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_JDBC_RATELIMIT_TABLE'))
+      'SPRING_DATA_JDBC_RATELIMIT_TABLE': const String.fromEnvironment(
+        'SPRING_DATA_JDBC_RATELIMIT_TABLE',
+      ),
     if (const bool.hasEnvironment('SPRING_DATA_JDBC_SCHEMA'))
       'SPRING_DATA_JDBC_SCHEMA': const String.fromEnvironment(
         'SPRING_DATA_JDBC_SCHEMA',
@@ -6201,6 +6670,8 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'SPRING_DATA_MEMORY_LOCKTIMEOUT': const String.fromEnvironment(
         'SPRING_DATA_MEMORY_LOCKTIMEOUT',
       ),
+    if (const bool.hasEnvironment('SPRING_DATA_STORE'))
+      'SPRING_DATA_STORE': const String.fromEnvironment('SPRING_DATA_STORE'),
     if (const bool.hasEnvironment('SPRING_DATA_WEB'))
       'SPRING_DATA_WEB': const String.fromEnvironment('SPRING_DATA_WEB'),
     if (const bool.hasEnvironment('SPRING_DATA_WEB_PAGEABLE'))
@@ -6293,6 +6764,18 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'spring.data.jdbc.format-sql': const String.fromEnvironment(
         'spring.data.jdbc.format-sql',
       ),
+    if (const bool.hasEnvironment('spring.data.jdbc.rate-limit'))
+      'spring.data.jdbc.rate-limit': const String.fromEnvironment(
+        'spring.data.jdbc.rate-limit',
+      ),
+    if (const bool.hasEnvironment('spring.data.jdbc.rate-limit.create-table'))
+      'spring.data.jdbc.rate-limit.create-table': const String.fromEnvironment(
+        'spring.data.jdbc.rate-limit.create-table',
+      ),
+    if (const bool.hasEnvironment('spring.data.jdbc.rate-limit.table'))
+      'spring.data.jdbc.rate-limit.table': const String.fromEnvironment(
+        'spring.data.jdbc.rate-limit.table',
+      ),
     if (const bool.hasEnvironment('spring.data.jdbc.schema'))
       'spring.data.jdbc.schema': const String.fromEnvironment(
         'spring.data.jdbc.schema',
@@ -6315,6 +6798,8 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'spring.data.memory.lock-timeout': const String.fromEnvironment(
         'spring.data.memory.lock-timeout',
       ),
+    if (const bool.hasEnvironment('spring.data.store'))
+      'spring.data.store': const String.fromEnvironment('spring.data.store'),
     if (const bool.hasEnvironment('spring.data.web'))
       'spring.data.web': const String.fromEnvironment('spring.data.web'),
     if (const bool.hasEnvironment('spring.data.web.pageable'))
@@ -6490,7 +6975,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'ad07122a',
+  fingerprint: 'f6968147',
 );
 
 /// Starts the application: config files, environment, context, runners

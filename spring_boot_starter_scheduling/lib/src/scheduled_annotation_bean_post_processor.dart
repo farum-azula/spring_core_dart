@@ -38,7 +38,7 @@ const _log = SpringLog('spring.scheduling');
 /// ```
 final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
     with SmartLifecycle
-    implements BeanFactoryAware, DisposableBean {
+    implements BeanFactoryAware, DisposableBean, TimerDrivenWork {
   /// A processor that runs the methods on [scheduler], unless they name
   /// another one, and resolves `${...}` in the attributes with
   /// [environment].
@@ -70,6 +70,13 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
   /// empty before the context is refreshed and after it closes.
   List<ScheduledTask> get scheduledTasks => List.unmodifiable(_tasks);
 
+  /// The `@Scheduled` methods found, with their triggers.
+  @override
+  Iterable<String> get timerDrivenWork => [
+    for (final method in _definitions)
+      '@Scheduled ${method.name} (${method.trigger})',
+  ];
+
   @override
   void setBeanFactory(BeanFactory beanFactory) => _beanFactory = beanFactory;
 
@@ -92,7 +99,13 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
     if (methods.isEmpty) {
       return bean;
     }
-    final owner = _typeName(definition.beanType);
+    // The class as the generator wrote it (`...#BooksJobs`): the name of
+    // a type at run time is shortened in a minified JavaScript build. A
+    // `@Bean` method's source (`...#Config.jobs`) names another class.
+    final owner = switch (definition.source?.split('#')) {
+      [_, final name] when name.isNotEmpty && !name.contains('.') => name,
+      _ => _typeName(definition.beanType),
+    };
     if (isolates == SchedulingIsolates.primary &&
         !IsolateInfo.current.primary) {
       _log.debug(

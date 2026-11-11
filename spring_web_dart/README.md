@@ -493,7 +493,10 @@ the session is closed with 1009 (message too big). The text limit counts
 UTF-8 bytes, where Tomcat counts characters. Raise the limits with
 `IoWebSocketTransport(maxTextMessageSize:, maxBinaryMessageSize:)` or
 `platformWebSocketTransport(maxTextMessageSize: ...)` (`-1`: no limit);
-the browser has no such limit. In Spring the limits are set in code, on
+the browser has no such limit. One connection gets limits of its own
+with `connect(url, maxTextMessageSize:, maxBinaryMessageSize:)`, for a
+server that sends large messages while the others keep the small limit;
+without them a connection has its transport's. In Spring the limits are set in code, on
 the client's `WebSocketContainer`. A ping between the fragments of a
 message is answered at once (a pong there is taken) and the message
 arrives whole, on the client and the web starter's server; until its
@@ -612,6 +615,11 @@ expect(server.sentJson, [{'text': 'hello'}]);   // what the client sent
 await server.drop();                            // connection lost (1006)
 sockets.failNextConnect();                      // the next connect fails
 ```
+
+A connection opened with `maxTextMessageSize` or `maxBinaryMessageSize`
+keeps them (`server.maxTextMessageSize`): a larger message pushed to it
+is not delivered and closes it with 1009, as on `dart:io`. Without them
+any size is delivered.
 
 ## Differences from Spring
 

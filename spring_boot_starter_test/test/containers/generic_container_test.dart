@@ -355,4 +355,51 @@ void main() {
       skip: dockerSkip,
     );
   });
+
+  test('containers of one Network reach each other by alias', () async {
+    final network = Network.newNetwork();
+    addTearDown(network.close);
+    final server = _track(
+      GenericContainer(_nginx)
+          .withNetwork(network)
+          .withNetworkAliases(['web'])
+          .withExposedPorts([80])
+          .waitingFor(Wait.forHttp('/').forStatusCode(200)),
+    );
+    await server.start();
+    final client = _track(
+      GenericContainer(_busybox)
+          .withNetwork(network)
+          .withCommand(['sleep', '60']),
+    );
+    await client.start();
+    // By its alias and the port it listens on, not the published one.
+    final answer = await client.execInContainer([
+      'wget',
+      '-q',
+      '-O',
+      '-',
+      'http://web:80/',
+    ]);
+    expect(answer.exitCode, 0, reason: answer.stderr);
+    expect(answer.stdout, contains('nginx'));
+    expect(network.isCreated, isTrue);
+    await client.stop();
+    await server.stop();
+    await network.close();
+    expect(network.isCreated, isFalse);
+  }, skip: dockerSkip);
+
+  test('a reusable container cannot be on a Network', () async {
+    final network = Network.newNetwork();
+    addTearDown(network.close);
+    final container = _track(
+      GenericContainer(_busybox).withNetwork(network)..withReuse(true),
+    );
+    if (Platform.environment['CI'] case final ci? when ci.isNotEmpty) {
+      // Reuse is off on CI: nothing to refuse there.
+      return;
+    }
+    await expectLater(container.start(), throwsStateError);
+  }, skip: dockerSkip);
 }

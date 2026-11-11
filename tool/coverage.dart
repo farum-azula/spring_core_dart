@@ -7,13 +7,17 @@
 //   dart run tool/coverage.dart
 import 'dart:io';
 
+import 'test_all.dart' show ownPipeline;
 import 'version.dart' as family;
 
 Future<void> main() async {
   Directory.current = File.fromUri(Platform.script).parent.parent;
   final packages = [
     for (final package in family.family)
-      if (!package.startsWith('spring_boot_starter_flutter')) package,
+      if (!package.startsWith('spring_boot_starter_flutter') &&
+          // Tested in a pipeline of its own (see ownPipeline).
+          !ownPipeline.contains(package))
+        package,
   ];
   final merged = StringBuffer();
   for (final package in packages) {

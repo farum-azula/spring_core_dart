@@ -1842,6 +1842,11 @@ final class _$DataAccessExceptionResolver
       'The resource already exists',
       error,
     ),
+    _i1.PermissionDeniedDataAccessException() => _i11.ResponseStatusException(
+      _i11.HttpStatus.forbidden,
+      'Access denied',
+      error,
+    ),
     _i1.EmptyResultDataAccessException() => _i11.ResponseStatusException(
       _i11.HttpStatus.notFound,
       'Not found',

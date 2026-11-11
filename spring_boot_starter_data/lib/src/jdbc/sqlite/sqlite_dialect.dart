@@ -4,6 +4,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/annotations.dart';
 import 'package:spring_boot_starter_data/src/exceptions.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_driver.dart';
+import 'package:spring_boot_starter_data/src/jdbc/json_storage.dart';
 import 'package:spring_boot_starter_data/src/jdbc/sql_dialect.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart';
 
@@ -257,6 +258,14 @@ final class SqliteDialect extends SqlDialect {
     return wanted == _Affinity.integer || wanted == _Affinity.real;
   }
 
+  // ----------------------------------------------------------------- json
+
+  /// JSON text in a `TEXT` column (SQLite has no JSON type; its JSON
+  /// functions read the text), which a created table checks with
+  /// `json_valid`.
+  @override
+  JsonStorage jsonStorage(Json json) => const _SqliteJsonStorage();
+
   // --------------------------------------------------------------- values
 
   @override
@@ -424,4 +433,25 @@ enum _Affinity {
     }
     return null;
   }
+}
+
+// JSON in SQLite: text, in a column of text affinity, of none, or declared
+// `JSON` (the JSON functions read all three).
+final class _SqliteJsonStorage extends JsonStorage {
+  const _SqliteJsonStorage();
+
+  @override
+  bool fits(String declared) {
+    final upper = declared.toUpperCase();
+    return upper.isEmpty ||
+        upper.contains('BLOB') ||
+        upper.contains('JSON') ||
+        (!upper.contains('INT') &&
+            (upper.contains('CHAR') ||
+                upper.contains('CLOB') ||
+                upper.contains('TEXT')));
+  }
+
+  @override
+  String? check(String column) => 'json_valid($column)';
 }

@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:spring_boot_starter_flutter_security/src/secret_store/desktop_secret_stores.dart';
 import 'package:spring_boot_starter_flutter_security/src/secret_store/method_channel_secret_store.dart';
-import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_store.dart';
+import 'package:spring_security_core/spring_security_core.dart'
+    show SecretStore;
 
 /// A [SecretStore] in the secure storage of the platform the app runs on:
 /// what it keeps survives a restart of the app and is encrypted for the

@@ -2243,6 +2243,11 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 }
 ```
 
+A digest without a dependency: `Sha256` is SHA-256 and HMAC-SHA-256 in
+plain Dart, on every platform (`Sha256.hex(Sha256.hmac(key, bytes))`);
+the web starter's rate limiter hashes addresses with it. Passwords belong
+to the `PasswordEncoder`s of `spring_security_core`.
+
 ## Differences from Spring
 
 | Spring | Here | Why |

@@ -23,6 +23,11 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// allows, each attempt on a new template. When the call still fails and
 /// the client has a [fallback], the fallback bean answers instead.
 ///
+/// Methods returning `Stream<List<int>>` read the body of the answer as
+/// it arrives, whatever its content type (a large file, chunks of any
+/// kind): each listener makes its own request, a failed status fails the
+/// stream with the error decoder's exception, and nothing reconnects.
+///
 /// Methods returning `EventStream<T>` (or `Stream<T>`) read
 /// `text/event-stream` responses: each listener opens its own connection,
 /// every event's data is decoded into `T`, and a lost connection is opened
@@ -145,12 +150,23 @@ final class FeignInvocationHandler implements InvocationHandler {
   Object? invoke(ProxyMethod method, List<Object?> arguments) {
     final plan = _plans[method]!;
     final eventType = plan.eventType;
+    if (eventType != null && plan.isByteStream) {
+      return _openBytes(plan, arguments);
+    }
     if (eventType != null) {
       return eventType.accept(
         _EventStreamFactory(this, plan, method, arguments),
       );
     }
     return _execute(plan, method, arguments);
+  }
+
+  // The body of one listener of a byte stream method, as it arrives: one
+  // request per listener, limited like a call up to the status and the
+  // headers, never reconnected (a file read half cannot be continued).
+  Stream<List<int>> _openBytes(_Plan plan, List<Object?> arguments) async* {
+    final response = await _connectEvents(plan, arguments, null);
+    yield* response.body;
   }
 
   // The raw events of one listener of an event stream method.
@@ -821,6 +837,14 @@ final class _Plan {
     );
   }
 
+  /// Whether the method returns `Stream<List<int>>`: the bytes of the
+  /// answer's body as they arrive, whatever its content type, not
+  /// server-sent events.
+  bool get isByteStream => switch (eventType) {
+    ListType(:final element) => element.type == int,
+    _ => false,
+  };
+
   // The data type T of `EventStream<T>` / `Stream<T>`, or null.
   static TypeInfo<Object?>? _eventType(TypeInfo<Object?> type) =>
       type is GenericType<Object?> && type.isSubtypeOf<Stream<Object?>>()
@@ -1039,7 +1063,9 @@ final class _Plan {
         [?existing, ...cookieValues].join('; '),
       );
     }
-    if (eventType != null && !requestHeaders.contains('Cache-Control')) {
+    if (eventType != null &&
+        !isByteStream &&
+        !requestHeaders.contains('Cache-Control')) {
       requestHeaders.set('Cache-Control', 'no-cache');
     }
     List<int>? bytes;
@@ -1283,7 +1309,9 @@ final class _Plan {
       headers.set(
         HttpHeaders.acceptHeader,
         produces ??
-            (eventType != null
+            (isByteStream
+                ? '*/*'
+                : eventType != null
                 ? MediaType.textEventStream
                 : MediaType.applicationJson),
       );

@@ -1,6 +1,11 @@
 ## 0.7.4
 
 - `SecurityContextChangedEvent` names itself (`eventName`), readable in a release build.
+- `OAuth2Token`: what every OAuth 2.0 token has (`tokenValue`, `issuedAt`, `expiresAt`), Spring's `OAuth2Token`; the OAuth2 client's `AbstractOAuth2Token` and the security starter's `Jwt` implement it.
+- `LoginSession`: the login of the current user of a client application, whatever the provider (`authentication`, `isLoggedIn`, `authenticationChanges`, `accessToken()`, `restore()`, `logout()`); an interface only.
+- `SecretStore` and `InMemorySecretStore`, moved here from `spring_boot_starter_flutter_security` (which still exports them): a provider's login can keep its tokens without depending on Flutter.
+- `AuthorizationWindow` and `AuthorizationCancelledException`, moved here from `spring_boot_starter_flutter_security` (which still exports them).
+- `sha256Digest(bytes)` and `pkceS256Challenge(verifier)`: SHA-256 and the `S256` code challenge of PKCE (RFC 7636), for a login that is not built on the OAuth2 client.
 
 ## 0.7.3
 

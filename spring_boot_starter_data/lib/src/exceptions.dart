@@ -147,6 +147,30 @@ class IncorrectUpdateSemanticsDataAccessException
   });
 }
 
+/// The database refused the statement because the user it runs as may not
+/// do it: a missing privilege on a table or a function, or a row-level
+/// security policy that refuses the row written.
+///
+/// ```dart
+/// try {
+///   await notes.save(note);
+/// } on PermissionDeniedDataAccessException {
+///   // the signed-in user may not write this row
+/// }
+/// ```
+///
+/// Spring (Java):
+/// `org.springframework.dao.PermissionDeniedDataAccessException`.
+class PermissionDeniedDataAccessException
+    extends NonTransientDataAccessException {
+  /// A refusal described by [message].
+  PermissionDeniedDataAccessException(
+    super.message, {
+    super.cause,
+    super.sql,
+  });
+}
+
 /// A resource was used wrongly: wrong SQL, an update without effect.
 ///
 /// Spring (Java):

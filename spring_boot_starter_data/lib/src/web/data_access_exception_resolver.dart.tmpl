@@ -18,6 +18,7 @@
 //
 //     OptimisticLockingFailureException  409  The resource was changed by someone else
 //     DuplicateKeyException              409  The resource already exists
+//     PermissionDeniedDataAccessException 403 Access denied
 //     EmptyResultDataAccessException     404  Not found
 //     PropertyReferenceException         400  Invalid sort property
 //     InvalidPagingRequestException      400  Invalid page or sort request
@@ -48,6 +49,12 @@ final class _$DataAccessExceptionResolver
       {{package:spring_boot_starter_web/spring_boot_starter_web.dart#ResponseStatusException}}(
         {{package:spring_boot_starter_web/spring_boot_starter_web.dart#HttpStatus}}.conflict,
         'The resource already exists',
+        error,
+      ),
+    {{package:spring_boot_starter_data/spring_boot_starter_data.dart#PermissionDeniedDataAccessException}}() =>
+      {{package:spring_boot_starter_web/spring_boot_starter_web.dart#ResponseStatusException}}(
+        {{package:spring_boot_starter_web/spring_boot_starter_web.dart#HttpStatus}}.forbidden,
+        'Access denied',
         error,
       ),
     {{package:spring_boot_starter_data/spring_boot_starter_data.dart#EmptyResultDataAccessException}}() =>

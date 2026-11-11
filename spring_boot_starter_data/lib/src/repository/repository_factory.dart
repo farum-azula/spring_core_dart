@@ -7,14 +7,16 @@ import 'package:spring_boot_starter_data/src/mapping/auditing.dart';
 import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
 import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
+import 'package:spring_boot_starter_data/src/repository/query/procedure_method.dart';
 import 'package:spring_boot_starter_data/src/repository/query/query_method.dart';
 import 'package:spring_boot_starter_data/src/repository/repository_operations.dart';
 import 'package:spring_boot_starter_data/src/store/data_store.dart';
+import 'package:spring_boot_starter_data/src/store/data_store_capabilities.dart';
 import 'package:spring_boot_starter_data/src/store/in_memory_data_sources.dart';
 import 'package:spring_boot_starter_data/src/store/in_memory_data_store.dart';
-import 'package:spring_boot_starter_data/src/store/in_memory_transaction_manager.dart';
 import 'package:spring_boot_starter_data/src/store/jdbc/jdbc_data_store.dart';
 import 'package:spring_boot_starter_data/src/transaction/platform_transaction_manager.dart';
+import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart';
 
 /// Builds the working [RepositoryOperations] behind each repository
 /// interface: it finds the entity and the store of the repository and
@@ -51,18 +53,23 @@ import 'package:spring_boot_starter_data/src/transaction/platform_transaction_ma
 /// named `jdbc` (the primary) and `jdbc:<name>`; a [DataStore] given to
 /// the factory under the name `jdbc` takes the place of the primary one.
 ///
-/// The repository runs its writes in transactions of its store: for a memory
-/// store the factory gives the operations an `InMemoryTransactionManager` of
-/// its own over that store; for a SQL store the `DataSourceTransactionManager`
-/// of its data source. It joins the transaction of a `@Transactional`
-/// service because both look for the same resource, the store (the data
-/// source).
+/// The repository runs its writes in transactions of its store, when the
+/// store has them (a `TransactionalDataStore`): the operations get the
+/// store's own manager, an `InMemoryTransactionManager` for a memory store
+/// and the `DataSourceTransactionManager` of its data source for a SQL
+/// store. It joins the transaction of a `@Transactional` service because
+/// both look for the same resource, the store (the data source). A store
+/// without transactions gives none, and its writes are not wrapped.
 ///
 /// What the build cannot know is checked here, when the repository is
-/// created: the store and the data source, the entity, the `@Query`
-/// methods. Every mistake is collected and reported together, so the
-/// application stops at startup with the reasons. The method names are
-/// checked by the build.
+/// created: the store and the data source, the entity, the `@Query` and
+/// `@Procedure` methods, and what the methods need of the store
+/// (`StoreRequirement`s against the store's `DataStoreCapabilities`: a
+/// `@Lock` on a store without locks, a `@Transactional` on one without
+/// transactions, a stream of changes from a store that reports none).
+/// Every mistake is collected and reported together, so the application
+/// stops at startup with the reasons. The method names are checked by the
+/// build.
 ///
 /// Spring (Java): `JdbcRepositoryFactoryBean` and its
 /// `JdbcRepositoryFactory` (`RepositoryFactorySupport`).
@@ -140,9 +147,6 @@ final class RepositoryFactory {
   // The SQL stores, one for each data source name.
   final _jdbcStores = <String, JdbcDataStore>{};
 
-  // The transaction managers of the repositories, one per store.
-  final _managers = Map<DataStore, PlatformTransactionManager>.identity();
-
   // The managers handed to the repositories made so far.
   final _used = Set<PlatformTransactionManager>.identity();
 
@@ -155,14 +159,34 @@ final class RepositoryFactory {
 
   /// The operations of the repository [typeName] for aggregates of type [T]
   /// with ids of type [ID]: the interface's [annotations] choose the store,
-  /// and its `@Query` methods ([queries]) are compiled and checked.
+  /// its `@Query` methods ([queries]) and `@Procedure` methods ([functions])
+  /// are compiled and checked, and what its other methods need of the store
+  /// ([requirements]: a `@Lock`, a `@Transactional`, a stream of changes)
+  /// is compared with what the store has. A `@Transactional` among
+  /// [annotations] is a requirement of the interface itself.
+  ///
+  /// ```dart
+  /// factory.operations<Stock, int>(
+  ///   r'StockRepository',
+  ///   annotations: const [UseStore(r'jdbc')],
+  ///   queries: [_low],
+  ///   functions: [_restock],
+  ///   requirements: const [
+  ///     StoreRequirement(r'findBySku', DataStoreCapability.locks),
+  ///     StoreRequirement(r'watchBySku', DataStoreCapability.changes),
+  ///   ],
+  /// );
+  /// ```
   ///
   /// Throws a [StateError] listing every mistake of the repository: the
-  /// entity, the store, the data source, the queries.
+  /// entity, the store, the data source, the queries, the functions, the
+  /// requirements the store does not meet.
   RepositoryOperations<T, ID> operations<T extends Object, ID extends Object>(
     String typeName, {
     List<Object> annotations = const [],
     List<QueryMethod> queries = const [],
+    List<ProcedureMethod> functions = const [],
+    List<StoreRequirement> requirements = const [],
   }) {
     final problems = <String>[];
     final PersistentEntity<T> entity;
@@ -174,11 +198,8 @@ final class RepositoryFactory {
     final store =
         _storeOf(typeName, annotations, problems) ?? stores['memory']!;
     final manager = switch (store) {
-      final InMemoryDataStore memory => _managers.putIfAbsent(
-        memory,
-        () => InMemoryTransactionManager(memory),
-      ),
-      final JdbcDataStore jdbc => jdbc.transactionManager,
+      final TransactionalDataStore transactional =>
+        transactional.transactionManager,
       _ => null,
     };
     if (manager != null) {
@@ -197,6 +218,12 @@ final class RepositoryFactory {
       introspector: converter.introspector,
       mappingContext: mappingContext,
       queries: queries,
+      functions: functions,
+      requirements: [
+        if (annotations.whereType<Transactional>().isNotEmpty)
+          const StoreRequirement.ofInterface(DataStoreCapability.transactions),
+        ...requirements,
+      ],
       problems: problems,
     );
   }

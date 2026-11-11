@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/exceptions.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_driver.dart';
+import 'package:spring_boot_starter_data/src/jdbc/jdbc_session_hook.dart';
 import 'package:spring_boot_starter_data/src/jdbc/sql_dialect.dart';
 
 /// A connection could not be had: the database is down, the pool is
@@ -44,6 +45,13 @@ abstract class DataSource {
 
   /// The SQL of the database.
   SqlDialect get dialect => driver.dialect;
+
+  /// The hooks that prepare the sessions of this data source's
+  /// connections, in the order they run: `DataSourceTransactionManager`
+  /// calls them when a transaction begins and `DataSourceUtils` around
+  /// the work outside one. The starter fills it with the
+  /// `JdbcSessionHook` beans; empty for none.
+  final List<JdbcSessionHook> sessionHooks = [];
 
   /// A connection to use; hand it back with [releaseConnection].
   ///

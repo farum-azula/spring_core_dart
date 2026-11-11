@@ -56,9 +56,13 @@ class ServerSettings {
   Duration connectionTimeout = const Duration(seconds: 60);
 
   /// The longest a request's filters and handler may take to answer, else
-  /// a 503; also a deadline for the calls the request makes. Default: no
-  /// limit (`0` or less: none). Not in Spring Boot.
-  Duration? requestTimeout;
+  /// a 503; also a deadline for the calls the request makes. It is what
+  /// ends a request whose body arrives so slowly that the connection
+  /// never counts as idle. A response that became a stream (an event
+  /// stream, a streamed body) and a WebSocket are not cut by it. `0` or
+  /// less: no limit; raise it for an application whose handlers or
+  /// uploads rightly take longer. Not in Spring Boot.
+  Duration requestTimeout = const Duration(seconds: 60);
 
   /// The most connections one isolate keeps open. While it has more,
   /// every request is answered 503 and its connection closed, until the

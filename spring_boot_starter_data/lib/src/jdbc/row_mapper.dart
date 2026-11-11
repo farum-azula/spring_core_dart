@@ -172,8 +172,9 @@ class SingleColumnRowMapper<T> {
   SingleColumnRowMapper({this.dialect, EntityConverter? converter})
     : converter = converter ?? EntityConverter();
 
-  /// The dialect converting the values read, or null for none.
-  final SqlDialect? dialect;
+  /// The dialect (or the reader of a store that is not SQL) converting the
+  /// values read, or null for none.
+  final ColumnValueReader? dialect;
 
   /// The converter doing the widening and the enums.
   final EntityConverter converter;
@@ -250,8 +251,9 @@ class DataClassRowMapper<T extends Object> {
        // ignore: prefer_initializing_formals
        _introspection = introspection;
 
-  /// The dialect converting the values read, or null for none.
-  final SqlDialect? dialect;
+  /// The dialect (or the reader of a store that is not SQL) converting the
+  /// values read, or null for none.
+  final ColumnValueReader? dialect;
 
   /// The converter doing the enums and the widening.
   final EntityConverter converter;

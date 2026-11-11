@@ -111,6 +111,7 @@ final class PersistentProperty {
     this.isVersion = false,
     this.audit,
     this.mappedCollection,
+    this.json,
     this.childEntity,
     this.referencedType,
     this.referencedEntityType,
@@ -151,6 +152,12 @@ final class PersistentProperty {
   /// The `@MappedCollection` settings, or null when the property is not a
   /// collection of children.
   final MappedCollection? mappedCollection;
+
+  /// The `@Json` settings, or null when the property is not stored as
+  /// JSON. Such a property's column holds JSON: `EntityConverter.write`
+  /// gives its decoded JSON (maps, lists, numbers, strings) and
+  /// `EntityConverter.read` takes that back.
+  final Json? json;
 
   /// For a [MappedCollection], the children's entity (or for a single
   /// child entity property); null otherwise.
@@ -193,6 +200,9 @@ final class PersistentProperty {
 
   /// Whether it references another aggregate by id, in either form.
   bool get isReference => referencedEntityType != null;
+
+  /// Whether it is stored as JSON in one column ([Json]).
+  bool get isJson => json != null;
 
   /// Whether it holds children of the aggregate.
   bool get isMappedCollection => mappedCollection != null;

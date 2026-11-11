@@ -1,0 +1,1868 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_supabase",
+  "properties": [
+    {
+      "name": "spring.supabase.anon-key",
+      "type": "String?",
+      "description": "The project's anon (publishable) key: sent as `apikey` with every call, and as the bearer token while nobody is signed in. It is meant to be public; what it may read and write is decided by the database's row-level security.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 26,
+      "class": "SupabaseProperties"
+    },
+    {
+      "name": "spring.supabase.auth.auto-refresh",
+      "type": "bool",
+      "description": "Whether the access token is refreshed in the background before it expires. Without it, it is refreshed when the next call needs it.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 129,
+      "class": "SupabaseAuthProperties"
+    },
+    {
+      "name": "spring.supabase.auth.enabled",
+      "type": "bool",
+      "description": "Whether the starter plugs Supabase Auth into Spring Security: on a server its tokens are accepted as bearer tokens, in a client application `SupabaseAuth` signs users in.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 106,
+      "class": "SupabaseAuthProperties"
+    },
+    {
+      "name": "spring.supabase.auth.issuer",
+      "type": "String?",
+      "description": "The issuer of the project's tokens (their `iss`). Default: `<url>/auth/v1`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 115,
+      "class": "SupabaseAuthProperties"
+    },
+    {
+      "name": "spring.supabase.auth.jwt-secret",
+      "type": "String?",
+      "description": "The JWT secret of a project that still signs its tokens with HS256 (the legacy secret). Server only: with it tokens can be forged for any user. Projects with signing keys (ES256, RS256) leave it unset and the server reads the project's public keys.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 121,
+      "class": "SupabaseAuthProperties"
+    },
+    {
+      "name": "spring.supabase.auth.persist-session",
+      "type": "bool",
+      "description": "Whether the session is kept across restarts (in the application's secret store when it has one).",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 125,
+      "class": "SupabaseAuthProperties"
+    },
+    {
+      "name": "spring.supabase.auth.redirect-urls",
+      "type": "List<String>",
+      "description": "The addresses a login through a provider, a magic link or a password reset may come back to. A redirect to any other address is refused before the request is made. The first one is the default.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 111,
+      "class": "SupabaseAuthProperties"
+    },
+    {
+      "name": "spring.supabase.auth.refresh-margin",
+      "type": "Duration",
+      "description": "How long before its expiry an access token counts as expired.",
+      "default": "30s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 132,
+      "class": "SupabaseAuthProperties"
+    },
+    {
+      "name": "spring.supabase.cache.shared",
+      "type": "List<String>",
+      "description": "The caches whose entries are the same for every user. Every other cache keeps the entries of each user (and of the anon key and of the service role) apart, because with row-level security one call answers differently per user.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 174,
+      "class": "SupabaseCacheProperties"
+    },
+    {
+      "name": "spring.supabase.connect-timeout",
+      "type": "Duration",
+      "description": "How long the connection of Realtime may take to open. The HTTP calls go through the application's `HttpTransport` bean, whose own connect timeout applies to them; [timeout] limits each of them as a whole.",
+      "default": "10s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 38,
+      "class": "SupabaseProperties"
+    },
+    {
+      "name": "spring.supabase.db.rls",
+      "type": "SupabaseRls",
+      "description": "As whom SQL runs. See [SupabaseRls].",
+      "default": "off",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 92,
+      "class": "SupabaseDbProperties"
+    },
+    {
+      "name": "spring.supabase.db.schema",
+      "type": "String?",
+      "description": "The schema the REST API reads and writes (PostgREST's `Accept-Profile` / `Content-Profile`). Default: the API's own default (`public`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 97,
+      "class": "SupabaseDbProperties"
+    },
+    {
+      "name": "spring.supabase.db.url",
+      "type": "String?",
+      "description": "The PostgreSQL address of the project (`postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres`, or a pooler's). When it is set, the repositories use SQL over it (transactions, `@Lock`, SQL `@Query` and `JdbcClient` work); when it is not (the default), they use the project's REST API (PostgREST), where those do not exist.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 89,
+      "class": "SupabaseDbProperties"
+    },
+    {
+      "name": "spring.supabase.functions.region",
+      "type": "String?",
+      "description": "The region the functions run in (the `x-region` header); the nearest one when not set.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 161,
+      "class": "SupabaseFunctionsProperties"
+    },
+    {
+      "name": "spring.supabase.functions.timeout",
+      "type": "Duration?",
+      "description": "How long a function may take. Default: `spring.supabase.timeout`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 164,
+      "class": "SupabaseFunctionsProperties"
+    },
+    {
+      "name": "spring.supabase.rate-limit.function",
+      "type": "String",
+      "description": "The database function an acquisition calls; the one of the package's `sql/rate_limit.sql` unless that was renamed.",
+      "default": "rate_limit_acquire",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 184,
+      "class": "SupabaseRateLimitProperties"
+    },
+    {
+      "name": "spring.supabase.realtime.heartbeat-interval",
+      "type": "Duration",
+      "description": "How often the connection says it is alive.",
+      "default": "25s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 139,
+      "class": "SupabaseRealtimeProperties"
+    },
+    {
+      "name": "spring.supabase.realtime.max-message-size",
+      "type": "DataSize",
+      "description": "The largest message read from Realtime (a change of a row can be 1 MB, a broadcast 3 MB); a larger one closes the connection.",
+      "default": "4MB",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 146,
+      "class": "SupabaseRealtimeProperties"
+    },
+    {
+      "name": "spring.supabase.realtime.timeout",
+      "type": "Duration",
+      "description": "How long a join or a message waits for its answer.",
+      "default": "10s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 142,
+      "class": "SupabaseRealtimeProperties"
+    },
+    {
+      "name": "spring.supabase.service-role-key",
+      "type": "String?",
+      "description": "The project's service role (secret) key, used only inside `SupabaseCredentials.asServiceRole`. It passes row-level security: keep it on a server. An application that ships it (a Flutter app) is warned at build time and at startup, since whoever has the app has the key.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 33,
+      "class": "SupabaseProperties"
+    },
+    {
+      "name": "spring.supabase.storage.signed-url-expiry",
+      "type": "Duration",
+      "description": "How long a signed URL is valid when the call does not say.",
+      "default": "1h",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 153,
+      "class": "SupabaseStorageProperties"
+    },
+    {
+      "name": "spring.supabase.timeout",
+      "type": "Duration",
+      "description": "How long a call may take, the answer's body included. Downloads and uploads of Storage are not limited by it.",
+      "default": "30s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 42,
+      "class": "SupabaseProperties"
+    },
+    {
+      "name": "spring.supabase.url",
+      "type": "String?",
+      "description": "The project's address (`https://<ref>.supabase.co`, or the local stack's `http://127.0.0.1:54321`). Every service is called under it (`/rest/v1`, `/auth/v1`, `/storage/v1`, `/functions/v1`, `/realtime/v1`), and a key or a token is only ever sent to it.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 20,
+      "class": "SupabaseProperties"
+    }
+  ],
+  "hints": [
+    {
+      "name": "spring.supabase.db.rls",
+      "values": [
+        {
+          "value": "off",
+          "description": "As the user of `spring.supabase.db.url` (usually `postgres`, which passes row-level security). The default."
+        },
+        {
+          "value": "user",
+          "description": "As the current user: every transaction sets the role `authenticated` (or `anon` when nobody is signed in) and the user's token claims, so the policies of row-level security apply with transactions and locks too."
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "callTemplates",
+      "type": "CallTemplates",
+      "types": [
+        "CallTemplates"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(CallTemplates)"
+      ],
+      "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
+      "line": 158,
+      "injects": [],
+      "members": [
+        {
+          "name": "beanFactory",
+          "kind": "field",
+          "type": "BeanFactory?"
+        },
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "Environment"
+        },
+        {
+          "name": "introspector",
+          "kind": "field",
+          "type": "BeanIntrospector?"
+        },
+        {
+          "name": "parse",
+          "kind": "method",
+          "type": "CallTemplate",
+          "parameters": [
+            "String text",
+            "{ProxyMethod method}",
+            "{TemplateEncoder encoder}"
+          ]
+        },
+        {
+          "name": "security",
+          "kind": "field",
+          "type": "MethodSecurityExpressionHandler"
+        }
+      ]
+    },
+    {
+      "name": "edgeFunctionsFactory",
+      "type": "EdgeFunctionsFactory",
+      "types": [
+        "EdgeFunctionsFactory",
+        "InvocationHandlerFactory"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
+      "line": 210,
+      "injects": [],
+      "members": [
+        {
+          "name": "create",
+          "kind": "method",
+          "type": "InvocationHandler",
+          "parameters": [
+            "InterfaceMetadata<Object> metadata"
+          ]
+        },
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "Environment"
+        },
+        {
+          "name": "errorDecoder",
+          "kind": "field",
+          "type": "ErrorDecoder"
+        },
+        {
+          "name": "feign",
+          "kind": "field",
+          "type": "FeignProperties"
+        },
+        {
+          "name": "http",
+          "kind": "field",
+          "type": "SupabaseHttp"
+        },
+        {
+          "name": "interceptor",
+          "kind": "field",
+          "type": "EdgeFunctionsInterceptor"
+        },
+        {
+          "name": "interceptors",
+          "kind": "field",
+          "type": "List<RequestInterceptor>"
+        },
+        {
+          "name": "mapper",
+          "kind": "field",
+          "type": "ObjectMapper"
+        },
+        {
+          "name": "observations",
+          "kind": "field",
+          "type": "ObservationRegistry"
+        },
+        {
+          "name": "retryer",
+          "kind": "field",
+          "type": "Retryer"
+        },
+        {
+          "name": "supports",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "InterfaceMetadata<Object> metadata"
+          ]
+        },
+        {
+          "name": "transport",
+          "kind": "field",
+          "type": "HttpTransport"
+        }
+      ]
+    },
+    {
+      "name": "edgeFunctionsInterceptor",
+      "type": "EdgeFunctionsInterceptor",
+      "types": [
+        "EdgeFunctionsInterceptor",
+        "RequestInterceptor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
+      "line": 199,
+      "injects": [],
+      "members": [
+        {
+          "name": "apply",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "RequestTemplate template"
+          ]
+        },
+        {
+          "name": "credentials",
+          "kind": "field",
+          "type": "SupabaseCredentials"
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "SupabaseFunctionsProperties"
+        }
+      ]
+    },
+    {
+      "name": "realtimeChannelFactory",
+      "type": "RealtimeChannelFactory",
+      "types": [
+        "RealtimeChannelFactory",
+        "InvocationHandlerFactory"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_supabase/src/realtime/realtime_auto_configuration.dart",
+      "line": 46,
+      "injects": [],
+      "members": [
+        {
+          "name": "create",
+          "kind": "method",
+          "type": "InvocationHandler",
+          "parameters": [
+            "InterfaceMetadata<Object> metadata"
+          ]
+        },
+        {
+          "name": "mapper",
+          "kind": "field",
+          "type": "ObjectMapper"
+        },
+        {
+          "name": "operations",
+          "kind": "field",
+          "type": "List<RealtimeChannelOperation>"
+        },
+        {
+          "name": "realtime",
+          "kind": "field",
+          "type": "SupabaseRealtime"
+        },
+        {
+          "name": "supports",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "InterfaceMetadata<Object> metadata"
+          ]
+        },
+        {
+          "name": "templates",
+          "kind": "field",
+          "type": "CallTemplates"
+        }
+      ]
+    },
+    {
+      "name": "storageBucketFactory",
+      "type": "StorageBucketFactory",
+      "types": [
+        "StorageBucketFactory",
+        "InvocationHandlerFactory"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
+      "line": 186,
+      "injects": [],
+      "members": [
+        {
+          "name": "create",
+          "kind": "method",
+          "type": "InvocationHandler",
+          "parameters": [
+            "InterfaceMetadata<Object> metadata"
+          ]
+        },
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "Environment"
+        },
+        {
+          "name": "operations",
+          "kind": "field",
+          "type": "List<StorageBucketOperation>"
+        },
+        {
+          "name": "storage",
+          "kind": "field",
+          "type": "StorageTemplate"
+        },
+        {
+          "name": "supports",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "InterfaceMetadata<Object> metadata"
+          ]
+        },
+        {
+          "name": "templates",
+          "kind": "field",
+          "type": "CallTemplates"
+        }
+      ]
+    },
+    {
+      "name": "storageTemplate",
+      "type": "StorageTemplate",
+      "types": [
+        "StorageTemplate"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(StorageTemplate)"
+      ],
+      "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
+      "line": 174,
+      "injects": [],
+      "members": [
+        {
+          "name": "asServiceRole",
+          "kind": "method",
+          "type": "StorageTemplate",
+          "parameters": []
+        },
+        {
+          "name": "bucket",
+          "kind": "method",
+          "type": "Future<StorageBucketInfo?>",
+          "parameters": [
+            "String id"
+          ]
+        },
+        {
+          "name": "buckets",
+          "kind": "method",
+          "type": "Future<List<StorageBucketInfo>>",
+          "parameters": []
+        },
+        {
+          "name": "copy",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String bucket",
+            "String from",
+            "String to",
+            "{String? toBucket}"
+          ]
+        },
+        {
+          "name": "createBucket",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String id",
+            "{bool isPublic}",
+            "{int? fileSizeLimit}",
+            "{List<String>? allowedMimeTypes}"
+          ]
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String bucket",
+            "String path"
+          ]
+        },
+        {
+          "name": "deleteAll",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "String bucket",
+            "List<String> paths"
+          ]
+        },
+        {
+          "name": "deleteBucket",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String id"
+          ]
+        },
+        {
+          "name": "download",
+          "kind": "method",
+          "type": "Stream<List<int>>",
+          "parameters": [
+            "String bucket",
+            "String path"
+          ]
+        },
+        {
+          "name": "downloadBytes",
+          "kind": "method",
+          "type": "Future<Uint8List>",
+          "parameters": [
+            "String bucket",
+            "String path"
+          ]
+        },
+        {
+          "name": "emptyBucket",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String id"
+          ]
+        },
+        {
+          "name": "exists",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "String bucket",
+            "String path"
+          ]
+        },
+        {
+          "name": "http",
+          "kind": "field",
+          "type": "SupabaseHttp"
+        },
+        {
+          "name": "info",
+          "kind": "method",
+          "type": "Future<StorageObjectInfo?>",
+          "parameters": [
+            "String bucket",
+            "String path"
+          ]
+        },
+        {
+          "name": "list",
+          "kind": "method",
+          "type": "Future<List<StorageObjectInfo>>",
+          "parameters": [
+            "String bucket",
+            "{String prefix}",
+            "{int limit}",
+            "{int offset}",
+            "{String sortBy}",
+            "{bool descending}",
+            "{String? search}"
+          ]
+        },
+        {
+          "name": "mapper",
+          "kind": "field",
+          "type": "ObjectMapper"
+        },
+        {
+          "name": "move",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String bucket",
+            "String from",
+            "String to",
+            "{String? toBucket}"
+          ]
+        },
+        {
+          "name": "publicUrl",
+          "kind": "method",
+          "type": "Uri",
+          "parameters": [
+            "String bucket",
+            "String path",
+            "{bool download}"
+          ]
+        },
+        {
+          "name": "read",
+          "kind": "method",
+          "type": "Future<T?>",
+          "parameters": [
+            "String bucket",
+            "String path",
+            "[TypeInfo<T>? type]"
+          ]
+        },
+        {
+          "name": "signedUploadUrl",
+          "kind": "method",
+          "type": "Future<SignedUpload>",
+          "parameters": [
+            "String bucket",
+            "String path"
+          ]
+        },
+        {
+          "name": "signedUrl",
+          "kind": "method",
+          "type": "Future<Uri>",
+          "parameters": [
+            "String bucket",
+            "String path",
+            "{Duration? expiresIn}"
+          ]
+        },
+        {
+          "name": "store",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String bucket",
+            "String path",
+            "Object? value",
+            "{bool upsert}"
+          ]
+        },
+        {
+          "name": "updateBucket",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String id",
+            "{bool isPublic}",
+            "{int? fileSizeLimit}",
+            "{List<String>? allowedMimeTypes}"
+          ]
+        },
+        {
+          "name": "upload",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String bucket",
+            "String path",
+            "Object content",
+            "{String? contentType}",
+            "{bool upsert}",
+            "{Duration? cacheControl}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supabaseAuth",
+      "type": "SupabaseAuth",
+      "types": [
+        "SupabaseAuth",
+        "LoginSession",
+        "AsyncStartup",
+        "DisposableBean"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.supabase.auth.enabled', matchIfMissing: true)",
+        "@ConditionalOnMissingBean(SupabaseAuth)"
+      ],
+      "source": "package:spring_boot_starter_supabase/src/auth/auth_auto_configuration.dart",
+      "line": 47,
+      "injects": [],
+      "members": [
+        {
+          "name": "accessToken",
+          "kind": "method",
+          "type": "Future<String?>",
+          "parameters": []
+        },
+        {
+          "name": "authentication",
+          "kind": "getter",
+          "type": "SupabaseAuthenticationToken?"
+        },
+        {
+          "name": "authenticationChanges",
+          "kind": "getter",
+          "type": "Stream<Authentication?>"
+        },
+        {
+          "name": "authorizationUrl",
+          "kind": "method",
+          "type": "Future<Uri>",
+          "parameters": [
+            "String provider",
+            "{List<String> scopes}",
+            "{String? redirectTo}",
+            "{Map<String, String> queryParameters}"
+          ]
+        },
+        {
+          "name": "authorizationWindow",
+          "kind": "field",
+          "type": "AuthorizationWindow?"
+        },
+        {
+          "name": "awaitStartup",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "completeSignIn",
+          "kind": "method",
+          "type": "Future<SupabaseAuthenticationToken>",
+          "parameters": [
+            "Uri redirect"
+          ]
+        },
+        {
+          "name": "destroy",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "errors",
+          "kind": "field",
+          "type": "SupabaseAuthErrors"
+        },
+        {
+          "name": "eventPublisher",
+          "kind": "field",
+          "type": "ApplicationEventPublisher?"
+        },
+        {
+          "name": "exchangeCode",
+          "kind": "method",
+          "type": "Future<SupabaseAuthenticationToken>",
+          "parameters": [
+            "String code"
+          ]
+        },
+        {
+          "name": "http",
+          "kind": "field",
+          "type": "SupabaseHttp"
+        },
+        {
+          "name": "isLoggedIn",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "logout",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "{SupabaseLogoutScope scope}"
+          ]
+        },
+        {
+          "name": "refreshSession",
+          "kind": "method",
+          "type": "Future<SupabaseAuthenticationToken>",
+          "parameters": []
+        },
+        {
+          "name": "reloadUser",
+          "kind": "method",
+          "type": "Future<SupabaseUser>",
+          "parameters": []
+        },
+        {
+          "name": "resetPassword",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String email",
+            "{String? redirectTo}"
+          ]
+        },
+        {
+          "name": "restore",
+          "kind": "method",
+          "type": "Future<SupabaseAuthenticationToken?>",
+          "parameters": []
+        },
+        {
+          "name": "secretStore",
+          "kind": "field",
+          "type": "SecretStore"
+        },
+        {
+          "name": "signInWithIdToken",
+          "kind": "method",
+          "type": "Future<SupabaseAuthenticationToken>",
+          "parameters": [
+            "{String provider}",
+            "{String idToken}",
+            "{String? accessToken}",
+            "{String? nonce}"
+          ]
+        },
+        {
+          "name": "signInWithOtp",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "{String? email}",
+            "{String? phone}",
+            "{bool createUser}",
+            "{String? redirectTo}"
+          ]
+        },
+        {
+          "name": "signInWithPassword",
+          "kind": "method",
+          "type": "Future<SupabaseAuthenticationToken>",
+          "parameters": [
+            "{String password}",
+            "{String? email}",
+            "{String? phone}"
+          ]
+        },
+        {
+          "name": "signInWithProvider",
+          "kind": "method",
+          "type": "Future<SupabaseAuthenticationToken>",
+          "parameters": [
+            "String provider",
+            "{List<String> scopes}",
+            "{String? redirectTo}",
+            "{Map<String, String> queryParameters}"
+          ]
+        },
+        {
+          "name": "signUp",
+          "kind": "method",
+          "type": "Future<SupabaseAuthenticationToken?>",
+          "parameters": [
+            "{String password}",
+            "{String? email}",
+            "{String? phone}",
+            "{Map<String, Object?> data}",
+            "{String? redirectTo}"
+          ]
+        },
+        {
+          "name": "updateUser",
+          "kind": "method",
+          "type": "Future<SupabaseUser>",
+          "parameters": [
+            "{String? email}",
+            "{String? password}",
+            "{Map<String, Object?>? data}"
+          ]
+        },
+        {
+          "name": "user",
+          "kind": "getter",
+          "type": "SupabaseUser?"
+        },
+        {
+          "name": "verifyOtp",
+          "kind": "method",
+          "type": "Future<SupabaseAuthenticationToken>",
+          "parameters": [
+            "{String token}",
+            "{SupabaseOtpType type}",
+            "{String? email}",
+            "{String? phone}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supabaseAuthAdmin",
+      "type": "SupabaseAuthAdmin",
+      "types": [
+        "SupabaseAuthAdmin"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.supabase.auth.enabled', matchIfMissing: true)",
+        "@ConditionalOnMissingBean(SupabaseAuthAdmin)"
+      ],
+      "source": "package:spring_boot_starter_supabase/src/auth/auth_auto_configuration.dart",
+      "line": 66,
+      "injects": [],
+      "members": [
+        {
+          "name": "createUser",
+          "kind": "method",
+          "type": "Future<SupabaseUser>",
+          "parameters": [
+            "{String? email}",
+            "{String? phone}",
+            "{String? password}",
+            "{bool emailConfirm}",
+            "{bool phoneConfirm}",
+            "{Map<String, Object?>? appMetadata}",
+            "{Map<String, Object?>? userMetadata}"
+          ]
+        },
+        {
+          "name": "deleteUser",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String id",
+            "{bool softDelete}"
+          ]
+        },
+        {
+          "name": "errors",
+          "kind": "field",
+          "type": "SupabaseAuthErrors"
+        },
+        {
+          "name": "http",
+          "kind": "field",
+          "type": "SupabaseHttp"
+        },
+        {
+          "name": "updateUser",
+          "kind": "method",
+          "type": "Future<SupabaseUser>",
+          "parameters": [
+            "String id",
+            "{String? email}",
+            "{String? phone}",
+            "{String? password}",
+            "{bool? emailConfirm}",
+            "{bool? phoneConfirm}",
+            "{Map<String, Object?>? appMetadata}",
+            "{Map<String, Object?>? userMetadata}",
+            "{String? banDuration}"
+          ]
+        },
+        {
+          "name": "user",
+          "kind": "method",
+          "type": "Future<SupabaseUser?>",
+          "parameters": [
+            "String id"
+          ]
+        },
+        {
+          "name": "users",
+          "kind": "method",
+          "type": "Future<List<SupabaseUser>>",
+          "parameters": [
+            "{int page}",
+            "{int perPage}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supabaseAuthErrors",
+      "type": "SupabaseAuthErrors",
+      "types": [
+        "SupabaseAuthErrors"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.supabase.auth.enabled', matchIfMissing: true)",
+        "@ConditionalOnMissingBean(SupabaseAuthErrors)"
+      ],
+      "source": "package:spring_boot_starter_supabase/src/auth/auth_auto_configuration.dart",
+      "line": 32,
+      "injects": [],
+      "members": [
+        {
+          "name": "read",
+          "kind": "method",
+          "type": "SupabaseAuthError",
+          "parameters": [
+            "HttpResponse response",
+            "{Iterable<String?> secrets}"
+          ]
+        },
+        {
+          "name": "translate",
+          "kind": "method",
+          "type": "AuthenticationException",
+          "parameters": [
+            "SupabaseAuthError error"
+          ]
+        },
+        {
+          "name": "translators",
+          "kind": "field",
+          "type": "List<SupabaseAuthErrorTranslator>"
+        }
+      ]
+    },
+    {
+      "name": "supabaseCacheResolver",
+      "type": "SupabaseCacheResolver",
+      "types": [
+        "SupabaseCacheResolver",
+        "CacheResolver"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
+      "line": 236,
+      "injects": [],
+      "members": [
+        {
+          "name": "cacheManager",
+          "kind": "field",
+          "type": "CacheManager"
+        },
+        {
+          "name": "credentials",
+          "kind": "field",
+          "type": "SupabaseCredentials"
+        },
+        {
+          "name": "resolveCaches",
+          "kind": "method",
+          "type": "Iterable<Cache>",
+          "parameters": [
+            "CacheOperationInvocationContext context"
+          ]
+        },
+        {
+          "name": "shared",
+          "kind": "field",
+          "type": "Set<String>"
+        }
+      ]
+    },
+    {
+      "name": "supabaseCachingConfigurer",
+      "type": "SupabaseCachingConfigurer",
+      "types": [
+        "SupabaseCachingConfigurer",
+        "CachingConfigurer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(CachingConfigurer)"
+      ],
+      "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
+      "line": 246,
+      "injects": [],
+      "members": [
+        {
+          "name": "cacheManager",
+          "kind": "method",
+          "type": "CacheManager?",
+          "parameters": []
+        },
+        {
+          "name": "cacheResolver",
+          "kind": "method",
+          "type": "CacheResolver?",
+          "parameters": []
+        },
+        {
+          "name": "errorHandler",
+          "kind": "method",
+          "type": "CacheErrorHandler?",
+          "parameters": []
+        },
+        {
+          "name": "generator",
+          "kind": "field",
+          "type": "KeyGenerator"
+        },
+        {
+          "name": "keyGenerator",
+          "kind": "method",
+          "type": "KeyGenerator?",
+          "parameters": []
+        },
+        {
+          "name": "resolver",
+          "kind": "field",
+          "type": "CacheResolver"
+        }
+      ]
+    },
+    {
+      "name": "supabaseCredentials",
+      "type": "SupabaseCredentials",
+      "types": [
+        "SupabaseCredentials"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(SupabaseCredentials)"
+      ],
+      "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
+      "line": 59,
+      "injects": [],
+      "members": [
+        {
+          "name": "accessToken",
+          "kind": "method",
+          "type": "Future<String>",
+          "parameters": []
+        },
+        {
+          "name": "apiKey",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "asServiceRole",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "FutureOr<T> Function() body"
+          ]
+        },
+        {
+          "name": "caller",
+          "kind": "getter",
+          "type": "SupabaseCaller"
+        }
+      ]
+    },
+    {
+      "name": "supabaseDataStore",
+      "type": "PostgrestDataStore",
+      "types": [
+        "PostgrestDataStore",
+        "FunctionDataStore",
+        "DataStore",
+        "ChangeStreamDataStore"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.supabase.url')",
+        "@ConditionalOnMissingBean(PostgrestDataStore)"
+      ],
+      "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
+      "line": 90,
+      "injects": [],
+      "members": [
+        {
+          "name": "callFunction",
+          "kind": "method",
+          "type": "Future<List<Map<String, Object?>>>",
+          "parameters": [
+            "String name",
+            "Map<String, Object?> arguments"
+          ]
+        },
+        {
+          "name": "capabilities",
+          "kind": "getter",
+          "type": "DataStoreCapabilities"
+        },
+        {
+          "name": "changes",
+          "kind": "method",
+          "type": "Stream<RowChange<T>>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "{Criteria? criteria}"
+          ]
+        },
+        {
+          "name": "converter",
+          "kind": "field",
+          "type": "EntityConverter"
+        },
+        {
+          "name": "count",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "{Criteria? criteria}"
+          ]
+        },
+        {
+          "name": "deleteById",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "Object id",
+            "{Object? expectedVersion}"
+          ]
+        },
+        {
+          "name": "deleteWhere",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "{Criteria? criteria}"
+          ]
+        },
+        {
+          "name": "deleteWhereAndReturn",
+          "kind": "method",
+          "type": "Future<List<T>>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "{Criteria? criteria}"
+          ]
+        },
+        {
+          "name": "exists",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "{Criteria? criteria}"
+          ]
+        },
+        {
+          "name": "filtersChanges",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "Criteria criteria"
+          ]
+        },
+        {
+          "name": "find",
+          "kind": "method",
+          "type": "Future<List<T>>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "{Criteria? criteria}",
+            "{Sort sort}",
+            "{int? offset}",
+            "{int? limit}",
+            "{bool distinct}",
+            "{LockMode? lock}",
+            "{Duration? lockTimeout}",
+            "{bool skipLocked}"
+          ]
+        },
+        {
+          "name": "findAllById",
+          "kind": "method",
+          "type": "Future<List<T>>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "Iterable<Object> ids"
+          ]
+        },
+        {
+          "name": "findById",
+          "kind": "method",
+          "type": "Future<T?>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "Object id",
+            "{LockMode? lock}",
+            "{Duration? lockTimeout}",
+            "{bool skipLocked}"
+          ]
+        },
+        {
+          "name": "http",
+          "kind": "field",
+          "type": "SupabaseHttp"
+        },
+        {
+          "name": "insert",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "T instance"
+          ]
+        },
+        {
+          "name": "name",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "schema",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "update",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "T instance",
+            "{Object? expectedVersion}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supabaseHttp",
+      "type": "SupabaseHttp",
+      "types": [
+        "SupabaseHttp"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(SupabaseHttp)"
+      ],
+      "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
+      "line": 74,
+      "injects": [],
+      "members": [
+        {
+          "name": "baseUrl",
+          "kind": "field",
+          "type": "Uri"
+        },
+        {
+          "name": "credentials",
+          "kind": "field",
+          "type": "SupabaseCredentials"
+        },
+        {
+          "name": "observations",
+          "kind": "field",
+          "type": "ObservationRegistry"
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "SupabaseProperties"
+        },
+        {
+          "name": "realtimeUrl",
+          "kind": "getter",
+          "type": "Uri"
+        },
+        {
+          "name": "send",
+          "kind": "method",
+          "type": "Future<HttpResponse>",
+          "parameters": [
+            "SupabaseService service",
+            "HttpMethod method",
+            "String path",
+            "{Iterable<MapEntry<String, String>> query}",
+            "{Map<String, String> headers}",
+            "{List<int>? body}",
+            "{Object? json}",
+            "{String? bearer}",
+            "{Duration? timeout}"
+          ]
+        },
+        {
+          "name": "stream",
+          "kind": "method",
+          "type": "Future<StreamedHttpResponse>",
+          "parameters": [
+            "SupabaseService service",
+            "HttpMethod method",
+            "String path",
+            "{Iterable<MapEntry<String, String>> query}",
+            "{Map<String, String> headers}",
+            "{List<int>? body}",
+            "{Object? json}",
+            "{String? bearer}",
+            "{Duration? timeout}"
+          ]
+        },
+        {
+          "name": "transport",
+          "kind": "field",
+          "type": "HttpTransport"
+        },
+        {
+          "name": "url",
+          "kind": "method",
+          "type": "Uri",
+          "parameters": [
+            "SupabaseService service",
+            "String path",
+            "{Iterable<MapEntry<String, String>> query}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supabaseKeyGenerator",
+      "type": "SupabaseKeyGenerator",
+      "types": [
+        "SupabaseKeyGenerator",
+        "KeyGenerator"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
+      "line": 230,
+      "injects": [],
+      "members": [
+        {
+          "name": "credentials",
+          "kind": "field",
+          "type": "SupabaseCredentials"
+        },
+        {
+          "name": "generate",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": [
+            "Object target",
+            "MethodSignature method",
+            "List<Object?> args"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supabaseProperties",
+      "type": "SupabaseProperties",
+      "types": [
+        "SupabaseProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_supabase/src/config/supabase_properties.dart",
+      "line": 15,
+      "injects": [],
+      "members": [
+        {
+          "name": "anonKey",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "auth",
+          "kind": "field",
+          "type": "SupabaseAuthProperties"
+        },
+        {
+          "name": "cache",
+          "kind": "field",
+          "type": "SupabaseCacheProperties"
+        },
+        {
+          "name": "connectTimeout",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "db",
+          "kind": "field",
+          "type": "SupabaseDbProperties"
+        },
+        {
+          "name": "functions",
+          "kind": "field",
+          "type": "SupabaseFunctionsProperties"
+        },
+        {
+          "name": "rateLimit",
+          "kind": "field",
+          "type": "SupabaseRateLimitProperties"
+        },
+        {
+          "name": "realtime",
+          "kind": "field",
+          "type": "SupabaseRealtimeProperties"
+        },
+        {
+          "name": "serviceRoleKey",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "storage",
+          "kind": "field",
+          "type": "SupabaseStorageProperties"
+        },
+        {
+          "name": "timeout",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "url",
+          "kind": "field",
+          "type": "String?"
+        }
+      ]
+    },
+    {
+      "name": "supabaseRateLimitStore",
+      "type": "SupabaseRateLimitStore",
+      "types": [
+        "SupabaseRateLimitStore",
+        "RateLimitStore"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnRateLimitStore('procedure', byDefault: _OnRestPath())"
+      ],
+      "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
+      "line": 108,
+      "injects": [],
+      "members": [
+        {
+          "name": "credentials",
+          "kind": "field",
+          "type": "SupabaseCredentials"
+        },
+        {
+          "name": "function",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "store",
+          "kind": "field",
+          "type": "FunctionDataStore"
+        },
+        {
+          "name": "tryAcquire",
+          "kind": "method",
+          "type": "Future<RateLimitDecision>",
+          "parameters": [
+            "String key",
+            "RateLimit limit",
+            "{int permits}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supabaseRealtime",
+      "type": "SupabaseRealtime",
+      "types": [
+        "SupabaseRealtime",
+        "DisposableBean"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(SupabaseRealtime)"
+      ],
+      "source": "package:spring_boot_starter_supabase/src/realtime/realtime_auto_configuration.dart",
+      "line": 23,
+      "injects": [],
+      "members": [
+        {
+          "name": "channel",
+          "kind": "method",
+          "type": "RealtimeChannelSession",
+          "parameters": [
+            "String name",
+            "{bool private}",
+            "{bool self}",
+            "{bool ack}",
+            "{String? presenceKey}"
+          ]
+        },
+        {
+          "name": "channels",
+          "kind": "getter",
+          "type": "List<RealtimeChannelSession>"
+        },
+        {
+          "name": "credentials",
+          "kind": "field",
+          "type": "SupabaseCredentials"
+        },
+        {
+          "name": "destroy",
+          "kind": "method",
+          "type": "FutureOr<void>",
+          "parameters": []
+        },
+        {
+          "name": "http",
+          "kind": "field",
+          "type": "SupabaseHttp"
+        },
+        {
+          "name": "isConnected",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "maxMessageSize",
+          "kind": "field",
+          "type": "DataSize"
+        },
+        {
+          "name": "postgresChanges",
+          "kind": "method",
+          "type": "Stream<RealtimeRowChange>",
+          "parameters": [
+            "{String table}",
+            "{String schema}",
+            "{String? filter}",
+            "{RealtimeChangeKind? kind}"
+          ]
+        },
+        {
+          "name": "refreshAuth",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "sockets",
+          "kind": "field",
+          "type": "PhoenixSocketFactory"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "url",
+          "kind": "getter",
+          "type": "Uri"
+        }
+      ]
+    },
+    {
+      "name": "supabaseRlsSessionHook",
+      "type": "SupabaseRlsSessionHook",
+      "types": [
+        "SupabaseRlsSessionHook",
+        "JdbcSessionHook"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.supabase.db.rls', havingValue: 'user')"
+      ],
+      "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
+      "line": 143,
+      "injects": [],
+      "members": [
+        {
+          "name": "afterBegin",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ConnectionHolder transaction"
+          ]
+        },
+        {
+          "name": "afterWork",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "DataSource dataSource",
+            "JdbcConnection connection"
+          ]
+        },
+        {
+          "name": "beforeWork",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "DataSource dataSource",
+            "JdbcConnection connection"
+          ]
+        },
+        {
+          "name": "credentials",
+          "kind": "field",
+          "type": "SupabaseCredentials"
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "SupabaseProperties"
+        }
+      ]
+    },
+    {
+      "name": "supabaseStartup",
+      "type": "SupabaseStartup",
+      "types": [
+        "SupabaseStartup"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_supabase/src/supabase_auto_configuration.dart",
+      "line": 54,
+      "injects": [],
+      "members": [
+        {
+          "name": "dataPath",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "SupabaseProperties"
+        },
+        {
+          "name": "warnings",
+          "kind": "field",
+          "type": "List<String>"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

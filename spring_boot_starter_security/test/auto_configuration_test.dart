@@ -3,6 +3,8 @@
 // it was given, the decoder checks what the properties tell it to, and the
 // chains are checked at startup.
 
+import 'dart:convert';
+
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
 import 'package:spring_boot_starter_security/src/properties/properties_beans.dart';
 import 'package:test/test.dart';
@@ -25,6 +27,16 @@ SecurityProperties _properties(Map<String, Object?> values) {
 
 const _password = 'spring.security.user.password=pw';
 const _jwt = 'spring.security.oauth2.resourceserver.jwt';
+const _secret = 'a-shared-secret-of-32-characters';
+
+// An ArgumentError whose message has every one of [texts].
+Matcher _argumentError(List<String> texts) => throwsA(
+  isA<ArgumentError>().having(
+    (e) => '${e.message}',
+    'message',
+    allOf([for (final text in texts) contains(text)]),
+  ),
+);
 
 void main() {
   group('SecurityProperties', () {
@@ -38,6 +50,9 @@ void main() {
       expect(properties.jwkSetUri, isNull);
       expect(properties.jwsAlgorithms, {JwsAlgorithm.rs256});
       expect(properties.audiences, isEmpty);
+      expect(properties.secretKey, isNull);
+      expect(properties.macAlgorithm, JwsAlgorithm.hs256);
+      expect(properties.requiredClaims, isEmpty);
       expect(properties.hasResourceServer, isFalse);
     });
 
@@ -90,6 +105,154 @@ void main() {
         isFalse,
       );
       expect(_properties({'$_jwt.issuer-uri': ' '}).hasResourceServer, isFalse);
+      expect(
+        _properties({'$_jwt.secret-key': _secret}).hasResourceServer,
+        isTrue,
+      );
+      expect(_properties({'$_jwt.secret-key': ' '}).hasResourceServer, isFalse);
+    });
+
+    test('the shared secret is its UTF-8 bytes; blank is unset', () {
+      expect(
+        _properties({'$_jwt.secret-key': _secret}).secretKey,
+        _secret.codeUnits,
+      );
+      final accented = 'é' * 16;
+      expect(
+        _properties({'$_jwt.secret-key': accented}).secretKey,
+        utf8.encode(accented),
+        reason: '32 bytes in 16 characters',
+      );
+      expect(_properties({'$_jwt.secret-key': ''}).secretKey, isNull);
+      expect(_properties({'$_jwt.secret-key': '   '}).secretKey, isNull);
+      expect(
+        _properties({
+          '$_jwt.secret-key': _secret,
+          '$_jwt.issuer-uri': 'https://i.example',
+        }).secretKey,
+        isNotNull,
+      );
+    });
+
+    test('a shared secret beside jwk-set-uri is refused', () {
+      expect(
+        () => _properties({
+          '$_jwt.secret-key': _secret,
+          '$_jwt.jwk-set-uri': 'https://i.example/jwks',
+        }).secretKey,
+        _argumentError(['$_jwt.secret-key', '$_jwt.jwk-set-uri']),
+      );
+      // A blank one is not set.
+      expect(
+        _properties({
+          '$_jwt.secret-key': ' ',
+          '$_jwt.jwk-set-uri': 'https://i.example/jwks',
+        }).secretKey,
+        isNull,
+      );
+    });
+
+    test('the algorithm of a shared secret: one of HS256, HS384, HS512', () {
+      JwsAlgorithm algorithm(String names) =>
+          _properties({'$_jwt.jws-algorithms': names}).macAlgorithm;
+      expect(algorithm(' , '), JwsAlgorithm.hs256);
+      expect(algorithm('HS256'), JwsAlgorithm.hs256);
+      expect(algorithm('HS384'), JwsAlgorithm.hs384);
+      expect(algorithm(' HS512 ,'), JwsAlgorithm.hs512);
+      expect(algorithm('HS256,HS256'), JwsAlgorithm.hs256);
+      for (final names in [
+        'RS256',
+        'ES256',
+        'PS256',
+        'HS256,RS256',
+        'RS256,HS256',
+      ]) {
+        expect(
+          () => algorithm(names),
+          _argumentError(['$_jwt.jws-algorithms', '$_jwt.secret-key', 'HS256']),
+          reason: names,
+        );
+      }
+      expect(
+        () => algorithm('HS256,HS512'),
+        _argumentError(['$_jwt.jws-algorithms', 'one algorithm']),
+      );
+      for (final names in ['none', 'hs256', 'HS128']) {
+        expect(
+          () => algorithm(names),
+          _argumentError(['$_jwt.jws-algorithms', 'unknown']),
+          reason: names,
+        );
+      }
+    });
+
+    test('a shared secret is at least as long as the hash', () {
+      List<int>? secret(int length, [String? algorithm]) => _properties({
+        '$_jwt.secret-key': 'k' * length,
+        '$_jwt.jws-algorithms': ?algorithm,
+      }).secretKey;
+      expect(secret(32), hasLength(32));
+      expect(secret(48, 'HS384'), hasLength(48));
+      expect(secret(64, 'HS512'), hasLength(64));
+      for (final (length, algorithm) in [
+        (31, null),
+        (31, 'HS256'),
+        (47, 'HS384'),
+        (63, 'HS512'),
+      ]) {
+        expect(
+          () => secret(length, algorithm),
+          throwsA(
+            isA<ArgumentError>()
+                .having(
+                  (e) => '${e.message}',
+                  'message',
+                  allOf(
+                    contains('$_jwt.secret-key'),
+                    contains('$length bytes'),
+                    contains(algorithm ?? 'HS256'),
+                  ),
+                )
+                .having(
+                  (e) => '$e',
+                  'never the secret',
+                  isNot(contains('k' * length)),
+                ),
+          ),
+          reason: '$length $algorithm',
+        );
+      }
+      // The algorithm is checked with the secret.
+      expect(
+        () => secret(64, 'RS256'),
+        _argumentError(['$_jwt.jws-algorithms']),
+      );
+    });
+
+    test('the required claims, by name', () {
+      expect(
+        _properties({
+          '$_jwt.required-claims.role': 'authenticated',
+          '$_jwt.required-claims.email_verified': 'true',
+        }).requiredClaims,
+        {'role': 'authenticated', 'email_verified': 'true'},
+      );
+      // A name with dots or a URL, in brackets; the case is kept.
+      expect(
+        _properties({
+          '$_jwt.required-claims[https://example.com/tenant]': 'shop',
+          '$_jwt.required-claims[app.tenantId]': '7',
+        }).requiredClaims,
+        {'https://example.com/tenant': 'shop', 'app.tenantId': '7'},
+      );
+      expect(
+        () => _properties({'$_jwt.required-claims[ ]': 'x'}).requiredClaims,
+        _argumentError(['$_jwt.required-claims', 'blank']),
+      );
+      expect(
+        () => _properties({}).requiredClaims['role'] = 'x',
+        throwsUnsupportedError,
+      );
     });
 
     test('algorithms and audiences', () {
@@ -120,6 +283,9 @@ void main() {
           'scope': 'read write',
           'roles': 'admin,staff',
           'groups': ['g1', 'g2'],
+          'realm_access': {
+            'roles': ['r1', 'r2'],
+          },
         },
       );
       List<String> authorities(SecurityProperties properties) => [
@@ -151,6 +317,21 @@ void main() {
       expect(
         authorities(_properties({'$_jwt.authorities-claim-name': 'groups'})),
         ['SCOPE_g1', 'SCOPE_g2'],
+      );
+      expect(
+        authorities(
+          _properties({
+            '$_jwt.authorities-claim-name': 'realm_access.roles',
+            '$_jwt.authority-prefix': 'ROLE_',
+          }),
+        ),
+        ['ROLE_r1', 'ROLE_r2'],
+      );
+      expect(
+        authorities(
+          _properties({'$_jwt.authorities-claim-name': 'realm_access.groups'}),
+        ),
+        isEmpty,
       );
       expect(
         _properties({'$_jwt.principal-claim-name': 'email'})
@@ -235,6 +416,16 @@ void main() {
           started.context.containsBean('inMemoryUserDetailsManager'),
           isFalse,
         );
+      });
+      await securityRunner(null, [
+        '$_jwt.secret-key=$_secret',
+      ]).runAsync((started) async {
+        expect(started.startupFailure, isNull);
+        expect(
+          started.context.containsBean('inMemoryUserDetailsManager'),
+          isFalse,
+        );
+        expect(started.context.getBean<JwtDecoder>(), isNotNull);
       });
     });
   });

@@ -28,3 +28,10 @@ coverage/
 
 # Golden test failure images (flutter test --tags golden writes them).
 **/test/failures/
+
+# Functions built by spring_boot_starter_edge
+# (dart run spring_boot_starter_edge:build): JavaScript compiled from Dart.
+example/supabase/supabase/functions/api/
+spring_boot_starter_supabase/test/stack/supabase/functions/api/
+spring_boot_starter_supabase/test/stack/supabase/functions/edge-test/
+spring_boot_starter_supabase/test/stack/supabase/functions/edge-test-wasm/

@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_web/src/io_web_socket.dart';
+import 'package:spring_boot_starter_web/src/request_target.dart';
 import 'package:spring_boot_starter_web/src/web_server.dart';
 import 'package:spring_web_dart/io.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
@@ -361,7 +362,7 @@ final class IoWebServer implements WebServer, WebServerActivity {
         await exchange.response.problem(HttpStatus.badRequest, problem);
         return;
       }
-      if (_targetProblem(ioRequest.uri) case final problem?) {
+      if (requestTargetProblem(ioRequest.uri) case final problem?) {
         await exchange.response.problem(HttpStatus.badRequest, problem);
         return;
       }
@@ -417,50 +418,6 @@ final class IoWebServer implements WebServer, WebServerActivity {
       if (target.host.toLowerCase() != named.host.toLowerCase() ||
           port(target, target.scheme) != port(named, target.scheme)) {
         return 'The host of the request target is not the Host header';
-      }
-    }
-    return null;
-  }
-
-  // Tomcat's default: an encoded slash (encodedSolidusHandling=reject),
-  // backslash or NUL in the path is a 400. dart:io keeps the path
-  // percent-encoded, so they are still visible here. A raw backslash is
-  // not: dart:io's Uri.parse has made it a "/" already.
-  static final _encodedSeparator = RegExp(
-    '%(?:2f|5c|00)',
-    caseSensitive: false,
-  );
-
-  // A 400 for a target the router must not see: an encoded separator, a
-  // dot segment hidden behind matrix parameters (dart:io removes plain
-  // ones), or an escape that does not decode to UTF-8.
-  static String? _targetProblem(Uri uri) {
-    final path = uri.hasAuthority && !uri.hasScheme
-        ? '//${uri.authority}${uri.path}'
-        : uri.path;
-    if (_encodedSeparator.hasMatch(path)) {
-      return r'The path contains an encoded "/", "\" or NUL';
-    }
-    for (final segment in path.split('/')) {
-      final semicolon = segment.indexOf(';');
-      final value = semicolon < 0 ? segment : segment.substring(0, semicolon);
-      final String decoded;
-      try {
-        decoded = Uri.decodeComponent(value);
-      } on Object {
-        return 'The path contains an invalid percent-encoding';
-      }
-      if (decoded == '.' || decoded == '..') {
-        return 'The path contains a "." or ".." segment';
-      }
-    }
-    if (uri.hasQuery) {
-      for (final pair in uri.query.split('&')) {
-        try {
-          pair.split('=').forEach(Uri.decodeQueryComponent);
-        } on Object {
-          return 'The query contains an invalid percent-encoding';
-        }
       }
     }
     return null;

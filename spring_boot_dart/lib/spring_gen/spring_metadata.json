@@ -535,6 +535,176 @@
       "class": "TaskExecutionIsolatesProperties"
     },
     {
+      "name": "spring.web.rate-limit.client-address-header",
+      "type": "String",
+      "description": "The header a trusted proxy puts the client's address in: `X-Forwarded-For` (a list, read from the right), or a header with one address such as `CF-Connecting-IP`.",
+      "default": "X-Forwarded-For",
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 73,
+      "class": "RateLimitProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.enabled",
+      "type": "bool?",
+      "description": "Whether requests are limited. Not set: on when [rules] has a rule, else off; an application that only uses `@RateLimiter` on its controllers sets it to `true` (the start fails when it does not). `false` turns the rules and the annotations off.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 44,
+      "class": "RateLimitProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.hash-addresses",
+      "type": "bool",
+      "description": "Whether keys made of an address are stored as their HMAC-SHA-256 under [hashSecret], so that the store holds no address in clear.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 77,
+      "class": "RateLimitProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.hash-secret",
+      "type": "String?",
+      "description": "The secret of [hashAddresses]; required with it. Every server that shares a store needs the same.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 81,
+      "class": "RateLimitProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.headers",
+      "type": "bool",
+      "description": "Whether the answers carry `RateLimit-Limit`, `RateLimit-Remaining` and `RateLimit-Reset` (of the rule that leaves the least).",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 85,
+      "class": "RateLimitProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.memory.max-entries",
+      "type": "int",
+      "description": "The most keys the stores in memory (`memory`, `primary-isolate`) keep; past it the buckets that are full again go, then the keys not used for the longest.",
+      "default": 100000,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 105,
+      "class": "RateLimitMemoryProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.on-store-failure",
+      "type": "RateLimitStoreFailure",
+      "description": "What happens to a request when the store cannot be reached; a rule may say otherwise for itself.",
+      "default": "deny",
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 57,
+      "class": "RateLimitProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.rules[*].burst",
+      "type": "int?",
+      "description": "The most requests at once (the size of the bucket) when it is not the count of [limit].",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 136,
+      "class": "RateLimitRuleProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.rules[*].key",
+      "type": "String?",
+      "description": "Who a bucket belongs to: `user` (the authenticated user, else the client's address; the default), `ip` (the client's address, decided before any authentication work), or a SpEL expression in `#{...}` over `request`, `principal`, `authentication`, `address`, `method` and `path` (`#{request.headers['X-Api-Key']}`); an expression that gives nothing counts by address.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 129,
+      "class": "RateLimitRuleProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.rules[*].limit",
+      "type": "String?",
+      "description": "The limit as `<count>/<duration>`: `5/1m`, `120/1m`, `10/s`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 132,
+      "class": "RateLimitRuleProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.rules[*].methods",
+      "type": "List<String>",
+      "description": "The HTTP methods the rule is for; empty for all.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 121,
+      "class": "RateLimitRuleProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.rules[*].name",
+      "type": "String?",
+      "description": "The rule's name: part of its keys in the store, and what the logs call it. Default: `rule-<n>`, its place in the list from 1. Name a rule so that reordering the list does not start its buckets anew.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 114,
+      "class": "RateLimitRuleProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.rules[*].on-store-failure",
+      "type": "RateLimitStoreFailure?",
+      "description": "What happens to a request of this rule when the store cannot be reached; not set: `spring.web.rate-limit.on-store-failure`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 140,
+      "class": "RateLimitRuleProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.rules[*].path",
+      "type": "String",
+      "description": "The paths the rule is for, as a mapping's pattern (`/api/**`, `/api/users/{id}`), inside the context path.",
+      "default": "/**",
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 118,
+      "class": "RateLimitRuleProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.store",
+      "type": "String?",
+      "description": "Where the buckets are kept: `memory` (this isolate), `primary-isolate` (the first isolate, for all of a pool), `jdbc` (the primary `DataSource`, data starter), `procedure` (a database function, Supabase starter), or the name another library gives its store. Not set: the most specific the application has, in that order from the last. A `RateLimitStore` bean of the application wins over all.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 53,
+      "class": "RateLimitProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.store-failure-retry-after",
+      "type": "Duration",
+      "description": "The `Retry-After` of the 503 a request gets when the store cannot be reached and the failure denies.",
+      "default": "5s",
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 61,
+      "class": "RateLimitProperties"
+    },
+    {
+      "name": "spring.web.rate-limit.trusted-proxies",
+      "type": "List<String>",
+      "description": "The reverse proxies in front of the server: addresses and CIDR ranges (IPv4 and IPv6). Only a connection from one of them has its [clientAddressHeader] read, and the client is the entry the first trusted proxy added, counting from the right. Empty (the default): no header is ever read, the client is the connection's own address.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 68,
+      "class": "RateLimitProperties"
+    },
+    {
       "name": "trace",
       "type": "String?",
       "description": "Any value but `false` (for example `--trace`) sets the framework loggers to trace.",
@@ -631,6 +801,53 @@
         {
           "value": "tasks",
           "description": "While the splash shows, as a splash task: the splash waits for it, and every page is there from the first tap."
+        }
+      ]
+    },
+    {
+      "name": "spring.web.rate-limit.on-store-failure",
+      "values": [
+        {
+          "value": "deny",
+          "description": "The request is refused with a 503 and `Retry-After`. The default: a limit that guards a login must not open when the database is down."
+        },
+        {
+          "value": "allow",
+          "description": "The request goes on, not counted."
+        }
+      ]
+    },
+    {
+      "name": "spring.web.rate-limit.rules[*].on-store-failure",
+      "values": [
+        {
+          "value": "deny",
+          "description": "The request is refused with a 503 and `Retry-After`. The default: a limit that guards a login must not open when the database is down."
+        },
+        {
+          "value": "allow",
+          "description": "The request goes on, not counted."
+        }
+      ]
+    },
+    {
+      "name": "spring.web.rate-limit.store",
+      "values": [
+        {
+          "value": "memory",
+          "description": null
+        },
+        {
+          "value": "primary-isolate",
+          "description": null
+        },
+        {
+          "value": "jdbc",
+          "description": null
+        },
+        {
+          "value": "procedure",
+          "description": null
         }
       ]
     }
@@ -951,7 +1168,7 @@
         "@ConditionalOnMissingBean(IsolateInfo)"
       ],
       "source": "package:spring_boot_dart/src/autoconfigure/isolate_auto_configuration.dart",
-      "line": 27,
+      "line": 29,
       "injects": [],
       "members": [
         {
@@ -992,7 +1209,7 @@
         "@ConditionalOnMissingBean(IsolateLoadSampler)"
       ],
       "source": "package:spring_boot_dart/src/autoconfigure/isolate_auto_configuration.dart",
-      "line": 38,
+      "line": 40,
       "injects": [],
       "members": [
         {
@@ -1054,7 +1271,7 @@
         "@ConditionalOnMissingBean(IsolateLoads)"
       ],
       "source": "package:spring_boot_dart/src/autoconfigure/isolate_auto_configuration.dart",
-      "line": 82,
+      "line": 89,
       "injects": [],
       "members": [
         {
@@ -1092,7 +1309,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/autoconfigure/isolate_auto_configuration.dart",
-      "line": 108,
+      "line": 115,
       "injects": [],
       "members": [
         {
@@ -1134,7 +1351,7 @@
         "@ConditionalOnMissingBean(IsolateReports)"
       ],
       "source": "package:spring_boot_dart/src/autoconfigure/isolate_auto_configuration.dart",
-      "line": 117,
+      "line": 124,
       "injects": [],
       "members": [
         {
@@ -1202,7 +1419,7 @@
         "@ConditionalOnMissingBean(IsolateTaskExecutor)"
       ],
       "source": "package:spring_boot_dart/src/autoconfigure/isolate_auto_configuration.dart",
-      "line": 52,
+      "line": 54,
       "injects": [],
       "members": [
         {
@@ -2158,7 +2375,7 @@
         "@ConditionalOnMissingBean(PrimaryIsolate)"
       ],
       "source": "package:spring_boot_dart/src/autoconfigure/isolate_auto_configuration.dart",
-      "line": 95,
+      "line": 102,
       "injects": [],
       "members": [
         {
@@ -2233,6 +2450,83 @@
           "name": "schemas",
           "kind": "field",
           "type": "List<JsonSchema>"
+        }
+      ]
+    },
+    {
+      "name": "rateLimitProperties",
+      "type": "RateLimitProperties",
+      "types": [
+        "RateLimitProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_dart/src/properties/rate_limit_properties.dart",
+      "line": 39,
+      "injects": [],
+      "members": [
+        {
+          "name": "clientAddressHeader",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool?"
+        },
+        {
+          "name": "hashAddresses",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "hashSecret",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "headers",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "isOn",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "memory",
+          "kind": "field",
+          "type": "RateLimitMemoryProperties"
+        },
+        {
+          "name": "onStoreFailure",
+          "kind": "field",
+          "type": "RateLimitStoreFailure"
+        },
+        {
+          "name": "rules",
+          "kind": "field",
+          "type": "List<RateLimitRuleProperties>"
+        },
+        {
+          "name": "store",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "storeFailureRetryAfter",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "trustedProxies",
+          "kind": "field",
+          "type": "List<String>"
         }
       ]
     },

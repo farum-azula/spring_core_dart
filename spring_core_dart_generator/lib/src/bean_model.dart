@@ -9,6 +9,7 @@ import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:spring_core_dart_generator/src/data_stores.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/log_scanning.dart';
 import 'package:spring_core_dart_generator/src/navigation_scanning.dart';
@@ -3349,6 +3350,7 @@ class RepositoryModel {
     required this.idType,
     required this.annotations,
     required this.methods,
+    this.requirements = const [],
   });
 
   /// The name of the generated class, e.g. `_$BookRepositoryImpl`.
@@ -3370,6 +3372,12 @@ class RepositoryModel {
   /// The methods the class writes: those `SimpleRepository` does not
   /// implement, in declaration order.
   final List<RepositoryMethodModel> methods;
+
+  /// What the methods (and the interface) need of the store, in
+  /// declaration order: `@Lock`, `@Query`, `@Procedure`, a stream of changes,
+  /// `@Transactional`. Written as `StoreRequirement`s, which the starter
+  /// checks against the store when the repository is created.
+  final List<StoreNeed> requirements;
 }
 
 /// A method of a [RepositoryModel] that the generated class writes.
@@ -3501,6 +3509,51 @@ class QueryMethodModel extends RepositoryMethodModel {
   bool get isStream => shape == ResultShape.stream;
 }
 
+/// A method with `@Procedure`: a call of a database function. The build checks
+/// the method and tells the starter what is left to do with an
+/// `ProcedureMethod`, a constant that holds the annotation, the parameters (the
+/// function's arguments, by name) and the shape of the result.
+///
+/// ```dart
+/// // Input:
+/// @Procedure('accounts_over')
+/// Future<List<Account>> over(int balance);
+/// // Output:
+/// static const _over = ProcedureMethod(
+///   r'over',
+///   Procedure(r'accounts_over'),
+///   parameters: [r'balance'],
+///   element: ClassType<Account>(),
+/// );
+/// @override
+/// Future<List<Account>> over(int balance) =>
+///     operations.procedure<List<Account>>(_over, [balance]);
+/// ```
+class ProcedureMethodModel extends RepositoryMethodModel {
+  /// Creates the model of a method annotated with [procedure].
+  ProcedureMethodModel(
+    super.member, {
+    required this.procedure,
+    required this.shape,
+    this.element,
+  });
+
+  /// The `@Procedure` annotation.
+  final DartObject procedure;
+
+  /// How the result is shaped; `single` for a method that returns nothing.
+  final ResultShape shape;
+
+  /// The type of what one row becomes (the element of a `List`, the type
+  /// itself for a single result); `null` for a method that returns
+  /// nothing.
+  final DartType? element;
+
+  /// Whether the method returns a `Stream` (`procedureStream`) instead of a
+  /// `Future` (`procedure`).
+  bool get isStream => shape == ResultShape.stream;
+}
+
 /// What a derived query asks of `RepositoryOperations`; each is the method
 /// of that name.
 enum DerivedOperation {
@@ -3536,6 +3589,14 @@ enum DerivedOperation {
 
   /// Deletes the results, returning them (`deleteByReturning`).
   deleteByReturning,
+
+  /// The results as a `Stream<List<T>>`, emitted again after every change
+  /// that concerns them (`watch…By`).
+  watch,
+
+  /// The changes of the rows the predicate matches, as a
+  /// `Stream<RowChange<T>>` (`changes…By`).
+  changes,
 }
 
 /// A derived query: a method whose name the build read as a `PartTree`.

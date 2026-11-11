@@ -1,0 +1,27 @@
+name: supabase_example_server
+description: "The server of the Supabase example: a REST API over the project's database (SQL, as the caller), its users' tokens as bearer tokens, an Edge Function and Storage."
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+resolution: workspace
+
+# The web starter (the REST API), the security starter (the resource
+# server that checks the project's tokens, @PreAuthorize) and the Supabase
+# starter, which brings and exports the data, Feign, cache and WebSocket
+# starters. The SQL path (spring.supabase.db.url) needs one more: `postgres`,
+# the driver, which an application lists itself (the generator writes the
+# driver's glue for it, and the web starter's answers to data errors, the
+# data starter being reached through the Supabase starter).
+dependencies:
+  postgres: ^3.5.0
+  spring_boot_starter_security: ^0.7.3
+  spring_boot_starter_supabase: ^0.7.3
+  spring_boot_starter_web: ^0.7.3
+
+dev_dependencies:
+  build_runner: ^2.17.0
+  spring_boot_starter_test: ^0.7.3
+  spring_core_dart_generator: ^0.7.3
+  test: ^1.33.0

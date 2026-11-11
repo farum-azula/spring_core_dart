@@ -1,0 +1,7 @@
+tags:
+  # test/stack_test.dart: the app's beans (no screen) against the whole of
+  # Supabase, given by SUPABASE_URL and SUPABASE_ANON_KEY; skipped without
+  # them. By hand (../README.md):
+  #   flutter test --tags supabase-stack
+  supabase-stack:
+    timeout: 4x

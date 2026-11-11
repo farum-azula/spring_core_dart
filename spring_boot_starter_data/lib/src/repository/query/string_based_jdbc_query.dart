@@ -3,16 +3,15 @@ import 'dart:async';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/annotations.dart';
 import 'package:spring_boot_starter_data/src/exceptions.dart';
-import 'package:spring_boot_starter_data/src/jdbc/entity_row_mapper.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_driver.dart';
 import 'package:spring_boot_starter_data/src/jdbc/named_parameter_utils.dart';
 import 'package:spring_boot_starter_data/src/jdbc/row_mapper.dart';
-import 'package:spring_boot_starter_data/src/mapping/entity_introspection.dart';
 import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
 import 'package:spring_boot_starter_data/src/mapping/naming_strategy.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 import 'package:spring_boot_starter_data/src/repository/page.dart';
 import 'package:spring_boot_starter_data/src/repository/query/query_method.dart';
+import 'package:spring_boot_starter_data/src/repository/query/query_result_mapper.dart';
 import 'package:spring_boot_starter_data/src/repository/query/query_text.dart';
 import 'package:spring_boot_starter_data/src/repository/query/result_shaper.dart';
 import 'package:spring_boot_starter_data/src/repository/sort.dart';
@@ -104,12 +103,9 @@ final class StringBasedJdbcQuery {
     required this._method,
     required this._main,
     required this._countStatement,
-    required this._kind,
-    required this._element,
-    required this._shaper,
+    required this._result,
     required this._table,
     required this._introspector,
-    required this._described,
     required this._expressionContext,
     required this._beanFactory,
     required this._inTransaction,
@@ -123,17 +119,12 @@ final class StringBasedJdbcQuery {
   final QueryMethod _method;
   final _Statement _main;
   final _Statement? _countStatement;
-  final _Kind _kind;
 
-  // What one row becomes (dynamic for a change, which has no rows).
-  final TypeInfo<Object?> _element;
-  final ResultShaper _shaper;
+  // Reads the rows as the method's result: shared with the @Procedure methods.
+  final QueryResultMapper _result;
 
   final String _table;
   final BeanIntrospector _introspector;
-
-  // The description of the DTO the method returns, when the build wrote one.
-  final EntityIntrospection<Object>? _described;
   final QueryExpressionContext _expressionContext;
   final BeanFactory? _beanFactory;
 
@@ -154,29 +145,11 @@ final class StringBasedJdbcQuery {
   // the Pageable and the Sort.
   late final Map<String, int> _parameterNames = _method.boundParameters;
 
-  // One column as the property type of the method wants it: converted as a
-  // column of an entity is (the type's own description, so a nullable type
-  // still converts: SQLite's 0/1 into a bool, a text into a DateTime).
-  Object? _scalar(JdbcRow row) {
-    if (row.columns.length != 1) {
-      throw IncorrectResultSetColumnCountException(1, row.columns.length);
-    }
-    final value = row.values.single;
-    if (value == null) {
-      if (_element.nullable) {
-        return null;
-      }
-      throw InvalidDataAccessApiUsageException(
-        '$_where: column ${row.columns.single} is null; return a nullable '
-        'type ($_element?)',
-      );
-    }
-    return _store.converter.fromColumnValue(
-      _store.dialect.fromDatabase(value, _element),
-      _element,
-      where: '$_where: column ${row.columns.single}',
-    );
-  }
+  _Kind get _kind => _result.kind;
+
+  // What one row becomes (dynamic for a change, which has no rows).
+  TypeInfo<Object?> get _element => _result.element;
+  ResultShaper get _shaper => _result.shaper;
 
   static final _identifier = RegExp(
     r'^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$',
@@ -210,18 +183,19 @@ final class StringBasedJdbcQuery {
     final before = problems.length;
     final intro = introspector ?? store.converter.introspector;
     final query = method.query;
-    final element = method.element;
-    final described = element == null
-        ? null
-        : mappingContext?.introspectionOf(element.type);
 
     // ---- the result
-    var kind = _Kind.custom;
-    if (element != null &&
-        query.rowMapper == null &&
-        query.resultSetExtractor == null) {
-      kind = _kindOf(element, entity, described, intro, where, problems);
-    }
+    final result = QueryResultMapper.of(
+      where: where,
+      element: method.element,
+      entity: entity,
+      converter: store.converter,
+      introspector: intro,
+      problems: problems,
+      reader: store.dialect,
+      mappingContext: mappingContext,
+      custom: query.rowMapper != null || query.resultSetExtractor != null,
+    );
 
     // ---- the text
     final table = store.sql.table(entity);
@@ -270,7 +244,6 @@ final class StringBasedJdbcQuery {
     if (problems.length > before) {
       return null;
     }
-    final type = element ?? const DynamicType();
     return StringBasedJdbcQuery._(
       where: where,
       store: store,
@@ -278,12 +251,9 @@ final class StringBasedJdbcQuery {
       method: method,
       main: main,
       countStatement: count,
-      kind: kind,
-      element: type,
-      shaper: type.capture<ResultShaper>(<E>() => TypedResultShaper<E>()),
+      result: result,
       table: table,
       introspector: intro,
-      described: described,
       expressionContext: QueryExpressionContext(
         entityName: table,
         methodName: method.name,
@@ -325,34 +295,6 @@ final class StringBasedJdbcQuery {
     }
     return store.dialect.quote(stored.columnName);
   };
-
-  static _Kind _kindOf(
-    TypeInfo<Object?> element,
-    PersistentEntity<Object> entity,
-    EntityIntrospection<Object>? described,
-    BeanIntrospector introspector,
-    String where,
-    List<String> problems,
-  ) {
-    if (element.type == entity.type) {
-      return _Kind.entity;
-    }
-    if (element is MapType<Object?, Object?>) {
-      return _Kind.map;
-    }
-    if (element is EnumType<Enum> ||
-        element.capture<bool>(<X>() => isSimpleType<X>())) {
-      return _Kind.scalar;
-    }
-    if (described == null && introspector.forType(element.type) == null) {
-      problems.add(
-        '$where: ${element.type} cannot be built from rows: it is not '
-        'described (register its module, or mark the class @Introspected), '
-        'or give a rowMapper',
-      );
-    }
-    return _Kind.dto;
-  }
 
   // ------------------------------------------------------------- running
 
@@ -414,12 +356,7 @@ final class StringBasedJdbcQuery {
       );
       return _extracted(result);
     }
-    final rows = await _fetch(sql, source);
-    return switch (_shape) {
-      QueryShape.list => _shaper.list(rows),
-      QueryShape.set => _shaper.set(rows),
-      _ => _single(rows),
-    };
+    return _result.shaped(_shape, await _fetch(sql, source));
   }
 
   Object? _extracted(Object? result) {
@@ -439,30 +376,6 @@ final class StringBasedJdbcQuery {
       (QueryShape.set, final Iterable<Object?> items) => _shaper.set(items),
       _ => result,
     };
-  }
-
-  Object? _single(List<Object?> rows) {
-    if (rows.isEmpty) {
-      if (_element.nullable) {
-        return null;
-      }
-      throw EmptyResultDataAccessException(
-        1,
-        message:
-            '$_where: no result, but the method returns a non-null '
-            '$_element (return it as nullable to get null)',
-      );
-    }
-    if (rows.length > 1) {
-      throw IncorrectResultSizeDataAccessException(
-        1,
-        rows.length,
-        message:
-            '$_where: ${rows.length} results for a method that returns '
-            'one (return a List, or limit the query)',
-      );
-    }
-    return rows.single;
   }
 
   Future<Object?> _change(List<Object?> arguments) async {
@@ -648,12 +561,7 @@ final class StringBasedJdbcQuery {
       name.replaceAll('_', '').toLowerCase();
 
   // The properties of the DTO the rows are mapped to.
-  late final List<String> _dtoProperties = [
-    if (_described case final described?)
-      for (final property in described.properties) property.name
-    else if (_introspector.forType(_element.type) case final bean?)
-      for (final property in bean.properties) property.name,
-  ];
+  List<String> get _dtoProperties => _result.dtoProperties;
 
   // What a sort of the entity or DTO result may name, for the message.
   late final List<String> _sortNames = [
@@ -665,30 +573,7 @@ final class StringBasedJdbcQuery {
     if (_query.rowMapper case final mapper?) {
       return (row) => Function.apply(mapper, [row]);
     }
-    return switch (_kind) {
-      _Kind.scalar => _scalar,
-      _Kind.map => const ColumnMapRowMapper().call,
-      _Kind.dto => _dtoMapper(),
-      _Kind.entity || _Kind.custom => throw StateError(
-        'no row mapper for $_kind',
-      ),
-    };
-  }
-
-  RowMapper<Object?> _dtoMapper() {
-    if (_described case final described?) {
-      return EntityRowMapper<Object>(
-        described,
-        dialect: _store.dialect,
-        converter: _store.converter,
-      ).call;
-    }
-    return DataClassRowMapper<Object>(
-      dialect: _store.dialect,
-      converter: _store.converter,
-      introspector: _introspector,
-      introspection: _introspector.forType(_element.type),
-    ).call;
+    return _result.rowMapper();
   }
 
   Future<List<Object?>> _fetch(String sql, SqlParameterSource source) async {
@@ -756,7 +641,7 @@ final class StringBasedJdbcQuery {
   String toString() => 'StringBasedJdbcQuery($_where)';
 }
 
-enum _Kind { entity, dto, scalar, map, custom }
+typedef _Kind = QueryResultKind;
 
 // One SQL text of a method: its expressions, each compiled by the build or
 // parsed here.

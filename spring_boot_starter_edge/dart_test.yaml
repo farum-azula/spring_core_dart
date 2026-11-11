@@ -1,0 +1,37 @@
+# The levels of this starter's tests. The tests without a tag run in the
+# Dart VM (FetchApplication); those below need a runtime.
+tags:
+  # The main pipeline's jobs (tool/test_all.dart): `integration` has Node,
+  # `docker` has Docker.
+  integration:
+    timeout: 2x
+  docker:
+    timeout: 4x
+  # The compiled function under Node (the AWS Lambda entry called with
+  # events): needs `node` on the PATH; skipped without it.
+  #   dart test --tags edge-node
+  edge-node:
+    timeout: 4x
+  # The compiled function in Cloudflare's runtime (`npx wrangler dev`,
+  # workerd), with KV, D1 and a cron trigger; skipped unless
+  # EDGE_CLOUDFLARE=true.
+  #   EDGE_CLOUDFLARE=true dart test --tags edge-cloudflare
+  edge-cloudflare:
+    timeout: 6x
+  # The compiled function in Deno (`npx deno`): Deno Deploy's entry, and
+  # Netlify's behind a stand-in; skipped unless EDGE_DENO=true.
+  #   EDGE_DENO=true dart test --tags edge-deno
+  edge-deno:
+    timeout: 6x
+  # The compiled function in AWS's Lambda runtime image (Docker); skipped
+  # without Docker, a failure with CONTAINERS_REQUIRED=true.
+  #   dart test --tags edge-docker
+  edge-docker:
+    timeout: 6x
+  # The compiled function in Supabase's Edge Runtime: the Supabase CLI's
+  # stack, given by SUPABASE_URL and SUPABASE_ANON_KEY, with the function
+  # built into its supabase/functions/edge-test and edge-test-wasm
+  # (SUPABASE_FUNCTIONS, the directory); skipped without them.
+  #   dart test --tags supabase-stack
+  supabase-stack:
+    timeout: 6x

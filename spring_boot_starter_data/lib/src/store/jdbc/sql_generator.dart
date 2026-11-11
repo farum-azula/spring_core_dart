@@ -1,6 +1,7 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart' show LogFormatUtils;
 import 'package:spring_boot_starter_data/src/exceptions.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_template.dart';
+import 'package:spring_boot_starter_data/src/jdbc/json_storage.dart';
 import 'package:spring_boot_starter_data/src/jdbc/sql_dialect.dart';
 import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
@@ -60,6 +61,11 @@ final class BoundSql {
 ///   and `notIn` of one everything, without an invalid `in ()`;
 /// - an `AggregateReference` is its id, an enum its name.
 ///
+/// The column of a `@Json` property is written as the dialect's
+/// `jsonStorage` says (its marker, and the decoded JSON of the row turned
+/// into what the marker binds); a condition or an order on one is refused
+/// (the repository says so before the store is asked).
+///
 /// Sorting names the null placement of every key (`NULLS FIRST` for
 /// descending and `NULLS LAST` for ascending unless the order says
 /// otherwise), as the in-memory store sorts, and ends with the id so equal
@@ -99,8 +105,26 @@ final class SqlGenerator {
 
   // ---------------------------------------------------------------- write
 
+  final _jsonColumns =
+      Map<PersistentEntity<Object>, Map<String, JsonStorage>>.identity();
+
+  // How the dialect keeps the `@Json` columns of [entity], by column.
+  Map<String, JsonStorage> _json(PersistentEntity<Object> entity) =>
+      _jsonColumns[entity] ??= {
+        for (final property in entity.columns)
+          if (property.json case final json?)
+            property.columnName: dialect.jsonStorage(json),
+      };
+
+  // The value of a row as its marker binds it: the decoded JSON of a
+  // `@Json` column as the dialect keeps it, any other as it is.
+  static Object? _bound(JsonStorage? storage, Object? value) =>
+      storage == null || value == null ? value : storage.toDatabase(value);
+
   /// `insert into t (columns) values (?, ...)` for the columns of [row]
-  /// (its keys, in order; leave out an id the database generates).
+  /// (its keys, in order; leave out an id the database generates). The
+  /// column of a `@Json` property holds decoded JSON in [row], as
+  /// `EntityConverter.write` gives it.
   BoundSql insert(
     PersistentEntity<Object> entity,
     Map<String, Object?> row,
@@ -108,11 +132,17 @@ final class SqlGenerator {
     if (row.isEmpty) {
       return BoundSql('insert into ${table(entity)} default values');
     }
+    final json = _json(entity);
     final columns = row.keys.map(_q).join(', ');
-    final markers = List.filled(row.length, '?').join(', ');
+    final markers = [
+      for (final column in row.keys) json[column]?.marker ?? '?',
+    ].join(', ');
     return BoundSql(
       'insert into ${table(entity)} ($columns) values ($markers)',
-      BoundParameters(row.values.toList(), row.keys.toList()),
+      BoundParameters([
+        for (final MapEntry(:key, :value) in row.entries)
+          _bound(json[key], value),
+      ], row.keys.toList()),
     );
   }
 
@@ -131,13 +161,15 @@ final class SqlGenerator {
       for (final entry in row.entries)
         if (entry.key != idColumn) entry,
     ];
+    final json = _json(entity);
     final parameters = _Binder();
     final assignments = sets.isEmpty
         ? '${_q(idColumn)} = ${_q(idColumn)}'
         : sets
               .map((e) {
-                parameters.add(e.key, e.value);
-                return '${_q(e.key)} = ?';
+                final storage = json[e.key];
+                parameters.add(e.key, _bound(storage, e.value));
+                return '${_q(e.key)} = ${storage?.marker ?? '?'}';
               })
               .join(', ');
     final where = _byIdWhere(

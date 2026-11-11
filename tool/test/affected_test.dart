@@ -163,6 +163,11 @@ targets:
         'extensions/language_server',
         // Its typed properties are generated (lib/src/config/).
         'spring_search_dart',
+        // Its test applications are generated, and it depends on the data,
+        // WebSocket and security packages above.
+        'spring_boot_starter_supabase',
+        // Its test function is generated.
+        'spring_boot_starter_edge',
       });
     });
 
@@ -178,6 +183,11 @@ targets:
         'spring_boot_starter_security',
         'spring_boot_starter_flutter_security',
         'example/server_guide',
+        // Its tests start a server with the security starter.
+        'spring_boot_starter_supabase',
+        // Its test function checks bearer tokens with the security
+        // starter.
+        'spring_boot_starter_edge',
         // Its example and tests secure the endpoints with the security
         // starter.
         'spring_boot_starter_actuator',

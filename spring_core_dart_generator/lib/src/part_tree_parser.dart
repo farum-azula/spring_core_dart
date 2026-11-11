@@ -26,6 +26,7 @@ final class StoredProperty implements PartTreeProperty {
     this.name,
     this.type, {
     this.isMappedCollection = false,
+    this.isJson = false,
     this.referencedId,
   });
 
@@ -38,6 +39,10 @@ final class StoredProperty implements PartTreeProperty {
 
   @override
   final bool isMappedCollection;
+
+  /// Whether it is one column of JSON (`@Json`), which a derived query
+  /// can neither filter nor sort by.
+  final bool isJson;
 
   @override
   bool get isString => type.isDartCoreString;
@@ -131,9 +136,29 @@ final class PartTreeParser {
 
   /// Parses [methodName] into a [PartTreeModel] for [entity]; see
   /// [PartTreeReader.parse]. Throws a [QueryProblem] for a name that is no
-  /// derived query or names no stored property.
-  PartTreeModel parse(String methodName, QueryEntity entity) =>
-      const PartTreeReader().parse(methodName, entity);
+  /// derived query, names no stored property, or filters or sorts by a
+  /// `@Json` property.
+  PartTreeModel parse(String methodName, QueryEntity entity) {
+    final tree = const PartTreeReader().parse(methodName, entity);
+    void refuseJson(String name, String what) {
+      if (entity.property(name)?.isJson ?? false) {
+        throw QueryProblem(
+          "property '$name' cannot be used $what: it is a @Json property, "
+          'one JSON value no derived query compares; use @Query with the '
+          "database's JSON operators on a SQL store, or @Procedure",
+          property: name,
+        );
+      }
+    }
+
+    for (final part in tree.parts) {
+      refuseJson(part.property, 'in a condition');
+    }
+    for (final order in tree.sort) {
+      refuseJson(order.property, 'in OrderBy');
+    }
+    return tree;
+  }
 
   /// Whether a parameter of [type] is a `Pageable` (or `PageRequest`),
   /// which windows the result instead of filtering it.
@@ -151,7 +176,9 @@ final class PartTreeParser {
   /// Checks [tree] (from [parse]) against the method's [parameters] and
   /// [returnType] (the type inside the `Future`, or the `Stream` or the
   /// type itself of a method that is no `Future`; [isFuture] says which);
-  /// throws a [QueryProblem] for the first problem.
+  /// throws a [QueryProblem] for the first problem. Without [checkReturn]
+  /// the return type is the caller's to check (a `watch…By` or a
+  /// `changes…By` method, whose stream is none of a find's results).
   ///
   /// Parameters:
   ///
@@ -187,6 +214,7 @@ final class PartTreeParser {
     List<QueryParameter> parameters, {
     required DartType returnType,
     required bool isFuture,
+    bool checkReturn = true,
   }) {
     final kind = tree.subject.kind;
     QueryParameter? pageable;
@@ -240,13 +268,15 @@ final class PartTreeParser {
       _validatePart(part, property, args);
     }
 
-    _validateReturn(
-      tree,
-      entity,
-      returnType,
-      isFuture: isFuture,
-      hasPageable: pageable != null,
-    );
+    if (checkReturn) {
+      _validateReturn(
+        tree,
+        entity,
+        returnType,
+        isFuture: isFuture,
+        hasPageable: pageable != null,
+      );
+    }
   }
 
   void _validatePart(

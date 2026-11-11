@@ -1,6 +1,6 @@
-## 0.7.4
+## Unreleased
 
-- No changes of its own; released with the family version 0.7.4.
+- `SecretStore`, `InMemorySecretStore`, `AuthorizationWindow` and `AuthorizationCancelledException` moved to `spring_security_core` (no Flutter code in them); this package's import still exports them, so applications change nothing.
 
 ## 0.7.3
 

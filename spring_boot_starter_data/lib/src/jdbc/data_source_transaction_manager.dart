@@ -107,6 +107,9 @@ class DataSourceTransactionManager extends AbstractPlatformTransactionManager {
         isolation: definition.isolation,
         readOnly: definition.readOnly,
       );
+      // The session hooks first: no statement of the application runs on
+      // a transaction they have not prepared.
+      await DataSourceUtils.transactionBegun(holder);
       holder.transactionActive = true;
       TransactionSynchronizationManager.bindResource(dataSource, holder);
       (transaction as DataSourceTransactionObject).holder = holder;

@@ -125,9 +125,14 @@ void main() {
         ),
     ).requestTimeout;
 
-    test('is no limit by default, for 0 and for a negative duration', () {
-      expect(const ServerProperties().requestTimeout, isNull);
-      expect(timeout(null), isNull);
+    test('is a minute by default; no limit for 0 and for a negative '
+        'duration', () {
+      expect(
+        const ServerProperties().requestTimeout,
+        const Duration(seconds: 60),
+      );
+      expect(timeout(null), const Duration(seconds: 60));
+      expect(ServerSettings().requestTimeout, const Duration(seconds: 60));
       expect(timeout('0'), isNull);
       expect(timeout('0s'), isNull);
       expect(timeout('-1'), isNull);
@@ -161,15 +166,96 @@ void main() {
       await webRunner().runAsync((context) async {
         expect(
           context.context.getBean<DispatcherHandler>().requestTimeout,
+          const Duration(seconds: 60),
+        );
+      });
+      await webRunner(['server.request-timeout=0']).runAsync((context) async {
+        expect(
+          context.context.getBean<DispatcherHandler>().requestTimeout,
           isNull,
         );
       });
     });
   });
 
-  group('without server.request-timeout', () {
-    test('a slow handler is not cut and sees no deadline', () async {
+  group('by default (a minute)', () {
+    test('a handler runs under a deadline of a minute, and one that takes '
+        'its time within it is not cut', () async {
       await webRunner().runAsync((context) async {
+        Duration? remaining;
+        final served = await _serveRoutes(context.context, {
+          '/slow': (request, response) async {
+            remaining = RequestDeadline.current?.remaining;
+            await _pause(300);
+            await response.send(200, 'done');
+          },
+        });
+        try {
+          final reply = await Client(served.port).get('/slow');
+          expect(reply.status, 200);
+          expect(reply.body, 'done');
+          expect(remaining, isNotNull);
+          expect(remaining!.inSeconds, inInclusiveRange(55, 60));
+        } finally {
+          await served.server.stop();
+        }
+      });
+    });
+
+    test('a body sent a little at a time, without ever being idle, is cut '
+        'when the time is up', () async {
+      // The same server with a short limit: the body trickles in faster
+      // than server.connection-timeout would notice, for longer than
+      // server.request-timeout allows.
+      await webRunner([
+        'server.request-timeout=600ms',
+        'server.connection-timeout=10s',
+      ]).runAsync((context) async {
+        final served = await _serveRoutes(context.context, {
+          '/upload': (request, response) async {
+            final body = await request.readBodyText();
+            await response.send(200, '${body.length}');
+          },
+        });
+        final socket = await io.Socket.connect('127.0.0.1', served.port);
+        try {
+          socket.write(
+            'POST /upload HTTP/1.1\r\nHost: localhost\r\n'
+            'Content-Length: 1000\r\nConnection: close\r\n\r\n',
+          );
+          final answer = StringBuffer();
+          final done = socket
+              .cast<List<int>>()
+              .transform(utf8.decoder)
+              .listen(answer.write, onError: (Object _) {})
+              .asFuture<void>()
+              .catchError((Object _) {});
+          final watch = Stopwatch()..start();
+          // A byte every 50 ms: never idle, never finished.
+          while (!answer.toString().contains('\r\n\r\n') &&
+              watch.elapsed < const Duration(seconds: 5)) {
+            try {
+              socket.write('x');
+              await socket.flush();
+            } on Object {
+              break;
+            }
+            await _pause(50);
+          }
+          await done.timeout(const Duration(seconds: 5), onTimeout: () {});
+          expect(answer.toString(), startsWith('HTTP/1.1 503'));
+          expect(watch.elapsed, lessThan(const Duration(seconds: 3)));
+        } finally {
+          socket.destroy();
+          await served.server.stop();
+        }
+      });
+    });
+  });
+
+  group('with server.request-timeout=0', () {
+    test('a slow handler is not cut and sees no deadline', () async {
+      await webRunner(['server.request-timeout=0']).runAsync((context) async {
         var deadline = true;
         final served = await _serveRoutes(context.context, {
           '/slow': (request, response) async {
@@ -619,10 +705,10 @@ void main() {
       });
     });
 
-    test('without server.request-timeout the call is limited by its own '
+    test('with server.request-timeout=0 the call is limited by its own '
         'timeouts only', () async {
       upstreamDelay = const Duration(milliseconds: 100);
-      await runner(const []).runAsync((context) async {
+      await runner(['server.request-timeout=0']).runAsync((context) async {
         final client = context.context.getBean<UpstreamClient>();
         final served = await _serveRoutes(context.context, {
           '/report': (request, response) async {

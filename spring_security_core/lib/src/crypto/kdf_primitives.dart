@@ -1,9 +1,11 @@
-// The key derivation functions of the password encoders, and the only file
-// of this package that imports `pointycastle`: Bouncy Castle's Dart port, a
-// third-party package allowed as an exception until a Dart team package
-// covers Argon2 and scrypt (docs/dependencies.md). Replacing it means
-// rewriting this file alone; the hashes written by Spring Security
-// (test/vectors/) and the encoder tests check the result.
+// The key derivation functions of the password encoders and SHA-256 (the
+// public `sha256Digest` of sha256.dart), and the only file of this package
+// that imports `pointycastle`: Bouncy Castle's Dart port, a third-party
+// package allowed as an exception until a Dart team package covers Argon2
+// and scrypt (docs/dependencies.md). Replacing it means rewriting this
+// file alone; the hashes written by Spring Security (test/vectors/), the
+// encoder tests and the FIPS 180-4 vectors of test/sha256_test.dart check
+// the result.
 import 'dart:typed_data';
 
 import 'package:pointycastle/export.dart'
@@ -118,3 +120,7 @@ Uint8List scrypt(
 }) => (Scrypt()..init(ScryptParameters(n, r, p, length, salt))).process(
   Uint8List.fromList(password),
 );
+
+/// The SHA-256 digest of [bytes], computed by `pointycastle`.
+Uint8List sha256(List<int> bytes) =>
+    SHA256Digest().process(Uint8List.fromList(bytes));

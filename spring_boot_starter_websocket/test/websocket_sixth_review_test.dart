@@ -256,6 +256,8 @@ final class _Transport implements WebSocketTransport {
     HttpHeaders? headers,
     List<String> protocols = const [],
     Duration? timeout,
+    int? maxTextMessageSize,
+    int? maxBinaryMessageSize,
   }) async => session;
 }
 

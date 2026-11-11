@@ -9,8 +9,28 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 64,
+      "line": 72,
       "class": "DataJdbcProperties"
+    },
+    {
+      "name": "spring.data.jdbc.rate-limit.create-table",
+      "type": "bool?",
+      "description": "Whether the store creates the table when it is not there. Default: only when `spring.data.jdbc.schema` is `create` or `create-drop`; else the table comes from a migration (the SQL is in the package: `sql/rate_limit/postgresql.sql`, `sql/rate_limit/sqlite.sql`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 102,
+      "class": "DataJdbcRateLimitProperties"
+    },
+    {
+      "name": "spring.data.jdbc.rate-limit.table",
+      "type": "String",
+      "description": "The table of the buckets: a name, or `schema.name`.",
+      "default": "rate_limit",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 96,
+      "class": "DataJdbcRateLimitProperties"
     },
     {
       "name": "spring.data.jdbc.schema",
@@ -19,7 +39,7 @@
       "default": "validate",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 57,
+      "line": 65,
       "class": "DataJdbcProperties"
     },
     {
@@ -29,7 +49,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 68,
+      "line": 76,
       "class": "DataJdbcProperties"
     },
     {
@@ -39,7 +59,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 61,
+      "line": 69,
       "class": "DataJdbcProperties"
     },
     {
@@ -49,7 +69,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 71,
+      "line": 79,
       "class": "DataJdbcProperties"
     },
     {
@@ -59,8 +79,18 @@
       "default": "10s",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 81,
+      "line": 112,
       "class": "DataMemoryProperties"
+    },
+    {
+      "name": "spring.data.store",
+      "type": "String?",
+      "description": "The store of the repositories without `@UseStore` and `@UseDataSource`: `memory`, `jdbc`, or the name of another store (`DataStore.name`). Default: `jdbc` with a primary data source, else `memory`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
+      "line": 37,
+      "class": "DataProperties"
     },
     {
       "name": "spring.data.web.pageable.default-page-size",
@@ -69,7 +99,7 @@
       "default": 20,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 113,
+      "line": 144,
       "class": "DataPageableProperties"
     },
     {
@@ -79,7 +109,7 @@
       "default": 2000,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 116,
+      "line": 147,
       "class": "DataPageableProperties"
     },
     {
@@ -89,7 +119,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 119,
+      "line": 150,
       "class": "DataPageableProperties"
     },
     {
@@ -99,7 +129,7 @@
       "default": "page",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 122,
+      "line": 153,
       "class": "DataPageableProperties"
     },
     {
@@ -109,7 +139,7 @@
       "default": "",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 128,
+      "line": 159,
       "class": "DataPageableProperties"
     },
     {
@@ -119,7 +149,7 @@
       "default": "_",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 131,
+      "line": 162,
       "class": "DataPageableProperties"
     },
     {
@@ -129,7 +159,7 @@
       "default": "size",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 125,
+      "line": 156,
       "class": "DataPageableProperties"
     },
     {
@@ -139,7 +169,7 @@
       "default": "sort",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 140,
+      "line": 171,
       "class": "DataSortProperties"
     },
     {
@@ -149,7 +179,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 211,
+      "line": 242,
       "class": "DataSourceConfigProperties"
     },
     {
@@ -159,7 +189,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 207,
+      "line": 238,
       "class": "DataSourceConfigProperties"
     },
     {
@@ -169,7 +199,7 @@
       "default": "30s",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 381,
+      "line": 412,
       "class": "DataSourcePoolProperties"
     },
     {
@@ -179,7 +209,7 @@
       "default": "10m",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 385,
+      "line": 416,
       "class": "DataSourcePoolProperties"
     },
     {
@@ -189,7 +219,7 @@
       "default": "30m",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 389,
+      "line": 420,
       "class": "DataSourcePoolProperties"
     },
     {
@@ -199,7 +229,7 @@
       "default": 10,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 373,
+      "line": 404,
       "class": "DataSourcePoolProperties"
     },
     {
@@ -209,7 +239,7 @@
       "default": 0,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 377,
+      "line": 408,
       "class": "DataSourcePoolProperties"
     },
     {
@@ -219,7 +249,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 393,
+      "line": 424,
       "class": "DataSourcePoolProperties"
     },
     {
@@ -229,7 +259,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 352,
+      "line": 383,
       "class": "PostgresqlConfigProperties"
     },
     {
@@ -239,7 +269,7 @@
       "default": "15s",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 349,
+      "line": 380,
       "class": "PostgresqlConfigProperties"
     },
     {
@@ -249,7 +279,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 356,
+      "line": 387,
       "class": "PostgresqlConfigProperties"
     },
     {
@@ -259,7 +289,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 344,
+      "line": 375,
       "class": "PostgresqlConfigProperties"
     },
     {
@@ -269,7 +299,7 @@
       "default": "prefer",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 340,
+      "line": 371,
       "class": "PostgresqlConfigProperties"
     },
     {
@@ -279,7 +309,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 314,
+      "line": 345,
       "class": "SqliteConfigProperties"
     },
     {
@@ -289,7 +319,7 @@
       "default": 5000,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 317,
+      "line": 348,
       "class": "SqliteConfigProperties"
     },
     {
@@ -299,7 +329,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 322,
+      "line": 353,
       "class": "SqliteConfigProperties"
     },
     {
@@ -309,7 +339,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 201,
+      "line": 232,
       "class": "DataSourceConfigProperties"
     },
     {
@@ -319,7 +349,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 204,
+      "line": 235,
       "class": "DataSourceConfigProperties"
     },
     {
@@ -329,7 +359,7 @@
       "default": "validate",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 298,
+      "line": 329,
       "class": "NamedDataJdbcProperties"
     },
     {
@@ -339,7 +369,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 262,
+      "line": 293,
       "class": "NamedDataSourceProperties"
     },
     {
@@ -349,7 +379,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 258,
+      "line": 289,
       "class": "NamedDataSourceProperties"
     },
     {
@@ -359,7 +389,7 @@
       "default": "30s",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 381,
+      "line": 412,
       "class": "DataSourcePoolProperties"
     },
     {
@@ -369,7 +399,7 @@
       "default": "10m",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 385,
+      "line": 416,
       "class": "DataSourcePoolProperties"
     },
     {
@@ -379,7 +409,7 @@
       "default": "30m",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 389,
+      "line": 420,
       "class": "DataSourcePoolProperties"
     },
     {
@@ -389,7 +419,7 @@
       "default": 10,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 373,
+      "line": 404,
       "class": "DataSourcePoolProperties"
     },
     {
@@ -399,7 +429,7 @@
       "default": 0,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 377,
+      "line": 408,
       "class": "DataSourcePoolProperties"
     },
     {
@@ -409,7 +439,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 393,
+      "line": 424,
       "class": "DataSourcePoolProperties"
     },
     {
@@ -419,7 +449,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 352,
+      "line": 383,
       "class": "PostgresqlConfigProperties"
     },
     {
@@ -429,7 +459,7 @@
       "default": "15s",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 349,
+      "line": 380,
       "class": "PostgresqlConfigProperties"
     },
     {
@@ -439,7 +469,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 356,
+      "line": 387,
       "class": "PostgresqlConfigProperties"
     },
     {
@@ -449,7 +479,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 344,
+      "line": 375,
       "class": "PostgresqlConfigProperties"
     },
     {
@@ -459,7 +489,7 @@
       "default": "prefer",
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 340,
+      "line": 371,
       "class": "PostgresqlConfigProperties"
     },
     {
@@ -723,7 +753,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 314,
+      "line": 345,
       "class": "SqliteConfigProperties"
     },
     {
@@ -733,7 +763,7 @@
       "default": 5000,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 317,
+      "line": 348,
       "class": "SqliteConfigProperties"
     },
     {
@@ -743,7 +773,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 322,
+      "line": 353,
       "class": "SqliteConfigProperties"
     },
     {
@@ -753,7 +783,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 252,
+      "line": 283,
       "class": "NamedDataSourceProperties"
     },
     {
@@ -763,7 +793,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 255,
+      "line": 286,
       "class": "NamedDataSourceProperties"
     },
     {
@@ -773,7 +803,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 160,
+      "line": 191,
       "class": "JdbcTemplateProperties"
     },
     {
@@ -1183,7 +1213,7 @@
         "@ConditionalOnMissingBean(AuditingHandler)"
       ],
       "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
-      "line": 273,
+      "line": 291,
       "injects": [],
       "members": [
         {
@@ -1244,7 +1274,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 383,
+      "line": 390,
       "injects": [],
       "members": [
         {
@@ -1283,6 +1313,11 @@
           "type": "DataMemoryProperties"
         },
         {
+          "name": "store",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
           "name": "web",
           "kind": "field",
           "type": "DataWebProperties"
@@ -1307,7 +1342,7 @@
         "@ConditionalOnMissingBean(DataSource)"
       ],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 400,
+      "line": 407,
       "injects": [],
       "members": [
         {
@@ -1373,6 +1408,11 @@
           ]
         },
         {
+          "name": "sessionHooks",
+          "kind": "field",
+          "type": "List<JdbcSessionHook>"
+        },
+        {
           "name": "settings",
           "kind": "field",
           "type": "ConnectionSettings"
@@ -1397,7 +1437,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 187,
+      "line": 218,
       "injects": [],
       "members": [
         {
@@ -1455,7 +1495,7 @@
         "@ConditionalOnMissingBean(DataSourceInitialization)"
       ],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 419,
+      "line": 426,
       "injects": [],
       "members": [
         {
@@ -1491,7 +1531,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 447,
+      "line": 454,
       "injects": [],
       "members": [
         {
@@ -1531,7 +1571,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
-      "line": 262,
+      "line": 280,
       "injects": [],
       "members": [
         {
@@ -1572,7 +1612,7 @@
         "@ConditionalOnMissingBean.named('dbHealthContributor')"
       ],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 508,
+      "line": 558,
       "injects": [],
       "members": []
     },
@@ -1590,7 +1630,7 @@
         "@ConditionalOnMissingBean(EntityConverter)"
       ],
       "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
-      "line": 208,
+      "line": 224,
       "injects": [],
       "members": [
         {
@@ -1599,6 +1639,16 @@
           "type": "Object?",
           "parameters": [
             "Object? value",
+            "TypeInfo<Object?> type",
+            "{String where}"
+          ]
+        },
+        {
+          "name": "fromJsonTree",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": [
+            "Object? tree",
             "TypeInfo<Object?> type",
             "{String where}"
           ]
@@ -1616,6 +1666,11 @@
           "name": "introspector",
           "kind": "field",
           "type": "BeanIntrospector"
+        },
+        {
+          "name": "mapper",
+          "kind": "getter",
+          "type": "ObjectMapper"
         },
         {
           "name": "read",
@@ -1653,6 +1708,16 @@
           "type": "Object?",
           "parameters": [
             "Object? value"
+          ]
+        },
+        {
+          "name": "toJsonTree",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": [
+            "Object? value",
+            "TypeInfo<Object?> type",
+            "{String where}"
           ]
         },
         {
@@ -1719,7 +1784,7 @@
         "@ConditionalOnMissingBean(InMemoryDataSources)"
       ],
       "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
-      "line": 235,
+      "line": 253,
       "injects": [],
       "members": [
         {
@@ -1752,7 +1817,9 @@
       "type": "InMemoryDataStore",
       "types": [
         "InMemoryDataStore",
-        "DataStore"
+        "TransactionalDataStore",
+        "DataStore",
+        "ChangeStreamDataStore"
       ],
       "scope": "singleton",
       "primary": false,
@@ -1762,7 +1829,7 @@
         "@ConditionalOnMissingBean(InMemoryDataStore)"
       ],
       "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
-      "line": 220,
+      "line": 238,
       "injects": [],
       "members": [
         {
@@ -1773,6 +1840,25 @@
             "{Isolation isolation}",
             "{bool readOnly}",
             "{String? name}"
+          ]
+        },
+        {
+          "name": "capabilities",
+          "kind": "getter",
+          "type": "DataStoreCapabilities"
+        },
+        {
+          "name": "changeListenerCount",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "changes",
+          "kind": "method",
+          "type": "Stream<RowChange<T>>",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "{Criteria? criteria}"
           ]
         },
         {
@@ -1846,6 +1932,15 @@
           "parameters": [
             "PersistentEntity<T> entity",
             "{Criteria? criteria}"
+          ]
+        },
+        {
+          "name": "filtersChanges",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "PersistentEntity<T> entity",
+            "Criteria criteria"
           ]
         },
         {
@@ -1939,6 +2034,11 @@
           ]
         },
         {
+          "name": "transactionManager",
+          "kind": "field",
+          "type": "InMemoryTransactionManager"
+        },
+        {
           "name": "update",
           "kind": "method",
           "type": "Future<T>",
@@ -1970,7 +2070,7 @@
         "@ConditionalOnMissingBean(JdbcClient)"
       ],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 494,
+      "line": 508,
       "injects": [],
       "members": [
         {
@@ -2007,7 +2107,7 @@
         "@ConditionalOnMissingBean(JdbcLogSettings)"
       ],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 389,
+      "line": 396,
       "injects": [],
       "members": [
         {
@@ -2044,13 +2144,115 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 145,
+      "line": 176,
       "injects": [],
       "members": [
         {
           "name": "template",
           "kind": "field",
           "type": "JdbcTemplateProperties"
+        }
+      ]
+    },
+    {
+      "name": "jdbcRateLimitStore",
+      "type": "JdbcRateLimitStore",
+      "types": [
+        "JdbcRateLimitStore",
+        "RateLimitStore"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnRateLimitStore('jdbc', byDefault: ConditionalOnSingleCandidate(DataSource))"
+      ],
+      "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
+      "line": 522,
+      "injects": [],
+      "members": [
+        {
+          "name": "createTable",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "dataSource",
+          "kind": "field",
+          "type": "DataSource"
+        },
+        {
+          "name": "purge",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "purgeInterval",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "statements",
+          "kind": "field",
+          "type": "RateLimitStatements"
+        },
+        {
+          "name": "table",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "tryAcquire",
+          "kind": "method",
+          "type": "Future<RateLimitDecision>",
+          "parameters": [
+            "String key",
+            "RateLimit limit",
+            "{int permits}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "jdbcSessionHookRegistrar",
+      "type": "JdbcSessionHookRegistrar",
+      "types": [
+        "JdbcSessionHookRegistrar",
+        "BeanPostProcessor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
+      "line": 465,
+      "injects": [],
+      "members": [
+        {
+          "name": "postProcessAfterInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "postProcessBeforeInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "resolver",
+          "kind": "field",
+          "type": "DependencyResolver"
         }
       ]
     },
@@ -2069,7 +2271,7 @@
         "@ConditionalOnMissingBean(JdbcTemplate)"
       ],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 470,
+      "line": 484,
       "injects": [],
       "members": [
         {
@@ -2262,7 +2464,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 227,
+      "line": 258,
       "injects": [],
       "members": [
         {
@@ -2287,7 +2489,7 @@
         "@ConditionalOnMissingBean(NamedParameterJdbcTemplate)"
       ],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 482,
+      "line": 496,
       "injects": [],
       "members": [
         {
@@ -2431,7 +2633,7 @@
         "@ConditionalOnMissingBean(RelationalMappingContext)"
       ],
       "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
-      "line": 187,
+      "line": 203,
       "injects": [],
       "members": [
         {
@@ -2516,7 +2718,7 @@
         "@ConditionalOnMissingBean(RepositoryFactory)"
       ],
       "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
-      "line": 288,
+      "line": 306,
       "injects": [],
       "members": [
         {
@@ -2584,7 +2786,9 @@
           "parameters": [
             "String typeName",
             "{List<Object> annotations}",
-            "{List<QueryMethod> queries}"
+            "{List<QueryMethod> queries}",
+            "{List<ProcedureMethod> functions}",
+            "{List<StoreRequirement> requirements}"
           ]
         },
         {
@@ -2611,7 +2815,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_data/src/properties/data_properties.dart",
-      "line": 165,
+      "line": 196,
       "injects": [],
       "members": [
         {
@@ -2641,7 +2845,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
-      "line": 336,
+      "line": 357,
       "injects": [],
       "members": [
         {
@@ -2680,7 +2884,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
-      "line": 321,
+      "line": 342,
       "injects": [],
       "members": [
         {
@@ -2741,7 +2945,7 @@
         "@ConditionalOnMissingBean(PlatformTransactionManager)"
       ],
       "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
-      "line": 249,
+      "line": 267,
       "injects": [],
       "members": [
         {
@@ -2892,7 +3096,7 @@
         "@ConditionalOnMissingBean(PlatformTransactionManager)"
       ],
       "source": "package:spring_boot_starter_data/src/data_source_auto_configuration.dart",
-      "line": 457,
+      "line": 471,
       "injects": [],
       "members": [
         {
@@ -3040,7 +3244,7 @@
         "@ConditionalOnMissingBean(TransactionTemplate)"
       ],
       "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
-      "line": 345,
+      "line": 366,
       "injects": [],
       "members": [
         {
@@ -3092,7 +3296,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
-      "line": 330,
+      "line": 351,
       "injects": [],
       "members": [
         {

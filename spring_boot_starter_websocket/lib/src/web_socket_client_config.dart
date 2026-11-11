@@ -1,9 +1,11 @@
 import 'dart:math' as math;
 
+import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_websocket/src/config/web_socket_properties.dart';
 
-/// The settings of one `@WebSocketClient`: its address, handshake timeout,
-/// reconnection and default headers.
+/// The settings of one `@WebSocketClient` (or `@PhoenixChannel`): its
+/// address, handshake timeout, reconnection and default headers, and what
+/// the Phoenix Channels protocol needs.
 ///
 /// They come from `spring.websocket.client.config.<name>.*`, where
 /// `<name>` is the client's name, and fall back to
@@ -24,6 +26,8 @@ import 'package:spring_boot_starter_websocket/src/config/web_socket_properties.d
 /// spring.websocket.client.config.chat.reconnect.jitter=200ms
 /// spring.websocket.client.config.chat.reconnect.max-retries=10
 /// spring.websocket.client.config.chat.default-request-headers.X-Shop=neon
+/// # The feed sends large JSON; every other client keeps the 8 KB limit.
+/// spring.websocket.client.config.feed.max-text-message-size=1MB
 /// ```
 ///
 /// Differs from Spring: these keys are this project's own (shaped like
@@ -37,6 +41,9 @@ final class WebSocketClientConfig {
     this.connectTimeout = const Duration(seconds: 10),
     this.reconnect = const WebSocketReconnectPolicy(),
     this.defaultRequestHeaders = const {},
+    this.phoenix = const PhoenixSocketConfig(),
+    this.maxTextMessageSize,
+    this.maxBinaryMessageSize,
   });
 
   /// The server's address (`url`), used when `@WebSocketClient` gives
@@ -57,13 +64,30 @@ final class WebSocketClientConfig {
   /// replaces the `default` one of the same name, in any case.
   final Map<String, List<String>> defaultRequestHeaders;
 
+  /// The Phoenix Channels settings (`phoenix.*`), read by a
+  /// `PhoenixSocket`; a plain `@WebSocketClient` ignores them.
+  final PhoenixSocketConfig phoenix;
+
+  /// The largest text message the client reads, in UTF-8 bytes
+  /// (`max-text-message-size`; `-1` for no limit): a larger one closes
+  /// the connection with 1009 (message too big). `null`, when neither the
+  /// client nor `default` sets it, leaves the limit to the transport:
+  /// `spring.websocket.client.max-text-message-size` (8 KB) with the
+  /// starter's own. The browser has no such limit and ignores it.
+  final DataSize? maxTextMessageSize;
+
+  /// The same for binary messages (`max-binary-message-size`), falling
+  /// back to `spring.websocket.client.max-binary-message-size`.
+  final DataSize? maxBinaryMessageSize;
+
   static const _prefix = 'spring.websocket.client.config.';
 
   /// Reads the settings of the client [name] from the bound [properties],
   /// with `default` as fallback for each property.
   ///
   /// Throws an [ArgumentError] for a reconnect value out of range (see
-  /// [WebSocketReconnectPolicy.validate]). The start then fails.
+  /// [WebSocketReconnectPolicy.validate]) or a Phoenix one (see
+  /// [PhoenixSocketConfig.validate]). The start then fails.
   static WebSocketClientConfig of(
     WebSocketProperties properties,
     String name,
@@ -85,6 +109,7 @@ final class WebSocketClientConfig {
 
     const defaults = WebSocketClientConfig();
     const policy = WebSocketReconnectPolicy();
+    const phoenix = PhoenixSocketConfig();
     return WebSocketClientConfig(
       url: get((s) => s.url),
       connectTimeout: get((s) => s.connectTimeout) ?? defaults.connectTimeout,
@@ -100,6 +125,15 @@ final class WebSocketClientConfig {
         fallback?.defaultRequestHeaders ?? const {},
         own?.defaultRequestHeaders ?? const {},
       ),
+      phoenix: PhoenixSocketConfig(
+        heartbeatInterval:
+            get((s) => s.phoenix.heartbeatInterval) ??
+            phoenix.heartbeatInterval,
+        pushTimeout: get((s) => s.phoenix.pushTimeout) ?? phoenix.pushTimeout,
+        vsn: get((s) => s.phoenix.vsn) ?? phoenix.vsn,
+      )..validate('$_prefix$name.phoenix'),
+      maxTextMessageSize: get((s) => s.maxTextMessageSize),
+      maxBinaryMessageSize: get((s) => s.maxBinaryMessageSize),
     );
   }
 
@@ -114,6 +148,69 @@ final class WebSocketClientConfig {
         key: value,
     ...own,
   };
+}
+
+/// The Phoenix Channels settings of one client: how often its socket
+/// sends a heartbeat, how long a push waits for its reply, and the version
+/// of the wire format.
+///
+/// They are set by `spring.websocket.client.config.<name>.phoenix.*`, where
+/// `<name>` is the name of the `@PhoenixChannel` (or of the socket asked
+/// from the `PhoenixSocketFactory`), with `default` as fallback like every
+/// client setting.
+///
+/// ```properties
+/// # The lobby: a heartbeat every 15 s, replies within 5 s, the older
+/// # wire format.
+/// spring.websocket.client.config.lobby.phoenix.heartbeat-interval=15s
+/// spring.websocket.client.config.lobby.phoenix.push-timeout=5s
+/// spring.websocket.client.config.lobby.phoenix.vsn=1.0.0
+/// ```
+///
+/// Phoenix (JavaScript): the `heartbeatIntervalMs`, `timeout` and `vsn`
+/// options of `new Socket(endPoint, opts)`, with the same defaults.
+final class PhoenixSocketConfig {
+  /// Settings with these values; the defaults are those of `phoenix.js`.
+  /// They are not checked until [validate].
+  const PhoenixSocketConfig({
+    this.heartbeatInterval = const Duration(seconds: 30),
+    this.pushTimeout = const Duration(seconds: 10),
+    this.vsn = '2.0.0',
+  });
+
+  /// The time between two heartbeats (`phoenix.heartbeat-interval`,
+  /// default 30 s). A heartbeat without a reply before the next one means
+  /// a dead connection, which is dropped and opened again. Zero sends
+  /// none.
+  final Duration heartbeatInterval;
+
+  /// The longest a join, a push or a leave waits for its reply
+  /// (`phoenix.push-timeout`, default 10 s).
+  final Duration pushTimeout;
+
+  /// The version of the wire format, sent as the `vsn` query parameter
+  /// (`phoenix.vsn`, default `2.0.0`): it selects the `PhoenixSerializer`.
+  final String vsn;
+
+  /// Checks the values: `heartbeat-interval` not negative, `push-timeout`
+  /// positive. Otherwise throws an [ArgumentError] naming the property
+  /// under [prefix]. Called when the settings are read from properties.
+  void validate([String prefix = 'phoenix']) {
+    if (heartbeatInterval.isNegative) {
+      throw ArgumentError.value(
+        WebSocketReconnectPolicy._show(heartbeatInterval),
+        '$prefix.heartbeat-interval',
+        'must not be negative (0 sends no heartbeat)',
+      );
+    }
+    if (pushTimeout <= Duration.zero) {
+      throw ArgumentError.value(
+        WebSocketReconnectPolicy._show(pushTimeout),
+        '$prefix.push-timeout',
+        'must be positive',
+      );
+    }
+  }
 }
 
 /// The rule for opening a `@WebSocketClient`'s connection again after a

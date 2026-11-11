@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -7,11 +8,13 @@ import 'package:spring_boot_starter_data/src/log_values.dart';
 import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
 import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
-import 'package:spring_boot_starter_data/src/query/part_tree.dart';
-import 'package:spring_boot_starter_data/src/query/query_arguments.dart';
 import 'package:spring_boot_starter_data/src/repository/sort.dart';
+import 'package:spring_boot_starter_data/src/store/criteria_matcher.dart';
 import 'package:spring_boot_starter_data/src/store/data_store.dart';
+import 'package:spring_boot_starter_data/src/store/data_store_capabilities.dart';
 import 'package:spring_boot_starter_data/src/store/in_memory_transaction.dart';
+import 'package:spring_boot_starter_data/src/store/in_memory_transaction_manager.dart';
+import 'package:spring_boot_starter_data/src/store/row_change.dart';
 import 'package:spring_boot_starter_data/src/store/row_locks.dart';
 import 'package:spring_boot_starter_data/src/store/stored_aggregate.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart';
@@ -132,6 +135,13 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_synchroniza
 /// caller must roll it back); the isolation levels above read committed
 /// are refused instead of being offered.
 ///
+/// **Changes.** [changes] reports every insert, update and delete of an
+/// entity's rows once it is committed, with the row before and after it:
+/// the writes of a transaction when it commits (in the order it made
+/// them, a row written twice once, with its last state), nothing of one
+/// that rolls back, the rows a cascade removed or changed too. The
+/// criteria are applied by the store itself. [clear] reports nothing.
+///
 /// Logging, under `spring.data.memory.InMemoryDataStore`: each operation at
 /// debug (the table and the counts), the transaction statements (`begin`,
 /// `commit`, `rollback`, lock waits) at debug too, the values only at
@@ -141,7 +151,8 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_synchroniza
 /// H2 (`EmbeddedDatabaseBuilder`), which this store replaces for tests; the
 /// transactions are what `DataSourceTransactionManager` gets from the
 /// connection.
-final class InMemoryDataStore implements DataStore {
+final class InMemoryDataStore
+    implements TransactionalDataStore, ChangeStreamDataStore {
   /// A store that converts entities with [converter]. [name] is what
   /// `@UseStore` selects (`memory`) and what the log shows; a store per
   /// `@UseDataSource` name is named `memory:<data source>`. [lockTimeout]
@@ -159,6 +170,22 @@ final class InMemoryDataStore implements DataStore {
   @override
   final String name;
 
+  /// Transactions, row locks and the changes of the rows; no SQL and no
+  /// database functions.
+  @override
+  DataStoreCapabilities get capabilities => const DataStoreCapabilities(
+    transactions: true,
+    locks: true,
+    changes: true,
+  );
+
+  /// A manager of the store's transactions, the one its repositories run
+  /// their writes in. Any other `InMemoryTransactionManager` of the store
+  /// shares its transactions: the store is the resource they bind.
+  @override
+  late final InMemoryTransactionManager transactionManager =
+      InMemoryTransactionManager(this);
+
   /// The longest a statement waits for a row lock (the transaction's time
   /// left may cut it shorter); `Duration.zero` fails at once.
   final Duration lockTimeout;
@@ -170,6 +197,14 @@ final class InMemoryDataStore implements DataStore {
   List<_Node>? _nodeList;
   final _locks = RowLockManager();
   var _transactionCount = 0;
+
+  // Who listens to the changes of each table.
+  final _listeners = <String, List<_ChangeListener>>{};
+
+  /// How many streams of [changes] are listened to now, for tests and
+  /// logs.
+  int get changeListenerCount =>
+      _listeners.values.fold(0, (sum, listeners) => sum + listeners.length);
 
   /// The number of aggregates committed for [entity], for tests and logs.
   int size(PersistentEntity<Object> entity) => _table(entity).rows.length;
@@ -249,20 +284,100 @@ final class InMemoryDataStore implements DataStore {
 
   void _commit(InMemoryTransaction tx) {
     var rows = 0;
+    final changed = <_CommittedChange>[];
     for (final MapEntry(:key, :value) in tx.writes.entries) {
       final table = _tables.putIfAbsent(key, _Table.new);
+      final listened = _listeners.containsKey(key);
       for (final MapEntry(key: id, value: stored) in value.entries) {
         rows++;
+        final before = table.rows[id];
         if (stored == null) {
           table.rows.remove(id);
         } else {
           table.rows[id] = stored;
         }
+        if (listened && !identical(before, stored)) {
+          changed.add((table: key, id: id, before: before, after: stored));
+        }
       }
     }
     _finish(tx, InMemoryTransactionState.committed);
     _log.debug('$name: commit ${tx.label}, $rows row(s) written');
+    // After the commit, so a listener that reads finds what it was told.
+    for (final change in changed) {
+      for (final listener in [...?_listeners[change.table]]) {
+        listener(change);
+      }
+    }
   }
+
+  // --------------------------------------------------------------- changes
+
+  /// The committed changes of the rows of [entity] that concern [criteria]
+  /// (all without it), from the moment the stream is listened to until
+  /// its subscription is cancelled; each carries the row after it and the
+  /// row before it. The stream has one listener and buffers while it is
+  /// paused.
+  @override
+  Stream<RowChange<T>> changes<T extends Object>(
+    PersistentEntity<T> entity, {
+    Criteria? criteria,
+  }) {
+    final matcher = criteria == null || criteria.isEmpty
+        ? null
+        : CriteriaMatcher<T>(entity, criteria, converter: converter);
+    final key = _tableKey(entity);
+    late final StreamController<RowChange<T>> controller;
+    void listener(_CommittedChange change) {
+      final (table: _, :id, :before, :after) = change;
+      if (matcher != null &&
+          !(before != null && matcher.matchesRow(before.values)) &&
+          !(after != null && matcher.matchesRow(after.values))) {
+        return;
+      }
+      try {
+        controller.add(
+          RowChange<T>(
+            before == null
+                ? RowChangeKind.insert
+                : after == null
+                ? RowChangeKind.delete
+                : RowChangeKind.update,
+            row: after == null ? null : _read(entity, after),
+            previous: before == null ? null : _read(entity, before),
+            id: id,
+          ),
+        );
+      } on Object catch (error, stackTrace) {
+        controller.addError(error, stackTrace);
+      }
+    }
+
+    controller = StreamController<RowChange<T>>(
+      onListen: () {
+        (_listeners[key] ??= []).add(listener);
+        _log.debug('$name: changes of ${entity.tableName} listened to');
+      },
+      onCancel: () {
+        final listeners = _listeners[key];
+        if (listeners != null) {
+          listeners.remove(listener);
+          if (listeners.isEmpty) {
+            _listeners.remove(key);
+          }
+        }
+        _log.debug('$name: changes of ${entity.tableName} cancelled');
+      },
+    );
+    return controller.stream;
+  }
+
+  /// Always true: the store applies the whole criteria itself.
+  @override
+  bool filtersChanges<T extends Object>(
+    PersistentEntity<T> entity,
+    Criteria criteria,
+  ) => true;
 
   /// Throws the writes of [tx] away, releases its locks and wakes the
   /// transactions waiting for them. Throws an
@@ -1345,10 +1460,14 @@ final class InMemoryDataStore implements DataStore {
     if (criteria == null || criteria.isEmpty) {
       return rows;
     }
-    final matches = _compile(entity, criteria);
+    final matcher = CriteriaMatcher<Object>(
+      entity,
+      criteria,
+      converter: converter,
+    );
     return [
       for (final stored in rows)
-        if (matches(stored.values)) stored,
+        if (matcher.matchesRow(stored.values)) stored,
     ];
   }
 
@@ -1485,190 +1604,20 @@ final class InMemoryDataStore implements DataStore {
   static Object? _copy(Object? value) =>
       value is Uint8List ? Uint8List.fromList(value) : value;
 
-  // ------------------------------------------------------------ predicates
-
-  // ------------------------------------------------------------ predicates
-
-  bool Function(Map<String, Object?> row) _compile(
-    PersistentEntity<Object> entity,
-    Criteria criteria,
-  ) {
-    var next = 0;
-    final alternatives = <List<bool Function(Map<String, Object?>)>>[];
-    for (final or in criteria.predicate) {
-      final conjunction = <bool Function(Map<String, Object?>)>[];
-      for (final part in or.parts) {
-        final property = _column(entity, part.path.first, 'a condition');
-        final count = part.type.argumentCount;
-        final arguments = criteria.arguments.sublist(next, next + count);
-        next += count;
-        final test = _test(entity, property, part, arguments);
-        final column = property.columnName;
-        conjunction.add((row) => test(row[column]));
-      }
-      alternatives.add(conjunction);
-    }
-    return (row) => alternatives.any((all) => all.every((test) => test(row)));
-  }
-
+  // The column a sort names.
   PersistentProperty _column(
     PersistentEntity<Object> entity,
     String name,
-    String where,
   ) {
     final property = entity.property(name);
     if (property == null || property.isMappedCollection) {
-      if (where == 'sorting') {
-        throw PropertyReferenceException(name, entity.introspection.className);
-      }
-      throw InvalidDataAccessApiUsageException(
-        'No column ${LogFormatUtils.formatValue(name)} of '
-        '${entity.introspection.className} for $where',
-      );
+      throw PropertyReferenceException(name, entity.introspection.className);
     }
     return property;
   }
 
   Object? _fold(Object? value, {required bool ignoreCase}) =>
       ignoreCase && value is String ? value.toLowerCase() : value;
-
-  bool Function(Object? value) _test(
-    PersistentEntity<Object> entity,
-    PersistentProperty property,
-    Part part,
-    List<Object?> arguments,
-  ) {
-    final ic = part.ignoreCase;
-    Object? argument(int index) {
-      final value = converter.toColumnValue(arguments[index]);
-      rejectNul(value, property.name);
-      return _fold(value, ignoreCase: ic);
-    }
-
-    Object? fold(Object? value) => _fold(value, ignoreCase: ic);
-    bool compare(Object? value, Object? other, bool Function(int c) holds) {
-      if (value == null || other == null) {
-        return false;
-      }
-      final c = _compare(fold(value), other);
-      return c != null && holds(c);
-    }
-
-    switch (part.type) {
-      case PartType.isNull:
-        return (value) => value == null;
-      case PartType.isNotNull:
-        return (value) => value != null;
-      case PartType.isTrue:
-        return (value) => value == true;
-      case PartType.isFalse:
-        return (value) => value == false;
-      case PartType.simpleProperty:
-        final other = argument(0);
-        return other == null
-            ? (value) => value == null
-            : (value) => value != null && _equals(fold(value), other);
-      case PartType.negatingSimpleProperty:
-        final other = argument(0);
-        return other == null
-            ? (value) => value != null
-            : (value) => value != null && !_equals(fold(value), other);
-      case PartType.lessThan:
-        final other = argument(0);
-        return (value) => compare(value, other, (c) => c < 0);
-      case PartType.lessThanEqual:
-        final other = argument(0);
-        return (value) => compare(value, other, (c) => c <= 0);
-      case PartType.greaterThan:
-        final other = argument(0);
-        return (value) => compare(value, other, (c) => c > 0);
-      case PartType.greaterThanEqual:
-        final other = argument(0);
-        return (value) => compare(value, other, (c) => c >= 0);
-      case PartType.between:
-        final low = argument(0);
-        final high = argument(1);
-        return (value) =>
-            compare(value, low, (c) => c >= 0) &&
-            compare(value, high, (c) => c <= 0);
-      case PartType.like || PartType.notLike:
-        final pattern = argument(0);
-        final negate = part.type == PartType.notLike;
-        final regex = pattern is String ? _likeRegex(pattern) : null;
-        return (value) {
-          if (value is! String || regex == null) {
-            return false;
-          }
-          return regex.hasMatch(fold(value)! as String) != negate;
-        };
-      case PartType.startingWith:
-        return _literal(argument(0), fold, (v, a) => v.startsWith(a));
-      case PartType.endingWith:
-        return _literal(argument(0), fold, (v, a) => v.endsWith(a));
-      case PartType.containing:
-        return _literal(argument(0), fold, (v, a) => v.contains(a));
-      case PartType.notContaining:
-        return _literal(argument(0), fold, (v, a) => !v.contains(a));
-      case PartType.in_ || PartType.notIn:
-        final raw = arguments[0];
-        if (raw is! Iterable<Object?>) {
-          throw InvalidDataAccessApiUsageException(
-            "'${property.name}' ${part.type.name} needs a collection, not "
-            '${raw == null ? 'null' : raw.runtimeType}',
-          );
-        }
-        final elements = [
-          for (final element in raw)
-            _fold(converter.toColumnValue(element), ignoreCase: ic),
-        ];
-        for (final element in elements) {
-          rejectNul(element, property.name);
-        }
-        if (part.type == PartType.in_) {
-          return (value) =>
-              value != null &&
-              elements.any((e) => e != null && _equals(fold(value), e));
-        }
-        final hasNull = elements.contains(null);
-        return (value) {
-          if (elements.isEmpty) {
-            return true;
-          }
-          return value != null &&
-              !hasNull &&
-              !elements.any((e) => _equals(fold(value), e));
-        };
-    }
-  }
-
-  bool Function(Object? value) _literal(
-    Object? argument,
-    Object? Function(Object?) fold,
-    bool Function(String value, String argument) holds,
-  ) =>
-      (value) =>
-          value is String &&
-          argument is String &&
-          holds(fold(value)! as String, argument);
-
-  // `%` any text, `_` one character, `\` makes the next one literal.
-  RegExp? _likeRegex(String pattern) {
-    final out = StringBuffer('^');
-    for (var i = 0; i < pattern.length; i++) {
-      final c = pattern[i];
-      if (c == r'\' && i + 1 < pattern.length) {
-        out.write(RegExp.escape(pattern[++i]));
-      } else if (c == '%') {
-        out.write('.*');
-      } else if (c == '_') {
-        out.write('.');
-      } else {
-        out.write(RegExp.escape(c));
-      }
-    }
-    out.write(r'$');
-    return RegExp(out.toString(), dotAll: true);
-  }
 
   // ----------------------------------------------------------------- sort
 
@@ -1679,7 +1628,7 @@ final class InMemoryDataStore implements DataStore {
   ) {
     final keys = [
       for (final order in sort.orders)
-        (order, _column(entity, order.property, 'sorting').columnName),
+        (order, _column(entity, order.property).columnName),
     ];
     final indexed = rows.indexed.toList()
       ..sort((a, b) {
@@ -1745,42 +1694,21 @@ final class InMemoryDataStore implements DataStore {
         (e) => b.containsKey(e.key) && _equals(e.value, b[e.key]),
       );
 
-  // The order of two column values of one type; null when they cannot be
-  // compared (different types).
-  static int? _compare(Object? a, Object? b) {
-    if (a is num && b is num) {
-      return a.compareTo(b);
-    }
-    if (a is String && b is String) {
-      return a.compareTo(b);
-    }
-    if (a is DateTime && b is DateTime) {
-      return a.compareTo(b);
-    }
-    if (a is bool && b is bool) {
-      return (a ? 1 : 0).compareTo(b ? 1 : 0);
-    }
-    if (a is BigInt && b is BigInt) {
-      return a.compareTo(b);
-    }
-    return null;
-  }
+  static int? _compare(Object? a, Object? b) =>
+      CriteriaMatcher.compareValues(a, b);
 
-  static bool _equals(Object? a, Object? b) {
-    if (a == null || b == null) {
-      return a == null && b == null;
-    }
-    final c = _compare(a, b);
-    if (c != null) {
-      return c == 0;
-    }
-    if (a is List<int> && b is List<int>) {
-      return a.length == b.length &&
-          Iterable<int>.generate(a.length).every((i) => a[i] == b[i]);
-    }
-    return a == b;
-  }
+  static bool _equals(Object? a, Object? b) => CriteriaMatcher.sameValue(a, b);
 }
+
+// A row as it was before a commit and as it is after it (null: no row).
+typedef _CommittedChange = ({
+  String table,
+  Object? id,
+  StoredAggregate? before,
+  StoredAggregate? after,
+});
+
+typedef _ChangeListener = void Function(_CommittedChange change);
 
 // One table: the stored aggregates by id, in insertion order, and the
 // counter of generated ids (children's tables only use the counter).

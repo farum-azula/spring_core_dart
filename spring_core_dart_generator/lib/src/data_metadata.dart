@@ -157,6 +157,7 @@ extension DataMetadata on BeanScanner {
       'name': member.name,
       'kind': switch (method) {
         QueryMethodModel() => 'query',
+        ProcedureMethodModel() => 'procedure',
         DerivedMethodModel() => 'derived',
         LockedMethodModel() => 'locked',
       },

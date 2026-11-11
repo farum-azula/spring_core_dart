@@ -1,0 +1,74 @@
+# The Supabase project of the example (../README.md says how to start it).
+# A part of the project the starter's own tests use
+# (spring_boot_starter_supabase/test/stack/supabase): the same tables,
+# function, bucket and Edge Functions, so the example also runs against
+# that stack. Written for the Supabase CLI 3.1.0; what is not set here is
+# the CLI's default.
+project_id = "spring-supabase-example"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.migrations]
+enabled = true
+
+# Nothing to seed: the users sign up in the app.
+[db.seed]
+enabled = false
+
+# The live list of the app (the changes of `todos`).
+[realtime]
+enabled = true
+
+[studio]
+enabled = false
+
+[analytics]
+enabled = false
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+enable_signup = true
+enable_anonymous_sign_ins = false
+minimum_password_length = 6
+
+[auth.email]
+enable_signup = true
+# A user is signed in right after signing up: no mail to confirm.
+enable_confirmations = false
+
+[edge_runtime]
+enabled = true
+policy = "per_worker"
+deno_version = 2
+
+# The function written in Dart (../function, built by
+# `dart run spring_boot_starter_edge:build`): the application checks the
+# tokens itself (Spring Security's resource server), and answers /health
+# to everyone.
+[functions.api]
+verify_jwt = false
+
+# What the functions get besides the project's own variables. The local
+# stack's functions reach the project at http://kong:8000, while its
+# tokens name the address the clients use: the Dart functions check the
+# issuer against this one. Not needed on a hosted project, where both are
+# https://<ref>.supabase.co.
+[edge_runtime.secrets]
+SPRING_SUPABASE_AUTH_ISSUER = "http://127.0.0.1:54321/auth/v1"

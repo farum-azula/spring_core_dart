@@ -410,6 +410,7 @@ final class NimbusJwtDecoder implements JwtDecoder {
     this._source, {
     Set<JwsAlgorithm>? jwsAlgorithms,
     OAuth2TokenValidator<Jwt>? validator,
+    this._matchKeyId = true,
   }) : jwsAlgorithms = jwsAlgorithms == null
            ? null
            : Set.unmodifiable(jwsAlgorithms),
@@ -473,6 +474,10 @@ final class NimbusJwtDecoder implements JwtDecoder {
       StaticJwkSource([key]),
       jwsAlgorithms: {macAlgorithm},
       validator: validator,
+      // One secret and no key set to choose from: a `kid` in the token
+      // (some issuers name their secret) selects nothing. The signature
+      // is what decides.
+      matchKeyId: false,
     );
   }
 
@@ -498,6 +503,9 @@ final class NimbusJwtDecoder implements JwtDecoder {
   }
 
   final JwkSource _source;
+
+  // Whether a token's `kid` narrows the keys tried (not with one secret).
+  final bool _matchKeyId;
 
   /// The algorithms accepted in a token's `alg`; `null` accepts those the
   /// keys allow, never HMAC.
@@ -527,7 +535,7 @@ final class NimbusJwtDecoder implements JwtDecoder {
         'matching key(s) found',
       );
     }
-    final kid = jws.keyId;
+    final kid = _matchKeyId ? jws.keyId : null;
     var candidates = _matching(await _source.keys(keyId: kid), kid, algorithm);
     if (candidates.isEmpty && kid != null) {
       // A key the cache does not know yet (rotation).
@@ -581,8 +589,9 @@ abstract final class JwtDecoders {
   /// metadata gives the JWK Set URL; the `issuer` named there must equal
   /// [issuer]. Tokens must carry `iss` equal to [issuer], pass the type
   /// and lifetime checks ([JwtValidators.createDefault]), and, when
-  /// [audiences] is not empty, name one of them in `aud`. The algorithms
-  /// are those the keys allow.
+  /// [audiences] is not empty, name one of them in `aud`. A [validator]
+  /// is one more check, run after these (none is replaced): a required
+  /// claim, a rule of your own. The algorithms are those the keys allow.
   ///
   /// The metadata is looked up where the OAuth2 client's
   /// `ClientRegistrations.fromIssuerLocation` looks (the same code):
@@ -602,12 +611,14 @@ abstract final class JwtDecoders {
     String issuer, {
     JwkFetcher? fetcher,
     List<String> audiences = const [],
+    OAuth2TokenValidator<Jwt>? validator,
     Duration retryInterval = const Duration(seconds: 30),
     DateTime Function()? clock,
   }) => _IssuerJwtDecoder(
     issuer,
     fetcher ?? defaultJwkFetcher,
     audiences,
+    validator,
     retryInterval,
     clock ?? DateTime.now,
   );
@@ -618,6 +629,7 @@ final class _IssuerJwtDecoder implements JwtDecoder {
     this.issuer,
     this.fetcher,
     this.audiences,
+    this.validator,
     this.retryInterval,
     this.clock,
   );
@@ -625,6 +637,7 @@ final class _IssuerJwtDecoder implements JwtDecoder {
   final String issuer;
   final JwkFetcher fetcher;
   final List<String> audiences;
+  final OAuth2TokenValidator<Jwt>? validator;
   final Duration retryInterval;
   final DateTime Function() clock;
   Future<JwtDecoder>? _delegate;
@@ -691,6 +704,7 @@ final class _IssuerJwtDecoder implements JwtDecoder {
         JwtTimestampValidator(),
         JwtIssuerValidator(issuer),
         if (audiences.isNotEmpty) JwtAudienceValidator(audiences),
+        ?validator,
       ]),
     );
   }

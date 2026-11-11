@@ -2,7 +2,9 @@
 // an application that depends on `sqlite3` and on spring_boot_starter_data
 // gets the starter's template (resolved with the library's import
 // prefixes) and a `JdbcDriver` bean definition; without either dependency,
-// or without the starter's template, nothing is added.
+// or without the starter's template, nothing is added. The starter may be
+// one the application only reaches (through a package it lists); the driver
+// package is always the application's own.
 //
 // The starter and `sqlite3` are replaced by small fakes: the generated code
 // must compile against the signatures the real template uses.
@@ -198,6 +200,28 @@ Map<String, Object> _sources({
   'pkg|lib/src/service.dart': _service,
 };
 
+// An application (`publish_to: none`) that lists [direct], with `via`, a
+// package bringing [through].
+Map<String, Object> _application({
+  required List<String> direct,
+  List<String> through = const [],
+}) => {
+  ..._sources(
+    pubspec: [
+      'name: pkg',
+      'publish_to: none',
+      'dependencies:',
+      for (final name in direct) '  $name: any',
+    ].join('\n'),
+  ),
+  'via|pubspec.yaml': [
+    'name: via',
+    'dependencies:',
+    for (final name in through) '  $name: any',
+  ].join('\n'),
+  'postgres|lib/postgres.dart': '',
+};
+
 Future<String> _build(
   Map<String, Object> sources, {
   bool template = true,
@@ -208,7 +232,17 @@ Future<String> _build(
   );
   // The isolate's sources include the real starter: its real template is
   // the one under test.
+  await loadRealPubspecs(readerWriter);
   final own = await loadRealSources(readerWriter, sources);
+  // Without a pubspec every package of the config counts as reached, and
+  // the Supabase starter declares a data store with the real starter's
+  // types, which the fake does not have.
+  readerWriter.testing.delete(
+    AssetId(
+      'spring_boot_starter_supabase',
+      'lib/spring_auto_configuration.dart',
+    ),
+  );
   if (!template) {
     readerWriter.testing.delete(AssetId.parse(_template));
   }
@@ -386,6 +420,71 @@ void main() {
       expect(output, contains('error is ${postgres[1]}.ServerException'));
       expect(output, contains('${io![1]}.SecurityContext('));
       expect(output, contains('${async![1]}.TimeoutException'));
+    });
+  });
+
+  group('the starter reached through another package', () {
+    test('with postgres listed by the application: the glue is '
+        'written', () async {
+      final output = await _build(
+        _application(
+          direct: ['via', 'postgres'],
+          through: ['spring_boot_starter_data'],
+        ),
+      );
+      expect(output, contains(r'class _$PostgresBinding'));
+      expect(_normalize(output), contains("name:r'postgresJdbcDriver'"));
+      expect(
+        output,
+        contains(
+          'package:spring_boot_starter_data/spring_boot_starter_data.dart',
+        ),
+      );
+      expect(output, isNot(contains('Sqlite3')));
+    });
+
+    test('with postgres reached only through that package: no '
+        'glue', () async {
+      final output = await _build(
+        _application(
+          direct: ['via'],
+          through: ['spring_boot_starter_data', 'postgres'],
+        ),
+      );
+      expect(output, isNot(contains('JdbcDriver')));
+    });
+
+    test('with the starter listed and postgres reached only through '
+        'another package: no glue', () async {
+      final output = await _build(
+        _application(
+          direct: ['spring_boot_starter_data', 'via'],
+          through: ['postgres'],
+        ),
+      );
+      expect(output, isNot(contains('JdbcDriver')));
+    });
+
+    test('with neither the starter nor postgres: no glue', () async {
+      final output = await _build(_application(direct: ['via']));
+      expect(output, isNot(contains('JdbcDriver')));
+    });
+
+    test('with postgres listed but no starter reached: no glue', () async {
+      final output = await _build(_application(direct: ['via', 'postgres']));
+      expect(output, isNot(contains('JdbcDriver')));
+    });
+
+    test('in the lib/ of a published package: no glue (pub.dev checks '
+        'its imports against its dependencies)', () async {
+      final sources = _application(
+        direct: ['via', 'postgres'],
+        through: ['spring_boot_starter_data'],
+      );
+      sources['pkg|pubspec.yaml'] = (sources['pkg|pubspec.yaml']! as String)
+          .replaceFirst('publish_to: none\n', '');
+      final output = await _build(sources);
+      expect(output, isNot(contains('JdbcDriver')));
     });
   });
 }

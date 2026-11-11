@@ -59,6 +59,32 @@ void main() {
       expect('$token', isNot(contains(token.tokenValue)));
     });
 
+    test('the access, refresh and ID tokens are OAuth2Tokens', () {
+      final expiresAt = _now.add(const Duration(minutes: 5));
+      final tokens = <OAuth2Token>[
+        OAuth2AccessToken(
+          TokenType.bearer,
+          'access',
+          issuedAt: _now,
+          expiresAt: expiresAt,
+        ),
+        OAuth2RefreshToken('refresh', issuedAt: _now),
+        _token({}),
+      ];
+      expect(tokens[0].tokenValue, 'access');
+      expect(tokens[0].issuedAt, _now);
+      expect(tokens[0].expiresAt, expiresAt);
+      expect(tokens[1].tokenValue, 'refresh');
+      expect(tokens[1].issuedAt, _now);
+      expect(tokens[1].expiresAt, isNull);
+      expect(tokens[2].tokenValue, isNotEmpty);
+      expect(tokens[2].issuedAt, _now);
+      expect(tokens[2].expiresAt, expiresAt);
+      for (final token in tokens) {
+        expect('$token', isNot(contains(token.tokenValue)));
+      }
+    });
+
     test('refuses unsigned and malformed tokens', () {
       for (final raw in [
         jwt({'sub': 'x'}, alg: 'none'),

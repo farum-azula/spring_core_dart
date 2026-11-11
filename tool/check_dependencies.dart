@@ -42,7 +42,9 @@ const repositoryOnly = {
   'spring_search_dart',
   'spring_boot_starter_feign',
   'spring_boot_starter_websocket',
+  'spring_boot_starter_supabase',
   'spring_boot_starter_web',
+  'spring_boot_starter_edge',
   'spring_boot_starter_actuator',
   'spring_security_core',
   'spring_boot_starter_oauth2_client',
@@ -70,6 +72,7 @@ const flutterPackages = [
   'example/themes/cupertino',
   'example/static_site/app',
   'example/seo_site',
+  'example/supabase/app',
 ];
 
 /// Dart-team packages that [repositoryOnly] packages may depend on anyway,
@@ -135,8 +138,18 @@ const allowedPackages = {
     'It is pure Dart: unlike sqlite3 it needs no entry for the workspace '
     'root. Its own dependencies (buffer, charcode, pool...) are allowed '
     'through it only. And a dependency of load_bench (tool/load_bench, not '
-    'published): the database scenarios run on PostgreSQL too.',
-    onlyIn: {'spring_boot_starter_data', 'load_bench'},
+    'published): the database scenarios run on PostgreSQL too. And a dev '
+    'dependency of spring_boot_starter_supabase, for the tests of its SQL '
+    'path (spring.supabase.db.url). And a dependency of '
+    'supabase_example_server (example/supabase/server, not published): the '
+    'example shows that SQL path (transactions as the caller), and an '
+    'application lists its database driver itself.',
+    onlyIn: {
+      'spring_boot_starter_data',
+      'spring_boot_starter_supabase',
+      'load_bench',
+      'supabase_example_server',
+    },
   ),
   'sqlite3': AllowedPackage(
     'The SQLite driver (the owner allowed database drivers): only a dev '
@@ -179,6 +192,7 @@ const allowedPackages = {
       'theme_showcase_cupertino',
       'static_site_app',
       'seo_site_app',
+      'supabase_example_app',
     },
   ),
   'pointycastle': AllowedPackage(

@@ -1,0 +1,113 @@
+# The edge starter (spring_boot_starter_edge) in the runtimes of the
+# platforms it is built for. Its other tests run in the main pipeline
+# (the Dart VM, and the AWS entry under Node); its function in Supabase's
+# Edge Runtime runs in the `stack` job of supabase.yml.
+#
+# - cloudflare: the function in Cloudflare's runtime (workerd, through
+#   `wrangler dev`), with a KV namespace, a D1 database and a cron
+#   trigger, as JavaScript and as WebAssembly;
+# - deno: the function in Deno (Deno Deploy's entry, and Netlify's behind
+#   a stand-in), as JavaScript and as WebAssembly;
+# - lambda: the function in AWS's Lambda runtime image (Docker).
+name: Edge
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'spring_boot_starter_edge/**'
+      - 'tool/edge_checks/**'
+      - 'spring_boot_starter_web/**'
+      - 'spring_boot_starter_security/**'
+      - 'spring_web_dart/**'
+      - 'spring_boot_dart/**'
+      - 'spring_core_dart/**'
+      - '.github/workflows/edge.yml'
+  pull_request:
+    paths:
+      - 'spring_boot_starter_edge/**'
+      - 'tool/edge_checks/**'
+      - 'spring_boot_starter_web/**'
+      - 'spring_boot_starter_security/**'
+      - 'spring_web_dart/**'
+      - 'spring_boot_dart/**'
+      - 'spring_core_dart/**'
+      - '.github/workflows/edge.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: edge-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  cloudflare:
+    name: Cloudflare Workers (workerd)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: The function in workerd
+        working-directory: spring_boot_starter_edge
+        env:
+          EDGE_CLOUDFLARE: 'true'
+        run: dart test -j 1 --tags edge-cloudflare --reporter expanded
+
+  deno:
+    name: Deno (Deno Deploy, Netlify)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: The function in Deno
+        working-directory: spring_boot_starter_edge
+        env:
+          EDGE_DENO: 'true'
+        run: dart test -j 1 --tags edge-deno --reporter expanded
+
+  lambda:
+    name: AWS Lambda (runtime image)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      # A skipped container test must not pass for a run of it.
+      - name: The function in the Lambda runtime
+        working-directory: spring_boot_starter_edge
+        env:
+          CONTAINERS_REQUIRED: 'true'
+        run: dart test -j 1 --tags "edge-docker || edge-node" --reporter expanded

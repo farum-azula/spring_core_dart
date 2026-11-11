@@ -9,6 +9,8 @@ workspace:
   - spring_core_dart
   - spring_core_dart_generator
   - spring_boot_dart
+  - spring_boot_starter_supabase
+  - spring_boot_starter_edge
   - spring_boot_starter_test
   - spring_boot_starter_logging
   - spring_boot_starter_scheduling
@@ -26,7 +28,10 @@ workspace:
   - spring_boot_starter_security
   - example/server_guide
   - example/static_site/server
+  - example/supabase/server
+  - example/supabase/function
   - tool/load_bench
+  - tool/edge_checks
   - extensions/language_server
 
 dev_dependencies:

@@ -1,6 +1,6 @@
-## 0.7.4
+## Unreleased
 
-- No changes of its own; released with the family version 0.7.4.
+- Containers of a test reach each other: `Network.newNetwork()`, `GenericContainer.withNetwork(network)` and `withNetworkAliases(['db'])` (a network of the run, removed with its containers), and `withExtraHost(host, address)`; `DockerClient.createNetwork` / `removeNetwork` and `DockerContainerConfig.network`, `networkAliases`, `extraHosts` under them.
 
 ## 0.7.3
 

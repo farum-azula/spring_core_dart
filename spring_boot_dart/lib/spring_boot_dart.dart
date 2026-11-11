@@ -49,6 +49,11 @@ export 'package:spring_boot_dart/src/properties/boot_properties.dart'
     show ApplicationProperties, LifecycleProperties;
 export 'package:spring_boot_dart/src/properties/properties.dart'
     show bootPropertiesBeans;
+export 'package:spring_boot_dart/src/properties/rate_limit_properties.dart';
+export 'package:spring_boot_dart/src/ratelimit/in_memory_rate_limit_store.dart';
+export 'package:spring_boot_dart/src/ratelimit/primary_isolate_rate_limit_store.dart';
+export 'package:spring_boot_dart/src/ratelimit/rate_limit.dart';
+export 'package:spring_boot_dart/src/ratelimit/rate_limit_conditions.dart';
 export 'package:spring_boot_dart/src/renamed_properties.dart';
 export 'package:spring_boot_dart/src/runners.dart';
 export 'package:spring_boot_dart/src/spring_application.dart';

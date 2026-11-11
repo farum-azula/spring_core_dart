@@ -1,4 +1,5 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_data/src/jdbc/collection_columns.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_driver.dart';
 import 'package:spring_boot_starter_data/src/jdbc/sql_dialect.dart';
@@ -62,7 +63,11 @@ class SchemaCreator {
   /// column type for.
   List<String> createStatements(Iterable<PersistentEntity<Object>> entities) {
     final model = SchemaModel.of(entities, naming: naming);
-    final problems = [...model.problems];
+    final problems = [
+      ...model.problems,
+      for (final entity in entities)
+        ...CollectionColumns(_dialect).problemsOf(entity),
+    ];
     final statements = <String>[];
     final later = <String>[];
     for (final (index, table) in model.tables.indexed) {
@@ -161,12 +166,18 @@ class SchemaCreator {
         lines.add('$name ${_dialect.identityColumn(column.type)}');
         continue;
       }
-      final type = _dialect.columnType(column.type);
+      final json = column.json == null
+          ? null
+          : _dialect.jsonStorage(column.json!);
+      final type = json?.columnType ?? _dialect.columnType(column.type);
       if (type == null) {
-        problems.add(
-          '${column.property}: ${_dialect.name} has no column type for '
-          '${column.type}',
-        );
+        // A collection without @Json is reported already, with its fix.
+        if (!problems.any((p) => p.startsWith('${column.property}: '))) {
+          problems.add(
+            '${column.property}: ${_dialect.name} has no column type for '
+            '${column.type}',
+          );
+        }
         continue;
       }
       final out = StringBuffer('$name $type');
@@ -179,6 +190,9 @@ class SchemaCreator {
         if (_dialect.defaultLiteral(column.defaultValue) case final value?) {
           out.write(' DEFAULT $value');
         }
+      }
+      if (json?.check(name) case final check?) {
+        out.write(' CHECK ($check)');
       }
       if (column.references case final parent?) {
         // A key to a table created later, in a dialect that cannot have it

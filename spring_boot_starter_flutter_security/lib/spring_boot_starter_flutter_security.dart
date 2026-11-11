@@ -85,6 +85,14 @@ export 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 export 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 export 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
     hide Banner, Size;
+// The secret store and the login window are interfaces of the security
+// core (any provider's login uses them); the implementations are here.
+export 'package:spring_security_core/spring_security_core.dart'
+    show
+        AuthorizationCancelledException,
+        AuthorizationWindow,
+        InMemorySecretStore,
+        SecretStore;
 
 export 'src/dpop/platform_dpop_key.dart';
 export 'src/dpop/secret_store_dpop_key.dart';
@@ -103,7 +111,6 @@ export 'src/screens/login_design.dart' show LoginDesign;
 export 'src/screens/login_form.dart' hide PlainLoginButton;
 export 'src/screens/oauth2_login_button.dart';
 export 'src/secret_store/platform_secret_store.dart';
-export 'src/secret_store/secret_store.dart';
 export 'src/secret_store/secret_template.dart';
 export 'src/web/browser_page.dart' show BrowserPage;
 export 'src/web/csrf_cookie_http_transport.dart';
@@ -114,7 +121,6 @@ export 'src/web/spa_oauth2_login_service.dart';
 export 'src/web/tab_oauth2_authorized_client_service.dart';
 export 'src/web/web_crypto_dpop_key.dart'
     hide StoredKeyPair, storedKeyPairUsable;
-export 'src/window/authorization_window.dart';
 export 'src/window/loopback_authorization_window.dart';
 export 'src/window/platform_authorization_window.dart'
     show PlatformAuthorizationWindow, AuthorizationWindowException;

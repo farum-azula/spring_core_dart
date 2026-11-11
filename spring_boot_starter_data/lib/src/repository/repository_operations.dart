@@ -10,11 +10,15 @@ import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 import 'package:spring_boot_starter_data/src/query/part_tree.dart';
 import 'package:spring_boot_starter_data/src/repository/page.dart';
+import 'package:spring_boot_starter_data/src/repository/query/procedure_method.dart';
 import 'package:spring_boot_starter_data/src/repository/query/query_method.dart';
 import 'package:spring_boot_starter_data/src/repository/query/string_based_jdbc_query.dart';
 import 'package:spring_boot_starter_data/src/repository/sort.dart';
+import 'package:spring_boot_starter_data/src/store/criteria_matcher.dart';
 import 'package:spring_boot_starter_data/src/store/data_store.dart';
+import 'package:spring_boot_starter_data/src/store/data_store_capabilities.dart';
 import 'package:spring_boot_starter_data/src/store/jdbc/jdbc_data_store.dart';
+import 'package:spring_boot_starter_data/src/store/row_change.dart';
 import 'package:spring_boot_starter_data/src/transaction/platform_transaction_manager.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_exceptions.dart';
@@ -30,7 +34,11 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_template.da
 /// with the other mistakes found at startup (the store, the data source,
 /// the entity, the `@Query` texts), all listed in one `StateError`:
 ///
-/// - `@Query` needs a SQL store and is refused with the in-memory store;
+/// - `@Query` needs a store that runs SQL and is refused with the
+///   in-memory store; `@Procedure` needs a store with database functions;
+/// - what the other methods need of the store (their `StoreRequirement`s:
+///   locks for `@Lock`, transactions for `@Transactional`, changes for a
+///   stream of them) must be among its `DataStoreCapabilities`;
 /// - the entity needs an `@Id` property.
 ///
 /// A call then does what its method says. [save] inserts a new entity (by
@@ -67,7 +75,18 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_template.da
 /// lock, the timeout and `skipLocked` of the annotation; the store locks
 /// the rows until the transaction ends. Called without a transaction of
 /// that store it throws an `IllegalTransactionStateException`, and never
-/// runs unlocked.
+/// runs unlocked; on a store without locks it is refused
+/// (`InvalidDataAccessApiUsageException`).
+///
+/// **Functions.** [procedure] and [procedureStream] call the database function
+/// of a `@Procedure` method through a `FunctionDataStore`, in the caller's
+/// transaction when there is one, and read its rows as a `@Query`'s.
+///
+/// **Changes.** On a `ChangeStreamDataStore`, [changes] is the stream of
+/// the committed changes that concern a derived query (the criteria the
+/// store cannot apply are applied here), and [watch] the query's result,
+/// emitted when the stream is listened to and again after every such
+/// change.
 ///
 /// What the store throws (all `DataAccessException`s) reaches the caller
 /// unchanged; any other error is wrapped in one with the original as its
@@ -82,10 +101,12 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_template.da
 /// `RepositoryFactorySupport` creates.
 final class RepositoryOperations<T extends Object, ID extends Object> {
   /// The operations of the interface [typeName], which stores the
-  /// aggregates of [entity] in [store]; [queries] are its `@Query` methods.
-  /// [problems] are mistakes found before (such as an unknown store): they
-  /// are reported with those of the queries. Throws a [StateError] listing
-  /// every problem.
+  /// aggregates of [entity] in [store]; [queries] are its `@Query` methods,
+  /// [functions] its `@Procedure` methods, and [requirements] what its other
+  /// methods need of the store. [problems] are mistakes found before (such
+  /// as an unknown store): they are reported with those of the queries,
+  /// the functions and the requirements the store does not meet. Throws a
+  /// [StateError] listing every problem.
   RepositoryOperations({
     required this.typeName,
     required this.entity,
@@ -99,6 +120,8 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
     this.introspector,
     this.mappingContext,
     List<QueryMethod> queries = const [],
+    List<ProcedureMethod> functions = const [],
+    List<StoreRequirement> requirements = const [],
     List<String> problems = const [],
   }) : _log = SpringLog('spring.data.repository.$typeName') {
     final found = [...problems];
@@ -108,10 +131,35 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
         'repository stores aggregates by id',
       );
     }
+    if (store case final EntityCheckingDataStore checking) {
+      found.addAll(checking.mappingProblems(entity));
+    }
+    for (final requirement in requirements) {
+      final problem = requirement.problemWith(typeName, store);
+      if (problem != null && !found.contains(problem)) {
+        found.add(problem);
+      }
+    }
     for (final method in queries) {
       final compiled = _compile(method, found);
       if (compiled != null) {
         _queries[method] = compiled;
+      }
+    }
+    for (final method in functions) {
+      final compiled = FunctionQuery.compile(
+        typeName: typeName,
+        method: method,
+        entity: entity,
+        store: store,
+        converter: converter,
+        translateError: _translate,
+        problems: found,
+        introspector: introspector,
+        mappingContext: mappingContext,
+      );
+      if (compiled != null) {
+        _functions[method] = compiled;
       }
     }
     if (found.isNotEmpty) {
@@ -123,7 +171,8 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
     _log.debug(
       'Created $typeName for ${entity.introspection.className} '
       '(${entity.tableName}) on the ${store.name} store: '
-      '${_queries.length} @Query method(s)',
+      '${_queries.length} @Query method(s), ${_functions.length} @Procedure '
+      'method(s)',
     );
   }
 
@@ -170,6 +219,10 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
   // passes.
   final _queries = Map<QueryMethod, StringBasedJdbcQuery>.identity();
 
+  // The compiled @Procedure methods, by the ProcedureMethod the generated class
+  // passes.
+  final _functions = Map<ProcedureMethod, FunctionQuery>.identity();
+
   // The conditions of a lookup by id.
   late final List<OrPart> _idPredicate = [
     OrPart([Part(entity.idProperty!.name)]),
@@ -200,15 +253,16 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
   /// The aggregate with id [id], or null; read with [lock] when given.
   Future<T?> findById(ID id, {Lock? lock}) {
     _called('findById', const ['id'], [id]);
-    return _guarded(
-      () => store.findById<T>(
+    return _guarded(() {
+      _requireLocks(lock, 'findById');
+      return store.findById<T>(
         entity,
         id,
         lock: lock?.value,
         lockTimeout: lock?.timeout,
         skipLocked: lock?.skipLocked ?? false,
-      ),
-    );
+      );
+    });
   }
 
   /// Whether an aggregate with id [id] exists.
@@ -280,12 +334,14 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
   /// Every aggregate, ordered by [sort].
   Future<List<T>> findAllSorted(Sort sort) {
     _called('findAllSorted', const ['sort'], [sort]);
+    _refuseJson('findAllSorted', const [], sort);
     return _guarded(() => store.find<T>(entity, sort: sort));
   }
 
   /// One page of aggregates, as [pageable] asks; the page knows the total.
   Future<Page<T>> findAllPaged(Pageable pageable) {
     _called('findAllPaged', const ['pageable'], [pageable]);
+    _refuseJson('findAllPaged', const [], pageable.sort);
     return _guarded(() async {
       final window = _Window.of(pageable, null);
       final content = await store.find<T>(
@@ -563,6 +619,19 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
 
   StringBasedJdbcQuery? _compile(QueryMethod method, List<String> problems) {
     final where = '$typeName.${method.name}';
+    final missing = StoreRequirement(
+      method.name,
+      DataStoreCapability.queries,
+    ).problemWith(typeName, store);
+    if (missing != null) {
+      // Once, also when the build wrote the same requirement.
+      if (!problems.contains(missing)) {
+        problems.add(missing);
+      }
+      return null;
+    }
+    // The capability says the store runs SQL; the text is run by the JDBC
+    // store's own template and dialect.
     if (store case final JdbcDataStore jdbc) {
       return StringBasedJdbcQuery.compile(
         typeName: typeName,
@@ -579,12 +648,261 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
       );
     }
     problems.add(
-      '$where: @Query needs a SQL store: set spring.datasource.url and '
-      'add a driver (coming in a later version); the ${store.name} store '
-      'runs derived queries only',
+      '$where: @Query runs on the JDBC store; the ${store.name} store says '
+      'it runs SQL but is no JdbcDataStore',
     );
     return null;
   }
+
+  // --------------------------------------------------------------- @Procedure
+
+  /// Calls the database function of the `@Procedure` [method] (one of the
+  /// `functions` given when the operations were created) with
+  /// [arguments], in the order of its parameters; the result has the type
+  /// the method returns (`R` is `void` for a method that returns
+  /// nothing).
+  ///
+  /// ```dart
+  /// @override
+  /// Future<List<Account>> over(int balance) =>
+  ///     this.operations.procedure<List<Account>>(_over, [balance]);
+  /// ```
+  Future<R> procedure<R>(ProcedureMethod method, List<Object?> arguments) {
+    final compiled = _function(method, arguments);
+    if (compiled.isStream) {
+      throw StateError(
+        '$typeName.${method.name} returns a Stream: call procedureStream',
+      );
+    }
+    return _guarded<R>(
+      () async =>
+          await Future<Object?>.sync(() => compiled.call(arguments)) as R,
+    );
+  }
+
+  /// Calls the database function of the `@Procedure` [method] that returns a
+  /// stream: the function is called when the stream is listened to, and
+  /// its rows are emitted one by one.
+  ///
+  /// ```dart
+  /// @override
+  /// Stream<Account> streamOver(int balance) =>
+  ///     this.operations.procedureStream<Account>(_streamOver, [balance]);
+  /// ```
+  Stream<E> procedureStream<E>(
+    ProcedureMethod method,
+    List<Object?> arguments,
+  ) {
+    final compiled = _function(method, arguments);
+    if (!compiled.isStream) {
+      throw StateError(
+        '$typeName.${method.name} returns a Future: call procedure',
+      );
+    }
+    return compiled.call(arguments)! as Stream<E>;
+  }
+
+  FunctionQuery _function(ProcedureMethod method, List<Object?> arguments) {
+    final compiled =
+        _functions[method] ??
+        (throw StateError(
+          '$typeName.${method.name} was not given as a function when the '
+          'operations were created',
+        ));
+    _called(method.name, method.parameters, arguments);
+    return compiled;
+  }
+
+  // -------------------------------------------------------------- changes
+
+  /// The committed changes of the rows that concern [tree] with
+  /// [arguments] (a row that matches after the change or matched before
+  /// it; every row for a tree without conditions), from the moment the
+  /// stream is listened to until its subscription is cancelled, which
+  /// stops the store's reporting. The subject of the tree (`find`,
+  /// `First`, an `OrderBy`) does not matter: only its conditions do.
+  ///
+  /// The store filters as far as it can; what it cannot apply
+  /// (`ChangeStreamDataStore.filtersChanges`) is applied here, with a
+  /// [CriteriaMatcher]. Errors of the store are forwarded (as
+  /// `DataAccessException`s) and do not end the stream.
+  ///
+  /// Throws an `InvalidDataAccessApiUsageException` when the store reports
+  /// no changes (a `StoreRequirement` of
+  /// [DataStoreCapability.changes] finds it when the repository is
+  /// created).
+  ///
+  /// ```dart
+  /// @override
+  /// Stream<RowChange<Book>> changesByShelf(String shelf) =>
+  ///     this.operations.changes(_changesByShelf, [shelf]);
+  /// ```
+  Stream<RowChange<T>> changes(PartTree tree, List<Object?> arguments) {
+    _calledTree(tree, arguments);
+    final source = _changeSource(tree);
+    return _guardedStream(() => _changes(source, tree, arguments));
+  }
+
+  /// The matches of [tree] as [list] reads them, emitted when the stream
+  /// is listened to and again after every committed change that may
+  /// concern them (see [changes]), by running the query again.
+  ///
+  /// - The queries never overlap: changes that arrive while one runs are
+  ///   answered by exactly one more query after it, however many they
+  ///   are, so the last list emitted is always read after the last
+  ///   change.
+  /// - A list is emitted after each query, also when it equals the one
+  ///   before.
+  /// - An error of a query or of the store's changes is forwarded and
+  ///   does not end the stream: the next change queries again.
+  /// - Cancelling the subscription stops the store's reporting; a paused
+  ///   subscription queries nothing and catches up with one query when it
+  ///   resumes. The stream has one listener.
+  ///
+  /// The queries run outside the transaction of the code that listens:
+  /// listen outside a transaction, or expect the committed rows only.
+  ///
+  /// Throws an `InvalidDataAccessApiUsageException` when the store reports
+  /// no changes.
+  ///
+  /// ```dart
+  /// @override
+  /// Stream<List<Book>> watchByShelf(String shelf, Sort sort) =>
+  ///     this.operations.watch(_watchByShelf, [shelf], sort: sort);
+  /// ```
+  Stream<List<T>> watch(
+    PartTree tree,
+    List<Object?> arguments, {
+    Sort? sort,
+    Pageable? pageable,
+  }) {
+    _calledTree(tree, arguments, sort: sort, pageable: pageable);
+    final source = _changeSource(tree);
+    late final StreamController<List<T>> controller;
+    StreamSubscription<RowChange<T>>? subscription;
+    var querying = false;
+    var stale = false;
+    var cancelled = false;
+    Future<void> refresh() async {
+      if (querying) {
+        stale = true;
+        return;
+      }
+      querying = true;
+      do {
+        stale = false;
+        try {
+          final rows = await _guarded(
+            () => _rows(tree, arguments, sort: sort, pageable: pageable),
+          );
+          if (!cancelled) {
+            controller.add(rows);
+          }
+        } on Object catch (error, stackTrace) {
+          if (!cancelled) {
+            controller.addError(error, stackTrace);
+          }
+        }
+      } while (stale && !cancelled && !controller.isPaused);
+      querying = false;
+    }
+
+    controller = StreamController<List<T>>(
+      onListen: () {
+        // The changes first, so one that commits during the first query
+        // is not lost.
+        try {
+          subscription = _changes(source, tree, arguments).listen(
+            (_) => unawaited(refresh()),
+            onError: (Object error, StackTrace stackTrace) =>
+                controller.addError(_asDataAccess(error), stackTrace),
+          );
+        } on Object catch (error, stackTrace) {
+          controller.addError(_asDataAccess(error), stackTrace);
+        }
+        unawaited(refresh());
+      },
+      onPause: () => subscription?.pause(),
+      onResume: () {
+        subscription?.resume();
+        if (stale) {
+          unawaited(refresh());
+        }
+      },
+      onCancel: () {
+        cancelled = true;
+        return subscription?.cancel();
+      },
+    );
+    return controller.stream;
+  }
+
+  // The store as a source of changes, or the misuse said clearly.
+  ChangeStreamDataStore _changeSource(PartTree tree) {
+    final store = this.store;
+    if (store is ChangeStreamDataStore && store.capabilities.changes) {
+      return store;
+    }
+    throw InvalidDataAccessApiUsageException(
+      StoreRequirement(
+            tree.methodName,
+            DataStoreCapability.changes,
+          ).problemWith(typeName, store) ??
+          '$typeName.${tree.methodName}: the ${store.name} store says it '
+              'reports changes but is no ChangeStreamDataStore',
+    );
+  }
+
+  // The store's changes for the tree's conditions, filtered here when the
+  // store did not apply all of them.
+  Stream<RowChange<T>> _changes(
+    ChangeStreamDataStore source,
+    PartTree tree,
+    List<Object?> arguments,
+  ) {
+    final criteria = Criteria(tree.predicate, arguments);
+    if (criteria.isEmpty) {
+      return source.changes<T>(entity);
+    }
+    final changes = source.changes<T>(entity, criteria: criteria);
+    if (source.filtersChanges<T>(entity, criteria)) {
+      return changes;
+    }
+    final matcher = CriteriaMatcher<T>(entity, criteria, converter: converter);
+    return changes.where(matcher.concerns);
+  }
+
+  // The stream [open] gives, opened when it is listened to; what it fails
+  // with (opening or later) is forwarded as a DataAccessException and
+  // does not end it.
+  Stream<E> _guardedStream<E>(Stream<E> Function() open) {
+    late final StreamController<E> controller;
+    StreamSubscription<E>? subscription;
+    controller = StreamController<E>(
+      onListen: () {
+        try {
+          subscription = open().listen(
+            controller.add,
+            onError: (Object error, StackTrace stackTrace) =>
+                controller.addError(_asDataAccess(error), stackTrace),
+            onDone: controller.close,
+          );
+        } on Object catch (error, stackTrace) {
+          controller.addError(_asDataAccess(error), stackTrace);
+          unawaited(controller.close());
+        }
+      },
+      onPause: () => subscription?.pause(),
+      onResume: () => subscription?.resume(),
+      onCancel: () => subscription?.cancel(),
+    );
+    return controller.stream;
+  }
+
+  Object _asDataAccess(Object error) => switch (error) {
+    DataAccessException() || TransactionException() => error,
+    _ => _translate(error),
+  };
 
   // -------------------------------------------------------------- running
 
@@ -616,6 +934,7 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
     Lock? lock, {
     int extraRows = 0,
   }) {
+    _requireLocks(lock, tree.methodName);
     final limit = window.limit;
     if (limit == 0) {
       return Future.value(<T>[]);
@@ -631,6 +950,22 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
       lockTimeout: lock?.timeout,
       skipLocked: lock?.skipLocked ?? false,
     );
+  }
+
+  // A read with a lock never runs unlocked: on a store without locks it
+  // is refused (the repository's requirements find it at startup when the
+  // build wrote them).
+  void _requireLocks(Lock? lock, String method) {
+    if (lock == null) {
+      return;
+    }
+    final problem = StoreRequirement(
+      method,
+      DataStoreCapability.locks,
+    ).problemWith(typeName, store);
+    if (problem != null) {
+      throw InvalidDataAccessApiUsageException(problem);
+    }
   }
 
   // The first row of a non-empty result that must have one row, unless the
@@ -741,6 +1076,38 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
     }
   }
 
+  late final Set<String> _jsonProperties = {
+    for (final property in entity.properties)
+      if (property.isJson) property.name,
+  };
+
+  // A `@Json` property is one value to a store: no store compares or
+  // orders by it the same way, so a condition or an order on one is
+  // refused here, whatever the store.
+  void _refuseJson(String method, Iterable<String> conditions, Sort sort) {
+    if (_jsonProperties.isEmpty) {
+      return;
+    }
+    String refused(String what, String property) =>
+        '$typeName.$method: a derived query cannot $what the @Json '
+        'property ${entity.introspection.className}.$property: use @Query '
+        "with the database's JSON operators on a SQL store, or @Procedure";
+    for (final property in conditions) {
+      if (_jsonProperties.contains(property)) {
+        throw InvalidDataAccessApiUsageException(
+          refused('filter by', property),
+        );
+      }
+    }
+    for (final order in sort.orders) {
+      if (_jsonProperties.contains(order.property)) {
+        throw InvalidDataAccessApiUsageException(
+          refused('sort by', order.property),
+        );
+      }
+    }
+  }
+
   // A derived query: the arguments are named after the properties of the
   // parts that take them.
   void _calledTree(
@@ -749,6 +1116,11 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
     Sort? sort,
     Pageable? pageable,
   }) {
+    _refuseJson(
+      tree.methodName,
+      tree.parts.map((part) => part.path.first),
+      _sortOf(tree, sort, pageable),
+    );
     if (_log.isEnabled(SpringLogLevel.trace)) {
       _called(
         tree.methodName,

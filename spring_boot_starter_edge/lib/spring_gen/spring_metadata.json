@@ -1,0 +1,324 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_edge",
+  "properties": [
+    {
+      "name": "spring.edge.cloudflare.rate-limit.database",
+      "type": "String?",
+      "description": "The binding (`wrangler.toml`, `[[d1_databases]]`) of the D1 database the rate limiter counts in. With it, the default store of the rate limiter in a Worker is that database (`spring.web.rate-limit.store: d1`), shared by every instance.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_edge/src/config/edge_properties.dart",
+      "line": 44,
+      "class": "EdgeCloudflareRateLimitProperties"
+    },
+    {
+      "name": "spring.edge.cloudflare.rate-limit.table",
+      "type": "String",
+      "description": "The table of the buckets, created when it is missing.",
+      "default": "rate_limit",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_edge/src/config/edge_properties.dart",
+      "line": 47,
+      "class": "EdgeCloudflareRateLimitProperties"
+    },
+    {
+      "name": "spring.edge.runtime",
+      "type": "String?",
+      "description": "The platform the function runs on (`supabase`, `cloudflare`, `aws`), set by the platform's entry file when the function starts; not set when the application runs as an ordinary server. Read it, do not write it.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_edge/src/config/edge_properties.dart",
+      "line": 17,
+      "class": "EdgeProperties"
+    },
+    {
+      "name": "spring.edge.supabase.anon-key-as-anonymous",
+      "type": "bool",
+      "description": "Whether a request whose bearer token is the project's anon key (`spring.supabase.anon-key`) is a request without a token. The Supabase clients send that key as the bearer token of everyone who is not signed in; it is public and names nobody, so the request is anonymous, as if it had no `Authorization` header. With `false` the key reaches the resource server, which answers 401 to it.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_edge/src/config/edge_properties.dart",
+      "line": 58,
+      "class": "EdgeSupabaseProperties"
+    },
+    {
+      "name": "spring.edge.warnings",
+      "type": "bool",
+      "description": "Whether the starter says once, when the function starts, which parts of the application work differently in a function (in-memory caches, `@Scheduled` methods, an in-memory rate limiter).",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_edge/src/config/edge_properties.dart",
+      "line": 22,
+      "class": "EdgeProperties"
+    }
+  ],
+  "hints": [],
+  "beans": [
+    {
+      "name": "cloudflareBindings",
+      "type": "CloudflareBindings",
+      "types": [
+        "CloudflareBindings"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.edge.runtime', havingValue: 'cloudflare')",
+        "@ConditionalOnMissingBean(CloudflareBindings)"
+      ],
+      "source": "package:spring_boot_starter_edge/src/edge_auto_configuration.dart",
+      "line": 87,
+      "injects": [],
+      "members": [
+        {
+          "name": "d1",
+          "kind": "method",
+          "type": "D1Database",
+          "parameters": [
+            "String binding"
+          ]
+        },
+        {
+          "name": "has",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "String binding"
+          ]
+        },
+        {
+          "name": "kv",
+          "kind": "method",
+          "type": "KvNamespace",
+          "parameters": [
+            "String binding"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "edgeProperties",
+      "type": "EdgeProperties",
+      "types": [
+        "EdgeProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_edge/src/config/edge_properties.dart",
+      "line": 12,
+      "injects": [],
+      "members": [
+        {
+          "name": "cloudflare",
+          "kind": "field",
+          "type": "EdgeCloudflareProperties"
+        },
+        {
+          "name": "runtime",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "supabase",
+          "kind": "field",
+          "type": "EdgeSupabaseProperties"
+        },
+        {
+          "name": "warnings",
+          "kind": "field",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "edgeRuntime",
+      "type": "EdgeRuntime",
+      "types": [
+        "EdgeRuntime"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_edge/src/edge_auto_configuration.dart",
+      "line": 52,
+      "injects": [],
+      "members": [
+        {
+          "name": "isFunction",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "platform",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "waitUntil",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Future<void> work"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "edgeWarnings",
+      "type": "EdgeWarnings",
+      "types": [
+        "EdgeWarnings",
+        "ApplicationContextAware",
+        "Aware",
+        "SmartInitializingSingleton"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.edge.runtime')",
+        "@ConditionalOnProperty('spring.edge.warnings', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_edge/src/edge_auto_configuration.dart",
+      "line": 170,
+      "injects": [],
+      "members": [
+        {
+          "name": "afterSingletonsInstantiated",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "contributors",
+          "kind": "field",
+          "type": "List<EdgeWarningContributor>"
+        },
+        {
+          "name": "found",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "log",
+          "kind": "field",
+          "type": "SpringLog"
+        },
+        {
+          "name": "setApplicationContext",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ApplicationContext context"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rateLimitStore",
+      "type": "RateLimitStore",
+      "types": [
+        "RateLimitStore"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.edge.runtime', havingValue: 'cloudflare')",
+        "@ConditionalOnRateLimitStore('d1', byDefault: OnD1RateLimitDatabase())"
+      ],
+      "source": "package:spring_boot_starter_edge/src/edge_auto_configuration.dart",
+      "line": 99,
+      "injects": [],
+      "members": [
+        {
+          "name": "tryAcquire",
+          "kind": "method",
+          "type": "Future<RateLimitDecision>",
+          "parameters": [
+            "String key",
+            "RateLimit limit",
+            "{int permits}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "supabaseAnonKeyFilter",
+      "type": "SupabaseAnonKeyFilter",
+      "types": [
+        "SupabaseAnonKeyFilter",
+        "WebFilter",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.edge.runtime', havingValue: 'supabase')",
+        "@ConditionalOnProperty('spring.supabase.anon-key')",
+        "@ConditionalOnProperty('spring.edge.supabase.anon-key-as-anonymous', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_edge/src/edge_auto_configuration.dart",
+      "line": 127,
+      "injects": [],
+      "members": [
+        {
+          "name": "doFilter",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "WebFilterChain chain"
+          ]
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "webServerFactory",
+      "type": "WebServerFactory",
+      "types": [
+        "WebServerFactory"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.edge.runtime')",
+        "@ConditionalOnMissingBean(WebServerFactory)"
+      ],
+      "source": "package:spring_boot_starter_edge/src/edge_auto_configuration.dart",
+      "line": 60,
+      "injects": [],
+      "members": [
+        {
+          "name": "getWebServer",
+          "kind": "method",
+          "type": "WebServer",
+          "parameters": [
+            "HttpHandler handler"
+          ]
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

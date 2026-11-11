@@ -61,11 +61,28 @@ abstract interface class WebSocketTransport {
   /// Browsers cannot send headers with the handshake, so in the browser a
   /// non-empty [headers] fails at once. Pass a token as a query parameter
   /// or a protocol there instead.
+  ///
+  /// [maxTextMessageSize] and [maxBinaryMessageSize] bound the messages
+  /// this one connection receives, in bytes (`-1` for no limit); a larger
+  /// message closes the session with 1009. `null` keeps the transport's
+  /// own limits. So one server that sends large messages gets a limit of
+  /// its own, while every other connection keeps the small one. The
+  /// browser assembles messages itself and ignores them.
+  ///
+  /// ```dart
+  /// // This server sends JSON of up to 1 MB; the others stay at 8 KB.
+  /// final session = await transport.connect(
+  ///   Uri.parse('wss://feed.neon.books/ws'),
+  ///   maxTextMessageSize: 1024 * 1024,
+  /// );
+  /// ```
   Future<WebSocketSession> connect(
     Uri url, {
     HttpHeaders? headers,
     List<String> protocols = const [],
     Duration? timeout,
+    int? maxTextMessageSize,
+    int? maxBinaryMessageSize,
   });
 }
 

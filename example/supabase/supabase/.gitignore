@@ -1,0 +1,7 @@
+# What the Supabase CLI writes beside the project.
+.branches
+.temp
+.env
+.env.*
+# Never in git: `supabase gen signing-key`.
+signing_keys.json

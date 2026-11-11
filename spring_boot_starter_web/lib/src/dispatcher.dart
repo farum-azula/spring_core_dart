@@ -194,7 +194,8 @@ final class DispatcherHandler implements HttpHandler {
   });
 
   /// The longest the filters and the handler may take to answer
-  /// (`server.request-timeout`); `null`, the default, for no limit.
+  /// (`server.request-timeout`, 60 seconds unless set); `null`, the
+  /// default of a dispatcher made by hand, for no limit.
   final Duration? requestTimeout;
 
   /// The filters every request passes, in the order they run (the

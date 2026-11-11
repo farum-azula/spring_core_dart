@@ -186,6 +186,7 @@ The return type says how the response is read:
 | `Future<ResponseEntity<void>>` | the status and headers; the body is ignored |
 | `Future<HttpResponse>` | the raw response, whatever its status: no error decoding, no `dismiss404` (Feign's `Response`) |
 | `EventStream<OrderEvent>`, `Stream<OrderEvent>` | the events of a `text/event-stream` response (see [Server-sent events](#server-sent-events)) |
+| `Stream<List<int>>` | the body of the answer as it arrives, whatever its content type (a large file): one request per listener, `Accept: */*` unless `produces` says otherwise, no reconnection |
 
 A non-nullable result with an empty body, or a body that does not fit
 the type, throws a `DecodeException`.

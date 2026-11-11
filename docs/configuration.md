@@ -1977,12 +1977,25 @@ The keys under `spring.websocket.client.config.<client>.`:
 | `reconnect.jitter` | duration | `0` | A random part added or taken, scaled like the delay |
 | `reconnect.max-retries` | int | no limit | Attempts in a row before giving up |
 | `default-request-headers.<Header>` | list | — | Headers sent with the handshake; not possible in browsers |
+| `max-text-message-size` | data size, or `-1` | `spring.websocket.client.max-text-message-size` | The largest text message this client reads, in UTF-8 bytes; a larger one closes the connection with 1009. What a client leaves out comes from `default`, then from the key for all clients below |
+| `max-binary-message-size` | data size, or `-1` | `spring.websocket.client.max-binary-message-size` | The same for binary messages |
+| `phoenix.heartbeat-interval` | duration | `30s` | For a `@PhoenixChannel` or a `PhoenixSocket` of that name: the time between two heartbeats; `0` sends none |
+| `phoenix.push-timeout` | duration | `10s` | The longest a join, a push or a leave of a Phoenix channel waits for its reply |
+| `phoenix.vsn` | `2.0.0`, `1.0.0` | `2.0.0` | The version of the Phoenix wire format, sent as the `vsn` query parameter; `@PhoenixChannel(vsn:)` wins |
 
-An invalid `reconnect.*` value fails the start. Not supported: heartbeats,
-STOMP and SockJS.
+An invalid `reconnect.*` value fails the start. Not supported: heartbeats
+of a plain `@WebSocketClient` (a Phoenix socket sends its own), STOMP and
+SockJS.
 
-Two keys apply to every client, through the default `webSocketTransport`
-bean (on `dart:io`; the browser has no such limits):
+```properties
+# The feed sends JSON of up to 1 MB; every other client stays at 8 KB.
+spring.websocket.client.config.feed.max-text-message-size=1MB
+spring.websocket.client.config.chat.phoenix.heartbeat-interval=15s
+```
+
+Two keys apply to every client that sets no limit of its own, through
+the default `webSocketTransport` bean (on `dart:io`; the browser has no
+such limits):
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
@@ -4568,7 +4581,7 @@ spring.web.multipart.location=/var/tmp/shop-uploads
 | `server.context-path` | path | — | A prefix of every mapping, such as `/shop`. A missing leading `/` is added and a trailing one dropped; other paths answer 404. |
 | `server.max-http-request-body-size` | data size, or `-1` | `10MB` | A larger request body is answered with 413, whatever its `Content-Type`; `-1` means no limit. This starter's own key. Only the multipart resolver reads uploads with `spring.web.multipart.max-request-size` instead |
 | `server.connection-timeout` | duration; `0` or less (`-1`) for none | `60s` | How long a request body may send nothing while it is read: then the answer is 408 and the connection closes. Also how long an idle keep-alive connection stays open. `0` or a negative value means no limit, as in Tomcat. Tomcat's `connectionTimeout` (Spring Boot 2.0 had this key; Boot 4 has `server.tomcat.connection-timeout`) |
-| `server.request-timeout` | duration; `0` or less for none | no limit | The longest a request's filters and handler may take to answer. When it passes before the answer starts, the answer is a 503 `ProblemDetail` with a generic detail (`AsyncRequestTimeoutException`, logged as a warning, at most once per 10 seconds), what the handler does afterwards is dropped, and the request's `RequestDeadline` has run out for the code it called (see [Deadlines](#deadlines-one-limit-for-a-request-and-the-calls-it-makes)). Not applied to a response that became a stream (server-sent events, a streamed body: `spring.mvc.async.request-timeout` limits an `SseEmitter`) or to a WebSocket handshake. A response already being sent is left alone. The time the handler spends reading a slow upload counts; `server.connection-timeout` still ends a body that sends nothing. This starter's own key: Spring Boot has none |
+| `server.request-timeout` | duration; `0` or less for none | `60s` | The longest a request's filters and handler may take to answer. The default ends a request whose body trickles in without ever being idle; raise it for handlers or uploads that rightly take longer. When it passes before the answer starts, the answer is a 503 `ProblemDetail` with a generic detail (`AsyncRequestTimeoutException`, logged as a warning, at most once per 10 seconds), what the handler does afterwards is dropped, and the request's `RequestDeadline` has run out for the code it called (see [Deadlines](#deadlines-one-limit-for-a-request-and-the-calls-it-makes)). Not applied to a response that became a stream (server-sent events, a streamed body: `spring.mvc.async.request-timeout` limits an `SseEmitter`) or to a WebSocket handshake. A response already being sent is left alone. The time the handler spends reading a slow upload counts; `server.connection-timeout` still ends a body that sends nothing. This starter's own key: Spring Boot has none |
 | `server.forward-headers-strategy` | `none` / `native` / `framework` | `none` | Behind a reverse proxy: apply its `Forwarded` or `X-Forwarded-Proto`, `-Host`, `-Port`, `-For` headers (the scheme, so cookies get `Secure` behind TLS; the host and port; the client's address), from trusted proxies only. `native` and `framework` do the same here. Another value stops the start |
 | `server.forward-headers.trusted-proxies` | list of addresses and CIDR ranges | loopback, `10/8`, `172.16/12`, `192.168/16`, `169.254/16`, `100.64/10`, `::1`, `fc00::/7`, `fe80::/10` | Whose forwarded headers are believed (Tomcat's `internalProxies`); a client reaching the server from elsewhere cannot set them. Not in Spring Boot |
 | `server.compression.enabled` | bool (only `true` turns it on) | `false` | gzip of the responses of `mime-types`, from `min-response-size` on (or of unknown length), for clients that send `Accept-Encoding: gzip`; never partial content, nor an answer with a strong `ETag` (as Tomcat). Every answer it would compress gets `Vary: Accept-Encoding`, for clients without gzip too |
@@ -4606,6 +4619,23 @@ spring.web.multipart.location=/var/tmp/shop-uploads
 | `spring.web.multipart.max-part-count` | int, or `-1` | `50` | The most parts (files and fields) of a multipart request; above it the answer is 413. This starter's own key: Spring Boot sets the same limit on Tomcat with `server.tomcat.max-part-count` (50) |
 | `spring.web.multipart.file-size-threshold` | data size | `0B` | Files above this size are written to a temporary file; smaller ones stay in memory. With `0B` every file goes to a temporary file (in memory where there is no `dart:io`). Temporary files are deleted after the request |
 | `spring.web.multipart.location` | directory path | the system's temporary directory | Where the private directory (`0700`) of the uploads' temporary files is made; the files have random names and are deleted when the request ends or fails |
+| `spring.web.rate-limit.enabled` | bool | not set: on when `rules` has a rule | Whether requests are rate limited. An application that only uses `@RateLimiter` sets it to `true` (the start fails when a controller has the annotation and nothing turned the limiter on); `false` turns the rules and the annotations off. This starter's own keys: Spring Boot has no rate limiter (see [Rate limiting](#rate-limiting)) |
+| `spring.web.rate-limit.store` | `memory` / `primary-isolate` / `jdbc` / `procedure`, or the name of another library's store | not set: the most specific the application has | Where the buckets are kept: `procedure` (a database function through the REST API; Supabase starter, the default on its REST path), `jdbc` (a table of the primary `DataSource`; data starter, the default with one), `primary-isolate` (the first isolate, for all of a pool; the default with `server.isolates.*`), `memory` (this isolate). A `RateLimitStore` bean of the application wins over all. A store the application does not have fails the start |
+| `spring.web.rate-limit.on-store-failure` | `deny` / `allow` | `deny` | When the store cannot be reached: `deny` answers 503 with `Retry-After`, `allow` lets the request through, not counted. One WARN line on `spring.web.ratelimit` (at most every 10 s) names the rule, never the key |
+| `spring.web.rate-limit.store-failure-retry-after` | duration | `5s` | The `Retry-After` of that 503 |
+| `spring.web.rate-limit.trusted-proxies` | list of addresses and CIDR ranges (IPv4, IPv6) | empty | The reverse proxies in front of the server. Only a connection from one of them has `client-address-header` read; the client is the entry the first trusted proxy added, counting from the right, and everything to the left of it is ignored. Empty: no header is ever read, the client is the connection's own address |
+| `spring.web.rate-limit.client-address-header` | header name | `X-Forwarded-For` | The header a trusted proxy puts the client's address in: a list read from the right, or one address (`CF-Connecting-IP`) |
+| `spring.web.rate-limit.hash-addresses` | bool | `false` | Stores the keys made of an address as their HMAC-SHA-256 under `hash-secret`, so the store holds no address in clear |
+| `spring.web.rate-limit.hash-secret` | string | — | The secret of `hash-addresses` (required with it; the same on every server that shares a store) |
+| `spring.web.rate-limit.headers` | bool | `true` | Whether the answers carry `RateLimit-Limit`, `RateLimit-Remaining` and `RateLimit-Reset` (seconds) of the rule that leaves the least |
+| `spring.web.rate-limit.memory.max-entries` | int | `100000` | The most keys the stores in memory (`memory`, `primary-isolate`) keep; past it the buckets that are full again go, then the keys not used for the longest |
+| `spring.web.rate-limit.rules[n].name` | string | `rule-<n+1>` | The rule's name: the first part of its keys in the store (`<name>:ip:<address>`, `<name>:user:<name>`) and what the logs call it |
+| `spring.web.rate-limit.rules[n].path` | path pattern | `/**` | The paths the rule is for, inside the context path |
+| `spring.web.rate-limit.rules[n].methods` | list of HTTP methods | empty: all | The methods the rule is for |
+| `spring.web.rate-limit.rules[n].key` | `user` / `ip` / `#{...}` / a key of a `RateLimitKeyResolver` bean | `user` | Who a bucket belongs to: `user` is the authenticated user, else the client's address (decided right after the security filter chain); `ip` is the client's address (decided before any authentication); `#{...}` is a SpEL expression over `request`, `headers` (names in lower case), `principal`, `authentication`, `address`, `method`, `path`, which counts by address when it gives nothing |
+| `spring.web.rate-limit.rules[n].limit` | `<count>/<duration>` | — (required) | The limit: `5/1m`, `120/1m`, `10/s`. A token bucket: `count` requests at once, refilled evenly over the duration |
+| `spring.web.rate-limit.rules[n].burst` | int | the count of `limit` | The most requests at once, when it is not the count |
+| `spring.web.rate-limit.rules[n].on-store-failure` | `deny` / `allow` | `spring.web.rate-limit.on-store-failure` | The same for this rule |
 | `spring.test.web-environment` | `mock` / `random-port` / `defined-port` / `none` | not set: a server starts | Set by `springBootTest(webEnvironment:)` (`mock` by default) and by `ApplicationContextRunner` (`mock`). In tests only `random-port` (port `0`) and `defined-port` start a server |
 | `local.server.port` | int, **written by the server** | — | The port the server listens on, set once it listens (also in `WebServerInitializedEvent`). Read it; do not set it |
 
@@ -4623,9 +4653,52 @@ locations. Mappings are logged at debug level under the logger
 `spring.web.mvc` (`logging.level.spring.web.mvc=debug`), and the server
 under `spring.web.server`.
 
+### Rate limiting
+
+```yaml
+spring:
+  web:
+    rate-limit:
+      trusted-proxies: [173.245.48.0/20]   # the proxies in front
+      rules:
+        - path: /api/auth/**               # logins: by address, before
+          methods: [POST]                  # any authentication work
+          key: ip
+          limit: 5/1m
+        - path: /api/**                    # the API: by user
+          limit: 120/1m
+```
+
+```properties
+spring.web.rate-limit.trusted-proxies=173.245.48.0/20
+spring.web.rate-limit.rules[0].path=/api/auth/**
+spring.web.rate-limit.rules[0].methods=POST
+spring.web.rate-limit.rules[0].key=ip
+spring.web.rate-limit.rules[0].limit=5/1m
+spring.web.rate-limit.rules[1].path=/api/**
+spring.web.rate-limit.rules[1].limit=120/1m
+```
+
+A request past a limit is answered with a 429 `ProblemDetail` and
+`Retry-After`, before its body is read. Every rule that matches a request
+applies; it passes only when all of them allow it. Rules keyed by `ip`
+run in a filter before the sessions and the security filter chain; rules
+keyed by `user` or an expression run right after the chain (a request the
+chain answered itself, such as a 401, does not reach them: limit those by
+`ip`). On a controller, `@RateLimiter('10/1m', key: '#{authentication.name}')`
+does the same for a method or a class. The buckets are kept in the
+store of `spring.web.rate-limit.store`; the SQL of the stores in a
+database is in their packages (`spring.data.jdbc.rate-limit.*` in
+[section 20](#20-reference-sql-databases), `spring.supabase.rate-limit.function`
+under [Supabase](#supabase-springsupabase)). The whole of it is in the
+web starter's
+[Rate limiting](../spring_boot_starter_web/README.md#rate-limiting)
+section.
+
 ### Deadlines: one limit for a request and the calls it makes
 
-`server.request-timeout` is more than a timer: the request runs under a
+`server.request-timeout` (a minute unless set; `0` for none) is more than
+a timer: the request runs under a
 `RequestDeadline` (`spring_web_dart`) of that length, carried in the
 `Zone` like a transaction, so that code the request calls can read it:
 `RequestDeadline.current` is the deadline (or `null`), with `remaining`,
@@ -4845,10 +4918,13 @@ spring.security.oauth2.resourceserver.jwt.audiences=my-api
 | `spring.security.password-checks.max-queued` | int | eight times `max-concurrent` | Logins waiting for a hash; beyond that a `503` with `Retry-After: 1`. Not in Spring Boot |
 | `spring.security.oauth2.resourceserver.jwt.issuer-uri` | URL | none | The provider; its keys come from its metadata |
 | `spring.security.oauth2.resourceserver.jwt.jwk-set-uri` | URL | none | The provider's public keys |
-| `spring.security.oauth2.resourceserver.jwt.jws-algorithms` | list | `RS256` | With `jwk-set-uri` only |
+| `spring.security.oauth2.resourceserver.jwt.secret-key` | string, 32 bytes or more | none | The secret shared with a provider that signs with HS256, HS384 or HS512, as its UTF-8 bytes; not with `jwk-set-uri`; `issuer-uri` beside it is only compared with `iss`. On a server only: never in a client application. Not in Spring Boot |
+| `spring.security.oauth2.resourceserver.jwt.jws-algorithms` | list | `RS256`; `HS256` with `secret-key` | With `jwk-set-uri`, or the one HMAC algorithm (`HS256`, `HS384`, `HS512`) of `secret-key` |
 | `spring.security.oauth2.resourceserver.jwt.audiences` | list | none | The audiences a token must name; none: no check |
+| `spring.security.oauth2.resourceserver.jwt.required-claims.<claim>` | string | none | The value a top-level claim of every token must have (a number or a boolean as its text); else a `401`. Not in Spring Boot |
+| `spring.security.oauth2.resourceserver.jwt.require-expiry` | bool | `false` | Whether a token without an `exp` claim is refused (else such a token never expires, as in Spring Security); set it for an issuer whose tokens always expire |
 | `spring.security.oauth2.resourceserver.jwt.authority-prefix` | string | `SCOPE_` | The prefix of the authorities read from the token |
-| `spring.security.oauth2.resourceserver.jwt.authorities-claim-name` | string | `scope`, else `scp` | The claim of the authorities |
+| `spring.security.oauth2.resourceserver.jwt.authorities-claim-name` | string | `scope`, else `scp` | The claim of the authorities; without a claim of that name, a name with dots is a path into nested objects (`realm_access.roles`) |
 | `spring.security.oauth2.resourceserver.jwt.authorities-claim-delimiter` | string | a space | Between authorities in that claim |
 | `spring.security.oauth2.resourceserver.jwt.principal-claim-name` | string | `sub` | The claim that names the user |
 
@@ -5063,7 +5139,10 @@ spring.data.jdbc.slow-query-threshold=500ms
 | `spring.jdbc.template.query-timeout` | none | bounds each statement of the `JdbcTemplate` beans |
 | `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and masked values) at info: the value of a name that looks secret (a column or parameter name that contains `password`, `token`, `secret`, `credential`, `apikey` or `privatekey`, or has the word `key`: `sslpassword`, `apiToken`, `clientSecret`; not `keyword`) is `******`, and so is a value bound without a name (a plain list to a `JdbcTemplate`); the values also show at trace, with the same masks |
 | `spring.data.jdbc.slow-query-threshold` | none | a slower statement is logged at warn |
+| `spring.data.jdbc.rate-limit.table` | `rate_limit` | the table of the rate limiter's SQL store (`spring.web.rate-limit.store: jdbc`, the default with a primary data source): a name, or `schema.name` |
+| `spring.data.jdbc.rate-limit.create-table` | only when `spring.data.jdbc.schema` is `create` or `create-drop` | whether the store creates that table when it is not there; else it comes from a migration (the SQL is in the package: `sql/rate_limit/postgresql.sql`, `sql/rate_limit/sqlite.sql`) |
 | `spring.data.memory.lock-timeout` | `10s` | the in-memory store's wait for a row lock |
+| `spring.data.store` | `jdbc` with a primary data source, else `memory` | the store of the repositories without `@UseStore` and `@UseDataSource`: `memory`, `jdbc`, or the name of another package's store (`supabase`); a name no store has fails the repositories when they are created, with the stores there are |
 
 Spring Boot's `spring.flyway.*` names are not used (and stop the start,
 see [Renamed properties](#renamed-properties)): the migrations are this
@@ -5239,6 +5318,97 @@ at start with a report that says so.
 `@Version`, new means a `null` version, or `0` for a version that cannot be
 null (`int`); a nullable `int?` version is new only when `null`, so a row
 stored at version 0 can be updated (Spring Data's rule for `long` and `Long`).
+
+### Supabase: `spring.supabase.*`
+
+The keys of `spring_boot_starter_supabase` (not on pub.dev yet): the
+project, how the repositories reach its database, Auth, Realtime,
+Storage, Edge Functions and the caches. They are this starter's own:
+Spring has no Supabase support.
+
+<table>
+<tr><th>YAML</th><th>.properties</th></tr>
+<tr><td>
+
+```yaml
+spring:
+  supabase:
+    url: https://abcd.supabase.co
+    anon-key: ${SUPABASE_ANON_KEY}
+    service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
+    db:
+      url: ${SUPABASE_DB_URL}
+      rls: user
+    auth:
+      redirect-urls:
+        - com.example.app://login
+    cache:
+      shared: [catalog]
+```
+
+</td><td>
+
+```properties
+spring.supabase.url=https://abcd.supabase.co
+spring.supabase.anon-key=${SUPABASE_ANON_KEY}
+spring.supabase.service-role-key=${SUPABASE_SERVICE_ROLE_KEY}
+spring.supabase.db.url=${SUPABASE_DB_URL}
+spring.supabase.db.rls=user
+spring.supabase.auth.redirect-urls[0]=com.example.app://login
+spring.supabase.cache.shared=catalog
+```
+
+</td></tr>
+</table>
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.supabase.url` | `http://` or `https://` URL | none | The project's address (`https://<ref>.supabase.co`), without a trailing slash, user, query or fragment (else the start fails). Every service is called under it; a key or a token is only ever sent to it |
+| `spring.supabase.anon-key` | string | none | The anon (publishable) key: `apikey` of every call, and the bearer token while nobody is signed in |
+| `spring.supabase.service-role-key` | string | none | The service role (secret) key, used only inside `SupabaseCredentials.asServiceRole`; it passes row-level security. Server only: in a Flutter app it is warned about at startup |
+| `spring.supabase.connect-timeout` | duration | `10s` | The longest the Realtime connection may take to open, unless the WebSocket client `supabase-realtime` (or `default`) sets `connect-timeout` |
+| `spring.supabase.timeout` | duration | `30s` | The longest a call may take, the answer's body included; the bodies of Storage downloads are not limited |
+| `spring.supabase.db.url` | `postgresql://` URL | none | The PostgreSQL address of the project or of a pooler. Set: the repositories use SQL over it (it becomes the default of `spring.datasource.url`). Not set: they use the REST API (`spring.data.store` defaults to `supabase`). In a Flutter app it is warned about at startup |
+| `spring.supabase.db.rls` | `off`, `user` | `off` | As whom SQL runs: the user of `db.url`, or (`user`) the current user, with the role `authenticated` or `anon` and the token's claims in every transaction and statement. `user` through the transaction pooler (port 6543) fails the start |
+| `spring.supabase.db.schema` | string | the API's (`public`) | The schema the REST API reads and writes |
+| `spring.supabase.auth.enabled` | bool | `true` | Whether Supabase Auth is plugged into Spring Security: the resource server's defaults on a server, the `supabaseAuth` and `supabaseAuthAdmin` beans |
+| `spring.supabase.auth.redirect-urls` | list | empty | Where a login through a provider, a magic link or a password reset may come back to; the first is the default, any other address is refused |
+| `spring.supabase.auth.issuer` | string | `<url>/auth/v1` | The issuer of the project's tokens |
+| `spring.supabase.auth.jwt-secret` | string | none | The legacy JWT secret of a project that signs with HS256; it becomes the default of `…resourceserver.jwt.secret-key`. Server only: in a Flutter app it is warned about at startup |
+| `spring.supabase.auth.persist-session` | bool | `true` | Keeps the session across restarts, in the application's `SecretStore` |
+| `spring.supabase.auth.auto-refresh` | bool | `true` | Refreshes the access token by a timer before it expires; without it, when the next call needs it |
+| `spring.supabase.auth.refresh-margin` | duration | `30s` | How long before its expiry an access token counts as expired |
+| `spring.supabase.realtime.heartbeat-interval` | duration | `25s` | How often the Realtime connection says it is alive; `spring.websocket.client.config.supabase-realtime.phoenix.heartbeat-interval` wins |
+| `spring.supabase.realtime.timeout` | duration | `10s` | How long a join or a message waits for its answer; `…supabase-realtime.phoenix.push-timeout` wins |
+| `spring.supabase.realtime.max-message-size` | data size | `4MB` | The largest message read from Realtime; a larger one closes the connection; `…supabase-realtime.max-text-message-size` wins |
+| `spring.supabase.storage.signed-url-expiry` | duration | `1h` | How long a signed URL is valid when the call does not say |
+| `spring.supabase.functions.region` | string | none | The region the Edge Functions run in (the `x-region` header) |
+| `spring.supabase.functions.timeout` | duration | `spring.supabase.timeout` | How long a function may take; `spring.feign.client.config.supabase-functions.call-timeout` wins |
+| `spring.supabase.cache.shared` | list | empty | The caches whose entries are the same for every user; every other cache keeps the entries of each caller (the anon key, each user, the service role) apart |
+| `spring.supabase.rate-limit.function` | name of a database function | `rate_limit_acquire` | The function the rate limiter's store calls for an acquisition (`spring.web.rate-limit.store: procedure`, the default of an application on the REST path with the rate limiter on), as the service role. The table and the function come from a migration: the package's `sql/rate_limit.sql` |
+
+On a server, with `spring.supabase.url` set and `auth.enabled` not
+`false`, the starter gives the resource server of
+`spring_boot_starter_security` these defaults, of the lowest precedence
+(the application's own values win):
+
+| Key under `spring.security.oauth2.resourceserver.jwt.` | Default with this starter |
+|---|---|
+| `jwk-set-uri` | `${spring.supabase.url}/auth/v1/.well-known/jwks.json` (without `auth.jwt-secret`) |
+| `secret-key` | `${spring.supabase.auth.jwt-secret}` (with it) |
+| `jws-algorithms` | `ES256,RS256`; `HS256` with `auth.jwt-secret` |
+| `issuer-uri` | `${spring.supabase.auth.issuer:${spring.supabase.url}/auth/v1}` |
+| `audiences` | `authenticated` |
+| `required-claims.role` | `authenticated` |
+| `require-expiry` | `true`: a token without `exp` is refused |
+| `authorities-claim-name` | `app_metadata.roles` |
+| `authority-prefix` | `ROLE_` |
+
+The Realtime connection is the WebSocket client `supabase-realtime`
+([section 16](#16-reference-websocket-clients); its `url` is not read,
+the address is always the project's) and the Edge Functions are the Feign
+client `supabase-functions` ([section 15](#15-reference-feign-clients);
+it never follows a redirect).
 
 ## 21. Tests
 

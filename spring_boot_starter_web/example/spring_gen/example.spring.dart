@@ -225,11 +225,25 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i11.springBootStarterWebAutoConfiguration,
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
+      _i11.springBootStarterWebRateLimitAutoConfiguration,
     _i12.springBootStarterWebsocketAutoConfiguration,
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i12.springBootStarterWebsocketServerAutoConfiguration,
   ],
+  autoConfigurationMetadata: {
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
+      _i11.springBootStarterWebRateLimitAutoConfiguration:
+          const _i2.AutoConfigurationModule(
+            after: [
+              'springBootStarterDataAutoConfiguration',
+              'springBootStarterSupabaseAutoConfiguration',
+            ],
+          ),
+  },
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
       'DEBUG': const String.fromEnvironment('DEBUG'),
@@ -280,7 +294,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'ce5976bc',
+  fingerprint: 'fed591a9',
 );
 
 /// Starts the application: config files, environment, context, runners

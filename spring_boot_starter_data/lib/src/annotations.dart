@@ -75,6 +75,67 @@ class Transient {
   const Transient();
 }
 
+/// Stores a property as JSON in one column: a class of the application, a
+/// list or a map of them, or plain `Map<String, Object?>` / `List` data.
+///
+/// The value is written and read through the application's `ObjectMapper`
+/// (the one controllers and Feign clients use), so its settings and the
+/// `@Json...` annotations of the classes apply; the build describes the
+/// classes of the property's type for it (as it does for a controller's
+/// body), with no `@Introspected` to add for the classes of the
+/// application's package. A `null` property is a SQL `NULL`, not the JSON
+/// `null`.
+///
+/// ```dart
+/// @Table('profiles')
+/// class Profile {
+///   @Id()
+///   String? id;
+///
+///   @Json() // PostgreSQL: jsonb
+///   Settings settings;
+///
+///   @Json(binary: false) // PostgreSQL: json
+///   Map<String, Object?> raw;
+///
+///   @Json()
+///   List<Address>? addresses;
+/// }
+/// ```
+///
+/// What a store keeps: PostgreSQL a `jsonb` column ([binary], the default)
+/// or a `json` one; SQLite, and any database without a JSON type, the
+/// JSON text in a `TEXT` column (`SqlDialect.jsonStorage`); the in-memory
+/// store and a store over a REST API the decoded JSON (maps, lists,
+/// numbers, strings).
+///
+/// A derived query cannot filter or sort by such a property (use `@Query`
+/// with the database's JSON operators, or `@Procedure`), and it cannot be the
+/// [Id], the [Version], a [MappedCollection] or a reference. A stored
+/// value that cannot be read as the property's type is a
+/// `MappingException` naming the class and the property.
+///
+/// A `Map`, `List` or `Set` property without it (and without
+/// [MappedCollection]; bytes aside) has no column on a SQL store, which
+/// refuses it when the repository is created, and at build time when the
+/// build knows the store (`CollectionColumns`).
+///
+/// Spring (Java): none in Spring Data JDBC (a custom
+/// `@WritingConverter` / `@ReadingConverter` pair to `PGobject`);
+/// Hibernate's `@JdbcTypeCode(SqlTypes.JSON)` is the nearest.
+class Json {
+  /// Stores the property as JSON: [binary] (the default) in the database's
+  /// binary JSON type where it has one (PostgreSQL's `jsonb`), else in its
+  /// textual one (`json`).
+  const Json({this.binary = true});
+
+  /// Whether the column is of the binary JSON type (`jsonb`), which
+  /// PostgreSQL indexes and compares; `false` keeps the text as written
+  /// (`json`: key order, duplicates and spaces). Databases with one way to
+  /// store JSON ignore it.
+  final bool binary;
+}
+
 /// Marks the version of an aggregate root, for optimistic locking: an `int`
 /// (or `DateTime`) the repository raises at each save.
 ///
@@ -443,6 +504,46 @@ class Query {
 class Modifying {
   /// Marks a changing query.
   const Modifying();
+}
+
+/// Makes a repository method a call of the database function [name], with
+/// the method's parameters as its named arguments.
+///
+/// An argument has the name of the parameter in snake case, as columns
+/// are named (`accountId` → `account_id`). What the function returns is
+/// read as the result of a [Query] is: the repository's entity or a class
+/// of the application from the columns of each row, a simple type from a
+/// single column; as a `List`, a `Set`, a `Stream`, one value (nullable
+/// for a function that may return no row) or nothing (`Future<void>`).
+/// The call runs in the current transaction when the store has one, so a
+/// function is also the way to do several writes atomically on a store
+/// without transactions.
+///
+/// The store must have database functions (PostgreSQL through the SQL
+/// store); on a store without them the repository fails when it is
+/// created.
+///
+/// ```dart
+/// abstract interface class Accounts
+///     implements CrudRepository<Account, int> {
+///   // select * from "transfer"("from_id" => ?, "to_id" => ?, "amount" => ?)
+///   @Procedure('transfer')
+///   Future<void> transfer(int fromId, int toId, int amount);
+///
+///   @Procedure('accounts_over')
+///   Future<List<Account>> over(int balance);
+/// }
+/// ```
+///
+/// Spring (Java): `org.springframework.data.jpa.repository.query.Procedure`
+/// (`@Procedure("name")` of Spring Data JPA; Spring Data JDBC has none).
+class Procedure {
+  /// Calls the database function [name] (`schema.name` for one outside
+  /// the search path).
+  const Procedure(this.name);
+
+  /// The name of the function.
+  final String name;
 }
 
 /// The kind of pessimistic lock a query method takes on the rows it reads.

@@ -616,6 +616,72 @@ class Plain {
     });
   });
 
+  group('@Json properties', () {
+    const model = '''
+class Settings {
+  Settings({required this.theme, this.layout});
+  String theme;
+  Layout? layout;
+}
+
+class Layout {
+  int columns = 1;
+}
+
+class Address {
+  Address(this.street);
+  String street;
+}
+
+class Plain {
+  String note = '';
+}
+
+@Table('profiles')
+class Account {
+  Account({required this.settings, this.raw = const {}, this.addresses,
+      this.id});
+  @Id()
+  int? id;
+  @Json()
+  Settings settings;
+  @Json(binary: false)
+  Map<String, Object?> raw;
+  @Json()
+  List<Address>? addresses;
+  @Transient()
+  Plain? plain;
+}
+''';
+
+    test('the classes of the type are described for the ObjectMapper, '
+        'nested ones too, with no @Introspected', () async {
+      final raw = await _generate(model);
+      final output = _normalize(raw);
+      expect(output, _has('BeanIntrospection<Settings>('));
+      expect(output, _has('BeanIntrospection<Layout>('));
+      expect(output, _has('BeanIntrospection<Address>('));
+      // What no @Json property holds is not, and neither is the entity.
+      expect(output, isNot(_has('BeanIntrospection<Plain>')));
+      expect(output, isNot(_has('BeanIntrospection<Account>')));
+      expect(
+        output,
+        _has('''
+    EntityProperty(r'settings', ClassType<Settings>(),
+        annotations: [Json()], parameter: true, writable: true),'''),
+      );
+      expect(output, _has('annotations: [Json(binary: false)]'));
+      expect(await _compileErrors(model, raw), isEmpty);
+    });
+
+    test('without @Json nothing is described for the ObjectMapper', () async {
+      final output = _normalize(
+        await _generate(model.replaceAll(RegExp(r'@Json\([^)]*\)'), '')),
+      );
+      expect(output, isNot(contains('BeanIntrospection')));
+    });
+  });
+
   group('SpEL in @Query', () {
     const repository = '''
 class Filter {

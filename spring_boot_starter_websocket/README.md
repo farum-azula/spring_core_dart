@@ -21,6 +21,11 @@ does that work:
   (`@SendMessage`), and inject it like any bean. The connection opens when
   first needed and reconnects after a loss. Works on the VM, in Flutter
   (mobile, desktop, web) and in the browser.
+- **Phoenix Channels:** a `@PhoenixChannel` interface with `@OnEvent`
+  streams and `@Push` methods is a channel of a Phoenix server (or of a
+  service that speaks its protocol): many topics over one connection,
+  joined again after every reconnection (see
+  [Phoenix Channels client](#phoenix-channels-client)).
 - **Server endpoints:** a `@WebSocketEndpoint` bean with `@OnOpen`,
   `@OnMessage` and `@OnClose` methods, or Spring's `WebSocketHandler` with
   a `WebSocketConfigurer`, served by
@@ -207,6 +212,8 @@ spring.websocket.client.config.chat.reconnect.max-retries=10
 | `reconnect.jitter` | `0` | a random part added to or taken from each wait. It grows with the multiplier like the wait does, and the wait never goes below `delay` nor above `max-delay` |
 | `reconnect.max-retries` | none | how many attempts in a row before giving up |
 | `default-request-headers.<Name>` | — | headers sent with every handshake (not possible in browsers). `a,b` or a YAML list gives several values. A client's header replaces the `default` one of the same name, in any case |
+| `max-text-message-size` | `spring.websocket.client.max-text-message-size` (`8KB`) | the largest text message this client reads, in UTF-8 bytes (`-1`: no limit); a larger one closes the connection with 1009 |
+| `max-binary-message-size` | `spring.websocket.client.max-binary-message-size` (`8KB`) | the same for binary messages |
 
 The `reconnect.*` names are those of Spring Framework 7's `RetryPolicy`
 (`delay`, `multiplier`, `maxDelay`, `jitter`, `maxRetries`), and the
@@ -285,10 +292,213 @@ spring.websocket.client.max-text-message-size=1MB
 spring.websocket.client.max-binary-message-size=-1
 ```
 
+Those two hold for every client of the application. One client gets
+limits of its own, so a server that sends large messages does not raise
+the limit of the others; what it leaves out comes from `default`, then
+from the two properties above. A `@PhoenixChannel` and a `PhoenixSocket`
+take them by their client name too.
+
+```properties
+# The feed sends JSON of up to 1 MB; every other client stays at 8 KB.
+spring.websocket.client.config.feed.max-text-message-size=1MB
+```
+
+The limits of a client are asked from the `WebSocketTransport` at every
+connection (`connect(url, maxTextMessageSize:, maxBinaryMessageSize:)`),
+so they hold with a transport bean of your own as well.
+
 No extension is offered (no permessage-deflate). A handshake answer that
 picks a subprotocol the client did not offer, or any extension, fails
 the connection (RFC 6455), and redirects are not followed, as in
 browsers.
+
+## Phoenix Channels client
+
+[Phoenix Channels](https://hexdocs.pm/phoenix/channels.html) is the
+realtime protocol of Phoenix (Elixir) servers, and of services built on
+it, such as Supabase Realtime. It puts many *topics* on one WebSocket
+connection: a client joins a topic (`room:42`), receives the events the
+server sends on it, and pushes its own events, each answered by a reply.
+The starter speaks it as a client, on the same connection handling as a
+`@WebSocketClient` (transport, reconnection, handshake interceptors,
+`spring.websocket.client.config.<name>.*`).
+
+Declare a channel like a WebSocket client:
+
+```dart
+@PhoenixChannel('chat', topic: 'room:{id}', url: r'${chat.url}')
+abstract interface class Room {
+  @OnEvent('new_msg')
+  Stream<ChatMessage> messages(String id);
+
+  @Push('new_msg')
+  Future<Ack> send(String id, ChatMessage message);
+
+  Future<void> leave(String id);
+}
+
+@Service()
+class Chat {
+  Chat(this.room);            // the generated bean
+  final Room room;
+
+  // Listening joins room:42; it stays joined while someone listens.
+  void open() => room.messages('42').listen(show);
+
+  Future<Ack> say(String text) =>
+      room.send('42', ChatMessage(from: 'me', text: text));
+}
+```
+
+```properties
+# lib/resources/application.properties: the socket's WebSocket endpoint,
+# "/websocket" included.
+chat.url=wss://chat.neon.books/socket/websocket
+```
+
+| Method | What it does |
+|---|---|
+| `@OnEvent('name') Stream<T> name(...)` | The events of that name on the topic. A payload that already is a `T` (a `String`, a `Map<String, Object?>`) is given as it is, any other type is read as JSON. A payload that cannot be read arrives as an error event (`MessageConversionException`), and the stream goes on. Listening joins the topic. |
+| `@Push('name') Future<T> name(..., payload)` | Pushes the event, joining the topic first when needed, and completes with the response of the server's reply read as `T`; `Future<void>` waits for the reply and ignores its response. At most one parameter besides the topic's: the payload, written as JSON (`{}` without one). An `error` reply fails with a `PhoenixPushException` (its `reply.response` says why), no reply within `phoenix.push-timeout` with a `TimeoutException`, a topic that cannot be joined with a `PhoenixJoinException`. |
+| `@Push('name', reply: false) Future<void> name(...)` | The same for an event the server does not answer (`{:noreply, socket}`): completes once it is sent. |
+| `Future<void> leave(...)` | Optional. Leaves the topic now; its streams are done. |
+
+Any other method stops the application at startup, with every problem of
+the interface in one message. So does a missing or wrong URL, an unknown
+`vsn`, or a method without a parameter the topic names.
+
+- **Topics.** A `{name}` in the topic is filled from the parameter of that
+  name of the method called, so one interface serves every room; a topic
+  without one needs no parameters. `${...}` in the topic and the URL are
+  resolved from the `Environment` at startup. Each topic is one channel:
+  joined on its first listener or push, left when its last listener
+  cancels or `leave` is called. A topic that was only pushed to stays
+  joined until `leave`.
+- **One connection.** Interfaces with the same name and address share a
+  socket. It connects when the first topic is joined and closes when the
+  last one is left, and when the application stops.
+- **Reconnection.** A lost connection is opened again as for a
+  `@WebSocketClient` (`reconnect.*`); then every topic is joined again,
+  with a fresh join payload, and the streams go on. The same happens when
+  the server reports that a channel crashed (`phx_error`). A join the
+  server refuses, or does not answer, is an error event on the streams
+  (a `PhoenixJoinException`) and is tried again with the `reconnect.*`
+  waits, while someone listens.
+- **Heartbeat.** Every `phoenix.heartbeat-interval` the socket sends a
+  heartbeat; one without a reply before the next drops the connection,
+  which is then opened again.
+- **When it ends.** A connection the server closes for good (a normal
+  close, a code that is not retried, `reconnect.max-retries` reached) ends
+  the streams, as for a `@WebSocketClient`; the next listener starts
+  again.
+
+### The join payload
+
+What a join sends comes from two places. A parameter marked
+`@JoinPayload()`, on any method, is used when that call joins the topic
+(a call on a topic that is joined already ignores it). And every
+`PhoenixJoinInterceptor` bean may change the payload of every join, the
+ones after a reconnection included, which is how a token is added:
+
+```dart
+@OnEvent('new_msg')
+Stream<ChatMessage> messagesSince(String id, @JoinPayload() RoomJoin join);
+
+// The rooms want the user's current token when joined.
+@Component()
+class RoomAuth implements PhoenixJoinInterceptor {
+  RoomAuth(this.tokens);
+  final TokenStore tokens;
+
+  @override
+  Future<void> apply(PhoenixJoin join) async {
+    if (join.topic.startsWith('room:')) {      // join.clientName: 'chat'
+      join.payload['token'] = await tokens.current();
+    }
+  }
+}
+```
+
+A token the server wants in the socket's URL instead (`connect/3` of the
+Phoenix socket) is added by a
+[`WebSocketHandshakeInterceptor`](#tokens-handshake-interceptors), as for
+any client.
+
+### Phoenix settings
+
+Beside the settings every client has ([Configuration](#configuration)):
+
+| Property | Default | Meaning |
+|---|---|---|
+| `phoenix.heartbeat-interval` | `30s` | the time between two heartbeats; `0` sends none |
+| `phoenix.push-timeout` | `10s` | the longest a join, a push or a leave waits for its reply |
+| `phoenix.vsn` | `2.0.0` | the version of the wire format, sent as the `vsn` query parameter: `2.0.0` (JSON arrays) or `1.0.0` (JSON objects); `@PhoenixChannel(vsn:)` wins |
+
+```properties
+spring.websocket.client.config.chat.phoenix.heartbeat-interval=15s
+spring.websocket.client.config.chat.phoenix.push-timeout=5s
+```
+
+The wire format is a `PhoenixSerializer`: `PhoenixSerializerV2` and
+`PhoenixSerializerV1` come with the starter, and a bean implementing the
+interface adds another `vsn`. Only text frames are read; Phoenix's binary
+payloads are not supported.
+
+### In code: `PhoenixSocket`
+
+The interfaces sit on a layer a library can use directly. The
+`PhoenixSocketFactory` bean gives the socket of a client name (one per
+name and address, closed when the application stops); a socket gives a
+channel per topic:
+
+```dart
+@Service()
+class Presence {
+  Presence(PhoenixSocketFactory sockets, this.tokens)
+    : _socket = sockets.socket(
+        'chat',                                 // ...config.chat.url
+        parameters: () async => {'token': await tokens.current()},
+      );
+
+  final TokenStore tokens;
+  final PhoenixSocket _socket;
+
+  Future<void> watch() async {
+    final lobby = _socket.channel(
+      'lobby',
+      payload: () => {'user': 'ann'},           // asked at every join
+    );
+    lobby.on('presence_diff').listen(update);   // or lobby.messages
+    lobby.states.listen(show);                  // joining, joined, errored...
+    await lobby.join();                         // the reply's response
+    final reply = await lobby.push('status', {'text': 'here'});
+    await lobby.send('typing');                 // no reply awaited
+    await lobby.leave();
+  }
+}
+```
+
+`parameters` are the extra query parameters of the handshake, asked at
+every connection. A `PhoenixChannelSession` joins again by itself after a
+reconnection and after a `phx_error`, and goes on trying after a failed
+join, until `leave()`: `join()` reports the outcome it waited for (a
+`PhoenixJoinException` for a refusal or a timeout). Pushes made while it
+is joining are sent once it joined. Replies are matched by their `ref`,
+and a message of an earlier join of the topic (another `join_ref`) is
+dropped.
+
+### Compared with phoenix.js
+
+| phoenix.js | Here |
+|---|---|
+| `new Socket(endPoint, {params, heartbeatIntervalMs, timeout, vsn})` | `PhoenixSocketFactory.socket(name, parameters: ...)` with `phoenix.*` properties; the URL is the full WebSocket address (`.../websocket`) |
+| `socket.connect()` / `disconnect()` | not needed: the connection follows the channels |
+| `socket.channel(topic, params)` | `socket.channel(topic, payload: ...)`, or a `@PhoenixChannel` interface |
+| `channel.join().receive("ok" / "error" / "timeout", ...)` | `await channel.join()`, a `PhoenixJoinException` |
+| `channel.on(event, callback)` | `channel.on(event)` (a `Stream`), `@OnEvent` |
+| `channel.push(event, payload).receive(...)` | `await channel.push(event, payload)`, `@Push` |
+| the reconnect and rejoin timers | `reconnect.*` of the client, for both |
+| long polling | not supported |
 
 ## Server endpoints
 
@@ -575,6 +785,20 @@ test('chats', () async {
 
 With an `ApplicationContextRunner`, register the mock with
 `.withBean<WebSocketTransport>(() => sockets)`.
+
+A `@PhoenixChannel` is tested the same way: the frames are those of the
+protocol, `[join_ref, ref, topic, event, payload]` with `vsn` 2.0.0.
+
+```dart
+room.messages('42').listen(messages.add);            // joins room:42
+final server = await sockets.nextConnection;
+await pumpEventQueue();
+final join = server.sentJson.single! as List;        // ["1","1","room:42","phx_join",{}]
+server.pushJson([join[0], join[1], join[2], 'phx_reply',
+    {'status': 'ok', 'response': {}}]);              // the join is accepted
+server.pushJson([null, null, 'room:42', 'new_msg',
+    {'from': 'ann', 'text': 'hi'}]);                 // an event
+```
 
 ### Server endpoints
 

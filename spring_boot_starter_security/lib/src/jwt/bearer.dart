@@ -118,6 +118,13 @@ final class JwtAuthenticationToken extends AbstractAuthenticationToken {
 /// `authorities-claim-delimiter` properties under
 /// `spring.security.oauth2.resourceserver.jwt`, or build one.
 ///
+/// [authoritiesClaimName] may be a path into nested objects, its segments
+/// separated by dots: `realm_access.roles` reads `roles` inside the
+/// `realm_access` claim. A claim of exactly that name wins (claim names
+/// such as `https://example.com/roles` contain dots); the path is walked
+/// only when the token has no such claim. A segment that is missing, or
+/// whose value is not an object, gives no authorities.
+///
 /// ```dart
 /// // Keycloak-style `roles` claim: ["admin"] becomes ROLE_admin.
 /// @Bean()
@@ -128,9 +135,16 @@ final class JwtAuthenticationToken extends AbstractAuthenticationToken {
 ///         authorityPrefix: 'ROLE_',
 ///       ),
 ///     );
+///
+/// // Roles inside an object: {"realm_access": {"roles": ["admin"]}}.
+/// const JwtGrantedAuthoritiesConverter(
+///   authoritiesClaimName: 'realm_access.roles',
+///   authorityPrefix: 'ROLE_',
+/// );
 /// ```
 ///
-/// Spring (Java): `JwtGrantedAuthoritiesConverter`.
+/// Spring (Java): `JwtGrantedAuthoritiesConverter`, which reads a
+/// top-level claim only; the nested path is not in Spring.
 final class JwtGrantedAuthoritiesConverter {
   /// A converter with the given claim, prefix and delimiter.
   const JwtGrantedAuthoritiesConverter({
@@ -143,7 +157,8 @@ final class JwtGrantedAuthoritiesConverter {
   final String authorityPrefix;
 
   /// The claim holding the authorities; `null` looks for `scope`, else
-  /// `scp`.
+  /// `scp`. Without a claim of that name, a name with dots is a path into
+  /// nested objects (`realm_access.roles`).
   final String? authoritiesClaimName;
 
   /// Separates the values of a string claim; a space by default.
@@ -162,7 +177,7 @@ final class JwtGrantedAuthoritiesConverter {
     if (name == null) {
       return const [];
     }
-    final values = switch (jwt.claims[name]) {
+    final values = switch (_claim(jwt.claims, name)) {
       final String text => text.split(authoritiesClaimDelimiter),
       final List<Object?> list => [
         for (final e in list)
@@ -175,6 +190,24 @@ final class JwtGrantedAuthoritiesConverter {
         if (value.trim().isNotEmpty)
           SimpleGrantedAuthority('$authorityPrefix${value.trim()}'),
     ];
+  }
+
+  // The claim called [name]; when the token has none and the name has
+  // dots, the value at that path through nested objects. Claim names may
+  // contain dots themselves (https://example.com/roles), so the literal
+  // name always wins. Anything but an object on the way gives null.
+  static Object? _claim(Map<String, Object?> claims, String name) {
+    if (claims.containsKey(name) || !name.contains('.')) {
+      return claims[name];
+    }
+    Object? value = claims;
+    for (final segment in name.split('.')) {
+      if (value is! Map<Object?, Object?>) {
+        return null;
+      }
+      value = value[segment];
+    }
+    return value;
   }
 }
 

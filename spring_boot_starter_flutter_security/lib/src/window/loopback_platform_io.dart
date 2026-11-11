@@ -3,7 +3,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:spring_boot_starter_flutter_security/src/window/authorization_window.dart';
+import 'package:spring_security_core/spring_security_core.dart'
+    show AuthorizationCancelledException;
 
 const _page = '''
 <!DOCTYPE html>

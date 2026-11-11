@@ -4,7 +4,6 @@ import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_login_service.dart';
 import 'package:spring_boot_starter_flutter_security/src/screens/login_design.dart';
 import 'package:spring_boot_starter_flutter_security/src/screens/login_form.dart';
-import 'package:spring_boot_starter_flutter_security/src/window/authorization_window.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
     hide Banner, Size;
 

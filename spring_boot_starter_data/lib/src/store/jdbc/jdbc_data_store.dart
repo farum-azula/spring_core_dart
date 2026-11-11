@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/annotations.dart';
 import 'package:spring_boot_starter_data/src/exceptions.dart';
+import 'package:spring_boot_starter_data/src/jdbc/collection_columns.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source_transaction_manager.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source_utils.dart';
@@ -18,6 +19,8 @@ import 'package:spring_boot_starter_data/src/mapping/naming_strategy.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 import 'package:spring_boot_starter_data/src/repository/sort.dart';
 import 'package:spring_boot_starter_data/src/store/data_store.dart';
+import 'package:spring_boot_starter_data/src/store/data_store_capabilities.dart';
+import 'package:spring_boot_starter_data/src/store/function_data_store.dart';
 import 'package:spring_boot_starter_data/src/store/jdbc/sql_generator.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_exceptions.dart';
@@ -73,6 +76,12 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_template.da
 /// - **Deletes** remove the children first, then the root (Spring's order,
 ///   so a schema without `ON DELETE CASCADE` works).
 ///
+/// - **Functions** ([callFunction], the `@Procedure` methods): with a dialect
+///   that has them (PostgreSQL) the store calls a function by name with
+///   named arguments, `select * from "name"("argument" => ?)`, on the
+///   connection of the running transaction; the capability is false for
+///   the other dialects (SQLite), and a call is refused.
+///
 /// What a database cannot match is documented here and tested: the order of
 /// strings is the database's collation (SQLite's binary order equals the
 /// in-memory one; PostgreSQL's depends on its collation); equal sort keys
@@ -82,7 +91,12 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_template.da
 /// Spring (Java):
 /// `org.springframework.data.jdbc.core.JdbcAggregateTemplate` (over
 /// `DefaultDataAccessStrategy`).
-final class JdbcDataStore implements DataStore {
+final class JdbcDataStore
+    implements
+        TransactionalDataStore,
+        FunctionDataStore,
+        RowReadingDataStore,
+        EntityCheckingDataStore {
   /// A store over [dataSource], converting with [converter]; table and
   /// column names of children come from [namingStrategy] (the one of the
   /// mapping context). [logSettings] and [queryTimeout] go to the
@@ -130,7 +144,29 @@ final class JdbcDataStore implements DataStore {
   /// The transaction manager of [dataSource] the repositories of this
   /// store run their writes in: a transaction of a service on the same
   /// data source is the one they join.
+  @override
   final DataSourceTransactionManager transactionManager;
+
+  /// Transactions, locks and the SQL of `@Query`; database functions when
+  /// the dialect has them (PostgreSQL).
+  @override
+  DataStoreCapabilities get capabilities => DataStoreCapabilities(
+    transactions: true,
+    locks: true,
+    queries: true,
+    functions: dialect.supportsFunctions,
+  );
+
+  /// The collection properties (`Map`, `List`, `Set`) without `@Json`
+  /// that the database has no column for: problems of the repository of
+  /// [entity], found when it is created.
+  @override
+  List<String> mappingProblems(PersistentEntity<Object> entity) =>
+      CollectionColumns(dialect).problemsOf(entity);
+
+  /// The dialect: it reads the values of the rows.
+  @override
+  ColumnValueReader get valueReader => dialect;
 
   /// The database's dialect.
   SqlDialect get dialect => dataSource.dialect;
@@ -605,6 +641,37 @@ final class JdbcDataStore implements DataStore {
     return rows.isNotEmpty;
   }
 
+  // ------------------------------------------------------------ functions
+
+  /// Calls the database function [name] with [arguments] by name, as the
+  /// dialect writes the call (`select * from "name"("argument" => ?)`),
+  /// through the store's template: on the connection of the running
+  /// transaction, logged, its errors translated. A list is bound as one
+  /// array argument (it is not expanded as for `in (:ids)`).
+  ///
+  /// Throws an `InvalidDataAccessResourceUsageException` when the dialect
+  /// has no functions (see [capabilities]).
+  @override
+  Future<List<Map<String, Object?>>> callFunction(
+    String name,
+    Map<String, Object?> arguments,
+  ) {
+    if (!dialect.supportsFunctions) {
+      return Future.error(
+        InvalidDataAccessResourceUsageException(
+          'Cannot call the function $name: ${dialect.name} has no '
+          'functions to call by name',
+        ),
+        StackTrace.current,
+      );
+    }
+    final names = arguments.keys.toList();
+    return jdbc.queryForMaps(
+      dialect.functionCall(name, names),
+      BoundParameters(arguments.values.toList(), names),
+    );
+  }
+
   // -------------------------------------------------------------- reading
 
   /// The aggregates of [entity] that [rows] hold (rows of a query that
@@ -615,6 +682,7 @@ final class JdbcDataStore implements DataStore {
   /// in its result, so they are loaded here and the aggregate is whole
   /// (Spring Data JDBC maps only what the query returns). The query must
   /// return the id when the entity has children.
+  @override
   Future<List<T>> readAggregates<T extends Object>(
     PersistentEntity<T> entity,
     List<JdbcRow> rows,
@@ -666,10 +734,28 @@ final class JdbcDataStore implements DataStore {
         final value = row[property.columnName];
         values[property.columnName] = value == null
             ? null
-            : dialect.fromDatabase(value, property.type);
+            : property.json == null
+            ? dialect.fromDatabase(value, property.type)
+            : _json(entity, property, value);
       }
     }
     return values;
+  }
+
+  // The decoded JSON of what the column of a `@Json` property gave, as
+  // the dialect reads it.
+  Object? _json(
+    PersistentEntity<Object> entity,
+    PersistentProperty property,
+    Object value,
+  ) {
+    try {
+      return dialect.jsonStorage(property.json!).fromDatabase(value);
+    } on FormatException {
+      throw MappingException(
+        '${_where(entity, property)}: the stored value is not JSON',
+      );
+    }
   }
 
   // The children of the roots [rootIds] of a collection, by root id (as the

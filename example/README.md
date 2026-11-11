@@ -14,6 +14,7 @@ The documentation links to their chapters.
 | [`themes/material/`](themes/material/README.md) | A Material theme showcase: every part of the theme in YAML, on a `MaterialApp` | `flutter run` |
 | [`themes/cupertino/`](themes/cupertino/README.md) | A Cupertino theme showcase: a `CupertinoApp` themed from YAML, Cupertino widgets only | `flutter run` |
 | [`static_site/`](static_site/README.md) | A Flutter web site served by its own Spring server: the files of `flutter build web` and an API on one port, the app's addresses answered with `index.html` | `flutter build web`, then `dart run bin/main.dart` |
+| [`supabase/`](supabase/README.md) | A todo list on a Supabase project (`spring_boot_starter_supabase`): a Flutter app (sign-in, a live list, an avatar in Storage, an Edge Function) and a server (the project's tokens as bearer tokens, SQL with transactions as the caller, a role check), with the project for the Supabase CLI beside them | `supabase start`, then `dart run bin/main.dart` and `flutter run` |
 | [`seo_site/`](seo_site/README.md) | A Flutter web site that search engines, link previews and language models can read: a page per route and Markdown file, `sitemap.xml`, `robots.txt`, `llms.txt` (`spring.flutter.web.seo.*`, `@RouteInfo`) | `dart run build_runner build`, then `flutter build web` |
 
 The three designs together are explained in [`themes/`](themes/README.md).

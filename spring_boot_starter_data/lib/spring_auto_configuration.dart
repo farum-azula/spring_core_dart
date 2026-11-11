@@ -21,6 +21,11 @@ import 'package:spring_boot_starter_data/src/properties/properties_beans.dart';
 // starter can name them.
 export 'package:spring_boot_starter_logging/spring_auto_configuration.dart';
 
+// What the build knows of the starter's stores (`memory`, `jdbc`): the
+// generator reads the `@DataStoreDeclaration` constants this library
+// declares or exports.
+export 'src/store/data_store_declarations.dart';
+
 /// The Data starter's auto-configuration module: the SQL data sources,
 /// transaction managers and templates (`dataSourceAutoConfiguration`), the
 /// mapping context, the converter, the stores and the factory of the

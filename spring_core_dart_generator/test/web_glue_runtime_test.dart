@@ -309,6 +309,7 @@ Future<void> main() async {
       DuplicateKeyException(message, sql: 'insert into people'),
       EmptyResultDataAccessException(1, message: message),
       _SubclassOfDuplicateKey(),
+      PermissionDeniedDataAccessException(message, sql: 'update people'),
     ]),
     // What a request can ask for wrongly: a sort property with a line
     // break, a direction, a page past the offsets a database counts.
@@ -461,6 +462,8 @@ void main() {
       _problem(404, 'Not Found', 'Not found'),
       // A subtype of a mapped exception is mapped too.
       _problem(409, 'Conflict', 'The resource already exists'),
+      // The database refused the statement for the user it runs as.
+      _problem(403, 'Forbidden', 'Access denied'),
     ]);
   });
 

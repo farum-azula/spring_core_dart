@@ -12,7 +12,9 @@ import 'package:spring_web_dart/src/websocket/web_socket_transport.dart';
 /// It replaces the real [WebSocketTransport] under a WebSocket client
 /// (for example one of the WebSocket starter), so a test can read what
 /// the client sent, push messages to it, close or drop the connection,
-/// and make the next connection attempt fail, all without a server.
+/// and make the next connection attempt fail, all without a server. A
+/// connection opened with message size limits keeps them, as `dart:io`
+/// does (see [MockWebSocket.push]).
 /// Each `connect` succeeds at once and gives a [MockWebSocket]; wait for
 /// it with [nextConnection].
 ///
@@ -75,6 +77,8 @@ class MockWebSocketTransport implements WebSocketTransport {
     HttpHeaders? headers,
     List<String> protocols = const [],
     Duration? timeout,
+    int? maxTextMessageSize,
+    int? maxBinaryMessageSize,
   }) async {
     await Future<void>.delayed(Duration.zero);
     if (_failures.isNotEmpty) {
@@ -86,6 +90,8 @@ class MockWebSocketTransport implements WebSocketTransport {
       url,
       headers?.copy() ?? HttpHeaders(),
       List.unmodifiable(protocols),
+      maxTextMessageSize,
+      maxBinaryMessageSize,
     );
     _connections.add(socket);
     if (_waiting.isNotEmpty) {
@@ -111,7 +117,13 @@ class MockWebSocketTransport implements WebSocketTransport {
 /// await server.closeFromServer(CloseStatus.goingAway);
 /// ```
 final class MockWebSocket implements WebSocketSession {
-  MockWebSocket._(this.uri, this.headers, this.protocols);
+  MockWebSocket._(
+    this.uri,
+    this.headers,
+    this.protocols,
+    this.maxTextMessageSize,
+    this.maxBinaryMessageSize,
+  );
 
   /// The URL the client connected to.
   @override
@@ -123,6 +135,14 @@ final class MockWebSocket implements WebSocketSession {
   /// The sub-protocols the client offered, in order; the first one is
   /// taken as the [acceptedProtocol].
   final List<String> protocols;
+
+  /// The largest text message the client asked to receive on this
+  /// connection, in UTF-8 bytes (`-1`: no limit); `null` when it asked
+  /// for none, and then [push] accepts any size.
+  final int? maxTextMessageSize;
+
+  /// The same for binary messages, in bytes.
+  final int? maxBinaryMessageSize;
 
   final _incoming = StreamController<Object>();
   final _sent = <Object>[];
@@ -164,9 +184,24 @@ final class MockWebSocket implements WebSocketSession {
   /// Sends the client a text (`String`) or binary (`List<int>`) message,
   /// as the server would. Throws a `StateError` once the connection is
   /// closed.
+  ///
+  /// A message larger than the limit the client asked for
+  /// ([maxTextMessageSize], [maxBinaryMessageSize]) is not delivered: the
+  /// connection closes with 1009 (message too big), as on `dart:io`.
   void push(Object message) {
     if (isClosed) {
       throw StateError('The connection is closed');
+    }
+    final (size, limit) = switch (message) {
+      String() => (utf8.encode(message).length, maxTextMessageSize),
+      List<int>() => (message.length, maxBinaryMessageSize),
+      _ => (0, null),
+    };
+    if (limit != null && limit >= 0 && size > limit) {
+      unawaited(
+        _end(CloseStatus.tooBigToProcess.withReason('Message too big')),
+      );
+      return;
     }
     _incoming.add(
       message is List<int> && message is! Uint8List

@@ -1,4 +1,5 @@
-import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_store.dart';
+import 'package:spring_security_core/spring_security_core.dart'
+    show SecretStore;
 
 /// Without dart:ffi (the web) there is no Windows store.
 SecretStore windowsSecretStore(String? applicationId) =>

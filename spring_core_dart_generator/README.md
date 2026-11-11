@@ -123,7 +123,20 @@ Into that file it writes:
   `lib/resources/`) and written as a small `QueryMethod`; its `:#{...}`
   SpEL values are compiled to Dart when the build can (`#book.titel` is a
   build error, `#book.title` is `(arguments[0] as Book).title`), else left
-  to the interpreter;
+  to the interpreter. A `@Procedure('name')` method (a database function) is
+  a `ProcedureMethod`; a `watch…By` method (`Stream<List<T>>`) and a `changes…By`
+  method (`Stream<RowChange<T>>`) are derived like a find. What each method
+  needs of its store (`@Lock`, `@Query`, `@Procedure`, a stream of changes,
+  `@Transactional`) is passed as `StoreRequirement`s, and checked by the
+  build against the stores the dependencies describe
+  (`@DataStoreDeclaration` in `lib/spring_auto_configuration.dart`) when it
+  knows the repository's store (`@UseStore`, `spring.data.store`, a
+  described store's `defaultWhen`): a capability the store lacks is one of
+  the interface's problems, and a `@Transactional` bean on a default store
+  without transactions fails the build. For a store described with
+  `collectionsNeedJson` (the SQL store) a `Map`, a `Set`, or a `List` of
+  anything but simple values in the entity, with neither `@Json` nor
+  `@MappedCollection`, is one of those problems too, with the fix;
 - `@Aspect` advice metadata and the AOP proxy classes;
 - generated subclasses of full-mode `@Configuration` classes and of beans
   with `@Lookup` methods;

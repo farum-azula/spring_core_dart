@@ -36,6 +36,7 @@ import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/constraint_checker.dart';
 import 'package:spring_core_dart_generator/src/data_schema.dart';
+import 'package:spring_core_dart_generator/src/data_stores.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/json_annotation_checker.dart';
 import 'package:spring_core_dart_generator/src/log_scanning.dart';
@@ -44,6 +45,7 @@ import 'package:spring_core_dart_generator/src/metadata_locations.dart'
 import 'package:spring_core_dart_generator/src/navigation_scanning.dart';
 import 'package:spring_core_dart_generator/src/part_tree.dart';
 import 'package:spring_core_dart_generator/src/part_tree_parser.dart';
+import 'package:spring_core_dart_generator/src/part_tree_reader.dart';
 import 'package:spring_core_dart_generator/src/query_expressions.dart';
 import 'package:spring_core_dart_generator/src/query_text_checker.dart';
 import 'package:spring_core_dart_generator/src/schema_sources.dart';
@@ -60,6 +62,7 @@ part 'lookup_scanning.dart';
 part 'mapper_calls.dart';
 part 'query_scanning.dart';
 part 'repository_scanning.dart';
+part 'repository_store_scanning.dart';
 
 // Annotations are matched by name in `package:spring_core_dart` (the
 // generator depends on the runtime only for its pointcut parser, see
@@ -514,6 +517,7 @@ class BeanScanner {
     this.proxyMode = ProxyMode.all,
     this.scan = const ComponentScanModel(),
     this.sqlResources = const {},
+    this.dataStores = DataStoreBuild.none,
   });
 
   /// The model being filled; the emitter writes it once the scan is done.
@@ -530,6 +534,11 @@ class BeanScanner {
   /// migrations and init scripts tell the schema the `@Query` texts of
   /// data repositories are checked against.
   final Map<String, String> sqlResources;
+
+  /// The stores of spring_boot_starter_data the build knows, and the
+  /// application's default store: what a repository (or a
+  /// `@Transactional` bean) uses and its store cannot do is a build error.
+  final DataStoreBuild dataStores;
 
   // Classes introspected so far (explicitly or automatically), with their
   // model in `module.introspections`: each request for a class adds to its
@@ -799,6 +808,7 @@ class BeanScanner {
   /// columns), whose problems join those of their repository.
   void throwErrors() {
     collectErrors(_checkQueries);
+    _checkTransactionalBeans();
     switch (errors) {
       case []:
         return;

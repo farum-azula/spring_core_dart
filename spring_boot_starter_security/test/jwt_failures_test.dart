@@ -651,6 +651,209 @@ void main() {
       expect(custom.convert(_jwt({'scope': 'ignored'})), isEmpty);
     });
 
+    group('a claim name with dots', () {
+      const nested = JwtGrantedAuthoritiesConverter(
+        authorityPrefix: 'ROLE_',
+        authoritiesClaimName: 'app_metadata.roles',
+        authoritiesClaimDelimiter: ',',
+      );
+
+      test('a claim of exactly that name wins over the path', () {
+        const url = JwtGrantedAuthoritiesConverter(
+          authoritiesClaimName: 'https://example.com/roles',
+        );
+        expect(
+          _names(
+            url.convert(
+              _jwt({
+                'https://example.com/roles': ['admin'],
+              }),
+            ),
+          ),
+          ['SCOPE_admin'],
+        );
+        expect(
+          _names(
+            nested.convert(
+              _jwt({
+                'app_metadata.roles': ['literal'],
+                'app_metadata': {
+                  'roles': ['nested'],
+                },
+              }),
+            ),
+          ),
+          ['ROLE_literal'],
+        );
+        // Present with another kind of value: still the claim, so the
+        // path is not walked.
+        for (final value in [null, 5, true]) {
+          expect(
+            nested.convert(
+              _jwt({
+                'app_metadata.roles': value,
+                'app_metadata': {
+                  'roles': ['nested'],
+                },
+              }),
+            ),
+            isEmpty,
+            reason: '$value',
+          );
+        }
+      });
+
+      test('the path through nested objects: a list at the end', () {
+        expect(
+          _names(
+            nested.convert(
+              _jwt({
+                'app_metadata': {
+                  'roles': ['admin', ' staff ', '', 7],
+                },
+              }),
+            ),
+          ),
+          ['ROLE_admin', 'ROLE_staff'],
+        );
+        const deep = JwtGrantedAuthoritiesConverter(
+          authoritiesClaimName: 'a.b.c',
+        );
+        expect(
+          _names(
+            deep.convert(
+              _jwt({
+                'a': {
+                  'b': {
+                    'c': ['x'],
+                  },
+                },
+              }),
+            ),
+          ),
+          ['SCOPE_x'],
+        );
+      });
+
+      test('the path through nested objects: a delimited text at the end', () {
+        expect(
+          _names(
+            nested.convert(
+              _jwt({
+                'app_metadata': {'roles': 'admin, staff'},
+              }),
+            ),
+          ),
+          ['ROLE_admin', 'ROLE_staff'],
+        );
+      });
+
+      test('a token decoded from JSON', () {
+        final claims = jsonDecode(
+          '{"app_metadata": {"roles": ["admin"]}}',
+        ) as Map<String, Object?>;
+        expect(_names(nested.convert(_jwt(claims))), ['ROLE_admin']);
+      });
+
+      test('a missing segment gives no authorities', () {
+        expect(nested.convert(_jwt({})), isEmpty);
+        expect(
+          nested.convert(_jwt({'app_metadata': <String, Object?>{}})),
+          isEmpty,
+        );
+        expect(
+          nested.convert(
+            _jwt({
+              'app_metadata': {'role': 'admin'},
+              'roles': ['top'],
+              'user_metadata': {
+                'roles': ['forged'],
+              },
+            }),
+          ),
+          isEmpty,
+        );
+        const deep = JwtGrantedAuthoritiesConverter(
+          authoritiesClaimName: 'a.b.c',
+        );
+        expect(
+          deep.convert(
+            _jwt({
+              'a': {
+                'c': ['x'],
+              },
+            }),
+          ),
+          isEmpty,
+        );
+      });
+
+      test('a value that is not an object on the way gives none', () {
+        for (final value in [
+          'roles',
+          5,
+          true,
+          null,
+          ['roles'],
+          [
+            {
+              'roles': ['admin'],
+            },
+          ],
+        ]) {
+          expect(
+            nested.convert(_jwt({'app_metadata': value})),
+            isEmpty,
+            reason: '$value',
+          );
+        }
+        // The last segment is an object, not authorities.
+        expect(
+          nested.convert(
+            _jwt({
+              'app_metadata': {
+                'roles': {'admin': true},
+              },
+            }),
+          ),
+          isEmpty,
+        );
+      });
+
+      test('empty segments match nothing', () {
+        for (final name in ['.roles', 'app_metadata.', 'app_metadata..roles']) {
+          expect(
+            JwtGrantedAuthoritiesConverter(authoritiesClaimName: name).convert(
+              _jwt({
+                'app_metadata': {
+                  'roles': ['admin'],
+                },
+                'roles': ['top'],
+              }),
+            ),
+            isEmpty,
+            reason: name,
+          );
+        }
+      });
+
+      test('a name without dots never reads inside an object', () {
+        const flat = JwtGrantedAuthoritiesConverter(
+          authoritiesClaimName: 'roles',
+        );
+        expect(
+          flat.convert(
+            _jwt({
+              'app_metadata': {
+                'roles': ['admin'],
+              },
+            }),
+          ),
+          isEmpty,
+        );
+      });
+    });
+
     test('the converter names the user by the principal claim', () {
       const converter = JwtAuthenticationConverter(principalClaimName: 'email');
       final result = converter.convert(

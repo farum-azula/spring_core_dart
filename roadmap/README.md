@@ -34,6 +34,12 @@ Rules every plan follows:
 
 ## Priorities
 
+**First, as soon as possible (the owner, November 2026): the generator,
+one module per starter** ([generator_by_starter.md](generator_by_starter.md)):
+a folder and one interface per starter in the generator, a part runs only
+when the application depends on its starter, tests per part; no change of
+the generated code. Before any new starter adds to the generator.
+
 What comes next, in order:
 
 1. ~~**Files on the web starter:** multipart uploads (`MultipartFile`,
@@ -90,10 +96,15 @@ What comes next, in order:
    `JdbcTemplate` / `JdbcClient`, containers in tests
    ([spring_boot_starter_test.md](spring_boot_starter_test.md)). Redis is out of 0.6.0, postponed
    indefinitely (the owner, November 2026).
-8. **The Supabase starter**, after the 0.6.0 release ([spring_boot_starter_supabase.md](spring_boot_starter_supabase.md)),
-   on the data starter: its tables through the repositories (PostgreSQL
-   directly on a server, PostgREST in apps), its Auth as a login of the
-   security starters, one session (ours).
+8. **The Supabase starter**, after the generator's split by starter
+   ([spring_boot_starter_supabase.md](spring_boot_starter_supabase.md)):
+   our own client (no Supabase packages), everything as Spring beans in
+   the first version: the database through Spring Data (PostgreSQL by
+   `db.url`, else PostgREST, decided at build time), Auth through Spring
+   Security front and back (one session, ours), Realtime as streams (a
+   Phoenix Channels client in the WebSocket starter first), Storage as
+   `StorageTemplate`, Edge Functions as an interface; nothing about
+   Supabase in the generator.
 9. **The edge starter** ([serverless.md](serverless.md)), after the
    Supabase starter, so an Edge Function on Supabase uses it:
    Spring Boot for Dart applications compiled to JavaScript behind a
@@ -240,6 +251,7 @@ What comes next, in order:
 
 | File | Package | Status |
 |---|---|---|
+| [generator_by_starter.md](generator_by_starter.md) | generator | planned, as soon as possible: a module per starter (folder, one interface to the core, runs only with its starter), tests per part, the generated code unchanged |
 | [generated_code_performance.md](generated_code_performance.md) | generator, all packages | planned, a release of its own: faster and smaller generated code, incremental output per library (with the editor metadata per starter and properties typed in code instead of the hand file), per-platform branches, `docs/codegen.md` |
 | [spring_core_dart.md](spring_core_dart.md) | `spring_core_dart`, generator | JSON next steps, Jakarta annotations under question (incremental generation moved to [generated_code_performance.md](generated_code_performance.md)) |
 | [dependencies.md](dependencies.md) | all packages | what an application must list (one package and the generator), what each package re-exports, the gaps left |
@@ -254,10 +266,10 @@ What comes next, in order:
 | [spring_boot_starter_oauth2_client.md](spring_boot_starter_oauth2_client.md) | `spring_boot_starter_oauth2_client` | done: Spring's OAuth2 client: registrations from `spring.security.oauth2.client.*`, discovery, the token endpoint of every grant with PKCE, authorized clients and their refresh, users, Bearer and DPoP tokens on Feign (DPoP `auto` by default), the token headers of WebSocket handshakes (`OAuth2AccessTokenHeaders`), the hardening (the plain `http://` warning, one discovery with the resource server, differential and mutation tests); next: runs on devices |
 | [spring_boot_starter_data.md](spring_boot_starter_data.md) | `spring_boot_starter_data` | done, in 0.6.0: Spring Data JDBC's model, one starter without drivers (the application's `postgres` / `sqlite3` wired by the generator), SQLite and PostgreSQL (Redis postponed indefinitely), `@Transactional` compared with Spring's propagation and isolation matrix, `@Version`, `@Lock`, SpEL in `@Query` compiled by the build, migrations, `@DataTest`, `JdbcTemplate` and `JdbcClient`; what is left is in the file |
 | [release_0_6.md](release_0_6.md) | all packages | the checklist of the 0.6.0 release: what was verified, what remains before the Release button |
-| [spring_boot_starter_supabase.md](spring_boot_starter_supabase.md) | `spring_boot_starter_supabase` | planned after the 0.6.0 release (the data starter ships without it): Supabase's official packages; its database as a store of the repositories, its Auth as a login of the security starters (one session, ours), later Storage, Realtime, Edge Functions |
+| [spring_boot_starter_supabase.md](spring_boot_starter_supabase.md) | `spring_boot_starter_supabase` | planned after the generator's split by starter: our own client, Spring Data (SQL by `db.url`, else PostgREST), Spring Security front and back, Realtime as streams, `StorageTemplate`, Edge Functions; nothing about Supabase in the generator |
 | [spring_boot_starter_retry.md](spring_boot_starter_retry.md) | `spring_boot_starter_retry` | planned: `@Retryable`, `@Recover` |
 | [review_0_5.md](review_0_5.md) | all packages | planned: the review before 0.5.0 (bugs and differences from Spring, security, vulnerabilities), then the minor release |
-| [serverless.md](serverless.md) | `spring_boot_starter_edge` (name to settle) | planned after the data and Supabase starters: Spring Boot for Dart applications on Supabase Edge Functions, Deno Deploy, Cloudflare Workers; deploys from GitHub Actions |
+| [serverless.md](serverless.md) | `spring_boot_starter_edge` | built (November 2026): Spring Boot for Dart applications on Supabase Edge Functions, Cloudflare Workers, AWS Lambda, Deno Deploy, Netlify and Vercel, as JavaScript or WebAssembly, with a deploy workflow; not yet: more Cloudflare bindings, Azure and Google Cloud Functions |
 | [rest_client.md](rest_client.md) | `spring_web_dart`, `spring_boot_dart` | planned: `RestClient`, `RestTemplate` (no package of its own), later `@HttpExchange` |
 | [spring_boot_starter_feign.md](spring_boot_starter_feign.md) | `spring_boot_starter_feign` | next steps: files and forms, `FallbackFactory`, circuit breaker |
 | [spring_boot_starter_websocket.md](spring_boot_starter_websocket.md) | `spring_boot_starter_websocket` | clients and server endpoints (on the web starter) done; next: STOMP, connection state |

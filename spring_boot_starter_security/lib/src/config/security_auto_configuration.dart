@@ -11,6 +11,7 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
         DelegatingOAuth2TokenValidator,
         OAuth2AuthorizedClientService,
         OAuth2ClientProperties,
+        OAuth2TokenValidator,
         OidcIdTokenDecoder;
 import 'package:spring_boot_starter_security/src/config/http_security.dart';
 import 'package:spring_boot_starter_security/src/jwt/bearer.dart';
@@ -32,8 +33,8 @@ const _source =
     'package:spring_boot_starter_security#SecurityAutoConfiguration';
 const _log = SpringLog('spring.security.autoconfigure');
 
-// Whether issuer-uri or jwk-set-uri is set (SecurityProperties describes
-// the keys); a condition runs before any bean exists.
+// Whether issuer-uri, jwk-set-uri or secret-key is set (SecurityProperties
+// describes the keys); a condition runs before any bean exists.
 bool _hasResourceServer(Environment environment) {
   bool set(String key) =>
       (environment
@@ -43,10 +44,11 @@ bool _hasResourceServer(Environment environment) {
                   ?.trim() ??
               '')
           .isNotEmpty;
-  return set('issuer-uri') || set('jwk-set-uri');
+  return set('issuer-uri') || set('jwk-set-uri') || set('secret-key');
 }
 
-// spring.security.oauth2.resourceserver.jwt.issuer-uri or jwk-set-uri.
+// spring.security.oauth2.resourceserver.jwt.issuer-uri, jwk-set-uri or
+// secret-key.
 final class _OnResourceServerProperties implements Condition {
   const _OnResourceServerProperties();
 
@@ -144,6 +146,16 @@ final class JwtExpressionCustomizer
     );
 }
 
+// required-claims: a text claim equal to [expected], or a number or a
+// boolean whose text is; an absent claim, null, a list or an object never
+// is.
+bool _claimEquals(Object? claim, String expected) => switch (claim) {
+  final String text => text == expected,
+  final num number => '$number' == expected,
+  final bool flag => '$flag' == expected,
+  _ => false,
+};
+
 String _generatedPassword() {
   final random = Random.secure();
   final bytes = List<int>.generate(16, (_) => random.nextInt(256));
@@ -187,8 +199,15 @@ String _generatedPassword() {
 ///   signs the cookies kept instead of a session before a login (the
 ///   page to come back to, the OAuth 2.0 authorization request). Without
 ///   it, a random key of the process signs them.
-/// - `jwtDecoder`, when `issuer-uri` or `jwk-set-uri` is set and the
-///   application declares none.
+/// - `jwtDecoder`, when `issuer-uri`, `jwk-set-uri` or `secret-key` is
+///   set and the application declares none. Beside the type, the
+///   lifetime, the issuer and the audiences, every token must pass the
+///   `required-claims` and every `OAuth2TokenValidator<Jwt>` bean of the
+///   application. With `secret-key` the tokens are verified with that
+///   shared secret and one HMAC algorithm (HS256 by default); startup
+///   fails when `jwk-set-uri` is set too, when `jws-algorithms` names
+///   anything but one of HS256, HS384 and HS512, or when the secret is
+///   shorter than the hash.
 /// - `jwtAuthenticationConverter`: the authorities and the name of JWT
 ///   users, from the properties.
 /// - The resolver of `@AuthenticationPrincipal`, `@CurrentSecurityContext`
@@ -248,19 +267,45 @@ final securityAutoConfiguration = <BeanDefinition<Object>>[
       final jwkSetUri = properties.jwkSetUri;
       final issuer = properties.issuerUri;
       final audiences = properties.audiences;
+      // Checked first: a secret beside jwk-set-uri, of a wrong algorithm
+      // or too short fails the start.
+      final secretKey = properties.secretKey;
+      // On every decoder built here: the claims of the properties, then
+      // the application's validators (Spring Boot's additional validators).
+      final additional = <OAuth2TokenValidator<Jwt>>[
+        if (properties.requireExpiry)
+          JwtTimestampValidator(requireExpiry: true),
+        for (final MapEntry(key: name, value: expected)
+            in properties.requiredClaims.entries)
+          JwtClaimValidator(name, (claim) => _claimEquals(claim, expected)),
+        ...?r.optionalDependencyList<OAuth2TokenValidator<Jwt>>(),
+      ];
+      final validator = DelegatingOAuth2TokenValidator<Jwt>([
+        JwtTypeValidator.jwt(),
+        JwtTimestampValidator(),
+        if (issuer != null) JwtIssuerValidator(issuer),
+        if (audiences.isNotEmpty) JwtAudienceValidator(audiences),
+        ...additional,
+      ]);
+      if (secretKey != null) {
+        return NimbusJwtDecoder.withSecretKey(
+          secretKey,
+          macAlgorithm: properties.macAlgorithm,
+          validator: validator,
+        );
+      }
       if (jwkSetUri != null) {
         return NimbusJwtDecoder.withJwkSetUri(
           Uri.parse(jwkSetUri),
           jwsAlgorithms: properties.jwsAlgorithms,
-          validator: DelegatingOAuth2TokenValidator([
-            JwtTypeValidator.jwt(),
-            JwtTimestampValidator(),
-            if (issuer != null) JwtIssuerValidator(issuer),
-            if (audiences.isNotEmpty) JwtAudienceValidator(audiences),
-          ]),
+          validator: validator,
         );
       }
-      return JwtDecoders.fromIssuerLocation(issuer!, audiences: audiences);
+      return JwtDecoders.fromIssuerLocation(
+        issuer!,
+        audiences: audiences,
+        validator: DelegatingOAuth2TokenValidator(additional),
+      );
     },
   ),
   BeanDefinition<JwtAuthenticationConverter>(

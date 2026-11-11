@@ -30,7 +30,9 @@ const family = [
   'spring_boot_starter_data',
   'spring_boot_starter_feign',
   'spring_boot_starter_websocket',
+  'spring_boot_starter_supabase',
   'spring_boot_starter_web',
+  'spring_boot_starter_edge',
   'spring_boot_starter_actuator',
   'spring_boot_starter_oauth2_client',
   'spring_boot_starter_security',
@@ -51,8 +53,12 @@ const dependents = [
   'example/static_site/server',
   'example/static_site/app',
   'example/seo_site',
+  'example/supabase/server',
+  'example/supabase/function',
+  'example/supabase/app',
   'extensions/language_server',
   'tool/load_bench',
+  'tool/edge_checks',
 ];
 
 const _versionFile = 'spring_boot_dart/lib/src/version.dart';

@@ -312,11 +312,15 @@ void main() {
       );
       expect(
         '$error',
-        contains('add the postgres package to your dependencies'),
+        contains('the application has no driver of the postgres package'),
       );
       final text = report(error);
       expect(text, contains('APPLICATION FAILED TO START'));
-      expect(text, contains('Add the postgres package'));
+      expect(
+        text,
+        contains("postgres is not in the dependencies of the application's"),
+      );
+      expect(text, contains('generated code is older than the pubspec'));
       expect(text, contains('sqlite3: sqlite'));
     });
 
@@ -334,10 +338,16 @@ void main() {
       );
       expect(
         '$found',
-        contains('add the sqlite3 package to your dependencies'),
+        contains('the application has no driver of the sqlite3 package'),
       );
-      expect('$found', contains('no driver at all'));
-      expect(report(found!), contains('Add the sqlite3 package'));
+      expect('$found', contains('its generated code has no driver'));
+      final text = report(found!);
+      // The reasons, in the order to check them.
+      final missing = text.indexOf('sqlite3 is not in the dependencies');
+      final stale = text.indexOf('generated code is older than the pubspec');
+      expect(missing, isNonNegative);
+      expect(stale, greaterThan(missing));
+      expect(text, contains('run the code generator again'));
     });
 
     test('an unknown scheme', () async {

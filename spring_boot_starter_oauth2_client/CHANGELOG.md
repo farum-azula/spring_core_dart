@@ -1,6 +1,6 @@
-## 0.7.4
+## Unreleased
 
-- No changes of its own; released with the family version 0.7.4.
+- `AbstractOAuth2Token` (the access, refresh and ID tokens) implements `OAuth2Token` of `spring_security_core`.
 
 ## 0.7.3
 

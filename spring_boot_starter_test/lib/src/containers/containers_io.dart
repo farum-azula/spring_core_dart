@@ -3,6 +3,7 @@ export 'package:spring_boot_starter_test/src/containers/docker_endpoint.dart';
 export 'package:spring_boot_starter_test/src/containers/docker_exception.dart';
 export 'package:spring_boot_starter_test/src/containers/generic_container.dart';
 export 'package:spring_boot_starter_test/src/containers/keycloak_container.dart';
+export 'package:spring_boot_starter_test/src/containers/network.dart';
 export 'package:spring_boot_starter_test/src/containers/postgres_container.dart'
     hide PostgresProtocolWait;
 export 'package:spring_boot_starter_test/src/containers/tar_archive.dart';

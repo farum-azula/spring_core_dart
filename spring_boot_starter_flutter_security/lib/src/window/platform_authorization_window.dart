@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:spring_boot_starter_flutter_security/src/window/authorization_window.dart';
 import 'package:spring_boot_starter_flutter_security/src/window/loopback_authorization_window.dart';
+import 'package:spring_security_core/spring_security_core.dart'
+    show AuthorizationCancelledException, AuthorizationWindow;
 
 /// The channel of the plugin's login window on Android, iOS and macOS.
 ///

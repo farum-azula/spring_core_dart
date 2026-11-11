@@ -1,0 +1,20 @@
+name: edge_checks
+description: "The function the edge starter's tests run in every platform's runtime (spring_boot_starter_edge/test): endpoints to be checked, also the ones that fail on purpose and the parts that do not suit a function."
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+resolution: workspace
+
+# The edge starter, the security starter (bearer tokens), and the cache
+# and scheduling starters: what the starter must warn about in a function.
+dependencies:
+  spring_boot_starter_cache: ^0.7.3
+  spring_boot_starter_edge: ^0.7.3
+  spring_boot_starter_scheduling: ^0.7.3
+  spring_boot_starter_security: ^0.7.3
+
+dev_dependencies:
+  build_runner: ^2.17.0
+  spring_core_dart_generator: ^0.7.3

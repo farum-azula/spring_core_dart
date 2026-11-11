@@ -1,9 +1,10 @@
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
-import 'package:spring_boot_starter_flutter_security/src/window/authorization_window.dart';
 import 'package:spring_boot_starter_flutter_security/src/window/loopback_platform_stub.dart'
     if (dart.library.io) 'package:spring_boot_starter_flutter_security/src/window/loopback_platform_io.dart'
     as platform;
+import 'package:spring_security_core/spring_security_core.dart'
+    show AuthorizationCancelledException, AuthorizationWindow;
 
 /// Opens a URI in the system's browser; see [LoopbackAuthorizationWindow].
 typedef SystemBrowserOpener = Future<void> Function(Uri uri);

@@ -335,6 +335,12 @@ class _$BookRepositoryImpl extends _i4.SimpleRepository<_i2.Book, int>
       _$BookRepositoryImpl(
         r.dependency<_i4.RepositoryFactory>().operations<_i2.Book, int>(
           r'BookRepository',
+          requirements: const [
+            _i4.StoreRequirement(
+              r'findOneByYearAndTitle',
+              _i4.DataStoreCapability.locks,
+            ),
+          ],
         ),
       );
 
@@ -660,16 +666,18 @@ class _$BookReportRepositoryImpl extends _i4.SimpleRepository<_i2.Book, int>
     entities: {r'Author': _i2.Author, r'Book': _i2.Book},
   );
 
-  static _$BookReportRepositoryImpl $create(_i1.DependencyResolver r) =>
-      _$BookReportRepositoryImpl(
-        r.dependency<_i4.RepositoryFactory>().operations<_i2.Book, int>(
-          r'BookReportRepository',
-          annotations: const [
-            _i8.ConditionalOnProperty(r'spring.datasource.url'),
-          ],
-          queries: [_cardsSince],
-        ),
-      );
+  static _$BookReportRepositoryImpl $create(
+    _i1.DependencyResolver r,
+  ) => _$BookReportRepositoryImpl(
+    r.dependency<_i4.RepositoryFactory>().operations<_i2.Book, int>(
+      r'BookReportRepository',
+      annotations: const [_i8.ConditionalOnProperty(r'spring.datasource.url')],
+      queries: [_cardsSince],
+      requirements: const [
+        _i4.StoreRequirement(r'cardsSince', _i4.DataStoreCapability.queries),
+      ],
+    ),
+  );
 
   @override
   _i3.Future<List<_i2.BookCard>> cardsSince(int year) =>
@@ -1824,7 +1832,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'e23ba5e1',
+  fingerprint: '90684a24',
 );
 
 /// Starts the application: config files, environment, context, runners

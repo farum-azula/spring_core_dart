@@ -56,12 +56,20 @@ export 'src/handler_exception_resolver.dart';
 export 'src/handler_mapping_descriptions.dart';
 export 'src/handler_method.dart';
 export 'src/http_session.dart';
+export 'src/ip_range.dart';
 export 'src/isolates/isolate_scaler.dart';
 export 'src/isolates/server_isolate_pool.dart'
     show ServerIsolatePool, ServerIsolateWorker;
 export 'src/isolates/web_server_load.dart';
 export 'src/multipart_resolver.dart';
+export 'src/ratelimit/client_address.dart';
+export 'src/ratelimit/rate_limit_auto_configuration.dart'
+    show OnServerIsolates, RateLimitWebMvcConfigurer, rateLimitRules;
+export 'src/ratelimit/rate_limit_filter.dart';
+export 'src/ratelimit/rate_limit_key.dart';
+export 'src/ratelimit/rate_limiter.dart';
 export 'src/request_mapping.dart' hide absent, dispatcherCorsConfiguration;
+export 'src/request_target.dart';
 export 'src/response_writer.dart';
 export 'src/sse_emitter.dart';
 export 'src/static_resources.dart';

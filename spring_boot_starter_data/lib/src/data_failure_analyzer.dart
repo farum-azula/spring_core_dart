@@ -18,13 +18,18 @@ import 'package:spring_boot_starter_data/src/schema/schema_exceptions.dart';
 /// Description:
 ///
 /// Failed to configure the data source: spring.datasource.url is
-/// sqlite:file:books.db — add the sqlite3 package to your dependencies (no
-/// driver handles the scheme "sqlite"; the application has no driver at all)
+/// sqlite:file:books.db, and no driver handles the scheme "sqlite": the
+/// application has no driver of the sqlite3 package (its generated code has
+/// no driver)
 ///
 /// Action:
 ///
-/// Add the sqlite3 package to the dependencies of the application
-/// (pubspec.yaml) and run the code generator again.
+/// The driver of "sqlite" is written by the code generator for the sqlite3
+/// package. Either sqlite3 is not in the dependencies of the application's
+/// own pubspec.yaml (one that only arrives with another package does not
+/// count): add it and run the code generator again. Or it is there and the
+/// generated code is older than the pubspec: run the code generator again
+/// (dart run build_runner build).
 /// ```
 ///
 /// Spring (Java): `DataSourceBeanCreationFailureAnalyzer`,

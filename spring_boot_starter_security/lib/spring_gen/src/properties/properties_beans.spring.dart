@@ -94,26 +94,35 @@ void _$set37(_i2.SecurityJwtProperties bean, Object? value) =>
 Object? _$get38(_i2.SecurityJwtProperties bean) => bean.jwkSetUri;
 void _$set39(_i2.SecurityJwtProperties bean, Object? value) =>
     bean.jwkSetUri = (value as String?);
-Object? _$get40(_i2.SecurityJwtProperties bean) => bean.jwsAlgorithms;
+Object? _$get40(_i2.SecurityJwtProperties bean) => bean.secretKey;
 void _$set41(_i2.SecurityJwtProperties bean, Object? value) =>
-    bean.jwsAlgorithms = (value as List<String>);
-Object? _$get42(_i2.SecurityJwtProperties bean) => bean.audiences;
+    bean.secretKey = (value as String?);
+Object? _$get42(_i2.SecurityJwtProperties bean) => bean.jwsAlgorithms;
 void _$set43(_i2.SecurityJwtProperties bean, Object? value) =>
-    bean.audiences = (value as List<String>);
-Object? _$get44(_i2.SecurityJwtProperties bean) => bean.authorityPrefix;
+    bean.jwsAlgorithms = (value as List<String>);
+Object? _$get44(_i2.SecurityJwtProperties bean) => bean.audiences;
 void _$set45(_i2.SecurityJwtProperties bean, Object? value) =>
-    bean.authorityPrefix = (value as String);
-Object? _$get46(_i2.SecurityJwtProperties bean) => bean.authoritiesClaimName;
+    bean.audiences = (value as List<String>);
+Object? _$get46(_i2.SecurityJwtProperties bean) => bean.requiredClaims;
 void _$set47(_i2.SecurityJwtProperties bean, Object? value) =>
-    bean.authoritiesClaimName = (value as String?);
-Object? _$get48(_i2.SecurityJwtProperties bean) =>
-    bean.authoritiesClaimDelimiter;
+    bean.requiredClaims = (value as Map<String, String>);
+Object? _$get48(_i2.SecurityJwtProperties bean) => bean.requireExpiry;
 void _$set49(_i2.SecurityJwtProperties bean, Object? value) =>
-    bean.authoritiesClaimDelimiter = (value as String);
-Object? _$get50(_i2.SecurityJwtProperties bean) => bean.principalClaimName;
+    bean.requireExpiry = (value as bool);
+Object? _$get50(_i2.SecurityJwtProperties bean) => bean.authorityPrefix;
 void _$set51(_i2.SecurityJwtProperties bean, Object? value) =>
+    bean.authorityPrefix = (value as String);
+Object? _$get52(_i2.SecurityJwtProperties bean) => bean.authoritiesClaimName;
+void _$set53(_i2.SecurityJwtProperties bean, Object? value) =>
+    bean.authoritiesClaimName = (value as String?);
+Object? _$get54(_i2.SecurityJwtProperties bean) =>
+    bean.authoritiesClaimDelimiter;
+void _$set55(_i2.SecurityJwtProperties bean, Object? value) =>
+    bean.authoritiesClaimDelimiter = (value as String);
+Object? _$get56(_i2.SecurityJwtProperties bean) => bean.principalClaimName;
+void _$set57(_i2.SecurityJwtProperties bean, Object? value) =>
     bean.principalClaimName = (value as String);
-_i2.SecurityJwtProperties _$create52(
+_i2.SecurityJwtProperties _$create58(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SecurityJwtProperties();
@@ -378,10 +387,17 @@ _i1.BeanModule get $securityConfigBeans => _i1.BeanModule(
           set: _$set39,
         ),
         _i1.BeanProperty<_i2.SecurityJwtProperties>(
-          r'jwsAlgorithms',
-          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          r'secretKey',
+          nullable: true,
+          typeInfo: _i1.ClassType<String>(nullable: true),
           get: _$get40,
           set: _$set41,
+        ),
+        _i1.BeanProperty<_i2.SecurityJwtProperties>(
+          r'jwsAlgorithms',
+          typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
+          get: _$get42,
+          set: _$set43,
           annotations: [
             _i1.PropertyValues([
               r'RS256',
@@ -402,45 +418,62 @@ _i1.BeanModule get $securityConfigBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.SecurityJwtProperties>(
           r'audiences',
           typeInfo: _i1.ListType<String>(_i1.ClassType<String>()),
-          get: _$get42,
-          set: _$set43,
+          get: _$get44,
+          set: _$set45,
+        ),
+        _i1.BeanProperty<_i2.SecurityJwtProperties>(
+          r'requiredClaims',
+          typeInfo: _i1.MapType<String, String>(
+            _i1.ClassType<String>(),
+            _i1.ClassType<String>(),
+          ),
+          get: _$get46,
+          set: _$set47,
+        ),
+        _i1.BeanProperty<_i2.SecurityJwtProperties>(
+          r'requireExpiry',
+          typeInfo: _i1.ClassType<bool>(),
+          hasInitialValue: true,
+          initialValue: false,
+          get: _$get48,
+          set: _$set49,
         ),
         _i1.BeanProperty<_i2.SecurityJwtProperties>(
           r'authorityPrefix',
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'SCOPE_',
-          get: _$get44,
-          set: _$set45,
+          get: _$get50,
+          set: _$set51,
         ),
         _i1.BeanProperty<_i2.SecurityJwtProperties>(
           r'authoritiesClaimName',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get46,
-          set: _$set47,
+          get: _$get52,
+          set: _$set53,
         ),
         _i1.BeanProperty<_i2.SecurityJwtProperties>(
           r'authoritiesClaimDelimiter',
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r' ',
-          get: _$get48,
-          set: _$set49,
+          get: _$get54,
+          set: _$set55,
         ),
         _i1.BeanProperty<_i2.SecurityJwtProperties>(
           r'principalClaimName',
           typeInfo: _i1.ClassType<String>(),
           hasInitialValue: true,
           initialValue: r'sub',
-          get: _$get50,
-          set: _$set51,
+          get: _$get56,
+          set: _$set57,
         ),
       ],
       instantiate: _i2.SecurityJwtProperties.new,
       constructor: _i1.BeanConstructor<_i2.SecurityJwtProperties>(
         parameters: [],
-        create: _$create52,
+        create: _$create58,
       ),
     ),
   ],

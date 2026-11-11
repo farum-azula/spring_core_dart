@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:spring_boot_starter_flutter_security/src/secret_store/platform_secret_store.dart';
-import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_store.dart';
+import 'package:spring_security_core/spring_security_core.dart'
+    show SecretStore;
 
 /// The channel of the plugin's secret store on Android, iOS and macOS.
 ///

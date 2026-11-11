@@ -1,0 +1,10 @@
+tags:
+  # test/stack_test.dart: the function built for Supabase and run by the
+  # Edge Runtime of the Supabase CLI's stack, given by SUPABASE_URL,
+  # SUPABASE_ANON_KEY and SUPABASE_FUNCTIONS (the stack's
+  # supabase/functions directory, where the function is built); skipped
+  # without the first two. CI runs it in the `stack` job of
+  # .github/workflows/supabase.yml:
+  #   dart test --tags supabase-stack
+  supabase-stack:
+    timeout: 6x

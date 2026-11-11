@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:spring_boot_starter_flutter_security/src/dpop/method_channel_dpop_key.dart';
 import 'package:spring_boot_starter_flutter_security/src/dpop/secret_store_dpop_key.dart';
 import 'package:spring_boot_starter_flutter_security/src/dpop/stored_dpop_key.dart';
-import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_store.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 
 /// The app's DPoP key (RFC 9449) in the safest place the platform has,

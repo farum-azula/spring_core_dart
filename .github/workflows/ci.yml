@@ -40,6 +40,7 @@ jobs:
       theme_showcase_cupertino: ${{ steps.affected.outputs.theme_showcase_cupertino }}
       static_site: ${{ steps.affected.outputs.static_site }}
       seo_site: ${{ steps.affected.outputs.seo_site }}
+      supabase_example: ${{ steps.affected.outputs.supabase_example }}
       family: ${{ steps.affected.outputs.family }}
     steps:
       - uses: actions/checkout@v7
@@ -91,14 +92,14 @@ jobs:
         # `generated` job checks it is up to date instead.
         run: |
           git ls-files '*.dart' \
-            | grep -v -e '^example/flutter_guide/' -e '^example/themes/' -e '^example/static_site/app/' -e '^example/seo_site/' \
+            | grep -v -e '^example/flutter_guide/' -e '^example/themes/' -e '^example/static_site/app/' -e '^example/seo_site/' -e '^example/supabase/app/' \
                       -e '/spring_gen/' -e '\.spring\.dart$' \
             | xargs dart format --output=none --set-exit-if-changed
 
       # The workspace packages (the Flutter ones resolve outside it and are
       # analyzed by the `flutter` job).
       - name: Analyze
-        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_data spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_actuator spring_boot_starter_web spring_boot_starter_actuator spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security spring_boot_starter_test spring_search_dart example/server_guide example/static_site/server extensions/language_server tool
+        run: dart analyze --fatal-infos spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_data spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_supabase spring_boot_actuator spring_boot_starter_web spring_boot_starter_edge spring_boot_starter_actuator spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security spring_boot_starter_test spring_search_dart example/server_guide example/static_site/server example/supabase/server example/supabase/function extensions/language_server tool
 
       # coverage:test_with_coverage in each published Dart package, the
       # lcov files merged into coverage/lcov.info.
@@ -214,9 +215,9 @@ jobs:
       matrix:
         include:
           - part: server guide and core
-            directories: example/server_guide example/static_site/server tool/load_bench spring_core_dart spring_boot_dart
+            directories: example/server_guide example/static_site/server example/supabase/server example/supabase/function tool/load_bench tool/edge_checks spring_core_dart spring_boot_dart
           - part: starters
-            directories: spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_data spring_boot_starter_feign spring_boot_starter_websocket spring_boot_actuator spring_boot_starter_web spring_boot_starter_actuator spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security spring_search_dart
+            directories: spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_data spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_supabase spring_boot_actuator spring_boot_starter_web spring_boot_starter_edge spring_boot_starter_actuator spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security spring_search_dart
     steps:
       - uses: actions/checkout@v7
 
@@ -677,6 +678,7 @@ jobs:
           (cd example/themes/cupertino && flutter pub get)
           (cd example/static_site/app && flutter pub get)
           (cd example/seo_site && flutter pub get)
+          (cd example/supabase/app && flutter pub get)
 
       - name: Dependencies only from this repository and the Dart / Flutter teams
         run: dart run tool/check_dependencies.dart --flutter
@@ -712,7 +714,7 @@ jobs:
 
       - name: Generated code is up to date (Flutter guide, theme examples and packages)
         run: |
-          for example in example/flutter_guide example/themes/neon_ui example/themes/neon example/themes/material example/themes/cupertino example/static_site/app example/seo_site spring_boot_starter_flutter spring_boot_starter_flutter_security spring_boot_starter_flutter_navigation; do
+          for example in example/flutter_guide example/themes/neon_ui example/themes/neon example/themes/material example/themes/cupertino example/static_site/app example/seo_site example/supabase/app spring_boot_starter_flutter spring_boot_starter_flutter_security spring_boot_starter_flutter_navigation; do
             (cd $example && dart run build_runner build)
             git diff --exit-code -- $example
             test -z "$(git status --porcelain -- $example)"
@@ -722,7 +724,7 @@ jobs:
         # Generated code is checked by the step above, not formatted here
         # (the generator's dart_style may differ from the SDK's).
         run: |
-          git ls-files example/flutter_guide example/themes example/static_site/app example/seo_site \
+          git ls-files example/flutter_guide example/themes example/static_site/app example/seo_site example/supabase/app \
             | grep '\.dart$' | grep -v -e '/spring_gen/' -e '\.spring\.dart$' \
             | xargs dart format --output=none --set-exit-if-changed
 
@@ -738,6 +740,7 @@ jobs:
           (cd example/themes/cupertino && flutter analyze --fatal-infos)
           (cd example/static_site/app && flutter analyze --fatal-infos)
           (cd example/seo_site && flutter analyze --fatal-infos)
+          (cd example/supabase/app && flutter analyze --fatal-infos)
 
       # The component pages and the table in docs/configuration.md are made
       # from tool/theme_metadata.json: regenerate them and fail on a change.
@@ -858,6 +861,15 @@ jobs:
         run: |
           flutter test
           flutter build web --release
+
+      # The Supabase example's app (example/supabase/app): its screen on a
+      # project played in memory. Its server is a workspace package, tested
+      # with the others; both against a real project run in
+      # .github/workflows/supabase.yml (the server) and by hand (the app).
+      - name: Tests of the Supabase example's app
+        if: needs.changes.outputs.supabase_example == 'true'
+        working-directory: example/supabase/app
+        run: flutter test
 
       - name: The static site, built, served by its server
         if: needs.changes.outputs.static_site == 'true'
@@ -1049,4 +1061,4 @@ jobs:
         with:
           sdk: stable
       - run: dart pub downgrade
-      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_data spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_actuator spring_boot_starter_web spring_boot_starter_actuator spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security spring_boot_starter_test spring_search_dart
+      - run: dart analyze spring_core_dart spring_core_dart_generator spring_boot_dart spring_boot_starter_logging spring_boot_starter_scheduling spring_boot_starter_cache spring_boot_starter_data spring_web_dart spring_boot_starter_feign spring_boot_starter_websocket spring_boot_starter_supabase spring_boot_actuator spring_boot_starter_web spring_boot_starter_edge spring_boot_starter_actuator spring_security_core spring_boot_starter_oauth2_client spring_boot_starter_security spring_boot_starter_test spring_search_dart

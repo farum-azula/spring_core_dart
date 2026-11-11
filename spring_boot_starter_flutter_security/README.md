@@ -649,6 +649,10 @@ plugin), and makes them beans:
 
 `OAuth2LoginService` uses them by itself. An app declares its own
 `SecretStore` or `AuthorizationWindow` bean only to replace them. The
+interfaces themselves (`SecretStore` with `InMemorySecretStore`,
+`AuthorizationWindow` with `AuthorizationCancelledException`) are in
+`spring_security_core`, which has no Flutter code, so another provider's
+login can use them; this package's import still exports them. The
 app's own secrets go to the same store through `SecretTemplate`
 ([below](#secrets-of-the-app-secrettemplate)).
 

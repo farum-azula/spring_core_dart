@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -21,6 +22,19 @@ import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 /// necessary: an enum's name to the constant, an `int` to a `double`
 /// property, an `int` 0/1 (SQLite) to a `bool`, an ISO-8601 `String` (or
 /// epoch milliseconds) to a `DateTime`, a `List<int>` to `Uint8List`.
+///
+/// A [Json] property is the exception to the plain values: [write] gives
+/// its decoded JSON (what `jsonDecode` returns: maps, lists, numbers,
+/// strings, booleans), made by the [mapper], and [read] takes that tree
+/// back, or the JSON text of a store that gave text; a SQL store asks its
+/// dialect how the tree is bound and read (`SqlDialect.jsonStorage`), a
+/// store that keeps or sends JSON uses it as it is.
+///
+/// ```dart
+/// final row = converter.write(profiles, Profile(settings: Settings('dark')));
+/// row['settings']; // {'theme': 'dark'}
+/// converter.read(profiles, row).settings.theme; // 'dark'
+/// ```
 ///
 /// An instance is created through the class's constructor, with the values
 /// of all the properties given to its `EntityIntrospection.create`: a
@@ -47,24 +61,140 @@ class EntityConverter {
   /// A converter looking enums up in [introspector] (by default
   /// `BeanIntrospector.shared`) when the type given does not carry them (a
   /// `ClassType` of the JDBC-level mappers; an entity's enum property is an
-  /// `EnumType`).
-  EntityConverter({BeanIntrospector? introspector})
-    : introspector = introspector ?? BeanIntrospector.shared;
+  /// `EnumType`), and writing and reading the [Json] properties with
+  /// [mapper] (the application's `ObjectMapper` bean in an application; by
+  /// default one over [introspector]).
+  EntityConverter({BeanIntrospector? introspector, ObjectMapper? mapper})
+    : introspector = introspector ?? BeanIntrospector.shared,
+      // The field is private; the parameter is public.
+      // ignore: prefer_initializing_formals
+      _mapper = mapper;
 
   /// Where enums not described by their type are looked up.
   final BeanIntrospector introspector;
+
+  ObjectMapper? _mapper;
+
+  /// Writes and reads the [Json] properties: the mapper given, else one
+  /// with the default settings over [introspector], made on first use.
+  ///
+  /// Spring (Java): the `ObjectMapper` a `@WritingConverter` to JSON is
+  /// given.
+  ObjectMapper get mapper =>
+      _mapper ??= ObjectMapper(introspector: introspector);
 
   // ---------------------------------------------------------------- write
 
   /// The row of [instance]: every column of [entity] (so the id and
   /// version too, and nulls included) with its value as [toColumnValue]
-  /// gives it.
+  /// gives it; a [Json] property as [toJsonTree] gives it.
   Map<String, Object?> write(PersistentEntity<Object> entity, Object instance) {
     return {
       for (final p in entity.columns)
-        p.columnName: toColumnValue(p.getValue(instance)),
+        p.columnName: p.isJson
+            ? toJsonTree(p.getValue(instance), p.type, where: _where(entity, p))
+            : toColumnValue(p.getValue(instance)),
     };
   }
+
+  /// [value] (of a [Json] property of [type]) as decoded JSON, written by
+  /// the [mapper]: new maps and lists that share nothing with [value]; null
+  /// for null. Throws a [MappingException] (naming [where], never the
+  /// value) for a value the mapper cannot write, such as a class that is
+  /// not described.
+  ///
+  /// ```dart
+  /// converter.toJsonTree([Address('Oak St')], addresses.type);
+  /// // [{'street': 'Oak St'}]
+  /// ```
+  Object? toJsonTree(
+    Object? value,
+    TypeInfo<Object?> type, {
+    String where = 'value',
+  }) {
+    if (value == null) {
+      return null;
+    }
+    try {
+      return copyJsonTree(mapper.valueToTree(value, type));
+    } on JsonMappingException catch (error) {
+      throw MappingException(
+        '$where: its value cannot be written as JSON'
+        '${error.path.isEmpty ? '' : ' (at ${error.path})'}: is every '
+        'class in it described (the build describes the classes of a '
+        '@Json property of the application; a class of another package '
+        'needs @Introspected there)?',
+      );
+    }
+  }
+
+  /// [tree] (decoded JSON, a `JsonNode`, or JSON text) read by the
+  /// [mapper] as a [Json] property of [type] holds it; the result shares
+  /// nothing with [tree]. Throws a [MappingException] naming [where] and
+  /// the place in the JSON, never the value, when the JSON does not fit
+  /// [type].
+  ///
+  /// A `String` is JSON text when [type] takes no `String` (a class, a
+  /// list, a map, a number: what a store that keeps text gave) and is
+  /// decoded; for a type that takes one (`String`, `Object`) it is the
+  /// value.
+  ///
+  /// ```dart
+  /// converter.fromJsonTree({'theme': 'dark'}, settings.type); // Settings
+  /// converter.fromJsonTree('{"theme":"dark"}', settings.type); // the same
+  /// ```
+  Object? fromJsonTree(
+    Object? tree,
+    TypeInfo<Object?> type, {
+    String where = 'value',
+  }) {
+    if (tree == null) {
+      if (!type.nullable) {
+        throw MappingException('$where is null but its type $type is not');
+      }
+      return null;
+    }
+    Object? json = tree;
+    if (tree is String && !type.isInstance(tree)) {
+      try {
+        json = jsonDecode(tree);
+      } on FormatException {
+        // No JSON text: a JSON string (an enum's name); the mapper judges.
+      }
+    }
+    final Object? read;
+    try {
+      read = mapper.treeToValue<Object?>(copyJsonTree(json), type);
+    } on JsonMappingException catch (error) {
+      throw MappingException(
+        '$where: the stored JSON cannot be read as $type'
+        '${error.path.isEmpty ? '' : ' (at ${error.path})'}',
+      );
+    } on TypeError {
+      throw MappingException(
+        '$where: the stored JSON cannot be read as $type',
+      );
+    }
+    if (!type.isInstance(read)) {
+      throw MappingException(
+        '$where: the stored JSON cannot be read as $type',
+      );
+    }
+    return read;
+  }
+
+  /// A copy of the decoded JSON [tree] with maps and lists of its own (a
+  /// `JsonNode` is left as it is: the mapper copies it).
+  static Object? copyJsonTree(Object? tree) => switch (tree) {
+    final Map<Object?, Object?> map => <String, Object?>{
+      for (final MapEntry(:key, :value) in map.entries)
+        '$key': copyJsonTree(value),
+    },
+    final List<Object?> list => <Object?>[
+      for (final item in list) copyJsonTree(item),
+    ],
+    _ => tree,
+  };
 
   /// [value] as a column holds it: an `AggregateReference` as its id, an
   /// enum as its `name`, anything else unchanged.
@@ -77,7 +207,8 @@ class EntityConverter {
   // ----------------------------------------------------------------- read
 
   /// Creates the entity of [entity]'s class from [row] (keyed by column
-  /// name); [children] holds the ready-made values of the
+  /// name; the column of a [Json] property holds decoded JSON, see
+  /// [fromJsonTree]); [children] holds the ready-made values of the
   /// [MappedCollection] properties, by property name (a `List`, `Set` or
   /// `Map`, of the right element types or not: it is converted). A
   /// non-null mapped collection absent from [children] is empty.
@@ -118,7 +249,9 @@ class EntityConverter {
         inRow = true;
         final value = row[p.columnName];
         if (value != null) {
-          values[i] = fromColumnValue(value, p.type, where: _where(entity, p));
+          values[i] = p.isJson
+              ? fromJsonTree(value, p.type, where: _where(entity, p))
+              : fromColumnValue(value, p.type, where: _where(entity, p));
           usable[i] = true;
         } else if (described.type.nullable) {
           usable[i] = true;

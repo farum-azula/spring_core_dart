@@ -429,6 +429,25 @@ spring.flutter.theme:
       expect(flat, isNot(contains('background')));
       expect(flat, isNot(contains('AppThemeStyles')));
       expect(flat, isNot(contains('AppThemeAnimations')));
+      // `spacing` reads the field of AppTheme.
+      expect(flat, isNot(contains('unused_field')));
+    });
+
+    test('a theme with nothing to name leaves no analyzer warning', () {
+      final (:code, :diagnostics) = _theme('''
+spring.flutter.theme:
+  seed-color: '#3ECF8E'
+''');
+      expect(diagnostics.errors, isEmpty);
+      // No getter reads the reader AppTheme keeps: `unused_field` is a
+      // warning, not a lint, so `ignore_for_file: type=lint` leaves it.
+      expect(
+        _flat(code),
+        contains(
+          'const AppTheme._(this._values); // ignore: unused_field '
+          'final ThemeKeyReader _values; }',
+        ),
+      );
     });
 
     test('a duration named curves clashes with the curves', () {

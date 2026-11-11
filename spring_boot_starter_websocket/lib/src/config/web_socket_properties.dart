@@ -9,15 +9,17 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 class WebSocketProperties {
   /// The largest text message a client reads, in UTF-8 bytes (Tomcat counts
   /// characters); a larger one closes the connection with 1009 (message too
-  /// big). `-1` for no limit.
+  /// big). `-1` for no limit. One client gets a limit of its own with
+  /// `config.<name>.max-text-message-size`.
   DataSize maxTextMessageSize = DataSize.ofKilobytes(8);
 
-  /// The same for binary messages. `-1` for no limit.
+  /// The same for binary messages. `-1` for no limit. One client gets a
+  /// limit of its own with `config.<name>.max-binary-message-size`.
   DataSize maxBinaryMessageSize = DataSize.ofKilobytes(8);
 
-  /// The settings of single clients, by the name of the `@WebSocketClient`;
-  /// `default` holds the ones every client falls back to, property by
-  /// property.
+  /// The settings of single clients, by the name of the `@WebSocketClient`
+  /// or `@PhoenixChannel`; `default` holds the ones every client falls back
+  /// to, property by property.
   Map<String, WebSocketClientSettings> config = {};
 }
 
@@ -26,8 +28,8 @@ class WebSocketProperties {
 /// named at each property.
 @Introspected()
 class WebSocketClientSettings {
-  /// The address, when `@WebSocketClient(url:)` is not set. `${...}`
-  /// placeholders are allowed.
+  /// The address, when `@WebSocketClient(url:)` (or `@PhoenixChannel(url:)`)
+  /// is not set. `${...}` placeholders are allowed.
   String? url;
 
   /// The longest a handshake may take. Default: `10s`.
@@ -38,9 +40,40 @@ class WebSocketClientSettings {
   /// client's header replaces the `default` one of the same name.
   Map<String, List<String>> defaultRequestHeaders = {};
 
+  /// The largest text message this client reads, in UTF-8 bytes; a larger
+  /// one closes the connection with 1009 (message too big). `-1` for no
+  /// limit. Default: `spring.websocket.client.max-text-message-size`.
+  DataSize? maxTextMessageSize;
+
+  /// The same for binary messages. Default:
+  /// `spring.websocket.client.max-binary-message-size`.
+  DataSize? maxBinaryMessageSize;
+
   /// How a lost connection, or a failed attempt, is opened again while
   /// someone listens.
   WebSocketReconnectSettings reconnect = WebSocketReconnectSettings();
+
+  /// The Phoenix Channels protocol, when the client is a `@PhoenixChannel`
+  /// interface or a `PhoenixSocket`.
+  WebSocketPhoenixSettings phoenix = WebSocketPhoenixSettings();
+}
+
+/// The `phoenix.*` settings of a client that speaks the Phoenix Channels
+/// protocol.
+@Introspected()
+class WebSocketPhoenixSettings {
+  /// The time between two heartbeats; one without a reply before the next
+  /// drops the connection, which is opened again. `0` sends none. Default:
+  /// `30s`.
+  Duration? heartbeatInterval;
+
+  /// The longest a join, a push or a leave waits for its reply; positive.
+  /// Default: `10s`.
+  Duration? pushTimeout;
+
+  /// The version of the wire format, sent as the `vsn` query parameter:
+  /// `2.0.0` (JSON arrays) or `1.0.0` (JSON objects). Default: `2.0.0`.
+  String? vsn;
 }
 
 /// The `reconnect.*` settings of a client, named as Spring Framework 7's

@@ -9,7 +9,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 560,
+      "line": 564,
       "class": "LocalServerSettings"
     },
     {
@@ -29,7 +29,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 240,
+      "line": 244,
       "class": "ServerCompressionSettings"
     },
     {
@@ -48,7 +48,7 @@
       ],
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 244,
+      "line": 248,
       "class": "ServerCompressionSettings"
     },
     {
@@ -58,7 +58,7 @@
       "default": "2KB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 256,
+      "line": 260,
       "class": "ServerCompressionSettings"
     },
     {
@@ -88,7 +88,7 @@
       "default": "none",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 84,
+      "line": 88,
       "class": "ServerSettings"
     },
     {
@@ -98,7 +98,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 207,
+      "line": 211,
       "class": "ForwardHeadersSettings"
     },
     {
@@ -108,7 +108,7 @@
       "default": "15s",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 155,
+      "line": 159,
       "class": "ServerIsolatesSettings"
     },
     {
@@ -118,7 +118,7 @@
       "default": "1",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 124,
+      "line": 128,
       "class": "ServerIsolatesSettings"
     },
     {
@@ -128,7 +128,7 @@
       "default": "30s",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 128,
+      "line": 132,
       "class": "ServerIsolatesSettings"
     },
     {
@@ -138,7 +138,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 140,
+      "line": 144,
       "class": "ServerIsolatesSettings"
     },
     {
@@ -148,7 +148,7 @@
       "default": 1,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 136,
+      "line": 140,
       "class": "ServerIsolatesSettings"
     },
     {
@@ -158,7 +158,7 @@
       "default": "2m",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 152,
+      "line": 156,
       "class": "ServerIsolatesSettings"
     },
     {
@@ -168,7 +168,7 @@
       "default": "5s",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 144,
+      "line": 148,
       "class": "ServerIsolatesSettings"
     },
     {
@@ -178,7 +178,7 @@
       "default": "5ms",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 149,
+      "line": 153,
       "class": "ServerIsolatesSettings"
     },
     {
@@ -188,7 +188,7 @@
       "default": "manual",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 133,
+      "line": 137,
       "class": "ServerIsolatesSettings"
     },
     {
@@ -198,7 +198,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 74,
+      "line": 78,
       "class": "ServerSettings"
     },
     {
@@ -208,7 +208,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 68,
+      "line": 72,
       "class": "ServerSettings"
     },
     {
@@ -228,7 +228,7 @@
       "default": {},
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 107,
+      "line": 111,
       "class": "ServerSettings"
     },
     {
@@ -243,12 +243,12 @@
     },
     {
       "name": "server.request-timeout",
-      "type": "Duration?",
-      "description": "The longest a request's filters and handler may take to answer, else a 503; also a deadline for the calls the request makes. Default: no limit (`0` or less: none). Not in Spring Boot.",
-      "default": null,
+      "type": "Duration",
+      "description": "The longest a request's filters and handler may take to answer, else a 503; also a deadline for the calls the request makes. It is what ends a request whose body arrives so slowly that the connection never counts as idle. A response that became a stream (an event stream, a streamed body) and a WebSocket are not cut by it. `0` or less: no limit; raise it for an application whose handlers or uploads rightly take longer. Not in Spring Boot.",
+      "default": "60s",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 61,
+      "line": 65,
       "class": "ServerSettings"
     },
     {
@@ -258,7 +258,7 @@
       "default": "1s",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 78,
+      "line": 82,
       "class": "ServerSettings"
     },
     {
@@ -268,7 +268,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 304,
+      "line": 308,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -278,7 +278,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 310,
+      "line": 314,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -288,7 +288,7 @@
       "default": "JSESSIONID",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 300,
+      "line": 304,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -298,7 +298,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 307,
+      "line": 311,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -308,7 +308,7 @@
       "default": "lax",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 317,
+      "line": 321,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -318,7 +318,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 314,
+      "line": 318,
       "class": "ServerSessionCookieSettings"
     },
     {
@@ -328,7 +328,7 @@
       "default": 10000,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 290,
+      "line": 294,
       "class": "ServerSessionSettings"
     },
     {
@@ -338,7 +338,7 @@
       "default": "30m",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 287,
+      "line": 291,
       "class": "ServerSessionSettings"
     },
     {
@@ -358,7 +358,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 217,
+      "line": 221,
       "class": "ServerSslSettings"
     },
     {
@@ -368,7 +368,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 220,
+      "line": 224,
       "class": "ServerSslSettings"
     },
     {
@@ -378,7 +378,7 @@
       "default": "none",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 230,
+      "line": 234,
       "class": "ServerSslSettings"
     },
     {
@@ -388,7 +388,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 214,
+      "line": 218,
       "class": "ServerSslSettings"
     },
     {
@@ -398,7 +398,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 223,
+      "line": 227,
       "class": "ServerSslSettings"
     },
     {
@@ -408,7 +408,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 226,
+      "line": 230,
       "class": "ServerSslSettings"
     },
     {
@@ -418,7 +418,7 @@
       "default": "8KB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 268,
+      "line": 272,
       "class": "ServerWebSocketSettings"
     },
     {
@@ -428,7 +428,7 @@
       "default": "8KB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 265,
+      "line": 269,
       "class": "ServerWebSocketSettings"
     },
     {
@@ -438,7 +438,7 @@
       "default": "512KB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 274,
+      "line": 278,
       "class": "ServerWebSocketSettings"
     },
     {
@@ -448,7 +448,7 @@
       "default": "10s",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 278,
+      "line": 282,
       "class": "ServerWebSocketSettings"
     },
     {
@@ -458,7 +458,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 539,
+      "line": 543,
       "class": "WebMainSettings"
     },
     {
@@ -468,7 +468,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 381,
+      "line": 385,
       "class": "MvcAsyncSettings"
     },
     {
@@ -478,7 +478,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 359,
+      "line": 363,
       "class": "MvcSettings"
     },
     {
@@ -488,7 +488,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 389,
+      "line": 393,
       "class": "MvcSseSettings"
     },
     {
@@ -498,7 +498,7 @@
       "default": "/**",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 366,
+      "line": 370,
       "class": "MvcSettings"
     },
     {
@@ -508,7 +508,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 551,
+      "line": 555,
       "class": "WebTestSettings"
     },
     {
@@ -518,7 +518,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 527,
+      "line": 531,
       "class": "WebDebugQpsSettings"
     },
     {
@@ -528,7 +528,7 @@
       "default": "10s",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 530,
+      "line": 534,
       "class": "WebDebugQpsSettings"
     },
     {
@@ -538,7 +538,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 327,
+      "line": 331,
       "class": "MultipartSettings"
     },
     {
@@ -548,7 +548,7 @@
       "default": "0B",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 344,
+      "line": 348,
       "class": "MultipartSettings"
     },
     {
@@ -558,7 +558,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 349,
+      "line": 353,
       "class": "MultipartSettings"
     },
     {
@@ -568,7 +568,7 @@
       "default": "1MB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 331,
+      "line": 335,
       "class": "MultipartSettings"
     },
     {
@@ -578,7 +578,7 @@
       "default": 50,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 340,
+      "line": 344,
       "class": "MultipartSettings"
     },
     {
@@ -588,7 +588,7 @@
       "default": "10MB",
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 335,
+      "line": 339,
       "class": "MultipartSettings"
     },
     {
@@ -598,7 +598,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 409,
+      "line": 413,
       "class": "WebResourcesSettings"
     },
     {
@@ -608,7 +608,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 482,
+      "line": 486,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -618,7 +618,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 479,
+      "line": 483,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -628,7 +628,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 464,
+      "line": 468,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -638,7 +638,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 473,
+      "line": 477,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -648,7 +648,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 467,
+      "line": 471,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -658,7 +658,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 470,
+      "line": 474,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -668,7 +668,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 476,
+      "line": 480,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -678,7 +678,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 485,
+      "line": 489,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -688,7 +688,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 500,
+      "line": 504,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -698,7 +698,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 495,
+      "line": 499,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -708,7 +708,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 490,
+      "line": 494,
       "class": "WebResourcesCacheControlSettings"
     },
     {
@@ -718,7 +718,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 444,
+      "line": 448,
       "class": "WebResourcesCacheSettings"
     },
     {
@@ -728,7 +728,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 448,
+      "line": 452,
       "class": "WebResourcesCacheSettings"
     },
     {
@@ -738,7 +738,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 510,
+      "line": 514,
       "class": "WebResourcesChainSettings"
     },
     {
@@ -748,7 +748,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 427,
+      "line": 431,
       "class": "WebResourcesSettings"
     },
     {
@@ -758,7 +758,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 417,
+      "line": 421,
       "class": "WebResourcesSettings"
     },
     {
@@ -771,7 +771,7 @@
       ],
       "deprecated": null,
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 404,
+      "line": 408,
       "class": "WebResourcesSettings"
     }
   ],
@@ -889,6 +889,52 @@
     }
   ],
   "beans": [
+    {
+      "name": "authenticatedRateLimitFilter",
+      "type": "RateLimitFilter",
+      "types": [
+        "RateLimitFilter",
+        "WebFilter",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnRateLimiting()"
+      ],
+      "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
+      "line": 207,
+      "injects": [],
+      "members": [
+        {
+          "name": "doFilter",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "WebFilterChain chain"
+          ]
+        },
+        {
+          "name": "limiter",
+          "kind": "field",
+          "type": "RequestRateLimiter"
+        },
+        {
+          "name": "order",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "rules",
+          "kind": "field",
+          "type": "List<RateLimitRule>"
+        }
+      ]
+    },
     {
       "name": "dispatcherHandler",
       "type": "DispatcherHandler",
@@ -1162,6 +1208,62 @@
       ]
     },
     {
+      "name": "inMemoryRateLimitStore",
+      "type": "InMemoryRateLimitStore",
+      "types": [
+        "InMemoryRateLimitStore",
+        "RateLimitStore",
+        "IsolateLocalState"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnRateLimitStore('memory')"
+      ],
+      "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
+      "line": 115,
+      "injects": [],
+      "members": [
+        {
+          "name": "acquire",
+          "kind": "method",
+          "type": "RateLimitDecision",
+          "parameters": [
+            "String key",
+            "RateLimit limit",
+            "{int permits}"
+          ]
+        },
+        {
+          "name": "isolateLocalState",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "length",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "maxEntries",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "tryAcquire",
+          "kind": "method",
+          "type": "Future<RateLimitDecision>",
+          "parameters": [
+            "String key",
+            "RateLimit limit",
+            "{int permits}"
+          ]
+        }
+      ]
+    },
+    {
       "name": "localServerSettings",
       "type": "LocalServerSettings",
       "types": [
@@ -1173,7 +1275,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 556,
+      "line": 560,
       "injects": [],
       "members": [
         {
@@ -1243,7 +1345,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 324,
+      "line": 328,
       "injects": [],
       "members": [
         {
@@ -1290,7 +1392,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 356,
+      "line": 360,
       "injects": [],
       "members": [
         {
@@ -1337,6 +1439,316 @@
           "type": "FailureAnalysis?",
           "parameters": [
             "Object failure"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "primaryIsolateRateLimitStore",
+      "type": "PrimaryIsolateRateLimitStore",
+      "types": [
+        "PrimaryIsolateRateLimitStore",
+        "RateLimitStore"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnRateLimitStore('primary-isolate', byDefault: OnServerIsolates())"
+      ],
+      "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
+      "line": 96,
+      "injects": [],
+      "members": [
+        {
+          "name": "primary",
+          "kind": "field",
+          "type": "PrimaryIsolate"
+        },
+        {
+          "name": "tryAcquire",
+          "kind": "method",
+          "type": "Future<RateLimitDecision>",
+          "parameters": [
+            "String key",
+            "RateLimit limit",
+            "{int permits}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rateLimitClientAddressResolver",
+      "type": "ClientAddressResolver",
+      "types": [
+        "ClientAddressResolver"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnRateLimiting()",
+        "@ConditionalOnMissingBean(ClientAddressResolver)"
+      ],
+      "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
+      "line": 129,
+      "injects": [],
+      "members": [
+        {
+          "name": "resolve",
+          "kind": "method",
+          "type": "String?",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rateLimitFilter",
+      "type": "RateLimitFilter",
+      "types": [
+        "RateLimitFilter",
+        "WebFilter",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnRateLimiting()"
+      ],
+      "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
+      "line": 194,
+      "injects": [],
+      "members": [
+        {
+          "name": "doFilter",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "WebFilterChain chain"
+          ]
+        },
+        {
+          "name": "limiter",
+          "kind": "field",
+          "type": "RequestRateLimiter"
+        },
+        {
+          "name": "order",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "rules",
+          "kind": "field",
+          "type": "List<RateLimitRule>"
+        }
+      ]
+    },
+    {
+      "name": "rateLimitPrimaryIsolateHandler",
+      "type": "PrimaryIsolateRateLimitHandler",
+      "types": [
+        "PrimaryIsolateRateLimitHandler",
+        "PrimaryIsolateHandler"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnRateLimiting()",
+        "@ConditionalOnPrimaryIsolate()"
+      ],
+      "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
+      "line": 80,
+      "injects": [],
+      "members": [
+        {
+          "name": "buckets",
+          "kind": "field",
+          "type": "InMemoryRateLimitStore"
+        },
+        {
+          "name": "handle",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": [
+            "Object? request"
+          ]
+        },
+        {
+          "name": "id",
+          "kind": "getter",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "rateLimitWebMvcConfigurer",
+      "type": "RateLimitWebMvcConfigurer",
+      "types": [
+        "RateLimitWebMvcConfigurer",
+        "WebMvcConfigurer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnRateLimiting()"
+      ],
+      "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
+      "line": 237,
+      "injects": [],
+      "members": [
+        {
+          "name": "addArgumentResolvers",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "List<HandlerMethodArgumentResolver> resolvers"
+          ]
+        },
+        {
+          "name": "addCorsMappings",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "CorsRegistry registry"
+          ]
+        },
+        {
+          "name": "addInterceptors",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "InterceptorRegistry registry"
+          ]
+        },
+        {
+          "name": "addResourceHandlers",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ResourceHandlerRegistry registry"
+          ]
+        },
+        {
+          "name": "interceptor",
+          "kind": "field",
+          "type": "RateLimiterInterceptor"
+        }
+      ]
+    },
+    {
+      "name": "rateLimiterAnnotationGuard",
+      "type": "RateLimiterAnnotationGuard",
+      "types": [
+        "RateLimiterAnnotationGuard",
+        "SmartInitializingSingleton"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnRateLimitingNeverSet()"
+      ],
+      "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
+      "line": 249,
+      "injects": [],
+      "members": [
+        {
+          "name": "afterSingletonsInstantiated",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "beanFactory",
+          "kind": "field",
+          "type": "ListableBeanFactory"
+        }
+      ]
+    },
+    {
+      "name": "rateLimiterInterceptor",
+      "type": "RateLimiterInterceptor",
+      "types": [
+        "RateLimiterInterceptor",
+        "SmartInitializingSingleton",
+        "HandlerInterceptor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnRateLimiting()"
+      ],
+      "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
+      "line": 222,
+      "injects": [],
+      "members": [
+        {
+          "name": "afterCompletion",
+          "kind": "method",
+          "type": "FutureOr<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "HandlerMethod handler",
+            "Object? error"
+          ]
+        },
+        {
+          "name": "afterSingletonsInstantiated",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "beanFactory",
+          "kind": "field",
+          "type": "ListableBeanFactory"
+        },
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "Environment"
+        },
+        {
+          "name": "limiter",
+          "kind": "field",
+          "type": "RequestRateLimiter"
+        },
+        {
+          "name": "postHandle",
+          "kind": "method",
+          "type": "FutureOr<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "HandlerMethod handler",
+            "Object? result"
+          ]
+        },
+        {
+          "name": "preHandle",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "HandlerMethod handler"
           ]
         }
       ]
@@ -1491,7 +1903,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/spring_auto_configuration.dart",
-      "line": 56,
+      "line": 77,
       "injects": [],
       "members": [
         {
@@ -1528,6 +1940,90 @@
       ]
     },
     {
+      "name": "requestRateLimiter",
+      "type": "RequestRateLimiter",
+      "types": [
+        "RequestRateLimiter"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnRateLimiting()",
+        "@ConditionalOnMissingBean(RequestRateLimiter)"
+      ],
+      "source": "package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart",
+      "line": 153,
+      "injects": [],
+      "members": [
+        {
+          "name": "acquire",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "ServerHttpResponse response",
+            "Iterable<RateLimitRule> rules"
+          ]
+        },
+        {
+          "name": "addresses",
+          "kind": "field",
+          "type": "ClientAddressResolver"
+        },
+        {
+          "name": "beforeAuthentication",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "RateLimitRule rule"
+          ]
+        },
+        {
+          "name": "headers",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "keyResolvers",
+          "kind": "field",
+          "type": "List<RateLimitKeyResolver>"
+        },
+        {
+          "name": "onStoreFailure",
+          "kind": "field",
+          "type": "RateLimitStoreFailure"
+        },
+        {
+          "name": "resolverOf",
+          "kind": "method",
+          "type": "RateLimitKeyResolver",
+          "parameters": [
+            "String key"
+          ]
+        },
+        {
+          "name": "store",
+          "kind": "field",
+          "type": "RateLimitStore"
+        },
+        {
+          "name": "storeFailureRetryAfter",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "validate",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "RateLimitRule rule"
+          ]
+        }
+      ]
+    },
+    {
       "name": "requestRates",
       "type": "RequestRates",
       "types": [
@@ -1544,7 +2040,7 @@
         "@ConditionalOnPrimaryIsolate()"
       ],
       "source": "package:spring_boot_starter_web/spring_auto_configuration.dart",
-      "line": 62,
+      "line": 83,
       "injects": [],
       "members": [
         {
@@ -2109,7 +2605,7 @@
         {
           "name": "requestTimeout",
           "kind": "field",
-          "type": "Duration?"
+          "type": "Duration"
         },
         {
           "name": "retryAfter",
@@ -2150,7 +2646,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 516,
+      "line": 520,
       "injects": [],
       "members": [
         {
@@ -2172,7 +2668,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 535,
+      "line": 539,
       "injects": [],
       "members": [
         {
@@ -2194,7 +2690,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 397,
+      "line": 401,
       "injects": [],
       "members": [
         {
@@ -2423,7 +2919,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/src/config/web_properties.dart",
-      "line": 544,
+      "line": 548,
       "injects": [],
       "members": [
         {

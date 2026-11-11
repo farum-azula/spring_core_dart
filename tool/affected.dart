@@ -30,6 +30,9 @@
 //                    server's tests against the app's real web build)
 //   seo_site         example/seo_site affected (its pages for search
 //                    engines)
+//   supabase_example example/supabase/app affected (its widget tests; the
+//                    server of the example is a workspace package, tested
+//                    with `packages`)
 //   flutter          any Flutter package
 //   family           a published Dart package of the family (the
 //                    applications of tool/check_app_dependencies.dart)
@@ -52,6 +55,7 @@ const flutterPackages = [
   'example/themes/cupertino',
   'example/static_site/app',
   'example/seo_site',
+  'example/supabase/app',
 ];
 
 /// Changed paths (prefixes) that affect every package.
@@ -134,6 +138,7 @@ Future<void> main(List<String> args) async {
     final staticSite =
         has('example/static_site/app') || has('example/static_site/server');
     final seoSite = has('example/seo_site');
+    final supabaseExample = has('example/supabase/app');
     final anyFlutter =
         starter ||
         security ||
@@ -143,7 +148,8 @@ Future<void> main(List<String> args) async {
         showcaseMaterial ||
         showcaseCupertino ||
         staticSite ||
-        seoSite;
+        seoSite ||
+        supabaseExample;
     final dartPackages = ordered
         .where((p) => !flutterPackages.contains(p))
         .join(',');
@@ -163,6 +169,7 @@ Future<void> main(List<String> args) async {
         'theme_showcase_cupertino=$showcaseCupertino',
         'static_site=$staticSite',
         'seo_site=$seoSite',
+        'supabase_example=$supabaseExample',
         'flutter=$anyFlutter',
         'family=${familyAffected(affected)}',
         '',

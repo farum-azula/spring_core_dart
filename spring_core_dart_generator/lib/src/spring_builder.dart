@@ -24,6 +24,7 @@ import 'package:spring_core_dart_generator/src/asset_check.dart';
 import 'package:spring_core_dart_generator/src/bean_model.dart';
 import 'package:spring_core_dart_generator/src/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/dart_define_keys.dart';
+import 'package:spring_core_dart_generator/src/data_stores.dart';
 import 'package:spring_core_dart_generator/src/driver_glue.dart';
 import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/generated_path.dart';
@@ -368,6 +369,11 @@ class SpringBuilder implements Builder {
         scan,
       ),
       sqlResources: _texts(resources),
+      dataStores: await DataStoreBuild.read(
+        buildStep,
+        reachablePackages: () => _reachablePackages(buildStep),
+        configuration: _texts(resources),
+      ),
     );
     await _scanLibraries(buildStep, scanner, assets);
     scanner.collectErrors(() => _checkUniqueNames(module.beans));
@@ -388,8 +394,18 @@ class SpringBuilder implements Builder {
     // package's other libraries and of the auto-configurations, as the
     // @SpringBootApplication output.
     final dependencies = await _dependencies(buildStep);
-    final glue = await driverGlueFor(buildStep, dependencies);
     final application = await _isApplication(buildStep);
+    // The data starter may be one the package only reaches (through the
+    // Supabase starter): the glue imports it all the same. Not in the
+    // `lib/` of a published package, whose imports pub.dev checks against
+    // its `dependencies`.
+    final glue = await driverGlueFor(
+      buildStep,
+      dependencies,
+      reachable: application || !output.path.startsWith('lib/')
+          ? await _reachablePackages(buildStep)
+          : null,
+    );
     final prune = pruneProxies && application;
     // A starter's `lib/` modules (a package with an auto-configuration
     // library), and those of a library that says a starter imports them
@@ -803,6 +819,11 @@ class SpringBuilder implements Builder {
       module,
       proxyMode: proxyMode,
       sqlResources: _texts(resources),
+      dataStores: await DataStoreBuild.read(
+        buildStep,
+        reachablePackages: () => _reachablePackages(buildStep),
+        configuration: _texts(resources),
+      ),
     );
     await _scanLibraries(buildStep, scanner, assets);
     scanner.collectErrors(() => _checkUniqueNames(module.beans));
@@ -849,7 +870,14 @@ class SpringBuilder implements Builder {
     }
     final springApplication = refer('springApplication');
     final dependencies = await _dependencies(buildStep);
-    final glue = await driverGlueFor(buildStep, dependencies);
+    final glue = await driverGlueFor(
+      buildStep,
+      dependencies,
+      reachable:
+          await _isApplication(buildStep) || !output.path.startsWith('lib/')
+          ? await _reachablePackages(buildStep)
+          : null,
+    );
     final emitter = ModuleEmitter(
       output,
       dependencies: dependencies,

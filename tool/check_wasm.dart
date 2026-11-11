@@ -27,6 +27,7 @@ const wasmPackages = [
   'spring_boot_starter_cache',
   'spring_boot_starter_feign',
   'spring_boot_starter_websocket',
+  'spring_boot_starter_supabase',
   'spring_boot_starter_data',
   'spring_security_core',
   'spring_search_dart',
@@ -51,6 +52,13 @@ const flutterApps = {
   'example/seo_site': [
     'spring_boot_starter_flutter',
     'spring_boot_starter_flutter_navigation',
+  ],
+  // The Supabase starter in a Flutter app: its own client, the data,
+  // Feign and WebSocket starters under it.
+  'example/supabase/app': [
+    'spring_boot_starter_flutter',
+    'spring_boot_starter_flutter_security',
+    'spring_boot_starter_supabase',
   ],
 };
 

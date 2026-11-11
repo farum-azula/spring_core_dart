@@ -109,6 +109,22 @@ T? _bean<T extends Object>(
   return beans.getBeanByName(names.single) as T;
 }
 
+/// The store of the repositories without `@UseStore` and
+/// `@UseDataSource`: `spring.data.store` when it is set (the name of any
+/// store; one that names no store fails the repositories when they are
+/// created, with the stores there are), else `jdbc` with a primary data
+/// source ([hasPrimaryDataSource]) and `memory` without.
+String defaultStoreOf(
+  Environment environment, {
+  required bool hasPrimaryDataSource,
+}) {
+  final configured = environment.getProperty('spring.data.store')?.trim();
+  if (configured != null && configured.isNotEmpty) {
+    return configured;
+  }
+  return hasPrimaryDataSource ? 'jdbc' : 'memory';
+}
+
 /// The longest a memory store waits for a row lock:
 /// `spring.data.memory.lock-timeout` (a duration such as `500ms` or
 /// `10s`), 10 seconds by default. A negative value is an error that stops
@@ -214,8 +230,10 @@ final dataAutoConfiguration = <BeanDefinition<Object>>[
         ConditionalOnMissingBean(EntityConverter),
       ]),
     ],
-    create: (r) =>
-        EntityConverter(introspector: r.dependency<BeanIntrospector>()),
+    create: (r) => EntityConverter(
+      introspector: r.dependency<BeanIntrospector>(),
+      mapper: r.optionalDependency<ObjectMapper>(),
+    ),
   ),
   BeanDefinition<InMemoryDataStore>(
     name: 'inMemoryDataStore',
@@ -308,9 +326,12 @@ final dataAutoConfiguration = <BeanDefinition<Object>>[
         dataSources: r.dependency<InMemoryDataSources>(),
         auditing: r.optionalDependency<AuditingHandler>(),
         jdbcDataSources: jdbc,
-        defaultStore: jdbc.containsKey(RepositoryFactory.primaryDataSource)
-            ? 'jdbc'
-            : 'memory',
+        defaultStore: defaultStoreOf(
+          r.dependency<Environment>(),
+          hasPrimaryDataSource: jdbc.containsKey(
+            RepositoryFactory.primaryDataSource,
+          ),
+        ),
         jdbcLogSettings:
             r.optionalDependency<JdbcLogSettings>() ?? const JdbcLogSettings(),
         environment: r.dependency<Environment>(),

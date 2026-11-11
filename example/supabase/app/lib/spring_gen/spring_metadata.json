@@ -1,0 +1,335 @@
+{
+  "version": 1,
+  "package": "supabase_example_app",
+  "properties": [
+    {
+      "name": "todos.list",
+      "type": "String",
+      "description": null,
+      "default": "home",
+      "deprecated": null,
+      "source": "package:supabase_example_app/src/todos/todo_list.dart",
+      "line": 10,
+      "class": "TodoProperties"
+    }
+  ],
+  "hints": [],
+  "beans": [
+    {
+      "name": "avatarPainter",
+      "type": "AvatarPainter",
+      "types": [
+        "AvatarPainter"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:supabase_example_app/src/profile/avatars.dart",
+      "line": 27,
+      "injects": [],
+      "members": [
+        {
+          "name": "paint",
+          "kind": "method",
+          "type": "Future<Uint8List>",
+          "parameters": [
+            "String letter",
+            "Color color"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "avatars",
+      "type": "Avatars",
+      "types": [
+        "Avatars"
+      ],
+      "scope": "singleton",
+      "primary": true,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:supabase_example_app/src/profile/avatars.dart",
+      "line": 11,
+      "injects": [],
+      "members": [
+        {
+          "name": "mine",
+          "kind": "method",
+          "type": "Future<Uint8List?>",
+          "parameters": []
+        },
+        {
+          "name": "put",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Uint8List png"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "functions",
+      "type": "Functions",
+      "types": [
+        "Functions"
+      ],
+      "scope": "singleton",
+      "primary": true,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:supabase_example_app/src/profile/functions.dart",
+      "line": 23,
+      "injects": [],
+      "members": [
+        {
+          "name": "sendInvite",
+          "kind": "method",
+          "type": "Future<InviteResult>",
+          "parameters": [
+            "Invite invite"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "todoProperties",
+      "type": "TodoProperties",
+      "types": [
+        "TodoProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:supabase_example_app/src/todos/todo_list.dart",
+      "line": 9,
+      "injects": [],
+      "members": [
+        {
+          "name": "list",
+          "kind": "field",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "todos",
+      "type": "Todos",
+      "types": [
+        "Todos",
+        "ListCrudRepository<Todo, int>",
+        "CrudRepository<Todo, int>",
+        "DataRepository<Todo, int>",
+        "ListCrudRepository<dynamic, dynamic>",
+        "CrudRepository<dynamic, dynamic>",
+        "DataRepository<dynamic, dynamic>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:supabase_example_app/src/todos/todo.dart",
+      "line": 27,
+      "injects": [],
+      "members": [
+        {
+          "name": "count",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Todo entity"
+          ]
+        },
+        {
+          "name": "deleteAll",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "deleteAllById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "deleteAllOf",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<Todo> entities"
+          ]
+        },
+        {
+          "name": "deleteById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "existsById",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "findAll",
+          "kind": "method",
+          "type": "Future<List<Todo>>",
+          "parameters": []
+        },
+        {
+          "name": "findAllById",
+          "kind": "method",
+          "type": "Future<List<Todo>>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "findById",
+          "kind": "method",
+          "type": "Future<Todo?>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "save",
+          "kind": "method",
+          "type": "Future<Todo>",
+          "parameters": [
+            "Todo entity"
+          ]
+        },
+        {
+          "name": "saveAll",
+          "kind": "method",
+          "type": "Future<List<Todo>>",
+          "parameters": [
+            "Iterable<Todo> entities"
+          ]
+        },
+        {
+          "name": "watchByListIdOrderByIdAsc",
+          "kind": "method",
+          "type": "Stream<List<Todo>>",
+          "parameters": [
+            "String listId"
+          ]
+        }
+      ]
+    }
+  ],
+  "profiles": [],
+  "entities": [
+    {
+      "class": "Todo",
+      "table": "todos",
+      "source": "package:supabase_example_app/src/todos/todo.dart",
+      "line": 7,
+      "id": "id",
+      "properties": [
+        {
+          "name": "id",
+          "type": "int?",
+          "kind": "column",
+          "column": "id",
+          "relation": null,
+          "source": "package:supabase_example_app/src/todos/todo.dart",
+          "line": 17
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "kind": "column",
+          "column": "title",
+          "relation": null,
+          "source": "package:supabase_example_app/src/todos/todo.dart",
+          "line": 19
+        },
+        {
+          "name": "listId",
+          "type": "String",
+          "kind": "column",
+          "column": "list_id",
+          "relation": null,
+          "source": "package:supabase_example_app/src/todos/todo.dart",
+          "line": 20
+        },
+        {
+          "name": "done",
+          "type": "bool",
+          "kind": "column",
+          "column": "done",
+          "relation": null,
+          "source": "package:supabase_example_app/src/todos/todo.dart",
+          "line": 21
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime?",
+          "kind": "column",
+          "column": "created_at",
+          "relation": null,
+          "source": "package:supabase_example_app/src/todos/todo.dart",
+          "line": 22
+        }
+      ]
+    }
+  ],
+  "repositories": [
+    {
+      "name": "Todos",
+      "entity": "Todo",
+      "id": "int",
+      "source": "package:supabase_example_app/src/todos/todo.dart",
+      "line": 27,
+      "methods": [
+        {
+          "name": "watchByListIdOrderByIdAsc",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "listId",
+              "type": "String"
+            }
+          ],
+          "returns": "Stream<List<Todo>>",
+          "line": 31
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "path": "/",
+      "name": "home-page",
+      "class": "HomePage",
+      "source": "package:supabase_example_app/src/app/home_page.dart#HomePage",
+      "title": "Todos"
+    }
+  ]
+}

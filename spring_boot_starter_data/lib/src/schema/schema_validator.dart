@@ -1,5 +1,6 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/annotations.dart';
+import 'package:spring_boot_starter_data/src/jdbc/collection_columns.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_driver.dart';
 import 'package:spring_boot_starter_data/src/jdbc/sql_dialect.dart';
@@ -79,7 +80,11 @@ class SchemaValidator {
   ) async {
     final model = SchemaModel.of(entities, naming: naming);
     final dialect = dataSource.dialect;
-    final problems = [...model.problems];
+    final problems = [
+      ...model.problems,
+      for (final entity in entities)
+        ...CollectionColumns(dialect).problemsOf(entity),
+    ];
     final warnings = <String>[];
     await withConnection(dataSource, (connection) async {
       for (final table in model.tables) {
@@ -268,7 +273,13 @@ class SchemaValidator {
     final byName = {for (final c in found) c.name.toLowerCase(): c};
     for (final column in table.columns) {
       final actual = byName[column.name.toLowerCase()];
-      final expected = dialect.columnType(column.type) ?? '${column.type}';
+      final json = column.json == null
+          ? null
+          : dialect.jsonStorage(column.json!);
+      final expected =
+          json?.columnType ??
+          dialect.columnType(column.type) ??
+          '${column.type}';
       if (actual == null) {
         problems.add(
           'Missing column "${column.name}" in table "$qualified" for '
@@ -277,8 +288,11 @@ class SchemaValidator {
         );
         continue;
       }
-      if (dialect.columnType(column.type) != null &&
-          !dialect.columnFits(actual.type, column.type)) {
+      final fits = json == null
+          ? dialect.columnType(column.type) == null ||
+                dialect.columnFits(actual.type, column.type)
+          : json.fits(actual.type);
+      if (!fits) {
         problems.add(
           'Column "${column.name}" in table "$qualified" for '
           '${column.property} has the wrong type: expected $expected '

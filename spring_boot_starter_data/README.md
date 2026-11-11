@@ -240,6 +240,112 @@ class Author {
   `@OnDelete` has the same limit). A reference must point to an aggregate
   root.
 
+## JSON columns
+
+`@Json()` on a property stores it as JSON in one column: a class of the
+application, a list or a map of them, or plain `Map<String, Object?>` / `List`
+data.
+
+```dart
+@Table('profiles')
+class UserProfile {
+  @Id()
+  int? id;
+
+  @Json() // PostgreSQL: jsonb
+  Settings settings; // a class of the application
+
+  @Json(binary: false) // PostgreSQL: json
+  Map<String, Object?> raw;
+
+  @Json()
+  List<Address>? addresses;
+}
+```
+
+The value is written and read by the application's `ObjectMapper` (the bean
+controllers and Feign clients use, so its settings and the `@Json...`
+annotations of the classes apply; without the bean, a mapper with the default
+settings). The build describes the classes of the property's type for it,
+nested ones too, the way it describes a controller's body: no `@Introspected`
+to add for the classes of the application's package (a class of another
+package is described there, with `@Introspected`). A `null` property is a SQL
+`NULL`, not the JSON `null`.
+
+| Store | What it keeps |
+|---|---|
+| PostgreSQL | a `jsonb` column, or `json` with `binary: false` (the text as written: key order, spaces); bound as text with `CAST(? AS JSONB)` |
+| SQLite | the JSON text in a `TEXT` column; a table the starter creates has `CHECK (json_valid("column"))` |
+| any other SQL database | the JSON text in a `TEXT` column: what a dialect that overrides nothing does |
+| in-memory | the decoded JSON (maps, lists, numbers, strings), copied on the way in and out, so a saved value does not change with the object it came from |
+| a store over a REST API (Supabase) | the decoded JSON, sent and received as nested JSON |
+
+`spring.data.jdbc.schema: create` writes those column types and `validate`
+checks them: PostgreSQL wants exactly `jsonb` or `json`, SQLite a text column
+(or one declared `JSON`, or without a type); another type is reported like any
+other mismatch (`Column "settings" in table "profiles" for
+UserProfile.settings has the wrong type: expected JSONB (Settings), found
+json`). A JSON column gets no `DEFAULT`: the property's default value is used
+when a row has none.
+
+A dialect says how its database keeps JSON in one place,
+`SqlDialect.jsonStorage(Json)`, which returns a `JsonStorage` (the column
+type, the test of an existing column, an optional `CHECK`, the marker and the
+value an insert or update binds, the reading of what the driver gives). The
+default suits a database without a JSON type; a dialect of your own overrides
+it for one that has it.
+
+A `@Query` reads such a column like the repository's own methods do, into the
+entity or into a class with a `@Json` property of its own, and it is the way
+to filter by what is inside:
+
+```dart
+@Query("select * from profiles where settings ->> 'theme' = :theme")
+Future<List<UserProfile>> themed(String theme);
+```
+
+What is refused, with the fix in the message:
+
+- A condition or an order on a `@Json` property in a derived query
+  (`findBySettings`, `OrderBySettings`, a `Sort` by it): a build error, and an
+  `InvalidDataAccessApiUsageException` at run time on every store. Use
+  `@Query` with the database's JSON operators on a SQL store, or `@Procedure`.
+- `@Json` on the `@Id`, the `@Version`, an audited property, a
+  `@MappedCollection` or a reference to another aggregate: a
+  `MappingException` when the entity is read.
+- A stored value that cannot be read as the property's type: a
+  `MappingException` naming the class and the property (and the place in the
+  JSON), never the value.
+
+Without `@Json`, a `Map`, `List` or `Set` property (other than `List<int>` and
+`Uint8List`, which are bytes, and a `@MappedCollection`) is no column of a SQL
+database, and the SQL store refuses it before any statement runs:
+
+```
+Invalid repository Parcels:
+  - Parcel.meta: a Map<String, Object?> property without @Json has no column on a SQL store: add @Json() to keep it as JSON, or @MappedCollection for rows of a child table
+```
+
+- **At build time**, when the build knows that the repository's store is the
+  SQL store (`@UseStore('jdbc')`, `@UseDataSource`, or `spring.datasource.url`
+  in the configuration): a `Map`, a `Set`, or a `List` of anything but simple
+  values is a build error. A store says it needs this check with
+  `DataStoreDescriptor(collectionsNeedJson: true)`.
+- **When the application starts**, on every SQL store: the repository is not
+  created (`Invalid repository X:`), and `spring.data.jdbc.schema: validate`
+  and `create` report the same line (`SchemaValidator`, `SchemaCreator`). The
+  store asks its dialect: `SqlDialect.storesCollection(type)`.
+- **PostgreSQL arrays** stay: a `List` of simple values (`List<String>`,
+  `List<double>`, `List<bool>`, `List<DateTime>`) is stored in and read from
+  an array column you create (`tags text[]`), so the build leaves such a list
+  to the store, and SQLite, which has no arrays, refuses it at start. A `Set`
+  and a `Map` are never arrays.
+
+The in-memory store keeps the Dart object as it is (its inner lists and maps
+are shared with the instance that was saved), and a store over a REST API
+sends a plain map or list as JSON and reads it back, but cannot build classes
+from it: neither is checked.
+
 ## Auditing
 
 `@EnableDataAuditing()` on a `@Configuration` class (Spring Data JDBC's
@@ -431,6 +537,7 @@ startup, but does not hold back early queries.
 | `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and values) at info; the values of a name that looks secret, and the values bound without a name, are masked (see "What the logs hold") |
 | `spring.data.jdbc.slow-query-threshold` | none | a slower statement is logged at warn |
 | `spring.data.memory.lock-timeout` | `10s` | the in-memory store's wait for a row lock |
+| `spring.data.store` | `jdbc` with a primary data source, else `memory` | the store of the repositories without `@UseStore` and `@UseDataSource`: `memory`, `jdbc` or the name of another store; the build reads it too (see "Stores") |
 
 **PostgreSQL.** List `postgres` (the `postgres` package is the application's
 dependency, never the starter's) and give a `postgresql://` URL, in the
@@ -555,7 +662,8 @@ binding lets the client choose the id and the version.
 among the application's dependencies, the generator adds a
 `HandlerExceptionResolver` (the bean `dataAccessExceptionResolver`) that
 answers an `OptimisticLockingFailureException` or a `DuplicateKeyException`
-with a 409, an `EmptyResultDataAccessException` with a 404, and a
+with a 409, a `PermissionDeniedDataAccessException` with a 403 ("Access
+denied"), an `EmptyResultDataAccessException` with a 404, and a
 `PropertyReferenceException` ("Invalid sort property") or an
 `InvalidPagingRequestException` ("Invalid page or sort request") or an
 `InvalidDataArgumentException` ("Invalid request value": a text with a NUL
@@ -590,6 +698,213 @@ the schema is set up on a connection, which Dart cannot wait for without
 `await`. With a SQL data source start the application with
 `await runApplicationAsync(args)`; the synchronous `runApplication(args)`
 fails at start with a report that says so.
+
+### The rate limiter's buckets: `JdbcRateLimitStore`
+
+The web starter's rate limiter (`spring.web.rate-limit.*`, its
+[Rate limiting](../spring_boot_starter_web/README.md#rate-limiting)
+section) keeps its buckets in a table of the primary data source when the
+application has one: every server on the database then shares the limits,
+and they outlive a restart. Nothing to declare; `spring.web.rate-limit.store`
+is `jdbc` by default with a primary `DataSource` (set it to `memory` to
+keep the counting out of the database).
+
+An acquisition is one statement, atomic in the database and on its clock,
+on a connection of its own (a rolled-back transaction of the request has
+still been counted):
+
+```sql
+-- PostgreSQL; SQLite runs the same with min / max and its own clock.
+insert into rate_limit as b (key, tokens, allowed, updated_at, expires_at)
+values (:key, :capacity - :permits, true, now, now + :capacity / :refill)
+on conflict (key) do update set
+  tokens  = <the bucket filled for the time that passed, less :permits when it holds them>,
+  allowed = <whether it held them>,
+  updated_at = greatest(b.updated_at, excluded.updated_at),
+  expires_at = excluded.expires_at
+returning allowed, tokens
+```
+
+The table:
+
+```sql
+create unlogged table if not exists rate_limit (   -- SQLite: a plain table, real and integer
+  key text primary key,
+  tokens double precision not null,
+  allowed boolean not null,
+  updated_at double precision not null,              -- seconds since 1970
+  expires_at double precision not null               -- when the bucket is full again
+);
+create index if not exists rate_limit_expires_at on rate_limit (expires_at);
+```
+
+The store creates it before its first statement when
+`spring.data.jdbc.schema` is `create` or `create-drop` (or
+`spring.data.jdbc.rate-limit.create-table: true`). Otherwise it comes
+from your migrations: copy `lib/sql/rate_limit/postgresql.sql` or
+`lib/sql/rate_limit/sqlite.sql` of this package
+(`package:spring_boot_starter_data/sql/rate_limit/...`).
+`spring.data.jdbc.rate-limit.table` renames the table (`name` or
+`schema.name`). Rows of buckets that are full again are deleted about
+once a minute. For a database the starter has no statements for, declare
+a `RateLimitStatements` bean. Spring has no counterpart; Bucket4j's JDBC
+`ProxyManager` is the nearest.
+
+### Sessions per user: `JdbcSessionHook`
+
+A `JdbcSessionHook` bean prepares the database session of a connection
+for the work about to run on it: the way to run every statement as the
+current user (a role and the user's claims, for row-level security), to
+set a tenant or a search path. All the beans of the type run, in `@Order`,
+on every `DataSource` bean:
+
+```dart
+@Component()
+class CurrentUserSession extends JdbcSessionHook {
+  CurrentUserSession(this.users);
+  final CurrentUser users;
+
+  // Right after a transaction began: transaction scope, gone at its end.
+  @override
+  Future<void> afterBegin(ConnectionHolder transaction) async {
+    await transaction.connection.query(
+      "select set_config('app.user_id', ?, true)",
+      [users.id],
+    );
+  }
+
+  // Around one unit of work outside a transaction, on a pooled connection.
+  @override
+  Future<void> beforeWork(DataSource dataSource, JdbcConnection c) async {
+    await c.query("select set_config('app.user_id', ?, false)", [users.id]);
+  }
+
+  @override
+  Future<void> afterWork(DataSource dataSource, JdbcConnection c) =>
+      c.execute('reset app.user_id');
+}
+```
+
+`afterBegin` runs once for each transaction, before its first statement
+(every `DataSourceTransactionManager` of the data source calls it);
+`beforeWork` and `afterWork` run around each call of `JdbcTemplate`,
+`JdbcClient` or a repository outside a transaction (a stream until it
+ends), `afterWork` in reverse order. A hook that fails before the work
+fails it and the connection is closed; a hook that fails after it is
+logged and the connection is closed instead of going back to the pool, so
+no statement runs unprepared and no connection is reused with another
+user's state. Migrations, the schema initializer and the health check do
+not go through the hooks. A statement the database refuses for a missing
+privilege or a row-level security policy (PostgreSQL's `42501`) is a
+`PermissionDeniedDataAccessException`.
+
+## Stores: what a store can do
+
+A repository talks to a `DataStore`: the in-memory one, the SQL one
+(`JdbcDataStore`), or one of another package registered under its
+`@UseStore` name. A store says what it has beyond the CRUD and derived
+queries in `capabilities`, and a repository that uses more fails at
+startup, with the method, the store and the fix:
+
+| Capability | Used by | Memory | SQL | Interface of the store |
+|---|---|---|---|---|
+| `transactions` | `@Transactional`, atomic writes | yes | yes | `TransactionalDataStore` |
+| `locks` | `@Lock` | yes | yes | |
+| `queries` | the SQL of `@Query` | no | yes | |
+| `functions` | `@Procedure` (database functions) | no | PostgreSQL | `FunctionDataStore` |
+| `changes` | streams of changes | yes | no | `ChangeStreamDataStore` |
+
+```text
+Invalid repository StockRepository:
+  - StockRepository.findBySku: @Lock needs a store with row locks, and the
+    rest store is none: use a SQL store (@UseStore('jdbc') with
+    spring.datasource.url), or remove @Lock (a @Version checks concurrent
+    writes without a lock)
+```
+
+**The store of a repository** is its `@UseStore('name')`; else the SQL
+store with a `@UseDataSource`; else `spring.data.store` (`memory`, `jdbc`
+or the name of any other store) when it is set; else `jdbc` with a primary
+data source and `memory` without. A name of no store fails the start with
+the stores there are.
+
+**Checked by the build.** A package describes its store to the build with
+a constant in (or exported by) its `lib/spring_auto_configuration.dart`,
+and the starter describes `memory` and `jdbc` the same way:
+
+```dart
+@DataStoreDeclaration()
+const documentStore = DataStoreDescriptor(
+  'documents',
+  capabilities: DataStoreCapabilities(changes: true),
+  // The default store when the application's application.yml (without a
+  // profile) sets every `whenProperty` and none of `unlessProperty`.
+  defaultWhen: DataStoreDefault(
+    whenProperty: ['documents.url'],
+    unlessProperty: ['spring.datasource.url', 'spring.data.store'],
+  ),
+  // The store's own fix for what it lacks, said before the general one.
+  fixes: {
+    DataStoreCapability.transactions:
+        'set documents.sql-url to keep the documents in SQL',
+  },
+);
+```
+
+When the build knows the store of a repository (`@UseStore`,
+`@UseDataSource`, `spring.data.store` in `application.yml` or
+`application.properties`, or the first described store whose `defaultWhen`
+holds) and the store is described, the error above is a build error, in
+the list of the repository's problems. So is a `@Transactional` (without a
+`transactionManager:`) on any bean when the application's default store is
+described without transactions. A capability that depends on the database
+(`functions` of the SQL store) is declared `true` and decided at startup;
+a store nothing describes is checked at startup only.
+
+**Database functions.** A method with `@Procedure('name')` calls the function
+with its parameters as named arguments, each named in snake case
+(`accountId` → `account_id`), and reads its rows as the rows of a `@Query`
+are: the entity, a described class, a single column; as a `List`, a
+`Set`, a `Stream`, one value or nothing. On PostgreSQL the call is
+`select * from "name"("argument" => ?)`, in the caller's transaction.
+
+```dart
+abstract interface class Accounts implements CrudRepository<Account, int> {
+  @Procedure('transfer')
+  Future<void> transfer(int fromId, int toId, int amount);
+
+  @Procedure('accounts_over')
+  Future<List<Account>> over(int balance);
+}
+```
+
+**Changes of rows.** Two more kinds of derived methods, on a store that
+reports its changes (the in-memory store does, at commit, never from a
+transaction that rolls back):
+
+```dart
+abstract interface class Tasks implements CrudRepository<Task, int> {
+  // The result of the query, emitted when the stream is listened to and
+  // again after every change that concerns it.
+  Stream<List<Task>> watchByListIdOrderByPositionAsc(int listId);
+
+  // Every task: nothing after `By`, as `findAllBy()`.
+  Stream<List<Task>> watchAllBy(Sort sort);
+
+  // The inserts, updates and deletes of the rows the conditions match,
+  // each with the row after and before.
+  Stream<RowChange<Task>> changesByListId(int listId);
+}
+```
+
+A `watch…By` method takes what a find takes (`First`/`Top`, `Distinct`,
+`OrderBy`, a `Sort` or a `Pageable`) and returns `Stream<List<T>>`; it
+never runs two queries at once, and cancelling the subscription stops the
+store's reporting. A `changes…By` method returns `Stream<RowChange<T>>`
+and has conditions only. Any other return type is a build error.
+`stream…By` keeps its meaning (the result once, as a stream).
+`CriteriaMatcher` tests an instance or a row against a `Criteria` without
+a database.
 
 ## Testing: `@DataTest`
 
@@ -650,6 +965,14 @@ written as functions.
   every exception rolls back unless listed in `noRollbackFor` (Dart has
   no checked exceptions); when `rollbackFor` and `noRollbackFor` both match,
   the entry closest to the exception's class wins, as in Spring.
+- A store declares its `DataStoreCapabilities`, and a repository that
+  needs more fails at startup (Spring Data has a module for each store
+  instead). `@Procedure('name')` calls a database function (Spring Data JPA's
+  `@Procedure`; Spring Data JDBC has none); `RowChange` streams have no
+  counterpart in Spring Data JDBC.
+- `JdbcSessionHook` beans prepare the connections' sessions; Spring has
+  `DataSourceTransactionManager.prepareTransactionalConnection` to
+  override and `DataSource` adapters.
 - `@DataTest` replaces `@DataJdbcTest` with `@AutoConfigureTestDatabase`: it
   is transactional by itself, and the database is always an in-memory SQLite
   one (`replaceDatabase: false` keeps yours).

@@ -144,6 +144,9 @@ final class _FailingStore implements DataStore {
   @override
   String get name => 'failing';
 
+  @override
+  DataStoreCapabilities get capabilities => const DataStoreCapabilities();
+
   Future<R> _fail<R>() => Future<R>.error(error);
 
   @override

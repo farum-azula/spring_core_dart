@@ -1,0 +1,148 @@
+# The Supabase project of the level 4 tests of spring_boot_starter_supabase
+# (../../stack_*_test.dart; how to run them: ../README.md). Written for the
+# Supabase CLI 3.1.0; what is not set here is the CLI's default.
+project_id = "spring-supabase-stack"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.migrations]
+enabled = true
+
+# Nothing to seed: the tests make their own users and rows.
+[db.seed]
+enabled = false
+
+[realtime]
+enabled = true
+
+# Not needed by the tests (`supabase start -x studio,...` leaves them out
+# anyway).
+# The dashboard, for looking at the stack by hand; the tests and CI start
+# the stack without it (-x studio).
+[studio]
+enabled = true
+port = 54323
+
+[analytics]
+enabled = false
+
+# The mail catcher (Mailpit): the tests read the mails of Auth from its
+# API, at the address `supabase status` gives as `mailpit.url`.
+[local_smtp]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+# Where Auth sends a login back when the address asked for is not
+# allowed. The tests expect exactly this (SUPABASE_SITE_URL).
+site_url = "http://127.0.0.1:3000"
+# The one address a login may come back to besides the site's own host
+# (SUPABASE_REDIRECT_URL).
+additional_redirect_urls = ["com.example.stack://login"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+# A refresh token that was used is refused at once, not after the 10
+# seconds of the default: the replay test does not wait
+# (SUPABASE_REFRESH_TOKEN_REUSE_INTERVAL).
+refresh_token_reuse_interval = 0
+enable_signup = true
+enable_anonymous_sign_ins = false
+minimum_password_length = 6
+
+# No signing_keys_path: the CLI then gives Auth its default ES256 key, so
+# the users' tokens are signed with ES256 and the key is served at
+# /auth/v1/.well-known/jwks.json. For a key of your own:
+#   supabase gen signing-key --algorithm ES256
+# written as a JSON list into supabase/signing_keys.json (not into git),
+# and here: signing_keys_path = "./signing_keys.json"
+
+# The suite signs in more often than an application would.
+[auth.rate_limit]
+token_refresh = 10000
+sign_in_sign_ups = 10000
+token_verifications = 10000
+
+[auth.email]
+enable_signup = true
+# A new user is signed in at once.
+enable_confirmations = false
+double_confirm_changes = false
+secure_password_change = false
+max_frequency = "1s"
+otp_length = 6
+otp_expiry = 3600
+
+# Mails a test can read: the code, the token hash and the link, each on a
+# line of its own (the paths are relative to the directory of `supabase/`).
+[auth.email.template.magic_link]
+subject = "stack: magic link"
+content_path = "./supabase/templates/mail.html"
+
+[auth.email.template.recovery]
+subject = "stack: recovery"
+content_path = "./supabase/templates/mail.html"
+
+[auth.email.template.confirmation]
+subject = "stack: confirmation"
+content_path = "./supabase/templates/mail.html"
+
+[edge_runtime]
+enabled = true
+policy = "per_worker"
+deno_version = 2
+
+# The functions read the caller from the token themselves, so that the
+# same functions answer the anon key of any kind; `reports` keeps the
+# gateway's own check of the token.
+[functions.send-invite]
+verify_jwt = false
+
+[functions.stats]
+verify_jwt = false
+
+[functions.reports]
+verify_jwt = true
+
+[functions.events]
+verify_jwt = false
+
+[functions.download]
+verify_jwt = false
+
+# Functions written in Dart (spring_boot_starter_edge): the application
+# checks the tokens itself (Spring Security's resource server), so the
+# platform's check is off.
+[functions.edge-test]
+verify_jwt = false
+
+[functions.edge-test-wasm]
+verify_jwt = false
+# The WebAssembly module the function loads when it starts.
+static_files = ["./functions/edge-test-wasm/*.wasm"]
+
+[functions.api]
+verify_jwt = false
+
+# What the functions get besides the project's own variables. The local
+# stack's functions reach the project at http://kong:8000, while its
+# tokens name the address the clients use: the Dart functions check the
+# issuer against this one. Not needed on a hosted project, where both are
+# https://<ref>.supabase.co.
+[edge_runtime.secrets]
+SPRING_SUPABASE_AUTH_ISSUER = "http://127.0.0.1:54321/auth/v1"
+GREETING = "hello-from-env"

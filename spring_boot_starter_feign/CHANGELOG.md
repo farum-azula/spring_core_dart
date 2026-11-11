@@ -1,6 +1,6 @@
-## 0.7.4
+## Unreleased
 
-- No changes of its own; released with the family version 0.7.4.
+- A method returning `Stream<List<int>>` reads the body of the answer as it arrives, whatever its content type (a large file, chunks that are not server-sent events): one request per listener, `Accept: */*` unless `produces` says otherwise, a failed status as the error decoder's exception, no reconnection.
 
 ## 0.7.3
 

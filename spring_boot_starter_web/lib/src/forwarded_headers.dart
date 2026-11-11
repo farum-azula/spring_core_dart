@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_web/src/dispatcher.dart';
+import 'package:spring_boot_starter_web/src/ip_range.dart';
 import 'package:spring_boot_starter_web/src/web_logging.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
@@ -58,7 +59,7 @@ final class ForwardedHeaderFilter implements WebFilter, Ordered {
   ForwardedHeaderFilter({List<String>? trustedProxies})
     : _trusted = [
         for (final range in trustedProxies ?? defaultTrustedProxies)
-          _Range.parse(range),
+          IpRange.parse(range),
       ];
 
   /// Loopback, private, link-local and shared (CGNAT) addresses, as
@@ -82,11 +83,11 @@ final class ForwardedHeaderFilter implements WebFilter, Ordered {
   @override
   int get order => filterOrder;
 
-  final List<_Range> _trusted;
+  final List<IpRange> _trusted;
 
   /// Whether [address] is one of the trusted proxies.
   bool isTrusted(String? address) {
-    final parsed = address == null ? null : _ip(address);
+    final parsed = address == null ? null : parseIpAddress(address);
     return parsed != null && _trusted.any((r) => r.contains(parsed));
   }
 
@@ -265,7 +266,7 @@ final class _Forwarded extends ServerHttpRequestDecorator {
         }
         port = rest.substring(1);
       }
-      if (_ip(host)?.length != 16) {
+      if (parseIpAddress(host)?.length != 16) {
         return null;
       }
     } else {
@@ -296,74 +297,6 @@ final class _Forwarded extends ServerHttpRequestDecorator {
         when i > 0 && text.lastIndexOf(':') == i) {
       text = text.substring(0, i); // v4:port
     }
-    return _ip(text) == null ? null : text;
-  }
-}
-
-// An address range: an address and a prefix length.
-final class _Range {
-  _Range(this._bytes, this._bits);
-
-  factory _Range.parse(String text) {
-    final slash = text.indexOf('/');
-    final address = _ip(
-      slash < 0 ? text.trim() : text.substring(0, slash).trim(),
-    );
-    if (address == null) {
-      throw ArgumentError('Not an address or range: $text');
-    }
-    final length = address.length * 8;
-    final bits = slash < 0 ? length : int.tryParse(text.substring(slash + 1));
-    if (bits == null || bits < 0 || bits > length) {
-      throw ArgumentError('Not an address or range: $text');
-    }
-    return _Range(address, bits);
-  }
-
-  final List<int> _bytes;
-  final int _bits;
-
-  bool contains(List<int> address) {
-    var raw = address;
-    // An IPv4 address mapped into IPv6 (::ffff:a.b.c.d) is that address.
-    if (raw.length == 16 &&
-        _bytes.length == 4 &&
-        raw.sublist(0, 10).every((b) => b == 0) &&
-        raw[10] == 0xff &&
-        raw[11] == 0xff) {
-      raw = raw.sublist(12);
-    }
-    if (raw.length != _bytes.length) {
-      return false;
-    }
-    final full = _bits ~/ 8;
-    for (var i = 0; i < full; i++) {
-      if (raw[i] != _bytes[i]) {
-        return false;
-      }
-    }
-    final rest = _bits % 8;
-    if (rest == 0) {
-      return true;
-    }
-    final mask = (0xff << (8 - rest)) & 0xff;
-    return (raw[full] & mask) == (_bytes[full] & mask);
-  }
-}
-
-// The bytes of an IPv4 (4) or IPv6 (16) address, or null.
-List<int>? _ip(String text) {
-  if (text.isEmpty || text.length > 45) {
-    return null;
-  }
-  try {
-    return Uri.parseIPv4Address(text);
-  } on FormatException {
-    // not IPv4
-  }
-  try {
-    return Uri.parseIPv6Address(text);
-  } on FormatException {
-    return null;
+    return parseIpAddress(text) == null ? null : text;
   }
 }

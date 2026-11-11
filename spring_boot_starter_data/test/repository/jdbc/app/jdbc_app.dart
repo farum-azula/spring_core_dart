@@ -982,6 +982,99 @@ abstract interface class MemoryGauges
 @UseStore('jdbc')
 abstract interface class SqlGauges implements ListCrudRepository<Gauge, int> {}
 
+// --- JSON columns -----------------------------------------------------------
+
+/// How a profile looks: a class of the application kept as JSON, described
+/// for the ObjectMapper by the build (no `@Introspected`).
+class Settings {
+  Settings({required this.theme, this.fontSize = 12, this.layout});
+
+  String theme;
+  int fontSize;
+
+  /// A class inside the class.
+  Layout? layout;
+}
+
+/// A class nested in [Settings].
+class Layout {
+  Layout({required this.columns, this.pinned = const []});
+
+  int columns;
+  List<String> pinned;
+}
+
+/// An element of a list kept as JSON.
+class Address {
+  Address({required this.street, this.city});
+
+  String street;
+  String? city;
+}
+
+/// Three JSON columns: a class (`jsonb` in PostgreSQL), a plain map
+/// (`json`) and a nullable list of classes.
+@Table('profiles')
+class UserProfile {
+  UserProfile({
+    required this.name,
+    required this.settings,
+    this.raw = const {},
+    this.addresses,
+    this.id,
+  });
+
+  @Id()
+  int? id;
+
+  String name;
+
+  @Json()
+  Settings settings;
+
+  @Json(binary: false)
+  Map<String, Object?> raw;
+
+  @Json()
+  List<Address>? addresses;
+}
+
+/// A class a `@Query` returns, with a JSON column of its own.
+class ProfileCard {
+  const ProfileCard({required this.name, required this.settings});
+
+  final String name;
+
+  @Json()
+  final Settings settings;
+}
+
+@UseStore('memory')
+abstract interface class MemoryProfiles
+    implements ListCrudRepository<UserProfile, int> {
+  Future<List<UserProfile>> findByName(String name);
+}
+
+@UseStore('jdbc')
+abstract interface class SqlProfiles
+    implements ListCrudRepository<UserProfile, int> {
+  Future<List<UserProfile>> findByName(String name);
+
+  // The entity, with its JSON columns, from a query of the application.
+  @Query('select * from profiles where name = :name')
+  Future<UserProfile?> named(String name);
+
+  // The database's JSON operator (PostgreSQL's, and SQLite's since 3.38).
+  @Query(
+    "select * from profiles where settings ->> 'theme' = :theme "
+    'order by id',
+  )
+  Future<List<UserProfile>> themed(String theme);
+
+  @Query('select name, settings from profiles order by id')
+  Future<List<ProfileCard>> cards();
+}
+
 @SpringBootApplication()
 Future<void> main(List<String> args) async {
   final context = await springApplication.runAsync(args);

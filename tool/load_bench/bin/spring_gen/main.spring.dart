@@ -380,6 +380,11 @@ final class _$DataAccessExceptionResolver
       'The resource already exists',
       error,
     ),
+    _i2.PermissionDeniedDataAccessException() => _i3.ResponseStatusException(
+      _i3.HttpStatus.forbidden,
+      'Access denied',
+      error,
+    ),
     _i2.EmptyResultDataAccessException() => _i3.ResponseStatusException(
       _i3.HttpStatus.notFound,
       'Not found',
@@ -497,6 +502,9 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i16.springBootStarterWebAutoConfiguration,
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
+      _i16.springBootStarterWebRateLimitAutoConfiguration,
     _i17.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
@@ -511,6 +519,15 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
       _i15.springBootStarterSecurityOAuth2ClientAutoConfiguration:
           const _i9.AutoConfigurationModule(
             before: ['springBootStarterOauth2ClientAutoConfiguration'],
+          ),
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
+      _i16.springBootStarterWebRateLimitAutoConfiguration:
+          const _i9.AutoConfigurationModule(
+            after: [
+              'springBootStarterDataAutoConfiguration',
+              'springBootStarterSupabaseAutoConfiguration',
+            ],
           ),
   },
   dartDefines: {
@@ -718,7 +735,7 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '115ad3ab',
+  fingerprint: '4447269f',
 );
 
 /// Starts the application: config files, environment, context, runners

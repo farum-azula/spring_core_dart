@@ -13,16 +13,20 @@ const _webUrl = 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 ///
 /// The starter cannot depend on a driver package (`sqlite3` bundles a
 /// native library, and pub has no optional dependencies). The application
-/// lists the one it wants; seeing it among the application's dependencies,
-/// the generator copies the starter's template for it into the generated
-/// module, and registers a `JdbcDriver` bean made by it. Spring Boot does
-/// the same with `@ConditionalOnClass` on the JDBC driver.
+/// lists the one it wants; seeing it among the application's own
+/// dependencies ([direct]: a driver is the application's choice, never one
+/// that only arrives with another package), the generator copies the
+/// starter's template for it into the generated module, and registers a
+/// `JdbcDriver` bean made by it. Spring Boot does the same with
+/// `@ConditionalOnClass` on the JDBC driver.
 ///
 /// The same table holds the glue between the data starter and another
 /// starter it must not depend on: the web starter's, which answers data
 /// errors with their HTTP status and fills `Pageable` and `Sort` controller
 /// parameters (`spring_boot_starter_web`). The bean is then of a type of
-/// that starter ([type] in [typeUrl]).
+/// that starter ([type] in [typeUrl]). This glue is written when the
+/// application reaches the web starter, listed by it or brought by a
+/// package it lists, as the data starter itself is reached.
 ///
 /// Spring (Java): the driver jar on the classpath that
 /// `DataSourceAutoConfiguration` finds by its class.
@@ -39,10 +43,15 @@ final class DriverGlue {
     this.type = 'JdbcDriver',
     this.typeUrl = _starterUrl,
     this.takesEnvironment = false,
+    this.direct = false,
   });
 
   /// The dependency that switches it on (`sqlite3`).
   final String package;
+
+  /// Whether [package] must be in the application's own pubspec (a driver)
+  /// rather than reached in any way (a starter).
+  final bool direct;
 
   /// The template's path inside the starter (`lib/src/jdbc/drivers/
   /// sqlite3.dart.tmpl`).
@@ -74,12 +83,14 @@ const driverGlues = [
     template: 'lib/src/jdbc/drivers/sqlite3.dart.tmpl',
     beanName: 'sqlite3JdbcDriver',
     factory: r'_$sqlite3JdbcDriver',
+    direct: true,
   ),
   DriverGlue(
     package: 'postgres',
     template: 'lib/src/jdbc/drivers/postgres.dart.tmpl',
     beanName: 'postgresJdbcDriver',
     factory: r'_$postgresJdbcDriver',
+    direct: true,
   ),
   // The web starter's HandlerExceptionResolver for data errors (409, 404);
   // the template, with the exceptions' names, is the data starter's.
@@ -120,23 +131,41 @@ final class DriverGlueOutput {
 // `{{package:sqlite3/sqlite3.dart#Database}}`, `{{dart:io#SecurityContext}}`
 final _placeholder = RegExp(r'\{\{((?:package|dart):[^#{}\s]+)#(\w+)\}\}');
 
-/// The glue of every driver in [driverGlues] whose package is among
-/// [dependencies] (the application's own), provided the application also
-/// depends on the starter and the starter has the template. Otherwise
-/// nothing.
+/// The glue of every entry of [driverGlues] that applies, provided the
+/// data starter is reached and has the template. Otherwise nothing.
 ///
-/// The application must depend on the starter itself (not only reach it
-/// through another package): the glue imports the starter's library.
+/// [dependencies] are the packages of the pubspec of the package being
+/// built (its own), [reachable] those with everything they bring (the
+/// packages whose auto-configurations the application gets); `null` when
+/// unknown, and then only [dependencies] count.
+///
+/// - The data starter, and the web starter of the web glue, are looked for
+///   in [reachable]: an application that lists `spring_boot_starter_supabase`
+///   has the data starter without naming it. The generated code imports
+///   the starter's library, which resolves for any package of the package
+///   config.
+/// - A driver package ([DriverGlue.direct]) is looked for in
+///   [dependencies]: `postgres` that only arrives with another package is
+///   not the application's choice.
+///
+/// Pass no [reachable] for the `lib/` of a published package: pub.dev
+/// refuses a package whose `lib/` imports one that is not in its
+/// `dependencies`.
 Future<List<DriverGlueOutput>> driverGlueFor(
   BuildStep buildStep,
-  Set<String>? dependencies,
-) async {
-  if (dependencies == null || !dependencies.contains(_starterPackage)) {
+  Set<String>? dependencies, {
+  Set<String>? reachable,
+}) async {
+  if (dependencies == null) {
+    return const [];
+  }
+  final reached = reachable ?? dependencies;
+  if (!reached.contains(_starterPackage)) {
     return const [];
   }
   final outputs = <DriverGlueOutput>[];
   for (final glue in driverGlues) {
-    if (!dependencies.contains(glue.package)) {
+    if (!(glue.direct ? dependencies : reached).contains(glue.package)) {
       continue;
     }
     final asset = AssetId(_starterPackage, glue.template);

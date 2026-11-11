@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_security/src/jwt/bearer.dart';
 import 'package:spring_boot_starter_security/src/jwt/jose.dart';
@@ -29,14 +31,20 @@ import 'package:spring_security_core/spring_security_core.dart';
 /// spring.security.oauth2.resourceserver.jwt.audiences=orders-api
 /// ```
 ///
-/// With `issuer-uri` or `jwk-set-uri` set, every request needs a valid
-/// bearer token and there is no default user. With `jwk-set-uri`, the
-/// issuer (when also set) and the audiences are checked too; with
-/// `issuer-uri` alone, the keys come from the issuer's metadata and
-/// `jws-algorithms` is not used.
+/// With `issuer-uri`, `jwk-set-uri` or `secret-key` set, every request
+/// needs a valid bearer token and there is no default user. With
+/// `jwk-set-uri`, the issuer (when also set) and the audiences are
+/// checked too; with `issuer-uri` alone, the keys come from the issuer's
+/// metadata and `jws-algorithms` is not used. `secret-key` is for a
+/// provider that signs with a shared secret (HS256): it is never set
+/// together with `jwk-set-uri`, and with it `issuer-uri` is only compared
+/// with the token's `iss`. `required-claims` names claims every token
+/// must carry with exact values, whatever the keys.
 ///
 /// Spring (Java): Spring Boot's `SecurityProperties` and
-/// `OAuth2ResourceServerProperties`, with the same names.
+/// `OAuth2ResourceServerProperties`, with the same names; `secret-key`,
+/// `required-claims` and a path in `authorities-claim-name` are not in
+/// Spring Boot.
 @ConfigurationProperties('spring.security')
 class SecurityProperties {
   /// The default user, made when the application has no user store.
@@ -123,8 +131,16 @@ class SecurityJwtProperties {
   /// The address of the keys that sign the accepted bearer tokens.
   String? jwkSetUri;
 
-  /// The signature algorithms accepted with `jwk-set-uri`. Default:
-  /// `RS256`.
+  /// The secret shared with the issuer that signs the accepted bearer
+  /// tokens (HS256, HS384 or HS512), used as its UTF-8 bytes: at least 32,
+  /// 48 or 64 bytes. Not with `jwk-set-uri`. For a server only: a shared
+  /// secret must never be put into a client application (a Flutter or web
+  /// app), where anyone can read it and sign tokens with it.
+  String? secretKey;
+
+  /// The signature algorithms accepted with `jwk-set-uri` (default:
+  /// `RS256`), or the one HMAC algorithm of `secret-key` (default:
+  /// `HS256`).
   @PropertyValues([
     'RS256',
     'RS384',
@@ -145,11 +161,22 @@ class SecurityJwtProperties {
   /// empty.
   List<String> audiences = [];
 
+  /// Claims a bearer token must have, by name, each with exactly the given
+  /// value (a number or a boolean claim is compared as its text); a token
+  /// without one of them, or with another value, is refused.
+  Map<String, String> requiredClaims = {};
+
+  /// Whether a bearer token without an `exp` claim is refused. Off by
+  /// default, as in Spring Security (such a token never expires); set it
+  /// for an issuer whose tokens always expire.
+  bool requireExpiry = false;
+
   /// Put before each authority read from the token.
   String authorityPrefix = 'SCOPE_';
 
   /// The claim whose values are the user's authorities; without it the
-  /// `scope` claim, else `scp`.
+  /// `scope` claim, else `scp`. When the token has no claim of that name,
+  /// a name with dots is a path into nested objects (`realm_access.roles`).
   String? authoritiesClaimName;
 
   /// The character that splits a text claim into authorities.
@@ -208,6 +235,44 @@ extension SecurityPropertiesValues on SecurityProperties {
   /// the provider's public keys, or `null`.
   String? get jwkSetUri => _text(_jwt.jwkSetUri);
 
+  /// `spring.security.oauth2.resourceserver.jwt.secret-key`: the secret
+  /// shared with the issuer of HS* tokens, as its UTF-8 bytes (the text as
+  /// written, not trimmed), or `null` when unset or blank.
+  ///
+  /// A credential: never log it. It belongs on a server only, never in a
+  /// client application.
+  ///
+  /// Throws an [ArgumentError] when `jwk-set-uri` is set too (two sources
+  /// of keys), or when the secret has fewer bytes than the hash of
+  /// [macAlgorithm] (32 for HS256, 48 for HS384, 64 for HS512). The error
+  /// never shows the secret.
+  List<int>? get secretKey {
+    final secret = _jwt.secretKey;
+    if (_text(secret) == null) {
+      return null;
+    }
+    if (jwkSetUri != null) {
+      throw ArgumentError(
+        'spring.security.oauth2.resourceserver.jwt.secret-key and '
+        'spring.security.oauth2.resourceserver.jwt.jwk-set-uri are both '
+        'set: tokens are verified with the shared secret or with the '
+        "provider's public keys, set only one",
+      );
+    }
+    final bytes = utf8.encode(secret!);
+    final algorithm = macAlgorithm;
+    if (!SecretVerificationKey(bytes).fits(algorithm)) {
+      throw ArgumentError(
+        'spring.security.oauth2.resourceserver.jwt.secret-key has '
+        '${bytes.length} bytes: ${algorithm.name} '
+        '(spring.security.oauth2.resourceserver.jwt.jws-algorithms) needs '
+        'at least as many bytes as its hash (32 for HS256, 48 for HS384, '
+        '64 for HS512)',
+      );
+    }
+    return bytes;
+  }
+
   /// `spring.security.oauth2.resourceserver.jwt.jws-algorithms`: the
   /// signature algorithms accepted with `jwk-set-uri`, `RS256` when unset.
   ///
@@ -227,18 +292,71 @@ extension SecurityPropertiesValues on SecurityProperties {
     };
   }
 
+  /// `spring.security.oauth2.resourceserver.jwt.jws-algorithms` as the
+  /// one algorithm of `secret-key`: `HS256` when unset.
+  ///
+  /// Throws an [ArgumentError] for an unknown name, for an algorithm that
+  /// is not HS256, HS384 or HS512 (a shared secret verifies no RS*, PS* or
+  /// ES* signature) and for more than one algorithm (one key, one
+  /// algorithm).
+  JwsAlgorithm get macAlgorithm {
+    final names = _texts(_jwt.jwsAlgorithms);
+    if (names.isEmpty) {
+      return JwsAlgorithm.hs256;
+    }
+    final algorithms = jwsAlgorithms;
+    if (algorithms.any((algorithm) => !algorithm.isMac)) {
+      throw ArgumentError(
+        'spring.security.oauth2.resourceserver.jwt.jws-algorithms: '
+        '${names.join(', ')}; with '
+        'spring.security.oauth2.resourceserver.jwt.secret-key only HS256, '
+        'HS384 or HS512 can be accepted',
+      );
+    }
+    if (algorithms.length > 1) {
+      throw ArgumentError(
+        'spring.security.oauth2.resourceserver.jwt.jws-algorithms: '
+        '${names.join(', ')}; with '
+        'spring.security.oauth2.resourceserver.jwt.secret-key name one '
+        'algorithm (HS256, HS384 or HS512)',
+      );
+    }
+    return algorithms.single;
+  }
+
   /// `spring.security.oauth2.resourceserver.jwt.audiences`: tokens must
   /// name one of them in `aud`; no audience check when empty.
   List<String> get audiences => _texts(_jwt.audiences);
 
-  /// Whether `issuer-uri` or `jwk-set-uri` is set, which makes the
-  /// application a JWT resource server.
-  bool get hasResourceServer => issuerUri != null || jwkSetUri != null;
+  /// `spring.security.oauth2.resourceserver.jwt.required-claims`: the
+  /// claims every token must have, by name, with the value each must
+  /// equal; empty when unset.
+  ///
+  /// Throws an [ArgumentError] for a blank claim name.
+  Map<String, String> get requiredClaims {
+    final claims = _jwt.requiredClaims;
+    if (claims.keys.any((name) => name.trim().isEmpty)) {
+      throw ArgumentError(
+        'spring.security.oauth2.resourceserver.jwt.required-claims: a '
+        'claim name cannot be blank',
+      );
+    }
+    return Map.unmodifiable(claims);
+  }
+
+  /// `spring.security.oauth2.resourceserver.jwt.require-expiry`: whether
+  /// a token without `exp` is refused.
+  bool get requireExpiry => _jwt.requireExpiry;
+
+  /// Whether `issuer-uri`, `jwk-set-uri` or `secret-key` is set, which
+  /// makes the application a JWT resource server.
+  bool get hasResourceServer =>
+      issuerUri != null || jwkSetUri != null || _text(_jwt.secretKey) != null;
 
   /// A [JwtAuthenticationConverter] following `authority-prefix`
-  /// (`SCOPE_`, may be empty), `authorities-claim-name`,
-  /// `authorities-claim-delimiter` (a space) and `principal-claim-name`
-  /// (`sub`).
+  /// (`SCOPE_`, may be empty), `authorities-claim-name` (a claim, or a
+  /// path into nested objects), `authorities-claim-delimiter` (a space)
+  /// and `principal-claim-name` (`sub`).
   JwtAuthenticationConverter get jwtAuthenticationConverter =>
       JwtAuthenticationConverter(
         authoritiesConverter: JwtGrantedAuthoritiesConverter(

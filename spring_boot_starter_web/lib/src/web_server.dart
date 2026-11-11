@@ -278,7 +278,7 @@ final class ServerProperties {
     this.webSocketSendBufferSizeLimit = 512 * 1024,
     this.webSocketSendTimeLimit = const Duration(seconds: 10),
     this.connectionTimeout = const Duration(seconds: 60),
-    this.requestTimeout,
+    this.requestTimeout = const Duration(seconds: 60),
     this.shared = false,
     this.maxConnections,
     this.maxConcurrentRequests,
@@ -377,10 +377,9 @@ final class ServerProperties {
         final timeout? when timeout > Duration.zero => timeout,
         _ => null,
       },
-      requestTimeout: switch (settings.requestTimeout) {
-        final timeout? when timeout > Duration.zero => timeout,
-        _ => null,
-      },
+      requestTimeout: settings.requestTimeout > Duration.zero
+          ? settings.requestTimeout
+          : null,
       shared: settings.isolates.pooled,
       maxConnections: switch (settings.maxConnections) {
         final max? when max > 0 => max,
@@ -491,8 +490,9 @@ final class ServerProperties {
   };
 
   /// The longest the filters and the handler of a request may take to
-  /// answer (`server.request-timeout`); `null`, the default, for no limit,
-  /// and zero or a negative duration mean none too. When it passes before
+  /// answer (`server.request-timeout`): 60 seconds by default; `null`
+  /// for no limit, and zero or a negative duration of the property mean
+  /// none too. When it passes before
   /// the answer starts, the request is answered with a 503 (an
   /// `AsyncRequestTimeoutException`) and what the handler returns later is
   /// dropped. The request runs under a `RequestDeadline` of this length,

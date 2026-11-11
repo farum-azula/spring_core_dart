@@ -10,6 +10,11 @@
 ///   written as JSON through the `ObjectMapper`. The connection opens on
 ///   demand and reconnects after a loss, configured by
 ///   `spring.websocket.client.config.<name>.*`.
+/// - **Phoenix Channels**, on the same platforms: an abstract class with
+///   `@PhoenixChannel`, `@OnEvent` streams and `@Push` methods is a
+///   channel of a Phoenix server (or of a service that speaks its
+///   protocol), many topics over one connection; in code, a
+///   `PhoenixSocket` from the `PhoenixSocketFactory`.
 /// - **Server endpoints**, with `spring_boot_starter_web` as a dependency:
 ///   a `@WebSocketEndpoint` bean with `@OnOpen`, `@OnMessage`, `@OnClose`
 ///   and `@OnError` methods, or a `WebSocketHandler` registered by a
@@ -43,6 +48,13 @@ export 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 export 'package:spring_web_dart/spring_web_dart.dart';
 
 export 'src/config/web_socket_properties.dart';
+export 'src/phoenix/phoenix_channel.dart';
+export 'src/phoenix/phoenix_channel_factory.dart';
+export 'src/phoenix/phoenix_channel_invocation_handler.dart';
+export 'src/phoenix/phoenix_message.dart';
+export 'src/phoenix/phoenix_serializer.dart';
+export 'src/phoenix/phoenix_socket.dart';
+export 'src/phoenix/phoenix_socket_factory.dart';
 export 'src/server/web_socket_endpoint.dart';
 export 'src/server/web_socket_handler.dart';
 export 'src/server/web_socket_handler_mapping.dart';

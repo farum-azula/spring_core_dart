@@ -95,6 +95,7 @@
         "BeanFactoryAware",
         "Aware",
         "DisposableBean",
+        "TimerDrivenWork",
         "SmartLifecycle",
         "Lifecycle"
       ],
@@ -200,6 +201,11 @@
           "parameters": [
             "void Function() callback"
           ]
+        },
+        {
+          "name": "timerDrivenWork",
+          "kind": "getter",
+          "type": "Iterable<String>"
         }
       ]
     },

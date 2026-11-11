@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:spring_boot_dart/src/conditions.dart';
 import 'package:spring_boot_dart/src/properties/boot_properties.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -77,7 +79,12 @@ final isolateAutoConfiguration = <BeanDefinition<Object>>[
       );
     },
     destroyMethodName: 'shutdown',
-    destroyMethod: (executor) => executor.shutdown(),
+    // All of shutdown's work is done when it returns (it awaits nothing),
+    // so a context closed with the synchronous close() ends the pool too,
+    // without a warning about a Future nobody awaits.
+    destroyMethod: (executor) {
+      unawaited(executor.shutdown());
+    },
   ),
   BeanDefinition<IsolateLoads>(
     name: 'isolateLoads',

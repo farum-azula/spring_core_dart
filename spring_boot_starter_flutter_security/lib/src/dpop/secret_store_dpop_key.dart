@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:spring_boot_starter_flutter_security/src/dpop/stored_dpop_key.dart';
-import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_store.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 
 const _log = SpringLog('spring.security.oauth2.client');

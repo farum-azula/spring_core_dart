@@ -8,6 +8,7 @@ import 'package:spring_boot_starter_test/src/containers/container_runtime.dart';
 import 'package:spring_boot_starter_test/src/containers/docker_client.dart';
 import 'package:spring_boot_starter_test/src/containers/docker_endpoint.dart';
 import 'package:spring_boot_starter_test/src/containers/docker_exception.dart';
+import 'package:spring_boot_starter_test/src/containers/network.dart';
 import 'package:spring_boot_starter_test/src/containers/tar_archive.dart';
 import 'package:spring_boot_starter_test/src/containers/wait.dart';
 
@@ -74,6 +75,9 @@ class GenericContainer implements WaitTarget {
   final List<int> _ports = [];
   final List<_Copy> _copies = [];
   final Map<String, String> _labels = {};
+  final List<String> _networkAliases = [];
+  final List<String> _extraHosts = [];
+  Network? _network;
   List<String>? _command;
   List<String>? _entrypoint;
   WaitStrategy _wait = Wait.forListeningPort();
@@ -213,6 +217,44 @@ class GenericContainer implements WaitTarget {
     return this;
   }
 
+  /// Puts the container on [network], where the other containers of it
+  /// reach this one by its [withNetworkAliases] names and the ports it
+  /// listens on. The network is created when the first container on it
+  /// starts.
+  ///
+  /// ```dart
+  /// final network = Network.newNetwork();
+  /// final database = PostgresContainer()
+  ///     .withNetwork(network)
+  ///     .withNetworkAliases(['db']);
+  /// ```
+  ///
+  /// Testcontainers (Java): `withNetwork(network)`.
+  GenericContainer withNetwork(Network network) {
+    _network = network;
+    return this;
+  }
+
+  /// The names the other containers of its [withNetwork] network reach
+  /// this container by.
+  ///
+  /// Testcontainers (Java): `withNetworkAliases("db")`.
+  GenericContainer withNetworkAliases(List<String> aliases) {
+    _networkAliases.addAll(aliases);
+    return this;
+  }
+
+  /// Adds [host] with [address] to the container's hosts file; the
+  /// address `host-gateway` is the machine the daemon runs on
+  /// (`withExtraHost('host.docker.internal', 'host-gateway')` makes that
+  /// name work on Linux as it does on Docker Desktop).
+  ///
+  /// Testcontainers (Java): `withExtraHost(host, address)`.
+  GenericContainer withExtraHost(String host, String address) {
+    _extraHosts.add('$host:$address');
+    return this;
+  }
+
   /// The wait strategy, for modules that extend it.
   WaitStrategy get waitStrategy => _wait;
 
@@ -347,6 +389,18 @@ class GenericContainer implements WaitTarget {
           await runtime.protect();
           protectedByReaper = true;
         }
+        // The network exists before its first container is created.
+        final network = _network;
+        if (network != null) {
+          if (reusable) {
+            throw StateError(
+              'A container kept for the next run (withReuse) cannot be on '
+              "a Network: the network is removed with the run's "
+              'containers',
+            );
+          }
+          await network.create(docker);
+        }
         id = await docker.createContainer(
           DockerContainerConfig(
             image: image,
@@ -367,6 +421,9 @@ class GenericContainer implements WaitTarget {
                 ),
             publishIp: docker.endpoint.publishIp,
             healthCheck: _healthCheck,
+            network: network?.name,
+            networkAliases: _networkAliases,
+            extraHosts: _extraHosts,
           ),
         );
         _id = id;
@@ -470,6 +527,9 @@ class GenericContainer implements WaitTarget {
       'entrypoint': _entrypoint,
       'ports': ([..._ports]..sort()),
       'health': _healthCheck?.test,
+      'network': _network?.name,
+      'aliases': _networkAliases,
+      'hosts': _extraHosts,
       'labels': Map.fromEntries(
         _labels.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
       ),

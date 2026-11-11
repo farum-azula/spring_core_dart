@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/exceptions.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_driver.dart';
@@ -115,6 +116,8 @@ final class ConnectionHolder {
         try {
           await connection.rollback();
           await connection.begin(isolation: isolation, lockForWrite: true);
+          // A new transaction: what the hooks set for the first is gone.
+          await DataSourceUtils.transactionBegun(this);
         } on Object {
           failed = true;
           rethrow;
@@ -143,9 +146,21 @@ final class ConnectionHolder {
 /// transaction of the data source, the transaction's connection; else one
 /// of the pool, given back when the operation ends.
 ///
+/// It is also where the data source's `JdbcSessionHook`s run for the work
+/// outside a transaction: [getConnection] prepares the pooled connection
+/// it hands out (`beforeWork`) and [releaseConnection] cleans it
+/// (`afterWork`) before the pool has it back, so every statement of a
+/// `JdbcTemplate` runs between the two. [transactionBegun] is the hooks'
+/// other door, called by the transaction manager.
+///
 /// Spring (Java): `org.springframework.jdbc.datasource.DataSourceUtils`.
 abstract final class DataSourceUtils {
   static final _applied = Expando<Duration>('statementTimeout');
+
+  // The pooled connections the hooks prepared and have not cleaned yet.
+  static final _prepared = Expando<bool>('sessionPrepared');
+
+  static const _log = SpringLog('spring.jdbc.datasource.DataSourceUtils');
 
   /// The holder of the running transaction on [dataSource], or null when
   /// the code is not in one.
@@ -157,13 +172,68 @@ abstract final class DataSourceUtils {
   }
 
   /// The connection to use for [dataSource]: the transaction's, or a new
-  /// one from the pool (give it back with [releaseConnection]).
+  /// one from the pool (give it back with [releaseConnection]), prepared
+  /// by the data source's session hooks (`JdbcSessionHook.beforeWork`, in
+  /// order).
+  ///
+  /// A hook that fails fails the call (an error of the database
+  /// translated by the dialect); the connection is closed and given back,
+  /// so it is never used half prepared.
   static Future<JdbcConnection> getConnection(DataSource dataSource) {
     final holder = currentHolder(dataSource);
     if (holder != null) {
       return Future.value(holder.connection);
     }
-    return dataSource.getConnection();
+    if (dataSource.sessionHooks.isEmpty) {
+      return dataSource.getConnection();
+    }
+    return _preparedConnection(dataSource);
+  }
+
+  static Future<JdbcConnection> _preparedConnection(
+    DataSource dataSource,
+  ) async {
+    final connection = await dataSource.getConnection();
+    try {
+      for (final hook in dataSource.sessionHooks) {
+        await hook.beforeWork(dataSource, connection);
+      }
+    } on Object catch (error, stackTrace) {
+      await _discard(connection, dataSource);
+      if (error is SqlError) {
+        Error.throwWithStackTrace(
+          dataSource.dialect.translate(error),
+          stackTrace,
+        );
+      }
+      rethrow;
+    }
+    _prepared[connection] = true;
+    return connection;
+  }
+
+  // Closes a connection whose session state is unknown and gives it back:
+  // the pool drops a closed connection.
+  static Future<void> _discard(
+    JdbcConnection connection,
+    DataSource dataSource,
+  ) async {
+    try {
+      await connection.close();
+    } on Object {
+      // Closing a broken connection may fail again.
+    }
+    await dataSource.releaseConnection(connection);
+  }
+
+  /// Runs the session hooks of the data source of [transaction] right
+  /// after its transaction began (`JdbcSessionHook.afterBegin`, in
+  /// order). The transaction manager calls it; an error is the caller's
+  /// to handle (it closes the connection).
+  static Future<void> transactionBegun(ConnectionHolder transaction) async {
+    for (final hook in transaction.dataSource.sessionHooks) {
+      await hook.afterBegin(transaction);
+    }
   }
 
   /// Whether [connection] is the connection of the running transaction on
@@ -174,7 +244,11 @@ abstract final class DataSourceUtils {
   ) => identical(currentHolder(dataSource)?.connection, connection);
 
   /// Gives back [connection] taken with [getConnection]: nothing for the
-  /// transaction's (its manager releases it), the pool's otherwise.
+  /// transaction's (its manager releases it), the pool's otherwise, after
+  /// the session hooks that prepared it cleaned it
+  /// (`JdbcSessionHook.afterWork`, in reverse order). A hook that fails
+  /// is logged and the connection is closed, so it does not go back to
+  /// the pool with state left on it.
   static Future<void> releaseConnection(
     JdbcConnection connection,
     DataSource dataSource,
@@ -182,8 +256,38 @@ abstract final class DataSourceUtils {
     if (isConnectionTransactional(connection, dataSource)) {
       return;
     }
+    if (_prepared[connection] ?? false) {
+      _prepared[connection] = null;
+      await _clean(connection, dataSource);
+    }
     await resetStatementTimeout(connection);
     await dataSource.releaseConnection(connection);
+  }
+
+  static Future<void> _clean(
+    JdbcConnection connection,
+    DataSource dataSource,
+  ) async {
+    for (final hook in dataSource.sessionHooks.reversed) {
+      if (connection.isClosed) {
+        return;
+      }
+      try {
+        await hook.afterWork(dataSource, connection);
+      } on Object catch (error) {
+        _log.warning(
+          'A session hook (${hook.runtimeType}) failed to clean a '
+          'connection of ${dataSource.name}; the connection is closed '
+          'instead of going back to the pool: $error',
+        );
+        try {
+          await connection.close();
+        } on Object {
+          // Closing a broken connection may fail again.
+        }
+        return;
+      }
+    }
   }
 
   /// Gets [connection] ready for a statement: throws a

@@ -6,18 +6,33 @@
 /// provider's authorization URI outside the app, the user logs in there
 /// (the app never sees the password, and a login the system already has
 /// is reused), and the provider redirects to the app's redirect URI with
-/// a `code` (or an `error`). This interface is that round trip.
-/// `OAuth2LoginService` builds the authorization URI and checks what
-/// comes back; apps rarely call it themselves.
+/// a `code` (or an `error`). This interface is that round trip. The
+/// login that uses it (`OAuth2LoginService` of
+/// `spring_boot_starter_flutter_security`, or another provider's) builds
+/// the authorization URI and checks what comes back; apps rarely call it
+/// themselves.
 ///
-/// Implementations: `PlatformAuthorizationWindow`
+/// This package only has the interface. The implementations are in
+/// `spring_boot_starter_flutter_security`: `PlatformAuthorizationWindow`
 /// (`ASWebAuthenticationSession` on iOS and macOS, Custom Tabs on
 /// Android), and `LoopbackAuthorizationWindow`, which opens the default
 /// browser and receives the redirect on a one-shot server on `127.0.0.1`
-/// (Windows, Linux). The package's auto-configuration declares the one
-/// of the platform as the `AuthorizationWindow` bean. There is none for a
-/// web page: there the server logs the user in (`oauth2Login()` of
+/// (Windows, Linux). Its auto-configuration declares the one of the
+/// platform as the `AuthorizationWindow` bean. There is none for a web
+/// page: there the server logs the user in (`oauth2Login()` of
 /// `spring_boot_starter_security`).
+///
+/// ```dart
+/// final redirect = await window.authorize(
+///   redirectUri: Uri.parse('com.example.app:/oauth2redirect'),
+///   authorizationUri: (redirectUri) => Uri.https(
+///     'login.example.com',
+///     '/authorize',
+///     {'redirect_uri': '$redirectUri', 'state': state},
+///   ),
+/// );
+/// final code = redirect.queryParameters['code'];
+/// ```
 ///
 /// Spring has no such type: Spring Security logs in browsers, not apps.
 abstract interface class AuthorizationWindow {
@@ -37,8 +52,9 @@ abstract interface class AuthorizationWindow {
   /// there. `ASWebAuthenticationSession` (iOS, macOS) cannot: it ends at
   /// the first navigation to the redirect URI, whatever its `state`, and
   /// the call completes with it. A redirect with another `state` never
-  /// logs anyone in: `OAuth2LoginService` refuses it
-  /// (`invalid_state_parameter`), and the user starts the login again.
+  /// logs anyone in: the login that called must refuse it
+  /// (`OAuth2LoginService` does, with `invalid_state_parameter`), and the
+  /// user starts the login again.
   ///
   /// Throws an [AuthorizationCancelledException] when the user closed the
   /// page without finishing.
@@ -49,6 +65,17 @@ abstract interface class AuthorizationWindow {
 }
 
 /// The user closed the provider's login page before it redirected back.
+///
+/// ```dart
+/// try {
+///   await window.authorize(
+///     redirectUri: redirectUri,
+///     authorizationUri: authorizationUri,
+///   );
+/// } on AuthorizationCancelledException {
+///   // Nothing to report: the user changed their mind.
+/// }
+/// ```
 class AuthorizationCancelledException implements Exception {
   /// An exception with an optional [message].
   const AuthorizationCancelledException([this.message]);

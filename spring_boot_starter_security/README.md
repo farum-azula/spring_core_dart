@@ -292,8 +292,8 @@ spring.security.oauth2.resourceserver.jwt.issuer-uri=https://login.example.com
 spring.security.oauth2.resourceserver.jwt.audiences=my-api
 ```
 
-With `issuer-uri` or `jwk-set-uri` set, the default chain needs a valid
-bearer token on every request, and there is no default user. Or declare a
+With `issuer-uri`, `jwk-set-uri` or `secret-key` set, the default chain
+needs a valid bearer token on every request, and there is no default user. Or declare a
 chain with `oauth2ResourceServer((s) => s.jwt())`, usually with a
 `stateless` session policy.
 
@@ -301,16 +301,73 @@ chain with `oauth2ResourceServer((s) => s.jwt())`, usually with a
 |---|---|
 | `spring.security.oauth2.resourceserver.jwt.issuer-uri` | none; the keys come from the issuer's metadata |
 | `spring.security.oauth2.resourceserver.jwt.jwk-set-uri` | none; the URL of the provider's public keys |
-| `spring.security.oauth2.resourceserver.jwt.jws-algorithms` | `RS256`; used with `jwk-set-uri` only |
+| `spring.security.oauth2.resourceserver.jwt.secret-key` | none; the secret shared with a provider that signs with HS256, HS384 or HS512. Not in Spring Boot |
+| `spring.security.oauth2.resourceserver.jwt.jws-algorithms` | `RS256` with `jwk-set-uri`; `HS256` with `secret-key`; not used with `issuer-uri` alone |
 | `spring.security.oauth2.resourceserver.jwt.audiences` | none: no audience check |
+| `spring.security.oauth2.resourceserver.jwt.required-claims.<claim>` | none; the value the claim must have. Not in Spring Boot |
+| `spring.security.oauth2.resourceserver.jwt.require-expiry` | `false`: a token without `exp` is accepted, as in Spring Security; `true` refuses it. Not in Spring Boot |
 | `spring.security.oauth2.resourceserver.jwt.authority-prefix` | `SCOPE_` |
-| `spring.security.oauth2.resourceserver.jwt.authorities-claim-name` | `scope`, else `scp` |
+| `spring.security.oauth2.resourceserver.jwt.authorities-claim-name` | `scope`, else `scp`; a claim, or a path into nested objects (`realm_access.roles`) |
 | `spring.security.oauth2.resourceserver.jwt.authorities-claim-delimiter` | a space |
 | `spring.security.oauth2.resourceserver.jwt.principal-claim-name` | `sub` |
 
 With `jwk-set-uri`, the issuer (when `issuer-uri` is set too) and the
 audiences are checked. With `issuer-uri` alone, `jws-algorithms` is not
 used: the algorithms are those the provider's keys allow.
+
+**A shared secret.** Some providers sign their tokens with a secret they
+share with the API (HS256) instead of a key pair. `secret-key` is that
+secret, used as its UTF-8 bytes:
+
+```properties
+spring.security.oauth2.resourceserver.jwt.secret-key=${JWT_SECRET}
+# optional: only compared with the token's iss, nothing is fetched
+spring.security.oauth2.resourceserver.jwt.issuer-uri=https://login.example.com
+```
+
+Whoever has the secret can sign a token for any user, so it belongs on a
+server only: never put it into a client application (a Flutter or web
+app, where anyone can read it), and take it from the environment, not
+from a file in the repository. The application does not start when
+
+- `jwk-set-uri` is set too (two sources of keys);
+- `jws-algorithms` names anything but one of `HS256` (the default),
+  `HS384` and `HS512`;
+- the secret is shorter than the algorithm's hash: 32, 48 or 64 bytes.
+
+Only tokens of that one algorithm, signed with the secret, pass: an
+RS256 or ES256 token is refused whatever its signature.
+
+**Required claims.** `required-claims` names claims every token must
+have, with the value each must equal; it works with all three ways to
+set the keys:
+
+```properties
+spring.security.oauth2.resourceserver.jwt.required-claims.role=authenticated
+spring.security.oauth2.resourceserver.jwt.required-claims[https://example.com/tenant]=shop
+```
+
+The claim is a top-level one, compared exactly; a number or a boolean
+claim is compared as its text (`true`, `2`). A token without the claim,
+with another value, or with a list or an object there is refused like
+any other invalid token.
+
+**Validators of your own.** Every `OAuth2TokenValidator<Jwt>` bean is
+added to the checks of the auto-configured decoder, as in Spring Boot;
+none of the checks above is replaced:
+
+```dart
+@Component()
+class TenantValidator implements OAuth2TokenValidator<Jwt> {
+  @override
+  OAuth2TokenValidatorResult validate(Jwt token) =>
+      token.claims['tenant'] == 'shop'
+      ? OAuth2TokenValidatorResult.success
+      : OAuth2TokenValidatorResult.failure(
+          const OAuth2Error('invalid_token', 'The tenant is not shop'),
+        );
+}
+```
 
 What is checked, in order; any failure is a `401` with `WWW-Authenticate:
 Bearer error="invalid_token"`:
@@ -320,7 +377,7 @@ Bearer error="invalid_token"`:
 2. Its `alg` must be an accepted one and fit the key, so an RSA public key
    is never used as an HMAC secret (algorithm confusion). Supported:
    RS256 to RS512, PS256 to PS512, ES256 to ES512, and HS256 to HS512 with
-   `NimbusJwtDecoder.withSecretKey`.
+   `secret-key` or `NimbusJwtDecoder.withSecretKey`.
 3. The signature is checked with the key of the token's `kid`. Keys named
    in the token itself (`jku`, `jwk`, `x5u`) are ignored: a token cannot
    bring its own key.
@@ -332,7 +389,8 @@ Bearer error="invalid_token"`:
    `JwtDecoder` bean whose validator starts with
    `JwtTypeValidator(['at+jwt', 'JWT'], allowEmpty: true)`.
 5. `exp` and `nbf` are checked with 60 seconds of clock skew, then the
-   issuer and the audiences as configured.
+   issuer and the audiences as configured, the `required-claims` and the
+   application's `OAuth2TokenValidator<Jwt>` beans.
 6. A token bound to a client certificate (`cnf.x5t#S256`, RFC 8705) is
    refused, with either scheme: it is valid only over a TLS connection
    made with that certificate, and the web starter does not hand client
@@ -354,7 +412,11 @@ server-sent events from a browser), and then only in `GET` requests, as
 in Spring; such a token never exempts a request from CSRF.
 
 Scopes become `SCOPE_x` authorities, so a rule reads
-`hasAuthority('SCOPE_orders.read')`. `@AuthenticationPrincipal() Jwt jwt`
+`hasAuthority('SCOPE_orders.read')`. For a provider that keeps roles
+elsewhere, `authorities-claim-name` names the claim; when the token has
+no claim of exactly that name, a name with dots is a path into nested
+objects (`realm_access.roles` reads `roles` inside `realm_access`), and
+a missing part gives no authorities. `@AuthenticationPrincipal() Jwt jwt`
 gives the token to a controller, and method security expressions can read
 `principal.claims['tenant']`.
 
@@ -930,6 +992,10 @@ Security 7.1 ([tool/security_reference](../tool/security_reference/README.md),
   refused. Spring checks them against the request's client
   certificate; the web starter does not hand client certificates to the
   security filters yet.
+- **More JWT properties:** `secret-key` (a shared secret; Spring Boot
+  needs a `JwtDecoder` bean for it), `required-claims`, and a path into
+  nested objects in `authorities-claim-name` (Spring's
+  `JwtGrantedAuthoritiesConverter` reads a top-level claim only).
 - **Errors are `ProblemDetail`** (`application/problem+json`), never the
   exception's message.
 - **Two `Authorization` headers** are refused (Spring reads the first).

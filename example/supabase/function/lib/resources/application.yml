@@ -1,0 +1,22 @@
+# In a Supabase Edge Function the project is the function's environment
+# (SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY): the edge
+# starter makes spring.supabase.* of them. Run as a server
+# (`dart run bin/main.dart`), the same variables are read here.
+spring:
+  application:
+    name: supabase-example-function
+  main:
+    banner-mode: off
+  supabase:
+    url: ${SUPABASE_URL:http://127.0.0.1:54321}
+    anon-key: ${SUPABASE_ANON_KEY:}
+    service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:}
+  web:
+    rate-limit:
+      # The counters live in the project's database (the function
+      # rate_limit_acquire of supabase/migrations), called as the service
+      # role: the default store with the Supabase starter.
+      enabled: true
+
+server:
+  port: 8083

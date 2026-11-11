@@ -116,7 +116,7 @@
         "@ConditionalOnMissingBean(AppleIdSignIn)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 474,
+      "line": 472,
       "injects": [],
       "members": [
         {
@@ -146,7 +146,7 @@
         "@ConditionalOnMissingBean(OAuth2AuthorizedClientService)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 454,
+      "line": 452,
       "injects": [],
       "members": [
         {
@@ -194,7 +194,7 @@
         "@ConditionalOnMissingBean(BrowserPage)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 548,
+      "line": 546,
       "injects": [],
       "members": [
         {
@@ -347,7 +347,7 @@
         "@ConditionalOnMissingBean(HttpTransport)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 561,
+      "line": 559,
       "injects": [],
       "members": [
         {
@@ -422,7 +422,7 @@
         "@ConditionalOnMissingBean(SecretStore)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 281,
+      "line": 279,
       "injects": [],
       "members": [
         {
@@ -480,7 +480,7 @@
         "@ConditionalOnMissingBean(AuthorizationWindow)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 333,
+      "line": 331,
       "injects": [],
       "members": [
         {
@@ -516,7 +516,7 @@
         "@ConditionalOnMissingBean(OAuth2LoginService)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 488,
+      "line": 486,
       "injects": [],
       "members": [
         {
@@ -671,7 +671,7 @@
         "@ConditionalOnMissingBean(AuthorizationWindow)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 313,
+      "line": 311,
       "injects": [],
       "members": [
         {
@@ -709,7 +709,7 @@
         "@ConditionalOnMissingBean(DPoPKey)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 400,
+      "line": 398,
       "injects": [],
       "members": [
         {
@@ -776,7 +776,7 @@
         "@ConditionalOnMissingBean(SecretStore)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 264,
+      "line": 262,
       "injects": [],
       "members": [
         {
@@ -842,7 +842,7 @@
         "@ConditionalOnMissingBean(PrincipalNotifier)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 381,
+      "line": 379,
       "injects": [],
       "members": [
         {
@@ -947,7 +947,7 @@
         "@ConditionalOnMissingBean(RouteRequestCache)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 346,
+      "line": 344,
       "injects": [],
       "members": [
         {
@@ -985,7 +985,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 356,
+      "line": 354,
       "injects": [],
       "members": [
         {
@@ -1027,7 +1027,7 @@
         "@ConditionalOnBean(RouteTemplate)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 366,
+      "line": 364,
       "injects": [],
       "members": [
         {
@@ -1067,7 +1067,7 @@
         "@ConditionalOnMissingBean(SecretTemplate)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 299,
+      "line": 297,
       "injects": [],
       "members": [
         {
@@ -1142,7 +1142,7 @@
         "@ConditionalOnMissingBean(OAuth2LoginService)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 598,
+      "line": 596,
       "injects": [],
       "members": [
         {
@@ -1238,7 +1238,7 @@
         "@ConditionalOnMissingBean(SpaBrowserPage)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 534,
+      "line": 532,
       "injects": [],
       "members": [
         {
@@ -1304,7 +1304,7 @@
         "@ConditionalOnMissingBean(OAuth2LoginService)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 617,
+      "line": 615,
       "injects": [],
       "members": [
         {
@@ -1441,7 +1441,7 @@
         "@ConditionalOnMissingBean(OAuth2AuthorizedClientService)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 434,
+      "line": 432,
       "injects": [],
       "members": [
         {
@@ -1492,7 +1492,7 @@
         "@ConditionalOnMissingBean(DPoPKey)"
       ],
       "source": "package:spring_boot_starter_flutter_security/spring_auto_configuration.dart",
-      "line": 417,
+      "line": 415,
       "injects": [],
       "members": [
         {

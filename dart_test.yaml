@@ -17,3 +17,22 @@ tags:
   # without Docker, a failure with CONTAINERS_REQUIRED=true. CI's `docker` job.
   docker:
     timeout: 4x
+  # spring_boot_starter_supabase: every test of it has `supabase`, and runs
+  # in a pipeline of its own (.github/workflows/supabase.yml), never in the
+  # jobs above (tool/test_all.dart leaves the package out). The levels are
+  # in the package's dart_test.yaml.
+  supabase:
+  supabase-docker:
+    timeout: 4x
+  supabase-stack:
+    timeout: 4x
+  # spring_boot_starter_edge: its function in the platforms' runtimes (the
+  # package's dart_test.yaml has the levels).
+  edge-node:
+    timeout: 4x
+  edge-cloudflare:
+    timeout: 6x
+  edge-deno:
+    timeout: 6x
+  edge-docker:
+    timeout: 6x

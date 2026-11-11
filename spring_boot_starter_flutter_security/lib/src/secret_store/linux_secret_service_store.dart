@@ -6,7 +6,8 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:spring_boot_starter_flutter_security/src/secret_store/native_memory.dart';
 import 'package:spring_boot_starter_flutter_security/src/secret_store/platform_secret_store.dart';
-import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_store.dart';
+import 'package:spring_security_core/spring_security_core.dart'
+    show SecretStore;
 
 /// The [PlatformSecretStore] of Linux: the Secret Service of the desktop
 /// (GNOME Keyring, KWallet, KeePassXC) through `libsecret`.

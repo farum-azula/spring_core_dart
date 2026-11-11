@@ -209,6 +209,8 @@ final class Jdbc {
   SqlCrates get sqlCrates => context.getBean<SqlCrates>();
   SqlMembers get sqlMembers => context.getBean<SqlMembers>();
   SqlGauges get sqlGauges => context.getBean<SqlGauges>();
+  MemoryProfiles get memoryProfiles => context.getBean<MemoryProfiles>();
+  SqlProfiles get sqlProfiles => context.getBean<SqlProfiles>();
   MemoryGauges get memoryGauges => context.getBean<MemoryGauges>();
 }
 

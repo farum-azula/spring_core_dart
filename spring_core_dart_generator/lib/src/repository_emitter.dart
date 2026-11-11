@@ -12,7 +12,15 @@ part of 'module_emitter.dart';
 //   static _$BookRepositoryImpl $create(DependencyResolver r) =>
 //       _$BookRepositoryImpl(r
 //           .dependency<RepositoryFactory>()
-//           .operations<Book, int>(r'BookRepository', queries: [_cards]));
+//           .operations<Book, int>(
+//             r'BookRepository',
+//             queries: [_cards],
+//             // What the methods need of the store (`@Query`, `@Procedure`,
+//             // `@Lock`, a stream of changes, `@Transactional`).
+//             requirements: const [
+//               StoreRequirement(r'cards', DataStoreCapability.queries),
+//             ],
+//           ));
 //
 //   static const _findByTitleAndYear = PartTree(r'findByTitleAndYear', [
 //     OrPart([Part(r'title'), Part(r'year')]),
@@ -54,6 +62,10 @@ extension _RepositoryEmitter on ModuleEmitter {
       for (final method in model.methods)
         if (method is QueryMethodModel) method,
     ];
+    final functions = [
+      for (final method in model.methods)
+        if (method is ProcedureMethodModel) method,
+    ];
     // `this.operations`, so a parameter called `operations` cannot hide it.
     final operations = refer('this').property('operations');
     // `r.dependency<RepositoryFactory>().operations<T, ID>(r'X', ...)`.
@@ -72,6 +84,18 @@ extension _RepositoryEmitter on ModuleEmitter {
             if (queries.isNotEmpty)
               'queries': literalList([
                 for (final query in queries) refer(_staticName(query)),
+              ]),
+            if (functions.isNotEmpty)
+              'functions': literalList([
+                for (final function in functions) refer(_staticName(function)),
+              ]),
+            if (model.requirements.isNotEmpty)
+              'requirements': literalConstList([
+                for (final need in model.requirements)
+                  _data('StoreRequirement').constInstance([
+                    _str(need.method!),
+                    _data('DataStoreCapability').property(need.capability.name),
+                  ]),
               ]),
           },
           [entity, id],
@@ -113,6 +137,7 @@ extension _RepositoryEmitter on ModuleEmitter {
                     ..assignment = _partTree(method.tree).code,
                 ),
                 QueryMethodModel() => _queryField(method, element),
+                ProcedureMethodModel() => _procedureField(method, element),
                 LockedMethodModel() => null,
               },
           ].nonNulls,
@@ -145,11 +170,17 @@ extension _RepositoryEmitter on ModuleEmitter {
                         [refer(method.member.parameters.first.name)],
                         {'lock': _constant(lock, element)},
                       ),
-                QueryMethodModel(:final isStream) => _queryCall(
+                QueryMethodModel(:final isStream) => _resultCall(
+                  isStream ? 'queryStream' : 'query',
                   method,
                   operations,
-                  isStream: isStream,
-                  element: element,
+                  element,
+                ),
+                ProcedureMethodModel() => _resultCall(
+                  method.isStream ? 'procedureStream' : 'procedure',
+                  method,
+                  operations,
+                  element,
                 ),
                 DerivedMethodModel() => _derivedCall(
                   method,
@@ -162,7 +193,8 @@ extension _RepositoryEmitter on ModuleEmitter {
     );
   }
 
-  // The static field holding the `PartTree` or `QueryMethod` of [method].
+  // The static field holding the `PartTree`, `QueryMethod` or `ProcedureMethod`
+  // of [method].
   String _staticName(RepositoryMethodModel method) => '_${method.member.name}';
 
   // The `QueryMethod` of [method]: a constant, unless the type of what a
@@ -215,6 +247,38 @@ extension _RepositoryEmitter on ModuleEmitter {
     );
   }
 
+  // The `ProcedureMethod` of [method]: a constant, unless the type of what a
+  // row becomes needs code (an enum with `@JsonValue`).
+  Field _procedureField(ProcedureMethodModel method, Element element) {
+    final member = method.member;
+    final info = method.element == null
+        ? null
+        : _typeInfo(method.element!, element);
+    return Field(
+      (f) => f
+        ..static = true
+        ..modifier = info?.$2 == false
+            ? FieldModifier.final$
+            : FieldModifier.constant
+        ..name = _staticName(method)
+        ..assignment = _data('ProcedureMethod')
+            .newInstance(
+              [_str(member.name), _constant(method.procedure, element)],
+              {
+                if (member.parameters.isNotEmpty)
+                  'parameters': literalConstList([
+                    for (final parameter in member.parameters)
+                      _str(parameter.name),
+                  ]),
+                if (method.element != null && method.shape != ResultShape.list)
+                  'shape': _data('QueryShape').property(method.shape.name),
+                if (info != null) 'element': info.$1,
+              },
+            )
+            .code,
+    );
+  }
+
   // The `expressions` of [method], one for each `:#{...}`: `null` for an
   // expression the starter interprets, else a function of the arguments and
   // the `QueryExpressionContext`, `(arguments, context) => ...`.
@@ -249,13 +313,14 @@ extension _RepositoryEmitter on ModuleEmitter {
         literalNull,
   ];
 
-  // `this.operations.query<R>(_x, [args])`, `...queryStream<E>(...)`.
-  Expression _queryCall(
-    QueryMethodModel method,
-    Expression operations, {
-    required bool isStream,
-    required Element element,
-  }) {
+  // `this.operations.query<R>(_x, [args])`, `...queryStream<E>(...)`, and
+  // the same for a database function: `procedure<R>`, `procedureStream<E>`.
+  Expression _resultCall(
+    String operation,
+    RepositoryMethodModel method,
+    Expression operations,
+    Element element,
+  ) {
     final member = method.member;
     final returnType = member.returnType;
     // `Future<R>` gives `R`; a `Stream<E>` gives `E`.
@@ -265,7 +330,7 @@ extension _RepositoryEmitter on ModuleEmitter {
         ? returnType.typeArguments.single
         : returnType;
     return operations
-        .property(isStream ? 'queryStream' : 'query')
+        .property(operation)
         .call(
           [
             refer(_staticName(method)),

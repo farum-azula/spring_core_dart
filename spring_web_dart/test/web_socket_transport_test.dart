@@ -561,6 +561,78 @@ void main() {
       expect(status?.code, 1000);
     });
 
+    test('a connect with limits of its own uses them for its session, and '
+        'the transport keeps its limits for the others', () async {
+      // The server sends one text and one binary message of 9 KB (and
+      // closes normally when [closes], for a client that reads both);
+      // gives what the client read and how it ended.
+      Future<(List<Object>, int?)> receive(
+        IoWebSocketTransport transport, {
+        int? maxText,
+        int? maxBinary,
+        bool closes = false,
+      }) async {
+        final server = await _fakeServer(
+          (key) =>
+              'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\n'
+              'Connection: Upgrade\r\n'
+              'Sec-WebSocket-Accept: ${webSocketAccept(key)}\r\n\r\n',
+          then: (socket, incoming) {
+            socket
+              ..add(_frame(1, List.filled(9000, 0x61)))
+              ..add(_frame(2, Uint8List(9000)));
+            if (closes) {
+              socket.add(_frame(8, [0x03, 0xE8]));
+            }
+            incoming.listen((frame) {
+              if (frame.$1 == 8) {
+                socket.add(_frame(8, frame.$2));
+              }
+            });
+          },
+        );
+        try {
+          final session = await transport.connect(
+            Uri.parse('ws://127.0.0.1:${server.port}/'),
+            maxTextMessageSize: maxText,
+            maxBinaryMessageSize: maxBinary,
+          );
+          final messages = await session.messages.toList().timeout(
+            const Duration(seconds: 10),
+          );
+          return (messages, session.closeStatus?.code);
+        } finally {
+          await server.close();
+        }
+      }
+
+      final transport = IoWebSocketTransport();
+      // Raised for this connection: both messages are read.
+      var (messages, code) = await receive(
+        transport,
+        maxText: 16 * 1024,
+        maxBinary: -1,
+        closes: true,
+      );
+      expect(messages, hasLength(2));
+      expect(code, 1000);
+      // Only the text limit: the binary one stays the transport's 8 KB.
+      (messages, code) = await receive(transport, maxText: 16 * 1024);
+      expect(messages, hasLength(1));
+      expect(code, 1009);
+      // The next connection of the same transport: its own 8 KB again.
+      (messages, code) = await receive(transport);
+      expect(messages, isEmpty);
+      expect(code, 1009);
+      // Lowered for one connection of a transport without limits.
+      (messages, code) = await receive(
+        IoWebSocketTransport(maxTextMessageSize: -1, maxBinaryMessageSize: -1),
+        maxText: 1024,
+      );
+      expect(messages, isEmpty);
+      expect(code, 1009);
+    });
+
     test('platformWebSocketTransport passes the message size limits', () {
       final defaults = platformWebSocketTransport() as IoWebSocketTransport;
       expect(defaults.maxTextMessageSize, 8192);
@@ -1478,6 +1550,40 @@ void main() {
       );
       expect(second.closeStatus?.code, 1008);
       expect(second.closedByClient, isFalse);
+    });
+
+    test('keeps the message size limits a connection asked for', () async {
+      final sockets = MockWebSocketTransport();
+      // No limits asked: any size is delivered.
+      final free = await sockets.connect(Uri.parse('ws://h/free'));
+      final freeServer = await sockets.nextConnection;
+      expect(freeServer.maxTextMessageSize, isNull);
+      expect(freeServer.maxBinaryMessageSize, isNull);
+      final large = 'a' * 100000;
+      freeServer.push(large);
+      expect(await free.messages.first, large);
+
+      final client = await sockets.connect(
+        Uri.parse('ws://h/limited'),
+        maxTextMessageSize: 4,
+        maxBinaryMessageSize: -1,
+      );
+      final server = await sockets.nextConnection;
+      expect(server.maxTextMessageSize, 4);
+      expect(server.maxBinaryMessageSize, -1);
+      final received = <Object>[];
+      final done = Completer<void>();
+      client.messages.listen(received.add, onDone: done.complete);
+      server
+        ..push('four')
+        ..push(List.filled(100, 1))
+        // Two bytes each in UTF-8: over the limit of four bytes.
+        ..push('äää');
+      await done.future;
+      expect(received, ['four', List.filled(100, 1)]);
+      expect(client.closeStatus?.code, 1009);
+      expect(server.closedByClient, isFalse);
+      expect(() => server.push('more'), throwsStateError);
     });
   });
 }

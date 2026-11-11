@@ -910,6 +910,128 @@ Every request runs in its own `Zone`, so
 `RequestContextHolder.currentRequest` is the request anywhere in its
 handling, across `await`s.
 
+## Rate limiting
+
+A server that anyone can reach needs a limit on how often one client may
+ask: five logins a minute for an address, 120 calls a minute for a user.
+The starter has a rate limiter that is off until you give it a rule (or
+`spring.web.rate-limit.enabled: true`):
+
+```yaml
+spring:
+  web:
+    rate-limit:
+      rules:
+        - path: /api/auth/**     # logins: by address
+          methods: [POST]
+          key: ip
+          limit: 5/1m
+        - path: /api/**          # the API: by user
+          limit: 120/1m
+```
+
+and, for one controller method or class:
+
+```dart
+@RestController()
+class ReportController {
+  // Ten exports a minute for each user, whatever the rules allow.
+  @PostMapping('/reports/export')
+  @RateLimiter('10/1m', key: '#{authentication.name}')
+  Future<Report> export() => reports.export();
+}
+```
+
+A request past a limit gets `429 Too Many Requests` with `Retry-After`
+(seconds) and the usual `ProblemDetail`; its body is not read and nothing
+else of it is processed. Every rule that matches a request applies: it
+passes only when all of them allow it. The answers carry
+`RateLimit-Limit`, `RateLimit-Remaining` and `RateLimit-Reset` of the rule
+that leaves the least (`spring.web.rate-limit.headers: false` turns them
+off). An application that only uses `@RateLimiter` sets
+`spring.web.rate-limit.enabled: true`: the start fails when a controller
+has the annotation and nothing turned the limiter on.
+
+**The limit** reads `<count>/<duration>` (`5/1m`, `10/s`, `1000/1h`) and
+is a token bucket: `count` requests at once, then refilled evenly, one
+every `duration / count`. `burst` sets the size of the bucket apart from
+the rate (`limit: 60/1m` with `burst: 10`: ten at once, then one a
+second).
+
+**The key** says who a bucket belongs to:
+
+| `key` | Counted by | Decided |
+|---|---|---|
+| `user` (the default) | the authenticated user (`request.principal`), else the client's address | right after the security filter chain |
+| `ip` | the client's address | before the sessions and the security filter chain |
+| `#{...}` | a SpEL expression over `request`, `headers` (a map, names in lower case), `principal`, `authentication`, `address`, `method`, `path`; nothing or an empty text counts by address | right after the security filter chain |
+| a name of your own | a `RateLimitKeyResolver` bean that `supports` it | as the resolver says |
+
+So a rule keyed by `ip` refuses a flood before a session is looked up or
+a password is hashed (the filter `rateLimitFilter`, order -5000), and a
+rule keyed by `user` sees the user the security starter authenticated
+(the filter `authenticatedRateLimitFilter`, order -50, just after the
+security chain at -100). A request the chain answered itself (a 401, a
+403) does not reach the rules keyed by the user: limit those by `ip`.
+`@RateLimiter` runs in an interceptor, after both filters and before the
+method's arguments are bound.
+
+**The client's address** is the connection's own. Behind reverse proxies,
+name them:
+
+```yaml
+spring:
+  web:
+    rate-limit:
+      trusted-proxies: [173.245.48.0/20, 2400:cb00::/32]   # addresses and CIDR ranges
+      client-address-header: X-Forwarded-For               # the default; or CF-Connecting-IP
+```
+
+Only a connection that comes from a trusted proxy has the header read,
+and the client is the entry the first trusted proxy added, counting from
+the right; everything to the left of it is what the client itself sent,
+and is ignored. Without trusted proxies no header is ever read, so a
+client cannot choose its bucket. (With `server.forward-headers-strategy`
+the address is already the forwarded one when the limiter looks.) To keep
+no address in clear in the store, set `hash-addresses: true` and a
+`hash-secret`: the keys of addresses are then their HMAC-SHA-256.
+
+**The store** of the buckets is one interface, `RateLimitStore`, with one
+atomic operation. The default is the most specific the application has:
+
+| `spring.web.rate-limit.store` | The buckets are | The default when |
+|---|---|---|
+| `procedure` | behind a database function, called through Supabase's REST API | the application uses `spring_boot_starter_supabase` without a database connection |
+| `jdbc` | in a table of the primary `DataSource` (PostgreSQL, SQLite) | the application has a primary `DataSource` (`spring_boot_starter_data`) |
+| `primary-isolate` | in the memory of the first isolate, for all of the pool | the server runs a pool of isolates (`server.isolates.*`) |
+| `memory` | in the memory of the isolate | otherwise |
+
+The first two are shared by every server on the database and outlive a
+restart; their SQL is in their packages. A bean of your own replaces
+them all:
+
+```dart
+@Component()
+class KvRateLimitStore implements RateLimitStore {
+  @override
+  Future<RateLimitDecision> tryAcquire(String key, RateLimit limit,
+      {int permits = 1}) => ...; // one atomic step in your store
+}
+```
+
+When the store cannot be reached, the request is refused with a 503 and
+`Retry-After` (`on-store-failure: deny`, the default: a limit on logins
+must not open when the database is down); `allow` lets it through, not
+counted. Both can be set for one rule. One WARN line on
+`spring.web.ratelimit` names the rule, never the key.
+
+Every key is in the
+[configuration reference](../docs/configuration.md#rate-limiting).
+Spring has no rate limiter in its core; the nearest are Resilience4j's
+`@RateLimiter` (one limit for all callers of a method), Bucket4j, and
+Spring Cloud Gateway's `RequestRateLimiter` (a `KeyResolver` and a store
+in Redis), whose shape this one follows.
+
 ## Interceptors and argument resolvers: `WebMvcConfigurer`
 
 A bean that mixes in `WebMvcConfigurer` customizes how controllers are
@@ -1168,7 +1290,7 @@ spring.lifecycle.timeout-per-shutdown-phase=20s
 server.context-path=/shop        # a prefix of every mapping
 server.max-http-request-body-size=10MB   # 413 above (10MB by default), whatever the type; -1: no limit
 server.connection-timeout=60s            # a body that sends nothing this long: 408; idle connections close; 0 or -1: no limit
-server.request-timeout=30s               # filters and handler must answer within this: else 503; no limit by default (see below)
+server.request-timeout=30s               # filters and handler must answer within this: else 503; 60s by default, 0: no limit (see below)
 server.compression.enabled=true          # gzip, for clients that accept it
 server.compression.mime-types=text/html,application/json   # Spring Boot's list by default
 server.compression.min-response-size=2KB # the default
@@ -1184,15 +1306,18 @@ Every property, with YAML next to it, is in the
 
 ### A deadline for every request: `server.request-timeout`
 
-By default a request takes as long as its handler does. With
-`server.request-timeout=30s` the filters and the handler must answer
-within 30 seconds: when the time passes before the answer starts, the
+The filters and the handler of a request must answer within
+`server.request-timeout`, a minute by default (so that a request whose
+body arrives a little at a time, never idle, ends too). With
+`server.request-timeout=30s` it is 30 seconds: when the time passes before
+the answer starts, the
 client gets a `503 Service Unavailable` problem (an
 `AsyncRequestTimeoutException`, with the generic detail "The request did
 not complete in time." and no word of the limit), and whatever the handler
 does to the response afterwards is dropped, with no second answer and no
-unhandled error. `0` or a negative value means no limit, which is the
-default.
+unhandled error. `0` or a negative value means no limit; raise the limit
+for an application whose handlers or uploads rightly take longer than a
+minute.
 
 The request runs under a `RequestDeadline` of that length, which the code
 it calls can read through `RequestDeadline.current` (`remaining`,
@@ -1526,6 +1651,12 @@ the bean as the context holds it, so AOP advice on a controller
 
 ## Differences from Spring
 
+- **Rate limiting** (`spring.web.rate-limit.*`, `@RateLimiter`) is an
+  extension: Spring has none in its core (Resilience4j, Bucket4j and
+  Spring Cloud Gateway's `RequestRateLimiter` are the nearest). See
+  [Rate limiting](#rate-limiting).
+- **`server.request-timeout` is 60 seconds by default**, where Spring
+  never times out a synchronous request.
 - **`server.request-timeout` and `RequestDeadline`** are extensions: Spring
   times out connections (Tomcat) and asynchronous requests
   (`spring.mvc.async.request-timeout`), not the handling of a synchronous

@@ -295,6 +295,63 @@ void main() {
       );
     });
 
+    test('a validator is one more check, after the issuer and the '
+        'audiences', () async {
+      const issuer = 'https://issuer.example';
+      final decoder = JwtDecoders.fromIssuerLocation(
+        issuer,
+        audiences: ['api'],
+        validator: JwtClaimValidator('tenant', (value) => value == 'shop'),
+        fetcher: (uri) async => uri.path.endsWith('jwks')
+            ? jsonEncode({
+                'keys': [keys.rsa.jwk],
+              })
+            : jsonEncode({
+                'issuer': issuer,
+                'jwks_uri': 'https://issuer.example/jwks',
+              }),
+      );
+      const valid = {'iss': issuer, 'aud': 'api', 'tenant': 'shop'};
+      await decoder.decode(keys.token(claims: valid));
+      Matcher invalid(String text) => throwsA(
+        isA<JwtValidationException>().having(
+          (e) => e.message,
+          'message',
+          contains(text),
+        ),
+      );
+      await expectLater(
+        decoder.decode(keys.token(claims: {...valid, 'tenant': 'other'})),
+        invalid('The tenant claim is not valid'),
+      );
+      await expectLater(
+        decoder.decode(keys.token(claims: {'iss': issuer, 'aud': 'api'})),
+        invalid('The tenant claim is not valid'),
+      );
+      // It replaces none of the others.
+      await expectLater(
+        decoder.decode(keys.token(claims: {...valid, 'iss': 'https://evil'})),
+        invalid('iss'),
+      );
+      await expectLater(
+        decoder.decode(keys.token(claims: {...valid, 'aud': 'other'})),
+        invalid('aud'),
+      );
+      final now = TokenFactory.now();
+      await expectLater(
+        decoder.decode(
+          keys.token(claims: {...valid, 'iat': now - 7200, 'exp': now - 3600}),
+        ),
+        invalid('expired'),
+      );
+      await expectLater(
+        decoder.decode(
+          keys.token(claims: valid, header: {'typ': 'logout+jwt'}),
+        ),
+        invalid('typ'),
+      );
+    });
+
     test('the metadata is looked up in the three standard places', () async {
       for (final issuer in [
         'https://issuer.example/tenant',

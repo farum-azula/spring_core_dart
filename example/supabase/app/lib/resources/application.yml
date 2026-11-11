@@ -1,0 +1,33 @@
+# The app of the Supabase example. The project's address and its anon
+# (publishable) key come from the build:
+#
+#   flutter run --dart-define=SUPABASE_ANON_KEY=...
+#   flutter run --dart-define=SUPABASE_URL=https://<ref>.supabase.co --dart-define=SUPABASE_ANON_KEY=...
+#
+# Nothing else of a project belongs in an app: whoever has the app has
+# what is in it (the starter warns at startup about a service role key, a
+# database address or a JWT secret).
+spring:
+  application:
+    name: supabase-example-app
+  supabase:
+    # The local stack unless the build says otherwise.
+    url: ${SUPABASE_URL:http://127.0.0.1:54321}
+    anon-key: ${SUPABASE_ANON_KEY}
+  flutter:
+    app:
+      type: material
+      title: Supabase todos
+      description: A todo list on a Supabase project, the Spring way.
+      debug-banner: false
+    theme:
+      seed-color: '#3ECF8E'
+    web:
+      # `flutter run -d chrome` serves the app here.
+      dev-server:
+        port: 5092
+
+# The list the app shows: the todos of the signed-in user whose `list_id`
+# is this.
+todos:
+  list: home

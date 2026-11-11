@@ -5,6 +5,9 @@ part of 'bean_scanner.dart';
 // (the CRUD methods) with one method for each other method of the
 // interface:
 //
+//  * `@Procedure`: a call of a database function (see
+//    `repository_store_scanning.dart`, with the `watch…By` and
+//    `changes…By` methods and the check of the store's capabilities);
 //  * `@Query`: a description of the method, which the starter reads;
 //  * a CRUD method redeclared with `@Lock`: an override passing the lock;
 //  * anything else: a derived query, `findByTitleAndYear`, whose name the
@@ -84,6 +87,11 @@ extension _RepositoryScanning on BeanScanner {
     final declared = _declaredMethodNames(element, type, problems);
     final methods = <RepositoryMethodModel>[];
     final queries = <_QueryText>[];
+    // What the interface and its methods need of the store.
+    final needs = <StoreNeed>[
+      if (DataStoreBuild.isTransactional(element))
+        const StoreNeed(null, StoreCapability.transactions),
+    ];
     for (final methodName in declared) {
       final method = type.lookUpMethod(methodName, element.library);
       if (method == null) {
@@ -141,8 +149,14 @@ extension _RepositoryScanning on BeanScanner {
       );
       if (model != null) {
         methods.add(model);
+        needs.addAll(_needsOf(model));
+      }
+      if (_transactionalMethod(method, hierarchy)) {
+        needs.add(StoreNeed(methodName, StoreCapability.transactions));
       }
     }
+    _checkStore(name, element, needs, problems);
+    _checkCollections(element, entityClass, problems);
     if (queries.isNotEmpty) {
       // The texts of the @Query methods are checked with the whole
       // application: their problems join these in one error.
@@ -160,6 +174,12 @@ extension _RepositoryScanning on BeanScanner {
       idType: idType,
       annotations: _userAnnotations(element),
       methods: methods,
+      // The interface's own `@Transactional` is among its annotations,
+      // which the starter reads.
+      requirements: [
+        for (final need in needs)
+          if (need.method != null) need,
+      ],
     );
     final explicitName = ConstantReader(
       _component.firstAnnotationOf(element),
@@ -335,6 +355,7 @@ extension _RepositoryScanning on BeanScanner {
     final lock = annotationOf(_lock);
     final query = annotationOf(_query);
     final modifying = annotationOf(_modifying);
+    final procedure = annotationOf(_procedure);
     if (unwritable) {
       return null;
     }
@@ -343,6 +364,23 @@ extension _RepositoryScanning on BeanScanner {
       for (final parameter in member.parameters)
         QueryParameter(parameter.name, parameter.type),
     ];
+
+    // `@Procedure`: a database function, whatever the name of the method says.
+    if (procedure != null) {
+      return _procedureMethod(
+        where,
+        member,
+        procedure: procedure,
+        query: query,
+        lock: lock,
+        modifying: modifying,
+        valueType: valueType,
+        isFuture: isFuture,
+        isStream: isStream,
+        entity: entityElement,
+        problems: problems,
+      );
+    }
 
     // `@Query`: checked here and in `_checkQueries`; the starter is told
     // what is left to do.
@@ -392,10 +430,28 @@ extension _RepositoryScanning on BeanScanner {
       problems.add(
         '$where: not a CRUD method of the repository interfaces and not a '
         'derived query: a query method starts with find, read, get, query, '
-        'search, stream, count, exists, delete or remove, then By and the '
-        'conditions (findByTitle)',
+        'search, stream, watch, changes, count, exists, delete or remove, '
+        'then By and the conditions (findByTitle)',
       );
       return null;
+    }
+    // `watch…By` and `changes…By`: streams that follow the store.
+    final prefix = PartTreeReader.prefixOf(methodName);
+    if (prefix == 'watch' || prefix == 'changes') {
+      try {
+        return _liveMethod(
+          where,
+          member,
+          prefix: prefix!,
+          lock: lock,
+          entity: entity(),
+          parameters: parameters,
+          problems: problems,
+        );
+      } on QueryProblem catch (problem) {
+        problems.add('$where: ${problem.reason}');
+        return null;
+      }
     }
     if (!isFuture && !isStream) {
       problems.add(_notAsynchronous(where, valueType));
@@ -581,6 +637,7 @@ extension _RepositoryScanning on BeanScanner {
           fieldName,
           type,
           isMappedCollection: marked(_mappedCollection, field),
+          isJson: marked(_dataJson, field),
           referencedId: referencedId,
         ),
       );

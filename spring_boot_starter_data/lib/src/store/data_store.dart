@@ -2,6 +2,7 @@ import 'package:spring_boot_starter_data/src/annotations.dart';
 import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 import 'package:spring_boot_starter_data/src/query/part_tree.dart';
 import 'package:spring_boot_starter_data/src/repository/sort.dart';
+import 'package:spring_boot_starter_data/src/store/data_store_capabilities.dart';
 
 /// A condition on the columns of an entity's own table, in a form every
 /// store can use: the parts of a derived query's name and the values that
@@ -78,6 +79,13 @@ final class Criteria {
 /// ids, the value of a `@Version` after a write and the check of its old
 /// value.
 ///
+/// What a store has beyond these methods it says in [capabilities], and
+/// offers through an interface of its own: `TransactionalDataStore`
+/// (transactions), `FunctionDataStore` (database functions),
+/// `ChangeStreamDataStore` (the changes of its rows). A store that is not
+/// SQL implements [DataStore] and the interfaces it can; a repository that
+/// uses more fails when it is created.
+///
 /// Spring (Java):
 /// `org.springframework.data.jdbc.core.JdbcAggregateOperations` (its
 /// implementation `JdbcAggregateTemplate`, over `DataAccessStrategy`).
@@ -85,6 +93,12 @@ abstract interface class DataStore {
   /// The name of the store (`memory`, later `sql`): what
   /// `@UseStore('...')` selects.
   String get name;
+
+  /// What the store can do beyond the methods here: transactions, locks,
+  /// the SQL of `@Query`, database functions, a stream of changes. A
+  /// repository whose methods need what the store lacks is refused when it
+  /// is created.
+  DataStoreCapabilities get capabilities;
 
   /// Inserts [instance] as a new aggregate, with its children, and returns
   /// the instance as stored.

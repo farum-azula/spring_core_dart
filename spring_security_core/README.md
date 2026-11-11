@@ -166,6 +166,36 @@ To hear about logins and logouts, wrap the strategy in a
 with the contexts before and after. `spring_boot_starter_flutter_security`
 does this so that widgets follow the logged-in user.
 
+## The login of a client application
+
+A client application (a Flutter app, a command-line tool) has one user,
+logged in by some provider: an OAuth 2.0 / OpenID Connect provider, a
+backend-as-a-service (Supabase, say), a login of your own. How the user
+logs in differs; what the rest of the application needs does not. This
+package has that common part as interfaces only, without any provider or
+platform code, so they can be used anywhere Dart runs:
+
+| Interface | What it is |
+|---|---|
+| `LoginSession` | The current login: `authentication`, `isLoggedIn`, `authenticationChanges` (a stream), `accessToken()` (a token that is not about to expire, refreshed when needed; `null` when logged out), `restore()` after a restart, `logout()` |
+| `SecretStore` | Where the login's tokens are kept between runs: strings by key. `InMemorySecretStore` is the one for tests and for platforms without secure storage |
+| `AuthorizationWindow` | The provider's login page in the system's login window, and the redirect back; throws `AuthorizationCancelledException` when the user closes it |
+| `OAuth2Token` | What every token has: `tokenValue`, `issuedAt`, `expiresAt` (Spring's `OAuth2Token`); the OAuth2 client's tokens and the security starter's `Jwt` implement it |
+
+```dart
+// Written once, for any provider: the user's token on a request.
+Future<Map<String, String>> userHeaders(LoginSession session) async {
+  final token = await session.accessToken();
+  return {if (token != null) 'authorization': 'Bearer $token'};
+}
+```
+
+`spring_boot_starter_flutter_security` has the platform implementations
+(the Keychain and the Keystore behind `SecretStore`, the system's login
+windows behind `AuthorizationWindow`) and re-exports these types. Spring
+has no `LoginSession`, `SecretStore` or `AuthorizationWindow`: Spring
+Security logs in the users of a server.
+
 ## Users and passwords
 
 | Type | What it is | Spring |

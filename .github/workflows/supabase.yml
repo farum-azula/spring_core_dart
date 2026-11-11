@@ -1,0 +1,272 @@
+name: Supabase
+
+# The tests of spring_boot_starter_supabase, in a pipeline of their own:
+# the main one (ci.yml) analyzes and formats the package and checks its
+# generated code, but never runs its tests (tool/test_all.dart leaves the
+# package out, see `ownPipeline` there).
+#
+# The levels (the package's dart_test.yaml and
+# roadmap/spring_boot_starter_supabase.md, "Tests"):
+#   1. `unit`: no network and no container (a fake HTTP transport, a fake
+#      WebSocket transport, keys made by the tests).
+#   2-3. `containers` (`supabase-docker`): the SQL path on PostgreSQL, and
+#      the store of the REST API on PostgREST over PostgreSQL.
+#   4. `stack` (`supabase-stack`): the whole of Supabase, the Supabase
+#      CLI's local stack with the project of
+#      spring_boot_starter_supabase/test/stack; and `hosted`, the same
+#      tests against a hosted project, nightly and by hand, when its
+#      address and keys are in the repository's secrets.
+#
+# The `stack` job also runs the example's server (example/supabase/server,
+# its test/stack_test.dart) against that stack; the rest of the example is
+# tested in the main pipeline.
+#
+# It runs when the package, one it depends on or the example's server
+# changed (the same tool/affected.dart the main pipeline uses), and by
+# hand; every night only `hosted` runs.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # Every night at 04:17 UTC, on the default branch: `hosted` only.
+    - cron: '17 4 * * *'
+
+concurrency:
+  group: supabase-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    # At night there is nothing to compare, and only `hosted` runs.
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-26.04
+    outputs:
+      affected: ${{ github.event_name == 'workflow_dispatch' || contains(steps.affected.outputs.packages, 'spring_boot_starter_supabase') || contains(steps.affected.outputs.packages, 'example/supabase/server') || contains(steps.affected.outputs.packages, 'spring_boot_starter_edge') || contains(steps.affected.outputs.packages, 'example/supabase/function') }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      # By hand there is nothing to compare with: everything runs.
+      - name: Affected packages
+        id: affected
+        if: github.event_name != 'workflow_dispatch'
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: dart run tool/affected.dart --base "$BASE" --github-output
+
+  # Level 1: everything that needs neither a network nor a container.
+  unit:
+    name: Supabase starter (unit)
+    needs: changes
+    if: needs.changes.outputs.affected == 'true'
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Tests without a network or a container
+        working-directory: spring_boot_starter_supabase
+        run: dart test --exclude-tags "supabase-docker || supabase-stack" --reporter expanded
+
+  # Levels 2 and 3: the SQL path on PostgreSQL, and the store of the REST
+  # API on PostgREST over PostgreSQL, with the roles and the row-level
+  # security of a project. GitHub's runners have Docker; with
+  # CONTAINERS_REQUIRED a missing Docker fails the tests instead of
+  # skipping them.
+  containers:
+    name: Supabase starter (PostgreSQL and PostgREST)
+    needs: changes
+    if: needs.changes.outputs.affected == 'true'
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Tests on containers
+        working-directory: spring_boot_starter_supabase
+        env:
+          CONTAINERS_REQUIRED: 'true'
+        run: dart test --tags supabase-docker --reporter expanded
+
+  # Level 4: the whole of Supabase. The Supabase CLI starts its local
+  # stack in Docker from the project of test/stack (the migration, the
+  # functions, the mail templates), without the services the tests do not
+  # use; `supabase status -o env` says where it is, under the names the
+  # tests read. The CLI's version is the one test/stack/supabase/config.toml
+  # was written for.
+  stack:
+    name: Supabase starter (the whole of Supabase)
+    needs: changes
+    if: needs.changes.outputs.affected == 'true'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 3.1.0
+
+      - name: Install dependencies
+        run: dart pub get
+
+      # The functions written in Dart (spring_boot_starter_edge) are
+      # compiled to JavaScript before the stack starts: its config.toml
+      # declares them, and the CLI wants every declared function there.
+      - name: Build the Dart functions
+        run: |
+          functions="$PWD/spring_boot_starter_supabase/test/stack/supabase/functions"
+          (cd tool/edge_checks && dart run spring_boot_starter_edge:build \
+            --platform supabase --name edge-test --output "$functions/edge-test")
+          (cd tool/edge_checks && dart run spring_boot_starter_edge:build \
+            --platform supabase --name edge-test-wasm --target wasm \
+            --output "$functions/edge-test-wasm")
+          (cd example/supabase/function && dart run spring_boot_starter_edge:build \
+            --platform supabase --name api --output "$functions/api")
+          echo "SUPABASE_FUNCTIONS=$functions" >> "$GITHUB_ENV"
+
+      - name: Start the stack
+        working-directory: spring_boot_starter_supabase/test/stack
+        run: supabase start -x studio,imgproxy,vector,logflare,postgres-meta,supavisor
+
+      # The values come quoted (NAME="value"); the environment file of
+      # GitHub takes them as they are written.
+      - name: Where the stack is
+        working-directory: spring_boot_starter_supabase/test/stack
+        run: |
+          supabase status -o env \
+            --override-name api.url=SUPABASE_URL \
+            --override-name auth.anon_key=SUPABASE_ANON_KEY \
+            --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY \
+            --override-name auth.jwt_secret=SUPABASE_JWT_SECRET \
+            --override-name db.url=SUPABASE_DB_URL \
+            --override-name mailpit.url=SUPABASE_MAILPIT_URL \
+            | grep '^SUPABASE_' \
+            | sed -E 's/^([A-Z_]+)="(.*)"$/\1=\2/' >> "$GITHUB_ENV"
+
+      # Without the address the tests are skipped, and a skipped level 4
+      # must not pass for a run of it.
+      - name: The stack is known
+        run: |
+          for name in SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY SUPABASE_DB_URL SUPABASE_MAILPIT_URL; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not set: supabase status did not give it"
+              exit 1
+            fi
+          done
+
+      - name: Tests against the stack
+        working-directory: spring_boot_starter_supabase
+        run: dart test -j 1 --tags supabase-stack --reporter expanded
+
+      # The example's server (example/supabase/server) on the same stack:
+      # the project of test/stack has everything the example's own
+      # (example/supabase/supabase) has. Its other tests run in the main
+      # pipeline.
+      - name: The example's server against the stack
+        working-directory: example/supabase/server
+        run: dart test -j 1 --tags supabase-stack --reporter expanded
+
+      # The edge starter's test function in the stack's Edge Runtime, and
+      # the example's function written in Dart (example/supabase/function)
+      # called as the project's users call it.
+      - name: The edge starter's function in the Edge Runtime
+        working-directory: spring_boot_starter_edge
+        run: dart test -j 1 --tags supabase-stack --reporter expanded
+
+      - name: The example's Dart function against the stack
+        working-directory: example/supabase/function
+        run: dart test -j 1 --tags supabase-stack --reporter expanded
+
+      - name: Logs of the stack
+        if: failure()
+        run: |
+          docker ps -a
+          for container in $(docker ps -a --format '{{.Names}}' | grep spring-supabase-stack); do
+            echo "::group::$container"
+            docker logs --tail 200 "$container" 2>&1 || true
+            echo "::endgroup::"
+          done
+
+      - name: Stop the stack
+        if: always()
+        working-directory: spring_boot_starter_supabase/test/stack
+        run: supabase stop --no-backup
+
+  # Level 4 again, against a hosted project: what the service answers
+  # today, not what the CLI's images answered when they were pinned.
+  # Nightly and by hand. The project has the migration and the functions
+  # of test/stack (its README says how); its address and keys are secrets
+  # of the repository:
+  #   SUPABASE_STACK_URL, SUPABASE_STACK_ANON_KEY,
+  #   SUPABASE_STACK_SERVICE_ROLE_KEY, SUPABASE_STACK_DB_URL (optional: the
+  #   SQL path), SUPABASE_STACK_JWT_SECRET (optional: a project that still
+  #   signs with HS256),
+  # and, when they differ from test/stack/supabase/config.toml, the
+  # variables SUPABASE_STACK_SITE_URL, SUPABASE_STACK_REDIRECT_URL and
+  # SUPABASE_STACK_REFRESH_TOKEN_REUSE_INTERVAL. Without the secrets the
+  # job says so and does nothing. No mail catcher there: the tests that
+  # read mails are skipped.
+  hosted:
+    name: Supabase starter (a hosted project)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_STACK_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STACK_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STACK_SERVICE_ROLE_KEY }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_STACK_DB_URL }}
+      SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_STACK_JWT_SECRET }}
+      SUPABASE_SITE_URL: ${{ vars.SUPABASE_STACK_SITE_URL }}
+      SUPABASE_REDIRECT_URL: ${{ vars.SUPABASE_STACK_REDIRECT_URL }}
+      SUPABASE_REFRESH_TOKEN_REUSE_INTERVAL: ${{ vars.SUPABASE_STACK_REFRESH_TOKEN_REUSE_INTERVAL }}
+    steps:
+      - name: Is a hosted project given?
+        id: project
+        run: |
+          if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_ANON_KEY" ] && [ -n "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "given=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No hosted project: the secrets SUPABASE_STACK_URL, SUPABASE_STACK_ANON_KEY and SUPABASE_STACK_SERVICE_ROLE_KEY are not set. Nothing ran."
+          fi
+
+      - uses: actions/checkout@v7
+        if: steps.project.outputs.given == 'true'
+
+      - uses: dart-lang/setup-dart@v1
+        if: steps.project.outputs.given == 'true'
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        if: steps.project.outputs.given == 'true'
+        run: dart pub get
+
+      - name: Tests against the hosted project
+        if: steps.project.outputs.given == 'true'
+        working-directory: spring_boot_starter_supabase
+        run: dart test -j 1 --tags supabase-stack --reporter expanded

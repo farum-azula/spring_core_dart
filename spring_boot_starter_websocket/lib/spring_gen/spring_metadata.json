@@ -9,7 +9,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
-      "line": 34,
+      "line": 36,
       "class": "WebSocketClientSettings"
     },
     {
@@ -19,8 +19,58 @@
       "default": {},
       "deprecated": null,
       "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
-      "line": 39,
+      "line": 41,
       "class": "WebSocketClientSettings"
+    },
+    {
+      "name": "spring.websocket.client.config.*.max-binary-message-size",
+      "type": "DataSize?",
+      "description": "The same for binary messages. Default: `spring.websocket.client.max-binary-message-size`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 50,
+      "class": "WebSocketClientSettings"
+    },
+    {
+      "name": "spring.websocket.client.config.*.max-text-message-size",
+      "type": "DataSize?",
+      "description": "The largest text message this client reads, in UTF-8 bytes; a larger one closes the connection with 1009 (message too big). `-1` for no limit. Default: `spring.websocket.client.max-text-message-size`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 46,
+      "class": "WebSocketClientSettings"
+    },
+    {
+      "name": "spring.websocket.client.config.*.phoenix.heartbeat-interval",
+      "type": "Duration?",
+      "description": "The time between two heartbeats; one without a reply before the next drops the connection, which is opened again. `0` sends none. Default: `30s`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 68,
+      "class": "WebSocketPhoenixSettings"
+    },
+    {
+      "name": "spring.websocket.client.config.*.phoenix.push-timeout",
+      "type": "Duration?",
+      "description": "The longest a join, a push or a leave waits for its reply; positive. Default: `10s`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 72,
+      "class": "WebSocketPhoenixSettings"
+    },
+    {
+      "name": "spring.websocket.client.config.*.phoenix.vsn",
+      "type": "String?",
+      "description": "The version of the wire format, sent as the `vsn` query parameter: `2.0.0` (JSON arrays) or `1.0.0` (JSON objects). Default: `2.0.0`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
+      "line": 76,
+      "class": "WebSocketPhoenixSettings"
     },
     {
       "name": "spring.websocket.client.config.*.reconnect.delay",
@@ -29,7 +79,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
-      "line": 55,
+      "line": 88,
       "class": "WebSocketReconnectSettings"
     },
     {
@@ -39,7 +89,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
-      "line": 52,
+      "line": 85,
       "class": "WebSocketReconnectSettings"
     },
     {
@@ -49,7 +99,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
-      "line": 65,
+      "line": 98,
       "class": "WebSocketReconnectSettings"
     },
     {
@@ -59,7 +109,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
-      "line": 62,
+      "line": 95,
       "class": "WebSocketReconnectSettings"
     },
     {
@@ -69,7 +119,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
-      "line": 68,
+      "line": 101,
       "class": "WebSocketReconnectSettings"
     },
     {
@@ -79,42 +129,174 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
-      "line": 59,
+      "line": 92,
       "class": "WebSocketReconnectSettings"
     },
     {
       "name": "spring.websocket.client.config.*.url",
       "type": "String?",
-      "description": "The address, when `@WebSocketClient(url:)` is not set. `${...}` placeholders are allowed.",
+      "description": "The address, when `@WebSocketClient(url:)` (or `@PhoenixChannel(url:)`) is not set. `${...}` placeholders are allowed.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
-      "line": 31,
+      "line": 33,
       "class": "WebSocketClientSettings"
     },
     {
       "name": "spring.websocket.client.max-binary-message-size",
       "type": "DataSize",
-      "description": "The same for binary messages. `-1` for no limit.",
+      "description": "The same for binary messages. `-1` for no limit. One client gets a limit of its own with `config.<name>.max-binary-message-size`.",
       "default": "8KB",
       "deprecated": null,
       "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
-      "line": 16,
+      "line": 18,
       "class": "WebSocketProperties"
     },
     {
       "name": "spring.websocket.client.max-text-message-size",
       "type": "DataSize",
-      "description": "The largest text message a client reads, in UTF-8 bytes (Tomcat counts characters); a larger one closes the connection with 1009 (message too big). `-1` for no limit.",
+      "description": "The largest text message a client reads, in UTF-8 bytes (Tomcat counts characters); a larger one closes the connection with 1009 (message too big). `-1` for no limit. One client gets a limit of its own with `config.<name>.max-text-message-size`.",
       "default": "8KB",
       "deprecated": null,
       "source": "package:spring_boot_starter_websocket/src/config/web_socket_properties.dart",
-      "line": 13,
+      "line": 14,
       "class": "WebSocketProperties"
     }
   ],
   "hints": [],
   "beans": [
+    {
+      "name": "phoenixChannelFactory",
+      "type": "PhoenixChannelFactory",
+      "types": [
+        "PhoenixChannelFactory",
+        "InvocationHandlerFactory"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_websocket/src/web_socket_auto_configuration.dart",
+      "line": 99,
+      "injects": [],
+      "members": [
+        {
+          "name": "create",
+          "kind": "method",
+          "type": "InvocationHandler",
+          "parameters": [
+            "InterfaceMetadata<Object> metadata"
+          ]
+        },
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "Environment"
+        },
+        {
+          "name": "interceptors",
+          "kind": "field",
+          "type": "List<PhoenixJoinInterceptor>"
+        },
+        {
+          "name": "mapper",
+          "kind": "field",
+          "type": "ObjectMapper"
+        },
+        {
+          "name": "sockets",
+          "kind": "field",
+          "type": "PhoenixSocketFactory"
+        },
+        {
+          "name": "supports",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "InterfaceMetadata<Object> metadata"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "phoenixSocketFactory",
+      "type": "PhoenixSocketFactory",
+      "types": [
+        "PhoenixSocketFactory",
+        "DisposableBean"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(PhoenixSocketFactory)"
+      ],
+      "source": "package:spring_boot_starter_websocket/src/web_socket_auto_configuration.dart",
+      "line": 76,
+      "injects": [],
+      "members": [
+        {
+          "name": "configOf",
+          "kind": "method",
+          "type": "WebSocketClientConfig",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "destroy",
+          "kind": "method",
+          "type": "FutureOr<void>",
+          "parameters": []
+        },
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "Environment"
+        },
+        {
+          "name": "interceptors",
+          "kind": "field",
+          "type": "List<WebSocketHandshakeInterceptor>"
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "WebSocketProperties"
+        },
+        {
+          "name": "serializerOf",
+          "kind": "method",
+          "type": "PhoenixSerializer?",
+          "parameters": [
+            "String vsn"
+          ]
+        },
+        {
+          "name": "serializers",
+          "kind": "field",
+          "type": "List<PhoenixSerializer>"
+        },
+        {
+          "name": "socket",
+          "kind": "method",
+          "type": "PhoenixSocket",
+          "parameters": [
+            "String name",
+            "{Uri? url}",
+            "{String? vsn}",
+            "{FutureOr<Map<String, String>> Function()? parameters}"
+          ]
+        },
+        {
+          "name": "transport",
+          "kind": "field",
+          "type": "WebSocketTransport"
+        }
+      ]
+    },
     {
       "name": "webSocketClientFactory",
       "type": "WebSocketClientFactory",
@@ -129,7 +311,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_websocket/src/web_socket_auto_configuration.dart",
-      "line": 45,
+      "line": 60,
       "injects": [],
       "members": [
         {
@@ -196,7 +378,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_websocket/src/web_socket_auto_configuration.dart",
-      "line": 79,
+      "line": 132,
       "injects": [],
       "members": [
         {
@@ -296,7 +478,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_websocket/src/web_socket_auto_configuration.dart",
-      "line": 74,
+      "line": 127,
       "injects": [],
       "members": [
         {
@@ -355,7 +537,7 @@
         "@ConditionalOnMissingBean(WebSocketTransport)"
       ],
       "source": "package:spring_boot_starter_websocket/src/web_socket_auto_configuration.dart",
-      "line": 29,
+      "line": 44,
       "injects": [],
       "members": [
         {
@@ -366,7 +548,9 @@
             "Uri url",
             "{HttpHeaders? headers}",
             "{List<String> protocols}",
-            "{Duration? timeout}"
+            "{Duration? timeout}",
+            "{int? maxTextMessageSize}",
+            "{int? maxBinaryMessageSize}"
           ]
         }
       ]

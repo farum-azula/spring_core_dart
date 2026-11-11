@@ -1,0 +1,46 @@
+# The server of the Supabase example. Nothing of a project is written
+# here: its address and keys come from the environment (the variables
+# `supabase status -o env` gives, see ../../README.md), and the start fails
+# with the name of the variable that is missing.
+spring:
+  application:
+    name: supabase-example
+  main:
+    # Close the context on Ctrl+C / SIGTERM.
+    register-shutdown-hook: true
+  supabase:
+    # The local stack unless SUPABASE_URL says otherwise.
+    url: ${SUPABASE_URL:http://127.0.0.1:54321}
+    anon-key: ${SUPABASE_ANON_KEY}
+    # Only inside SupabaseCredentials.asServiceRole (AdminReports).
+    service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
+    db:
+      # Set: the repositories use SQL over the project's database, so
+      # @Transactional works (TodoLists.addPair).
+      url: ${SUPABASE_DB_URL}
+      # Every transaction, and every statement outside one, runs as the
+      # caller: the role `authenticated` and the claims of their token, so
+      # auth.uid() and the policies of the project see who asks.
+      rls: user
+  datasource:
+    postgresql:
+      # The local stack's database has no TLS; a hosted project's has
+      # (SUPABASE_DB_SSLMODE=require).
+      sslmode: ${SUPABASE_DB_SSLMODE:disable}
+  data:
+    jdbc:
+      # The tables are the project's (../../supabase/migrations): nothing
+      # is created or checked at startup.
+      schema: none
+
+# The project's access tokens are accepted as bearer tokens with the
+# starter's defaults (spring.security.oauth2.resourceserver.jwt.*): signed
+# by one of the project's keys (ES256 or RS256, read from
+# <url>/auth/v1/.well-known/jwks.json), its issuer, the audience and the
+# role `authenticated`, roles from app_metadata.roles. A project that still
+# signs with its legacy secret (HS256) sets
+# spring.supabase.auth.jwt-secret (SPRING_SUPABASE_AUTH_JWT_SECRET).
+
+server:
+  port: 8082
+  shutdown: graceful

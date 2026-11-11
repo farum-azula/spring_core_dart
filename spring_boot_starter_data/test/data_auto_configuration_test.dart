@@ -1,8 +1,11 @@
 import 'package:spring_boot_starter_data/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
+import 'package:spring_boot_starter_data/src/data_auto_configuration.dart'
+    show defaultStoreOf;
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
+import 'repository/support/plain_store.dart';
 import 'support/app.dart';
 
 final class _Auditor implements AuditorAware<String> {
@@ -44,6 +47,90 @@ BeanDefinition<Object> _auditor(String name, {String? bean}) =>
 
 void main() {
   const runner = ApplicationContextRunner();
+
+  group('spring.data.store', () {
+    Environment environment([Map<String, Object?> properties = const {}]) {
+      final environment = StandardEnvironment();
+      environment.propertySources.addFirst(
+        MapPropertySource('test', properties),
+      );
+      return environment;
+    }
+
+    test('not set: jdbc with a primary data source, else memory', () {
+      expect(
+        defaultStoreOf(environment(), hasPrimaryDataSource: true),
+        'jdbc',
+      );
+      expect(
+        defaultStoreOf(environment(), hasPrimaryDataSource: false),
+        'memory',
+      );
+      expect(
+        defaultStoreOf(
+          environment({'spring.data.store': '  '}),
+          hasPrimaryDataSource: true,
+        ),
+        'jdbc',
+      );
+    });
+
+    test('set: the name of any store, whatever the data sources', () {
+      for (final name in ['memory', 'jdbc', 'documents']) {
+        expect(
+          defaultStoreOf(
+            environment({'spring.data.store': ' $name '}),
+            hasPrimaryDataSource: name == 'memory',
+          ),
+          name,
+        );
+      }
+    });
+
+    test('the factory of the application has it; a repository without '
+        '@UseStore is on that store', () {
+      exampleRunner.run((context) {
+        expect(context.startupFailure, isNull);
+        expect(context.getBean<RepositoryFactory>().defaultStore, 'memory');
+      });
+      runner
+          .withAutoConfiguration(springBootStarterDataAutoConfiguration)
+          .withUserConfiguration(
+            BeanModule('stores', [
+              BeanDefinition<DataStore>(
+                name: 'documentStore',
+                types: const [DataStore],
+                create: (r) => PlainStore(
+                  r.dependency<InMemoryDataStore>(),
+                  name: 'documents',
+                ),
+              ),
+            ]),
+          )
+          .withPropertyValues(['spring.data.store=documents'])
+          .run((context) {
+            expect(context.startupFailure, isNull);
+            final factory = context.getBean<RepositoryFactory>();
+            expect(factory.defaultStore, 'documents');
+            expect(factory.stores['documents'], isA<PlainStore>());
+          });
+    });
+
+    test('a name of no store fails the start, with the stores there '
+        'are', () {
+      exampleRunner.withPropertyValues(['spring.data.store=cassandra']).run((
+        context,
+      ) {
+        expect(
+          '${context.startupFailure}',
+          allOf(
+            contains("the default store 'cassandra' names no store"),
+            contains('the stores here: memory'),
+          ),
+        );
+      });
+    });
+  });
 
   test('the starter adds its beans', () {
     exampleRunner.run((context) {

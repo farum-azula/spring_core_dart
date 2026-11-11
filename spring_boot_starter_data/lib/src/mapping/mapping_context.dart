@@ -44,6 +44,8 @@ class MappingException extends InvalidDataAccessApiUsageException {
 /// * [Unique] marks a property whose values are unique, and
 ///   [UniqueConstraint] on the class lists the properties of a composite
 ///   constraint; both become the entity's `uniqueConstraints`.
+/// * A [Json] property is one column holding JSON; it cannot be the id,
+///   the version, an audited property, a mapped collection or a reference.
 /// * A [MappedCollection] on a `List<C>`, `Set<C>` or `Map<K, C>` (or on a
 ///   single `C`) holds children: `C` must be described and marked [Table];
 ///   its entity is built the same way, as a child (it takes no [Version]).
@@ -365,7 +367,7 @@ class RelationalMappingContext {
         referenced ?? type,
         isAggregateReference: plain == null,
       );
-    } else if (mapped == null) {
+    } else if (mapped == null && !annotations.any((a) => a is Json)) {
       _checkNotAnEntity(where, owner.className, described.name, type);
     }
     final onDelete = annotations.whereType<OnDelete>().firstOrNull;
@@ -401,6 +403,24 @@ class RelationalMappingContext {
         );
       }
     }
+    final json = annotations.whereType<Json>().firstOrNull;
+    if (json != null) {
+      final refused = [
+        if (isId) 'the @Id',
+        if (isVersion) 'the @Version',
+        if (audit != null) 'an audited property',
+        if (mapped != null) 'a @MappedCollection',
+        if (target != null) 'a reference to another aggregate',
+      ];
+      if (refused.isNotEmpty) {
+        throw MappingException(
+          '$where: @Json cannot be on ${refused.join(' or ')}: remove '
+          '@Json from it (a JSON column holds a value of the aggregate '
+          'that nothing else reads; a key, a version, children and '
+          'references are columns and tables of their own)',
+        );
+      }
+    }
     final unique = annotations.any((a) => a is Unique);
     if (unique && mapped != null) {
       throw MappingException(
@@ -418,6 +438,7 @@ class RelationalMappingContext {
       isVersion: isVersion,
       audit: audit,
       mappedCollection: mapped,
+      json: json,
       childEntity: child,
       referencedType: referenced,
       referencedEntityType: target,

@@ -6,8 +6,6 @@ import 'package:spring_boot_starter_flutter_security/src/login/apple_id_sign_in.
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_login_service.dart';
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_token_revocation_client.dart';
 import 'package:spring_boot_starter_flutter_security/src/login/secret_store_oauth2_authorized_client_service.dart';
-import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_store.dart';
-import 'package:spring_boot_starter_flutter_security/src/window/authorization_window.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 
 const _log = SpringLog('spring.security.oauth2.client.login');

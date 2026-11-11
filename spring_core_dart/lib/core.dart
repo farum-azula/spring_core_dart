@@ -51,6 +51,7 @@ export 'package:spring_core_dart/src/core/convert/data_size.dart';
 export 'package:spring_core_dart/src/core/convert/default_conversion_service.dart';
 export 'package:spring_core_dart/src/core/convert/duration_style.dart';
 export 'package:spring_core_dart/src/core/convert/generic_conversion_service.dart';
+export 'package:spring_core_dart/src/core/crypto/sha256.dart';
 export 'package:spring_core_dart/src/core/env/brace_placeholders.dart';
 export 'package:spring_core_dart/src/core/env/cloud_platform.dart';
 export 'package:spring_core_dart/src/core/env/command_line_property_source.dart';

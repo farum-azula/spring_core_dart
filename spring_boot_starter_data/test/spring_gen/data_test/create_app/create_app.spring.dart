@@ -535,6 +535,18 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'SPRING_DATA_JDBC_FORMATSQL': const String.fromEnvironment(
         'SPRING_DATA_JDBC_FORMATSQL',
       ),
+    if (const bool.hasEnvironment('SPRING_DATA_JDBC_RATELIMIT'))
+      'SPRING_DATA_JDBC_RATELIMIT': const String.fromEnvironment(
+        'SPRING_DATA_JDBC_RATELIMIT',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_JDBC_RATELIMIT_CREATETABLE'))
+      'SPRING_DATA_JDBC_RATELIMIT_CREATETABLE': const String.fromEnvironment(
+        'SPRING_DATA_JDBC_RATELIMIT_CREATETABLE',
+      ),
+    if (const bool.hasEnvironment('SPRING_DATA_JDBC_RATELIMIT_TABLE'))
+      'SPRING_DATA_JDBC_RATELIMIT_TABLE': const String.fromEnvironment(
+        'SPRING_DATA_JDBC_RATELIMIT_TABLE',
+      ),
     if (const bool.hasEnvironment('SPRING_DATA_JDBC_SCHEMA'))
       'SPRING_DATA_JDBC_SCHEMA': const String.fromEnvironment(
         'SPRING_DATA_JDBC_SCHEMA',
@@ -557,6 +569,8 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'SPRING_DATA_MEMORY_LOCKTIMEOUT': const String.fromEnvironment(
         'SPRING_DATA_MEMORY_LOCKTIMEOUT',
       ),
+    if (const bool.hasEnvironment('SPRING_DATA_STORE'))
+      'SPRING_DATA_STORE': const String.fromEnvironment('SPRING_DATA_STORE'),
     if (const bool.hasEnvironment('SPRING_DATA_WEB'))
       'SPRING_DATA_WEB': const String.fromEnvironment('SPRING_DATA_WEB'),
     if (const bool.hasEnvironment('SPRING_DATA_WEB_PAGEABLE'))
@@ -647,6 +661,18 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'spring.data.jdbc.format-sql': const String.fromEnvironment(
         'spring.data.jdbc.format-sql',
       ),
+    if (const bool.hasEnvironment('spring.data.jdbc.rate-limit'))
+      'spring.data.jdbc.rate-limit': const String.fromEnvironment(
+        'spring.data.jdbc.rate-limit',
+      ),
+    if (const bool.hasEnvironment('spring.data.jdbc.rate-limit.create-table'))
+      'spring.data.jdbc.rate-limit.create-table': const String.fromEnvironment(
+        'spring.data.jdbc.rate-limit.create-table',
+      ),
+    if (const bool.hasEnvironment('spring.data.jdbc.rate-limit.table'))
+      'spring.data.jdbc.rate-limit.table': const String.fromEnvironment(
+        'spring.data.jdbc.rate-limit.table',
+      ),
     if (const bool.hasEnvironment('spring.data.jdbc.schema'))
       'spring.data.jdbc.schema': const String.fromEnvironment(
         'spring.data.jdbc.schema',
@@ -669,6 +695,8 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
       'spring.data.memory.lock-timeout': const String.fromEnvironment(
         'spring.data.memory.lock-timeout',
       ),
+    if (const bool.hasEnvironment('spring.data.store'))
+      'spring.data.store': const String.fromEnvironment('spring.data.store'),
     if (const bool.hasEnvironment('spring.data.web'))
       'spring.data.web': const String.fromEnvironment('spring.data.web'),
     if (const bool.hasEnvironment('spring.data.web.pageable'))
@@ -844,7 +872,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '3e3eb00e',
+  fingerprint: 'c0787721',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -1,5 +1,6 @@
 ## 0.7.4
 
+- `ScheduledAnnotationBeanPostProcessor` is a `TimerDrivenWork`: it names every `@Scheduled` method with its trigger. The class in that name, in the task's name and in the messages about a method is the one the generator wrote, so a minified JavaScript build shows `BooksJobs.refresh`, not a shortened name.
 - `spring.task.scheduling.isolates`: with a pool of server isolates the `@Scheduled` methods run in the application's first isolate only (`primary`, the default), or in every isolate (`all`).
 
 ## 0.7.3

@@ -1,4 +1,4 @@
-# The edge starter: the same application on fetch platforms (planned, after the data and Supabase starters)
+# The edge starter: the same application on fetch platforms (built, November 2026)
 
 Dart compiles to JavaScript, and the family already runs without
 `dart:io` and without reflection (Flutter web proves it). Serverless
@@ -149,3 +149,68 @@ name `spring_boot_starter_edge` ("Spring edge"): the fetch adapter and
 the platforms' integrations (Supabase first) together, split only if a
 platform needs dependencies of its own; the exact name settled when it is
 built.
+
+## As built (November 2026)
+
+The package is `spring_boot_starter_edge`
+([README](../spring_boot_starter_edge/README.md)).
+
+- `runFetchApplication(() => springApplication)`; on the Dart VM the same
+  `main` runs an ordinary server.
+- The fetch adapter is a `WebServerFactory` (`FetchWebServerFactory`): the
+  web starter's own factory backs off, nothing in the web or security
+  starters knows a platform. The built-in server's check of the request
+  target moved to `requestTargetProblem` of the web starter, which both
+  servers ask.
+- The server modules (`ModulePlatform.native`) are kept in the JavaScript
+  build by `-DSPRING_ALL_PLATFORMS=true`, which the build command passes.
+- `dart run spring_boot_starter_edge:build --platform supabase|cloudflare|aws`
+  compiles and writes the entry (`index.ts`; `worker.mjs` and
+  `wrangler.toml`; `index.mjs` for a function URL, API Gateway 1.0 and
+  2.0 and a load balancer, buffered or `--streaming`). A command of the
+  starter, not the generator: the generator depends on published
+  packages only.
+- AWS Lambda was added to the platforms (the owner, November 2026):
+  Lambda has no fetch handler, so its entry turns the event into a
+  `Request` and the `Response` into the trigger's result.
+- Supabase: the function's name as `server.context-path`, the
+  environment as properties, `spring.supabase.*` from `SUPABASE_*`, the
+  anon key as a bearer token treated as no token
+  (`spring.edge.supabase.anon-key-as-anonymous`).
+- `EdgeRuntime.waitUntil`; the warning list (`EdgeWarningContributor`).
+  The contributors for `@Scheduled` and the caches go by the bean names
+  of those starters and give one line each, not a line per method or
+  cache: the edge starter does not depend on them.
+- Tested in the Dart VM, as the AWS entry under Node, in AWS's Lambda
+  runtime image, in Cloudflare's workerd (`wrangler dev`) and in
+  Supabase's Edge Runtime, with one set of checks; the example
+  `example/supabase/function` on the Supabase stack.
+
+Added after the first version (November 2026, the owner: everything
+that was left):
+
+- `--target wasm` (`dart compile wasm`, a loader in place of the script):
+  runs in Supabase's Edge Runtime (the module among the function's
+  `static_files`), workerd (the module imported, since a Worker may not
+  compile at run time), Node.js 22 of AWS Lambda, and Deno. A command
+  line option, not `spring.edge.target`: the build reads no application
+  configuration.
+- `dart run spring_boot_starter_edge:workflow`: the deploy workflow for
+  Supabase, Cloudflare and AWS.
+- The platforms `deno` (Deno Deploy), `netlify` and `vercel`.
+- `EdgeScheduledHandler`: Cloudflare cron triggers and EventBridge
+  schedules run the application's handlers.
+- `CloudflareBindings` (KV, D1) and `D1RateLimitStore`, the shared rate
+  limiter of a Worker.
+- The warning list by item: `TimerDrivenWork` (each `@Scheduled` method)
+  and `IsolateLocalState` (each bean with state in memory), both
+  interfaces of `spring_core_dart` that say nothing about a platform, so
+  the edge starter still depends on none of those starters and none of
+  them knows it.
+
+Not built yet: Cloudflare's other bindings (queues, R2, Durable Objects),
+Azure Functions and Google Cloud Functions, deploy workflows for Deno
+Deploy, Netlify and Vercel. Not run on the platforms themselves, only in
+their runtimes on a developer's machine and in CI; the measurements per
+platform are the size (1.8 MB of JavaScript, 0.6 MB gzipped; 1.7 MB of
+WebAssembly) and the start of the context (50 to 250 ms).

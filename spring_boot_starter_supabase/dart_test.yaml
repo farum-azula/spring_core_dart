@@ -1,0 +1,19 @@
+# Every test of this starter carries the tag `supabase`, and runs in a
+# pipeline of its own (.github/workflows/supabase.yml), never in the main
+# one (tool/test_all.dart leaves the package out). The levels
+# (roadmap/spring_boot_starter_supabase.md, "Tests"):
+tags:
+  # Level 1: no network, no container. Every test file has this tag.
+  #   dart test --exclude-tags "supabase-docker || supabase-stack"
+  supabase:
+  # Levels 2 and 3: PostgreSQL (and PostgREST) in containers; skipped
+  # without Docker, a failure with CONTAINERS_REQUIRED=true.
+  #   dart test --tags supabase-docker
+  supabase-docker:
+    timeout: 4x
+  # Level 4: the whole of Supabase (the Supabase CLI's stack, or a hosted
+  # project), given by SUPABASE_URL, SUPABASE_ANON_KEY,
+  # SUPABASE_SERVICE_ROLE_KEY and SUPABASE_DB_URL; skipped without them.
+  #   dart test --tags supabase-stack
+  supabase-stack:
+    timeout: 4x

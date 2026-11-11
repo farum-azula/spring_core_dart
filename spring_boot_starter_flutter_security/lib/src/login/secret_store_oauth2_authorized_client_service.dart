@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_store.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 
 const _log = SpringLog('spring.security.oauth2.client');

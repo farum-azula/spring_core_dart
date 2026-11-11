@@ -24,6 +24,12 @@ import 'package:test/test.dart';
 /// variables and are skipped by the rules below; a literal on a line with
 /// `Log` in it is a logger name.)
 const _notProperties = <String, String>{
+  'spring_boot_starter_edge:spring.supabase.anon-key':
+      "the Supabase starter's property, which the starter reads in a "
+      'Supabase Edge Function without depending on that starter',
+  'spring_boot_starter_supabase:spring.security.oauth2.resourceserver.jwt':
+      "the prefix of the security starter's properties, whose defaults the "
+      'starter sets without depending on it',
   'spring_boot_dart:spring.web.server': 'a logger name (debug loggers)',
   'spring_boot_dart:spring.web': 'a logger group (logging.level.web)',
   'spring_boot_dart:spring.websocket': 'a logger group (logging.level.web)',

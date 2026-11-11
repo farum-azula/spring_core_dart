@@ -2,7 +2,28 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/annotations.dart';
 import 'package:spring_boot_starter_data/src/exceptions.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_driver.dart';
+import 'package:spring_boot_starter_data/src/jdbc/json_storage.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart';
+
+/// Turns a value as a store's rows hold it into what a property of a type
+/// wants, before the entity converter's own conversions (enums,
+/// references, widening).
+///
+/// A [SqlDialect] is one (SQLite's 0/1 into a `bool`, PostgreSQL's numeric
+/// text into a `double`); a store that is not SQL gives its own for the
+/// rows it returns (see `RowReadingDataStore`). The row mappers take one
+/// as their `dialect`.
+///
+/// ```dart
+/// final mapper = SingleColumnRowMapper<bool>(dialect: SqliteDialect());
+/// ```
+///
+/// Spring (Java): none; `JdbcUtils.getResultSetValue` asks the JDBC driver
+/// for the Java type.
+abstract interface class ColumnValueReader {
+  /// [value] read from the store as a property of [type] wants it.
+  Object? fromDatabase(Object? value, TypeInfo<Object?> type);
+}
 
 /// What differs between the SQL of two databases, for the statements the
 /// starter writes itself (repositories, schema creation, migrations'
@@ -14,7 +35,7 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_definition.
 /// Spring (Java): `org.springframework.data.relational.core.dialect.
 /// Dialect` with `SQLErrorCodeSQLExceptionTranslator`'s per-database
 /// codes.
-abstract class SqlDialect {
+abstract class SqlDialect implements ColumnValueReader {
   /// A dialect.
   const SqlDialect();
 
@@ -114,9 +135,30 @@ abstract class SqlDialect {
   /// when the type cannot be stored as a column.
   String? columnType(TypeInfo<Object?> type);
 
+  /// Whether a column of the database holds a property of the collection
+  /// [type] (a `List`, a `Set` or a `Map`) as it is, with no `@Json`: an
+  /// array column. False by default: the store then refuses such a
+  /// property when its repository is created (`CollectionColumns`), with
+  /// the fix. Bytes (`List<int>`) are no collection here: [columnType]
+  /// names their column.
+  bool storesCollection(TypeInfo<Object?> type) => false;
+
   /// Whether a column declared with [declared] (as the database reports
   /// it) can hold a property of [type]: the schema validation's test.
   bool columnFits(String declared, TypeInfo<Object?> type);
+
+  /// How the database keeps a `@Json` property ([json]: its settings):
+  /// the column type, the test of an existing column, the marker and the
+  /// value an insert or update binds, and the reading of what the column
+  /// gives. By default the JSON text in a `TEXT` column, which every
+  /// database can hold; a dialect of a database with a JSON type
+  /// overrides it.
+  ///
+  /// ```dart
+  /// const PostgresDialect().jsonStorage(const Json()).columnType; // JSONB
+  /// SqliteDialect().jsonStorage(const Json()).columnType; // TEXT
+  /// ```
+  JsonStorage jsonStorage(Json json) => const JsonStorage();
 
   /// The isolation levels the database offers; [Isolation.defaultLevel]
   /// is always among them.
@@ -252,7 +294,26 @@ abstract class SqlDialect {
   /// reverse of [toDatabase] (a text to a `DateTime`, 0/1 to a `bool`, an
   /// `int` to a `double`). The entity converter applies its own
   /// conversions after it (enums, references).
+  @override
   Object? fromDatabase(Object? value, TypeInfo<Object?> type) => value;
+
+  // ------------------------------------------------------------ functions
+
+  /// Whether the database has functions that [functionCall] can call
+  /// with named arguments (PostgreSQL); a `@Procedure` method needs it.
+  bool get supportsFunctions => false;
+
+  /// The statement that calls the database function [name] with one `?`
+  /// for each of [arguments], passed by name, and returns what it returns
+  /// as rows (a scalar function: one row with one column):
+  /// `select * from "restock"("sku" => ?, "quantity" => ?)`. Every name
+  /// is quoted; a `schema.name` is quoted part by part.
+  ///
+  /// Throws an [UnsupportedError] without [supportsFunctions].
+  String functionCall(String name, List<String> arguments) =>
+      throw UnsupportedError(
+        '${this.name} has no functions to call by name',
+      );
 
   // --------------------------------------------------------------- errors
 

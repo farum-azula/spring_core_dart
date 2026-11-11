@@ -1,0 +1,9 @@
+tags:
+  # test/stack_test.dart: the server against the whole of Supabase (the
+  # Supabase CLI's stack of ../supabase, or a hosted project), given by
+  # SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY and
+  # SUPABASE_DB_URL; skipped without them. CI runs it in the `stack` job of
+  # .github/workflows/supabase.yml:
+  #   dart test --tags supabase-stack
+  supabase-stack:
+    timeout: 4x

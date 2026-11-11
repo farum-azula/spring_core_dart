@@ -1,4 +1,5 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_data/src/annotations.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_driver.dart';
 import 'package:spring_boot_starter_data/src/jdbc/sql_dialect.dart';
 import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
@@ -20,6 +21,10 @@ import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
 /// - A value goes through the dialect's `fromDatabase` (when a [dialect] is
 ///   given) with the property's `TypeInfo`, then the converter's enum,
 ///   widening and reference conversions.
+/// - A property marked `@Json` is read from the JSON of its column (as the
+///   dialect's `jsonStorage` reads it when the [dialect] is a
+///   `SqlDialect`) through the converter's `ObjectMapper`, like an
+///   entity's.
 ///
 /// It maps the classes a `@Query` method returns that are not entities (the
 /// build describes them as projections), and any described class.
@@ -36,8 +41,9 @@ class EntityRowMapper<T extends Object> {
   /// The class mapped.
   final EntityIntrospection<T> introspection;
 
-  /// The dialect converting the values read, or null for none.
-  final SqlDialect? dialect;
+  /// The dialect (or the reader of a store that is not SQL) converting the
+  /// values read, or null for none.
+  final ColumnValueReader? dialect;
 
   /// The converter doing the enums and the widening.
   final EntityConverter converter;
@@ -73,6 +79,29 @@ class EntityRowMapper<T extends Object> {
     return converter.fromColumnValue(read, type, where: where);
   }
 
+  Object? _readJson(
+    JdbcRow row,
+    int index,
+    EntityProperty property,
+    Json json,
+  ) {
+    final raw = row.values[index];
+    if (raw == null) {
+      return null;
+    }
+    final where = '${introspection.className}.${property.name}';
+    final Object? tree;
+    try {
+      tree = switch (dialect) {
+        final SqlDialect sql => sql.jsonStorage(json).fromDatabase(raw),
+        _ => raw,
+      };
+    } on FormatException {
+      throw MappingException('$where: the stored value is not JSON');
+    }
+    return converter.fromJsonTree(tree, property.type, where: where);
+  }
+
   /// The mapper as a function.
   T call(JdbcRow row) {
     _plan(row);
@@ -84,7 +113,10 @@ class EntityRowMapper<T extends Object> {
       final index = _propertyColumns[i];
       final where = '$className.${property.name}';
       if (index != null) {
-        values[i] = _read(row, index, property.type, where);
+        values[i] = switch (property.annotation<Json>()) {
+          final json? => _readJson(row, index, property, json),
+          null => _read(row, index, property.type, where),
+        };
         usable[i] = values[i] != null || property.type.nullable;
       }
       if (!usable[i] && property.parameter) {

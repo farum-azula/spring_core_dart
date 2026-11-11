@@ -13,7 +13,9 @@ import 'package:spring_web_dart/src/websocket/web_socket_transport.dart';
 /// applications rarely create it. The browser's `WebSocket` cannot send
 /// custom headers with the handshake, so `connect` with a non-empty
 /// `headers` fails at once with a [WebSocketException]: put a token in
-/// the URL or in a protocol instead. Binary messages arrive as
+/// the URL or in a protocol instead. It has no limit on the size of a
+/// message either, so the `maxTextMessageSize` and `maxBinaryMessageSize`
+/// of `connect` are ignored. Binary messages arrive as
 /// `Uint8List`. The browser reports no detail when a connection fails, so
 /// the exception says only `cannot connect`, with the close code when
 /// there is one.
@@ -41,6 +43,9 @@ class BrowserWebSocketTransport implements WebSocketTransport {
     HttpHeaders? headers,
     List<String> protocols = const [],
     Duration? timeout,
+    // The browser assembles messages itself: there is no limit to set.
+    int? maxTextMessageSize,
+    int? maxBinaryMessageSize,
   }) async {
     if (headers != null && headers.isNotEmpty) {
       throw WebSocketException(

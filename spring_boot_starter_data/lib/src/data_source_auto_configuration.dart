@@ -8,12 +8,14 @@ import 'package:spring_boot_starter_data/src/jdbc/data_source_properties.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source_transaction_manager.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_client.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_driver.dart';
+import 'package:spring_boot_starter_data/src/jdbc/jdbc_session_hook.dart';
 import 'package:spring_boot_starter_data/src/jdbc/jdbc_template.dart';
 import 'package:spring_boot_starter_data/src/jdbc/named_parameter_jdbc_template.dart';
 import 'package:spring_boot_starter_data/src/jdbc/sql_logging.dart';
 import 'package:spring_boot_starter_data/src/mapping/mapping_context.dart';
 import 'package:spring_boot_starter_data/src/properties/data_properties.dart';
 import 'package:spring_boot_starter_data/src/properties_binding.dart';
+import 'package:spring_boot_starter_data/src/ratelimit/jdbc_rate_limit_store.dart';
 import 'package:spring_boot_starter_data/src/schema/database_initializer.dart';
 import 'package:spring_boot_starter_data/src/schema/initializing_data_source.dart';
 import 'package:spring_boot_starter_data/src/schema/repository_entities.dart';
@@ -363,6 +365,11 @@ JdbcTemplate _jdbcTemplate(DependencyResolver r, DataSource dataSource) =>
 ///   single `DataSource`, with `spring.jdbc.template.query-timeout`;
 /// - `dataSourceInitialization` — the schema setup of a `DataSource` the
 ///   application declared itself;
+/// - `jdbcRateLimitStore` — the rate limiter's buckets in a table of the
+///   single `DataSource` ([JdbcRateLimitStore]), when the rate limiter is
+///   on and `spring.web.rate-limit.store` is `jdbc` or not set, unless a
+///   `RateLimitStore` is declared already; the application's
+///   [RateLimitStatements] beans come before the built-in SQL;
 /// - `dbHealthContributor` — the actuator's `db` health: a
 ///   [DataSourceHealthIndicator] per data source, unless
 ///   `management.health.db.enabled=false` (it is only read when the
@@ -454,6 +461,13 @@ final dataSourceAutoConfiguration = <BeanDefinition<Object>>[
     source: _source,
     create: (r) => DataSourceRegistrar(r.dependency<Environment>()),
   ),
+  // Gives the JdbcSessionHook beans to every DataSource bean.
+  BeanDefinition<JdbcSessionHookRegistrar>(
+    name: 'jdbcSessionHookRegistrar',
+    types: const [JdbcSessionHookRegistrar, BeanPostProcessor],
+    source: _source,
+    create: JdbcSessionHookRegistrar.new,
+  ),
   BeanDefinition<DataSourceTransactionManager>(
     name: 'transactionManager',
     factoryMethodName: 'transactionManager',
@@ -505,6 +519,42 @@ final dataSourceAutoConfiguration = <BeanDefinition<Object>>[
   ),
   // The actuator's `db`: every data source by bean name, read when the
   // singletons are created (the registrar's named data sources too).
+  BeanDefinition<JdbcRateLimitStore>(
+    name: 'jdbcRateLimitStore',
+    factoryMethodName: 'jdbcRateLimitStore',
+    types: const [JdbcRateLimitStore, RateLimitStore],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.jdbcRateLimitStore', [
+        ConditionalOnRateLimitStore(
+          'jdbc',
+          byDefault: ConditionalOnSingleCandidate(DataSource),
+        ),
+      ]),
+    ],
+    create: (r) {
+      final jdbc = bindSettings<DataJdbcProperties>(
+        r.dependency<Environment>(),
+        'spring.data.jdbc',
+        fallback: const DataJdbcProperties(),
+      );
+      return JdbcRateLimitStore(
+        r.optionalDependency<DataSource>() ??
+            (throw StateError(
+              'spring.web.rate-limit.store=jdbc needs a primary DataSource '
+              '(spring.datasource.url)',
+            )),
+        table: jdbc.rateLimit.table,
+        createTable:
+            jdbc.rateLimit.createTable ??
+            (jdbc.schema == SchemaMode.create ||
+                jdbc.schema == SchemaMode.createDrop),
+        statements:
+            r.optionalDependencyList<RateLimitStatements>() ??
+            const <RateLimitStatements>[],
+      );
+    },
+  ),
   BeanDefinition<HealthContributor>(
     name: 'dbHealthContributor',
     factoryMethodName: 'dbHealthContributor',

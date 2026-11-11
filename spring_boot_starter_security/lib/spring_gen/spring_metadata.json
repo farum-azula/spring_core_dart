@@ -9,7 +9,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 98,
+      "line": 106,
       "class": "SecurityCookieProperties"
     },
     {
@@ -19,7 +19,7 @@
       "default": -100,
       "deprecated": null,
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 76,
+      "line": 84,
       "class": "SecurityFilterProperties"
     },
     {
@@ -29,7 +29,7 @@
       "default": [],
       "deprecated": null,
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 146,
+      "line": 162,
       "class": "SecurityJwtProperties"
     },
     {
@@ -39,17 +39,17 @@
       "default": " ",
       "deprecated": null,
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 156,
+      "line": 183,
       "class": "SecurityJwtProperties"
     },
     {
       "name": "spring.security.oauth2.resourceserver.jwt.authorities-claim-name",
       "type": "String?",
-      "description": "The claim whose values are the user's authorities; without it the `scope` claim, else `scp`.",
+      "description": "The claim whose values are the user's authorities; without it the `scope` claim, else `scp`. When the token has no claim of that name, a name with dots is a path into nested objects (`realm_access.roles`).",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 153,
+      "line": 180,
       "class": "SecurityJwtProperties"
     },
     {
@@ -59,7 +59,7 @@
       "default": "SCOPE_",
       "deprecated": null,
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 149,
+      "line": 175,
       "class": "SecurityJwtProperties"
     },
     {
@@ -69,7 +69,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 121,
+      "line": 129,
       "class": "SecurityJwtProperties"
     },
     {
@@ -79,17 +79,17 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 124,
+      "line": 132,
       "class": "SecurityJwtProperties"
     },
     {
       "name": "spring.security.oauth2.resourceserver.jwt.jws-algorithms",
       "type": "List<String>",
-      "description": "The signature algorithms accepted with `jwk-set-uri`. Default: `RS256`.",
+      "description": "The signature algorithms accepted with `jwk-set-uri` (default: `RS256`), or the one HMAC algorithm of `secret-key` (default: `HS256`).",
       "default": [],
       "deprecated": null,
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 142,
+      "line": 158,
       "class": "SecurityJwtProperties"
     },
     {
@@ -99,7 +99,37 @@
       "default": "sub",
       "deprecated": null,
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 159,
+      "line": 186,
+      "class": "SecurityJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.resourceserver.jwt.require-expiry",
+      "type": "bool",
+      "description": "Whether a bearer token without an `exp` claim is refused. Off by default, as in Spring Security (such a token never expires); set it for an issuer whose tokens always expire.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 172,
+      "class": "SecurityJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.resourceserver.jwt.required-claims.*",
+      "type": "String",
+      "description": "Claims a bearer token must have, by name, each with exactly the given value (a number or a boolean claim is compared as its text); a token without one of them, or with another value, is refused.",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 167,
+      "class": "SecurityJwtProperties"
+    },
+    {
+      "name": "spring.security.oauth2.resourceserver.jwt.secret-key",
+      "type": "String?",
+      "description": "The secret shared with the issuer that signs the accepted bearer tokens (HS256, HS384 or HS512), used as its UTF-8 bytes: at least 32, 48 or 64 bytes. Not with `jwk-set-uri`. For a server only: a shared secret must never be put into a client application (a Flutter or web app), where anyone can read it and sign tokens with it.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
+      "line": 139,
       "class": "SecurityJwtProperties"
     },
     {
@@ -109,7 +139,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 88,
+      "line": 96,
       "class": "SecuritySessionProperties"
     },
     {
@@ -119,7 +149,7 @@
       "default": 10,
       "deprecated": null,
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 84,
+      "line": 92,
       "class": "SecuritySessionProperties"
     },
     {
@@ -129,7 +159,7 @@
       "default": "user",
       "deprecated": null,
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 62,
+      "line": 70,
       "class": "SecurityUserProperties"
     },
     {
@@ -139,7 +169,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 66,
+      "line": 74,
       "class": "SecurityUserProperties"
     },
     {
@@ -149,7 +179,7 @@
       "default": [],
       "deprecated": null,
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 69,
+      "line": 77,
       "class": "SecurityUserProperties"
     }
   ],
@@ -223,7 +253,7 @@
         "@ConditionalOnMissingBean(PrincipalRoleChecker)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 402,
+      "line": 447,
       "injects": [],
       "members": [
         {
@@ -252,7 +282,7 @@
         "@ConditionalOnMissingBean(OAuth2AuthorizedClientRepository)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 354,
+      "line": 399,
       "injects": [],
       "members": [
         {
@@ -304,7 +334,7 @@
         "@ConditionalOnMissingBean(CookieSigner)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 222,
+      "line": 241,
       "injects": [],
       "members": [
         {
@@ -344,7 +374,7 @@
         "@ConditionalOnMissingBean(SecurityFilterChain)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 327,
+      "line": 372,
       "injects": [],
       "members": [
         {
@@ -374,7 +404,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 207,
+      "line": 226,
       "injects": [],
       "members": [
         {
@@ -588,7 +618,7 @@
         "@_OnNoClientRegistrationsOrUserProperties()"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 278,
+      "line": 323,
       "injects": [],
       "members": [
         {
@@ -656,7 +686,7 @@
         "@ConditionalOnMissingBean(JwtAuthenticationConverter)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 266,
+      "line": 311,
       "injects": [],
       "members": [
         {
@@ -694,7 +724,7 @@
         "@_OnResourceServerProperties()"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 236,
+      "line": 255,
       "injects": [],
       "members": [
         {
@@ -720,7 +750,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 394,
+      "line": 439,
       "injects": [],
       "members": [
         {
@@ -748,7 +778,7 @@
         "@ConditionalOnMissingBean(OidcIdTokenDecoder)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 463,
+      "line": 508,
       "injects": [],
       "members": [
         {
@@ -776,7 +806,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 372,
+      "line": 417,
       "injects": [],
       "members": [
         {
@@ -823,7 +853,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/properties/security_properties.dart",
-      "line": 41,
+      "line": 49,
       "injects": [],
       "members": [
         {
@@ -865,7 +895,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 388,
+      "line": 433,
       "injects": [],
       "members": [
         {

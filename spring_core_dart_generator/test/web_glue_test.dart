@@ -63,6 +63,27 @@ Map<String, Object> _sources({String? pubspec}) => {
   'pkg|lib/src/service.dart': _service,
 };
 
+// An application (`publish_to: none`) that lists [direct], with `via`, a
+// package bringing [through].
+Map<String, Object> _application({
+  required List<String> direct,
+  List<String> through = const [],
+}) => {
+  ..._sources(
+    pubspec: [
+      'name: pkg',
+      'publish_to: none',
+      'dependencies:',
+      for (final name in direct) '  $name: any',
+    ].join('\n'),
+  ),
+  'via|pubspec.yaml': [
+    'name: via',
+    'dependencies:',
+    for (final name in through) '  $name: any',
+  ].join('\n'),
+};
+
 Future<String> _build(
   Map<String, Object> sources, {
   bool template = true,
@@ -73,6 +94,7 @@ Future<String> _build(
   );
   // The isolate's sources include the real starters: their real template
   // is the one under test.
+  await loadRealPubspecs(readerWriter);
   final own = await loadRealSources(readerWriter, sources);
   if (!template) {
     readerWriter.testing
@@ -127,11 +149,13 @@ void main() {
       expect(output, contains('$d.OptimisticLockingFailureException()'));
       expect(output, contains('$d.DuplicateKeyException()'));
       expect(output, contains('$d.EmptyResultDataAccessException()'));
+      expect(output, contains('$d.PermissionDeniedDataAccessException()'));
       expect(output, contains('$d.PropertyReferenceException()'));
       expect(output, contains('$d.InvalidPagingRequestException()'));
       expect(output, contains('$w.ResponseStatusException('));
       expect(output, contains('$w.HttpStatus.conflict'));
       expect(output, contains('$w.HttpStatus.notFound'));
+      expect(output, contains('$w.HttpStatus.forbidden'));
       expect(output, contains('$w.HttpStatus.badRequest'));
     });
 
@@ -271,6 +295,53 @@ void main() {
 
     test('without a readable pubspec', () async {
       await expectNoGlue(_sources()..remove('pkg|pubspec.yaml'));
+    });
+  });
+
+  group('a starter reached through another package', () {
+    test('the data starter, with the web starter listed: both pieces are '
+        'written', () async {
+      final output = await _build(
+        _application(
+          direct: ['via', 'spring_boot_starter_web'],
+          through: ['spring_boot_starter_data'],
+        ),
+      );
+      final code = _normalize(output);
+      expect(code, contains("name:r'dataAccessExceptionResolver'"));
+      expect(code, contains("name:r'pagingArgumentResolvers'"));
+    });
+
+    test('both starters: both pieces are written', () async {
+      final output = await _build(
+        _application(
+          direct: ['via'],
+          through: ['spring_boot_starter_data', 'spring_boot_starter_web'],
+        ),
+      );
+      final code = _normalize(output);
+      expect(code, contains("name:r'dataAccessExceptionResolver'"));
+      expect(code, contains("name:r'pagingArgumentResolvers'"));
+    });
+
+    test('only the web starter reached: nothing', () async {
+      final output = await _build(
+        _application(direct: ['via'], through: ['spring_boot_starter_web']),
+      );
+      expect(output, isNot(contains('HandlerExceptionResolver')));
+      expect(output, isNot(contains('WebMvcConfigurer')));
+    });
+
+    test('in the lib/ of a published package: nothing (pub.dev checks its '
+        'imports against its dependencies)', () async {
+      final sources = _application(
+        direct: ['via', 'spring_boot_starter_web'],
+        through: ['spring_boot_starter_data'],
+      );
+      sources['pkg|pubspec.yaml'] = (sources['pkg|pubspec.yaml']! as String)
+          .replaceFirst('publish_to: none\n', '');
+      final output = await _build(sources);
+      expect(output, isNot(contains('HandlerExceptionResolver')));
     });
   });
 }

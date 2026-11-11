@@ -519,4 +519,29 @@ void main() {
       );
     });
   });
+
+  test('a network, its aliases and extra hosts in the create request', () {
+    const config = DockerContainerConfig(
+      image: 'busybox',
+      network: 'spring-test-1',
+      networkAliases: ['db'],
+      extraHosts: ['host.docker.internal:host-gateway'],
+    );
+    final json = config.toJson();
+    expect(json['HostConfig'], {
+      'NetworkMode': 'spring-test-1',
+      'ExtraHosts': ['host.docker.internal:host-gateway'],
+    });
+    expect(json['NetworkingConfig'], {
+      'EndpointsConfig': {
+        'spring-test-1': {
+          'Aliases': ['db'],
+        },
+      },
+    });
+    expect(
+      const DockerContainerConfig(image: 'busybox').toJson().keys,
+      isNot(contains('NetworkingConfig')),
+    );
+  });
 }

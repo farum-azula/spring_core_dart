@@ -81,7 +81,7 @@ void _$set19(_i2.ServerSettings bean, Object? value) =>
     bean.connectionTimeout = (value as Duration);
 Object? _$get20(_i2.ServerSettings bean) => bean.requestTimeout;
 void _$set21(_i2.ServerSettings bean, Object? value) =>
-    bean.requestTimeout = (value as Duration?);
+    bean.requestTimeout = (value as Duration);
 Object? _$get22(_i2.ServerSettings bean) => bean.maxConnections;
 void _$set23(_i2.ServerSettings bean, Object? value) =>
     bean.maxConnections = (value as int?);
@@ -1033,8 +1033,7 @@ _i1.BeanModule get $webConfigBeans => _i1.BeanModule(
         ),
         _i1.BeanProperty<_i2.ServerSettings>(
           r'requestTimeout',
-          nullable: true,
-          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          typeInfo: _i1.ClassType<Duration>(),
           get: _$get20,
           set: _$set21,
         ),

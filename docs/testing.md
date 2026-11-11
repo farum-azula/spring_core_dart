@@ -1633,6 +1633,8 @@ use cascades, `..withReuse(true)`, to keep its type):
 | `waitingFor(strategy)` | when it counts as ready |
 | `withStartupTimeout(duration)` | 60 s by default; the image pull is not counted |
 | `withReuse(true)` | keep it for the next run |
+| `withNetwork(network)`, `withNetworkAliases(['db'])` | put it on a `Network` of the run, where the other containers of it reach this one by these names and the ports it listens on |
+| `withExtraHost(host, address)` | a line of the container's hosts file; `host-gateway` is the machine the daemon runs on |
 
 `start()` pulls the image when it is missing, creates the container, copies
 the files, starts it and waits; `stop()` removes it. `host` (`127.0.0.1`
@@ -1709,6 +1711,36 @@ what was kept with
 `docker rm -f $(docker ps -aq --filter label=org.testcontainers.reuse.hash)`.
 The data in it survives, so tests must clean up after themselves.
 
+### Containers that talk to each other
+
+A container reaches the host's published ports, not another container.
+For two that must talk (an API and its database), put them on a `Network`:
+
+```dart
+static final network = Network.newNetwork();
+
+@Container()
+static final database = PostgresContainer('postgres:17-alpine')
+    .withNetwork(network)
+    .withNetworkAliases(['db']);
+
+@Container()
+static final api = GenericContainer('postgrest/postgrest:v12.2.3')
+    .withNetwork(network)
+    .withEnv('PGRST_DB_URI', 'postgres://test:test@db:5432/test')
+    .withExposedPorts([3000]);
+```
+
+Inside the network the database is `db:5432`: its alias and the port it
+listens on. The test itself still uses `mappedPort`. The network is
+created when its first container starts and is removed with the run's
+containers (by the reaper too, when the process is killed);
+`network.close()` removes it sooner. A container kept with `withReuse`
+cannot be on one.
+
+Spring (Java): `Network.newNetwork()`, `withNetwork`, `withNetworkAliases`
+of Testcontainers.
+
 ### Differences from Testcontainers and Spring
 
 - **`containers.dart` is its own import**, not part of
@@ -1718,8 +1750,8 @@ The data in it survives, so tests must clean up after themselves.
   unless `disabledWithoutDocker = true`. `CONTAINERS_REQUIRED=true` is the
   switch for CI.
 - **No `withCreateContainerCmdModifier`**: the settings above are what there
-  is, plus `DockerClient` for the rest. No networks between containers, no
-  Docker Compose module, no `RedisContainer`, `MongoContainer`... yet.
+  is, plus `DockerClient` for the rest. No Docker Compose module, no
+  `RedisContainer`, `MongoContainer`... yet.
 - **Ports are published on the loopback interface** of a local daemon.
 - **The fluent methods return `GenericContainer`**, not the module's own
   type: Dart has no self type. Use cascades on a module.

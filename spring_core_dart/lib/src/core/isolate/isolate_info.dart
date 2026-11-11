@@ -59,3 +59,16 @@ abstract interface class IsolateLocalState {
   /// What is kept, for the warning: `sessions`, `the cache`.
   String get isolateLocalState;
 }
+
+/// A bean that runs work by itself, on timers, outside any request:
+/// scheduled methods.
+///
+/// Where the code does not run all the time (a function that a platform
+/// starts for a request and stops after it), a timer does not fire
+/// between requests. Whoever runs the application that way names every
+/// item of the beans that implement this in one warning when it starts.
+abstract interface class TimerDrivenWork {
+  /// What runs on a timer, an item for each: `@Scheduled
+  /// BooksJobs.refresh (PeriodicTrigger(fixedRate: 0:05:00))`.
+  Iterable<String> get timerDrivenWork;
+}

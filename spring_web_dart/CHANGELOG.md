@@ -1,6 +1,6 @@
-## 0.7.4
+## Unreleased
 
-- No changes of its own; released with the family version 0.7.4.
+- `WebSocketTransport.connect(url, maxTextMessageSize:, maxBinaryMessageSize:)`: the largest messages this one connection receives, in bytes (`-1`: no limit); `null`, the default, keeps the transport's own limits. `IoWebSocketTransport` uses them for the session it opens, the browser (which has no limit) ignores them, and a `MockWebSocket` keeps them (`maxTextMessageSize`, `maxBinaryMessageSize`) and closes with 1009 when the test pushes a larger message. A class that implements `WebSocketTransport` adds the two parameters to its `connect`.
 
 ## 0.7.3
 

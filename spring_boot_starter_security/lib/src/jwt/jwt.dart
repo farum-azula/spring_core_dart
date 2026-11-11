@@ -7,6 +7,8 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
         OAuth2Error,
         OAuth2TokenValidator,
         OAuth2TokenValidatorResult;
+import 'package:spring_security_core/spring_security_core.dart'
+    show OAuth2Token;
 
 /// A decoded JSON Web Token: the raw token, its header and its claims.
 ///
@@ -23,8 +25,11 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
 /// String me(@AuthenticationPrincipal() Jwt jwt) => jwt.subject ?? '';
 /// ```
 ///
+/// It is an [OAuth2Token]: code written for any token (its value, when
+/// it was issued and when it expires) takes a [Jwt] too.
+///
 /// Spring (Java): `Jwt`, with the same getters.
-final class Jwt {
+final class Jwt implements OAuth2Token {
   /// A token whose compact form is [tokenValue], with copies of [headers]
   /// and [claims] that cannot be modified.
   ///
@@ -38,6 +43,7 @@ final class Jwt {
 
   /// The token as it was sent (`xxxxx.yyyyy.zzzzz`); a credential, never
   /// log it.
+  @override
   final String tokenValue;
 
   /// The token's header: `alg`, `kid` and so on.
@@ -62,6 +68,7 @@ final class Jwt {
   /// The `exp` claim: when the token expires, in UTC.
   ///
   /// Throws a [FormatException] when the claim is not a number.
+  @override
   DateTime? get expiresAt => getClaimAsInstant('exp');
 
   /// The `nbf` claim: the time before which the token is not valid, in
@@ -73,6 +80,7 @@ final class Jwt {
   /// The `iat` claim: when the token was issued, in UTC.
   ///
   /// Throws a [FormatException] when the claim is not a number.
+  @override
   DateTime? get issuedAt => getClaimAsInstant('iat');
 
   /// The `cnf` claim (RFC 7800): the key the token is bound to, so that
@@ -188,11 +196,18 @@ final class JwtTimestampValidator implements OAuth2TokenValidator<Jwt> {
   /// (`DateTime.now` by default), so tests can fix it.
   JwtTimestampValidator({
     this.clockSkew = const Duration(seconds: 60),
+    this.requireExpiry = false,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now;
 
   /// How far the clocks may differ; 60 seconds by default.
   final Duration clockSkew;
+
+  /// Whether a token without an `exp` claim is refused. Off by default,
+  /// as in Spring Security: such a token never expires.
+  ///
+  /// Spring (Java): `JwtTimestampValidator.setAllowEmptyExpiryClaim(false)`.
+  final bool requireExpiry;
 
   final DateTime Function() _clock;
 
@@ -207,6 +222,11 @@ final class JwtTimestampValidator implements OAuth2TokenValidator<Jwt> {
     } on FormatException catch (e) {
       return OAuth2TokenValidatorResult.failure(
         OAuth2Error(_invalidToken, e.message, _rfc6750),
+      );
+    }
+    if (expiresAt == null && requireExpiry) {
+      return OAuth2TokenValidatorResult.failure(
+        const OAuth2Error(_invalidToken, 'Jwt has no expiry (exp)', _rfc6750),
       );
     }
     if (expiresAt != null && now.subtract(clockSkew).isAfter(expiresAt)) {

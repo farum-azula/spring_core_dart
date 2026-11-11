@@ -58,8 +58,8 @@ final class WebSocketConnectionManager {
   /// The subprotocols offered in each handshake.
   final List<String> protocols;
 
-  /// The client's settings: handshake timeout, reconnection and default
-  /// headers.
+  /// The client's settings: handshake timeout, reconnection, default
+  /// headers and the largest messages it reads.
   final WebSocketClientConfig config;
 
   /// Opens the connections: `dart:io`, the browser, or a mock in tests.
@@ -70,6 +70,9 @@ final class WebSocketConnectionManager {
 
   final SpringLog _log;
   final _listeners = <StreamController<Object>>{};
+  // Synchronous: a protocol on top (Phoenix channels) reacts to an open
+  // connection before any of its messages is delivered.
+  final _changes = StreamController<bool>.broadcast(sync: true);
   WebSocketSession? _connection;
   StreamSubscription<Object>? _subscription;
   Completer<WebSocketSession>? _pending;
@@ -88,6 +91,21 @@ final class WebSocketConnectionManager {
   /// Whether a connection is open now; `false` before the first use,
   /// during a reconnection and after [close].
   bool get isConnected => _connection != null;
+
+  /// Each change of [isConnected]: `true` when a connection opens, the
+  /// first one and every reconnection, `false` when it is lost or
+  /// closed. Listening does not open the connection. A protocol kept on
+  /// top of the connection uses it to start again after a reconnection,
+  /// as the Phoenix channels join again; the listeners are called at
+  /// once, before a message of the new connection is delivered.
+  ///
+  /// ```dart
+  /// // Say hello again on every (re)connection.
+  /// manager.connectionChanges.where((open) => open).listen((_) {
+  ///   manager.sendMessage('hello').ignore();
+  /// });
+  /// ```
+  Stream<bool> get connectionChanges => _changes.stream;
 
   /// The incoming messages as they arrive, a `String` or a `Uint8List`
   /// each. Listening opens the connection; the stream is done when the
@@ -153,6 +171,33 @@ final class WebSocketConnectionManager {
   /// use; fails when the next attempt fails, like [sendMessage].
   Future<void> connect() => _awaitConnection();
 
+  /// Drops the open connection and opens a new one as after a loss:
+  /// after the reconnect policy's wait, while someone listens. For a
+  /// protocol on top that found the connection dead though it looks
+  /// open, as a heartbeat without an answer does. The server is told a
+  /// normal closure (1000) with [reason]; this side counts it as a
+  /// session that could not be relied on (4500). Without an open
+  /// connection nothing happens.
+  ///
+  /// ```dart
+  /// // No answer to the last ping: this connection is gone.
+  /// if (!answered) manager.reconnect('no pong');
+  /// ```
+  void reconnect([String reason = 'reconnect']) {
+    final connection = _connection;
+    if (connection == null) {
+      return;
+    }
+    unawaited(_subscription?.cancel());
+    // Not waited for: a dead connection may never confirm the close.
+    unawaited(
+      connection
+          .close(CloseStatus.normal.withReason(reason))
+          .then((_) {}, onError: (_) {}),
+    );
+    _lost(CloseStatus.sessionNotReliable.withReason(reason));
+  }
+
   Future<WebSocketSession> _awaitConnection() {
     final connection = _connection;
     if (connection != null) {
@@ -191,6 +236,7 @@ final class WebSocketConnectionManager {
     }
     _listeners.clear();
     if (connection != null) {
+      _changes.add(false);
       _log.debug('closing ${redactUrl(url)}', fields: {'client': clientName});
       await connection.close();
     }
@@ -204,6 +250,7 @@ final class WebSocketConnectionManager {
     }
     _disposed = true;
     await close();
+    unawaited(_changes.close());
   }
 
   // Forgets the current connection and any attempt in progress.
@@ -268,6 +315,9 @@ final class WebSocketConnectionManager {
         headers: handshake.headers.isEmpty ? null : handshake.headers,
         protocols: handshake.protocols,
         timeout: config.connectTimeout,
+        // The client's own limits; null leaves them to the transport.
+        maxTextMessageSize: config.maxTextMessageSize?.toBytes(),
+        maxBinaryMessageSize: config.maxBinaryMessageSize?.toBytes(),
       );
     } on Object catch (error, stackTrace) {
       if (generation == _generation) {
@@ -312,6 +362,7 @@ final class WebSocketConnectionManager {
     final pending = _pending;
     _pending = null;
     pending?.complete(connection);
+    _changes.add(true);
   }
 
   // A connection attempt failed.
@@ -339,11 +390,22 @@ final class WebSocketConnectionManager {
     if (_connection != connection) {
       return;
     }
+    _lost(connection.closeStatus);
+  }
+
+  // The open connection is gone, closed with [status].
+  void _lost(CloseStatus? status) {
     _connection = null;
     _subscription = null;
     _stable?.cancel();
     _stable = null;
-    final status = connection.closeStatus;
+    _reopenOrEnd(status);
+    _changes.add(false);
+  }
+
+  // After a connection closed with [status]: opened again while someone
+  // listens and the code allows it, the end of the streams otherwise.
+  void _reopenOrEnd(CloseStatus? status) {
     final code = status?.code;
     final reason = status?.reason;
     final why = reason == null || reason.isEmpty ? '' : ' $reason';

@@ -20,6 +20,11 @@
 ///   proxy. Adding the dependency switches them on.
 /// - **Building blocks** for access rules: `AuthorizationManager`s for
 ///   roles, authorities and login kinds, and `RoleHierarchyImpl`.
+/// - **What a client application's login is made of**, as interfaces any
+///   provider can implement: `LoginSession` (the current user, a fresh
+///   access token, restore, logout), `SecretStore` (where its tokens are
+///   kept), `AuthorizationWindow` (the provider's login page) and
+///   `OAuth2Token` (what every token has).
 ///
 /// ```dart
 /// @Service()
@@ -43,6 +48,9 @@ export 'package:spring_security_core/src/authentication/authentication_manager.d
 export 'package:spring_security_core/src/authentication/events.dart';
 export 'package:spring_security_core/src/authentication/password_checks.dart';
 export 'package:spring_security_core/src/authorization/authorization_manager.dart';
+export 'package:spring_security_core/src/client/authorization_window.dart';
+export 'package:spring_security_core/src/client/login_session.dart';
+export 'package:spring_security_core/src/client/secret_store.dart';
 export 'package:spring_security_core/src/config/security_core_properties.dart';
 export 'package:spring_security_core/src/context/listening_security_context.dart';
 export 'package:spring_security_core/src/context/security_context.dart';
@@ -50,9 +58,11 @@ export 'package:spring_security_core/src/core/authentication.dart';
 export 'package:spring_security_core/src/core/authority.dart';
 export 'package:spring_security_core/src/core/exceptions.dart';
 export 'package:spring_security_core/src/crypto/password_encoder.dart';
+export 'package:spring_security_core/src/crypto/sha256.dart';
 export 'package:spring_security_core/src/method/annotations.dart';
 export 'package:spring_security_core/src/method/expression_handler.dart';
 export 'package:spring_security_core/src/method/method_security_interceptor.dart';
+export 'package:spring_security_core/src/oauth2/oauth2_token.dart';
 export 'package:spring_security_core/src/security_core_auto_configuration.dart';
 export 'package:spring_security_core/src/userdetails/user_details.dart';
 export 'package:spring_security_core/src/userdetails/user_details_service.dart';

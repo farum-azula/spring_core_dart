@@ -7,6 +7,7 @@ import 'package:spring_boot_starter_websocket/src/web_socket_client.dart';
 import 'package:spring_boot_starter_websocket/src/web_socket_client_config.dart';
 import 'package:spring_boot_starter_websocket/src/web_socket_connection_manager.dart';
 import 'package:spring_boot_starter_websocket/src/web_socket_handshake.dart';
+import 'package:spring_boot_starter_websocket/src/web_socket_url.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
 /// The implementation behind one `@WebSocketClient` interface: the
@@ -79,31 +80,15 @@ final class WebSocketInvocationHandler implements InvocationHandler {
 
   final _plans = Map<ProxyMethod, Object? Function(List<Object?>)>.identity();
 
-  Uri? _resolveUrl(Environment environment, List<String> problems) {
-    final raw = client.url ?? config.url;
-    if (raw == null || raw.trim().isEmpty) {
-      problems.add(
-        'no URL: set @WebSocketClient(url: ...) or '
-        'spring.websocket.client.config.${client.name}.url',
+  Uri? _resolveUrl(Environment environment, List<String> problems) =>
+      resolveClientUrl(
+        environment,
+        client.url ?? config.url,
+        problems,
+        missing:
+            'no URL: set @WebSocketClient(url: ...) or '
+            'spring.websocket.client.config.${client.name}.url',
       );
-      return null;
-    }
-    final String resolved;
-    try {
-      resolved = environment.resolveRequiredPlaceholders(raw.trim());
-    } on Object catch (error) {
-      problems.add('cannot resolve the URL "$raw": $error');
-      return null;
-    }
-    final url = Uri.tryParse(resolved);
-    if (url == null || (url.scheme != 'ws' && url.scheme != 'wss')) {
-      // A token in the query or a password must not reach the log.
-      final shown = url == null ? redactText(resolved) : '${redactUrl(url)}';
-      problems.add('the URL "$shown" must start with ws:// or wss://');
-      return null;
-    }
-    return url;
-  }
 
   Object? Function(List<Object?>)? _plan(
     ProxyMethod method,

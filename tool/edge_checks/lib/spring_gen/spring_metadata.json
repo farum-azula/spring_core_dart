@@ -1,0 +1,461 @@
+{
+  "version": 1,
+  "package": "edge_checks",
+  "properties": [],
+  "hints": [],
+  "beans": [
+    {
+      "name": "accountController",
+      "type": "AccountController",
+      "types": [
+        "AccountController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "bin/controllers.dart",
+      "line": 104,
+      "injects": [
+        {
+          "parameter": "reports",
+          "type": "AdminReports",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "admin",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "me",
+          "kind": "method",
+          "type": "Map<String, Object?>",
+          "parameters": [
+            "Authentication authentication"
+          ]
+        },
+        {
+          "name": "reports",
+          "kind": "field",
+          "type": "AdminReports"
+        }
+      ]
+    },
+    {
+      "name": "adminReports",
+      "type": "AdminReports",
+      "types": [
+        "AdminReports"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "bin/controllers.dart",
+      "line": 226,
+      "injects": [],
+      "members": [
+        {
+          "name": "all",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "apiChain",
+      "type": "SecurityFilterChain",
+      "types": [
+        "SecurityFilterChain"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "bin/controllers.dart",
+      "line": 234,
+      "injects": [
+        {
+          "parameter": "http",
+          "type": "HttpSecurity",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "filters",
+          "kind": "getter",
+          "type": "List<WebFilter>"
+        },
+        {
+          "name": "matches",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "bindingsController",
+      "type": "BindingsController",
+      "types": [
+        "BindingsController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "bin/controllers.dart",
+      "line": 164,
+      "injects": [
+        {
+          "parameter": "schedule",
+          "type": "ScheduleLog",
+          "qualifier": null
+        },
+        {
+          "parameter": "bindings",
+          "type": "CloudflareBindings",
+          "qualifier": null
+        },
+        {
+          "parameter": "warnings",
+          "type": "EdgeWarnings",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "bindings",
+          "kind": "field",
+          "type": "CloudflareBindings?"
+        },
+        {
+          "name": "buckets",
+          "kind": "method",
+          "type": "Future<List<Map<String, Object?>>>",
+          "parameters": []
+        },
+        {
+          "name": "get",
+          "kind": "method",
+          "type": "Future<Map<String, Object?>>",
+          "parameters": [
+            "String key"
+          ]
+        },
+        {
+          "name": "note",
+          "kind": "method",
+          "type": "Future<Map<String, Object?>>",
+          "parameters": [
+            "String text"
+          ]
+        },
+        {
+          "name": "put",
+          "kind": "method",
+          "type": "Future<List<String>>",
+          "parameters": [
+            "String key",
+            "String value"
+          ]
+        },
+        {
+          "name": "schedule",
+          "kind": "field",
+          "type": "ScheduleLog"
+        },
+        {
+          "name": "scheduled",
+          "kind": "method",
+          "type": "List<String>",
+          "parameters": []
+        },
+        {
+          "name": "warned",
+          "kind": "method",
+          "type": "List<String>",
+          "parameters": []
+        },
+        {
+          "name": "warnings",
+          "kind": "field",
+          "type": "EdgeWarnings?"
+        }
+      ]
+    },
+    {
+      "name": "publicController",
+      "type": "PublicController",
+      "types": [
+        "PublicController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "bin/controllers.dart",
+      "line": 10,
+      "injects": [
+        {
+          "parameter": "runtime",
+          "type": "EdgeRuntime",
+          "qualifier": null
+        },
+        {
+          "parameter": "environment",
+          "type": "Environment",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "badHeader",
+          "kind": "method",
+          "type": "ResponseEntity<String>",
+          "parameters": []
+        },
+        {
+          "name": "boom",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "cookies",
+          "kind": "method",
+          "type": "ResponseEntity<String>",
+          "parameters": [
+            "ServerHttpResponse response"
+          ]
+        },
+        {
+          "name": "download",
+          "kind": "method",
+          "type": "Uint8List",
+          "parameters": []
+        },
+        {
+          "name": "echo",
+          "kind": "method",
+          "type": "Map<String, Object?>",
+          "parameters": [
+            "Map<String, Object?> body",
+            "String? trace"
+          ]
+        },
+        {
+          "name": "environment",
+          "kind": "field",
+          "type": "Environment"
+        },
+        {
+          "name": "events",
+          "kind": "method",
+          "type": "Stream<Map<String, Object?>>",
+          "parameters": []
+        },
+        {
+          "name": "file",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "hello",
+          "kind": "method",
+          "type": "Map<String, Object?>",
+          "parameters": [
+            "ServerHttpRequest request",
+            "{String name}"
+          ]
+        },
+        {
+          "name": "later",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "laterCount",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        },
+        {
+          "name": "limited",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "nothing",
+          "kind": "method",
+          "type": "ResponseEntity<void>",
+          "parameters": []
+        },
+        {
+          "name": "runtime",
+          "kind": "field",
+          "type": "EdgeRuntime"
+        },
+        {
+          "name": "size",
+          "kind": "method",
+          "type": "Future<Map<String, Object?>>",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        },
+        {
+          "name": "upload",
+          "kind": "method",
+          "type": "Future<Map<String, Object?>>",
+          "parameters": [
+            "MultipartFile file",
+            "String title"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rates",
+      "type": "Rates",
+      "types": [
+        "Rates"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "bin/controllers.dart",
+      "line": 125,
+      "injects": [],
+      "members": [
+        {
+          "name": "rate",
+          "kind": "method",
+          "type": "int",
+          "parameters": [
+            "String currency"
+          ]
+        },
+        {
+          "name": "refresh",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "ratesController",
+      "type": "RatesController",
+      "types": [
+        "RatesController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "bin/controllers.dart",
+      "line": 136,
+      "injects": [
+        {
+          "parameter": "rates",
+          "type": "Rates",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "rate",
+          "kind": "method",
+          "type": "int",
+          "parameters": [
+            "String currency"
+          ]
+        },
+        {
+          "name": "rates",
+          "kind": "field",
+          "type": "Rates"
+        }
+      ]
+    },
+    {
+      "name": "scheduleLog",
+      "type": "ScheduleLog",
+      "types": [
+        "ScheduleLog",
+        "EdgeScheduledHandler"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "bin/controllers.dart",
+      "line": 149,
+      "injects": [],
+      "members": [
+        {
+          "name": "onScheduled",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "EdgeScheduledEvent event"
+          ]
+        },
+        {
+          "name": "seen",
+          "kind": "field",
+          "type": "List<String>"
+        }
+      ]
+    },
+    {
+      "name": "securityConfig",
+      "type": "SecurityConfig",
+      "types": [
+        "SecurityConfig"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "bin/controllers.dart",
+      "line": 232,
+      "injects": [],
+      "members": [
+        {
+          "name": "apiChain",
+          "kind": "method",
+          "type": "SecurityFilterChain",
+          "parameters": [
+            "HttpSecurity http"
+          ]
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

@@ -1,5 +1,9 @@
+import 'dart:io';
+import 'dart:isolate';
+
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
+import 'package:package_config/package_config.dart';
 
 /// Loads the sources of the real packages (the isolate's) into [readerWriter],
 /// writes the sources of [sources] that are not in [rootPackage] over them,
@@ -28,4 +32,23 @@ Future<Map<String, Object>> loadRealSources(
     }
   });
   return own;
+}
+
+/// Writes the `pubspec.yaml` of every real package (the isolate's) into
+/// [readerWriter], as a build reads them: the generator then knows which
+/// packages the application reaches, instead of taking every package of
+/// the package config (what it does when a pubspec cannot be read).
+///
+/// Call it before [loadRealSources], whose sources may replace one.
+Future<void> loadRealPubspecs(TestReaderWriter readerWriter) async {
+  final config = await loadPackageConfigUri((await Isolate.packageConfig)!);
+  for (final package in config.packages) {
+    final file = File.fromUri(package.root.resolve('pubspec.yaml'));
+    if (file.existsSync()) {
+      readerWriter.testing.writeString(
+        AssetId(package.name, 'pubspec.yaml'),
+        file.readAsStringSync(),
+      );
+    }
+  }
 }

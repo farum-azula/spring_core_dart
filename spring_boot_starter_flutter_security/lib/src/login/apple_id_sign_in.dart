@@ -3,7 +3,6 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:spring_boot_starter_flutter_security/src/window/authorization_window.dart';
 import 'package:spring_boot_starter_flutter_security/src/window/platform_authorization_window.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 

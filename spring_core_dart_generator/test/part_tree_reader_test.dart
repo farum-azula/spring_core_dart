@@ -123,5 +123,17 @@ void main() {
     expect(PartTreeReader.isDerivedQuery('findAllByYear'), isTrue);
     expect(PartTreeReader.isDerivedQuery('cards'), isFalse);
     expect(PartTreeReader.isDerivedQuery('save'), isFalse);
+    expect(PartTreeReader.isDerivedQuery('watchByTitle'), isTrue);
+    expect(PartTreeReader.isDerivedQuery('changesAllBy'), isTrue);
+    // A prefix is a word: what follows it starts with an upper-case letter.
+    expect(PartTreeReader.isDerivedQuery('watchmanByTitle'), isFalse);
+    expect(PartTreeReader.isDerivedQuery('watch'), isFalse);
+  });
+
+  test('prefixOf is the first word of a derived name', () {
+    expect(PartTreeReader.prefixOf('findTop3ByTitle'), 'find');
+    expect(PartTreeReader.prefixOf('watchByTitle'), 'watch');
+    expect(PartTreeReader.prefixOf('changesAllBy'), 'changes');
+    expect(PartTreeReader.prefixOf('save'), isNull);
   });
 }

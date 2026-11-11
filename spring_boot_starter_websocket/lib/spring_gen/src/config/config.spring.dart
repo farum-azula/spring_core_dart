@@ -39,35 +39,57 @@ void _$set11(_i2.WebSocketClientSettings bean, Object? value) =>
 Object? _$get12(_i2.WebSocketClientSettings bean) => bean.defaultRequestHeaders;
 void _$set13(_i2.WebSocketClientSettings bean, Object? value) =>
     bean.defaultRequestHeaders = (value as Map<String, List<String>>);
-Object? _$get14(_i2.WebSocketClientSettings bean) => bean.reconnect;
+Object? _$get14(_i2.WebSocketClientSettings bean) => bean.maxTextMessageSize;
 void _$set15(_i2.WebSocketClientSettings bean, Object? value) =>
+    bean.maxTextMessageSize = (value as _i1.DataSize?);
+Object? _$get16(_i2.WebSocketClientSettings bean) => bean.maxBinaryMessageSize;
+void _$set17(_i2.WebSocketClientSettings bean, Object? value) =>
+    bean.maxBinaryMessageSize = (value as _i1.DataSize?);
+Object? _$get18(_i2.WebSocketClientSettings bean) => bean.reconnect;
+void _$set19(_i2.WebSocketClientSettings bean, Object? value) =>
     bean.reconnect = (value as _i2.WebSocketReconnectSettings);
-_i2.WebSocketClientSettings _$create16(
+Object? _$get20(_i2.WebSocketClientSettings bean) => bean.phoenix;
+void _$set21(_i2.WebSocketClientSettings bean, Object? value) =>
+    bean.phoenix = (value as _i2.WebSocketPhoenixSettings);
+_i2.WebSocketClientSettings _$create22(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.WebSocketClientSettings();
-Object? _$get17(_i2.WebSocketReconnectSettings bean) => bean.enabled;
-void _$set18(_i2.WebSocketReconnectSettings bean, Object? value) =>
-    bean.enabled = (value as bool?);
-Object? _$get19(_i2.WebSocketReconnectSettings bean) => bean.delay;
-void _$set20(_i2.WebSocketReconnectSettings bean, Object? value) =>
-    bean.delay = (value as Duration?);
-Object? _$get21(_i2.WebSocketReconnectSettings bean) => bean.multiplier;
-void _$set22(_i2.WebSocketReconnectSettings bean, Object? value) =>
-    bean.multiplier = (value as double?);
-Object? _$get23(_i2.WebSocketReconnectSettings bean) => bean.maxDelay;
+Object? _$get23(_i2.WebSocketReconnectSettings bean) => bean.enabled;
 void _$set24(_i2.WebSocketReconnectSettings bean, Object? value) =>
-    bean.maxDelay = (value as Duration?);
-Object? _$get25(_i2.WebSocketReconnectSettings bean) => bean.jitter;
+    bean.enabled = (value as bool?);
+Object? _$get25(_i2.WebSocketReconnectSettings bean) => bean.delay;
 void _$set26(_i2.WebSocketReconnectSettings bean, Object? value) =>
-    bean.jitter = (value as Duration?);
-Object? _$get27(_i2.WebSocketReconnectSettings bean) => bean.maxRetries;
+    bean.delay = (value as Duration?);
+Object? _$get27(_i2.WebSocketReconnectSettings bean) => bean.multiplier;
 void _$set28(_i2.WebSocketReconnectSettings bean, Object? value) =>
+    bean.multiplier = (value as double?);
+Object? _$get29(_i2.WebSocketReconnectSettings bean) => bean.maxDelay;
+void _$set30(_i2.WebSocketReconnectSettings bean, Object? value) =>
+    bean.maxDelay = (value as Duration?);
+Object? _$get31(_i2.WebSocketReconnectSettings bean) => bean.jitter;
+void _$set32(_i2.WebSocketReconnectSettings bean, Object? value) =>
+    bean.jitter = (value as Duration?);
+Object? _$get33(_i2.WebSocketReconnectSettings bean) => bean.maxRetries;
+void _$set34(_i2.WebSocketReconnectSettings bean, Object? value) =>
     bean.maxRetries = (value as int?);
-_i2.WebSocketReconnectSettings _$create29(
+_i2.WebSocketReconnectSettings _$create35(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.WebSocketReconnectSettings();
+Object? _$get36(_i2.WebSocketPhoenixSettings bean) => bean.heartbeatInterval;
+void _$set37(_i2.WebSocketPhoenixSettings bean, Object? value) =>
+    bean.heartbeatInterval = (value as Duration?);
+Object? _$get38(_i2.WebSocketPhoenixSettings bean) => bean.pushTimeout;
+void _$set39(_i2.WebSocketPhoenixSettings bean, Object? value) =>
+    bean.pushTimeout = (value as Duration?);
+Object? _$get40(_i2.WebSocketPhoenixSettings bean) => bean.vsn;
+void _$set41(_i2.WebSocketPhoenixSettings bean, Object? value) =>
+    bean.vsn = (value as String?);
+_i2.WebSocketPhoenixSettings _$create42(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.WebSocketPhoenixSettings();
 
 /// Beans found by `@ComponentScan` in `lib/src/config`.
 _i1.BeanModule get $webSocketConfigBeans => _i1.BeanModule(
@@ -183,16 +205,36 @@ _i1.BeanModule get $webSocketConfigBeans => _i1.BeanModule(
           set: _$set13,
         ),
         _i1.BeanProperty<_i2.WebSocketClientSettings>(
-          r'reconnect',
-          typeInfo: _i1.ClassType<_i2.WebSocketReconnectSettings>(),
+          r'maxTextMessageSize',
+          nullable: true,
+          typeInfo: _i1.ClassType<_i1.DataSize>(nullable: true),
           get: _$get14,
           set: _$set15,
+        ),
+        _i1.BeanProperty<_i2.WebSocketClientSettings>(
+          r'maxBinaryMessageSize',
+          nullable: true,
+          typeInfo: _i1.ClassType<_i1.DataSize>(nullable: true),
+          get: _$get16,
+          set: _$set17,
+        ),
+        _i1.BeanProperty<_i2.WebSocketClientSettings>(
+          r'reconnect',
+          typeInfo: _i1.ClassType<_i2.WebSocketReconnectSettings>(),
+          get: _$get18,
+          set: _$set19,
+        ),
+        _i1.BeanProperty<_i2.WebSocketClientSettings>(
+          r'phoenix',
+          typeInfo: _i1.ClassType<_i2.WebSocketPhoenixSettings>(),
+          get: _$get20,
+          set: _$set21,
         ),
       ],
       instantiate: _i2.WebSocketClientSettings.new,
       constructor: _i1.BeanConstructor<_i2.WebSocketClientSettings>(
         parameters: [],
-        create: _$create16,
+        create: _$create22,
       ),
     ),
     const _i1.BeanIntrospection<_i2.WebSocketReconnectSettings>(
@@ -202,49 +244,80 @@ _i1.BeanModule get $webSocketConfigBeans => _i1.BeanModule(
           r'enabled',
           nullable: true,
           typeInfo: _i1.ClassType<bool>(nullable: true),
-          get: _$get17,
-          set: _$set18,
-        ),
-        _i1.BeanProperty<_i2.WebSocketReconnectSettings>(
-          r'delay',
-          nullable: true,
-          typeInfo: _i1.ClassType<Duration>(nullable: true),
-          get: _$get19,
-          set: _$set20,
-        ),
-        _i1.BeanProperty<_i2.WebSocketReconnectSettings>(
-          r'multiplier',
-          nullable: true,
-          typeInfo: _i1.ClassType<double>(nullable: true),
-          get: _$get21,
-          set: _$set22,
-        ),
-        _i1.BeanProperty<_i2.WebSocketReconnectSettings>(
-          r'maxDelay',
-          nullable: true,
-          typeInfo: _i1.ClassType<Duration>(nullable: true),
           get: _$get23,
           set: _$set24,
         ),
         _i1.BeanProperty<_i2.WebSocketReconnectSettings>(
-          r'jitter',
+          r'delay',
           nullable: true,
           typeInfo: _i1.ClassType<Duration>(nullable: true),
           get: _$get25,
           set: _$set26,
         ),
         _i1.BeanProperty<_i2.WebSocketReconnectSettings>(
+          r'multiplier',
+          nullable: true,
+          typeInfo: _i1.ClassType<double>(nullable: true),
+          get: _$get27,
+          set: _$set28,
+        ),
+        _i1.BeanProperty<_i2.WebSocketReconnectSettings>(
+          r'maxDelay',
+          nullable: true,
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get29,
+          set: _$set30,
+        ),
+        _i1.BeanProperty<_i2.WebSocketReconnectSettings>(
+          r'jitter',
+          nullable: true,
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get31,
+          set: _$set32,
+        ),
+        _i1.BeanProperty<_i2.WebSocketReconnectSettings>(
           r'maxRetries',
           nullable: true,
           typeInfo: _i1.ClassType<int>(nullable: true),
-          get: _$get27,
-          set: _$set28,
+          get: _$get33,
+          set: _$set34,
         ),
       ],
       instantiate: _i2.WebSocketReconnectSettings.new,
       constructor: _i1.BeanConstructor<_i2.WebSocketReconnectSettings>(
         parameters: [],
-        create: _$create29,
+        create: _$create35,
+      ),
+    ),
+    const _i1.BeanIntrospection<_i2.WebSocketPhoenixSettings>(
+      className: r'WebSocketPhoenixSettings',
+      properties: [
+        _i1.BeanProperty<_i2.WebSocketPhoenixSettings>(
+          r'heartbeatInterval',
+          nullable: true,
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get36,
+          set: _$set37,
+        ),
+        _i1.BeanProperty<_i2.WebSocketPhoenixSettings>(
+          r'pushTimeout',
+          nullable: true,
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get38,
+          set: _$set39,
+        ),
+        _i1.BeanProperty<_i2.WebSocketPhoenixSettings>(
+          r'vsn',
+          nullable: true,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get40,
+          set: _$set41,
+        ),
+      ],
+      instantiate: _i2.WebSocketPhoenixSettings.new,
+      constructor: _i1.BeanConstructor<_i2.WebSocketPhoenixSettings>(
+        parameters: [],
+        create: _$create42,
       ),
     ),
   ],

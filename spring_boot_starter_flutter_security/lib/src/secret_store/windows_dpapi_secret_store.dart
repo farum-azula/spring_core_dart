@@ -8,9 +8,10 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:spring_boot_starter_flutter_security/src/secret_store/native_memory.dart';
 import 'package:spring_boot_starter_flutter_security/src/secret_store/platform_secret_store.dart';
-import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_store.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
     show SpringLog, sha256Base64Url;
+import 'package:spring_security_core/spring_security_core.dart'
+    show SecretStore;
 
 const _log = SpringLog('spring.security.oauth2.client');
 

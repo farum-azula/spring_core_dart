@@ -61,9 +61,11 @@ abstract interface class PartTreeEntity {
 ///
 /// Grammar, as Spring's `PartTree`:
 ///
-/// * subject: `find|read|get|query|search|stream` (find), `count`,
-///   `exists`, `delete|remove`; then optional words, `Distinct`, and for
-///   find `First`/`Top` with an optional number; then `By`.
+/// * subject: `find|read|get|query|search|stream` (find), `watch` (a find
+///   whose result is kept up to date), `changes` (the changes of the rows
+///   the predicate matches), `count`, `exists`, `delete|remove`; then
+///   optional words, `Distinct`, and for find and watch `First`/`Top` with
+///   an optional number; then `By`.
 /// * predicate: split at `OrderBy`, then at `Or`, then at `And`, only where
 ///   an upper-case letter follows (`OrderNumber` and `Android` stay whole).
 ///   `AllIgnoreCase` / `AllIgnoringCase` anywhere in the predicate applies
@@ -84,8 +86,8 @@ final class PartTreeReader {
   const PartTreeReader();
 
   static final RegExp _subject = RegExp(
-    '^(find|read|get|query|search|stream|count|exists|delete|remove)'
-    r'((\p{Lu}.*?))??By',
+    '^(find|read|get|query|search|stream|watch|changes|count|exists|delete|'
+    r'remove)((\p{Lu}.*?))??By',
     unicode: true,
   );
   static final RegExp _orderBy = RegExp(r'OrderBy(?=\p{Lu})', unicode: true);
@@ -104,11 +106,17 @@ final class PartTreeReader {
   static final RegExp _orderBlock = RegExp(r'^(.+?)(Asc|Desc)?$');
 
   /// Whether [methodName] starts like a derived query: a prefix (`find`,
-  /// `read`, `get`, `query`, `search`, `stream`, `count`, `exists`,
-  /// `delete`, `remove`), optional words starting with an upper-case
-  /// letter, then `By`. It says nothing about the rest of the name.
+  /// `read`, `get`, `query`, `search`, `stream`, `watch`, `changes`,
+  /// `count`, `exists`, `delete`, `remove`), optional words starting with
+  /// an upper-case letter, then `By`. It says nothing about the rest of
+  /// the name.
   static bool isDerivedQuery(String methodName) =>
       _subject.hasMatch(methodName);
+
+  /// The prefix of [methodName] when it starts like a derived query
+  /// (`watch` of `watchByShelf`), else null.
+  static String? prefixOf(String methodName) =>
+      _subject.firstMatch(methodName)?.group(1);
 
   /// Parses [methodName] into a [PartTreeModel] for [entity].
   ///
@@ -125,8 +133,8 @@ final class PartTreeReader {
     if (match == null) {
       throw QueryProblem(
         'the name is not a derived query: it must start with find, read, '
-        'get, query, search, stream, count, exists, delete or remove, '
-        'optionally followed by words, and then "By"',
+        'get, query, search, stream, watch, changes, count, exists, delete '
+        'or remove, optionally followed by words, and then "By"',
       );
     }
     final prefix = match.group(1)!;

@@ -7,6 +7,10 @@ part of 'bean_scanner.dart';
 // set an instance, and nothing else. Matched by URL, so the generator does
 // not depend on the starter.
 //
+// The type of a `@Json` property is described for the `ObjectMapper` too,
+// the way a controller's body is (its classes of the entity's package,
+// written and read): no `@Introspected` to add.
+//
 // ```dart
 // @Table('books')
 // class Book { ... }                      // described
@@ -23,6 +27,9 @@ const _dataAnnotations =
 const _table = TypeChecker.fromUrl('$_dataAnnotations#Table');
 const _transient = TypeChecker.fromUrl('$_dataAnnotations#Transient');
 const _query = TypeChecker.fromUrl('$_dataAnnotations#Query');
+// `@Json`: the property is one column of JSON, written and read by the
+// application's `ObjectMapper`.
+const _dataJson = TypeChecker.fromUrl('$_dataAnnotations#Json');
 const _aggregateReference = TypeChecker.fromUrl(
   '$_dataAnnotations#AggregateReference',
 );
@@ -79,6 +86,11 @@ extension _EntityScanning on BeanScanner {
         yield projection;
       }
     }
+    for (final (method, _) in _procedureMethods(repository)) {
+      if (_projectionOf(method.returnType) case final projection?) {
+        yield projection;
+      }
+    }
   }
 
   ClassElement? _projectionOf(DartType returned) {
@@ -115,6 +127,13 @@ extension _EntityScanning on BeanScanner {
       if (_mapsItself(reader)) {
         continue;
       }
+      if (_projectionOf(method.returnType) case final projection?) {
+        scanEntity(projection, returnedBy: '${repository.name}.${method.name}');
+      }
+    }
+    // The rows of a database function (`@Procedure`) become objects the same
+    // way.
+    for (final (method, _) in _procedureMethods(repository)) {
       if (_projectionOf(method.returnType) case final projection?) {
         scanEntity(projection, returnedBy: '${repository.name}.${method.name}');
       }
@@ -198,6 +217,14 @@ extension _EntityScanning on BeanScanner {
           'row. Make it a constructor parameter (this.$fieldName), make it '
           'non-final (so it has a setter), or mark it @Transient.',
           field,
+        );
+      }
+      if (annotations.any((a) => _dataJson.isExactlyType(a.type!))) {
+        // The mapper writes the value into the column and reads it back.
+        _introspectUsed(
+          _fieldType(element, field),
+          element,
+          need: IntrospectionNeed.read | IntrospectionNeed.write,
         );
       }
       final initial = initialValueOf(field);

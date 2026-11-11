@@ -296,22 +296,30 @@ final class DataSourceProperties {
     final add = package == null
         ? 'No driver is known for the scheme "$scheme"; check the URL '
               '(${prefix}url), or write a JdbcDriver bean for it.'
-        : 'Add the $package package to the dependencies of the application '
-              '(pubspec.yaml) and run the code generator again.';
+        // The reasons in the order to check them. A driver is the code the
+        // generator writes for the driver package, when the application
+        // lists it.
+        : 'The driver of "$scheme" is written by the code generator for '
+              'the $package package. Either $package is not in the '
+              "dependencies of the application's own pubspec.yaml (one "
+              'that only arrives with another package does not count): add '
+              'it and run the code generator again. Or it is there and the '
+              'generated code is older than the pubspec: run the code '
+              'generator again (dart run build_runner build).';
     throw DataSourceConfigurationException(
-      '${prefix}url is $safeUrl'
-      '${package == null ? '' : ' — add the $package package to your '
-                'dependencies'} (no driver handles the scheme "$scheme"'
-      '${_known(all)})',
+      '${prefix}url is $safeUrl, and no driver handles the scheme "$scheme"'
+      '${package == null ? '' : ': the application has no driver of the '
+                '$package package'}'
+      '${_known(all)}',
       property: '${prefix}url',
       action: add,
     );
   }
 
   static String _known(List<JdbcDriver> drivers) => drivers.isEmpty
-      ? '; the application has no driver at all'
-      : '; the drivers there are: ${drivers.map((d) => '${d.name}: '
-            '${d.schemes.join(', ')}').join('; ')}';
+      ? ' (its generated code has no driver)'
+      : ' (the drivers there are: ${drivers.map((d) => '${d.name}: '
+            '${d.schemes.join(', ')}').join('; ')})';
 
   /// The package that holds the driver of [scheme], when it is one the
   /// generator knows (`sqlite` is `sqlite3`); null otherwise.

@@ -24,10 +24,17 @@ final class DataProperties {
   /// Settings with these values; the defaults are those of an app without
   /// any property.
   const DataProperties({
+    this.store,
     this.jdbc = const DataJdbcProperties(),
     this.memory = const DataMemoryProperties(),
     this.web = const DataWebProperties(),
   });
+
+  /// The store of the repositories without `@UseStore` and
+  /// `@UseDataSource`: `memory`, `jdbc`, or the name of another store
+  /// (`DataStore.name`). Default: `jdbc` with a primary data source, else
+  /// `memory`.
+  final String? store;
 
   /// The JDBC repositories and templates.
   final DataJdbcProperties jdbc;
@@ -49,6 +56,7 @@ final class DataJdbcProperties {
     this.formatSql = false,
     this.showParameters = false,
     this.slowQueryThreshold,
+    this.rateLimit = const DataJdbcRateLimitProperties(),
   });
 
   /// What the starter does with the schema: `none`, `validate` (tables and
@@ -69,6 +77,29 @@ final class DataJdbcProperties {
 
   /// A slower statement is logged at warn. Default: none.
   final Duration? slowQueryThreshold;
+
+  /// The rate limiter's SQL store.
+  final DataJdbcRateLimitProperties rateLimit;
+}
+
+/// The `spring.data.jdbc.rate-limit.*` properties: the table of the rate
+/// limiter's SQL store (`spring.web.rate-limit.store: jdbc`, the default
+/// of an application with a primary data source).
+final class DataJdbcRateLimitProperties {
+  /// Settings with these values.
+  const DataJdbcRateLimitProperties({
+    this.table = 'rate_limit',
+    this.createTable,
+  });
+
+  /// The table of the buckets: a name, or `schema.name`.
+  final String table;
+
+  /// Whether the store creates the table when it is not there. Default:
+  /// only when `spring.data.jdbc.schema` is `create` or `create-drop`;
+  /// else the table comes from a migration (the SQL is in the package:
+  /// `sql/rate_limit/postgresql.sql`, `sql/rate_limit/sqlite.sql`).
+  final bool? createTable;
 }
 
 /// The `spring.data.memory.*` properties.

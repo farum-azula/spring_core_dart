@@ -1,0 +1,464 @@
+{
+  "version": 1,
+  "package": "supabase_example_function",
+  "properties": [],
+  "hints": [],
+  "beans": [
+    {
+      "name": "accountController",
+      "type": "AccountController",
+      "types": [
+        "AccountController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:supabase_example_function/src/account/account_controller.dart",
+      "line": 5,
+      "injects": [
+        {
+          "parameter": "runtime",
+          "type": "EdgeRuntime",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "admin",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "health",
+          "kind": "method",
+          "type": "Map<String, Object?>",
+          "parameters": []
+        },
+        {
+          "name": "me",
+          "kind": "method",
+          "type": "Map<String, Object?>",
+          "parameters": [
+            "Authentication authentication"
+          ]
+        },
+        {
+          "name": "runtime",
+          "kind": "field",
+          "type": "EdgeRuntime"
+        }
+      ]
+    },
+    {
+      "name": "apiChain",
+      "type": "SecurityFilterChain",
+      "types": [
+        "SecurityFilterChain"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:supabase_example_function/src/web/security_config.dart",
+      "line": 9,
+      "injects": [
+        {
+          "parameter": "http",
+          "type": "HttpSecurity",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "filters",
+          "kind": "getter",
+          "type": "List<WebFilter>"
+        },
+        {
+          "name": "matches",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "ServerHttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "apiErrors",
+      "type": "ApiErrors",
+      "types": [
+        "ApiErrors"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:supabase_example_function/src/web/api_errors.dart",
+      "line": 4,
+      "injects": [],
+      "members": [
+        {
+          "name": "denied",
+          "kind": "method",
+          "type": "ProblemDetail",
+          "parameters": [
+            "PermissionDeniedDataAccessException error"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "projectController",
+      "type": "ProjectController",
+      "types": [
+        "ProjectController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:supabase_example_function/src/project/project_controller.dart",
+      "line": 36,
+      "injects": [],
+      "members": [
+        {
+          "name": "sendInvite",
+          "kind": "method",
+          "type": "InviteResult",
+          "parameters": [
+            "Authentication caller",
+            "Invite invite"
+          ]
+        },
+        {
+          "name": "stats",
+          "kind": "method",
+          "type": "Map<String, Object?>",
+          "parameters": [
+            "JwtAuthenticationToken caller",
+            "ServerHttpRequest request",
+            "{String? from}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "securityConfig",
+      "type": "SecurityConfig",
+      "types": [
+        "SecurityConfig"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:supabase_example_function/src/web/security_config.dart",
+      "line": 4,
+      "injects": [],
+      "members": [
+        {
+          "name": "apiChain",
+          "kind": "method",
+          "type": "SecurityFilterChain",
+          "parameters": [
+            "HttpSecurity http"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "todoController",
+      "type": "TodoController",
+      "types": [
+        "TodoController"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:supabase_example_function/src/todos/todo_controller.dart",
+      "line": 26,
+      "injects": [
+        {
+          "parameter": "todos",
+          "type": "Todos",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "add",
+          "kind": "method",
+          "type": "Future<Todo>",
+          "parameters": [
+            "NewTodo todo"
+          ]
+        },
+        {
+          "name": "closeAll",
+          "kind": "method",
+          "type": "Future<Closed>",
+          "parameters": [
+            "String listId"
+          ]
+        },
+        {
+          "name": "list",
+          "kind": "method",
+          "type": "Future<List<Todo>>",
+          "parameters": [
+            "String listId"
+          ]
+        },
+        {
+          "name": "todos",
+          "kind": "field",
+          "type": "Todos"
+        }
+      ]
+    },
+    {
+      "name": "todos",
+      "type": "Todos",
+      "types": [
+        "Todos",
+        "ListCrudRepository<Todo, int>",
+        "CrudRepository<Todo, int>",
+        "DataRepository<Todo, int>",
+        "ListCrudRepository<dynamic, dynamic>",
+        "CrudRepository<dynamic, dynamic>",
+        "DataRepository<dynamic, dynamic>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:supabase_example_function/src/todos/todo.dart",
+      "line": 31,
+      "injects": [],
+      "members": [
+        {
+          "name": "closeAll",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": [
+            "String listId"
+          ]
+        },
+        {
+          "name": "count",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Todo entity"
+          ]
+        },
+        {
+          "name": "deleteAll",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "deleteAllById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "deleteAllOf",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Iterable<Todo> entities"
+          ]
+        },
+        {
+          "name": "deleteById",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "existsById",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "findAll",
+          "kind": "method",
+          "type": "Future<List<Todo>>",
+          "parameters": []
+        },
+        {
+          "name": "findAllById",
+          "kind": "method",
+          "type": "Future<List<Todo>>",
+          "parameters": [
+            "Iterable<int> ids"
+          ]
+        },
+        {
+          "name": "findById",
+          "kind": "method",
+          "type": "Future<Todo?>",
+          "parameters": [
+            "int id"
+          ]
+        },
+        {
+          "name": "findByListIdOrderById",
+          "kind": "method",
+          "type": "Future<List<Todo>>",
+          "parameters": [
+            "String listId"
+          ]
+        },
+        {
+          "name": "save",
+          "kind": "method",
+          "type": "Future<Todo>",
+          "parameters": [
+            "Todo entity"
+          ]
+        },
+        {
+          "name": "saveAll",
+          "kind": "method",
+          "type": "Future<List<Todo>>",
+          "parameters": [
+            "Iterable<Todo> entities"
+          ]
+        }
+      ]
+    }
+  ],
+  "profiles": [],
+  "entities": [
+    {
+      "class": "Todo",
+      "table": "todos",
+      "source": "package:supabase_example_function/src/todos/todo.dart",
+      "line": 7,
+      "id": "id",
+      "properties": [
+        {
+          "name": "id",
+          "type": "int?",
+          "kind": "column",
+          "column": "id",
+          "relation": null,
+          "source": "package:supabase_example_function/src/todos/todo.dart",
+          "line": 18
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "kind": "column",
+          "column": "title",
+          "relation": null,
+          "source": "package:supabase_example_function/src/todos/todo.dart",
+          "line": 20
+        },
+        {
+          "name": "listId",
+          "type": "String",
+          "kind": "column",
+          "column": "list_id",
+          "relation": null,
+          "source": "package:supabase_example_function/src/todos/todo.dart",
+          "line": 21
+        },
+        {
+          "name": "done",
+          "type": "bool",
+          "kind": "column",
+          "column": "done",
+          "relation": null,
+          "source": "package:supabase_example_function/src/todos/todo.dart",
+          "line": 22
+        },
+        {
+          "name": "createdAt",
+          "type": "DateTime?",
+          "kind": "column",
+          "column": "created_at",
+          "relation": null,
+          "source": "package:supabase_example_function/src/todos/todo.dart",
+          "line": 23
+        },
+        {
+          "name": "version",
+          "type": "int?",
+          "kind": "column",
+          "column": "version",
+          "relation": null,
+          "source": "package:supabase_example_function/src/todos/todo.dart",
+          "line": 26
+        }
+      ]
+    }
+  ],
+  "repositories": [
+    {
+      "name": "Todos",
+      "entity": "Todo",
+      "id": "int",
+      "source": "package:supabase_example_function/src/todos/todo.dart",
+      "line": 31,
+      "methods": [
+        {
+          "name": "findByListIdOrderById",
+          "kind": "derived",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "listId",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<List<Todo>>",
+          "line": 32
+        },
+        {
+          "name": "closeAll",
+          "kind": "procedure",
+          "query": null,
+          "countQuery": null,
+          "parameters": [
+            {
+              "name": "listId",
+              "type": "String"
+            }
+          ],
+          "returns": "Future<int>",
+          "line": 36
+        }
+      ]
+    }
+  ]
+}

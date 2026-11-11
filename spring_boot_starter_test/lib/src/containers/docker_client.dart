@@ -51,6 +51,9 @@ final class DockerContainerConfig {
     this.autoRemove = false,
     this.publishIp = '',
     this.healthCheck,
+    this.network,
+    this.networkAliases = const [],
+    this.extraHosts = const [],
   });
 
   /// The image, such as `postgres:17`.
@@ -88,6 +91,18 @@ final class DockerContainerConfig {
   final ({List<String> test, Duration interval, Duration timeout, int retries})?
   healthCheck;
 
+  /// The network the container joins (its name or id), or `null` for the
+  /// daemon's default bridge.
+  final String? network;
+
+  /// The names other containers of [network] reach this one by.
+  final List<String> networkAliases;
+
+  /// More entries of the container's hosts file, as `host:address`
+  /// (`host.docker.internal:host-gateway` for the machine itself on
+  /// Linux).
+  final List<String> extraHosts;
+
   /// The JSON body of the create request.
   Map<String, Object?> toJson() => {
     'Image': image,
@@ -117,7 +132,15 @@ final class DockerContainerConfig {
         },
       if (binds.isNotEmpty) 'Binds': binds,
       if (autoRemove) 'AutoRemove': true,
+      'NetworkMode': ?network,
+      if (extraHosts.isNotEmpty) 'ExtraHosts': extraHosts,
     },
+    if (network case final network?)
+      'NetworkingConfig': {
+        'EndpointsConfig': {
+          network: {if (networkAliases.isNotEmpty) 'Aliases': networkAliases},
+        },
+      },
   };
 }
 
@@ -421,6 +444,34 @@ final class DockerClient {
     );
     return '${body['Id']}';
   }
+
+  /// Creates the bridge network [name] with [labels] and returns its id.
+  ///
+  /// Containers of one such network reach each other by name
+  /// ([DockerContainerConfig.networkAliases]), which the default bridge
+  /// does not offer.
+  Future<String> createNetwork(
+    String name, {
+    Map<String, String> labels = const {},
+  }) async {
+    final body = await _json(
+      await _send(
+        'POST',
+        '/networks/create',
+        json: {
+          'Name': name,
+          'Driver': 'bridge',
+          if (labels.isNotEmpty) 'Labels': labels,
+        },
+      ),
+    );
+    return '${body['Id']}';
+  }
+
+  /// Removes the network [id]; one that is gone already is no error.
+  Future<void> removeNetwork(String id) => _ignoreMissing(
+    () async => await _drain(await _send('DELETE', '/networks/$id')),
+  );
 
   /// Copies [files] into the container [id] (created or running), the
   /// parent directories included: they are written as a tar archive and

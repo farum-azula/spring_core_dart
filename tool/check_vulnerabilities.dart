@@ -29,6 +29,7 @@ const _flutterLocks = [
   'example/themes/cupertino/pubspec.lock',
   'example/static_site/app/pubspec.lock',
   'example/seo_site/pubspec.lock',
+  'example/supabase/app/pubspec.lock',
 ];
 
 /// The hosted packages of the lock file at [path]: name → version.

@@ -16,6 +16,7 @@ final class ColumnSpec {
     this.references,
     this.hasDefaultValue = false,
     this.defaultValue,
+    this.json,
   });
 
   /// The column name.
@@ -45,6 +46,11 @@ final class ColumnSpec {
 
   /// The column's default, as the property holds it.
   final Object? defaultValue;
+
+  /// The `@Json` settings of the property, or null when the column does
+  /// not hold JSON: its type is then the dialect's `jsonStorage`'s, not
+  /// the one of [type].
+  final Json? json;
 }
 
 /// A foreign key: the column of a child table to the key of its parent's
@@ -253,8 +259,11 @@ class _Builder {
           primaryKey: id,
           identity: id && type.type == int && p.isNullable,
           references: references,
-          hasDefaultValue: !id && p.hasDefaultValue,
+          // A JSON column has no DEFAULT: the property's default is used
+          // when the entity is created.
+          hasDefaultValue: !id && p.hasDefaultValue && !p.isJson,
           defaultValue: p.defaultValue,
+          json: p.json,
         ),
       );
     }

@@ -14,8 +14,9 @@ import 'package:spring_boot_starter_websocket/src/web_socket_auto_configuration.
 export 'package:spring_boot_starter_logging/spring_auto_configuration.dart';
 
 /// The beans behind `@WebSocketClient` interfaces (the transport and the
-/// client factory) and behind server endpoints (the handshake mapping and
-/// the registry of open sessions).
+/// client factory), behind `@PhoenixChannel` interfaces (the socket
+/// factory and the channel factory) and behind server endpoints (the
+/// handshake mapping and the registry of open sessions).
 @AutoConfigurationModule()
 final BeanModule springBootStarterWebsocketAutoConfiguration = BeanModule(
   'springBootStarterWebsocketAutoConfiguration',

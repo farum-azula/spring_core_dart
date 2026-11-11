@@ -717,6 +717,52 @@ Good to know:
 - Keep the starter's third-party constraints wide (`dio: '>=5.0.0 <7.0.0'`)
   so applications can resolve them together with other starters.
 
+### A store for the rate limiter
+
+The web starter's rate limiter keeps its buckets behind one interface,
+which lives here so that a starter can bring a store without depending on
+the web starter (the data starter's SQL store and the Supabase starter's
+database function do):
+
+```dart
+abstract interface class RateLimitStore {
+  // Fills the bucket of `key` for the time that passed and takes
+  // `permits` when it holds them, in one atomic step.
+  Future<RateLimitDecision> tryAcquire(String key, RateLimit limit,
+      {int permits = 1});
+}
+```
+
+`RateLimit` is a token bucket (`RateLimit.parse('5/1m', burst: 10)`:
+`capacity`, `refillPerSecond`), `RateLimitDecision` says `allowed`,
+`remaining` and `retryAfter`, and `TokenBucket` is the arithmetic for a
+store of your own. `InMemoryRateLimitStore` keeps the buckets of one
+isolate, `PrimaryIsolateRateLimitStore` those of a pool of isolates in
+the first one. A library offers its store with
+`ConditionalOnRateLimitStore`:
+
+```dart
+BeanDefinition<RedisRateLimitStore>(
+  name: 'redisRateLimitStore',
+  types: const [RedisRateLimitStore, RateLimitStore],
+  conditions: const [
+    ConditionGroup('redisRateLimitStore', [
+      // spring.web.rate-limit.store=redis; or, when it is not set, the
+      // default of an application with a RedisClient.
+      ConditionalOnRateLimitStore('redis', byDefault: ConditionalOnBean(RedisClient)),
+    ]),
+  ],
+  create: (r) => RedisRateLimitStore(r.dependency<RedisClient>()),
+)
+```
+
+in a module that the web starter's `springBootStarterWebRateLimitAutoConfiguration`
+comes after, or that names it in `before`. The properties
+(`spring.web.rate-limit.*`, `RateLimitProperties`) are bound here for the
+same reason. Spring Boot has no counterpart; it chooses a `CacheManager`
+the same way (`spring.cache.type`, else the first configuration that
+matches).
+
 ## Logging levels
 
 `SpringApplication` applies the `logging.level.*` properties to the

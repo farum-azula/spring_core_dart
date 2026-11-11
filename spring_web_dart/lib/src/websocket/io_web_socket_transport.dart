@@ -71,7 +71,8 @@ class IoWebSocketTransport implements WebSocketTransport {
   /// `StandardWebSocketClient` gets), `-1` for no limit. A larger one is
   /// not read, and the session is closed with 1009 (message too big).
   /// Tomcat counts characters, so text outside ASCII reaches this limit
-  /// sooner than Tomcat's.
+  /// sooner than Tomcat's. A `connect` with a `maxTextMessageSize` of its
+  /// own uses that one for its session instead.
   final int maxTextMessageSize;
 
   /// The largest binary message a session receives, in bytes; as
@@ -87,8 +88,16 @@ class IoWebSocketTransport implements WebSocketTransport {
     HttpHeaders? headers,
     List<String> protocols = const [],
     Duration? timeout,
+    int? maxTextMessageSize,
+    int? maxBinaryMessageSize,
   }) async {
-    final handshake = _handshake(url, headers, protocols);
+    final handshake = _handshake(
+      url,
+      headers,
+      protocols,
+      maxTextMessageSize ?? this.maxTextMessageSize,
+      maxBinaryMessageSize ?? this.maxBinaryMessageSize,
+    );
     try {
       return timeout == null
           ? await handshake
@@ -128,6 +137,8 @@ class IoWebSocketTransport implements WebSocketTransport {
     Uri url,
     HttpHeaders? headers,
     List<String> protocols,
+    int maxTextMessageSize,
+    int maxBinaryMessageSize,
   ) async {
     if (url.scheme != 'ws' && url.scheme != 'wss') {
       throw io.WebSocketException("Unsupported URL scheme '${url.scheme}'");

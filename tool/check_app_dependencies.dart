@@ -38,6 +38,7 @@ final class _Starter {
     this.feature = '',
     this.featureTest = '',
     this.testImports = const [],
+    this.properties = '',
   });
 
   /// The package name (`spring_boot_starter_feign`).
@@ -49,6 +50,10 @@ final class _Starter {
   /// Test statements using the feature (in `main` of the test, after
   /// `app`).
   final String featureTest;
+
+  /// More lines of the application's `application.properties`: what the
+  /// feature needs to start (the address of a project).
+  final String properties;
 
   /// More libraries the test imports (the starter's test support).
   final List<String> testImports;
@@ -186,6 +191,52 @@ abstract interface class ChatSocket {
 ''',
   ),
   _Starter(
+    'spring_boot_starter_supabase',
+    // A declared function or bucket needs the project it belongs to.
+    properties:
+        'spring.supabase.url=https://abcd.supabase.co\n'
+        'spring.supabase.anon-key=anon-key\n',
+    feature: '''
+@EdgeFunctions()
+abstract interface class Functions {
+  @EdgeFunction('hello')
+  Future<Map<String, Object?>> hello(@RequestBody() Map<String, Object?> body);
+}
+
+@StorageBucket('avatars')
+abstract interface class Avatars {
+  @PublicUrl('{userId}/avatar.png')
+  Uri link(String userId);
+}
+''',
+    featureTest: r'''
+  group('Supabase through the MockHttpTransport of the test starter', () {
+    final server = MockHttpTransport()
+      ..when(HttpMethod.post, '/functions/v1/hello')
+          .respond(200, json: {'message': 'Hello'});
+    final supabase = springBootTest(
+      springApplication,
+      properties: {
+        'spring.supabase.url': 'https://abcd.supabase.co',
+        'spring.supabase.anon-key': 'anon-key',
+      },
+      overrides: [BeanOverride<HttpTransport>(server)],
+    );
+
+    test('a function and a bucket come with the starter', () async {
+      expect(
+        await supabase.getBean<Functions>().hello({'name': 'Ada'}),
+        {'message': 'Hello'},
+      );
+      expect(
+        '${supabase.getBean<Avatars>().link('u1')}',
+        'https://abcd.supabase.co/storage/v1/object/public/avatars/u1/avatar.png',
+      );
+    });
+  });
+''',
+  ),
+  _Starter(
     'spring_boot_starter_web',
     feature: r'''
 class Greeting {
@@ -206,6 +257,29 @@ class GreetingController {
         .get('/api/greetings/Ada')
         .andExpect(status: 200, json: {'text': 'Hello, Ada'});
     expect(app, hasSingleBean<GreetingController>());
+  });
+''',
+  ),
+  _Starter(
+    'spring_boot_starter_edge',
+    feature: '''
+@RestController()
+class TasksController {
+  TasksController(this.runtime);
+  final EdgeRuntime runtime;
+
+  @PostMapping('/tasks')
+  String accept() {
+    runtime.waitUntil(Future<void>.value());
+    return runtime.platform ?? 'server';
+  }
+}
+''',
+    featureTest: '''
+  test('the web starter comes with it, and the runtime bean', () async {
+    await app.mockMvc.post('/tasks').andExpect(status: 200, body: 'server');
+    expect(app, hasSingleBean<EdgeRuntime>());
+    expect(app, hasSingleBean<TasksController>());
   });
 ''',
   ),
@@ -493,7 +567,10 @@ linter:
   rules:
     - depend_on_referenced_packages
 ''');
-  file('lib/resources/application.properties', 'greeting.name=World\n');
+  file(
+    'lib/resources/application.properties',
+    'greeting.name=World\n${starter.properties}',
+  );
   file('lib/app.dart', '''
 import '${starter.library}';
 

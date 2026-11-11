@@ -811,8 +811,14 @@ final class TypedThemeKeys {
       ..writeln('/// The values `spring.flutter.theme.*` declares, of the')
       ..writeln('/// active Spring theme: `context.theme`.')
       ..writeln('final class AppTheme {')
-      ..writeln('  const AppTheme._(this._values);')
-      ..writeln('  final ThemeKeyReader _values;');
+      ..writeln('  const AppTheme._(this._values);');
+    // A theme with nothing to name (a seed color alone) has no getter that
+    // reads the field, and `unused_field` is a warning of the analyzer,
+    // which the file's `ignore_for_file: type=lint` does not cover.
+    if (sections.isEmpty && !_background && !_splash) {
+      theme.writeln('  // ignore: unused_field');
+    }
+    theme.writeln('  final ThemeKeyReader _values;');
     for (final (getter, className) in sections) {
       theme.writeln('  $className get $getter => $className._(_values);');
     }

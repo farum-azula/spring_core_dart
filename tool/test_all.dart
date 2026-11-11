@@ -75,6 +75,8 @@ Future<void> main(List<String> args) async {
   if (options.only case final wanted?) {
     packages.retainWhere(wanted.contains);
   }
+  // A package with a pipeline of its own is tested there, not here.
+  packages.removeWhere(ownPipeline.contains);
   // With `--tags <tag>`: only the files that mention the tag.
   final files = <String, List<String>>{
     for (final package in packages)
@@ -349,6 +351,13 @@ final class _Options {
     exit(64);
   }
 }
+
+/// The packages whose tests run in a pipeline of their own and in no
+/// other: `spring_boot_starter_supabase` in `.github/workflows/supabase.yml`
+/// (`dart test` in the package; see its `dart_test.yaml` for the levels).
+/// This script, the coverage gate and the release's test run leave them
+/// out; they are still analyzed, formatted and checked with the others.
+const ownPipeline = {'spring_boot_starter_supabase'};
 
 /// The `workspace:` entries of the root pubspec.yaml.
 List<String> workspacePackages() {

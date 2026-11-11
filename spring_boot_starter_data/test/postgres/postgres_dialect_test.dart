@@ -331,6 +331,34 @@ void main() {
       );
     });
 
+    test('insufficient privilege is a permission error, not wrong SQL', () {
+      final denied = _translate('42501');
+      expect(denied, isA<PermissionDeniedDataAccessException>());
+      expect(denied, isA<NonTransientDataAccessException>());
+      expect(denied, isNot(isA<InvalidDataAccessResourceUsageException>()));
+      expect(denied.message, contains('boom'));
+      expect(denied.sql, 'select ?');
+      expect(denied.cause, isA<SqlError>());
+      // Its neighbours in class 42 keep their translation.
+      expect(_translate('42601'), isA<BadSqlGrammarException>());
+      expect(
+        _translate('42P07'),
+        isA<InvalidDataAccessResourceUsageException>(),
+      );
+    });
+
+    test('functions are called by name, with named notation', () {
+      expect(dialect.supportsFunctions, isTrue);
+      expect(
+        dialect.functionCall('total', const []),
+        'select * from "total"()',
+      );
+      expect(
+        dialect.functionCall('app.transfer', const ['from_id', 'amount']),
+        'select * from "app"."transfer"("from_id" => ?, "amount" => ?)',
+      );
+    });
+
     test('connection, authentication, shutdown and resources', () {
       for (final state in [
         '08000',

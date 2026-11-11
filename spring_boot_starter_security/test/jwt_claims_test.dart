@@ -89,6 +89,19 @@ void main() {
       expect(jwt.hasClaim('y'), isFalse);
     });
 
+    test('is an OAuth2Token: its value and its times', () {
+      final OAuth2Token token = _jwt({'iat': 1700000000, 'exp': 1700003600});
+      expect(token.tokenValue, _jwt({}).tokenValue);
+      expect(token.issuedAt, DateTime.utc(2023, 11, 14, 22, 13, 20));
+      expect(token.expiresAt, DateTime.utc(2023, 11, 14, 23, 13, 20));
+      final OAuth2Token bare = _jwt({});
+      expect(bare.issuedAt, isNull);
+      expect(bare.expiresAt, isNull);
+      // As before: a time that is not a number is refused when read.
+      final OAuth2Token broken = _jwt({'exp': 'soon'});
+      expect(() => broken.expiresAt, throwsFormatException);
+    });
+
     test('toString never shows the token', () {
       final text = _jwt({
         'sub': 'ada',

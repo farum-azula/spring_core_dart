@@ -231,6 +231,9 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i16.springBootStarterWebAutoConfiguration,
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
+      _i16.springBootStarterWebRateLimitAutoConfiguration,
     _i17.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
@@ -251,6 +254,15 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
       _i15.springBootStarterSecurityOAuth2ClientAutoConfiguration:
           const _i2.AutoConfigurationModule(
             before: ['springBootStarterOauth2ClientAutoConfiguration'],
+          ),
+    if ((const bool.fromEnvironment('dart.library.io') ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
+      _i16.springBootStarterWebRateLimitAutoConfiguration:
+          const _i2.AutoConfigurationModule(
+            after: [
+              'springBootStarterDataAutoConfiguration',
+              'springBootStarterSupabaseAutoConfiguration',
+            ],
           ),
   },
   dartDefines: {
@@ -343,7 +355,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '0e3df84d',
+  fingerprint: '9d18dd6a',
 );
 
 /// Starts the application: config files, environment, context, runners

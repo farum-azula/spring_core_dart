@@ -1,3 +1,6 @@
+import 'package:spring_security_core/spring_security_core.dart'
+    show OAuth2Token;
+
 /// What every OAuth 2.0 token has: its value and, when known, when it was
 /// issued and when it expires.
 ///
@@ -5,8 +8,11 @@
 /// credential: whoever has it acts as the user. [toString] never shows
 /// it, and nothing in this package logs it.
 ///
+/// It is the [OAuth2Token] of `spring_security_core`, so code written for
+/// any token takes these too.
+///
 /// Spring (Java): `AbstractOAuth2Token`.
-abstract class AbstractOAuth2Token {
+abstract class AbstractOAuth2Token implements OAuth2Token {
   /// A token with [tokenValue], issued at [issuedAt] and expiring at
   /// [expiresAt] (both in UTC, when known).
   ///
@@ -36,12 +42,15 @@ abstract class AbstractOAuth2Token {
 
   /// The token itself, as the provider issued it; a credential, never log
   /// it.
+  @override
   final String tokenValue;
 
   /// When the token was issued (UTC), or `null` when unknown.
+  @override
   final DateTime? issuedAt;
 
   /// When the token stops being accepted (UTC), or `null` when unknown.
+  @override
   final DateTime? expiresAt;
 
   @override

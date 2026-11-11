@@ -210,8 +210,8 @@ void main() {
         throwsA(
           _failure(
             property: 'spring.datasource.url',
-            message: 'add the postgres package',
-            action: 'pubspec.yaml',
+            message: 'no driver of the postgres package',
+            action: 'generated code is older than the pubspec',
           ),
         ),
       );
@@ -221,7 +221,7 @@ void main() {
           isA<DataSourceConfigurationException>().having(
             (e) => e.message,
             'message',
-            contains('no driver at all'),
+            contains('its generated code has no driver'),
           ),
         ),
       );

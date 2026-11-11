@@ -14,6 +14,7 @@ import 'package:spring_boot_starter_web/src/config/config.dart';
 import 'package:spring_boot_starter_web/src/config/web_properties.dart';
 import 'package:spring_boot_starter_web/src/debug/request_rate.dart';
 import 'package:spring_boot_starter_web/src/dispatcher.dart';
+import 'package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart';
 import 'package:spring_boot_starter_web/src/web_auto_configuration.dart';
 
 // The auto-configurations this starter builds on (logging, and through it
@@ -29,6 +30,26 @@ final BeanModule springBootStarterWebAutoConfiguration = BeanModule(
   'springBootStarterWebAutoConfiguration',
   [...webMvcAutoConfiguration],
   imports: [webConfigBeans],
+);
+
+/// The rate limiter (`spring.web.rate-limit.*`, `@RateLimiter`): the
+/// beans of `rateLimitAutoConfiguration`, registered when it is on.
+///
+/// It comes after the starters that bring a store of their own (the
+/// database function of the Supabase starter, the SQL store of the data
+/// starter), so that its stores (the first isolate's for a pool of
+/// isolates, else memory) are the default only when the application has
+/// none of those.
+@AutoConfigurationModule(
+  after: [
+    'springBootStarterDataAutoConfiguration',
+    'springBootStarterSupabaseAutoConfiguration',
+  ],
+  platform: ModulePlatform.native,
+)
+final BeanModule springBootStarterWebRateLimitAutoConfiguration = BeanModule(
+  'springBootStarterWebRateLimitAutoConfiguration',
+  [...rateLimitAutoConfiguration],
 );
 
 const _qps = 'package:spring_boot_starter_web#RequestRateAutoConfiguration';
