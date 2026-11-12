@@ -3,6 +3,6 @@
 /// tests; an application's code does not import it (it needs `dart:io`).
 library;
 
-export 'src/build/deploy_workflow.dart';
-export 'src/build/edge_build.dart';
-export 'src/build/entry_templates.dart';
+export 'src/function_build/deploy_workflow.dart';
+export 'src/function_build/edge_build.dart';
+export 'src/function_build/entry_templates.dart';
