@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.0
 
 - First version: Material Design for `spring_boot_starter_flutter`, which knows no design library from this release on. Built on the Flutter team's `material_ui` (Flutter 3.50 deprecates `package:flutter/material.dart`).
 - **Fixed:** a page that asks for `PageTransition.platform` showed no transition when the theme set no `motion.page-transition` (the theme's `none` made Material's route too), and the theme's kind when it set one. It now has the platform's own (Cupertino's slide on iOS and macOS, the predictive back on Android, the zoom on Windows and Linux), with the theme's duration and curve when it gives them. A `pageTransitionsTheme` that code sets (a `ThemeCustomizer`) is still Material's route's. Material's routes of the app's own follow the theme's `motion.page-transition` as before.

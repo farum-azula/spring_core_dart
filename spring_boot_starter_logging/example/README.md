@@ -15,11 +15,11 @@ application reads the warnings back from the in-memory buffer.
 
 ```yaml
 dependencies:
-  spring_boot_starter_logging: ^0.7.4
+  spring_boot_starter_logging: ^0.8.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.4   # required: turns annotations into code
+  spring_core_dart_generator: ^0.8.0   # required: turns annotations into code
 ```
 
 Adding the dependency and running the generator is all the setup: the

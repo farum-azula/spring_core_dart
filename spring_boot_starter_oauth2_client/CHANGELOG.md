@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.0
 
 - `AbstractOAuth2Token` (the access, refresh and ID tokens) implements `OAuth2Token` of `spring_security_core`.
 

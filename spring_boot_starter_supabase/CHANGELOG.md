@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.0
 
 - The first version: Supabase for spring_boot_dart, on a server and in Flutter apps, with a client of its own (no third-party package; it compiles to WebAssembly). Not on pub.dev yet: a git dependency until its tests against the whole of Supabase have run. Its tests: without a network, on PostgreSQL and PostgREST in containers (its own pipeline), and against a whole stack (written, not in a pipeline yet).
 - `SupabaseRateLimitStore.verify()`: at startup the store calls its database function once, for a bucket of its own (`spring:verify`). A function or a table the project does not have, a function that answers something else, or a service role that may not call it, fails the start with what to run (`sql/rate_limit.sql`); a project that cannot be reached is a warning. In an edge function the start is the first request of an instance, which then costs one call more; `spring.web.rate-limit.verify-store=false` skips it.

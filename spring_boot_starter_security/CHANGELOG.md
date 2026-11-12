@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.0
 
 - An authentication set outside a request (by a `@Scheduled` method, a timer, a listener of a stream opened at startup) is the one of the whole program and stays: a WARN on `spring.security.context.ProgramWideAuthentication` says so once per place in the code, with the place and without the user (`ProgramWideAuthenticationMonitor`; nothing is refused). With `management.health.securityContext.enabled=true` the health has `securityContext`: whether there is such an authentication now and how many times one was set, always `UP`. Off by default, so the health is Spring Boot's.
 - `spring.security.oauth2.resourceserver.jwt.authorities-claim-name` (`JwtGrantedAuthoritiesConverter.authoritiesClaimName`) may be a path into nested objects (`realm_access.roles`): a claim of exactly that name wins, the path is walked only without one, and a missing or non-object part gives no authorities.

@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.0
 
 - **Breaking: Flutter 3.50 and no design library.** `LoginForm` and `OAuth2LoginButton` import neither Material nor Cupertino. In an app of type `material` or `cupertino` they are drawn by the controls of the app's design starter (`DesignControls` of `spring_boot_starter_flutter`) and look as before; so do they below a `MaterialApp` or `CupertinoApp` the app builds itself, when the application has that design's starter. In an app without a design library they are the plain widgets, as before. `LoginDesign` is `app` (the controls of the app's design library) or `widgets`; `LoginDesign.material` and `LoginDesign.cupertino` are gone. Requires Flutter 3.50.
 - The Android part builds with the Android Gradle Plugin 9.3.1, the version of Flutter 3.50's template (Flutter 3.50 refuses an app on less than 9.1.1); its Kotlin is compiled by the plugin's built-in Kotlin support. An app on Flutter 3.50 needs AGP 9.1.1 or later anyway; Flutter recommends Gradle 9.5.0.

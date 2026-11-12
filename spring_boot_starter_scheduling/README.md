@@ -29,11 +29,11 @@ for servers and Flutter apps alike.
 
 ```yaml
 dependencies:
-  spring_boot_starter_scheduling: ^0.7.4
+  spring_boot_starter_scheduling: ^0.8.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.4   # required: makes @Scheduled methods callable
+  spring_core_dart_generator: ^0.8.0   # required: makes @Scheduled methods callable
 ```
 
 ```bash

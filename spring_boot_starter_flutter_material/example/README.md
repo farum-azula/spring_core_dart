@@ -25,13 +25,13 @@ The app's dependencies:
 
 ```yaml
 dependencies:
-  spring_boot_starter_flutter_material: ^0.7.4
+  spring_boot_starter_flutter_material: ^0.8.0
   # Material's widgets, which the page itself uses.
   material_ui: ^1.11.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.4
+  spring_core_dart_generator: ^0.8.0
 ```
 
 To run it, make an app around it:

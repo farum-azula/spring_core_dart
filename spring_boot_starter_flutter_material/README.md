@@ -45,11 +45,11 @@ text styles without Material in the build. This starter adds Material:
 ```yaml
 dependencies:
   material_ui: ^1.11.0
-  spring_boot_starter_flutter_material: ^0.7.4
+  spring_boot_starter_flutter_material: ^0.8.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.4
+  spring_core_dart_generator: ^0.8.0
 ```
 
 The starter brings and re-exports `spring_boot_starter_flutter`; an app

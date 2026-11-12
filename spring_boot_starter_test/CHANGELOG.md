@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.0
 
 - Containers of a test reach each other: `Network.newNetwork()`, `GenericContainer.withNetwork(network)` and `withNetworkAliases(['db'])` (a network of the run, removed with its containers), and `withExtraHost(host, address)`; `DockerClient.createNetwork` / `removeNetwork` and `DockerContainerConfig.network`, `networkAliases`, `extraHosts` under them.
 - **Fixed:** a `GenericContainer` whose start fails before its container exists (the network or the container could not be created) releases the reaper: its connection stayed open for the rest of the process.

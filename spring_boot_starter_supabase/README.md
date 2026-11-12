@@ -26,11 +26,11 @@ security).
 
 ```yaml
 dependencies:
-  spring_boot_starter_supabase: ^0.7.4
+  spring_boot_starter_supabase: ^0.8.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.4   # required: writes the repositories and the declared interfaces
+  spring_core_dart_generator: ^0.8.0   # required: writes the repositories and the declared interfaces
 ```
 
 ```bash

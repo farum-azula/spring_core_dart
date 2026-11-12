@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.0
 
 - First version: Cupertino for apps of `spring_boot_starter_flutter`, which knows no design library from this release on. Built on `cupertino_ui`, the Flutter team's library that replaces `package:flutter/cupertino.dart`; no dependency on `material_ui`.
 - The iOS route draws no dimming layer under its page when the theme has a `background`: iOS dims the page below with a light black while a page slides in and keeps it under the page, and a theme's background, which shows through every screen, stayed darker than the theme says. Without a background the page covers it, as in Flutter.

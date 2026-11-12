@@ -1,7 +1,7 @@
 name: spring_boot_starter_security
 description: >-
   Spring Security for the web starter: a filter chain configured with HttpSecurity, HTTP Basic, form login, sessions, CSRF, CORS, security headers, JWT resource servers.
-version: 0.7.4
+version: 0.8.0
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_security
 documentation: https://farum-azula.org/components
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
@@ -23,21 +23,21 @@ dependencies:
   pointycastle: ^4.0.0
   # EndpointRequest and the roles of the actuator's `when-authorized`: the
   # actuator's model only (no endpoint, no auto-configuration).
-  spring_boot_actuator: ^0.7.4
-  spring_boot_dart: ^0.7.4
+  spring_boot_actuator: ^0.8.0
+  spring_boot_dart: ^0.8.0
   # oauth2Login(): the registrations, the token endpoint, the users and
   # the authorized clients (re-exported, with the Feign starter it brings).
-  spring_boot_starter_oauth2_client: ^0.7.4
-  spring_boot_starter_web: ^0.7.4
-  spring_security_core: ^0.7.4
+  spring_boot_starter_oauth2_client: ^0.8.0
+  spring_boot_starter_web: ^0.8.0
+  spring_security_core: ^0.8.0
   # MockServerHttpRequest and RequestPostProcessor of testing.dart.
-  spring_web_dart: ^0.7.4
+  spring_web_dart: ^0.8.0
 
 dev_dependencies:
   # For example/ and test/app/: the generator writes the *.spring.dart files.
   build_runner: ^2.17.0
-  spring_boot_starter_test: ^0.7.4
+  spring_boot_starter_test: ^0.8.0
   # WebSocket endpoints behind the security chain (test/websocket_test.dart).
-  spring_boot_starter_websocket: ^0.7.4
-  spring_core_dart_generator: ^0.7.4
+  spring_boot_starter_websocket: ^0.8.0
+  spring_core_dart_generator: ^0.8.0
   test: ^1.33.0

@@ -56,13 +56,13 @@ Spring Cloud OpenFeign's OAuth2 interceptor.
 
 ```yaml
 dependencies:
-  spring_boot_starter_oauth2_client: ^0.7.4
+  spring_boot_starter_oauth2_client: ^0.8.0
   # Only for Feign clients that carry the token, as above.
-  spring_boot_starter_feign: ^0.7.4
+  spring_boot_starter_feign: ^0.8.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.4
+  spring_core_dart_generator: ^0.8.0
 ```
 
 ```bash

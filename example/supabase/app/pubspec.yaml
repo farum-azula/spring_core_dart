@@ -15,24 +15,24 @@ dependencies:
   # form, the widgets that follow the signed-in user, the session in the
   # Keychain / Keystore. It brings and re-exports the Flutter starter and
   # spring_security_core.
-  spring_boot_starter_flutter_security: ^0.7.4
+  spring_boot_starter_flutter_security: ^0.8.0
   # Material Design for the app (spring.flutter.app.type: material): the
   # MaterialApp and the palette of the theme's seed color.
-  spring_boot_starter_flutter_material: ^0.7.4
+  spring_boot_starter_flutter_material: ^0.8.0
   # Material's widgets (Scaffold, AppBar, ...), which the pages import.
   material_ui: ^1.11.0
   # The project: its database as repositories, Auth as the app's login,
   # Realtime behind the watched queries, Storage and Edge Functions as
   # declared interfaces. Its own client: no package of Supabase's.
-  spring_boot_starter_supabase: ^0.7.4
+  spring_boot_starter_supabase: ^0.8.0
 
 dev_dependencies:
   build_runner: ^2.17.0
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
-  spring_boot_starter_test: ^0.7.4
-  spring_core_dart_generator: ^0.7.4
+  spring_boot_starter_test: ^0.8.0
+  spring_core_dart_generator: ^0.8.0
 
 flutter:
   uses-material-design: true

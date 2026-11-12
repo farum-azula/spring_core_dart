@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.0
 
 - `AutoConfigurationModule(factories: [...])` and `SpringFactories`: what a starter adds to an application before its beans exist. A starter lists constants on its module (`@AutoConfigurationModule(factories: [OceanThemeDesign()])`); the application finds them by type with `SpringApplication.factories.load<T>()` (by `Ordered`, else in the order of the modules), and the context has the same as the `springFactories` bean. For what must work while the environment is prepared or a splash shows: the design library a Flutter theme is read with. Spring's `META-INF/spring.factories` and `SpringFactoriesLoader.loadFactories`; the generator copies the constants into the generated application, as Dart has no class path to scan.
 - `VerifiableRateLimitStore` and `RateLimitStoreSetupException`: a rate limit store that can say at startup whether what it keeps its buckets in is there (a table, a database function, a binding). `spring.web.rate-limit.verify-store` (`true` by default) has the web starter ask it once.

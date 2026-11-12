@@ -27,13 +27,13 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
-  spring_boot_starter_edge: ^0.7.4       # the function, with the web starter
-  spring_boot_starter_security: ^0.7.4   # checks the project's tokens
-  spring_boot_starter_supabase: ^0.7.4   # the project's tables as repositories
+  spring_boot_starter_edge: ^0.8.0       # the function, with the web starter
+  spring_boot_starter_security: ^0.8.0   # checks the project's tokens
+  spring_boot_starter_supabase: ^0.8.0   # the project's tables as repositories
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.4
+  spring_core_dart_generator: ^0.8.0
   test: ^1.33.0
 ```
 

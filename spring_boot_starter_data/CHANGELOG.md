@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.0
 
 - `JdbcRateLimitStore.verify()`: at startup the store creates its table when `spring.data.jdbc.rate-limit.create-table` says so and reads it once; a table that is not there fails the start, naming the migration (`sql/rate_limit/postgresql.sql`, `sql/rate_limit/sqlite.sql`) and the property.
 - **Fixed:** an order that ignores case (`?sort=id,ignorecase` through a `Pageable` or `Sort`, `SortOrder.ignoringCase()`) folds only a `String` or enum property on the JDBC store; a number, date or boolean property is ordered as it is, as on the in-memory store. It was `lower(column)` for any property, which PostgreSQL refuses (`function lower(bigint) does not exist`), a 500 any client could cause. Spring Data JDBC folds blindly and lets the database fail. A sort name of a `@Query` method that is no property of the entity is still folded as asked.

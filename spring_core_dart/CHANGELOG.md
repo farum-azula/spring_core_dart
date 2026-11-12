@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.0
 
 - `TimerDrivenWork` (`package:spring_core_dart/core.dart`): a bean that runs work on timers names it (`timerDrivenWork`), for whoever runs the application where timers do not fire between requests (the edge starter's warning list), as `IsolateLocalState` names state kept in memory.
 - `Sha256` (`package:spring_core_dart/core.dart`): SHA-256 and HMAC-SHA-256 in plain Dart (`digest`, `hmac`, `hex`), on every platform and without a dependency; the web starter's rate limiter hashes addresses with it.

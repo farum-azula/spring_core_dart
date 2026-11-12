@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.0
 
 - Fixed: `PhoenixChannelSession.send` made while the channel is not joined waits at most the push timeout (`phoenix.push-timeout`): its future then fails with a `TimeoutException` and the event is dropped. Before, such events waited without limit while the server was away and were all sent at once after the join.
 - Fixed: a topic of a `@PhoenixChannel` that only `@Push` methods used was never left, so pushes to `room:{id}` over many ids kept a joined channel per id, joined again at every reconnection. A topic is now left once it stayed unused, with no `@OnEvent` listener and no push on its way, for the push timeout (`phoenix.push-timeout`); a push or a listener within that time keeps it, so a client that pushes now and then does not join for every push. The same wait applies after the last listener cancelled (before, the topic was left at once, also under a push on its way). A topic whose join failed is given up when its push failed. `leave` and closing the application leave at once.

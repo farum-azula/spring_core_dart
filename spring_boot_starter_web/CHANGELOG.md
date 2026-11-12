@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.0
 
 - The rate limiter's store is asked at startup that it is set up (`RateLimitStoreVerifier`, an `ApplicationRunner`; stores that implement `VerifiableRateLimitStore`: the SQL store, Supabase's database function, Cloudflare D1). A table, a function or a binding that is missing fails the start with what to run; before, a forgotten migration showed only at the first request under a limit, as a 503. A store that cannot be reached at that moment is a WARN and the start goes on. `spring.web.rate-limit.verify-store=false` skips the check and its one call to the store.
 - **Fixed:** a question for the first isolate asked in another one (`PrimaryIsolate.ask`, `IsolateScaler.scaleTo` there) no longer waits for ever when no answer comes (the first isolate is stopping, its handler never answers): it fails with a `TimeoutException` that names the question after one minute, a scaling step after three.

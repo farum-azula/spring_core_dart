@@ -1,3 +1,7 @@
+## 0.8.0
+
+- No changes of its own; released with the family version 0.8.0.
+
 ## 0.7.4
 
 - The `isolatesEndpoint` bean: the `isolates` endpoint over HTTP once exposed (`management.endpoints.web.exposure.include=isolates`).

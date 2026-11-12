@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.0
 
 - **Fixed (Dart 3.14):** a WebSocket connection whose socket the other side reset before the session was made no longer fails the upgrade. Dart 3.14 reads the socket's remote address and port when it makes the `WebSocket` (for the profiler of its tools), and a socket closed by then throws for them; the session is made without them, and the reset shows where it is handled, as a close with 1006 and the error as the reason.
 - `HttpRequest(abort:)`: a future that completes when the caller no longer wants the response. `IoHttpTransport` and `FetchHttpTransport` then give up a request that still waits for the status and headers (the connection closes, the call fails with an `HttpTransportException`, `request aborted`); once the headers arrived it has no effect, the body's subscription is cancelled instead. A transport of your own that wraps another one copies it to the request it passes on; one that ignores it keeps working, the request then runs until the server answers.

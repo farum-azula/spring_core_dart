@@ -14,10 +14,10 @@ dependencies:
   # (RouteContentView), the browser's addresses. It brings and exports the
   # Flutter starter (the app widget and theme from properties,
   # MarkdownView).
-  spring_boot_starter_flutter_navigation: ^0.7.4
+  spring_boot_starter_flutter_navigation: ^0.8.0
   # Material Design for the app (spring.flutter.app.type: material): the
   # MaterialApp and the palette of the theme's seed color.
-  spring_boot_starter_flutter_material: ^0.7.4
+  spring_boot_starter_flutter_material: ^0.8.0
   # Material's widgets (Scaffold, AppBar, ...), which the pages import.
   material_ui: ^1.11.0
 
@@ -26,8 +26,8 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
-  spring_boot_starter_test: ^0.7.4
-  spring_core_dart_generator: ^0.7.4
+  spring_boot_starter_test: ^0.8.0
+  spring_core_dart_generator: ^0.8.0
 
 flutter:
   uses-material-design: true

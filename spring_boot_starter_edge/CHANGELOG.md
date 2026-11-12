@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.0
 
 - The first version: `runFetchApplication`, the `main` of an application that runs as a function behind the fetch API (and as an ordinary server on the Dart VM); `FetchWebServer`, the web starter's `WebServer` without a socket, with the built-in server's checks of the request target, the body size limit and the error answers; complete responses with their length, streamed ones (server-sent events, downloads) when the handler flushes.
 - **WebAssembly on Supabase needs Dart 3.13, for now:** Supabase's Edge Runtime is Deno 2.1, whose V8 (13.0) lacks the WebAssembly exception handling (`exnref`) that `dart compile wasm` uses from Dart 3.14 on, so such a function never answered. `--platform supabase --target wasm` compiled by Dart 3.14 or later is refused, saying that Dart 3.13 works until Supabase updates its runtime; `--dart <the dart of a Dart 3.13 SDK>` (new) compiles with it, while the build runs on any Dart. A deploy workflow of such a build installs Dart 3.13.7. `EdgePlatform.newestWasmDart` and `wasmLimit` say it for a platform; every other platform runs WebAssembly of every Dart.
