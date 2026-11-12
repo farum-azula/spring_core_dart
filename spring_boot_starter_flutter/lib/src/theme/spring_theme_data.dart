@@ -1,16 +1,17 @@
 import 'package:spring_boot_starter_flutter/src/markdown/code_tokens.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:spring_boot_starter_flutter/src/theme/spring_color_scheme.dart';
+import 'package:spring_boot_starter_flutter/src/theme/spring_type_scale.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_design.dart';
 import 'package:spring_boot_starter_flutter/src/theme/frame_meter_theme.dart';
 import 'package:spring_boot_starter_flutter/src/theme/content_change.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_animation.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_background.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_loader.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_splash.dart';
-import 'package:spring_boot_starter_flutter/src/theme/theme_components.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_image.dart';
-import 'package:spring_boot_starter_flutter/src/theme/theme_reader.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_styles.dart';
 import 'package:spring_boot_starter_flutter/src/theme/wheel_scroll.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
@@ -135,45 +136,21 @@ const textStyleNames = [
   'labellarge', 'labelmedium', 'labelsmall',
 ];
 
-/// The color roles of `ColorScheme` that `colors.<role>` may set, by
-/// canonical name.
-const colorRoles = [
-  'primary', 'onprimary', 'primarycontainer', 'onprimarycontainer', //
-  'primaryfixed',
-  'primaryfixeddim',
-  'onprimaryfixed',
-  'onprimaryfixedvariant', //
-  'secondary', 'onsecondary', 'secondarycontainer', 'onsecondarycontainer', //
-  'secondaryfixed',
-  'secondaryfixeddim',
-  'onsecondaryfixed',
-  'onsecondaryfixedvariant', //
-  'tertiary', 'ontertiary', 'tertiarycontainer', 'ontertiarycontainer', //
-  'tertiaryfixed',
-  'tertiaryfixeddim',
-  'ontertiaryfixed',
-  'ontertiaryfixedvariant', //
-  'error', 'onerror', 'errorcontainer', 'onerrorcontainer', //
-  'surface', 'onsurface', 'onsurfacevariant', 'surfacedim', 'surfacebright', //
-  'surfacecontainerlowest', 'surfacecontainerlow', 'surfacecontainer', //
-  'surfacecontainerhigh', 'surfacecontainerhighest', 'surfacetint', //
-  'inversesurface', 'oninversesurface', 'inverseprimary', //
-  'outline', 'outlinevariant', 'shadow', 'scrim',
-];
-
 /// One theme of the app as the `spring.flutter.theme.*` properties
 /// describe it: colors, typography, shapes, elevations, density, motion,
 /// spacing, component adjustments and the app's own tokens.
 ///
 /// A theme's values come from the shared part of the properties, then the
 /// theme it `extends`, then its own. They are read and checked once, when
-/// the theme is made. From them come Material's `ThemeData`
-/// ([toMaterial]) and a `CupertinoThemeData` ([toCupertino]). The app's
-/// own widgets read the theme shown with `SpringTheme.of(context)`, for
-/// what Material's theme has no place for: [space], [textStyle] of `code`,
+/// the theme is made. The class knows no design library: the palette
+/// ([colorScheme]), the text styles ([textStyle]) and the scales are the
+/// same in an app without one. The Material starter makes Material's
+/// `ThemeData` of it (`toMaterial()`), the Cupertino starter a
+/// `CupertinoThemeData` (`toCupertino()`). The app's own widgets read the
+/// theme shown with `SpringTheme.of(context)`: [space], [textStyle],
 /// [tokenColor] and the like. Only what the properties set differs from
-/// Flutter's defaults: a theme without properties is Flutter's own
-/// Material 3 theme.
+/// Flutter's defaults: a theme without properties has the colors and text
+/// styles of Flutter's own Material 3 theme.
 ///
 /// Apps do not create it: `SpringThemes` makes one per theme.
 ///
@@ -188,7 +165,7 @@ const colorRoles = [
 /// );
 /// ```
 final class SpringThemeData {
-  SpringThemeData._(this.name, ThemeProperties p)
+  SpringThemeData._(this.name, ThemeProperties p, this.designs)
     : brightness = p.read(
         'brightness',
         (v) => ThemeValues.enumValue(Brightness.values, v),
@@ -197,8 +174,8 @@ final class SpringThemeData {
       seedColor = p.color('seedcolor'),
       schemeVariant = p.read(
         'schemevariant',
-        (v) => ThemeValues.enumValue(DynamicSchemeVariant.values, v),
-        DynamicSchemeVariant.values.map((v) => v.name).join(', '),
+        designs.schemeVariant,
+        designs.schemeVariants,
       ),
       contrast = p.read(
         'contrast',
@@ -235,7 +212,7 @@ final class SpringThemeData {
       fontFamily: 'monospace',
       size: 14,
     ).merge(_spec(p, 'typography.code'));
-    _checkKeys(p);
+    _checkKeys(p, designs);
     for (final key in p.children('typography')) {
       const known = {
         'fontfamily',
@@ -287,32 +264,6 @@ final class SpringThemeData {
     for (final key in p.children('spacing')) {
       spacing[key] = p.read('spacing.$key', ThemeValues.number, 'a number')!;
     }
-    visualDensity = p.read(
-      'visualdensity',
-      (v) => switch (ThemeValues.canonical(v)) {
-        'adaptive' => VisualDensity.adaptivePlatformDensity,
-        'standard' => VisualDensity.standard,
-        'comfortable' => VisualDensity.comfortable,
-        'compact' => VisualDensity.compact,
-        _ => null,
-      },
-      'adaptive, standard, comfortable or compact',
-    );
-    tapTargetSize = p.read(
-      'taptargetsize',
-      (v) => ThemeValues.enumValue(MaterialTapTargetSize.values, v),
-      'padded or shrinkWrap',
-    );
-    splashFactory = p.read(
-      'splash',
-      (v) => switch (ThemeValues.canonical(v)) {
-        'ripple' => InkRipple.splashFactory,
-        'sparkle' => InkSparkle.splashFactory,
-        'none' => NoSplash.splashFactory,
-        _ => null,
-      },
-      'ripple, sparkle or none',
-    );
     final transition = PageTransitionSpec.parseAt(p, 'motion.pagetransition');
     pageTransitions = transition ?? const PageTransitionSpec();
     textChange =
@@ -342,14 +293,25 @@ final class SpringThemeData {
         AnimationSpec.parseAt(p, 'motion.scrolltotop'),
       null => defaultScrollToTop,
     };
-    // Not set: none, for Material's own page routes too.
+    // Not set: the platform's, as in Flutter, for Material's own page
+    // routes too.
     pageTransition = switch (transition?.type) {
-      null => const _NoTransition(),
+      null => const _Platform(),
       PageTransitionType.platform => const _Platform(),
       PageTransitionType.fadeUpwards =>
         const FadeUpwardsPageTransitionsBuilder(),
-      PageTransitionType.zoom => const ZoomPageTransitionsBuilder(),
-      PageTransitionType.cupertino => const CupertinoPageTransitionsBuilder(),
+      final type && (PageTransitionType.zoom || PageTransitionType.cupertino) =>
+        designs.pageTransition(type) ??
+            (throw ThemePropertyException(
+              p.propertyName('motion.pagetransition.type'),
+              type.name,
+              'a transition of the application: ${type.name} is '
+              "${type == PageTransitionType.zoom ? "Material's" : "Cupertino's"}"
+              ', read by spring_boot_starter_flutter_'
+              "${type == PageTransitionType.zoom ? 'material' : 'cupertino'}"
+              ' (add it to the dependencies), or platform, fade-upwards, '
+              'fade, content or none',
+            )),
       PageTransitionType.fade => const _FadeTransition(),
       PageTransitionType.content => const ContentPageTransitionsBuilder(),
       PageTransitionType.none => const _NoTransition(),
@@ -393,19 +355,11 @@ final class SpringThemeData {
       }
     }
     splash = ThemeSplashData.parse(p);
+    // One name, two things: a map is the splash of the start, a single
+    // value Material's ink splash, which only the Material starter reads.
     _readImageTokens(p);
     for (final name in p.children('styles')) {
       styles[name] = StateStyle.parse(p, name);
-    }
-    for (final component in p.children('components')) {
-      if (!themeComponents.containsKey(component)) {
-        throw ThemePropertyException(
-          p.propertyName('components.$component'),
-          '',
-          'a component: ${themeComponentNames.join(', ')}'
-              '${didYouMean(component, themeComponentNames)}',
-        );
-      }
     }
     for (final MapEntry(:key, :value) in p.values.entries) {
       if (key.startsWith('tokens.')) {
@@ -413,10 +367,16 @@ final class SpringThemeData {
       }
     }
     _checkColorTokens(p);
-    cupertinoPrimaryColor = _cupertinoReader().color('primaryColor');
-    // Checks every component value now, not when a widget needs it.
-    toMaterial();
-    toCupertino();
+    // The palette now: a seed color without a design fails the start.
+    colorScheme;
+    unreadDesignProperties = designs.unread({
+      for (final key in p.values.keys)
+        // The splash of the start is a map: only a single value is
+        // Material's ink splash.
+        if (!key.startsWith('splash.')) key.split('.').first,
+    });
+    // Each design reads its own part now, not when a widget needs it.
+    designs.check(this);
   }
 
   // A token that is a map with a `color` is a color object: it may have
@@ -440,17 +400,16 @@ final class SpringThemeData {
     }
   }
 
-  /// The top-level properties a theme may have. Any other key fails the
-  /// start like a wrong value, so a misspelling is not silently ignored.
+  /// The top-level properties a theme may have, whatever its design; a
+  /// design adds its own (`ThemeDesign.themeProperties`: `components`,
+  /// `visual-density`, `cupertino`). Any other key fails the start like a
+  /// wrong value, so a misspelling is not silently ignored.
   static const themeProperties = [
     'brightness', 'seed-color', 'scheme-variant', 'contrast', 'colors', //
-    'typography', 'shape', 'elevation', 'spacing', 'visual-density', //
-    'tap-target-size',
+    'typography', 'shape', 'elevation', 'spacing', //
     'splash',
     'motion',
-    'components',
     'tokens',
-    'cupertino',
     'styles', //
     'animations',
     'background',
@@ -467,9 +426,11 @@ final class SpringThemeData {
     'letterspacing',
   };
 
-  static void _checkKeys(ThemeProperties p) {
+  static void _checkKeys(ThemeProperties p, ThemeDesigns designs) {
     final roots = {
       for (final key in themeProperties) ThemeValues.canonical(key),
+      ...designs.themeProperties,
+      ...ThemeDesigns.familyProperties,
     };
     for (final key in p.values.keys) {
       final segments = key.split('.');
@@ -477,8 +438,12 @@ final class SpringThemeData {
         throw ThemePropertyException(
           p.propertyName(key),
           p.values[key]!,
-          'a theme property: ${themeProperties.join(', ')}'
-          '${segments.first == 'themes' ? ' (a theme is themes.<name>.<property>)' : ''}',
+          'a theme property: ${[
+            ...themeProperties,
+            for (final design in designs.all) ...design.themeProperties,
+          ].join(', ')}'
+          '${segments.first == 'themes' ? ' (a theme is themes.<name>.<property>)' : ''}'
+          '${ThemeDesigns.starterOf(segments.first)}',
         );
       }
       final second = segments.length > 1 ? segments[1] : null;
@@ -536,6 +501,7 @@ final class SpringThemeData {
         config.resolve(resolved),
         addresses: config.addresses,
       ),
+      config.designs,
     );
   }
 
@@ -544,6 +510,24 @@ final class SpringThemeData {
       '0.2, 0, 0, 1';
 
   final ThemeProperties _properties;
+
+  /// The theme's properties as written, relative to the theme and with
+  /// every reference resolved: what a design reads its own part from
+  /// (`components.*`, `cupertino.*`).
+  ThemeProperties get properties => _properties;
+
+  /// The designs the theme was read with.
+  final ThemeDesigns designs;
+
+  /// The theme properties of a design starter the application does not
+  /// have (`components`, `cupertino`), with that starter: the theme has
+  /// them for apps of that design, this one does not show them, and they
+  /// are not checked. `SpringThemes` logs them once.
+  late final Map<String, String> unreadDesignProperties;
+
+  // The platform the default fonts are those of: the one the theme was
+  // made on.
+  final TargetPlatform _platform = defaultTargetPlatform;
 
   /// The theme's name as declared (`light`, `dark`, `ocean`).
   final String name;
@@ -557,9 +541,10 @@ final class SpringThemeData {
   /// or [contrast] is set).
   final Color? seedColor;
 
-  /// How the palette is made from the seed; `null` for Material 3's
-  /// `tonalSpot`.
-  final DynamicSchemeVariant? schemeVariant;
+  /// How the palette is made from the seed, as the design that makes it
+  /// names the variant (`tonalSpot`, `vibrant`); `null` for the design's
+  /// default (Material 3's `tonalSpot`).
+  final String? schemeVariant;
 
   /// The palette's contrast, from -1 to 1; `null` for 0.
   final double? contrast;
@@ -597,22 +582,17 @@ final class SpringThemeData {
   /// [defaultSpacing].
   final Map<String, double> spacing = {};
 
-  /// The visual density; `null` when not set.
-  late final VisualDensity? visualDensity;
-
-  /// The minimum tap target size; `null` when not set.
-  late final MaterialTapTargetSize? tapTargetSize;
-
-  /// The ink splash of taps (ripple, sparkle or none); `null` when not
-  /// set.
-  late final InteractiveInkFeatureFactory? splashFactory;
-
-  /// The page transition used on every platform: none when not set, `null`
-  /// for `platform` (Flutter's own).
+  /// The page transition used on every platform; when not set, or for
+  /// `platform`, the one that leaves the choice to the app's design
+  /// ([isPlatformPageTransition]), as Flutter does.
   late final PageTransitionsBuilder? pageTransition;
 
+  /// Whether `motion.page-transition` is `platform` or not set: the
+  /// design of the app chooses, per platform.
+  bool get isPlatformPageTransition => pageTransition is _Platform;
+
   /// `motion.page-transition`: the kind, duration and curve of a router's
-  /// page transitions (none when not set). The navigation starter reads
+  /// page transitions (the platform's when not set). The navigation starter reads
   /// it; [pageTransition] is the same for Material's page routes.
   late final PageTransitionSpec pageTransitions;
 
@@ -739,45 +719,33 @@ final class SpringThemeData {
   /// [tokenColor], [tokenNumber], [tokenDuration] and the list reads.
   final Map<String, String> tokens = {};
 
-  /// The primary color of the Cupertino theme; `null` when not set.
-  late final Color? cupertinoPrimaryColor;
+  SpringColorScheme? _scheme;
 
-  ColorScheme? _scheme;
-
-  /// The full palette: the one made from the seed by Material 3's
-  /// algorithm (or Flutter's baseline when nothing is set), with the roles
-  /// of [colors] over it.
-  ColorScheme get colorScheme => _scheme ??= _withColors(
-    baseScheme(
-      brightness: brightness,
-      seedColor: seedColor,
-      schemeVariant: schemeVariant,
-      contrast: contrast,
-    ),
-  );
-
-  /// The palette before the explicit `colors.*` roles: made from the seed
-  /// by Material 3's algorithm, or Flutter's own baseline when no seed,
-  /// variant or contrast is set. The theme's [colorScheme] and the
-  /// references to undeclared roles (`$colors.outline`) both come from it.
-  static ColorScheme baseScheme({
-    required Brightness brightness,
-    Color? seedColor,
-    DynamicSchemeVariant? schemeVariant,
-    double? contrast,
-  }) => seedColor == null && schemeVariant == null && contrast == null
-      // Flutter's own Material 3 baseline (not quite the seed's).
-      ? ThemeData(brightness: brightness).colorScheme
-      : ColorScheme.fromSeed(
-          seedColor: seedColor ?? const Color(0xFF6750A4),
+  /// The full palette: Flutter's baseline, or the one the app's design
+  /// makes from the seed color (Material 3's algorithm), with the roles of
+  /// [colors] over it.
+  SpringColorScheme get colorScheme => _scheme ??= designs
+      .colorScheme(
+        ColorSchemeSpec(
           brightness: brightness,
-          dynamicSchemeVariant: schemeVariant ?? DynamicSchemeVariant.tonalSpot,
-          contrastLevel: contrast ?? 0,
-        );
-
-  /// The color of [role] (canonical name) in [scheme]; `null` for an
-  /// unknown role.
-  static Color? roleIn(ColorScheme scheme, String role) => _role(scheme, role);
+          seedColor: seedColor,
+          schemeVariant: schemeVariant,
+          contrast: contrast,
+        ),
+        property: _properties.propertyName(
+          seedColor != null
+              ? 'seedcolor'
+              : schemeVariant != null
+              ? 'schemevariant'
+              : 'contrast',
+        ),
+        value:
+            _properties['seedcolor'] ??
+            _properties['schemevariant'] ??
+            _properties['contrast'] ??
+            '',
+      )
+      .withRoles(colors);
 
   /// The corner radius of shape token [token] (`medium`,
   /// `extra-large`), as the properties set it or Material 3's;
@@ -826,31 +794,56 @@ final class SpringThemeData {
   /// The motion curve [name] (`standard`, `emphasized`), as the
   /// properties set it; otherwise Material's standard easing.
   Curve curve(String name) =>
-      curves[ThemeValues.canonical(name)] ?? Easing.standard;
+      curves[ThemeValues.canonical(name)] ?? ThemeValues.standardEasing;
 
-  /// A finished text style of the theme: a `TextTheme` style by name
-  /// (`titleLarge`, `title-large`) or `code`, with what the properties set.
-  /// Throws an `ArgumentError` for another name.
-  TextStyle textStyle(String style) => _styleIn(toMaterial().textTheme, style);
-
-  TextStyle _styleIn(TextTheme textTheme, String style) {
+  /// A finished text style of the theme: one of the 15 by name
+  /// (`titleLarge`, `title-large`) or `code`, with what the properties set
+  /// over the platform's font and the palette's on-surface color. It has
+  /// the size the properties give it and no other: [localizedTextStyle]
+  /// adds the size of the type scale. Throws an `ArgumentError` for
+  /// another name.
+  TextStyle textStyle(String style) {
     final key = ThemeValues.canonical(style);
     if (key == 'code') {
       // Falls back to the theme's own font where the monospaced one is
       // missing (`monospace` is not a family on every platform).
       return code
-          .applyTo(textTheme.bodyMedium)
+          .applyTo(_named('bodymedium'))
           .copyWith(
             fontFamily: code.fontFamily,
             fontFamilyFallback: [?fontFamily, ...?fontFamilyFallback],
           );
     }
-    return _textThemeStyle(textTheme, key) ??
-        (throw ArgumentError.value(
-          style,
-          'style',
-          'a TextTheme style or code',
-        ));
+    if (!textStyleNames.contains(key)) {
+      throw ArgumentError.value(style, 'style', 'a TextTheme style or code');
+    }
+    return _named(key);
+  }
+
+  final _textStyles = <String, TextStyle>{};
+
+  // What Material's `ThemeData.textTheme` has for the style: the
+  // platform's font, the on-surface color, then the theme's own values.
+  TextStyle _named(String key) => _textStyles[key] ??= TextStyle(
+    fontFamily: fontFamily ?? SpringTypeScale.fontFamily(_platform, key),
+    fontFamilyFallback:
+        fontFamilyFallback ?? SpringTypeScale.fontFamilyFallback(_platform),
+    color: colorScheme.onSurface,
+    decoration: TextDecoration.none,
+    decorationColor: colorScheme.onSurface,
+  ).merge(textStyles[key]?.toStyle());
+
+  /// [textStyle] with the size, weight, line height and letter spacing the
+  /// Material 3 type scale has for [script] where the properties set none:
+  /// what `Theme.of(context).textTheme` gives in a `MaterialApp`. `code`
+  /// has no place in the scale and is as [textStyle] gives it.
+  TextStyle localizedTextStyle(String style, TextScript script) {
+    final own = textStyle(style);
+    final geometry = SpringTypeScale.geometry(
+      ThemeValues.canonical(style),
+      script,
+    );
+    return geometry?.merge(own) ?? own;
   }
 
   /// Every font family the theme names: the main one, the fallbacks, and
@@ -956,358 +949,18 @@ final class SpringThemeData {
   static String _tokenKey(String key) =>
       key.split('.').map(ThemeValues.canonical).join('.');
 
-  // ---------------------------------------------------------------------
-  // Material
-  // ---------------------------------------------------------------------
-
-  ThemeData? _material;
-
-  /// The theme as Material's `ThemeData`, made once; it carries this
-  /// theme as a [SpringThemeExtension]. Customizers are not applied here
-  /// but in `SpringThemes.material`.
-  ThemeData toMaterial() => _material ??= _buildMaterial();
-
-  ThemeData _buildMaterial() {
-    final scheme = colorScheme;
-    final textTheme = TextTheme(
-      displayLarge: _style('displaylarge'),
-      displayMedium: _style('displaymedium'),
-      displaySmall: _style('displaysmall'),
-      headlineLarge: _style('headlinelarge'),
-      headlineMedium: _style('headlinemedium'),
-      headlineSmall: _style('headlinesmall'),
-      titleLarge: _style('titlelarge'),
-      titleMedium: _style('titlemedium'),
-      titleSmall: _style('titlesmall'),
-      bodyLarge: _style('bodylarge'),
-      bodyMedium: _style('bodymedium'),
-      bodySmall: _style('bodysmall'),
-      labelLarge: _style('labellarge'),
-      labelMedium: _style('labelmedium'),
-      labelSmall: _style('labelsmall'),
-    );
-    final theme = ThemeData(
-      colorScheme: scheme,
-      fontFamily: fontFamily,
-      fontFamilyFallback: fontFamilyFallback,
-      textTheme: textTheme,
-      visualDensity: visualDensity,
-      materialTapTargetSize: tapTargetSize,
-      splashFactory: splashFactory,
-      pageTransitionsTheme: switch (pageTransition) {
-        _Platform() || null => null,
-        final builder => PageTransitionsTheme(
-          builders: {
-            for (final platform in TargetPlatform.values) platform: builder,
-          },
-        ),
-      },
-      // A background shows through the screens.
-      scaffoldBackgroundColor: background == null ? null : Colors.transparent,
-      extensions: [SpringThemeExtension(this)],
-    );
-    return _components(theme);
-  }
-
-  TextStyle? _style(String name) => textStyles[name]?.toStyle();
-
-  ThemeReader _componentReader(ThemeData theme, ThemeComponent component) =>
-      ThemeReader(
-        theme: this,
-        properties: _properties,
-        root: 'components.${ThemeValues.canonical(component.name)}',
-        label: component.name,
-        namedStyle: (name) => _styleIn(theme.textTheme, name),
-        shapeToken: component.shapeToken,
-        topShape: component.topShape,
-      );
-
-  // Applies each component the properties mention (or that follows a
-  // shape token the theme changed), then checks its keys.
-  ThemeData _components(ThemeData theme) {
-    ThemeReader other(String name) =>
-        _componentReader(theme, themeComponents[ThemeValues.canonical(name)]!);
-    var result = theme;
-    for (final component in themeComponents.values) {
-      final reader = _componentReader(theme, component);
-      final themed =
-          reader.has || (component.base != null && other(component.base!).has);
-      if (!themed) {
-        continue;
-      }
-      try {
-        result = component.apply(result, reader, other);
-      } on AssertionError catch (e) {
-        // Flutter's own rule for a combination of values.
-        throw ThemePropertyException(
-          _properties.propertyName(reader.root),
-          '',
-          "values Flutter accepts together in ${component.name}: ${e.message ?? e}",
-        );
-      }
-      reader.checkUnknown();
-    }
-    return result;
-  }
-
-  // ---------------------------------------------------------------------
-  // Cupertino and Widgets
-  // ---------------------------------------------------------------------
-
-  CupertinoThemeData? _cupertino;
-
-  /// The theme as a `CupertinoThemeData`, made once: primary color, text
-  /// styles and backgrounds where the properties set them, iOS's
-  /// defaults otherwise.
-  CupertinoThemeData toCupertino() => _cupertino ??= _buildCupertino();
-
-  // The reader of `cupertino.*`; its text styles are Material's.
-  ThemeReader _cupertinoReader() => ThemeReader(
-    theme: this,
-    properties: _properties,
-    root: 'cupertino',
-    label: 'cupertino',
-    namedStyle: (name) => _styleIn(toMaterial().textTheme, name),
-  );
-
-  /// The `cupertino.*` properties the theme reads, for the reference
-  /// documentation and tests.
-  @visibleForTesting
-  List<ThemeProperty> get cupertinoProperties {
-    final r = _cupertinoReader();
-    _buildCupertino(r);
-    return r.asked;
-  }
-
-  CupertinoThemeData _buildCupertino([ThemeReader? reader]) {
-    final r = reader ?? _cupertinoReader();
-    // iOS's own styles, with this theme's primary color in the ones that
-    // carry it (actions, nav actions), not iOS blue.
-    final defaults = CupertinoTextThemeData(
-      primaryColor:
-          r.color('primaryColor') ??
-          colors['primary'] ??
-          (seedColor == null ? null : colorScheme.primary) ??
-          CupertinoColors.systemBlue,
-    );
-    TextStyle text(TextStyle base, String style) {
-      final spec = textStyles[style];
-      return (spec?.applyTo(base) ?? base).copyWith(
-        fontFamily: spec?.fontFamily ?? fontFamily,
-        fontFamilyFallback: fontFamilyFallback,
-      );
-    }
-
-    final typography =
-        fontFamily != null ||
-        fontFamilyFallback != null ||
-        textStyles.isNotEmpty;
-    final primary =
-        r.color('primaryColor') ??
-        colors['primary'] ??
-        (seedColor == null ? null : colorScheme.primary);
-    final t = r.group('textTheme');
-    // The style written under `text-theme`, over the one made from the
-    // typography, over iOS's own.
-    TextStyle style(String key, TextStyle base, String? from) {
-      final own = t.text(key, base: base);
-      return own ?? (typography && from != null ? text(base, from) : base);
-    }
-
-    final textTheme = CupertinoTextThemeData(
-      primaryColor:
-          t.color('primaryColor') ?? primary ?? CupertinoColors.systemBlue,
-      textStyle: style('textStyle', defaults.textStyle, 'bodylarge'),
-      actionTextStyle: style(
-        'actionTextStyle',
-        defaults.actionTextStyle,
-        'labellarge',
-      ),
-      tabLabelTextStyle: style(
-        'tabLabelTextStyle',
-        defaults.tabLabelTextStyle,
-        'labelsmall',
-      ),
-      navTitleTextStyle: style(
-        'navTitleTextStyle',
-        defaults.navTitleTextStyle,
-        'titlelarge',
-      ),
-      navLargeTitleTextStyle: style(
-        'navLargeTitleTextStyle',
-        defaults.navLargeTitleTextStyle,
-        'displaysmall',
-      ),
-      navActionTextStyle: style(
-        'navActionTextStyle',
-        defaults.navActionTextStyle,
-        'labellarge',
-      ),
-      pickerTextStyle: style(
-        'pickerTextStyle',
-        defaults.pickerTextStyle,
-        'bodylarge',
-      ),
-      dateTimePickerTextStyle: style(
-        'dateTimePickerTextStyle',
-        defaults.dateTimePickerTextStyle,
-        'bodylarge',
-      ),
-    );
-    final result = CupertinoThemeData(
-      brightness: brightness,
-      primaryColor: primary,
-      primaryContrastingColor: r.color('primaryContrastingColor'),
-      scaffoldBackgroundColor:
-          r.color('scaffoldBackgroundColor') ??
-          (background == null ? colors['surface'] : Colors.transparent),
-      barBackgroundColor:
-          r.color('barBackgroundColor') ??
-          _componentReader(
-            toMaterial(),
-            themeComponents['appbar']!,
-          ).color('backgroundColor'),
-      selectionHandleColor: r.color('selectionHandleColor'),
-      applyThemeToAll: r.flag('applyThemeToAll'),
-      textTheme: typography || t.has ? textTheme : null,
-    );
-    r.checkUnknown();
-    return result;
-  }
-
   /// The color the OS uses for the app (in the task switcher): the
   /// palette's primary color.
   Color get appColor => colorScheme.primary;
 
-  /// The default text style of a `WidgetsApp`: Material's body medium in
-  /// the theme's font and on-surface color.
+  /// The default text style of a `WidgetsApp`: body medium in the theme's
+  /// font and on-surface color.
   TextStyle get widgetsTextStyle =>
       textStyle('bodyMedium').copyWith(color: colorScheme.onSurface);
 
-  ColorScheme _withColors(ColorScheme s) {
-    Color? c(String role) => colors[role];
-    return s.copyWith(
-      primary: c('primary'),
-      onPrimary: c('onprimary'),
-      primaryContainer: c('primarycontainer'),
-      onPrimaryContainer: c('onprimarycontainer'),
-      primaryFixed: c('primaryfixed'),
-      primaryFixedDim: c('primaryfixeddim'),
-      onPrimaryFixed: c('onprimaryfixed'),
-      onPrimaryFixedVariant: c('onprimaryfixedvariant'),
-      secondary: c('secondary'),
-      onSecondary: c('onsecondary'),
-      secondaryContainer: c('secondarycontainer'),
-      onSecondaryContainer: c('onsecondarycontainer'),
-      secondaryFixed: c('secondaryfixed'),
-      secondaryFixedDim: c('secondaryfixeddim'),
-      onSecondaryFixed: c('onsecondaryfixed'),
-      onSecondaryFixedVariant: c('onsecondaryfixedvariant'),
-      tertiary: c('tertiary'),
-      onTertiary: c('ontertiary'),
-      tertiaryContainer: c('tertiarycontainer'),
-      onTertiaryContainer: c('ontertiarycontainer'),
-      tertiaryFixed: c('tertiaryfixed'),
-      tertiaryFixedDim: c('tertiaryfixeddim'),
-      onTertiaryFixed: c('ontertiaryfixed'),
-      onTertiaryFixedVariant: c('ontertiaryfixedvariant'),
-      error: c('error'),
-      onError: c('onerror'),
-      errorContainer: c('errorcontainer'),
-      onErrorContainer: c('onerrorcontainer'),
-      surface: c('surface'),
-      onSurface: c('onsurface'),
-      onSurfaceVariant: c('onsurfacevariant'),
-      surfaceDim: c('surfacedim'),
-      surfaceBright: c('surfacebright'),
-      surfaceContainerLowest: c('surfacecontainerlowest'),
-      surfaceContainerLow: c('surfacecontainerlow'),
-      surfaceContainer: c('surfacecontainer'),
-      surfaceContainerHigh: c('surfacecontainerhigh'),
-      surfaceContainerHighest: c('surfacecontainerhighest'),
-      surfaceTint: c('surfacetint'),
-      inverseSurface: c('inversesurface'),
-      onInverseSurface: c('oninversesurface'),
-      inversePrimary: c('inverseprimary'),
-      outline: c('outline'),
-      outlineVariant: c('outlinevariant'),
-      shadow: c('shadow'),
-      scrim: c('scrim'),
-    );
-  }
-
   /// The color of palette role [name] (`surface-container`,
   /// `onPrimary`); `null` for an unknown role.
-  Color? role(String name) => _role(colorScheme, ThemeValues.canonical(name));
-
-  static Color? _role(ColorScheme s, String role) => switch (role) {
-    'primary' => s.primary,
-    'onprimary' => s.onPrimary,
-    'primarycontainer' => s.primaryContainer,
-    'onprimarycontainer' => s.onPrimaryContainer,
-    'primaryfixed' => s.primaryFixed,
-    'primaryfixeddim' => s.primaryFixedDim,
-    'onprimaryfixed' => s.onPrimaryFixed,
-    'onprimaryfixedvariant' => s.onPrimaryFixedVariant,
-    'secondary' => s.secondary,
-    'onsecondary' => s.onSecondary,
-    'secondarycontainer' => s.secondaryContainer,
-    'onsecondarycontainer' => s.onSecondaryContainer,
-    'secondaryfixed' => s.secondaryFixed,
-    'secondaryfixeddim' => s.secondaryFixedDim,
-    'onsecondaryfixed' => s.onSecondaryFixed,
-    'onsecondaryfixedvariant' => s.onSecondaryFixedVariant,
-    'tertiary' => s.tertiary,
-    'ontertiary' => s.onTertiary,
-    'tertiarycontainer' => s.tertiaryContainer,
-    'ontertiarycontainer' => s.onTertiaryContainer,
-    'tertiaryfixed' => s.tertiaryFixed,
-    'tertiaryfixeddim' => s.tertiaryFixedDim,
-    'ontertiaryfixed' => s.onTertiaryFixed,
-    'ontertiaryfixedvariant' => s.onTertiaryFixedVariant,
-    'error' => s.error,
-    'onerror' => s.onError,
-    'errorcontainer' => s.errorContainer,
-    'onerrorcontainer' => s.onErrorContainer,
-    'surface' => s.surface,
-    'onsurface' => s.onSurface,
-    'onsurfacevariant' => s.onSurfaceVariant,
-    'surfacedim' => s.surfaceDim,
-    'surfacebright' => s.surfaceBright,
-    'surfacecontainerlowest' => s.surfaceContainerLowest,
-    'surfacecontainerlow' => s.surfaceContainerLow,
-    'surfacecontainer' => s.surfaceContainer,
-    'surfacecontainerhigh' => s.surfaceContainerHigh,
-    'surfacecontainerhighest' => s.surfaceContainerHighest,
-    'surfacetint' => s.surfaceTint,
-    'inversesurface' => s.inverseSurface,
-    'oninversesurface' => s.onInverseSurface,
-    'inverseprimary' => s.inversePrimary,
-    'outline' => s.outline,
-    'outlinevariant' => s.outlineVariant,
-    'shadow' => s.shadow,
-    'scrim' => s.scrim,
-    _ => null,
-  };
-
-  static TextStyle? _textThemeStyle(TextTheme t, String name) => switch (name) {
-    'displaylarge' => t.displayLarge,
-    'displaymedium' => t.displayMedium,
-    'displaysmall' => t.displaySmall,
-    'headlinelarge' => t.headlineLarge,
-    'headlinemedium' => t.headlineMedium,
-    'headlinesmall' => t.headlineSmall,
-    'titlelarge' => t.titleLarge,
-    'titlemedium' => t.titleMedium,
-    'titlesmall' => t.titleSmall,
-    'bodylarge' => t.bodyLarge,
-    'bodymedium' => t.bodyMedium,
-    'bodysmall' => t.bodySmall,
-    'labellarge' => t.labelLarge,
-    'labelmedium' => t.labelMedium,
-    'labelsmall' => t.labelSmall,
-    _ => null,
-  };
+  Color? role(String name) => colorScheme.role(name);
 
   static SpringTextSpec _spec(ThemeProperties p, String path) => SpringTextSpec(
     fontFamily: p['$path.fontfamily'],
@@ -1328,35 +981,6 @@ final class SpringThemeData {
       'a number',
     ),
   );
-}
-
-/// Carries a [SpringThemeData] inside Material's `ThemeData`, among its
-/// `extensions`.
-///
-/// Every `ThemeData` made from the properties has one, so code that has
-/// only Material's theme at hand still reaches the values Material has no
-/// place for (spacing, tokens, the `code` style). Inside the app,
-/// `SpringTheme.of(context)` is shorter.
-///
-/// ```dart
-/// // In a widget that only knows Material's theme.
-/// final spring =
-///     Theme.of(context).extension<SpringThemeExtension>()!.data;
-/// final gap = spring.space('s');
-/// ```
-final class SpringThemeExtension extends ThemeExtension<SpringThemeExtension> {
-  /// The extension carrying [data].
-  SpringThemeExtension(this.data);
-
-  /// The theme the `ThemeData` was made from.
-  final SpringThemeData data;
-
-  @override
-  SpringThemeExtension copyWith() => this;
-
-  @override
-  SpringThemeExtension lerp(SpringThemeExtension? other, double t) =>
-      t < 0.5 || other == null ? this : other;
 }
 
 // `motion.page-transition: platform`: Flutter's own per platform.

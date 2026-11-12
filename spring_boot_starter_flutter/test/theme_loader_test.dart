@@ -1,6 +1,6 @@
 // Loaders of the theme: parsing and its errors, the built-in kinds, kinds
 // of the app's own (painter, widget), phases, progress, reduced motion.
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 

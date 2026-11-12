@@ -3,7 +3,7 @@
 // secret, and shows what the user may
 // do (for display only: the server checks access). The generator writes
 // example.spring.dart (`dart run build_runner build`).
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 import 'spring_gen/example.spring.dart';

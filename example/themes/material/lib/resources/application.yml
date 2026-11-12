@@ -26,6 +26,7 @@ spring:
         port: 5070
     app:
       # A MaterialApp: Scaffold, AppBar and the other Material widgets.
+      # spring_boot_starter_flutter_material builds it.
       type: material
       title: Theme Showcase Material
       debug-banner: false
@@ -273,8 +274,9 @@ spring:
 
       # ---------------------------------------------------------------- 7
       motion:
-        # What a new page does: none by default (not written here). The
-        # themes neon (zoom) and high-contrast (none) set their own; the
+        # What a new page does: not written here, so the platform's, as in
+        # Flutter (Material's own, per platform). The themes neon (zoom) and
+        # high-contrast (none: pages switch at once) set their own; the
         # Transitions page shows the kinds: platform | fade-upwards | zoom |
         # cupertino | fade | none, or { type, duration, curve }.
         durations:

@@ -30,6 +30,7 @@ Future<TestBuilderResult> _build(
   String arguments = '',
   String? config,
   String configFile = 'application.properties',
+  String? starter,
   List<String>? logs,
 }) async {
   final isolateConfig = await loadPackageConfigUri(
@@ -53,10 +54,8 @@ Future<TestBuilderResult> _build(
     {
       'pkg|bin/main.dart': app,
       'pkg|lib/resources/$configFile': ?config,
-      'neon_cache|lib/spring_auto_configuration.dart': _starter(
-        requires,
-        arguments,
-      ),
+      'neon_cache|lib/spring_auto_configuration.dart':
+          starter ?? _starter(requires, arguments),
     },
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -309,6 +308,75 @@ void main() {
       );
     },
   );
+
+  test('the factories of a starter reach SpringApplication as the constants '
+      'they were written as', () async {
+    final result = await _build(
+      '^$springBootVersion',
+      starter: '''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+
+class Design {
+  const Design([this.name = 'plain', this.dense = false]);
+  const Design.named({required this.name}) : dense = true;
+  final String name;
+  final bool dense;
+  static const ocean = Design('ocean');
+}
+
+const forest = Design('forest');
+
+@AutoConfigurationModule(
+  factories: [
+    Design(),
+    Design('neon', true),
+    Design.named(name: 'named'),
+    Design.ocean,
+    forest,
+  ],
+)
+final BeanModule neonCacheAutoConfiguration = BeanModule('neonCache', []);
+''',
+    );
+    expect(result.errors, isEmpty);
+    // The constants come from the starter's package, not a file path.
+    expect(_compact(result), isNot(contains("import'asset:")));
+    expect(
+      _compact(result),
+      matches(
+        RegExp(
+          r'_i\d+\.neonCacheAutoConfiguration:'
+          r'const_i\d+\.AutoConfigurationModule\(factories:\['
+          r'_i\d+\.Design\(\),'
+          r"_i\d+\.Design\('neon',true,?\),"
+          r"_i\d+\.Design\.named\(name:'named',?\),"
+          r'_i\d+\.Design\.ocean,'
+          r"_i\d+\.Design\('forest',?\),\]",
+        ),
+      ),
+    );
+  });
+
+  test('a factory that is no public constant stops the build', () async {
+    final result = await _build(
+      '^$springBootVersion',
+      starter: '''
+import 'package:spring_boot_dart/spring_boot_dart.dart';
+
+class _Hidden {
+  const _Hidden();
+}
+
+@AutoConfigurationModule(factories: [_Hidden()])
+final BeanModule neonCacheAutoConfiguration = BeanModule('neonCache', []);
+''',
+    );
+    expect(result.succeeded, isFalse);
+    expect(
+      result.errors.join('\n'),
+      contains('A factory is a public constant'),
+    );
+  });
 
   test('a starter without constraints adds no metadata', () async {
     final result = await _build('^$springBootVersion');

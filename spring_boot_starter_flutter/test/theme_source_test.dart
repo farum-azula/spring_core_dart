@@ -7,7 +7,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
@@ -22,7 +22,7 @@ spring:
     theme:
       themes:
         ocean:
-          seed-color: '#FF0000'
+          colors.primary: '#FF0000'
 ''';
 
 const _oceanBlue = '''
@@ -31,7 +31,7 @@ spring:
     theme:
       themes:
         whatever:
-          seed-color: '#0000FF'
+          colors.primary: '#0000FF'
 ''';
 
 class _Server implements HttpTransport {
@@ -67,7 +67,7 @@ HttpResponse _ok(String body, {String? etag, String? lastModified}) =>
     );
 
 Color _primary(SpringThemes themes, String name) =>
-    themes.material(name).colorScheme.primary;
+    themes.data(name).colorScheme.primary;
 
 void main() {
   late InMemoryFileStore store;
@@ -106,7 +106,7 @@ void main() {
   final once = {
     'active': 'ocean',
     'themes.ocean.source': _url,
-    'themes.ocean.seed-color': '#00FF00',
+    'themes.ocean.colors.primary': '#00FF00',
   };
 
   autoConfigurationTests();
@@ -242,7 +242,7 @@ void main() {
         'themes.ocean.source': _url,
         'themes.ocean.source-sha256': 'x' * 64,
         'themes.ocean.refresh': '1h',
-        'themes.ocean.seed-color': '#00FF00',
+        'themes.ocean.colors.primary': '#00FF00',
       });
       expect(themes.names, contains('ocean'));
       expect(_primary(themes, 'ocean'), isNotNull);
@@ -297,25 +297,25 @@ void main() {
         final (themes, _) = await start(once);
         expect(themes.names, containsAll(['light', 'dark', 'ocean']));
         expect(themes.names, isNot(contains('whatever')));
-        final blue = ColorScheme.fromSeed(seedColor: const Color(0xFF0000FF));
-        expect(_primary(themes, 'ocean'), blue.primary);
+        const blue = Color(0xFF0000FF);
+        expect(_primary(themes, 'ocean'), blue);
       },
     );
 
     test(
       'a file with the theme\'s keys at the top, or under spring.flutter.theme',
       () async {
-        server.handler = (_) => _ok("seed-color: '#0000FF'\n");
+        server.handler = (_) => _ok("colors.primary: '#0000FF'\n");
         var (themes, _) = await start(once);
-        final blue = ColorScheme.fromSeed(seedColor: const Color(0xFF0000FF));
-        expect(_primary(themes, 'ocean'), blue.primary);
+        const blue = Color(0xFF0000FF);
+        expect(_primary(themes, 'ocean'), blue);
 
         files = FileTemplate(InMemoryFileStore());
         server.handler = (_) => _ok(
-          "spring.flutter.theme.seed-color: '#0000FF'\n",
+          "spring.flutter.theme.colors.primary: '#0000FF'\n",
         );
         (themes, _) = await start(once);
-        expect(_primary(themes, 'ocean'), blue.primary);
+        expect(_primary(themes, 'ocean'), blue);
       },
     );
 
@@ -331,8 +331,8 @@ void main() {
         (themes, _) = await start(moved);
         expect(server.requests, hasLength(2));
         expect(await files.list('spring/themes/$oldKey/'), isEmpty);
-        final blue = ColorScheme.fromSeed(seedColor: const Color(0xFF0000FF));
-        expect(_primary(themes, 'ocean'), blue.primary);
+        const blue = Color(0xFF0000FF);
+        expect(_primary(themes, 'ocean'), blue);
 
         final digest = sha256HexOfString(_oceanBlue);
         final pinned = {...moved, 'themes.ocean.source-sha256': digest};
@@ -383,15 +383,15 @@ void main() {
             .toUpperCase(),
       };
       final (themes, _) = await start(pinned);
-      final blue = ColorScheme.fromSeed(seedColor: const Color(0xFF0000FF));
-      expect(_primary(themes, 'ocean'), blue.primary);
+      const blue = Color(0xFF0000FF);
+      expect(_primary(themes, 'ocean'), blue);
     });
 
     test('a cache that no longer matches its digest is ignored', () async {
       server.handler = (_) => _ok(_ocean);
       final (themes, _) = await start(once);
       final key = ThemeSource.read(once, themes).single.cacheKey;
-      await files.write('spring/themes/$key/theme.yml', 'seed-color: red');
+      await files.write('spring/themes/$key/theme.yml', 'colors.primary: red');
       await start(once);
       expect(server.requests, hasLength(2));
     });
@@ -440,12 +440,12 @@ void main() {
           request.headers['If-Modified-Since'],
           'Mon, 02 Nov 2026 10:00:00 GMT',
         );
-        final red = ColorScheme.fromSeed(seedColor: const Color(0xFFFF0000));
-        expect(_primary(themes, 'ocean'), red.primary);
+        const red = Color(0xFFFF0000);
+        expect(_primary(themes, 'ocean'), red);
 
         slow.complete(HttpResponse(304));
         await loader.idle;
-        expect(_primary(themes, 'ocean'), red.primary);
+        expect(_primary(themes, 'ocean'), red);
         final key = ThemeSource.read(refreshing, themes).single.cacheKey;
         final meta = jsonDecode(
           (await files.read<String>('spring/themes/$key/meta.json'))!,
@@ -470,12 +470,12 @@ void main() {
       expect(selection.active, 'ocean');
       await loader.idle;
       expect(notified, greaterThan(0));
-      final blue = ColorScheme.fromSeed(seedColor: const Color(0xFF0000FF));
-      expect(_primary(themes, 'ocean'), blue.primary);
+      const blue = Color(0xFF0000FF);
+      expect(_primary(themes, 'ocean'), blue);
       // And it is the cache now.
       server.requests.clear();
       final (again, other) = await start(refreshing);
-      expect(_primary(again, 'ocean'), blue.primary);
+      expect(_primary(again, 'ocean'), blue);
       expect(server.requests, isEmpty);
       other.dispose();
       loader.dispose();
@@ -489,8 +489,8 @@ void main() {
       server.handler = (_) => throw HttpTransportException('down');
       (themes, loader) = await start(refreshing);
       await loader.idle;
-      final red = ColorScheme.fromSeed(seedColor: const Color(0xFFFF0000));
-      expect(_primary(themes, 'ocean'), red.primary);
+      const red = Color(0xFFFF0000);
+      expect(_primary(themes, 'ocean'), red);
       loader.dispose();
     });
 
@@ -548,7 +548,7 @@ void main() {
       (themes, _) = await start(once);
       expect(_primary(themes, 'ocean'), bundled);
 
-      server.handler = (_) => _ok('seed-color: purpel\n');
+      server.handler = (_) => _ok('colors.primary: purpel\n');
       (themes, _) = await start(once);
       expect(_primary(themes, 'ocean'), bundled);
       expect(await files.list('spring/themes/'), isEmpty);
@@ -572,8 +572,8 @@ void main() {
               }),
             );
       (themes, _) = await start(once);
-      final blue = ColorScheme.fromSeed(seedColor: const Color(0xFF0000FF));
-      expect(_primary(themes, 'ocean'), blue.primary);
+      const blue = Color(0xFF0000FF);
+      expect(_primary(themes, 'ocean'), blue);
       expect(server.requests.last.followRedirects, isFalse);
     });
   });
@@ -588,7 +588,7 @@ spring:
     theme:
       active: dark
       system-light: dark
-      seed-color: '#0000FF'
+      colors.primary: '#0000FF'
       themes:
         ocean:
           source: https://evil.example/t.yml
@@ -598,7 +598,7 @@ server:
   port: 1
 ''', 'brand');
       expect(content.properties, {
-        'themes.brand.seed-color': '#0000FF',
+        'themes.brand.colors.primary': '#0000FF',
         'themes.brand.brightness': 'dark',
       });
       expect(
@@ -617,7 +617,7 @@ server:
     test('the file does not choose the active theme', () async {
       server.handler = (_) => _ok('''
 spring.flutter.theme.active: dark
-spring.flutter.theme.seed-color: '#0000FF'
+spring.flutter.theme.colors.primary: '#0000FF'
 ''');
       final (themes, _) = await start(once);
       expect(themes.config.active, 'ocean');
@@ -627,11 +627,11 @@ spring.flutter.theme.seed-color: '#0000FF'
     test('the file does not extend another theme', () async {
       server.handler = (_) => _ok('''
 spring.flutter.theme.extends: dark
-spring.flutter.theme.seed-color: '#0000FF'
+spring.flutter.theme.colors.primary: '#0000FF'
 ''');
       final (themes, _) = await start(once);
-      final blue = ColorScheme.fromSeed(seedColor: const Color(0xFF0000FF));
-      expect(_primary(themes, 'ocean'), blue.primary);
+      const blue = Color(0xFF0000FF);
+      expect(_primary(themes, 'ocean'), blue);
       final ignored = ThemeSourceContent.parse(
         'spring.flutter.theme.extends: dark',
         'brand',
@@ -645,7 +645,7 @@ spring.flutter.theme.seed-color: '#0000FF'
 spring:
   flutter:
     theme:
-      seed-color: '#00FF00'
+      colors.primary: '#00FF00'
       syntax:
         java:
           keywords: [class]
@@ -657,7 +657,7 @@ spring:
       server.handler = (_) => _ok(languages);
       final (themes, _) = await start(const {
         'source': 'github:farum-azula/themes/themes/code.yml@code-v1',
-        'seed-color': '#0000FF',
+        'colors.primary': '#0000FF',
         'themes.night.brightness': 'dark',
       });
       expect(
@@ -673,7 +673,7 @@ spring:
       }
       expect(
         _primary(themes, 'light'),
-        _primary(SpringThemes(const {'seed-color': '#0000FF'}), 'light'),
+        _primary(SpringThemes(const {'colors.primary': '#0000FF'}), 'light'),
       );
     });
 
@@ -758,11 +758,13 @@ spring:
         'themes.ocean-dark.brightness': 'dark',
       };
       final (themes, _) = await start(props);
-      final scheme = ColorScheme.fromSeed(
-        seedColor: const Color(0xFF0000FF),
-        brightness: Brightness.dark,
+      // The downloaded color, in a dark theme.
+      expect(_primary(themes, 'ocean-dark'), const Color(0xFF0000FF));
+      expect(themes.data('ocean-dark').brightness, Brightness.dark);
+      expect(
+        themes.data('ocean-dark').colorScheme.surface,
+        SpringColorScheme.baseline(Brightness.dark).surface,
       );
-      expect(themes.material('ocean-dark').colorScheme.primary, scheme.primary);
       expect(ThemeSelection(themes).active, 'ocean-dark');
     });
 
@@ -776,12 +778,12 @@ spring:
           'themes.b.source': 'https://x.example/b.yml',
         };
         final (themes, _) = await start(props);
-        final red = ColorScheme.fromSeed(seedColor: const Color(0xFFFF0000));
-        final blue = ColorScheme.fromSeed(seedColor: const Color(0xFF0000FF));
-        expect(_primary(themes, 'a'), red.primary);
-        expect(_primary(themes, 'b'), blue.primary);
-        themes.load({'themes.c.seed-color': 'teal'});
-        expect(_primary(themes, 'a'), red.primary);
+        const red = Color(0xFFFF0000);
+        const blue = Color(0xFF0000FF);
+        expect(_primary(themes, 'a'), red);
+        expect(_primary(themes, 'b'), blue);
+        themes.load({'themes.c.colors.primary': 'teal'});
+        expect(_primary(themes, 'a'), red);
         themes.unload();
         expect(themes.names, containsAll(['a', 'b']));
         expect(themes.names, isNot(contains('c')));
@@ -870,8 +872,8 @@ spring:
       expect(template.fileStore, same(recording));
       expect(recording.writes, hasLength(2));
       expect(recording.writes.first, startsWith('support:spring/themes/'));
-      final blue = ColorScheme.fromSeed(seedColor: const Color(0xFF0000FF));
-      expect(_primary(SpringThemes.of(context), 'ocean'), blue.primary);
+      const blue = Color(0xFF0000FF);
+      expect(_primary(SpringThemes.of(context), 'ocean'), blue);
       expect(ThemeSelection.of(context).active, 'ocean');
     },
   );

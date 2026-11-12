@@ -9,7 +9,7 @@ keywords: [flutter, theme, yaml, tooltip, TooltipThemeData]
 
 # Tooltip theme in YAML
 
-The small label that appears when you hover or long-press something. It configures Flutter's `TooltipThemeData`. Set it under `spring.flutter.theme.components.tooltip`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.tooltip`.
+The small label that appears when you hover or long-press something. It configures Flutter's `TooltipThemeData`. Set it under `spring.flutter.theme.components.tooltip`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.tooltip`. The Material starter, `spring_boot_starter_flutter_material`, reads it: an app without that package in its dependencies shows nothing of it.
 
 ## Example
 
@@ -52,7 +52,7 @@ Every property is optional. One you leave out keeps Flutter's value.
 
 ## Read it in Dart
 
-The starter sets `ThemeData.tooltipTheme` from these properties. In a widget, read the result with:
+The Material starter sets `ThemeData.tooltipTheme` from these properties. In a widget, read the result with:
 
 ```dart
 final theme = Theme.of(context).tooltipTheme;
@@ -72,4 +72,4 @@ final theme = Theme.of(context).tooltipTheme;
 
 ---
 
-*Property descriptions are adapted from the documentation of the Flutter SDK (3.47.9), copyright The Flutter Authors, BSD 3-Clause license.*
+*Property descriptions are adapted from the documentation of the Flutter SDK (3.50.0), copyright The Flutter Authors, BSD 3-Clause license.*

@@ -26,18 +26,22 @@ import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
     as _i12;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
-import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_flutter_material/spring_auto_configuration.dart'
     as _i23;
+import 'package:spring_boot_starter_flutter_material/src/material_theme_design.dart'
+    as _i31;
+import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
+    as _i24;
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
     as _i15;
 import 'package:spring_boot_starter_flutter_security/spring_auto_configuration.dart'
-    as _i24;
-import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i25;
-import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i26;
-import 'package:spring_boot_starter_supabase/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
     as _i27;
+import 'package:spring_boot_starter_supabase/spring_auto_configuration.dart'
+    as _i28;
 import 'package:spring_boot_starter_supabase/spring_boot_starter_supabase.dart'
     as _i8;
 import 'package:spring_boot_starter_supabase/src/auth/supabase_auth.dart'
@@ -47,9 +51,9 @@ import 'package:spring_boot_starter_supabase/src/functions/edge_functions.dart'
 import 'package:spring_boot_starter_supabase/src/storage/storage_bucket.dart'
     as _i3;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
-    as _i28;
+    as _i29;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i29;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i30;
 import 'package:supabase_example_app/src/app/home_page.dart' as _i16;
 import 'package:supabase_example_app/src/profile/avatars.dart' as _i1;
 import 'package:supabase_example_app/src/profile/functions.dart' as _i6;
@@ -203,6 +207,7 @@ const _$knownAdvisors0 = {
   r'package:spring_boot_starter_data',
   r'package:spring_boot_starter_feign',
   r'package:spring_boot_starter_flutter',
+  r'package:spring_boot_starter_flutter_material',
   r'package:spring_boot_starter_flutter_navigation',
   r'package:spring_boot_starter_flutter_security',
   r'package:spring_boot_starter_logging',
@@ -522,23 +527,28 @@ _i17.SpringApplication get springApplication => _i17.SpringApplication(
       _i22.springBootStarterFlutterDebugMotionAutoConfiguration,
     if (!const bool.fromEnvironment('dart.vm.product'))
       _i22.springBootStarterFlutterDebugTimelineAutoConfiguration,
-    _i23.springBootStarterFlutterNavigationAutoConfiguration,
-    _i24.springBootStarterFlutterSecurityAutoConfiguration,
-    _i25.springBootStarterLoggingAutoConfiguration,
-    _i26.springBootStarterOauth2ClientAutoConfiguration,
-    _i27.springBootStarterSupabaseAutoConfiguration,
-    _i27.springBootStarterSupabaseDataAutoConfiguration,
+    _i23.springBootStarterFlutterMaterialAutoConfiguration,
+    _i24.springBootStarterFlutterNavigationAutoConfiguration,
+    _i25.springBootStarterFlutterSecurityAutoConfiguration,
+    _i26.springBootStarterLoggingAutoConfiguration,
+    _i27.springBootStarterOauth2ClientAutoConfiguration,
+    _i28.springBootStarterSupabaseAutoConfiguration,
+    _i28.springBootStarterSupabaseDataAutoConfiguration,
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
-      _i27.springBootStarterSupabaseServerAutoConfiguration,
-    _i28.springBootStarterWebsocketAutoConfiguration,
+      _i28.springBootStarterSupabaseServerAutoConfiguration,
+    _i29.springBootStarterWebsocketAutoConfiguration,
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
-      _i28.springBootStarterWebsocketServerAutoConfiguration,
-    _i29.springSecurityCoreAutoConfiguration,
+      _i29.springBootStarterWebsocketServerAutoConfiguration,
+    _i30.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
-    _i24.springBootStarterFlutterSecurityAutoConfiguration:
+    _i23.springBootStarterFlutterMaterialAutoConfiguration:
+        const _i17.AutoConfigurationModule(
+          factories: [_i31.MaterialThemeDesign()],
+        ),
+    _i25.springBootStarterFlutterSecurityAutoConfiguration:
         const _i17.AutoConfigurationModule(
           before: [
             r'springBootStarterOauth2ClientAutoConfiguration',
@@ -546,7 +556,7 @@ _i17.SpringApplication get springApplication => _i17.SpringApplication(
           ],
           after: [r'springBootStarterFlutterNavigationAutoConfiguration'],
         ),
-    _i27.springBootStarterSupabaseAutoConfiguration:
+    _i28.springBootStarterSupabaseAutoConfiguration:
         const _i17.AutoConfigurationModule(
           after: [
             r'springBootStarterFeignAutoConfiguration',
@@ -555,13 +565,13 @@ _i17.SpringApplication get springApplication => _i17.SpringApplication(
             r'springSecurityCoreAutoConfiguration',
           ],
         ),
-    _i27.springBootStarterSupabaseDataAutoConfiguration:
+    _i28.springBootStarterSupabaseDataAutoConfiguration:
         const _i17.AutoConfigurationModule(
           before: [r'springBootStarterDataAutoConfiguration'],
         ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
-      _i27.springBootStarterSupabaseServerAutoConfiguration:
+      _i28.springBootStarterSupabaseServerAutoConfiguration:
           const _i17.AutoConfigurationModule(
             before: [
               r'springBootStarterSecurityAutoConfiguration',
@@ -695,7 +705,7 @@ _i17.SpringApplication get springApplication => _i17.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'afec7709',
+  fingerprint: '1b65179b',
 );
 
 /// Starts the application: config files, environment, context, runners

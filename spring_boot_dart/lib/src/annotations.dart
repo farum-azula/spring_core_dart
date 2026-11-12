@@ -210,6 +210,7 @@ class AutoConfigurationModule {
     this.after = const [],
     this.build,
     this.platform,
+    this.factories = const [],
   });
 
   /// The position among the auto-configuration modules, lower first;
@@ -242,6 +243,27 @@ class AutoConfigurationModule {
   /// (server code checked as minified JavaScript under Node) is compiled
   /// with `-DSPRING_ALL_PLATFORMS=true`, which keeps every module.
   final ModulePlatform? platform;
+
+  /// What the starter adds to an application before its beans exist:
+  /// constant objects the application finds by their type with
+  /// `SpringApplication.factories.load<T>()` (and the `springFactories`
+  /// bean), in the order of the modules. Empty by default.
+  ///
+  /// For what must work while the environment is prepared or a splash
+  /// shows: a bean cannot, since no bean exists yet. Each is a constant: a
+  /// `const` constructor call with literal arguments, a top-level `const`
+  /// variable or a `static const` field.
+  ///
+  /// ```dart
+  /// @AutoConfigurationModule(factories: [OceanThemeDesign()])
+  /// final BeanModule oceanAutoConfiguration = $oceanBeans;
+  /// ```
+  ///
+  /// Spring (Java): the entries of a starter's `META-INF/spring.factories`,
+  /// which `SpringFactoriesLoader.loadFactories(type, classLoader)` finds
+  /// on the class path. Here the generator copies them into the generated
+  /// application.
+  final List<Object> factories;
 }
 
 /// The platforms an [AutoConfigurationModule] can be kept to.

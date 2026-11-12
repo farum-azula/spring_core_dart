@@ -2,10 +2,12 @@
 // file (`index.md` is the folder's address, a subfolder's too), links
 // between the files opening their screens as on the site's pages, and the
 // same screen kept from one address of the route to another.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
+
+import 'support/design_starters.dart';
 
 class _DocsScreen extends StatefulWidget {
   const _DocsScreen();
@@ -88,7 +90,9 @@ SpringApplication _application() => SpringApplication(
   autoConfigurations: [
     springBootStarterFlutterAutoConfiguration,
     springBootStarterFlutterNavigationAutoConfiguration,
+    ...DesignStarters.onlyMaterial.autoConfigurations,
   ],
+  autoConfigurationMetadata: DesignStarters.onlyMaterial.metadata,
   bannerMode: BannerMode.off,
 );
 

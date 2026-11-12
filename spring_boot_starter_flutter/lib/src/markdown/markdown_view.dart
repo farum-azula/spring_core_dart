@@ -1,26 +1,12 @@
 import 'dart:math' as math;
 import 'dart:ui' show PlatformDispatcher;
 
-import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/gestures.dart';
-import 'package:flutter/cupertino.dart'
-    show
-        cupertinoDesktopTextSelectionHandleControls,
-        cupertinoTextSelectionHandleControls;
-import 'package:flutter/material.dart'
-    show
-        Icons,
-        MaterialLocalizations,
-        ScriptCategory,
-        SelectionArea,
-        TextTheme,
-        Theme,
-        ThemeData,
-        Typography,
-        desktopTextSelectionHandleControls,
-        materialTextSelectionHandleControls;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
+import 'package:spring_boot_starter_flutter/src/design_scope.dart';
+import 'package:spring_boot_starter_flutter/src/text/selection_controls.dart';
+import 'package:spring_boot_starter_flutter/src/theme/spring_type_scale.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:spring_boot_dart/spring_boot_dart.dart' show BracePlaceholders;
 import 'package:spring_boot_starter_flutter/src/theme/content_change.dart';
@@ -251,7 +237,7 @@ class _CopyButtonState extends State<_CopyButton> {
         child: Padding(
           padding: const EdgeInsets.all(4),
           child: Icon(
-            _copied ? Icons.check_rounded : Icons.copy_rounded,
+            _copied ? _checkIcon : _copyIcon,
             size: 16,
             color: widget.color,
           ),
@@ -599,24 +585,18 @@ class _MarkdownViewState extends State<MarkdownView>
     if (!widget.selectable) {
       return view;
     }
-    // Material's SelectionArea needs MaterialLocalizations (its menu); in a
-    // CupertinoApp or WidgetsApp the text is selectable without a menu.
-    if (Localizations.of<MaterialLocalizations>(
-          context,
-          MaterialLocalizations,
-        ) !=
-        null) {
-      return SelectionArea(child: view);
+    // The design library of the app selects text its own way (Material's
+    // SelectionArea with its menu); without one the text is selectable
+    // with the starter's handles and no menu.
+    final design = DesignScope.maybeOf(context);
+    if (design != null) {
+      return design.selectable(context, view);
     }
     return SelectableRegion(
-      selectionControls: switch (defaultTargetPlatform) {
-        TargetPlatform.iOS => cupertinoTextSelectionHandleControls,
-        TargetPlatform.macOS => cupertinoDesktopTextSelectionHandleControls,
-        TargetPlatform.linux ||
-        TargetPlatform.windows => desktopTextSelectionHandleControls,
-        TargetPlatform.android ||
-        TargetPlatform.fuchsia => materialTextSelectionHandleControls,
-      },
+      selectionControls: SpringTextSelectionControls.instance,
+      // No menu: the platform's shortcuts copy. Flutter asks for one at a
+      // long press or a right click, so it gets one that shows nothing.
+      contextMenuBuilder: (_, _) => const SizedBox.shrink(),
       child: view,
     );
   }
@@ -1371,19 +1351,19 @@ final class _Look {
 
   static CodeSyntax? _noSyntax(String? language) => null;
 
-  // What Theme.of gives in a MaterialApp, without one: the theme's text
-  // styles with the sizes of the locale's script (Material's typography).
-  static TextTheme _localized(BuildContext context, SpringThemeData theme) {
-    final script = switch (Localizations.maybeLocaleOf(context)?.languageCode) {
-      'ja' || 'zh' || 'ko' => ScriptCategory.dense,
-      'ar' || 'fa' || 'hi' || 'th' || 'bn' || 'ur' => ScriptCategory.tall,
-      _ => ScriptCategory.englishLike,
-    };
-    final geometry = Typography.material2021(
-      platform: defaultTargetPlatform,
-    ).geometryThemeFor(script);
-    return ThemeData.localize(theme.toMaterial(), geometry).textTheme;
-  }
+  // What Theme.of gives in a MaterialApp: the style of the design's theme
+  // when the app has a design library, else the theme's own with the sizes
+  // of the locale's script (the Material 3 type scale).
+  static TextStyle _style(
+    BuildContext context,
+    SpringThemeData theme,
+    String name,
+  ) =>
+      DesignScope.maybeOf(context)?.textStyle(context, name) ??
+      theme.localizedTextStyle(
+        name,
+        SpringTypeScale.scriptOf(Localizations.maybeLocaleOf(context)),
+      );
 
   static _Look of(BuildContext context) {
     final theme = SpringTheme.maybeOf(context);
@@ -1457,24 +1437,20 @@ final class _Look {
     }
     Color? callout(String kind) => colorOf('callout', kind);
 
-    // Theme.of's styles: the theme's, with the sizes of the locale's
-    // script (a SpringTheme's own text styles have only what was set). A
-    // WidgetsApp has no Theme, and Theme.of would give Material's light
-    // fallback, black text on a dark theme: the theme's own then.
-    final text = context.findAncestorWidgetOfExactType<Theme>() == null
-        ? _localized(context, theme)
-        : Theme.of(context).textTheme;
+    // The styles with the sizes of the locale's script (a SpringTheme's
+    // own text styles have only what was set).
+    TextStyle text(String name) => _style(context, theme, name);
     final roles = [
-      text.headlineLarge,
-      text.headlineMedium,
-      text.headlineSmall,
-      text.titleLarge,
-      text.titleMedium,
-      text.titleSmall,
+      text('headlinelarge'),
+      text('headlinemedium'),
+      text('headlinesmall'),
+      text('titlelarge'),
+      text('titlemedium'),
+      text('titlesmall'),
     ];
-    final code = (text.bodyMedium ?? base).merge(theme.textStyle('code'));
+    final code = text('bodymedium').merge(theme.textStyle('code'));
     return _Look(
-      body: text.bodyLarge ?? base,
+      body: text('bodylarge'),
       code: color('text') == null ? code : code.copyWith(color: color('text')),
       codeBackground: color('background') ?? scheme.surfaceContainerHighest,
       codePadding:
@@ -1490,8 +1466,8 @@ final class _Look {
         for (var level = 1; level <= 6; level++)
           'h$level': switch (colorOf('heading', 'h$level') ??
               colorOf('heading', 'color')) {
-            final color? => (roles[level - 1] ?? base).copyWith(color: color),
-            null => roles[level - 1] ?? base,
+            final color? => roles[level - 1].copyWith(color: color),
+            null => roles[level - 1],
           },
       },
       tokens: {
@@ -1782,3 +1758,9 @@ class _LongTableState extends State<_LongTable> {
     );
   }
 }
+
+// The two icons of the copy button, of the Material Icons font (an app
+// has it with `uses-material-design: true`); constants, so that the build
+// keeps only their glyphs.
+const _copyIcon = IconData(0xf66c, fontFamily: 'MaterialIcons');
+const _checkIcon = IconData(0xf636, fontFamily: 'MaterialIcons');

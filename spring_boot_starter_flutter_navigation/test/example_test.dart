@@ -1,8 +1,8 @@
 // The example app as generated (example/spring_gen/example.spring.dart):
 // the annotated screens and shell, `BookPageRoute.to(...)` with a value, a
 // parameter and an extra, replaceParams, push with a result.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 
 import '../example/spring_gen/example.spring.dart';

@@ -50,6 +50,8 @@ const repositoryOnly = {
   'spring_boot_starter_oauth2_client',
   'spring_boot_starter_security',
   'spring_boot_starter_flutter',
+  'spring_boot_starter_flutter_material',
+  'spring_boot_starter_flutter_cupertino',
   'spring_boot_starter_flutter_security',
   'spring_boot_starter_flutter_navigation',
 };
@@ -63,6 +65,8 @@ const familyGitPackages = {'neon_ui'};
 
 const flutterPackages = [
   'spring_boot_starter_flutter',
+  'spring_boot_starter_flutter_material',
+  'spring_boot_starter_flutter_cupertino',
   'spring_boot_starter_flutter_security',
   'spring_boot_starter_flutter_navigation',
   'example/flutter_guide',
@@ -99,12 +103,38 @@ const repositoryOnlyExceptions = {
       "GitHub's Markdown parser (tools.dart.dev): the Flutter starter's "
       'MarkdownView shows Markdown resources with the theme; the generator '
       "parses the same files for the site's pages, so both read them alike.",
+  'material_ui':
+      "Material Design (flutter.dev): the Flutter team's library that "
+      'replaces package:flutter/material.dart, deprecated in Flutter 3.50; '
+      'spring_boot_starter_flutter_material is built on it '
+      '(repositoryOnlyExceptionsOnlyIn: that starter alone).',
+  'cupertino_ui':
+      "The iOS design (flutter.dev): the Flutter team's library that "
+      'replaces package:flutter/cupertino.dart, deprecated in Flutter 3.50; '
+      'spring_boot_starter_flutter_cupertino is built on it '
+      '(repositoryOnlyExceptionsOnlyIn: that starter alone).',
+  'material_color_utilities':
+      "The Material 3 color math (Google's material.io, pure Dart; an "
+      'exception of allowedPackages too): '
+      'spring_boot_starter_flutter_cupertino makes the palette of a '
+      "theme's seed color with it, without Material's widgets "
+      '(repositoryOnlyExceptionsOnlyIn: that starter alone).',
   'pointycastle':
       "THIRD-PARTY, to be removed: Bouncy Castle's Dart port "
       '(bouncycastle.org), RSA, ECDSA, Argon2, PBKDF2, scrypt and SHA-256 '
       'for the security packages and the OAuth2 client until a Dart team '
       'package has them; one file per package uses it '
       '(docs/dependencies.md).',
+};
+
+/// The [repositoryOnlyExceptions] that only some [repositoryOnly] packages
+/// may depend on (the others are for any of them): the design libraries
+/// belong to the two design starters, so `spring_boot_starter_flutter` and
+/// the starters built on it stay without one.
+const repositoryOnlyExceptionsOnlyIn = {
+  'material_ui': {'spring_boot_starter_flutter_material'},
+  'cupertino_ui': {'spring_boot_starter_flutter_cupertino'},
+  'material_color_utilities': {'spring_boot_starter_flutter_cupertino'},
 };
 
 /// A package allowed although it is not published by the Dart team.
@@ -179,10 +209,15 @@ const allowedPackages = {
     onlyIn: {'spring_core_dart_workspace'},
   ),
   'material_color_utilities': AllowedPackage(
-    'Part of the Flutter SDK (package:flutter depends on it, pinned by the '
-    "SDK); published by Google's material.io.",
+    "The Material 3 color math, published by Google's material.io: "
+    'package:flutter still depends on it in Flutter 3.50 (the SDK pins its '
+    'version), so every Flutter package gets it; material_ui depends on it '
+    'too, and spring_boot_starter_flutter_cupertino lists it itself, for '
+    "the palette of a theme's seed color.",
     onlyIn: {
       'spring_boot_starter_flutter',
+      'spring_boot_starter_flutter_material',
+      'spring_boot_starter_flutter_cupertino',
       'spring_boot_starter_flutter_security',
       'spring_boot_starter_flutter_navigation',
       'neon_books_app',
@@ -325,7 +360,7 @@ Future<void> _check(String directory, {required bool standalone}) async {
       // The Flutter SDK (`flutter: sdk: flutter`) counts as the SDK.
       if (!workspace.contains(dependency) &&
           packages[dependency]?['source'] != 'sdk' &&
-          !repositoryOnlyExceptions.containsKey(dependency)) {
+          !_repositoryOnlyException(dependency, of: name)) {
         problems.add(
           '$dependency: a dependency of $name, which may depend only on '
           'packages of this repository (repositoryOnly)',
@@ -390,6 +425,13 @@ Future<void> _check(String directory, {required bool standalone}) async {
     );
   }
 }
+
+// Whether the [repositoryOnly] package [of] may depend on [dependency]:
+// one of [repositoryOnlyExceptions], and one for this package when
+// [repositoryOnlyExceptionsOnlyIn] names its packages.
+bool _repositoryOnlyException(String dependency, {required String of}) =>
+    repositoryOnlyExceptions.containsKey(dependency) &&
+    (repositoryOnlyExceptionsOnlyIn[dependency]?.contains(of) ?? true);
 
 List<String> _dependencies(Map<String, Object?> package) => [
   ...((package['dependencies'] as List?) ?? const []).cast<String>(),

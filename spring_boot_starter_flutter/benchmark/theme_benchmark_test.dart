@@ -1,14 +1,17 @@
 // Timings of the theme machinery (debug / JIT, so slower than a release
-// build): start with many themes, the first and later ThemeData lookups,
-// switching, a theme from a server, the font name table. Not part of the
-// tests (outside test/); run with
+// build) in an app with the Material starter: start with many themes, the
+// first and later ThemeData lookups, switching, a theme from a server, the
+// font name table. Not part of the tests (outside test/); run with
 //   flutter test benchmark
 
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:spring_boot_starter_flutter_material/spring_auto_configuration.dart'
+    show springBootStarterFlutterMaterialAutoConfiguration;
+
+import '../test/support/designs.dart';
 
 Map<String, String> properties(int themes) => {
   'seed-color': 'deepPurple',
@@ -35,7 +38,7 @@ void main() {
     test('$count themes', () {
       final props = properties(count);
       final start = Stopwatch()..start();
-      final themes = SpringThemes(props);
+      final themes = SpringThemes(props, designs: testDesigns);
       start.stop();
 
       final first = Stopwatch()..start();
@@ -91,30 +94,39 @@ void main() {
   });
 
   testWidgets('switching in the app: one frame', (tester) async {
-    final themes = SpringThemes(properties(30));
+    final themes = SpringThemes(properties(30), designs: testDesigns);
     final selection = ThemeSelection(themes);
-    final context = await SpringApplication([
-      BeanModule(
-        'm',
-        [
-          BeanDefinition<SpringThemes>(
-            name: 'springThemes',
-            types: const [SpringThemes],
-            create: (_) => themes,
-          ),
-          BeanDefinition<ThemeSelection>(
-            name: 'themeSelection',
-            types: const [ThemeSelection],
-            create: (_) => selection,
-          ),
-        ],
-        resources: {
-          'application.properties': const EmbeddedResource.text(
-            'spring.flutter.app.type=material',
-          ),
-        },
-      ),
-    ], bannerMode: BannerMode.off).runAsync(const []);
+    final context = await SpringApplication(
+      [
+        BeanModule(
+          'm',
+          [
+            BeanDefinition<SpringThemes>(
+              name: 'springThemes',
+              types: const [SpringThemes],
+              create: (_) => themes,
+            ),
+            BeanDefinition<ThemeSelection>(
+              name: 'themeSelection',
+              types: const [ThemeSelection],
+              create: (_) => selection,
+            ),
+          ],
+          resources: {
+            'application.properties': const EmbeddedResource.text(
+              'spring.flutter.app.type=material',
+            ),
+          },
+        ),
+      ],
+      // The MaterialApp of the app type, and the themes as ThemeData.
+      autoConfigurations: [springBootStarterFlutterMaterialAutoConfiguration],
+      autoConfigurationMetadata: {
+        springBootStarterFlutterMaterialAutoConfiguration:
+            designAutoConfigurationMetadata[springBootStarterFlutterMaterialAutoConfiguration]!,
+      },
+      bannerMode: BannerMode.off,
+    ).runAsync(const []);
     addTearDown(context.close);
     await tester.pumpWidget(
       SpringScope(

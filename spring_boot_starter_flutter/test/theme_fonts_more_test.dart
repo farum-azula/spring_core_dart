@@ -396,7 +396,12 @@ spring.flutter.fonts.families:
       ]);
       // A language alone covers its regions; a script only itself.
       expect(ThemeFonts.loadLanguage('zh'), isNull);
-      expect(ThemeFonts.loadLanguage('zh-Hant'), isNotNull);
+      final loading = ThemeFonts.loadLanguage('zh-Hant');
+      expect(loading, isNotNull);
+      // Loaded before the test ends: a font that comes in later asks for a
+      // frame the test no longer draws.
+      await tester.runAsync(() => loading!);
+      await tester.pump();
     });
   });
 }

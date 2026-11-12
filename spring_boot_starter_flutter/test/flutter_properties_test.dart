@@ -26,7 +26,8 @@ FlutterDataSourceProperties dataSource(Environment p) => bind('dataSource', p);
 void main() {
   test('app: defaults, then every key', () {
     final defaults = app(env({}));
-    expect(defaults.type, AppType.widgets);
+    // Not set: the starters of the application decide (SpringAppFactories).
+    expect(defaults.type, isNull);
     expect(defaults.title, isNull);
     expect(defaults.debugBanner, isTrue);
     expect(defaults.locales, isNull);
@@ -39,7 +40,9 @@ void main() {
         'spring.flutter.app.locales': 'en, ja,,pt_BR',
       }),
     );
-    expect(set.type, AppType.material);
+    // As written: SpringAppFactories finds the factory without case and
+    // the spaces around.
+    expect(set.type, ' Material ');
     expect(set.title, 'Shop');
     expect(set.debugBanner, isFalse);
     // The blank tag between the commas is dropped where the locales are
@@ -47,25 +50,19 @@ void main() {
     expect(set.locales, ['en', 'ja', '', 'pt_BR']);
   });
 
-  test('app: a bad type or banner names the property', () {
+  test('app: any type is a text; a bad banner names the property', () {
+    // The type is the type of a SpringAppFactory bean: the factories of
+    // the application say which ones there are, not the binding.
+    expect(app(env({'spring.flutter.app.type': 'ocean'})).type, 'ocean');
     expect(
-      () => app(env({'spring.flutter.app.type': 'x'})),
+      () => app(env({'spring.flutter.app.debug-banner': 'maybe'})),
       throwsA(
         isA<ConfigurationPropertiesBindException>().having(
           (e) => '$e',
           'message',
-          allOf(
-            contains('spring.flutter.app.type'),
-            contains('one of widgets, material, cupertino'),
-          ),
+          contains('spring.flutter.app.debug-banner'),
         ),
       ),
-    );
-    expect(
-      () => app(
-        env({'spring.flutter.app.debug-banner': 'maybe'}),
-      ),
-      throwsA(isA<ConfigurationPropertiesBindException>()),
     );
   });
 

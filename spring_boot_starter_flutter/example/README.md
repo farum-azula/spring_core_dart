@@ -28,7 +28,7 @@ To run it, make an app around it:
 
 ```sh
 flutter create counter && cd counter
-flutter pub add spring_boot_starter_flutter
+flutter pub add spring_boot_starter_flutter spring_boot_starter_flutter_material material_ui
 flutter pub add dev:build_runner dev:spring_core_dart_generator
 # copy example.dart to lib/main.dart, and change its import
 # 'spring_gen/example.spring.dart' to 'spring_gen/main.spring.dart'
@@ -51,6 +51,10 @@ dependencies:
   flutter:
     sdk: flutter
   spring_boot_starter_flutter: ^0.7.4
+  # The counter's Scaffold and AppBar: Material's app widget and theme,
+  # and its widgets (Flutter 3.50 has them in material_ui, not the SDK).
+  spring_boot_starter_flutter_material: ^0.7.4
+  material_ui: ^1.11.0
 
 dev_dependencies:
   build_runner: ^2.17.0
@@ -61,7 +65,7 @@ dev_dependencies:
 
 ```dart
 // lib/main.dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
 import 'spring_gen/main.spring.dart'; // generated
@@ -79,8 +83,9 @@ void main() => runApp(
 
 ```properties
 # lib/resources/application.properties
-# Scaffold and AppBar need a MaterialApp; the default is a WidgetsApp.
-spring.flutter.app.type=material
+# Scaffold and AppBar need a MaterialApp: spring_boot_starter_flutter_material,
+# the one design starter, makes the app one, so spring.flutter.app.type need
+# not be set (without a design starter the app is a WidgetsApp).
 spring.flutter.app.title=${counter.title}
 ```
 
@@ -214,7 +219,7 @@ the app widget of the properties around it.
 // test/counter_test.dart
 import 'package:counter/main.dart';
 import 'package:counter/spring_gen/main.spring.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';

@@ -1,72 +1,13 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show mapEquals;
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show listEquals, mapEquals;
+import 'package:flutter/widgets.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_choice_store.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_design.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
-
-/// Changes, in code, every Material `ThemeData` made from the theme
-/// properties: for what the properties do not cover.
-///
-/// The properties set colors, typography, shapes and a list of components;
-/// a customizer can change anything else on the `ThemeData` (a component
-/// the properties do not know, a value computed from others). Declare a
-/// bean that implements it; every customizer runs, in `@Order`, on each
-/// theme when it is first made, also on a `ThemeData` bean named `theme`
-/// or `darkTheme` that replaces the made `light` or `dark` theme.
-///
-/// ```dart
-/// // Stadium-shaped chips in every theme.
-/// @Component()
-/// class RoundedChips implements ThemeCustomizer {
-///   @override
-///   ThemeData customize(ThemeData theme, SpringThemeData spring) =>
-///       theme.copyWith(
-///         chipTheme: theme.chipTheme.copyWith(shape: const StadiumBorder()),
-///       );
-/// }
-/// ```
-///
-/// Spring Boot (Java) adjusts its auto-configured objects the same way,
-/// for example with a `Jackson2ObjectMapperBuilderCustomizer` bean.
-abstract interface class ThemeCustomizer {
-  /// Returns [theme] changed, usually with `copyWith`. [theme] was made
-  /// from [spring], whose name, palette and tokens the change may depend
-  /// on.
-  ThemeData customize(ThemeData theme, SpringThemeData spring);
-}
-
-/// Changes, in code, every `CupertinoThemeData` made from the theme
-/// properties, for apps of type `cupertino`.
-///
-/// The Cupertino counterpart of [ThemeCustomizer]: declare a bean that
-/// implements it; every customizer runs, in `@Order`, on each Cupertino
-/// theme when it is first made (also on a replacing `CupertinoThemeData`
-/// bean).
-///
-/// ```dart
-/// // Bar backgrounds follow the theme's surface color.
-/// @Component()
-/// class SurfaceBars implements CupertinoThemeCustomizer {
-///   @override
-///   CupertinoThemeData customize(
-///     CupertinoThemeData theme,
-///     SpringThemeData spring,
-///   ) => theme.copyWith(barBackgroundColor: spring.colorScheme.surface);
-/// }
-/// ```
-abstract interface class CupertinoThemeCustomizer {
-  /// Returns [theme] changed, usually with `copyWith`. [theme] was made
-  /// from [spring].
-  CupertinoThemeData customize(
-    CupertinoThemeData theme,
-    SpringThemeData spring,
-  );
-}
 
 /// All the themes of the app, read from the `spring.flutter.theme.*`
 /// properties: the standard `light` and `dark`, and every custom theme of
@@ -74,10 +15,13 @@ abstract interface class CupertinoThemeCustomizer {
 ///
 /// The look of the app is configuration rather than `ThemeData` code, and
 /// this bean holds the result. Each theme is read once and is available
-/// as [SpringThemeData], as Material `ThemeData` ([material]) and as
-/// `CupertinoThemeData` ([cupertino]); switching themes only picks another
-/// one. Every theme is read when the application starts, so an invalid
-/// property fails the start with the property's name.
+/// as [SpringThemeData]; switching themes only picks another one. The
+/// design starters make their own themes of it: Material's `ThemeData`
+/// (the `MaterialThemes` bean of `spring_boot_starter_flutter_material`),
+/// a `CupertinoThemeData` (`CupertinoThemes` of
+/// `spring_boot_starter_flutter_cupertino`). Every theme is read when the
+/// application starts, so an invalid property fails the start with the
+/// property's name.
 ///
 /// The starter creates it as a bean, and `SpringApp` shows its themes.
 /// Inject it to list the themes (for a theme menu) or to add themes at
@@ -96,42 +40,21 @@ final class SpringThemes extends ChangeNotifier {
   /// Throws a `ThemePropertyException` (or a `StateError` for a wrong
   /// `extends`) when a property is invalid.
   ///
-  /// [light] and [dark] replace the made `light` and `dark` Material themes,
-  /// and [cupertino] every Cupertino theme; the starter passes a
-  /// `ThemeData` bean named `theme` / `darkTheme` and a
-  /// `CupertinoThemeData` bean here. [customizers] and
-  /// [cupertinoCustomizers] then change every theme, replaced ones too.
+  /// [designs] are the design libraries the themes are read with: what
+  /// makes a palette from `seed-color` and reads `components.*` or
+  /// `cupertino.*`. None by default, as in an app of type `widgets`.
   SpringThemes(
     Map<String, String> properties, {
-    List<ThemeCustomizer> customizers = const [],
-    List<CupertinoThemeCustomizer> cupertinoCustomizers = const [],
-    ThemeData? light,
-    ThemeData? dark,
-    CupertinoThemeData? cupertino,
     RemoteAddresses addresses = const RemoteAddresses(),
-  }) : this._(
-         properties,
-         customizers: customizers,
-         cupertinoCustomizers: cupertinoCustomizers,
-         light: light,
-         dark: dark,
-         cupertino: cupertino,
-         addresses: addresses,
-       );
+    ThemeDesigns designs = ThemeDesigns.none,
+  }) : this._(properties, addresses: addresses, designs: designs);
 
   SpringThemes._(
     Map<String, String> properties, {
-    required this.customizers,
-    required this.cupertinoCustomizers,
-    ThemeData? light,
-    ThemeData? dark,
-    CupertinoThemeData? cupertino,
     Map<String, SpringThemeData>? read,
     this.addresses = const RemoteAddresses(),
-  }) : _files = Map.of(properties),
-       _lightOverride = light,
-       _darkOverride = dark,
-       _cupertinoOverride = cupertino {
+    this.designs = ThemeDesigns.none,
+  }) : _files = Map.of(properties) {
     final config = _configOf(_files);
     _use(config, read ?? _read(config));
   }
@@ -143,17 +66,11 @@ final class SpringThemes extends ChangeNotifier {
   /// The themes are read once per [environment]: `SpringApplicationWidget`
   /// reads them for the splash while the application starts, and the bean
   /// made later from the same environment and the same properties reuses
-  /// them (and the Material themes they made) instead of reading them again
-  /// during the splash. The customizers and replacing themes still apply to
-  /// each instance.
+  /// them instead of reading them again during the splash.
   factory SpringThemes.fromEnvironment(
     ConfigurableEnvironment environment, {
-    List<ThemeCustomizer> customizers = const [],
-    List<CupertinoThemeCustomizer> cupertinoCustomizers = const [],
-    ThemeData? light,
-    ThemeData? dark,
-    CupertinoThemeData? cupertino,
     RemoteAddresses addresses = const RemoteAddresses(),
+    ThemeDesigns designs = ThemeDesigns.none,
   }) {
     final properties = Binder.get(environment)
         .bind(prefix, const MapType(ClassType<String>(), ClassType<String>()))
@@ -162,19 +79,19 @@ final class SpringThemes extends ChangeNotifier {
     final earlier = _readFor[environment];
     final themes = SpringThemes._(
       properties,
-      customizers: customizers,
-      cupertinoCustomizers: cupertinoCustomizers,
-      light: light,
-      dark: dark,
-      cupertino: cupertino,
-      read: earlier != null && mapEquals(earlier.properties, properties)
+      read:
+          earlier != null &&
+              mapEquals(earlier.properties, properties) &&
+              _sameDesigns(earlier.designs, designs)
           ? earlier.data
           : null,
       addresses: addresses,
+      designs: designs,
     );
     _readFor[environment] = (
       properties: themes._files,
       data: Map.unmodifiable(themes._data),
+      designs: designs,
     );
     return themes;
   }
@@ -183,19 +100,38 @@ final class SpringThemes extends ChangeNotifier {
   // [SpringThemes.fromEnvironment] of the same environment.
   static final _readFor =
       Expando<
-        ({Map<String, String> properties, Map<String, SpringThemeData> data})
+        ({
+          Map<String, String> properties,
+          Map<String, SpringThemeData> data,
+          ThemeDesigns designs,
+        })
       >('SpringThemes.fromEnvironment');
+
+  static bool _sameDesigns(ThemeDesigns a, ThemeDesigns b) =>
+      a.appType == b.appType && listEquals(a.all, b.all);
 
   /// The themes of [context]: its bean, else, for a context without the
   /// starter's auto-configuration (in a test), themes made once from its
-  /// environment.
+  /// environment, with the designs of its `springFactories` bean when it
+  /// has one.
   static SpringThemes of(ApplicationContext context) =>
       context.getBeansOfType<SpringThemes>().values.firstOrNull ??
       (_made[context] ??= switch (context.environment) {
         final ConfigurableEnvironment environment =>
-          SpringThemes.fromEnvironment(environment),
+          SpringThemes.fromEnvironment(
+            environment,
+            designs: designsOf(context),
+          ),
         _ => SpringThemes(const {}),
       });
+
+  /// The designs of [context]'s application: the [ThemeDesign]s among the
+  /// factories of its starters, for its `spring.flutter.app.type`.
+  static ThemeDesigns designsOf(ApplicationContext context) => ThemeDesigns.of(
+    context.getBeansOfType<SpringFactories>().values.firstOrNull ??
+        const SpringFactories(),
+    context.environment,
+  );
 
   static final _made = Expando<SpringThemes>('SpringThemes');
 
@@ -219,19 +155,8 @@ final class SpringThemes extends ChangeNotifier {
       if (key.isNotEmpty) ...value,
   };
 
-  /// The customizers applied to every Material theme, in order.
-  final List<ThemeCustomizer> customizers;
-
-  /// The customizers applied to every Cupertino theme, in order.
-  final List<CupertinoThemeCustomizer> cupertinoCustomizers;
-  final ThemeData? _lightOverride;
-  final ThemeData? _darkOverride;
-  final CupertinoThemeData? _cupertinoOverride;
-
   late ThemeConfig _config;
   final _data = <String, SpringThemeData>{};
-  final _material = <String, ThemeData>{};
-  final _cupertino = <String, CupertinoThemeData>{};
 
   /// The theme properties as read, with the selection properties
   /// (`active`, `system-light`, `system-dark`) that [ThemeSelection]
@@ -274,34 +199,6 @@ final class SpringThemes extends ChangeNotifier {
   /// values directly. Throws an `ArgumentError` for an unknown name.
   SpringThemeData data(String name) =>
       _data[_name(name)] ??= SpringThemeData.of(_config, _name(name));
-
-  /// Theme [name] as Material's `ThemeData`: the one made from the
-  /// properties (or the replacing one, for `light` and `dark`), then
-  /// changed by the customizers; made once. Throws an `ArgumentError` for
-  /// an unknown name.
-  ThemeData material(String name) => _material[_name(name)] ??= () {
-    final spring = data(name);
-    final override = switch (spring.name) {
-      'light' => _lightOverride,
-      'dark' => _darkOverride,
-      _ => null,
-    };
-    return customizers.fold(
-      override ?? spring.toMaterial(),
-      (theme, customizer) => customizer.customize(theme, spring),
-    );
-  }();
-
-  /// Theme [name] as a `CupertinoThemeData`: the one made from the
-  /// properties (or the replacing one), then changed by the customizers;
-  /// made once. Throws an `ArgumentError` for an unknown name.
-  CupertinoThemeData cupertino(String name) => _cupertino[_name(name)] ??= () {
-    final spring = data(name);
-    return cupertinoCustomizers.fold(
-      _cupertinoOverride ?? spring.toCupertino(),
-      (theme, customizer) => customizer.customize(theme, spring),
-    );
-  }();
 
   /// Adds or changes themes at run time: [properties] (relative to
   /// `spring.flutter.theme`, like `themes.winter.seed-color`) go over the
@@ -360,8 +257,11 @@ final class SpringThemes extends ChangeNotifier {
   /// (`SpringApplication(addressResolvers:)`), then the built-in ones.
   final RemoteAddresses addresses;
 
+  /// The design libraries the themes are read with.
+  final ThemeDesigns designs;
+
   ThemeConfig _configOf(Map<String, String> properties) =>
-      ThemeConfig(properties, addresses: addresses);
+      ThemeConfig(properties, addresses: addresses, designs: designs);
 
   /// Every address the themes download from: the images of every theme
   /// (backgrounds, the splash's logo, image tokens).
@@ -405,16 +305,42 @@ final class SpringThemes extends ChangeNotifier {
     _data
       ..clear()
       ..addAll(data);
-    _material.clear();
-    _cupertino.clear();
   }
 
-  // Every theme is read (and made into a Material theme) now, once: an
+  // Every theme is read (and checked by its designs) now, once: an
   // invalid property fails here, not when a theme is first shown, and the
   // themes read are the ones used.
-  static Map<String, SpringThemeData> _read(ThemeConfig config) => {
-    for (final name in config.names) name: SpringThemeData.of(config, name),
-  };
+  static Map<String, SpringThemeData> _read(ThemeConfig config) {
+    final data = {
+      for (final name in config.names) name: SpringThemeData.of(config, name),
+    };
+    _logUnread(data.values);
+    return data;
+  }
+
+  // The design properties of the themes that no starter of the
+  // application reads: once per property, so an app that meant to show
+  // them learns which starter it lacks.
+  static void _logUnread(Iterable<SpringThemeData> themes) {
+    final unread = <String, String>{
+      for (final theme in themes) ...theme.unreadDesignProperties,
+    };
+    for (final MapEntry(key: property, value: starter) in unread.entries) {
+      if (_logged.add(property)) {
+        _themesLog.info(
+          () =>
+              'The theme property $property is not shown and not checked: '
+              '$starter, which reads it, is not in the application.',
+        );
+      }
+    }
+  }
+
+  static final _logged = <String>{};
+
+  static const _themesLog = SpringLog(
+    'spring_boot_starter_flutter.SpringThemes',
+  );
 
   String _name(String name) =>
       _config.nameOf(name) ??
@@ -580,8 +506,8 @@ final class ThemeSelection extends ChangeNotifier {
 /// app's own tokens.
 ///
 /// Material widgets read Material's `Theme.of(context)`, which has no
-/// place for spacing, a code style or brand tokens, and a `WidgetsApp` has
-/// no `Theme` at all. `SpringTheme.of(context)` gives the whole
+/// place for spacing, a code style or brand tokens, and an app without a
+/// design library has no `Theme` at all. `SpringTheme.of(context)` gives the whole
 /// [SpringThemeData] of the theme shown instead. `SpringApp` puts one
 /// above the app; you create one only to show a part of the UI in another
 /// theme, such as a theme preview.

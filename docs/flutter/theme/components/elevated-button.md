@@ -9,7 +9,7 @@ keywords: [flutter, theme, yaml, elevated button, ElevatedButtonThemeData]
 
 # Elevated button theme in YAML
 
-A raised button with a shadow. It configures Flutter's `ElevatedButtonThemeData`, whose `style` is a `ButtonStyle`. It starts from [button](button.md): a value set here wins over the one of `button`. Set it under `spring.flutter.theme.components.elevated-button`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.elevated-button`.
+A raised button with a shadow. It configures Flutter's `ElevatedButtonThemeData`, whose `style` is a `ButtonStyle`. It starts from [button](button.md): a value set here wins over the one of `button`. Set it under `spring.flutter.theme.components.elevated-button`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.elevated-button`. The Material starter, `spring_boot_starter_flutter_material`, reads it: an app without that package in its dependencies shows nothing of it.
 
 ## Example
 
@@ -72,7 +72,7 @@ A property with **yes** in the States column takes one value, or a map with a va
 
 ## Read it in Dart
 
-The starter sets `ThemeData.elevatedButtonTheme` from these properties. In a widget, read the result with:
+The Material starter sets `ThemeData.elevatedButtonTheme` from these properties. In a widget, read the result with:
 
 ```dart
 final theme = Theme.of(context).elevatedButtonTheme.style;
@@ -92,4 +92,4 @@ final theme = Theme.of(context).elevatedButtonTheme.style;
 
 ---
 
-*Property descriptions are adapted from the documentation of the Flutter SDK (3.47.9), copyright The Flutter Authors, BSD 3-Clause license.*
+*Property descriptions are adapted from the documentation of the Flutter SDK (3.50.0), copyright The Flutter Authors, BSD 3-Clause license.*

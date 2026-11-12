@@ -12,9 +12,9 @@ topics:
   - spring
 
 environment:
-  sdk: ^3.13.0
-  # The Flutter that ships Dart 3.13; plugins must name one.
-  flutter: '>=3.47.0'
+  sdk: ^3.14.0
+  # The Flutter that ships Dart 3.14; plugins must name one.
+  flutter: '>=3.50.0'
 
 
 dependencies:
@@ -47,6 +47,12 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   spring_boot_starter_test: ^0.7.4
+  # For the tests in a Material and in a Cupertino app only: the package
+  # itself depends on no design library.
+  spring_boot_starter_flutter_material: ^0.7.4
+  spring_boot_starter_flutter_cupertino: ^0.7.4
+  material_ui: ^1.11.0
+  cupertino_ui: ^1.1.6
   lints: ^6.0.0
 
 # A Flutter plugin: its own platform code keeps secrets in the platform's

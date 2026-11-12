@@ -16,6 +16,9 @@ name: 'Release: publish to pub.dev'
 #         → spring_security_core → spring_boot_starter_oauth2_client
 #         → spring_boot_starter_security
 #         → spring_boot_starter_flutter (with the Flutter SDK)
+#         → spring_boot_starter_flutter_material,
+#           spring_boot_starter_flutter_cupertino (after the Flutter
+#           starter)
 #         → spring_boot_starter_flutter_navigation (after the Flutter
 #           starter)
 #         → spring_boot_starter_flutter_security (after the security
@@ -231,18 +234,57 @@ jobs:
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
-      # Pinned until 0.8.0 moves to Flutter 3.50: 3.50 deprecates
-      # package:flutter/material.dart and cupertino.dart, and the analysis
-      # fails on a deprecation. Back to `stable` with that release.
-      - name: Flutter SDK (3.47.9)
+      - name: Flutter SDK (stable)
         run: |
-          git clone https://github.com/flutter/flutter.git --branch 3.47.9 --depth 1 "$RUNNER_TEMP/flutter"
+          git clone https://github.com/flutter/flutter.git --branch stable --depth 1 "$RUNNER_TEMP/flutter"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
       - run: dart pub get
       # The family was published seconds ago; pub.dev's cache may not list
       # the new versions yet ("doesn't match any versions"), so retry.
+      # The design starters are dev dependencies of the Flutter starter (its
+      # tests and tools) and are published after it, as they depend on it:
+      # they alone stay path overrides, the rest comes from pub.dev.
       - name: Tests against the published family
         working-directory: spring_boot_starter_flutter
+        run: |
+          printf '%s\n' \
+            'dependency_overrides:' \
+            '  spring_boot_starter_flutter_material:' \
+            '    path: ../spring_boot_starter_flutter_material' \
+            '  spring_boot_starter_flutter_cupertino:' \
+            '    path: ../spring_boot_starter_flutter_cupertino' \
+            > pubspec_overrides.yaml
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            flutter pub get && break
+            if [ "$attempt" = 10 ]; then exit 1; fi
+            echo "The new versions are not on pub.dev yet; retrying in 30 s ($attempt/10)"
+            sleep 30
+          done
+          flutter test
+      - run: dart run tool/publish.dart --package spring_boot_starter_flutter
+
+  # spring_boot_starter_flutter_material needs the Flutter starter (and
+  # material_ui from pub.dev): after the Flutter job, tested against the
+  # versions just published.
+  flutter_material:
+    name: Publish spring_boot_starter_flutter_material
+    needs: [flutter]
+    runs-on: ubuntu-26.04
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      # Sets up pub.dev's OpenID Connect token, which `flutter pub` uses too.
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: Flutter SDK (stable)
+        run: |
+          git clone https://github.com/flutter/flutter.git --branch stable --depth 1 "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - run: dart pub get
+      - name: Tests against the published family
+        working-directory: spring_boot_starter_flutter_material
         run: |
           rm pubspec_overrides.yaml
           for attempt in 1 2 3 4 5 6 7 8 9 10; do
@@ -252,7 +294,40 @@ jobs:
             sleep 30
           done
           flutter test
-      - run: dart run tool/publish.dart --package spring_boot_starter_flutter
+      - run: dart run tool/publish.dart --package spring_boot_starter_flutter_material
+
+  # spring_boot_starter_flutter_cupertino needs the Flutter starter (and
+  # cupertino_ui from pub.dev): after the Flutter job, tested against the
+  # versions just published.
+  flutter_cupertino:
+    name: Publish spring_boot_starter_flutter_cupertino
+    needs: [flutter]
+    runs-on: ubuntu-26.04
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      # Sets up pub.dev's OpenID Connect token, which `flutter pub` uses too.
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: Flutter SDK (stable)
+        run: |
+          git clone https://github.com/flutter/flutter.git --branch stable --depth 1 "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - run: dart pub get
+      - name: Tests against the published family
+        working-directory: spring_boot_starter_flutter_cupertino
+        run: |
+          rm pubspec_overrides.yaml
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            flutter pub get && break
+            if [ "$attempt" = 10 ]; then exit 1; fi
+            echo "The new versions are not on pub.dev yet; retrying in 30 s ($attempt/10)"
+            sleep 30
+          done
+          flutter test
+      - run: dart run tool/publish.dart --package spring_boot_starter_flutter_cupertino
 
   # spring_boot_starter_flutter_security needs the Flutter starter, the
   # navigation, the OAuth2 client and spring_security_core: after the jobs
@@ -270,9 +345,9 @@ jobs:
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
-      - name: Flutter SDK (3.47.9)
+      - name: Flutter SDK (stable)
         run: |
-          git clone https://github.com/flutter/flutter.git --branch 3.47.9 --depth 1 "$RUNNER_TEMP/flutter"
+          git clone https://github.com/flutter/flutter.git --branch stable --depth 1 "$RUNNER_TEMP/flutter"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
       - run: dart pub get
       - name: Tests against the published family
@@ -303,9 +378,9 @@ jobs:
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
-      - name: Flutter SDK (3.47.9)
+      - name: Flutter SDK (stable)
         run: |
-          git clone https://github.com/flutter/flutter.git --branch 3.47.9 --depth 1 "$RUNNER_TEMP/flutter"
+          git clone https://github.com/flutter/flutter.git --branch stable --depth 1 "$RUNNER_TEMP/flutter"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
       - run: dart pub get
       - name: Tests against the published family

@@ -3,7 +3,6 @@ import 'package:spring_boot_starter_flutter/src/debug/overlay/debug_overlay.dart
     show DebugOverlayLayout;
 import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart'
     show FrameMeterPosition;
-import 'package:spring_boot_starter_flutter/src/spring_app.dart' show AppType;
 import 'package:spring_boot_starter_flutter/src/sqlite_directories.dart'
     show SqliteLocation;
 
@@ -17,15 +16,20 @@ final class FlutterAppProperties {
   /// Settings with these values; the defaults are those of an app without
   /// any property.
   const FlutterAppProperties({
-    this.type = AppType.widgets,
+    this.type,
     this.title,
     this.description,
     this.debugBanner = true,
     this.locales,
   });
 
-  /// The kind of app widget SpringApplicationWidget builds.
-  final AppType type;
+  /// The kind of app widget SpringApplicationWidget builds: widgets (no
+  /// design library), material (with spring_boot_starter_flutter_material),
+  /// cupertino (with spring_boot_starter_flutter_cupertino), or the type of
+  /// a SpringAppFactory bean of the application. Not set: the one design
+  /// starter of the application decides (material or cupertino), widgets
+  /// without one; with several, it must be set.
+  final String? type;
 
   /// The title of the app (task switcher, browser tab; the build writes it
   /// into web/index.html and the web manifest).
@@ -289,6 +293,7 @@ final class FlutterWebPageProperties {
     this.swipeToClose = true,
     this.maxPixelRatio,
     this.translate = true,
+    this.wasmAllowList,
   });
 
   /// Whether a swipe down may close the page where the browser does so:
@@ -308,6 +313,16 @@ final class FlutterWebPageProperties {
   /// writes `translate="no"` and `<meta name="google"
   /// content="notranslate">` into `web/index.html`, and the offer is gone.
   final bool translate;
+
+  /// The browser engines that run the WebAssembly of a `--wasm` build,
+  /// `spring.flutter.web.page.wasm-allow-list.<engine>`: `blink` (Chrome,
+  /// Edge), `gecko` (Firefox 147 and newer) and `webkit` (Safari 26.2 and
+  /// newer), each `true` or `false`; an engine not allowed loads the
+  /// JavaScript build. The build passes it to Flutter's loader as
+  /// `config.wasmAllowList`, under what the app's own
+  /// `flutter_bootstrap.js` passes. `null`: Flutter's default, Blink
+  /// only.
+  final Map<String, bool>? wasmAllowList;
 }
 
 /// The lifecycle of the app, `spring.flutter.lifecycle.*`.

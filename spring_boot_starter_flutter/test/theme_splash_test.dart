@@ -8,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter/src/loader_hand_off.dart';
 
+import 'support/designs.dart' show MaterialSpringThemeData, testDesigns;
+
 ThemeSplashData? _parse(Map<String, String> props) =>
     SpringThemes(props).data('light').splash;
 
@@ -94,9 +96,15 @@ void main() {
       expect(splash.exit.curve, Curves.easeOut);
     });
 
-    test('none without a map; ink splash stays a factory', () {
+    test('none without a map; a single value is the ink splash of the '
+        'Material starter', () {
       expect(_parse({}), isNull);
-      final data = SpringThemes({'splash': 'none'}).data('light');
+      // Without the starter the value is accepted, and no splash of it.
+      expect(_parse({'splash': 'none'}), isNull);
+      expect(_parse({'splash': 'ripple'}), isNull);
+      final data = SpringThemes({
+        'splash': 'none',
+      }, designs: testDesigns).data('light');
       expect(data.splash, isNull);
       expect(data.splashFactory, isNotNull);
     });

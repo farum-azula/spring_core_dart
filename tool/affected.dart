@@ -19,6 +19,8 @@
 //   security         spring_boot_starter_security affected (compared with
 //                    Spring Security itself)
 //   flutter_starter  spring_boot_starter_flutter affected
+//   flutter_material spring_boot_starter_flutter_material affected
+//   flutter_cupertino spring_boot_starter_flutter_cupertino affected
 //   flutter_security spring_boot_starter_flutter_security affected
 //   flutter_navigation spring_boot_starter_flutter_navigation affected
 //   flutter_guide    example/flutter_guide affected, or the server guide
@@ -47,6 +49,8 @@ import 'version.dart' as version;
 /// Flutter packages outside the pub workspace.
 const flutterPackages = [
   'spring_boot_starter_flutter',
+  'spring_boot_starter_flutter_material',
+  'spring_boot_starter_flutter_cupertino',
   'spring_boot_starter_flutter_security',
   'spring_boot_starter_flutter_navigation',
   'example/flutter_guide',
@@ -125,6 +129,8 @@ Future<void> main(List<String> args) async {
     }
     bool has(String package) => affected.contains(package);
     final starter = has('spring_boot_starter_flutter');
+    final material = has('spring_boot_starter_flutter_material');
+    final cupertino = has('spring_boot_starter_flutter_cupertino');
     final security = has('spring_boot_starter_flutter_security');
     final navigation = has('spring_boot_starter_flutter_navigation');
     final server = has('example/server_guide');
@@ -141,6 +147,8 @@ Future<void> main(List<String> args) async {
     final supabaseExample = has('example/supabase/app');
     final anyFlutter =
         starter ||
+        material ||
+        cupertino ||
         security ||
         navigation ||
         app ||
@@ -161,6 +169,8 @@ Future<void> main(List<String> args) async {
         'security=${has('spring_boot_starter_security')}',
         'actuator=${has('spring_boot_starter_actuator')}',
         'flutter_starter=$starter',
+        'flutter_material=$material',
+        'flutter_cupertino=$cupertino',
         'flutter_security=$security',
         'flutter_navigation=$navigation',
         'flutter_guide=$app',

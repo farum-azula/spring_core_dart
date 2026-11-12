@@ -32,9 +32,12 @@ origin there too.
 
 ## Dependencies
 
-Each side lists one starter: the server `spring_boot_starter_web`, the app
+The server lists one starter, `spring_boot_starter_web`. The app lists
 `spring_boot_starter_flutter_navigation` (it brings the Flutter starter,
-`MarkdownView` and `spring_web_dart`'s `HttpTransport`). See
+`MarkdownView` and `spring_web_dart`'s `HttpTransport`) and, as an app of
+`spring.flutter.app.type: material`, `spring_boot_starter_flutter_material`
+with `material_ui`, the library of the Material widgets its pages import.
+See
 [the packages an application lists](../../docs/packages.md).
 
 ## The server's configuration

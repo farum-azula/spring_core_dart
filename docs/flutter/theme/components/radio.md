@@ -9,7 +9,7 @@ keywords: [flutter, theme, yaml, radio, RadioThemeData]
 
 # Radio theme in YAML
 
-A round button to pick one option out of several. It configures Flutter's `RadioThemeData`. Set it under `spring.flutter.theme.components.radio`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.radio`.
+A round button to pick one option out of several. It configures Flutter's `RadioThemeData`. Set it under `spring.flutter.theme.components.radio`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.radio`. The Material starter, `spring_boot_starter_flutter_material`, reads it: an app without that package in its dependencies shows nothing of it.
 
 ## Example
 
@@ -56,7 +56,7 @@ A property with **yes** in the States column takes one value, or a map with a va
 
 ## Read it in Dart
 
-The starter sets `ThemeData.radioTheme` from these properties. In a widget, read the result with:
+The Material starter sets `ThemeData.radioTheme` from these properties. In a widget, read the result with:
 
 ```dart
 final theme = Theme.of(context).radioTheme;
@@ -74,4 +74,4 @@ final theme = Theme.of(context).radioTheme;
 
 ---
 
-*Property descriptions are adapted from the documentation of the Flutter SDK (3.47.9), copyright The Flutter Authors, BSD 3-Clause license.*
+*Property descriptions are adapted from the documentation of the Flutter SDK (3.50.0), copyright The Flutter Authors, BSD 3-Clause license.*

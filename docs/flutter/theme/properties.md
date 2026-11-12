@@ -89,7 +89,7 @@ These keys exist at the root (shared by every theme) and in each
 | `visual-density` | enum | `adaptive`, `standard`, `comfortable`, `compact` | Flutter's | How tightly components are packed. See [below](#visual-density) |
 | `tap-target-size` | enum | `padded`, `shrink-wrap` | Flutter's | The minimum size of a tap target. See [below](#tap-target-size) |
 | `splash` | enum | `ripple`, `sparkle`, `none` | Flutter's | The ink effect when something is tapped. See [below](#splash) |
-| `motion.page-transition` | enum, or a map of `type`, `duration`, `curve` | `platform`, `fade-upwards`, `zoom`, `cupertino`, `fade`, `none` | `none` | The page transition of every screen, in every app type. See [motion](motion-and-animations.md#page-transitions) |
+| `motion.page-transition` | enum, or a map of `type`, `duration`, `curve` | `platform`, `fade-upwards`, `zoom`, `cupertino`, `fade`, `none` | `platform` | The page transition of every screen, in every app type: the app type's own by default, as in Flutter; `none` switches pages at once. See [motion](motion-and-animations.md#page-transitions) |
 | `motion.durations.<name>` | duration | `250ms`, `1.5s` | `short` 100ms, `medium` 250ms, `long` 450ms | Named durations. See [motion](motion-and-animations.md#durations) |
 | `motion.curves.<name>` | curve | a curve name or four numbers | Material's standard easing | Named curves. See [motion](motion-and-animations.md#curves) |
 | `components.<component>.*` | map | | Material 3's | Adjusts one Material component. See [components](components/index.md) |
@@ -259,7 +259,7 @@ the same rule.
 
 | Property | Type | Default | What it does |
 |---|---|---|---|
-| `spring.flutter.app.type` | `widgets`, `material`, `cupertino` | `widgets` | Which app widget is built. `material` uses the Material `ThemeData` of the theme shown, `cupertino` the `CupertinoThemeData` |
+| `spring.flutter.app.type` | `widgets`, `material`, `cupertino` | not set: the one design starter's type (`material`, `cupertino`), else `widgets`; with several, required | Which app widget is built. `material` (with `spring_boot_starter_flutter_material`) uses the Material `ThemeData` of the theme shown, `cupertino` (with `spring_boot_starter_flutter_cupertino`) the `CupertinoThemeData` |
 | `spring.flutter.fonts.auto-load` | bool | `true` | Load every `.ttf` and `.otf` file under `flutter: assets:` before the first frame. See [typography](typography.md#fonts-from-assets) |
 | `spring.flutter.fonts.exclude` | list of globs | none | Font assets not to load |
 

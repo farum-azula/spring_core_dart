@@ -1,13 +1,13 @@
 // Chapter 3, "Themes": every theme comes from the properties
 // (application.yml and themes/*.yml), Settings switches them at run time,
 // one more is loaded at run time, the fonts come from an asset folder.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/app/home_page.dart';
 import 'package:neon_books_app/src/settings/settings_page.dart';
 import 'package:neon_books_app/src/settings/theme_preview.dart';
-import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
+import 'package:spring_boot_starter_flutter_material/spring_boot_starter_flutter_material.dart';
 
 import 'support/app.dart';
 import 'support/fake_server.dart';
@@ -46,7 +46,12 @@ void main() {
     // The shared part: fonts from res/fonts/, loaded by family.
     expect(neon.fontFamily, 'Roboto');
     expect(
-      themes.material('neon').textTheme.displaySmall!.fontFamily,
+      context
+          .getBean<MaterialThemes>()
+          .theme('neon')
+          .textTheme
+          .displaySmall!
+          .fontFamily,
       'Roboto Condensed',
     );
     await stopApp(tester);
@@ -54,14 +59,14 @@ void main() {
 
   testWidgets('Settings switches the theme at once', (tester) async {
     final context = await startApp(tester, FakeServer());
-    final themes = context.getBean<SpringThemes>();
+    final themes = context.getBean<MaterialThemes>();
     await openMore(tester, 'Settings');
 
     await tester.tap(find.text('Sepia'));
     await tester.pumpAndSettle();
 
     expect(context.getBean<ThemeSelection>().active, 'sepia');
-    expect(primary(tester), themes.material('sepia').colorScheme.primary);
+    expect(primary(tester), themes.theme('sepia').colorScheme.primary);
     // The banner: the theme's name on its own brand token.
     final banner = SpringTheme.of(tester.element(find.byType(ThemeBanner)));
     expect(banner.name, 'sepia');
@@ -165,7 +170,7 @@ void main() {
     // `dark` writes no colors: the scheme's, and application.yml's comment.
     context.getBean<ThemeSelection>().select('dark');
     await tester.pumpAndSettle();
-    final dark = context.getBean<SpringThemes>().material('dark').colorScheme;
+    final dark = context.getBean<MaterialThemes>().theme('dark').colorScheme;
     expect(colorOf('final'), dark.primary);
     expect(colorOf("'Spring in Action'"), dark.tertiary);
     expect(colorOf('// 1'), dark.onSurfaceVariant);

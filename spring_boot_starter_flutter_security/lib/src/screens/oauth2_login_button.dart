@@ -1,5 +1,4 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_login_service.dart';
 import 'package:spring_boot_starter_flutter_security/src/screens/login_design.dart';
@@ -51,7 +50,8 @@ typedef OAuth2LoginButtonBuilder = Widget Function(
 /// (`google` → Google, `github` → GitHub), else the registration id.
 /// The text is the message `login-button.oauth2` (`Sign in with {0}`),
 /// or [label]. Its look follows the app ([LoginDesign]): a filled
-/// button of the Material or Cupertino theme, or a plain one; [builder]
+/// button of the Material or Cupertino theme (with the app's design
+/// starter), or a plain one; [builder]
 /// draws one of one's own.
 ///
 /// ```dart
@@ -226,48 +226,29 @@ class _OAuth2LoginButtonState extends State<OAuth2LoginButton> {
           ),
         ]);
     final icon = widget.icon;
-    switch (widget.design ?? LoginDesign.of(context)) {
-      case LoginDesign.material:
-        const spinner = SizedBox.square(
-          dimension: 18,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        );
-        final text = Text(label);
-        return Semantics(
-          value: _busy ? '…' : null,
-          child: icon == null
-              ? FilledButton(
-                  onPressed: onPressed,
-                  child: _busy ? Semantics(label: label, child: spinner) : text,
-                )
-              : FilledButton.icon(
-                  onPressed: onPressed,
-                  icon: _busy ? spinner : icon,
-                  label: text,
-                ),
-        );
-      case LoginDesign.cupertino:
-        return Semantics(
-          value: _busy ? '…' : null,
-          child: CupertinoButton.filled(
+    final controls = (widget.design ?? LoginDesign.of(context)).controlsOf(
+      context,
+    );
+    if (controls != null) {
+      return Semantics(
+        value: _busy ? '…' : null,
+        child: controls.filledButton(
+          context,
+          DesignButton(
+            label: label,
             onPressed: onPressed,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_busy) const CupertinoActivityIndicator() else ?icon,
-                if (_busy || icon != null) const SizedBox(width: 8),
-                Flexible(child: Text(label)),
-              ],
-            ),
+            busy: _busy,
+            icon: icon,
+            keepsLabel: true,
           ),
-        );
-      case LoginDesign.widgets:
-        return PlainLoginButton(
-          label: label,
-          onPressed: onPressed,
-          busy: _busy,
-          icon: icon ?? (_busy ? const SizedBox.shrink() : null),
-        );
+        ),
+      );
     }
+    return PlainLoginButton(
+      label: label,
+      onPressed: onPressed,
+      busy: _busy,
+      icon: icon ?? (_busy ? const SizedBox.shrink() : null),
+    );
   }
 }

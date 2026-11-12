@@ -5,17 +5,29 @@ publish_to: none
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.13.0
+  sdk: ^3.14.0
 
 dependencies:
   flutter:
     sdk: flutter
   # The icons of the Cupertino widgets (CupertinoIcons); see flutter: below.
   cupertino_icons: ^1.0.8
-  # The pages as screens with their own addresses (@ScreenRoute, the
-  # @RouteShell with the rail). It brings and exports the Flutter starter:
+  # Material's widgets, which the pages use themselves (Flutter 3.50 has
+  # them in this package, not in the SDK).
+  material_ui: ^1.11.0
+  # Cupertino's widgets, for the Cupertino section of the Components page.
+  cupertino_ui: ^1.1.6
+  # Material Design for the app (spring.flutter.app.type: material): the
+  # MaterialApp, ThemeData with `components.*`, the palette of a seed
+  # color. It brings and exports the Flutter starter:
   # SpringApplicationWidget, the theme (spring.flutter.theme.*), the typed
   # keys, ThemeStates, ThemeAnimation, ThemeBackground, ThemeImage.
+  spring_boot_starter_flutter_material: ^0.7.4
+  # The `cupertino.*` section of the theme as a CupertinoThemeData
+  # (CupertinoThemes), shown in a box of the Components page.
+  spring_boot_starter_flutter_cupertino: ^0.7.4
+  # The pages as screens with their own addresses (@ScreenRoute, the
+  # @RouteShell with the rail).
   spring_boot_starter_flutter_navigation: ^0.7.4
 
 dev_dependencies:
@@ -27,9 +39,9 @@ dev_dependencies:
   spring_core_dart_generator: ^0.7.4
 
 flutter:
-  # MaterialApp and CupertinoApp are both in the starter (the theme picks
-  # one at run time), so the build looks for both icon fonts; the unused
-  # glyphs are cut out of a release build.
+  # The font of Material's icons (Icons.*). The Cupertino widgets of the
+  # Components page have their icon font in cupertino_icons above; the
+  # unused glyphs are cut out of a release build.
   uses-material-design: true
   assets:
     # The images of the image and background examples (an asset is the

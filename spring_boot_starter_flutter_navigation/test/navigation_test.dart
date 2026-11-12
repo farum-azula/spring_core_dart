@@ -4,11 +4,13 @@
 // `route` scope, push and pop with a result, the back button.
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
+
+import 'support/design_starters.dart';
 
 class Page extends StatelessWidget {
   const Page(this.label, {super.key});
@@ -182,7 +184,9 @@ SpringApplication application({
     autoConfigurations: [
       springBootStarterFlutterAutoConfiguration,
       springBootStarterFlutterNavigationAutoConfiguration,
+      ...DesignStarters.onlyMaterial.autoConfigurations,
     ],
+    autoConfigurationMetadata: DesignStarters.onlyMaterial.metadata,
     bannerMode: BannerMode.off,
   );
 }

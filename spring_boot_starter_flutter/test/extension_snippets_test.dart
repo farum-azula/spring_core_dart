@@ -1,15 +1,15 @@
 // The editor's theme snippets (extensions/zed/dart_spring/snippets/
 // yaml.json and properties.json), expanded with their defaults, are
-// valid configuration: an application starts with each one, every theme
-// is read, and the values arrive. Keeps the snippets in step with the
-// starter.
+// valid configuration: an application with both design starters starts
+// with each one, every theme is read, and the values arrive. Keeps the
+// snippets in step with the starters.
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+
+import 'support/designs.dart';
 
 const _snippets = '../extensions/zed/dart_spring/snippets';
 
@@ -43,7 +43,9 @@ Future<ConfigurableApplicationContext> start(String file, String content) =>
           resources: {file: EmbeddedResource.text(content)},
         ),
       ],
-      autoConfigurations: [springBootStarterFlutterAutoConfiguration],
+      autoConfigurations: designedAutoConfigurations,
+      autoConfigurationMetadata: designAutoConfigurationMetadata,
+      defaultProperties: designDefaultProperties,
       bannerMode: BannerMode.off,
     ).runAsync(const []);
 
@@ -98,7 +100,7 @@ void main() {
         final app = FlutterAppSettings.of(await of('spapp'));
         expect(
           (app.type, app.title, app.debugShowCheckedModeBanner),
-          (AppType.material, 'My app', true),
+          ('material', 'My app', true),
         );
 
         final theme = SpringThemes.of(await of('sptheme'));

@@ -4,12 +4,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter/src/files/sha256.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_image.dart';
+
+import 'support/designs.dart';
 
 // A 1x1 PNG.
 final _png = Uint8List.fromList(
@@ -46,7 +46,7 @@ Matcher _fails(Pattern text) => throwsA(
 void main() {
   group('parsing', () {
     test('no background key, no background', () {
-      expect(_parse({'seed-color': 'red'}), isNull);
+      expect(_parse({'colors.primary': 'red'}), isNull);
     });
 
     test('every key', () {
@@ -287,7 +287,7 @@ void main() {
     test('background() and tokenImage()', () {
       final themes = SpringThemes({
         'background.color': '#111111',
-        'themes.ocean.seed-color': 'teal',
+        'themes.ocean.colors.primary': 'teal',
       });
       expect(
         ThemeKeyReader(themes.data('light')).background().color,
@@ -300,20 +300,20 @@ void main() {
     });
   });
 
-  group('the app themes', () {
+  group('the app themes of the design starters', () {
     test('a background makes the scaffold transparent', () {
       final themes = SpringThemes({
         'background.color': '#111111',
         'themes.plain.background.color': '#222222',
         'themes.plain.cupertino.scaffold-background-color': '#FF0000',
-      });
+      }, designs: testDesigns);
       expect(
         themes.material('light').scaffoldBackgroundColor,
-        Colors.transparent,
+        const Color(0x00000000),
       );
       expect(
         themes.cupertino('light').scaffoldBackgroundColor,
-        Colors.transparent,
+        const Color(0x00000000),
       );
       expect(
         themes.cupertino('plain').scaffoldBackgroundColor,
@@ -322,7 +322,7 @@ void main() {
     });
 
     test('no background, the surface as before', () {
-      final themes = SpringThemes({'seed-color': 'teal'});
+      final themes = SpringThemes({'seed-color': 'teal'}, designs: testDesigns);
       expect(
         themes.material('light').scaffoldBackgroundColor,
         themes.data('light').colorScheme.surface,
@@ -413,13 +413,14 @@ void main() {
           .data('light');
       final controller = TextEditingController();
       addTearDown(controller.dispose);
-      final field = Localizations(
-        locale: const Locale('en'),
-        delegates: const [
-          DefaultMaterialLocalizations.delegate,
-          DefaultWidgetsLocalizations.delegate,
-        ],
-        child: Material(child: TextField(controller: controller)),
+      final focus = FocusNode();
+      addTearDown(focus.dispose);
+      final field = EditableText(
+        controller: controller,
+        focusNode: focus,
+        style: const TextStyle(),
+        cursorColor: const Color(0xFF000000),
+        backgroundCursorColor: const Color(0xFF808080),
       );
       await tester.pumpWidget(app(plain, ThemeBackground(child: field)));
       controller.text = 'typed';
@@ -572,7 +573,9 @@ void main() {
     testWidgets('a Cupertino app shows it through the transparent page', (
       tester,
     ) async {
-      final themes = SpringThemes({'background.color': '#101010'});
+      final themes = SpringThemes({
+        'background.color': '#101010',
+      }, designs: testDesigns);
       final data = themes.data('light');
       await tester.pumpWidget(
         SpringTheme(

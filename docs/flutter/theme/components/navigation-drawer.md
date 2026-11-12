@@ -9,7 +9,7 @@ keywords: [flutter, theme, yaml, navigation drawer, NavigationDrawerThemeData]
 
 # Navigation drawer theme in YAML
 
-The Material 3 side panel with the destinations of the app. It configures Flutter's `NavigationDrawerThemeData`. Set it under `spring.flutter.theme.components.navigation-drawer`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.navigation-drawer`.
+The Material 3 side panel with the destinations of the app. It configures Flutter's `NavigationDrawerThemeData`. Set it under `spring.flutter.theme.components.navigation-drawer`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.navigation-drawer`. The Material starter, `spring_boot_starter_flutter_material`, reads it: an app without that package in its dependencies shows nothing of it.
 
 ## Example
 
@@ -53,7 +53,7 @@ A property with **yes** in the States column takes one value, or a map with a va
 
 ## Read it in Dart
 
-The starter sets `ThemeData.navigationDrawerTheme` from these properties. In a widget, read the result with:
+The Material starter sets `ThemeData.navigationDrawerTheme` from these properties. In a widget, read the result with:
 
 ```dart
 final theme = Theme.of(context).navigationDrawerTheme;
@@ -73,4 +73,4 @@ final theme = Theme.of(context).navigationDrawerTheme;
 
 ---
 
-*Property descriptions are adapted from the documentation of the Flutter SDK (3.47.9), copyright The Flutter Authors, BSD 3-Clause license.*
+*Property descriptions are adapted from the documentation of the Flutter SDK (3.50.0), copyright The Flutter Authors, BSD 3-Clause license.*

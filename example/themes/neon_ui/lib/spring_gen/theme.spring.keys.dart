@@ -44,8 +44,23 @@ final class AppThemeColors {
   /// `colors.error`
   Color get error => _values.color('error');
 
+  /// `colors.error-container`
+  Color get errorContainer => _values.color('error-container');
+
+  /// `colors.inverse-primary`
+  Color get inversePrimary => _values.color('inverse-primary');
+
+  /// `colors.inverse-surface`
+  Color get inverseSurface => _values.color('inverse-surface');
+
   /// `colors.on-error`
   Color get onError => _values.color('on-error');
+
+  /// `colors.on-error-container`
+  Color get onErrorContainer => _values.color('on-error-container');
+
+  /// `colors.on-inverse-surface`
+  Color get onInverseSurface => _values.color('on-inverse-surface');
 
   /// `colors.on-primary`
   Color get onPrimary => _values.color('on-primary');
@@ -53,8 +68,24 @@ final class AppThemeColors {
   /// `colors.on-primary-container`
   Color get onPrimaryContainer => _values.color('on-primary-container');
 
+  /// `colors.on-primary-fixed`
+  Color get onPrimaryFixed => _values.color('on-primary-fixed');
+
+  /// `colors.on-primary-fixed-variant`
+  Color get onPrimaryFixedVariant => _values.color('on-primary-fixed-variant');
+
   /// `colors.on-secondary`
   Color get onSecondary => _values.color('on-secondary');
+
+  /// `colors.on-secondary-container`
+  Color get onSecondaryContainer => _values.color('on-secondary-container');
+
+  /// `colors.on-secondary-fixed`
+  Color get onSecondaryFixed => _values.color('on-secondary-fixed');
+
+  /// `colors.on-secondary-fixed-variant`
+  Color get onSecondaryFixedVariant =>
+      _values.color('on-secondary-fixed-variant');
 
   /// `colors.on-surface`
   Color get onSurface => _values.color('on-surface');
@@ -64,6 +95,16 @@ final class AppThemeColors {
 
   /// `colors.on-tertiary`
   Color get onTertiary => _values.color('on-tertiary');
+
+  /// `colors.on-tertiary-container`
+  Color get onTertiaryContainer => _values.color('on-tertiary-container');
+
+  /// `colors.on-tertiary-fixed`
+  Color get onTertiaryFixed => _values.color('on-tertiary-fixed');
+
+  /// `colors.on-tertiary-fixed-variant`
+  Color get onTertiaryFixedVariant =>
+      _values.color('on-tertiary-fixed-variant');
 
   /// `colors.outline`
   Color get outline => _values.color('outline');
@@ -77,11 +118,35 @@ final class AppThemeColors {
   /// `colors.primary-container`
   Color get primaryContainer => _values.color('primary-container');
 
+  /// `colors.primary-fixed`
+  Color get primaryFixed => _values.color('primary-fixed');
+
+  /// `colors.primary-fixed-dim`
+  Color get primaryFixedDim => _values.color('primary-fixed-dim');
+
+  /// `colors.scrim`
+  Color get scrim => _values.color('scrim');
+
   /// `colors.secondary`
   Color get secondary => _values.color('secondary');
 
+  /// `colors.secondary-container`
+  Color get secondaryContainer => _values.color('secondary-container');
+
+  /// `colors.secondary-fixed`
+  Color get secondaryFixed => _values.color('secondary-fixed');
+
+  /// `colors.secondary-fixed-dim`
+  Color get secondaryFixedDim => _values.color('secondary-fixed-dim');
+
+  /// `colors.shadow`
+  Color get shadow => _values.color('shadow');
+
   /// `colors.surface`
   Color get surface => _values.color('surface');
+
+  /// `colors.surface-bright`
+  Color get surfaceBright => _values.color('surface-bright');
 
   /// `colors.surface-container`
   Color get surfaceContainer => _values.color('surface-container');
@@ -99,8 +164,23 @@ final class AppThemeColors {
   /// `colors.surface-container-lowest`
   Color get surfaceContainerLowest => _values.color('surface-container-lowest');
 
+  /// `colors.surface-dim`
+  Color get surfaceDim => _values.color('surface-dim');
+
+  /// `colors.surface-tint`
+  Color get surfaceTint => _values.color('surface-tint');
+
   /// `colors.tertiary`
   Color get tertiary => _values.color('tertiary');
+
+  /// `colors.tertiary-container`
+  Color get tertiaryContainer => _values.color('tertiary-container');
+
+  /// `colors.tertiary-fixed`
+  Color get tertiaryFixed => _values.color('tertiary-fixed');
+
+  /// `colors.tertiary-fixed-dim`
+  Color get tertiaryFixedDim => _values.color('tertiary-fixed-dim');
 }
 
 /// `spacing.*` of the active theme.

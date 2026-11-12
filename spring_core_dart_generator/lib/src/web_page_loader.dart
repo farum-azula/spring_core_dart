@@ -51,7 +51,9 @@ abstract final class WebPageLoader {
   };
 
   /// The script of the block, the same for every app.
-  static const script =
+  static const String script = _scriptStart + _install + _scriptEnd;
+
+  static const _scriptStart =
       '''
 (function () {
   var root = document.getElementById('spring-loader');
@@ -158,6 +160,12 @@ abstract final class WebPageLoader {
       return load.call(loader, options);
     };
   }
+''';
+
+  // Wraps the loader Flutter's `flutter.js` sets, or the one already set:
+  // the page's only `defineProperty` of `_flutter.loader` (a second one
+  // would replace the setter of the first).
+  static const _install = '''
   var flutter = window._flutter = window._flutter || {};
   if (flutter.loader) {
     wrap(flutter.loader);
@@ -170,6 +178,9 @@ abstract final class WebPageLoader {
       set: function (value) { held = value; wrap(value); }
     });
   }
+''';
+
+  static const _scriptEnd = '''
   show('load');
   requestAnimationFrame(paint);
 })();''';
@@ -177,6 +188,75 @@ abstract final class WebPageLoader {
   /// The hash of [script] for a Content-Security-Policy `script-src`
   /// (`'sha256-...'`).
   static String get scriptHash => WebPageHead.hashOf(script);
+
+  /// [script]; with [wasmAllowList]
+  /// (`spring.flutter.web.page.wasm-allow-list`), the script that also
+  /// passes it to Flutter's loader, as [wasmScript] does.
+  static String scriptFor({Map<String, bool>? wasmAllowList}) {
+    if (wasmAllowList == null || wasmAllowList.isEmpty) {
+      return script;
+    }
+    final start = _scriptStart
+        .replaceFirst(_wrapStart, '${_wasmConfig(wasmAllowList)}$_wrapStart')
+        .replaceFirst(_config, _wasmLine);
+    return '$start$_install$_scriptEnd';
+  }
+
+  /// The script of a page without a splash that passes [wasmAllowList]
+  /// to Flutter's loader as `config.wasmAllowList`: the engines of the
+  /// app's own `flutter_bootstrap.js` win, the others are
+  /// [wasmAllowList]'s. Like [script], it wraps `_flutter.loader`.
+  static String wasmScript(Map<String, bool> wasmAllowList) =>
+      '(function () {\n'
+      '${_wasmConfig(wasmAllowList)}'
+      '$_wrapStart'
+      '''
+    if (!loader || loader.__springLoader || typeof loader.load !== 'function') return;
+    loader.__springLoader = true;
+    var load = loader.load;
+    loader.load = function (options) {
+      options = options || {};
+      options.config = wasmConfig(options.config || {});
+      return load.call(loader, options);
+    };
+  }
+'''
+      '$_install'
+      '})();';
+
+  /// The block of a page without a splash: only [wasmScript], between the
+  /// markers.
+  static String wasmBlock(Map<String, bool> wasmAllowList) =>
+      '$startMarker\n'
+      '<!-- Written by spring_core_dart_generator from '
+      'spring.flutter.web.page.wasm-allow-list; rewritten on every build. '
+      '-->\n'
+      // Nothing between the tags but the script, for its hash.
+      '<script>${wasmScript(wasmAllowList)}</script>\n'
+      '$endMarker';
+
+  static const _wrapStart = '  function wrap(loader) {\n';
+  static const _config = '      var config = options.config || {};\n';
+  static const _wasmLine =
+      '      var config = options.config = '
+      'wasmConfig(options.config || {});\n';
+
+  // A copy of the config with a wasmAllowList of [allow] under its own.
+  static String _wasmConfig(Map<String, bool> allow) {
+    final engines = jsonEncode({
+      for (final engine in allow.keys.toList()..sort()) engine: allow[engine],
+    });
+    return '''
+  function wasmConfig(config) {
+    var allow = $engines, own = config.wasmAllowList || {}, copy = {}, key;
+    for (key in config) copy[key] = config[key];
+    copy.wasmAllowList = {};
+    for (key in allow) copy.wasmAllowList[key] = allow[key];
+    for (key in own) copy.wasmAllowList[key] = own[key];
+    return copy;
+  }
+''';
+  }
 
   static const _style = '''
 #spring-loader{position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--spring-progress:0}
@@ -374,10 +454,12 @@ abstract final class WebPageLoader {
   /// [readFile] gives the text of a file below the app's directory (the
   /// `web:` of a loader), or `null`. Problems go to [diagnostics] as
   /// warnings: a page loader never fails a build.
+  /// [wasmAllowList] goes to Flutter's loader ([scriptFor]).
   static String? generate(
     ThemeSet set,
     KeysDiagnostics diagnostics, {
     required String? Function(String path) readFile,
+    Map<String, bool>? wasmAllowList,
   }) {
     final (:light, :dark) = _active(set);
     final scope = set.scope(light);
@@ -441,8 +523,8 @@ abstract final class WebPageLoader {
       ..write('<div class="sl-kind">$kindHtml</div>')
       ..writeln('</div></div>')
       // Nothing between the tags but the script: a policy allows it by
-      // the hash of exactly that text ([scriptHash]).
-      ..writeln('<script>$script</script>')
+      // the hash of exactly that text ([scriptHash], or of [scriptFor]).
+      ..writeln('<script>${scriptFor(wasmAllowList: wasmAllowList)}</script>')
       ..write(endMarker);
     return out.toString();
   }

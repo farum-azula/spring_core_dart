@@ -1,6 +1,5 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter_security/src/screens/login_design.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
@@ -161,10 +160,12 @@ final class LoginFormSubmitButton {
 /// Nothing is logged, the password least of all.
 ///
 /// **Its look** follows the app ([LoginDesign]): Material fields and a
-/// filled button below a `MaterialApp`, styled by the app's theme (the
+/// filled button below a `MaterialApp` (with
+/// `spring_boot_starter_flutter_material`), styled by the app's theme (the
 /// `spring.flutter.theme.components.input.*` and `button.*` properties);
-/// Cupertino ones below a `CupertinoApp`; plain fields coloured from the
-/// `SpringTheme` below a `WidgetsApp`. [fieldBuilder],
+/// Cupertino ones below a `CupertinoApp` (with
+/// `spring_boot_starter_flutter_cupertino`); plain fields coloured from
+/// the `SpringTheme` in an app without a design library. [fieldBuilder],
 /// [submitButtonBuilder] and [errorBuilder] replace its parts.
 ///
 /// **Its texts** come from the app's messages files (with these English
@@ -408,7 +409,9 @@ class _LoginFormState extends State<LoginForm> {
 
   @override
   Widget build(BuildContext context) {
-    final design = widget.design ?? LoginDesign.of(context);
+    final controls = (widget.design ?? LoginDesign.of(context)).controlsOf(
+      context,
+    );
     final spacing =
         widget.spacing ?? SpringTheme.maybeOf(context)?.space('m') ?? 16;
     final fields = [
@@ -463,7 +466,7 @@ class _LoginFormState extends State<LoginForm> {
     final fieldBuilder =
         widget.fieldBuilder ??
         (context, field) => _DefaultField(
-          design: design,
+          controls: controls,
           field: field,
           // The first field to fill: the password when the user name
           // was given.
@@ -475,10 +478,11 @@ class _LoginFormState extends State<LoginForm> {
     final buttonBuilder =
         widget.submitButtonBuilder ??
         (context, button) =>
-            _DefaultSubmitButton(design: design, button: button);
+            _DefaultSubmitButton(controls: controls, button: button);
     final errorBuilder =
         widget.errorBuilder ??
-        (context, message) => _DefaultError(design: design, message: message);
+        (context, message) =>
+            _DefaultError(controls: controls, message: message);
     final column = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -502,111 +506,44 @@ class _LoginFormState extends State<LoginForm> {
         buttonBuilder(context, button),
       ],
     );
-    // A Material field needs a Material above it; a screen without a
-    // Scaffold gets a transparent one.
-    return design == LoginDesign.material && Material.maybeOf(context) == null
-        ? Material(type: MaterialType.transparency, child: column)
-        : column;
+    // What the design's controls need above them: a Material field a
+    // Material, which a screen without a Scaffold has none of.
+    return controls?.surface(context, column) ?? column;
   }
 }
 
 class _DefaultField extends StatelessWidget {
   const _DefaultField({
-    required this.design,
+    required this.controls,
     required this.field,
     required this.autofocus,
   });
 
-  final LoginDesign design;
+  final DesignControls? controls;
   final LoginFormField field;
   final bool autofocus;
 
   @override
-  Widget build(BuildContext context) => switch (design) {
-    LoginDesign.material => _material(context),
-    LoginDesign.cupertino => _cupertino(context),
-    LoginDesign.widgets => _plain(context),
-  };
-
-  Widget _material(BuildContext context) => TextField(
-    controller: field.controller,
-    focusNode: field.focusNode,
-    enabled: field.enabled,
-    autofocus: autofocus,
-    obscureText: field.obscureText,
-    autocorrect: false,
-    enableSuggestions: false,
-    autofillHints: field.autofillHints,
-    keyboardType: field.keyboardType,
-    textInputAction: field.textInputAction,
-    onSubmitted: field.onSubmitted,
-    decoration: InputDecoration(
-      labelText: field.label,
-      errorText: field.errorText,
-      suffixIcon: field.toggleObscured == null
-          ? null
-          : IconButton(
-              onPressed: field.enabled ? field.toggleObscured : null,
-              tooltip: field.toggleLabel,
-              icon: Icon(
-                field.obscureText ? Icons.visibility : Icons.visibility_off,
-              ),
-            ),
-    ),
-  );
-
-  Widget _cupertino(BuildContext context) {
-    final theme = CupertinoTheme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        CupertinoTextField(
+  Widget build(BuildContext context) =>
+      controls?.textField(
+        context,
+        DesignTextField(
           controller: field.controller,
           focusNode: field.focusNode,
+          label: field.label,
+          errorText: field.errorText,
           enabled: field.enabled,
           autofocus: autofocus,
           obscureText: field.obscureText,
-          autocorrect: false,
-          enableSuggestions: false,
+          toggleObscured: field.toggleObscured,
+          toggleLabel: field.toggleLabel,
           autofillHints: field.autofillHints,
           keyboardType: field.keyboardType,
           textInputAction: field.textInputAction,
           onSubmitted: field.onSubmitted,
-          placeholder: field.label,
-          suffix: field.toggleObscured == null
-              ? null
-              : Semantics(
-                  label: field.toggleLabel,
-                  button: true,
-                  excludeSemantics: true,
-                  child: CupertinoButton(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    minimumSize: const Size(44, 44),
-                    onPressed: field.enabled ? field.toggleObscured : null,
-                    child: Icon(
-                      field.obscureText
-                          ? CupertinoIcons.eye
-                          : CupertinoIcons.eye_slash,
-                      size: 20,
-                    ),
-                  ),
-                ),
         ),
-        if (field.errorText case final error?)
-          Padding(
-            padding: const EdgeInsetsDirectional.only(start: 6, top: 4),
-            child: Text(
-              error,
-              style: theme.textTheme.textStyle.copyWith(
-                fontSize: 13,
-                color: CupertinoColors.destructiveRed.resolveFrom(context),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
+      ) ??
+      _plain(context);
 
   Widget _plain(BuildContext context) {
     final colors = loginColorScheme(context);
@@ -712,40 +649,26 @@ class _DefaultField extends StatelessWidget {
 }
 
 class _DefaultSubmitButton extends StatelessWidget {
-  const _DefaultSubmitButton({required this.design, required this.button});
+  const _DefaultSubmitButton({required this.controls, required this.button});
 
-  final LoginDesign design;
+  final DesignControls? controls;
   final LoginFormSubmitButton button;
 
   @override
-  Widget build(BuildContext context) => switch (design) {
-    LoginDesign.material => FilledButton(
-      onPressed: button.onPressed,
-      child: button.busy
-          ? Semantics(
-              label: button.label,
-              child: const SizedBox.square(
-                dimension: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            )
-          : Text(button.label),
-    ),
-    LoginDesign.cupertino => CupertinoButton.filled(
-      onPressed: button.onPressed,
-      child: button.busy
-          ? Semantics(
-              label: button.label,
-              child: const CupertinoActivityIndicator(),
-            )
-          : Text(button.label),
-    ),
-    LoginDesign.widgets => PlainLoginButton(
-      label: button.label,
-      onPressed: button.onPressed,
-      busy: button.busy,
-    ),
-  };
+  Widget build(BuildContext context) =>
+      controls?.filledButton(
+        context,
+        DesignButton(
+          label: button.label,
+          onPressed: button.onPressed,
+          busy: button.busy,
+        ),
+      ) ??
+      PlainLoginButton(
+        label: button.label,
+        onPressed: button.onPressed,
+        busy: button.busy,
+      );
 }
 
 /// The filled button of the plain [LoginDesign.widgets] design, in the
@@ -830,20 +753,15 @@ class PlainLoginButton extends StatelessWidget {
 }
 
 class _DefaultError extends StatelessWidget {
-  const _DefaultError({required this.design, required this.message});
+  const _DefaultError({required this.controls, required this.message});
 
-  final LoginDesign design;
+  final DesignControls? controls;
   final String message;
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (design) {
-      LoginDesign.material => Theme.of(context).colorScheme.error,
-      LoginDesign.cupertino => CupertinoColors.destructiveRed.resolveFrom(
-        context,
-      ),
-      LoginDesign.widgets => loginColorScheme(context).error,
-    };
+    final color =
+        controls?.errorColor(context) ?? loginColorScheme(context).error;
     return Semantics(
       liveRegion: true,
       child: Text(

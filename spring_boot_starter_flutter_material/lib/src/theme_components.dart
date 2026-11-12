@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:spring_boot_starter_flutter/src/theme/theme_reader.dart';
-import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:spring_boot_starter_flutter/theme_design.dart';
+import 'package:spring_boot_starter_flutter_material/src/material_theme_reader.dart';
 
 /// How a component of `ThemeData` is made from its properties: [apply]
 /// reads them with a [ThemeReader], by Flutter's own property names, and

@@ -1,8 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show SynchronousFuture, kIsWeb;
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter_navigation/src/navigation.dart';
@@ -198,11 +197,10 @@ final class SpringRouterDelegate extends RouterDelegate<RouteLocation>
       return;
     }
     _shownTitle = title;
-    // The theme shown; Material's Theme only in a MaterialApp (a WidgetsApp
-    // has none, and Theme.of would be Material's fallback).
+    // The theme shown; without one, the baseline palette's.
     final color =
         (SpringTheme.maybeOf(context)?.colorScheme ??
-                Theme.of(context).colorScheme)
+                SpringColorScheme.baseline(Brightness.light))
             .primary
             .toARGB32();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -221,22 +219,53 @@ final class SpringRouterDelegate extends RouterDelegate<RouteLocation>
   }
 }
 
-// The page route of the app type: Material's, Cupertino's, or none for a
-// WidgetsApp.
-enum _PageKind {
-  material,
-  cupertino,
-  widgets;
+// What a page route is made with: the type of the app and the routes of
+// its design libraries (`DesignPageRoutes` beans), which the router itself
+// does not know.
+final class _PageKind {
+  const _PageKind(this.appType, this.designs);
+
+  static const none = _PageKind(WidgetsAppFactory.typeName, []);
 
   static _PageKind of(BuildContext context) {
     final spring = SpringScope.maybeOf(context, listen: false);
-    return switch (spring == null
-        ? AppType.material
-        : FlutterAppSettings.of(spring).type) {
-      AppType.material => material,
-      AppType.cupertino => cupertino,
-      AppType.widgets => widgets,
-    };
+    return spring == null
+        ? none
+        : _kinds[spring] ??= _PageKind(
+            FlutterAppSettings.of(spring).type,
+            spring.getSortedBeans<DesignPageRoutes>(),
+          );
+  }
+
+  static final _kinds = Expando<_PageKind>('page kind');
+
+  final String appType;
+  final List<DesignPageRoutes> designs;
+
+  // The route a design library has for the page; `null` when none does.
+  PageRoute<Object?>? route(
+    PageTransitionType transition,
+    SpringPageRequest page,
+  ) {
+    for (final design in designs) {
+      final route = design.pageRoute(transition, appType, page);
+      if (route != null) {
+        return route;
+      }
+    }
+    return null;
+  }
+
+  // The hero flights of a navigator: the design's of the app, else
+  // Flutter's own.
+  HeroController heroController() {
+    for (final design in designs) {
+      final controller = design.heroController(appType);
+      if (controller != null) {
+        return controller;
+      }
+    }
+    return HeroController();
   }
 }
 
@@ -277,43 +306,53 @@ final class _SpringPage extends Page<Object?> {
     final content =
         SpringTheme.maybeOf(context)?.contentChange ??
         const ContentChangeSpec();
-    final Route<Object?> route = switch ((type, kind)) {
-      (PageTransitionType.none, _) ||
-      (PageTransitionType.platform, _PageKind.widgets) => _PlainRoute(
+    // The route of a design library: Material's for `platform` in its
+    // app, Cupertino's for `cupertino` and for `platform` in its app.
+    PageRoute<Object?>? designed() => kind.route(
+      type,
+      SpringPageRequest(
+        settings: this,
+        child: child,
+        // The page of a route is replaced in place: its child then.
+        content: (settings) => (settings as _SpringPage).child,
+        duration: duration,
+        curve: curve,
+      ),
+    );
+    final Route<Object?> route = switch (type) {
+      PageTransitionType.none => _PlainRoute(
         this,
         builder: null,
         duration: Duration.zero,
       ),
-      (PageTransitionType.platform, _PageKind.material) => _MaterialRoute(
-        this,
-        duration: duration,
-        curve: curve,
-      ),
-      (PageTransitionType.platform, _PageKind.cupertino) ||
-      (PageTransitionType.cupertino, _) => _CupertinoRoute(
-        this,
-        duration: duration,
-        curve: curve,
-      ),
-      (PageTransitionType.fadeUpwards, _) => _PlainRoute(
+      // Without a design library the platform has no transition.
+      PageTransitionType.platform =>
+        designed() ?? _PlainRoute(this, builder: null, duration: Duration.zero),
+      PageTransitionType.cupertino => designed() ?? _missing(type, 'cupertino'),
+      PageTransitionType.fadeUpwards => _PlainRoute(
         this,
         builder: const FadeUpwardsPageTransitionsBuilder(),
         duration: duration ?? const Duration(milliseconds: 300),
         curve: curve,
       ),
-      (PageTransitionType.zoom, _) => _PlainRoute(
-        this,
-        builder: const ZoomPageTransitionsBuilder(),
-        duration: duration ?? const Duration(milliseconds: 300),
-        curve: curve,
-      ),
-      (PageTransitionType.fade, _) => _PlainRoute(
+      PageTransitionType.zoom => switch (_designs(context).pageTransition(
+        type,
+      )) {
+        final builder? => _PlainRoute(
+          this,
+          builder: builder,
+          duration: duration ?? const Duration(milliseconds: 300),
+          curve: curve,
+        ),
+        null => _missing(type, 'material'),
+      },
+      PageTransitionType.fade => _PlainRoute(
         this,
         builder: const _Fade(),
         duration: duration ?? const Duration(milliseconds: 250),
         curve: curve,
       ),
-      (PageTransitionType.content, _) => _PlainRoute(
+      PageTransitionType.content => _PlainRoute(
         this,
         builder: const ContentPageTransitionsBuilder(),
         duration: still ? Duration.zero : duration ?? content.duration,
@@ -326,6 +365,44 @@ final class _SpringPage extends Page<Object?> {
     }
     return route;
   }
+
+  // The designs of the application: those the shown theme was read with,
+  // else those of its themes (an app widget of the app's own may have no
+  // SpringTheme above the router).
+  static ThemeDesigns _designs(BuildContext context) =>
+      SpringTheme.maybeOf(context)?.designs ??
+      switch (SpringScope.maybeOf(context, listen: false)) {
+        final spring? => SpringThemes.of(spring).designs,
+        null => ThemeDesigns.none,
+      };
+
+  // A transition of a design library the application does not have (a
+  // screen's own `transition:`; the theme's is checked at the start): the
+  // error is reported, and the page shows without one. Thrown here, while
+  // the navigator updates its pages, it would leave the widget tree broken.
+  Route<Object?> _missing(PageTransitionType type, String design) {
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: _needsStarter(type, design),
+        library: 'spring_boot_starter_flutter_navigation',
+        context: ErrorDescription('while making the route of page $name'),
+      ),
+    );
+    return _PlainRoute(this, builder: null, duration: Duration.zero);
+  }
+
+  static FlutterError _needsStarter(PageTransitionType type, String design) =>
+      FlutterError.fromParts([
+        ErrorSummary(
+          'The page transition ${type.name} needs '
+          'spring_boot_starter_flutter_$design.',
+        ),
+        ErrorHint(
+          "It is the $design library's own transition: add "
+          'spring_boot_starter_flutter_$design to the dependencies, or '
+          'choose platform, fadeUpwards, fade, content or none.',
+        ),
+      ]);
 }
 
 // [animation] along [curve], when the theme gives one.
@@ -333,89 +410,6 @@ Animation<double> _curved(Animation<double> animation, Curve? curve) =>
     curve == null
     ? animation
     : CurvedAnimation(parent: animation, curve: curve);
-
-final class _MaterialRoute extends PageRoute<Object?>
-    with MaterialRouteTransitionMixin<Object?> {
-  _MaterialRoute(_SpringPage page, {this.duration, this.curve})
-    : super(settings: page);
-
-  final Duration? duration;
-  final Curve? curve;
-
-  _SpringPage get _page => settings as _SpringPage;
-
-  @override
-  Widget buildContent(BuildContext context) => _page.child;
-
-  @override
-  Duration get transitionDuration => duration ?? super.transitionDuration;
-
-  @override
-  Duration get reverseTransitionDuration =>
-      duration ?? super.reverseTransitionDuration;
-
-  @override
-  Widget buildTransitions(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) => super.buildTransitions(
-    context,
-    _curved(animation, curve),
-    _curved(secondaryAnimation, curve),
-    child,
-  );
-
-  @override
-  bool get maintainState => true;
-
-  @override
-  String get debugLabel => '${super.debugLabel}(${_page.name})';
-}
-
-final class _CupertinoRoute extends PageRoute<Object?>
-    with CupertinoRouteTransitionMixin<Object?> {
-  _CupertinoRoute(_SpringPage page, {this.duration, this.curve})
-    : super(settings: page);
-
-  final Duration? duration;
-  final Curve? curve;
-
-  _SpringPage get _page => settings as _SpringPage;
-
-  @override
-  Widget buildContent(BuildContext context) => _page.child;
-
-  @override
-  Duration get transitionDuration => duration ?? super.transitionDuration;
-
-  @override
-  Duration get reverseTransitionDuration =>
-      duration ?? super.reverseTransitionDuration;
-
-  @override
-  Widget buildTransitions(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) => super.buildTransitions(
-    context,
-    _curved(animation, curve),
-    _curved(secondaryAnimation, curve),
-    child,
-  );
-
-  @override
-  String? get title => null;
-
-  @override
-  bool get maintainState => true;
-
-  @override
-  String get debugLabel => '${super.debugLabel}(${_page.name})';
-}
 
 // The theme's `fade`.
 final class _Fade extends PageTransitionsBuilder {
@@ -566,10 +560,7 @@ final class _ShellHost extends StatefulWidget {
 final class _ShellHostState extends State<_ShellHost> implements ShellState {
   // One hero controller per branch navigator, for the life of the shell.
   late final _heroes = [
-    for (final _ in widget.shell.stacks)
-      widget.kind == _PageKind.cupertino
-          ? CupertinoApp.createCupertinoHeroController()
-          : MaterialApp.createMaterialHeroController(),
+    for (final _ in widget.shell.stacks) widget.kind.heroController(),
   ];
 
   @override

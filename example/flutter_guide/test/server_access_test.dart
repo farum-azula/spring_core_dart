@@ -4,8 +4,8 @@
 // the clients keeps the cookies and sends the CSRF token.
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/account/session.dart';
 import 'package:neon_books_app/src/admin/admin_page.dart';

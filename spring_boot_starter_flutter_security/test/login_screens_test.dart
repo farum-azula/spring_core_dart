@@ -3,20 +3,34 @@
 // the event), OAuth2LoginButton on the login service (labels, progress,
 // cancel, errors), the brand buttons (their rules: sizes, colours, texts,
 // logos), in the three designs, with semantics, RTL and large text.
+//
+// The widgets know no design library. In an app of type `material` or
+// `cupertino` the controls of its design starter draw them (the
+// `DesignScope` of the starter's app widget); in an app without a design
+// library they are the plain widgets. So the Material and Cupertino apps
+// here are the ones the starters build.
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:spring_boot_starter_flutter_cupertino/spring_boot_starter_flutter_cupertino.dart'
+    show CupertinoDesignControls;
+import 'package:spring_boot_starter_flutter_material/spring_boot_starter_flutter_material.dart'
+    show MaterialDesignControls;
 import 'package:spring_boot_starter_flutter_security/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 import 'package:spring_boot_starter_flutter_security/src/screens/brand_buttons.dart'
     show BrandButton;
 import 'package:spring_boot_starter_flutter_security/src/screens/brand_logos.dart';
 import 'package:spring_boot_starter_flutter_security/src/screens/login_design.dart'
-    show LoginSpinner;
+    show LoginSpinner, loginColorScheme;
+import 'package:spring_boot_starter_flutter_security/src/screens/login_form.dart'
+    show PlainLoginButton;
+
+import 'support/design_starters.dart';
 
 /// Checks `ada` / `secret`; a gate holds the answer back when set.
 class _Manager implements AuthenticationManager {
@@ -90,7 +104,10 @@ class _Events implements GenericApplicationListener {
   void onApplicationEvent(Object event) => received.add(event);
 }
 
-Widget _material(Widget child, {TextDirection? direction}) => MaterialApp(
+/// [child] on a page of the app widget that the application above builds
+/// (`spring.flutter.app.type`): the Material starter's `MaterialApp` under
+/// the application the tests start by default.
+Widget _material(Widget child, {TextDirection? direction}) => SpringApp(
   home: Scaffold(
     body: Directionality(
       textDirection: direction ?? TextDirection.ltr,
@@ -99,12 +116,53 @@ Widget _material(Widget child, {TextDirection? direction}) => MaterialApp(
   ),
 );
 
+/// A `MaterialApp` of the test's own, with Material's controls given the
+/// way the Material starter's app gives them.
+Widget _ownMaterial({
+  required Widget home,
+  Locale? locale,
+  Iterable<Locale> supportedLocales = const [Locale('en')],
+  Iterable<LocalizationsDelegate<Object?>>? localizationsDelegates,
+}) => MaterialApp(
+  locale: locale,
+  supportedLocales: supportedLocales,
+  localizationsDelegates: localizationsDelegates,
+  builder: (context, child) => DesignScope(
+    controls: const MaterialDesignControls(),
+    textStyle: (context, style) => null,
+    selectable: (context, child) => SelectionArea(child: child),
+    child: child!,
+  ),
+  home: home,
+);
+
+/// A `WidgetsApp` of the test's own: no design library.
+Widget _ownWidgets(Widget home) => WidgetsApp(
+  color: const Color(0xFF6750A4),
+  textStyle: const TextStyle(fontSize: 14, color: Color(0xFF000000)),
+  pageRouteBuilder: <T>(settings, builder) => PageRouteBuilder<T>(
+    settings: settings,
+    pageBuilder: (context, _, _) => builder(context),
+  ),
+  home: home,
+);
+
 Finder _field(String label) => find.byWidgetPredicate(
   (widget) => widget is TextField && widget.decoration?.labelText == label,
 );
 
 void main() {
+  // An application of type `material` with both design starters, one of
+  // type `cupertino` with Cupertino's, and one without a design library.
   late ConfigurableApplicationContext context;
+  late ConfigurableApplicationContext cupertinoContext;
+  late ConfigurableApplicationContext plainContext;
+  // Starts another application of [type] with [starters], as those above.
+  late Future<ConfigurableApplicationContext> Function(
+    String type,
+    DesignStarters starters,
+  )
+  startApplication;
   late _Manager manager;
   late _Events events;
 
@@ -117,7 +175,10 @@ void main() {
         'login-form.username': 'Nom',
         'login-button.google.continue': 'Continuer avec Google',
       }, 'fr');
-    context = await SpringApplication(
+    Future<ConfigurableApplicationContext> start(
+      String type,
+      DesignStarters starters,
+    ) => SpringApplication(
       [
         BeanModule('loginScreensTest', [
           BeanDefinition<AuthenticationManager>(
@@ -133,25 +194,282 @@ void main() {
         ]),
       ],
       // The security core's beans only: a registration property would
-      // make this package's login beans want a provider.
-      autoConfigurations: [springSecurityCoreAutoConfiguration],
+      // make this package's login beans want a provider. The Flutter
+      // starter and the design starters build the app widget.
+      autoConfigurations: [
+        springSecurityCoreAutoConfiguration,
+        springBootStarterFlutterAutoConfiguration,
+        ...starters.autoConfigurations,
+      ],
+      autoConfigurationMetadata: starters.metadata,
       listeners: [events],
       defaultProperties: {
+        'spring.flutter.app.type': type,
+        // A widget test has no directories to keep the chosen theme in.
+        'spring.flutter.theme.remember': 'false',
         'spring.security.oauth2.client.registration.keycloak.client-name':
             'Neon SSO',
       },
       bannerMode: BannerMode.off,
     ).runAsync(const []);
+    startApplication = start;
+    context = await start('material', DesignStarters.both);
+    cupertinoContext = await start('cupertino', DesignStarters.onlyCupertino);
+    plainContext = await start('widgets', DesignStarters.none);
   });
 
   tearDown(() async {
     await context.closeAsync();
+    await cupertinoContext.closeAsync();
+    await plainContext.closeAsync();
     SecurityContextHolder.clearContext();
     debugDefaultTargetPlatformOverride = null;
   });
 
   Widget spring(Widget app) =>
       SpringScope(applicationContext: context, child: app);
+
+  // [home] in the Cupertino starter's `CupertinoApp`.
+  Widget cupertino(Widget home) => SpringScope(
+    applicationContext: cupertinoContext,
+    child: SpringApp(home: home),
+  );
+
+  // [home] in the Flutter starter's `WidgetsApp`, in an application
+  // without a design starter.
+  Widget plain(Widget home) => SpringScope(
+    applicationContext: plainContext,
+    child: SpringApp(home: home),
+  );
+
+  group('LoginDesign', () {
+    // The design the login widgets find below [app], and its controls.
+    Future<(LoginDesign, DesignControls?)> designIn(
+      WidgetTester tester,
+      Widget Function(Widget home) app,
+    ) async {
+      late LoginDesign design;
+      DesignControls? controls;
+      await tester.pumpWidget(
+        app(
+          Builder(
+            builder: (context) {
+              design = LoginDesign.of(context);
+              controls = design.controlsOf(context);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+      return (design, controls);
+    }
+
+    testWidgets("app below a design starter's app, with its controls", (
+      tester,
+    ) async {
+      var (design, controls) = await designIn(
+        tester,
+        (home) => spring(SpringApp(home: home)),
+      );
+      expect(find.byType(MaterialApp), findsOneWidget);
+      expect(design, LoginDesign.app);
+      expect(controls, isA<MaterialDesignControls>());
+
+      (design, controls) = await designIn(tester, cupertino);
+      expect(find.byType(CupertinoApp), findsOneWidget);
+      expect(design, LoginDesign.app);
+      expect(controls, isA<CupertinoDesignControls>());
+    });
+
+    testWidgets('widgets in an app without a design library', (tester) async {
+      final (design, controls) = await designIn(tester, plain);
+      expect(find.byType(WidgetsApp), findsOneWidget);
+      expect(find.byType(MaterialApp), findsNothing);
+      expect(find.byType(CupertinoApp), findsNothing);
+      expect(design, LoginDesign.widgets);
+      expect(controls, isNull);
+    });
+
+    testWidgets("an app widget of the app's own: the controls of its "
+        "DesignScope, else those of the design starter whose app it is, "
+        'else widgets', (tester) async {
+      // Its own DesignScope with controls: those.
+      var (design, controls) = await designIn(
+        tester,
+        (home) => spring(_ownMaterial(home: home)),
+      );
+      expect(design, LoginDesign.app);
+      expect(controls, isA<MaterialDesignControls>());
+
+      // No DesignScope, or one for the text styles only: the controls of
+      // the starter whose app it is. With both starters a MaterialApp gets
+      // Material's, though it has Cupertino's localizations too.
+      Widget textStylesOnly(Widget home) => MaterialApp(
+        builder: (context, child) => DesignScope(
+          textStyle: (context, style) => null,
+          selectable: (context, child) => child,
+          child: child!,
+        ),
+        home: home,
+      );
+      for (final (label, app, expected) in [
+        (
+          'MaterialApp',
+          (Widget home) => MaterialApp(home: home),
+          isA<MaterialDesignControls>(),
+        ),
+        (
+          'CupertinoApp',
+          (Widget home) => CupertinoApp(home: home),
+          isA<CupertinoDesignControls>(),
+        ),
+        ('text styles only', textStylesOnly, isA<MaterialDesignControls>()),
+      ]) {
+        (design, controls) = await designIn(
+          tester,
+          (home) => spring(app(home)),
+        );
+        expect(design, LoginDesign.app, reason: label);
+        expect(controls, expected, reason: label);
+      }
+
+      // The Cupertino starter alone: a CupertinoApp gets Cupertino's.
+      (design, controls) = await designIn(
+        tester,
+        (home) => SpringScope(
+          applicationContext: cupertinoContext,
+          child: CupertinoApp(home: home),
+        ),
+      );
+      expect(design, LoginDesign.app);
+      expect(controls, isA<CupertinoDesignControls>());
+
+      // The Cupertino starter alone: a MaterialApp, which has Cupertino's
+      // localizations too, is not Cupertino's app: plain widgets.
+      (design, controls) = await designIn(
+        tester,
+        (home) => SpringScope(
+          applicationContext: cupertinoContext,
+          child: MaterialApp(home: home),
+        ),
+      );
+      expect(design, LoginDesign.widgets);
+      expect(controls, isNull);
+
+      // The Material starter alone: a MaterialApp gets Material's, a
+      // CupertinoApp, whose starter is not there, plain widgets.
+      final materialContext = await startApplication(
+        'material',
+        DesignStarters.onlyMaterial,
+      );
+      addTearDown(materialContext.closeAsync);
+      (design, controls) = await designIn(
+        tester,
+        (home) => SpringScope(
+          applicationContext: materialContext,
+          child: MaterialApp(home: home),
+        ),
+      );
+      expect(design, LoginDesign.app);
+      expect(controls, isA<MaterialDesignControls>());
+      (design, controls) = await designIn(
+        tester,
+        (home) => SpringScope(
+          applicationContext: materialContext,
+          child: CupertinoApp(home: home),
+        ),
+      );
+      expect(design, LoginDesign.widgets);
+      expect(controls, isNull);
+
+      // No design starter: plain widgets in any of them; a WidgetsApp has
+      // no design whatever the starters.
+      for (final (label, application, app) in [
+        (
+          'MaterialApp',
+          plainContext,
+          (Widget home) => MaterialApp(home: home),
+        ),
+        (
+          'CupertinoApp',
+          plainContext,
+          (Widget home) => CupertinoApp(home: home),
+        ),
+        ('WidgetsApp', plainContext, _ownWidgets),
+        ('WidgetsApp, both starters', context, _ownWidgets),
+      ]) {
+        (design, controls) = await designIn(
+          tester,
+          (home) =>
+              SpringScope(applicationContext: application, child: app(home)),
+        );
+        expect(design, LoginDesign.widgets, reason: label);
+        expect(controls, isNull, reason: label);
+      }
+    });
+
+    testWidgets("a LoginForm in an app widget of the app's own draws the "
+        "controls of its design's starter", (tester) async {
+      await tester.pumpWidget(
+        spring(MaterialApp(home: const Scaffold(body: LoginForm()))),
+      );
+      expect(_field('User name'), findsOneWidget);
+      expect(_field('Password'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Log in'), findsOneWidget);
+
+      await tester.pumpWidget(
+        SpringScope(
+          applicationContext: cupertinoContext,
+          child: const CupertinoApp(
+            home: CupertinoPageScaffold(child: Center(child: LoginForm())),
+          ),
+        ),
+      );
+      expect(find.byType(CupertinoTextField), findsNWidgets(2));
+      expect(find.byType(TextField), findsNothing);
+
+      await tester.pumpWidget(
+        SpringScope(
+          applicationContext: plainContext,
+          child: MaterialApp(home: const Scaffold(body: LoginForm())),
+        ),
+      );
+      expect(find.byType(TextField), findsNothing);
+      expect(find.byType(CupertinoTextField), findsNothing);
+      expect(find.byType(EditableText), findsNWidgets(2));
+    });
+
+    testWidgets('no app at all: widgets', (tester) async {
+      final (design, controls) = await designIn(
+        tester,
+        (home) => Directionality(textDirection: TextDirection.ltr, child: home),
+      );
+      expect(design, LoginDesign.widgets);
+      expect(controls, isNull);
+    });
+
+    testWidgets('widgets has no controls, in a Material app too', (
+      tester,
+    ) async {
+      late DesignControls? ofWidgets;
+      late DesignControls? ofApp;
+      await tester.pumpWidget(
+        spring(
+          SpringApp(
+            home: Builder(
+              builder: (context) {
+                ofWidgets = LoginDesign.widgets.controlsOf(context);
+                ofApp = LoginDesign.app.controlsOf(context);
+                return const SizedBox();
+              },
+            ),
+          ),
+        ),
+      );
+      expect(ofWidgets, isNull);
+      expect(ofApp, isA<MaterialDesignControls>());
+    });
+  });
 
   group('LoginForm', () {
     testWidgets('empty fields are checked before anything is asked', (
@@ -299,7 +617,7 @@ void main() {
       // it, so the French text needs a French app.
       await tester.pumpWidget(
         spring(
-          MaterialApp(
+          _ownMaterial(
             locale: const Locale('fr'),
             supportedLocales: const [Locale('fr')],
             localizationsDelegates: const [
@@ -349,12 +667,11 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        spring(
-          const CupertinoApp(
-            home: CupertinoPageScaffold(child: SafeArea(child: LoginForm())),
-          ),
+        cupertino(
+          const CupertinoPageScaffold(child: SafeArea(child: LoginForm())),
         ),
       );
+      expect(find.byType(CupertinoApp), findsOneWidget);
       expect(find.byType(CupertinoTextField), findsNWidgets(2));
       expect(find.byType(TextField), findsNothing);
 
@@ -375,17 +692,8 @@ void main() {
     ) async {
       await tester.pumpWidget(
         spring(
-          WidgetsApp(
-            color: const Color(0xFF6750A4),
-            textStyle: const TextStyle(fontSize: 14, color: Color(0xFF000000)),
-            pageRouteBuilder: <T>(settings, builder) => PageRouteBuilder<T>(
-              settings: settings,
-              pageBuilder: (context, _, _) => builder(context),
-            ),
-            home: const Padding(
-              padding: EdgeInsets.all(16),
-              child: LoginForm(),
-            ),
+          _ownWidgets(
+            const Padding(padding: EdgeInsets.all(16), child: LoginForm()),
           ),
         ),
       );
@@ -405,6 +713,296 @@ void main() {
       await tester.tap(find.text('Log in'));
       await tester.pumpAndSettle();
       expect(SecurityContextHolder.getContext().authentication?.name, 'ada');
+    });
+
+    testWidgets('in a Material app: the look of the old Material design', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      manager.gate = Completer();
+      // A page without a Scaffold: the form brings the Material its
+      // fields need.
+      await tester.pumpWidget(
+        spring(
+          SpringApp(
+            home: Builder(
+              builder: (context) => ColoredBox(
+                color: Theme.of(context).colorScheme.surface,
+                child: const LoginForm(),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(
+        tester
+            .widget<Material>(
+              find
+                  .descendant(
+                    of: find.byType(LoginForm),
+                    matching: find.byType(Material),
+                  )
+                  .first,
+            )
+            .type,
+        MaterialType.transparency,
+      );
+      expect(
+        find.ancestor(
+          of: find.byType(LoginForm),
+          matching: find.byType(Material),
+        ),
+        findsNothing,
+      );
+      expect(find.byType(TextField), findsNWidgets(2));
+      expect(find.byType(CupertinoTextField), findsNothing);
+      final username = tester.widget<TextField>(_field('User name'));
+      expect(username.autocorrect, isFalse);
+      expect(username.enableSuggestions, isFalse);
+      expect(username.decoration!.suffixIcon, isNull);
+      expect(find.byIcon(Icons.visibility), findsOneWidget);
+      await tester.tap(find.byTooltip('Show password'));
+      await tester.pump();
+      expect(find.byIcon(Icons.visibility_off), findsOneWidget);
+
+      // The checks: each error in its field's decoration.
+      await tester.tap(find.widgetWithText(FilledButton, 'Log in'));
+      await tester.pump();
+      expect(
+        tester.widget<TextField>(_field('User name')).decoration!.errorText,
+        'Enter your user name',
+      );
+      expect(
+        tester.widget<TextField>(_field('Password')).decoration!.errorText,
+        'Enter your password',
+      );
+
+      // While the login runs: a small spinner in the button, which still
+      // says what it is.
+      await tester.enterText(_field('User name'), 'bob');
+      await tester.enterText(_field('Password'), 'guess');
+      await tester.tap(find.widgetWithText(FilledButton, 'Log in'));
+      await tester.pump();
+      final spinner = find.descendant(
+        of: find.byType(FilledButton),
+        matching: find.byType(CircularProgressIndicator),
+      );
+      expect(tester.getSize(spinner), const Size.square(18));
+      expect(
+        tester.widget<CircularProgressIndicator>(spinner).strokeWidth,
+        2,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(FilledButton),
+          matching: find.text('Log in'),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(FilledButton),
+          matching: find.bySemanticsLabel('Log in'),
+        ),
+        findsOneWidget,
+      );
+
+      // The refusal in the theme's error color.
+      manager.gate!.complete();
+      await tester.pumpAndSettle();
+      final error = find.text('Wrong user name or password');
+      expect(
+        tester.widget<Text>(error).style!.color,
+        Theme.of(tester.element(error)).colorScheme.error,
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('in a Cupertino app: the look of the old Cupertino design', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      manager.gate = Completer();
+      await tester.pumpWidget(
+        cupertino(
+          const CupertinoPageScaffold(child: SafeArea(child: LoginForm())),
+        ),
+      );
+      expect(find.byType(Material), findsNothing);
+      final fields = find.byType(CupertinoTextField);
+      // The labels are the fields' placeholders.
+      expect(
+        tester.widget<CupertinoTextField>(fields.first).placeholder,
+        ('User name'),
+      );
+      expect(
+        tester.widget<CupertinoTextField>(fields.last).placeholder,
+        'Password',
+      );
+      expect(tester.widget<CupertinoTextField>(fields.first).suffix, isNull);
+      expect(tester.widget<CupertinoTextField>(fields.first).autofillHints, [
+        AutofillHints.username,
+      ]);
+      expect(tester.widget<CupertinoTextField>(fields.last).autofillHints, [
+        AutofillHints.password,
+      ]);
+
+      // The eye shows and hides the password, and says so to a screen
+      // reader.
+      Finder toggle(String label) => find.ancestor(
+        of: find.bySubtype<Icon>(),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              widget.properties.label == label &&
+              (widget.properties.button ?? false),
+        ),
+      );
+      expect(find.byIcon(CupertinoIcons.eye), findsOneWidget);
+      expect(toggle('Show password'), findsOneWidget);
+      await tester.tap(find.byIcon(CupertinoIcons.eye));
+      await tester.pump();
+      expect(
+        tester.widget<CupertinoTextField>(fields.last).obscureText,
+        (isFalse),
+      );
+      expect(find.byIcon(CupertinoIcons.eye_slash), findsOneWidget);
+      expect(toggle('Hide password'), findsOneWidget);
+
+      // The checks: each error below its field, in iOS's red.
+      await tester.tap(find.widgetWithText(CupertinoButton, 'Log in'));
+      await tester.pump();
+      final required = find.text('Enter your user name');
+      final red = CupertinoColors.destructiveRed.resolveFrom(
+        tester.element(required),
+      );
+      expect(tester.widget<Text>(required).style!.color, red);
+      expect(tester.widget<Text>(required).style!.fontSize, 13);
+      expect(
+        tester.getTopLeft(required).dy,
+        greaterThan(tester.getBottomLeft(fields.first).dy),
+      );
+      expect(
+        tester.getTopLeft(required).dy,
+        lessThan(tester.getTopLeft(fields.last).dy),
+      );
+      expect(find.text('Enter your password'), findsOneWidget);
+
+      // While the login runs: the activity indicator in place of the
+      // button's text, the button still saying what it is.
+      await tester.enterText(fields.first, 'bob');
+      await tester.enterText(fields.last, 'guess');
+      await tester.tap(find.widgetWithText(CupertinoButton, 'Log in'));
+      await tester.pump();
+      final button = find.ancestor(
+        of: find.byType(CupertinoActivityIndicator),
+        matching: find.byType(CupertinoButton),
+      );
+      expect(button, findsOneWidget);
+      expect(tester.widget<CupertinoButton>(button).onPressed, isNull);
+      expect(
+        find.descendant(of: button, matching: find.text('Log in')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: button, matching: find.bySemanticsLabel('Log in')),
+        findsOneWidget,
+      );
+      expect(tester.widget<CupertinoTextField>(fields.last).enabled, isFalse);
+
+      manager.gate!.complete();
+      await tester.pumpAndSettle();
+      expect(find.byType(CupertinoActivityIndicator), findsNothing);
+      final refused = find.text('Wrong user name or password');
+      expect(tester.widget<Text>(refused).style!.color, red);
+      expect(
+        tester.widget<CupertinoTextField>(fields.last).controller!.text,
+        (isEmpty),
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('without a design starter: the plain design', (tester) async {
+      manager.gate = Completer();
+      await tester.pumpWidget(
+        plain(const Padding(padding: EdgeInsets.all(16), child: LoginForm())),
+      );
+      expect(find.byType(WidgetsApp), findsOneWidget);
+      expect(find.byType(Material), findsNothing);
+      expect(find.byType(TextField), findsNothing);
+      expect(find.byType(CupertinoTextField), findsNothing);
+      expect(find.byType(EditableText), findsNWidgets(2));
+      expect(find.byType(PlainLoginButton), findsOneWidget);
+      // The labels above the fields, the toggle as a text.
+      expect(find.text('User name'), findsOneWidget);
+      expect(find.text('Password'), findsOneWidget);
+      expect(find.text('Show password'), findsOneWidget);
+
+      await tester.tap(find.text('Log in'));
+      await tester.pump();
+      final colors = loginColorScheme(tester.element(find.byType(LoginForm)));
+      expect(
+        colors,
+        SpringTheme.of(tester.element(find.byType(LoginForm))).colorScheme,
+      );
+      expect(
+        tester.widget<Text>(find.text('Enter your user name')).style!.color,
+        colors.error,
+      );
+
+      final fields = find.byType(EditableText);
+      await tester.enterText(fields.first, 'bob');
+      await tester.enterText(fields.last, 'guess');
+      await tester.tap(find.text('Log in'));
+      await tester.pump();
+      // The spinner drawn by the starter, in place of the text.
+      expect(
+        find.descendant(
+          of: find.byType(PlainLoginButton),
+          matching: find.byType(LoginSpinner),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Log in'), findsNothing);
+      expect(tester.widget<EditableText>(fields.last).readOnly, isTrue);
+
+      manager.gate!.complete();
+      // The spinner turns for ever: no settling while it shows.
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(LoginSpinner), findsNothing);
+      expect(
+        tester
+            .widget<Text>(find.text('Wrong user name or password'))
+            .style!
+            .color,
+        colors.error,
+      );
+      expect(tester.widget<EditableText>(fields.last).controller.text, isEmpty);
+    });
+
+    testWidgets('design: the plain widgets in a Material app; app without '
+        'a design library is the plain design', (tester) async {
+      await tester.pumpWidget(
+        spring(_material(const LoginForm(design: LoginDesign.widgets))),
+      );
+      expect(find.byType(TextField), findsNothing);
+      expect(find.byType(FilledButton), findsNothing);
+      expect(find.byType(EditableText), findsNWidgets(2));
+      expect(find.byType(PlainLoginButton), findsOneWidget);
+
+      await tester.pumpWidget(
+        plain(
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: LoginForm(design: LoginDesign.app),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.byType(EditableText), findsNWidgets(2));
+      expect(find.byType(PlainLoginButton), findsOneWidget);
     });
 
     testWidgets('semantics: labelled fields, the toggle, the button', (
@@ -589,15 +1187,182 @@ void main() {
       expect(ids, ['keycloak']);
     });
 
+    testWidgets('in a Material app: a filled button; the spinner takes the '
+        "text's place, or the icon's", (tester) async {
+      final semantics = tester.ensureSemantics();
+      final service = _LoginService()..gate = Completer();
+      await tester.pumpWidget(
+        spring(
+          _material(
+            Column(
+              children: [
+                OAuth2LoginButton('keycloak', loginService: service),
+                OAuth2LoginButton(
+                  'github',
+                  loginService: service,
+                  icon: const Icon(Icons.key),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(FilledButton), findsNWidgets(2));
+      expect(find.byType(PlainLoginButton), findsNothing);
+      final plain = find.widgetWithText(FilledButton, 'Sign in with Neon SSO');
+      final withIcon = find.ancestor(
+        of: find.byIcon(Icons.key),
+        matching: find.bySubtype<FilledButton>(),
+      );
+      expect(plain, findsOneWidget);
+      expect(withIcon, findsOneWidget);
+      expect(
+        tester.getCenter(find.byIcon(Icons.key)).dx,
+        lessThan(tester.getCenter(find.text('Sign in with GitHub')).dx),
+      );
+
+      // Without an icon the spinner replaces the text.
+      await tester.tap(plain);
+      await tester.pump();
+      final busy = find.ancestor(
+        of: find.byType(CircularProgressIndicator),
+        matching: find.bySubtype<FilledButton>(),
+      );
+      expect(busy, findsOneWidget);
+      expect(tester.widget<FilledButton>(busy).onPressed, isNull);
+      expect(find.text('Sign in with Neon SSO'), findsNothing);
+      expect(find.bySemanticsLabel('Sign in with Neon SSO'), findsOneWidget);
+      expect(
+        tester.getSize(find.byType(CircularProgressIndicator)),
+        const Size.square(18),
+      );
+      service.gate!.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('Sign in with Neon SSO'), findsOneWidget);
+
+      // With an icon the spinner replaces the icon, the text stays.
+      service.gate = Completer();
+      await tester.tap(find.text('Sign in with GitHub'));
+      await tester.pump();
+      expect(find.byIcon(Icons.key), findsNothing);
+      expect(find.text('Sign in with GitHub'), findsOneWidget);
+      expect(
+        tester.getCenter(find.byType(CircularProgressIndicator)).dx,
+        lessThan(tester.getCenter(find.text('Sign in with GitHub')).dx),
+      );
+      service.gate!.complete();
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.key), findsOneWidget);
+      semantics.dispose();
+    });
+
+    testWidgets('in a Cupertino app: a filled button; the activity '
+        'indicator before the text, which stays', (tester) async {
+      final service = _LoginService()..gate = Completer();
+      await tester.pumpWidget(
+        cupertino(
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                OAuth2LoginButton('keycloak', loginService: service),
+                OAuth2LoginButton(
+                  'github',
+                  loginService: service,
+                  icon: const Icon(CupertinoIcons.lock),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(Material), findsNothing);
+      expect(find.byType(CupertinoButton), findsNWidgets(2));
+      expect(find.byType(PlainLoginButton), findsNothing);
+      // A filled button: the primary color behind the text.
+      final button = tester.widget<CupertinoButton>(
+        find.widgetWithText(CupertinoButton, 'Sign in with Neon SSO'),
+      );
+      expect(button.onPressed, isNotNull);
+      expect(
+        tester.getCenter(find.byIcon(CupertinoIcons.lock)).dx,
+        lessThan(tester.getCenter(find.text('Sign in with GitHub')).dx),
+      );
+
+      await tester.tap(find.text('Sign in with Neon SSO'));
+      await tester.pump();
+      expect(find.byType(CupertinoActivityIndicator), findsOneWidget);
+      expect(find.text('Sign in with Neon SSO'), findsOneWidget);
+      expect(
+        tester.getCenter(find.byType(CupertinoActivityIndicator)).dx,
+        lessThan(tester.getCenter(find.text('Sign in with Neon SSO')).dx),
+      );
+      expect(
+        tester
+            .widget<CupertinoButton>(
+              find.widgetWithText(CupertinoButton, 'Sign in with Neon SSO'),
+            )
+            .onPressed,
+        isNull,
+      );
+      service.gate!.complete();
+      await tester.pumpAndSettle();
+      expect(find.byType(CupertinoActivityIndicator), findsNothing);
+
+      // With an icon the indicator takes its place.
+      service.gate = Completer();
+      await tester.tap(find.text('Sign in with GitHub'));
+      await tester.pump();
+      expect(find.byIcon(CupertinoIcons.lock), findsNothing);
+      expect(find.byType(CupertinoActivityIndicator), findsOneWidget);
+      expect(find.text('Sign in with GitHub'), findsOneWidget);
+      service.gate!.complete();
+      await tester.pumpAndSettle();
+      expect(find.byIcon(CupertinoIcons.lock), findsOneWidget);
+      expect(service.logins.map((login) => login.$1), ['keycloak', 'github']);
+    });
+
+    testWidgets('without a design starter: the plain button, and the plain '
+        'one by design in a Material app', (tester) async {
+      final service = _LoginService()..gate = Completer();
+      await tester.pumpWidget(
+        plain(
+          Center(child: OAuth2LoginButton('keycloak', loginService: service)),
+        ),
+      );
+      expect(find.byType(Material), findsNothing);
+      expect(find.byType(PlainLoginButton), findsOneWidget);
+      await tester.tap(find.text('Sign in with Neon SSO'));
+      await tester.pump();
+      // The spinner before the text, which stays.
+      expect(find.byType(LoginSpinner), findsOneWidget);
+      expect(find.text('Sign in with Neon SSO'), findsOneWidget);
+      service.gate!.complete();
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(LoginSpinner), findsNothing);
+      expect(service.logins.single.$1, 'keycloak');
+
+      await tester.pumpWidget(
+        spring(
+          _material(
+            OAuth2LoginButton(
+              'keycloak',
+              loginService: service,
+              design: LoginDesign.widgets,
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(FilledButton), findsNothing);
+      expect(find.byType(PlainLoginButton), findsOneWidget);
+    });
+
     testWidgets('in a CupertinoApp and a WidgetsApp', (tester) async {
       final service = _LoginService();
       await tester.pumpWidget(
-        spring(
-          CupertinoApp(
-            home: Center(
-              child: OAuth2LoginButton('keycloak', loginService: service),
-            ),
-          ),
+        cupertino(
+          Center(child: OAuth2LoginButton('keycloak', loginService: service)),
         ),
       );
       expect(find.byType(CupertinoButton), findsOneWidget);
@@ -606,19 +1371,13 @@ void main() {
 
       await tester.pumpWidget(
         spring(
-          WidgetsApp(
-            color: const Color(0xFF6750A4),
-            textStyle: const TextStyle(fontSize: 14, color: Color(0xFF000000)),
-            pageRouteBuilder: <T>(settings, builder) => PageRouteBuilder<T>(
-              settings: settings,
-              pageBuilder: (context, _, _) => builder(context),
-            ),
-            home: Center(
-              child: OAuth2LoginButton('keycloak', loginService: service),
-            ),
+          _ownWidgets(
+            Center(child: OAuth2LoginButton('keycloak', loginService: service)),
           ),
         ),
       );
+      expect(find.byType(CupertinoButton), findsNothing);
+      expect(find.byType(PlainLoginButton), findsOneWidget);
       await tester.tap(find.text('Sign in with Neon SSO'));
       await tester.pumpAndSettle();
       expect(service.logins.map((login) => login.$1), [

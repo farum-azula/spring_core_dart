@@ -11,7 +11,7 @@ pluginManagement {
         gradlePluginPortal()
     }
     plugins {
-        id("com.android.library") version "9.1.0"
+        id("com.android.library") version "9.3.1"
     }
 }
 

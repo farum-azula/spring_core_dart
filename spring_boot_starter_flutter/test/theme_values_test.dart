@@ -1,8 +1,12 @@
 // Reading theme property values: colors, weights, numbers, durations,
 // curves, booleans, enums, canonical names.
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+// The names of colors are those of Material's palette.
+import 'package:material_ui/material_ui.dart' show Colors;
 import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
+
+enum _Variant { tonalSpot, fruitSalad }
 
 void main() {
   group('color', () {
@@ -152,12 +156,12 @@ void main() {
 
   test('enum: case, - and _ ignored', () {
     expect(
-      ThemeValues.enumValue(DynamicSchemeVariant.values, 'tonal-spot'),
-      DynamicSchemeVariant.tonalSpot,
+      ThemeValues.enumValue(_Variant.values, 'tonal-spot'),
+      _Variant.tonalSpot,
     );
     expect(
-      ThemeValues.enumValue(DynamicSchemeVariant.values, 'FRUIT_SALAD'),
-      DynamicSchemeVariant.fruitSalad,
+      ThemeValues.enumValue(_Variant.values, 'FRUIT_SALAD'),
+      _Variant.fruitSalad,
     );
     expect(ThemeValues.enumValue(Brightness.values, 'grey'), isNull);
   });

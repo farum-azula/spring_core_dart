@@ -9,7 +9,9 @@ keywords: [flutter, theme, yaml, components, material, widgets]
 
 # Component themes in YAML
 
-Each Material component has a theme in Flutter: the look every widget of that kind starts from. Spring for Dart reads them from `spring.flutter.theme.components.<name>`, with the same names and values as Flutter, in kebab case (`background-color` for `backgroundColor`). Pick a component below to see all its properties, what they do and an example.
+Each Material component has a theme in Flutter: the look every widget of that kind starts from. The Material starter, `spring_boot_starter_flutter_material`, reads them from `spring.flutter.theme.components.<name>`, with the same names and values as Flutter, in kebab case (`background-color` for `backgroundColor`). Pick a component below to see all its properties, what they do and an example.
+
+An app needs the Material starter in its dependencies to show them: without it the `components` of a theme are accepted, not checked and not shown, and a line of the log names the package. The last row is not a Material component: the Cupertino starter, `spring_boot_starter_flutter_cupertino`, reads `spring.flutter.theme.cupertino` in the same way.
 
 | Component | Flutter class | What it styles | Properties |
 |---|---|---|---|
@@ -74,4 +76,4 @@ Each Material component has a theme in Flutter: the look every widget of that ki
 
 ---
 
-*Property descriptions are adapted from the documentation of the Flutter SDK (3.47.9), copyright The Flutter Authors, BSD 3-Clause license.*
+*Property descriptions are adapted from the documentation of the Flutter SDK (3.50.0), copyright The Flutter Authors, BSD 3-Clause license.*

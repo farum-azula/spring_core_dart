@@ -1,7 +1,7 @@
 // What the tests share: the app started as `flutter run` starts it, on a
 // project played in memory.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 import 'package:supabase_example_app/src/app/home_page.dart';
 

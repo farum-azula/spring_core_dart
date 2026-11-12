@@ -12,3 +12,7 @@ dependency_overrides:
     path: ../spring_core_dart_generator
   spring_web_dart:
     path: ../spring_web_dart
+  spring_boot_starter_flutter_material:
+    path: ../spring_boot_starter_flutter_material
+  spring_boot_starter_flutter_cupertino:
+    path: ../spring_boot_starter_flutter_cupertino

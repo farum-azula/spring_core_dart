@@ -18,6 +18,7 @@ import 'package:spring_boot_dart/src/properties/boot_properties.dart';
 import 'package:spring_boot_dart/src/properties/properties.dart';
 import 'package:spring_boot_dart/src/renamed_properties.dart';
 import 'package:spring_boot_dart/src/runners.dart';
+import 'package:spring_boot_dart/src/spring_factories.dart';
 import 'package:spring_boot_dart/src/startup_info_stub.dart'
     if (dart.library.io) 'package:spring_boot_dart/src/startup_info_io.dart';
 import 'package:spring_boot_dart/src/startup_runtime.dart';
@@ -388,6 +389,16 @@ class SpringApplication {
   /// [environmentPostProcessors] are, because the themes are read before
   /// the beans exist; the context has it as the `remoteAddresses` bean.
   final RemoteAddresses remoteAddresses;
+
+  /// What the starters add before the beans exist: the constants of
+  /// `AutoConfigurationModule.factories` of every one of
+  /// [autoConfigurations], found by type with `factories.load<T>()`. The
+  /// context has it as the `springFactories` bean. Spring's
+  /// `SpringFactoriesLoader`.
+  late final SpringFactories factories = SpringFactories([
+    for (final module in autoConfigurations)
+      ...?autoConfigurationMetadata[module]?.factories,
+  ]);
 
   /// Where the steps of the start go (`spring.boot.application.starting`,
   /// `spring.boot.application.environment-prepared`,
@@ -1144,6 +1155,11 @@ class SpringApplication {
         'remoteAddresses',
         remoteAddresses,
         types: const [RemoteAddresses],
+      )
+      ..registerSingleton(
+        'springFactories',
+        factories,
+        types: const [SpringFactories],
       )
       ..addBeanPostProcessor(
         ConfigurationPropertiesBinder(

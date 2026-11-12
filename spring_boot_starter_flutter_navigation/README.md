@@ -175,20 +175,22 @@ and it rebuilds with the new values.
 
 ## Transitions
 
-Screens show at once by default, in every app type. The theme turns a
-transition on for every screen:
+By default a screen comes in as the app type's own routes do, as in
+Flutter (`platform`): Material's per platform in a `MaterialApp`, the iOS
+slide in a `CupertinoApp`, none in an app of type `widgets`. The theme
+sets another for every screen:
 `spring.flutter.theme.motion.page-transition`
-([page transitions](../docs/flutter/theme/motion-and-animations.md#page-transitions)).
-`platform` is the app type's own: Material's, the iOS slide in a
-`CupertinoApp`, none in an app of type `widgets`.
+([page transitions](../docs/flutter/theme/motion-and-animations.md#page-transitions);
+[as in Flutter, and where it differs](../docs/flutter/theme/motion-and-animations.md#as-in-flutter-and-where-it-differs)).
+`none` switches pages at once.
 
 ```yaml
-# The platform's transition for every screen.
+# Pages that switch at once, in every app type.
 spring:
   flutter:
     theme:
       motion:
-        page-transition: platform
+        page-transition: none
 ---
 # A fade of the theme's own duration and curve.
 spring:
@@ -210,11 +212,17 @@ context.route.go('/motion', transition: PageTransition.none);
 
 | `PageTransition` | |
 |---|---|
-| `theme` | The theme's `motion.page-transition`, none when it sets nothing (the default) |
-| `platform` | The app type's own |
-| `fadeUpwards`, `zoom`, `cupertino`, `fade` | That kind, in any app type |
+| `theme` | The theme's `motion.page-transition`, `platform` when it sets nothing (the default) |
+| `platform` | The app type's own, as in Flutter: Material's per platform in an app of type `material` (or the `pageTransitionsTheme` a `ThemeCustomizer` sets), Cupertino's slide in one of type `cupertino`, none in an app without a design library (the theme's default) |
+| `fadeUpwards`, `fade` | That kind, in any app type |
+| `zoom` | Material's, in any app type with `spring_boot_starter_flutter_material` in the dependencies |
+| `cupertino` | Cupertino's, with its swipe back, in any app type with `spring_boot_starter_flutter_cupertino` in the dependencies |
 | `content` | As the theme's `motion.content-change`: the way a part of a screen shows other content (`fade-up`) |
 | `none` | At once |
+
+`zoom` or `cupertino` without its starter: in the theme, the start fails
+and names the starter; on a screen or in `go(...)`, the error is reported
+(it names the starter) and the page shows without a transition.
 
 The kinds take the theme's duration and curve when it sets them. With
 reduced motion on the device every transition is instant. Switching the

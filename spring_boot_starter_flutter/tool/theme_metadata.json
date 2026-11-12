@@ -1,6 +1,6 @@
 {
   "generatedBy": "tool/theme_metadata.dart",
-  "flutterVersion": "3.47.9",
+  "flutterVersion": "3.50.0",
   "states": [
     "default",
     "hovered",
@@ -2159,8 +2159,8 @@
         "fade",
         "content"
       ],
-      "description": "How a new screen comes in, on every platform: a kind, or a map of `type`, `duration`, `curve`.",
-      "default": "none"
+      "description": "How a new screen comes in, on every platform: a kind, or a map of `type`, `duration`, `curve`. Not set, the app type's own, as in Flutter: Material's per platform in a `MaterialApp`, the iOS slide in a `CupertinoApp`, none without a design library; `none` switches pages at once.",
+      "default": "platform"
     },
     {
       "name": "motion.page-transition.type",
@@ -2176,7 +2176,7 @@
         "content"
       ],
       "description": "The map form's kind.",
-      "default": "none"
+      "default": "platform"
     },
     {
       "name": "motion.page-transition.duration",

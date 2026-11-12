@@ -1710,11 +1710,14 @@ class SpringBuilder implements Builder {
 
   // `const AutoConfigurationModule(order:, before:, after:)` with the
   // values the annotation sets; `null` when it sets none.
+  // What `SpringApplication` needs of the annotation at run time: its
+  // ordering and its factories.
   static Expression? _orderingOf(ConstantReader annotation) {
     final order = annotation.peek('order')?.intValue ?? 0;
     final before = annotation.peek('before')?.listValue ?? const [];
     final after = annotation.peek('after')?.listValue ?? const [];
-    if (order == 0 && before.isEmpty && after.isEmpty) {
+    final factories = annotation.peek('factories')?.listValue ?? const [];
+    if (order == 0 && before.isEmpty && after.isEmpty && factories.isEmpty) {
       return null;
     }
     List<Expression> names(List<DartObject> values) => [
@@ -1725,8 +1728,80 @@ class SpringBuilder implements Builder {
       if (order != 0) 'order': literalNum(order),
       if (before.isNotEmpty) 'before': literalList(names(before)),
       if (after.isNotEmpty) 'after': literalList(names(after)),
+      if (factories.isNotEmpty)
+        'factories': literalList([
+          for (final factory in factories) _factory(factory),
+        ]),
     });
   }
+
+  // One of `AutoConfigurationModule.factories` as the constant it was
+  // written as: a top-level or static constant by its name, else the
+  // call of its const constructor.
+  static Expression _factory(DartObject factory) {
+    final reader = ConstantReader(factory);
+    final Revivable revivable;
+    try {
+      revivable = reader.revive();
+    } on Object {
+      throw InvalidGenerationSource(_factoryForms(factory));
+    }
+    // A library under `lib/` is an `asset:` URI here: its `package:` one.
+    final source = revivable.source.removeFragment();
+    final library = switch (source) {
+      Uri(
+        scheme: 'asset',
+        pathSegments: [final package, 'lib', ...final rest],
+      ) =>
+        'package:$package/${rest.join('/')}',
+      Uri(scheme: 'package' || 'dart') => '$source',
+      _ => '',
+    };
+    final type = revivable.source.fragment;
+    if (revivable.isPrivate || library.isEmpty) {
+      throw InvalidGenerationSource(_factoryForms(factory));
+    }
+    if (type.isEmpty) {
+      return refer(revivable.accessor, library);
+    }
+    final declared = factory.type?.element;
+    if (revivable.accessor.isNotEmpty &&
+        declared is InterfaceElement &&
+        declared.getField(revivable.accessor)?.isStatic == true) {
+      return refer(type, library).property(revivable.accessor);
+    }
+    Expression argument(DartObject value) {
+      final constant = ConstantReader(value);
+      return constant.isNull ||
+              constant.isBool ||
+              constant.isInt ||
+              constant.isDouble ||
+              constant.isString
+          ? literal(constant.literalValue)
+          : _factory(value);
+    }
+
+    final positional = [
+      for (final value in revivable.positionalArguments) argument(value),
+    ];
+    final named = {
+      for (final MapEntry(:key, :value) in revivable.namedArguments.entries)
+        key: argument(value),
+    };
+    return revivable.accessor.isEmpty
+        ? refer(type, library).constInstance(positional, named)
+        : refer(
+            type,
+            library,
+          ).constInstanceNamed(revivable.accessor, positional, named);
+  }
+
+  static String _factoryForms(DartObject factory) =>
+      'AutoConfigurationModule.factories: '
+      "${factory.type?.getDisplayString() ?? 'a value'} cannot be written "
+      'into the generated application. A factory is a public constant: a '
+      'const constructor call with literal arguments, a top-level const '
+      'variable or a static const field.';
 
   // A starter's `requires` range against the spring_boot_dart version in
   // use (`springBootVersion`); a mismatch stops the build with an

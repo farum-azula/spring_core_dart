@@ -57,5 +57,6 @@ export 'package:spring_boot_dart/src/ratelimit/rate_limit_conditions.dart';
 export 'package:spring_boot_dart/src/renamed_properties.dart';
 export 'package:spring_boot_dart/src/runners.dart';
 export 'package:spring_boot_dart/src/spring_application.dart';
+export 'package:spring_boot_dart/src/spring_factories.dart';
 export 'package:spring_boot_dart/src/version.dart';
 export 'package:spring_core_dart/spring_core_dart.dart';

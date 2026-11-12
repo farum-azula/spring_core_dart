@@ -2,8 +2,10 @@
 // typed keys, the switcher, the states, the motion, the backgrounds and the
 // images (without the network).
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:spring_boot_starter_flutter_cupertino/spring_boot_starter_flutter_cupertino.dart'
+    show CupertinoThemes;
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
@@ -141,10 +143,10 @@ void main() {
 
   testWidgets('the Cupertino theme comes from cupertino.*', (tester) async {
     final context = await startApp(tester, theme: AppThemes.light);
-    final themes = context.getBean<SpringThemes>();
+    final themes = context.getBean<CupertinoThemes>();
     final element = tester.element(find.byType(Shell));
     expect(
-      themes.cupertino(AppThemes.light).primaryColor,
+      themes.theme(AppThemes.light).primaryColor,
       Theme.of(element).colorScheme.primary,
     );
     await stopApp(tester);

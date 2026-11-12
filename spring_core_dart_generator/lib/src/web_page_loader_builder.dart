@@ -18,6 +18,7 @@ import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart'
 import 'package:spring_core_dart_generator/src/web_loader_download.dart';
 import 'package:spring_core_dart_generator/src/web_page_head.dart';
 import 'package:spring_core_dart_generator/src/web_page_loader.dart';
+import 'package:spring_core_dart_generator/src/web_wasm_allow_list.dart';
 import 'package:yaml/yaml.dart';
 
 /// Reads and writes the files of the app's own directory (not `lib/`)
@@ -101,9 +102,14 @@ Future<String?> _fromDependency(BuildStep buildStep, String path) async {
 /// every build and removed when the theme has no splash. The rest of the
 /// file is never touched; a page that does not exist is not created.
 ///
+/// `spring.flutter.web.page.wasm-allow-list` goes into the same block
+/// ([WasmAllowList]): the splash's script passes it to Flutter's loader;
+/// without a splash, the block has only a script that does.
+///
 /// It runs for a package that depends on `spring_boot_starter_flutter`,
 /// reads `lib/resources/` as the keys builder does, and never fails a
-/// build: what it cannot use is a warning.
+/// build for the splash: what it cannot use is a warning. A bad
+/// `wasm-allow-list` fails it.
 ///
 /// Spring has no counterpart.
 final class WebPageLoaderBuilder implements Builder {
@@ -212,13 +218,17 @@ final class WebPageLoaderBuilder implements Builder {
             await _fromDependency(buildStep, path);
       }
     }
-    final block = set == null
-        ? null
-        : WebPageLoader.generate(
-            set,
-            diagnostics,
-            readFile: (path) => files[path],
-          );
+    final wasmAllowList = _wasmAllowList(texts);
+    final block =
+        (set == null
+            ? null
+            : WebPageLoader.generate(
+                set,
+                diagnostics,
+                readFile: (path) => files[path],
+                wasmAllowList: wasmAllowList,
+              )) ??
+        (wasmAllowList == null ? null : WebPageLoader.wasmBlock(wasmAllowList));
     final problems = <String>[];
     final loaded = WebPageLoader.apply(page, block, problem: problems.add);
     // The head and the manifest from spring.flutter.app.* and the theme.
@@ -252,12 +262,27 @@ final class WebPageLoaderBuilder implements Builder {
     problems.forEach(log.warning);
     if (updated != null && updated != page) {
       await _files.write(buildStep, package, pagePath, updated);
-      log.info(
-        block == null
-            ? 'Removed the page loader from $pagePath: the active theme has '
-                  'no splash.'
-            : 'Wrote the page loader of the splash into $pagePath.',
+      log.info(switch (block) {
+        null =>
+          'Removed the page loader from $pagePath: the active theme has '
+              'no splash.',
+        _ when set == null || !WebPageLoader.hasSplash(set) =>
+          'Wrote ${WasmAllowList.property} into $pagePath.',
+        _ => 'Wrote the page loader of the splash into $pagePath.',
+      });
+    }
+  }
+
+  // spring.flutter.web.page.wasm-allow-list as the app reads it in a
+  // browser; a bad engine or value fails the build.
+  static Map<String, bool>? _wasmAllowList(Map<String, String> texts) {
+    try {
+      return WasmAllowList.read(
+        readPlatformEnvironment(texts, profiles: const ['web']),
+        problem: (message) => log.severe('The page loader: $message'),
       );
+    } on Exception {
+      return null; // the config's own reading reports it
     }
   }
 

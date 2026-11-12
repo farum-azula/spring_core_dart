@@ -1,8 +1,8 @@
 // Chapter 8, "Cache & scheduling": catalog reads are @Cacheable; a
 // @Scheduled task refreshes the catalog while the app is in the
 // foreground and stops while it is in the background.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/catalog/catalog_service.dart';
 import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'

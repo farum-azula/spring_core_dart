@@ -5,7 +5,7 @@ publish_to: none
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.13.0
+  sdk: ^3.14.0
 
 dependencies:
   flutter:
@@ -20,6 +20,11 @@ dependencies:
   # re-exports the Flutter starter, the OAuth2 client and
   # spring_security_core.
   spring_boot_starter_flutter_security: ^0.7.4
+  # Material Design for the app (spring.flutter.app.type=material): the
+  # MaterialApp, the themes as Material's ThemeData, the palette of a seed.
+  spring_boot_starter_flutter_material: ^0.7.4
+  # Material's widgets (Scaffold, AppBar, Icons), which the pages import.
+  material_ui: ^1.11.0
   # The server's REST API as @FeignClient interfaces (chapter 6).
   spring_boot_starter_feign: ^0.7.4
   # The support chat as a @WebSocketClient (chapter 6).
@@ -46,9 +51,10 @@ dev_dependencies:
   pointycastle: ^4.0.0
 
 flutter:
-  # MaterialApp and CupertinoApp are both in the starter (the theme picks
-  # one at run time), so the build looks for both icon fonts; the unused
-  # glyphs are cut out of a release build.
+  # The font of Material's icons (Icons.*). material_ui builds on
+  # cupertino_ui, so the build looks for the Cupertino icon font too
+  # (cupertino_icons above); the unused glyphs are cut out of a release
+  # build.
   uses-material-design: true
   assets:
     # Injected with @Value('asset:...') (lib/src/about/app_assets.dart).

@@ -7,7 +7,8 @@
 // What it reads:
 //  - the properties and their types: the reader itself, through
 //    test/support/theme_catalog_dump.dart (a `flutter test` run);
-//  - the Flutter class of each component: lib/src/theme/theme_components.dart;
+//  - the Flutter class of each component: the mapping of the Material
+//    starter, ../spring_boot_starter_flutter_material/lib/src/theme_components.dart;
 //  - the descriptions: the `///` docs of the fields in the Flutter SDK,
 //    shortened and put in plain words; what cannot be derived is in the
 //    override maps below. The tool fails when any description is empty.
@@ -72,6 +73,10 @@ import 'dart:io';
 
 import 'theme_sections.dart';
 
+// Where the Material starter maps each component to its Flutter class.
+const _componentsSource =
+    '../spring_boot_starter_flutter_material/lib/src/theme_components.dart';
+
 void main(List<String> args) {
   Directory.current = File.fromUri(Platform.script).parent.parent;
   final catalogIndex = args.indexOf('--catalog');
@@ -82,7 +87,7 @@ void main(List<String> args) {
       .cast<String, dynamic>();
   final sdk = _Sdk(_flutterRoot());
   final classes = _componentClasses(
-    File('lib/src/theme/theme_components.dart').readAsStringSync(),
+    File(_componentsSource).readAsStringSync(),
   );
 
   final problems = <String>[];
@@ -523,6 +528,8 @@ String _title(String name) {
 
 final class _Sdk {
   _Sdk(this.root) {
+    // Material's and Cupertino's classes too, from the SDK's own copy of
+    // them: their fields are those of material_ui and cupertino_ui.
     final dir = Directory('$root/packages/flutter/lib/src');
     for (final file in dir.listSync(recursive: true)) {
       if (file is File && file.path.endsWith('.dart')) {

@@ -1,5 +1,5 @@
 // ThemeAnimation: once, loop, reverse, less motion, a new spec.
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 

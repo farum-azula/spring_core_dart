@@ -2,8 +2,8 @@
 // the bar while the app starts and hands over to it; the Loaders page shows
 // a spinner, a bar with progress and a skeleton. No network; time moves by
 // pumping durations (the loaders loop, so not pumpAndSettle).
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_material/src/app/shell.dart';
 

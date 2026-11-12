@@ -19,9 +19,9 @@ loader kind of its own: a gate of panels, written in Dart in `neon_ui` (see belo
 
 | Design | App | What it is |
 |---|---|---|
-| Material | [`material/`](material/README.md) | A `MaterialApp`. The theme sets Flutter's own components (buttons, inputs, cards, bars...) per state, and styles for our own widgets. Port 5070 on the web. |
-| Cupertino | [`cupertino/`](cupertino/README.md) | A `CupertinoApp` with only Cupertino widgets, themed from the `cupertino:` section. Port 5080 on the web. |
-| Custom widgets | [`neon/`](neon/README.md) on [`neon_ui/`](neon_ui/README.md) | An app of type `widgets` (no Material, no Cupertino). Its components are not Flutter's: they are the widgets of a **component library**, `neon_ui`, delivered as a Dart package with its fonts, picture and a theme file (`themes/neon.yml`) that the app imports. Port 1010 on the web. |
+| Material | [`material/`](material/README.md) | A `MaterialApp`, with `spring_boot_starter_flutter_material`. The theme sets Flutter's own components (buttons, inputs, cards, bars...) per state, and styles for our own widgets. Port 5070 on the web. |
+| Cupertino | [`cupertino/`](cupertino/README.md) | A `CupertinoApp` with only Cupertino widgets, with `spring_boot_starter_flutter_cupertino`, themed from the `cupertino:` section. Port 5080 on the web. |
+| Custom widgets | [`neon/`](neon/README.md) on [`neon_ui/`](neon_ui/README.md) | An app of type `widgets` (no Material, no Cupertino: no design library and no design starter in its dependencies). Its components are not Flutter's: they are the widgets of a **component library**, `neon_ui`, delivered as a Dart package with its fonts, picture and a theme file (`themes/neon.yml`) that the app imports. Port 1010 on the web. |
 
 The **gate** loader (`neon_ui`'s `@ThemeLoaderKind('neon-gate')` widget, the
 `loaders.neon-gate` in its `themes/neon.yml` and

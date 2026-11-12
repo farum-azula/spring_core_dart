@@ -1,12 +1,13 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_cupertino/spring_gen/main.spring.dart';
 import 'package:theme_showcase_cupertino/src/widgets/page_frame.dart';
 import 'package:theme_showcase_cupertino/src/widgets/section.dart';
 
-/// Transitions: how a screen comes in. None by default, in every app
-/// type; the theme turns one on for every screen
-/// (`motion.page-transition`), a screen or one navigation for itself.
+/// Transitions: how a screen comes in. As in Flutter, the app type's own
+/// (the iOS slide in a `CupertinoApp`) unless the theme names one for every
+/// screen (`motion.page-transition`); a screen or one navigation chooses
+/// for itself.
 @ScreenRoute('/transitions', title: '#{nav.transitions}', branch: '/more')
 class TransitionsPage extends StatelessWidget {
   const TransitionsPage({super.key});
@@ -24,20 +25,24 @@ class TransitionsPage extends StatelessWidget {
     return PageFrame(
       title: context.messages.nav.transitions,
       intro:
-          'A screen shows at once unless something asks for a transition: '
-          'the theme for every screen (motion.page-transition), a screen '
-          'for itself, or one navigation. This theme asks for none, so the '
-          'default is what you see from the sidebar and the tabs.',
+          "As in Flutter, a screen comes in with the app type's own "
+          'transition (in a CupertinoApp the iOS slide, with the swipe back) '
+          'unless the theme names one for every screen '
+          '(motion.page-transition); a screen for itself, or one navigation, '
+          'can choose too. This theme names no transition, so its screens '
+          'slide; none makes pages switch at once, as the sidebar asks for '
+          'each of its switches.',
       children: [
         Section(
-          title: 'The default: none',
+          title: "The default: the platform's",
           note:
-              'motion.page-transition is not set: the screen is there at once.',
+              'motion.page-transition is not set: the iOS slide. A theme that '
+              'writes none has its screens there at once.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const MarkdownView.code(
-                '# Turn one on for every screen, and tune it:\n'
+                '# Name one for every screen, and tune it:\n'
                 'motion:\n'
                 '  page-transition: { type: cupertino, duration: 300ms, '
                 'curve: ease-out }',
@@ -90,7 +95,8 @@ class TransitionsPage extends StatelessWidget {
   }
 }
 
-/// A screen with the theme's transition: none here.
+/// A screen with the theme's transition: the platform's here, the iOS
+/// slide.
 @ScreenRoute(
   TransitionThemePage.path,
   title: 'With the default',
@@ -104,7 +110,9 @@ class TransitionThemePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const _Demo(
     title: 'With the default',
-    text: 'It was there at once: the theme asks for no transition.',
+    text:
+        'It came in with the iOS slide: the theme names no transition, so '
+        "it has the platform's.",
   );
 }
 

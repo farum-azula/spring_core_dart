@@ -1,5 +1,6 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:spring_boot_starter_flutter_cupertino/spring_boot_starter_flutter_cupertino.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
 import 'package:theme_showcase_material/src/widgets/page_frame.dart';
@@ -713,11 +714,11 @@ class _CupertinoSectionState extends State<_CupertinoSection> {
 
   @override
   Widget build(BuildContext context) {
-    // The iOS look has a root of its own, `cupertino`; SpringThemes makes a
-    // CupertinoThemeData for every theme.
-    final themes = context.bean<SpringThemes>();
+    // The iOS look has a root of its own, `cupertino`; the Cupertino
+    // starter's CupertinoThemes makes a CupertinoThemeData of every theme.
+    final themes = context.bean<CupertinoThemes>();
     final name = SpringTheme.of(context).name;
-    final cupertino = themes.cupertino(name);
+    final cupertino = themes.theme(name);
     return Section(
       title: 'Cupertino',
       note:

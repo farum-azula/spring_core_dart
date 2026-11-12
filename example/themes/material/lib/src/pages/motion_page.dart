@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
 import 'package:theme_showcase_material/src/widgets/page_frame.dart';
@@ -253,10 +253,10 @@ class _MotionPageState extends State<MotionPage> {
         Section(
           title: 'Page transitions',
           note:
-              'motion.page-transition: none by default; platform, '
-              'fade-upwards, zoom, cupertino or fade turn one on. This theme '
-              'uses $transition. Neon zooms; the Transitions page shows the '
-              'rest.',
+              "motion.page-transition: the platform's by default, as in "
+              "Flutter (Material's own); fade-upwards, zoom, cupertino, fade "
+              'or none (at once) name another. This theme uses $transition. '
+              'Neon zooms; the Transitions page shows the rest.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

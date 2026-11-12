@@ -2049,11 +2049,27 @@ spring.flutter.app.locales=en,ja,pt_BR
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `spring.flutter.app.type` | `widgets` / `material` / `cupertino` | `widgets` | The app widget: `WidgetsApp`, `MaterialApp` (needed by `Scaffold` and `AppBar`) or `CupertinoApp` |
+| `spring.flutter.app.type` | `widgets` / `material` / `cupertino`, or the type of an app factory of your own | not set: the one design starter's type (`material`, `cupertino`), else `widgets`; with several, required | The app widget: `WidgetsApp`, `MaterialApp` (needed by `Scaffold` and `AppBar`; `spring_boot_starter_flutter_material`) or `CupertinoApp` (`spring_boot_starter_flutter_cupertino`) |
 | `spring.flutter.app.title` | string | empty | The app's name for the OS, shown in the task switcher or the browser tab; the build also writes it into `web/index.html` (`<title>`) and `web/manifest.json` (`name`, `short_name`) |
 | `spring.flutter.app.description` | string | none | What the app is, in a sentence: the build writes it into `web/index.html` (`<meta name="description">`) and `web/manifest.json`. With a theme, the build also writes its `primary` (`theme-color`) and `surface` (`background_color`) |
 | `spring.flutter.app.debug-banner` | `true` / `false` | `true` | Flutter's DEBUG banner in debug builds |
 | `spring.flutter.app.locales` | comma list of locales (`en`, `pt_BR`, `zh_Hant_TW`) | the languages of the messages files | The locales the app supports. By default `messages.properties` counts as English, and each `messages_<locale>.properties` of `spring.messages.basename` adds its locale |
+
+`spring.flutter.app.type` need not be set. As Spring Boot deduces
+`spring.main.web-application-type` from the class path, the application's
+starters decide: with one design starter
+(`spring_boot_starter_flutter_material` → `material`,
+`spring_boot_starter_flutter_cupertino` → `cupertino`) or one
+`SpringAppFactory` bean of the app's own type, the app is of that type;
+with none, `widgets`. With app factories of several types (both design
+starters, say) the start fails, naming the property and the types:
+
+```text
+Invalid argument(s) (spring.flutter.app.type): not set, and the application has app widgets of several types: cupertino, material. Choose one, for every platform or in a profile of each (spring.flutter.app.type=cupertino in application-ios.properties)
+```
+
+Set, the property always wins: `widgets` keeps a `WidgetsApp` although a
+design starter came in through another package.
 
 Write `locales`, and in Flutter apps `spring.messages.basename`, as one
 comma-separated value, also in YAML. The app widget reads them as single
@@ -2155,10 +2171,12 @@ from properties and use it from Dart. Each step works on its own; the
 
 #### Step 1: a Material app with a palette from one color
 
-`spring.flutter.app.type: material` makes the app a `MaterialApp`, which
-`Scaffold`, `AppBar` and the other Material widgets need. `seed-color`
-makes the whole Material 3 palette (primary, secondary, surfaces, …) from
-one color.
+`spring_boot_starter_flutter_material` in the dependencies makes the app a
+`MaterialApp`, which `Scaffold`, `AppBar` and the other Material widgets
+need: as the one design starter, it sets the app's type
+(`spring.flutter.app.type: material`, which need not be written).
+`seed-color` makes the whole Material 3 palette (primary, secondary,
+surfaces, …) from one color.
 
 <table>
 <tr><th>YAML</th><th>.properties</th></tr>
@@ -2167,8 +2185,6 @@ one color.
 ```yaml
 spring:
   flutter:
-    app:
-      type: material
     theme:
       seed-color: deepPurple
 ```
@@ -2176,7 +2192,6 @@ spring:
 </td><td>
 
 ```properties
-spring.flutter.app.type=material
 spring.flutter.theme.seed-color=deepPurple
 ```
 
@@ -2855,7 +2870,7 @@ theme starts from the root, or from the theme it `extends`:
 | `visual-density` | `adaptive` / `standard` / `comfortable` / `compact` | Flutter's | How dense the components are |
 | `tap-target-size` | `padded` / `shrinkWrap` | Flutter's | The minimum tap target size |
 | `splash` | `ripple` / `sparkle` / `none` | Flutter's | The ink splash on taps |
-| `motion.page-transition` | `platform`, `fadeUpwards`, `zoom`, `cupertino`, `fade`, `none`, or a map of `type`, `duration`, `curve` | `none` | The page transition of every screen, in every app type (the navigation starter's router follows it): none by default, `platform` for the app type's own. See [page transitions](flutter/theme/motion-and-animations.md#page-transitions) |
+| `motion.page-transition` | `platform`, `fadeUpwards`, `zoom`, `cupertino`, `fade`, `none`, or a map of `type`, `duration`, `curve` | `platform` | The page transition of every screen, in every app type (the navigation starter's router follows it): the app type's own by default, as in Flutter (Material's per platform in a `MaterialApp`, the iOS slide in a `CupertinoApp`, none without a design library); `none` switches pages at once. See [page transitions](flutter/theme/motion-and-animations.md#page-transitions) |
 | `motion.durations.<name>` | duration | `short` 100ms, `medium` 250ms, `long` 450ms | Durations for the app's animations |
 | `motion.curves.<name>` | four numbers | `standard`: Material's | Curves for the app's animations |
 | `components.<component>.<property>` | see the next table | Material 3's | Adjusts one component |
@@ -4069,6 +4084,39 @@ spring.flutter.theme:
   allows it by its hash. If you set your own policy
   (`content-security-policy`), add `WebPageLoader.scriptHash` (the
   `'sha256-...'` of the block's script) to its `script-src`.
+
+### WebAssembly in Safari and Firefox
+
+A `flutter build web --wasm` build has both a WebAssembly and a JavaScript
+form of the app; Flutter's loader picks the WebAssembly one only on Blink
+(Chrome, Edge) unless told otherwise. `wasm-allow-list` tells it which
+engines may run it:
+
+```yaml
+# lib/resources/application-web.yml
+spring:
+  flutter:
+    web:
+      page:
+        wasm-allow-list:
+          gecko: true     # Firefox 147 and newer
+          webkit: true    # Safari 26.2 and newer
+```
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.flutter.web.page.wasm-allow-list.<engine>` | `true` / `false` per engine: `blink`, `gecko`, `webkit` | not set: Flutter's own, Blink only | The generator writes the map into the block between the loader's markers, and the page passes it to `_flutter.loader.load` as `config.wasmAllowList`. An engine the app's own `flutter_bootstrap.js` names in its `wasmAllowList` keeps the app's value. With a splash, the page loader's script passes it; without one, the block has only that script. Another engine name, or a value that is not `true` or `false`, fails the build |
+
+- It needs a `--wasm` build; a JavaScript-only build loads as before.
+- A browser older than the versions above, or one without the WebAssembly
+  features dart2wasm needs, gets the JavaScript form: Flutter's loader
+  checks them before it uses the list. `false` keeps an engine on
+  JavaScript, Blink too.
+- When it is not set, nothing is written and Flutter's default (Blink only)
+  applies; the page loader's script is the one of `WebPageLoader.scriptHash`.
+- With it, the script differs: the policy of spa mode allows it by its hash;
+  an own `content-security-policy` adds the `'sha256-...'` of the script
+  between the block's `<script>` tags.
 
 ### The web login
 

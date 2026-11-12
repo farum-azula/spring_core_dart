@@ -176,18 +176,18 @@
       "title": "With the default"
     },
     {
+      "path": "/transitions/fade-upwards",
+      "name": "transition-fade-upwards-page",
+      "class": "TransitionFadeUpwardsPage",
+      "source": "package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionFadeUpwardsPage",
+      "title": "With a fade upwards"
+    },
+    {
       "path": "/transitions/platform",
       "name": "transition-platform-page",
       "class": "TransitionPlatformPage",
       "source": "package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionPlatformPage",
       "title": "With the platform's"
-    },
-    {
-      "path": "/transitions/zoom",
-      "name": "transition-zoom-page",
-      "class": "TransitionZoomPage",
-      "source": "package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionZoomPage",
-      "title": "With a zoom"
     }
   ],
   "shells": [

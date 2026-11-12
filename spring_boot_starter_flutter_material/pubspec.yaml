@@ -1,0 +1,35 @@
+name: spring_boot_starter_flutter_material
+description: >-
+  Material Design for Spring Boot Flutter apps: a MaterialApp from properties, Material's ThemeData and its component themes from spring.flutter.theme, palettes from a seed color.
+version: 0.7.4
+repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_flutter_material
+documentation: https://farum-azula.org/components
+issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
+topics:
+  - flutter
+  - material
+  - theme
+  - spring
+
+environment:
+  sdk: ^3.14.0
+  flutter: '>=3.50.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Material Design: the Flutter team's library, which replaces
+  # package:flutter/material.dart.
+  material_ui: ^1.11.0
+  spring_boot_dart: ^0.7.4
+  # Re-exported: an app lists only this package.
+  spring_boot_starter_flutter: ^0.7.4
+
+dev_dependencies:
+  # For example/: the generator writes example/spring_gen/example.spring.dart.
+  build_runner: ^2.17.0
+  spring_core_dart_generator: ^0.7.4
+  flutter_test:
+    sdk: flutter
+  spring_boot_starter_test: ^0.7.4
+  lints: ^6.0.0

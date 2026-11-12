@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
 
 /// A color with its name and hex value, over a checkerboard so that a

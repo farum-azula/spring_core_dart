@@ -22,6 +22,7 @@ Read it chapter by chapter. Each chapter says what it shows, which files
 to open, what to try and which test proves it. The packages' READMEs
 have the details:
 [`spring_boot_starter_flutter`](../../spring_boot_starter_flutter/README.md),
+[`spring_boot_starter_flutter_material`](../../spring_boot_starter_flutter_material/README.md),
 [`spring_boot_starter_flutter_security`](../../spring_boot_starter_flutter_security/README.md),
 [`spring_boot_starter_feign`](../../spring_boot_starter_feign/README.md),
 [`spring_boot_starter_websocket`](../../spring_boot_starter_websocket/README.md),
@@ -142,7 +143,10 @@ beans) and gives it to the widgets. There is no hand-written
 (below). The app widget is built from `spring.flutter.app.*` in
 `lib/resources/application.properties` (`type=material`, the title, no
 debug banner), its locales from the message files, and its themes from
-`application.yml` (chapter 3).
+`application.yml` (chapter 3). The `MaterialApp` of `type=material` is
+built by `spring_boot_starter_flutter_material`, which is in the
+dependencies next to `material_ui`, the library of the Material widgets
+the pages import (`package:material_ui/material_ui.dart`).
 
 - **Platform profiles.** The platform the app runs on is an active
   profile: `mobile` with `android` or `ios`, `desktop` with `macos`,

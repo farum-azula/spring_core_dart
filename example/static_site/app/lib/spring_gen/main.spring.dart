@@ -16,12 +16,16 @@ import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
     as _i4;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
-import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_flutter_material/spring_auto_configuration.dart'
     as _i9;
+import 'package:spring_boot_starter_flutter_material/src/material_theme_design.dart'
+    as _i12;
+import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
+    as _i10;
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
     as _i3;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i10;
+    as _i11;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 import 'package:static_site_app/src/pages.dart' as _i5;
 import 'package:static_site_app/src/server_info.dart' as _i1;
@@ -46,6 +50,7 @@ class _$NetworkConfigConfiguration extends _i1.NetworkConfig {
 const _$knownAdvisors0 = {
   r'package:spring_boot_dart',
   r'package:spring_boot_starter_flutter',
+  r'package:spring_boot_starter_flutter_material',
   r'package:spring_boot_starter_flutter_navigation',
   r'package:spring_boot_starter_logging',
 };
@@ -176,9 +181,16 @@ _i6.SpringApplication get springApplication => _i6.SpringApplication(
       _i8.springBootStarterFlutterDebugMotionAutoConfiguration,
     if (!const bool.fromEnvironment('dart.vm.product'))
       _i8.springBootStarterFlutterDebugTimelineAutoConfiguration,
-    _i9.springBootStarterFlutterNavigationAutoConfiguration,
-    _i10.springBootStarterLoggingAutoConfiguration,
+    _i9.springBootStarterFlutterMaterialAutoConfiguration,
+    _i10.springBootStarterFlutterNavigationAutoConfiguration,
+    _i11.springBootStarterLoggingAutoConfiguration,
   ],
+  autoConfigurationMetadata: {
+    _i9.springBootStarterFlutterMaterialAutoConfiguration:
+        const _i6.AutoConfigurationModule(
+          factories: [_i12.MaterialThemeDesign()],
+        ),
+  },
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
       'DEBUG': const String.fromEnvironment('DEBUG'),
@@ -331,7 +343,7 @@ _i6.SpringApplication get springApplication => _i6.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '2d5929d8',
+  fingerprint: 'c1db6fd7',
 );
 
 /// Starts the application: config files, environment, context, runners

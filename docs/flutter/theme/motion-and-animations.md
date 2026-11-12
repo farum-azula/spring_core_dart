@@ -42,7 +42,7 @@ spring:
 | Property | Type | Values | Default | What it does |
 |---|---|---|---|---|
 | `motion.enabled` | bool | `true`, `false` | `true` | `false` makes every motion of the app instant, as the device's "reduce motion" does: page transitions, text and content changes, the scroll to the top, the theme's animations and Flutter's own. The debug panel's Motion tab switches it at run time |
-| `motion.page-transition` | enum, or a map | `platform`, `fade-upwards`, `zoom`, `cupertino`, `fade`, `content`, `none` | `none` | The page transition of every screen |
+| `motion.page-transition` | enum, or a map | `platform`, `fade-upwards`, `zoom`, `cupertino`, `fade`, `content`, `none` | `platform` | The page transition of every screen: the app type's own by default, as in Flutter; `none` switches pages at once |
 | `motion.page-transition.type` / `.duration` / `.curve` | enum / duration / curve | as above, `200ms`, a curve name | the kind's own | The map form: the kind with its duration and curve |
 | `motion.text-change` | enum, or a map | `none`, `fade`, `morph` | `none` | What a `ThemeText` does when its text changes, another language say |
 | `motion.text-change.type` / `.duration` / `.curve` / `.stagger` / `.keep-unchanged` / `.glyphs` / `.glyph-duration` | enum / duration / curve / duration / boolean / text / duration | as above, `450ms`, a curve name, `12ms`, `true` / `false`, any characters, a duration over zero | `none`, `450ms`, `ease-out`, `12ms`, `false`, `▓▒░<>/\|=+*#%&@$?!01`, `40ms` | The map form; `stagger` is how much later each character of `morph` starts; `keep-unchanged` leaves the characters that stay the same in place |
@@ -72,23 +72,23 @@ Material's own page routes follow it too.
 
 | Value | What it does |
 |---|---|
-| `none` | No transition: the new page appears at once (the default) |
-| `platform` | The app type's own: Material's per platform, the iOS slide in a `CupertinoApp`, none in an app of type `widgets` |
+| `none` | No transition: the new page appears at once |
+| `platform` | The app type's own: Material's per platform, the iOS slide in a `CupertinoApp`, none in an app of type `widgets` (the default) |
 | `fade-upwards` | The new page slides up a little and fades in |
 | `zoom` | The new page grows from the centre while it fades in (Android 10 style) |
 | `cupertino` | The iOS slide from the right, with the swipe-back gesture, in any app type |
 | `fade` | The new page fades in |
 | `content` | The new page comes in as `motion.content-change` shows other content (`fade-up`, a kind of the app's own), with its duration and curve unless the map form sets its own: the screens of a site change as its pages do |
 
-Screens show at once by default, in every app type. Turn the platform's
-transition on for every screen:
+By default a screen comes in as the app type's own routes do, as in
+Flutter (`platform`). For pages that switch at once, in every app type:
 
 ```yaml
 spring:
   flutter:
     theme:
       motion:
-        page-transition: platform
+        page-transition: none
 ```
 
 Or choose and tune one: the map form gives the kind its duration and curve, which may
@@ -113,6 +113,38 @@ instant. One screen can still choose its own
 (`@ScreenRoute(transition: PageTransition.none)`), and one navigation too
 (`context.route.go(path, transition: PageTransition.none)`): see the
 navigation starter.
+
+### As in Flutter, and where it differs
+
+In Flutter the route chooses the transition, and each `Navigator.push` chooses its route class:
+
+| App | Flutter's transition |
+|---|---|
+| `MaterialApp` (`MaterialPageRoute`) | `ThemeData.pageTransitionsTheme`, one builder per platform: `PredictiveBackPageTransitionsBuilder` on Android, `CupertinoPageTransitionsBuilder` on iOS and macOS, `ZoomPageTransitionsBuilder` on Windows and Linux |
+| `CupertinoApp` (`CupertinoPageRoute`) | The iOS slide, with the swipe back from the edge |
+| `WidgetsApp` | None of its own: the app gives a `pageRouteBuilder` |
+
+The default here is the same, `platform`, so an app that sets nothing looks as Flutter's would.
+
+**One theme value instead of builders per platform.** The look is configuration: `motion.page-transition` is in `application.yml`, per theme (`themes.<name>`) and per profile, and a platform is a profile:
+
+```yaml
+# lib/resources/application-web.yml: the web pages switch at once
+spring.flutter.theme.motion.page-transition: none
+```
+
+The same value drives the router's screens and Material's own routes (a `MaterialPageRoute` pushed by code takes it through `pageTransitionsTheme`). Builders per platform in code still work: a `ThemeCustomizer` that sets `pageTransitionsTheme` ([themes in code](../../../spring_boot_starter_flutter_material/README.md#themes-in-code)), and a page that asks for `platform` then uses them.
+
+**What Flutter has no counterpart for:**
+
+- A screen chooses its own (`@ScreenRoute(transition: PageTransition.fade)`, [the navigation starter](../../../spring_boot_starter_flutter_navigation/README.md#transitions)), and one navigation too (`go(path, transition: PageTransition.none)`), with no route class of its own.
+- Duration and curve come from the theme for every kind, `platform` included (`{ type: platform, duration: 250ms, curve: ease-out }`).
+- `content`: a screen comes in as `motion.content-change` shows other content.
+- Reduced motion on the device makes every transition instant.
+- Switching the branches of a shell never animates.
+- `zoom` and `cupertino` work in any app type with their starter: the iOS slide in a `MaterialApp`, Material's zoom in a `WidgetsApp`.
+
+**Why it used to be none, and when to write `none`.** Until 0.8 a theme without `motion.page-transition` had no transition, in every app type. An app without a design library (a web site such as farum-azula.org) switches pages at once anyway, and content sites and dashboards often want instant pages; a Material or Cupertino app, though, had less than Flutter gives it. For pages that switch at once, write `motion.page-transition: none`.
 
 ## Text changes
 

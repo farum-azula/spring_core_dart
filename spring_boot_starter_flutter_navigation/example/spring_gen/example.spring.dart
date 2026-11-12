@@ -11,12 +11,20 @@ import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i4;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
     as _i5;
-import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_flutter_cupertino/spring_auto_configuration.dart'
     as _i6;
+import 'package:spring_boot_starter_flutter_cupertino/src/cupertino_theme_design.dart'
+    as _i10;
+import 'package:spring_boot_starter_flutter_material/spring_auto_configuration.dart'
+    as _i7;
+import 'package:spring_boot_starter_flutter_material/src/material_theme_design.dart'
+    as _i11;
+import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
+    as _i8;
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
     as _i2;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i7;
+    as _i9;
 
 import '../example.dart' as _i3;
 
@@ -71,7 +79,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
   ],
   resources: const {
     r'application.properties': _i1.EmbeddedResource.text(
-      '# The example app: Material widgets, and the catalog as the first screen\n# when the platform gives no address of its own.\nspring.flutter.app.type=material\nspring.flutter.app.title=Books\nspring.flutter.navigation.initial=/catalog\n',
+      '# The example app: a MaterialApp (the app depends on\n# spring_boot_starter_flutter_material), and the catalog as the first\n# screen when the platform gives no address of its own.\nspring.flutter.app.type=material\nspring.flutter.app.title=Books\nspring.flutter.navigation.initial=/catalog\n',
     ),
   },
 );
@@ -93,9 +101,21 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
       _i5.springBootStarterFlutterDebugMotionAutoConfiguration,
     if (!const bool.fromEnvironment('dart.vm.product'))
       _i5.springBootStarterFlutterDebugTimelineAutoConfiguration,
-    _i6.springBootStarterFlutterNavigationAutoConfiguration,
-    _i7.springBootStarterLoggingAutoConfiguration,
+    _i6.springBootStarterFlutterCupertinoAutoConfiguration,
+    _i7.springBootStarterFlutterMaterialAutoConfiguration,
+    _i8.springBootStarterFlutterNavigationAutoConfiguration,
+    _i9.springBootStarterLoggingAutoConfiguration,
   ],
+  autoConfigurationMetadata: {
+    _i6.springBootStarterFlutterCupertinoAutoConfiguration:
+        const _i1.AutoConfigurationModule(
+          factories: [_i10.CupertinoThemeDesign()],
+        ),
+    _i7.springBootStarterFlutterMaterialAutoConfiguration:
+        const _i1.AutoConfigurationModule(
+          factories: [_i11.MaterialThemeDesign()],
+        ),
+  },
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
       'DEBUG': const String.fromEnvironment('DEBUG'),
@@ -166,7 +186,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'd95564e5',
+  fingerprint: '8bc6bc86',
 );
 
 /// Starts the application: config files, environment, context, runners

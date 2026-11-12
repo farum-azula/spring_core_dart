@@ -65,7 +65,9 @@ class HelloController {
 3. **List a library your code imports that none of your starters
    re-exports.** The table below shows which those are. With the starters
    that is rare: the libraries of one platform (`io.dart`, `browser.dart`)
-   are the usual case.
+   are the usual case, and the design library of a Flutter app
+   (`material_ui` next to `spring_boot_starter_flutter_material`,
+   `cupertino_ui` next to `spring_boot_starter_flutter_cupertino`).
 4. **Tests take `spring_boot_starter_test`**, as a dev dependency. It
    re-exports `spring_boot_dart` and the fake transports
    (`MockHttpTransport`, `MockWebSocketTransport`).
@@ -105,7 +107,9 @@ main library and their main libraries come with it.
 | `spring_boot_starter_actuator` | `spring_boot_actuator`, `spring_boot_dart`, `spring_boot_starter_logging`, `spring_boot_starter_web`, `spring_core_dart`, `spring_web_dart` | The endpoints over HTTP |
 | `spring_boot_starter_oauth2_client` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_security_core`, `spring_web_dart` | OAuth 2.0 and OpenID Connect clients. Not the Feign starter: the access token on Feign calls (`OAuth2AccessTokenInterceptor`) is for apps with Feign clients, which list Feign |
 | `spring_boot_starter_security` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_boot_starter_oauth2_client`, `spring_boot_starter_web`, `spring_core_dart`, `spring_security_core`, `spring_web_dart` | The security filter chain. Its `testing.dart` re-exports `spring_security_core`'s, with `user()` and `csrf()` for MockMvc |
-| `spring_boot_starter_flutter` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | Flutter apps; `spring_web_dart` because the starter's API takes an `HttpTransport` (`RemoteCache`, the theme's network images) |
+| `spring_boot_starter_flutter` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | Flutter apps, with no design library: `spring.flutter.app.type`, when not set, is the type of the one design starter listed, else `widgets` (a `WidgetsApp`), and must be set when both are; `spring_web_dart` because the starter's API takes an `HttpTransport` (`RemoteCache`, the theme's network images) |
+| `spring_boot_starter_flutter_material` | `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | Material Design: the `MaterialApp` of `spring.flutter.app.type: material`, the themes as `ThemeData`. Not `material_ui`: an app lists it for the widgets it uses |
+| `spring_boot_starter_flutter_cupertino` | `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | Cupertino: the `CupertinoApp` of `spring.flutter.app.type: cupertino`, the themes as `CupertinoThemeData`. Not `cupertino_ui`: an app lists it for the widgets it uses |
 | `spring_boot_starter_flutter_navigation` | `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | Screens, routes, the browser's addresses |
 | `spring_boot_starter_flutter_security` | `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_boot_starter_flutter_navigation`, `spring_boot_starter_logging`, `spring_boot_starter_oauth2_client`, `spring_core_dart`, `spring_security_core`, `spring_web_dart` | The app's login and its secrets. Its `testing.dart` re-exports `spring_security_core`'s (`withMockUser`) |
 | `spring_boot_starter_test` | `spring_boot_dart`, `spring_core_dart` | Dev dependency. It also re-exports `spring_web_dart`'s `testing.dart` (the fake transports) |
@@ -141,7 +145,9 @@ The rules the packages follow:
   starter re-exports the web starter (`HttpSecurity` secures its requests)
   and the OAuth2 client (`oauth2Login()` takes its registrations); the
   Flutter security starter the Flutter and navigation starters (its
-  widgets and route guards) and the OAuth2 client. An optional integration
+  widgets and route guards) and the OAuth2 client; the Material and
+  Cupertino starters the Flutter starter (their themes and app widgets
+  are its `SpringThemes` and `SpringApplicationWidget`). An optional integration
   does not count: the OAuth2 client works with Feign clients when there
   are some, but does not re-export Feign. An application that writes
   Feign clients lists the Feign starter, whatever else brings it (rule 1),

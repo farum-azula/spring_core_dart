@@ -72,8 +72,19 @@ void main() {
     expect(fixture.objects.length, greaterThan(25));
   });
 
-  test('root sections are the theme properties', () {
-    expect(fixture.roots, SpringThemeData.themeProperties);
+  test('root sections are the theme properties, the design starters\' '
+      'among them', () {
+    // A reference may start with a property of a design starter in an app
+    // without that starter too, so both lists make the roots.
+    expect(fixture.roots.toSet(), hasLength(fixture.roots.length));
+    expect(
+      {for (final root in fixture.roots) ThemeValues.canonical(root)},
+      {
+        for (final property in SpringThemeData.themeProperties)
+          ThemeValues.canonical(property),
+        ...ThemeDesigns.familyProperties,
+      },
+    );
   });
 
   test('image keys are those of ThemeImage', () {

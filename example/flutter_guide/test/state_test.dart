@@ -1,8 +1,8 @@
 // Chapter 2, "State in beans": the basket, the catalog and the session are
 // beans the widgets share; a widget rebuilds only when it read the state
 // that changed.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/app/home_page.dart';

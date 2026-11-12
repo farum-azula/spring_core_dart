@@ -9,7 +9,7 @@ keywords: [flutter, theme, yaml, chip, ChipThemeData]
 
 # Chip theme in YAML
 
-A small pill for a tag, a filter, a choice or an input. It configures Flutter's `ChipThemeData`. Set it under `spring.flutter.theme.components.chip`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.chip`.
+A small pill for a tag, a filter, a choice or an input. It configures Flutter's `ChipThemeData`. Set it under `spring.flutter.theme.components.chip`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.chip`. The Material starter, `spring_boot_starter_flutter_material`, reads it: an app without that package in its dependencies shows nothing of it.
 
 ## Example
 
@@ -69,7 +69,7 @@ A property with **yes** in the States column takes one value, or a map with a va
 
 ## Read it in Dart
 
-The starter sets `ThemeData.chipTheme` from these properties. In a widget, read the result with:
+The Material starter sets `ThemeData.chipTheme` from these properties. In a widget, read the result with:
 
 ```dart
 final theme = Theme.of(context).chipTheme;
@@ -89,4 +89,4 @@ final theme = Theme.of(context).chipTheme;
 
 ---
 
-*Property descriptions are adapted from the documentation of the Flutter SDK (3.47.9), copyright The Flutter Authors, BSD 3-Clause license.*
+*Property descriptions are adapted from the documentation of the Flutter SDK (3.50.0), copyright The Flutter Authors, BSD 3-Clause license.*

@@ -9,7 +9,7 @@ keywords: [flutter, theme, yaml, banner, MaterialBannerThemeData]
 
 # Banner theme in YAML
 
-A message bar at the top of a screen with actions to dismiss or follow it. It configures Flutter's `MaterialBannerThemeData`. Set it under `spring.flutter.theme.components.banner`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.banner`.
+A message bar at the top of a screen with actions to dismiss or follow it. It configures Flutter's `MaterialBannerThemeData`. Set it under `spring.flutter.theme.components.banner`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.banner`. The Material starter, `spring_boot_starter_flutter_material`, reads it: an app without that package in its dependencies shows nothing of it.
 
 ## Example
 
@@ -43,7 +43,7 @@ Every property is optional. One you leave out keeps Flutter's value.
 
 ## Read it in Dart
 
-The starter sets `ThemeData.bannerTheme` from these properties. In a widget, read the result with:
+The Material starter sets `ThemeData.bannerTheme` from these properties. In a widget, read the result with:
 
 ```dart
 final theme = Theme.of(context).bannerTheme;
@@ -63,4 +63,4 @@ final theme = Theme.of(context).bannerTheme;
 
 ---
 
-*Property descriptions are adapted from the documentation of the Flutter SDK (3.47.9), copyright The Flutter Authors, BSD 3-Clause license.*
+*Property descriptions are adapted from the documentation of the Flutter SDK (3.50.0), copyright The Flutter Authors, BSD 3-Clause license.*

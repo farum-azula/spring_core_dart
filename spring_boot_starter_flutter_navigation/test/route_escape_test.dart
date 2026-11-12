@@ -3,10 +3,12 @@
 // `/docs/..%2Fprivate%2Fsecret` stays on the public `/docs/{*path}` while
 // its rest names a file of `/private`'s folder, past that screen's guard.
 // The app stays on its screen, or opens its first one on a first visit.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
+
+import 'support/design_starters.dart';
 
 SpringApplication _application() => SpringApplication(
   [
@@ -42,7 +44,9 @@ SpringApplication _application() => SpringApplication(
   autoConfigurations: [
     springBootStarterFlutterAutoConfiguration,
     springBootStarterFlutterNavigationAutoConfiguration,
+    ...DesignStarters.onlyMaterial.autoConfigurations,
   ],
+  autoConfigurationMetadata: DesignStarters.onlyMaterial.metadata,
   bannerMode: BannerMode.off,
 );
 

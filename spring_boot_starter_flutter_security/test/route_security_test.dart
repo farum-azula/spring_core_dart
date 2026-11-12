@@ -3,10 +3,12 @@
 // configuration. Nobody logged in goes to the login and back after it; a
 // user without the role gets the error screen; a logout sends a guarded
 // screen to the login.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_security/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
+
+import 'support/design_starters.dart';
 
 SecurityContextImpl _user(String name, [List<String> authorities = const []]) =>
     SecurityContextImpl(TestingAuthenticationToken(name, null, authorities));
@@ -67,7 +69,9 @@ SpringApplication _application() => SpringApplication(
     springBootStarterFlutterNavigationAutoConfiguration,
     springSecurityCoreAutoConfiguration,
     springBootStarterFlutterSecurityAutoConfiguration,
+    ...DesignStarters.onlyMaterial.autoConfigurations,
   ],
+  autoConfigurationMetadata: DesignStarters.onlyMaterial.metadata,
   bannerMode: BannerMode.off,
 );
 

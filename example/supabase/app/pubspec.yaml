@@ -5,7 +5,7 @@ publish_to: none
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.13.0
+  sdk: ^3.14.0
 
 dependencies:
   flutter:
@@ -16,6 +16,11 @@ dependencies:
   # Keychain / Keystore. It brings and re-exports the Flutter starter and
   # spring_security_core.
   spring_boot_starter_flutter_security: ^0.7.4
+  # Material Design for the app (spring.flutter.app.type: material): the
+  # MaterialApp and the palette of the theme's seed color.
+  spring_boot_starter_flutter_material: ^0.7.4
+  # Material's widgets (Scaffold, AppBar, ...), which the pages import.
+  material_ui: ^1.11.0
   # The project: its database as repositories, Auth as the app's login,
   # Realtime behind the watched queries, Storage and Edge Functions as
   # declared interfaces. Its own client: no package of Supabase's.

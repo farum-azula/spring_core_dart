@@ -1,6 +1,6 @@
 // ThemeKeyReader: what the generated context.theme (main.spring.dart)
 // reads, live from the theme shown now.
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 

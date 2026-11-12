@@ -59,7 +59,7 @@ spring:
     theme:
       themes:
         ocean:
-          seed-color: '#FF0000'
+          colors.primary: '#FF0000'
 '''),
         ),
       ),
@@ -281,7 +281,7 @@ void main() {
       final properties = {
         'active': 'ocean',
         'themes.ocean.source': url,
-        'themes.ocean.seed-color': '#00FF00',
+        'themes.ocean.colors.primary': '#00FF00',
       };
       final server = _Server();
 
@@ -299,10 +299,12 @@ void main() {
 
       final first = await start();
       expect(server.requests, hasLength(1));
-      final primary = first.material('ocean').colorScheme.primary;
+      // The downloaded color, over the one of the app's own files.
+      final primary = first.data('ocean').colorScheme.primary;
+      expect(primary.toARGB32(), 0xFFFF0000);
       expect(
-        primary,
-        isNot(SpringThemes(properties).material('ocean').colorScheme.primary),
+        SpringThemes(properties).data('ocean').colorScheme.primary.toARGB32(),
+        0xFF00FF00,
       );
 
       final key = ThemeSource.read(properties, first).single.cacheKey;
@@ -313,7 +315,7 @@ void main() {
       // A restart: a new store over the same IndexedDB asks nobody.
       final second = await start();
       expect(server.requests, hasLength(1));
-      expect(second.material('ocean').colorScheme.primary, primary);
+      expect(second.data('ocean').colorScheme.primary, primary);
     });
   });
 }

@@ -1,6 +1,6 @@
 // Every page in every theme: the app starts from the properties, each page
 // builds without an error (a layout overflow is one) and has its title.
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_cupertino/src/app/shell.dart';
@@ -137,12 +137,15 @@ void _addresses() {
     await stopApp(tester);
   });
 
-  testWidgets("the Transitions page: none by default, the platform's, a fade", (
-    tester,
-  ) async {
+  testWidgets("the Transitions page: the platform's by default, the "
+      "platform's for a screen, a fade", (tester) async {
     await startApp(tester, size: phoneSize);
     await openPage(tester, 'Transitions');
-    Future<PageRoute<Object?>> open(String button, String title) async {
+    // The route of the screen, and its duration while it is open.
+    Future<(PageRoute<Object?>, Duration)> open(
+      String button,
+      String title,
+    ) async {
       await tester.ensureVisible(find.text(button));
       await settle(tester);
       await tester.tap(find.text(button));
@@ -159,21 +162,28 @@ void _addresses() {
                 ),
               )!
               as PageRoute<Object?>;
+      final duration = route.transitionDuration;
       await tester.tap(find.text('Back'));
       await settle(tester);
-      return route;
+      return (route, duration);
     }
 
-    // The default: none (the theme sets no transition).
-    final theme = await open('Open with the default', 'With the default');
-    expect(theme.transitionDuration, Duration.zero);
-    final platform = await open(
+    // The default: the platform's (the theme sets no transition): the iOS
+    // slide, as a screen that asks for the platform's.
+    final (theme, themeDuration) = await open(
+      'Open with the default',
+      'With the default',
+    );
+    expect(theme, isA<CupertinoRouteTransitionMixin<Object?>>());
+    final (platform, platformDuration) = await open(
       "Open with the platform's",
       "With the platform's",
     );
     expect(platform, isA<CupertinoRouteTransitionMixin<Object?>>());
-    final fade = await open('Open with a fade', 'With a fade');
-    expect(fade.transitionDuration, const Duration(milliseconds: 250));
+    expect(platformDuration, greaterThan(Duration.zero));
+    expect(themeDuration, platformDuration);
+    final (_, fade) = await open('Open with a fade', 'With a fade');
+    expect(fade, const Duration(milliseconds: 250));
     expect(tester.takeException(), isNull);
     await stopApp(tester);
   });

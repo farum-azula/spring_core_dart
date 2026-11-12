@@ -6,6 +6,11 @@ in an app of type `widgets`: **no Material, no Cupertino, no `ThemeData`**.
 Everything on screen is a widget of [`neon_ui`](../neon_ui/README.md), the
 NEON design system shipped as a library, or a small widget of this app.
 
+The app and the library depend on no design library and on no design
+starter: neither `material_ui` nor `cupertino_ui` is in the build. The
+theme writes its color roles out (`colors.*`), because a palette from a
+`seed-color` is made by a design starter.
+
 The look is YAML. [`neon_ui`'s `themes/neon.yml`](../neon_ui/lib/resources/themes/neon.yml)
 is imported with `spring.config.import: resources:themes/neon.yml` (with the
 app's own `resources:themes/code.yml`, the languages of the code boxes), and
@@ -65,10 +70,12 @@ checks that every quoted line is in the resources.
    expressions.
 8. **Logs**: `NeonLogsPanel` on the app's `LogBuffer`; the pages and the
    theme switches write there through the Spring logger (never `print`).
-9. **Transitions**: how a screen comes in: none by default, and an app of
-   type `widgets` has no platform transition either; a screen chooses its
-   own (`transition: PageTransition.zoom`), and the theme could turn one on
-   for every screen (`motion.page-transition: { type: fade, duration:
+9. **Transitions**: how a screen comes in: the platform's by default, as in
+   Flutter, which is none in an app of type `widgets` (Flutter's
+   `WidgetsApp` has no transition of its own); a screen chooses its
+   own (`transition: PageTransition.fadeUpwards`; `zoom` and `cupertino`
+   come with the Material and Cupertino starters), and the theme could turn
+   one on for every screen (`motion.page-transition: { type: fade, duration:
    $motion.durations.fast, curve: ease-out }`).
 10. **Themes**: `neon` and `neon-ice`, switched with `ThemeSelection` and the
    generated `AppThemes.*` constants; the choice is kept between runs

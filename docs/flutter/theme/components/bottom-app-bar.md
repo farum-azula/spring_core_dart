@@ -9,7 +9,7 @@ keywords: [flutter, theme, yaml, bottom app bar, BottomAppBarThemeData]
 
 # Bottom app bar theme in YAML
 
-The bar at the bottom of a screen that can hold actions and a floating action button. It configures Flutter's `BottomAppBarThemeData`. Set it under `spring.flutter.theme.components.bottom-app-bar`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.bottom-app-bar`.
+The bar at the bottom of a screen that can hold actions and a floating action button. It configures Flutter's `BottomAppBarThemeData`. Set it under `spring.flutter.theme.components.bottom-app-bar`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.bottom-app-bar`. The Material starter, `spring_boot_starter_flutter_material`, reads it: an app without that package in its dependencies shows nothing of it.
 
 ## Example
 
@@ -41,7 +41,7 @@ Every property is optional. One you leave out keeps Flutter's value.
 
 ## Read it in Dart
 
-The starter sets `ThemeData.bottomAppBarTheme` from these properties. In a widget, read the result with:
+The Material starter sets `ThemeData.bottomAppBarTheme` from these properties. In a widget, read the result with:
 
 ```dart
 final theme = Theme.of(context).bottomAppBarTheme;
@@ -60,4 +60,4 @@ final theme = Theme.of(context).bottomAppBarTheme;
 
 ---
 
-*Property descriptions are adapted from the documentation of the Flutter SDK (3.47.9), copyright The Flutter Authors, BSD 3-Clause license.*
+*Property descriptions are adapted from the documentation of the Flutter SDK (3.50.0), copyright The Flutter Authors, BSD 3-Clause license.*

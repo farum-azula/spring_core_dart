@@ -583,6 +583,16 @@ between its tags, so spa mode's Content-Security-Policy allows it by hash;
 with your own policy add that hash (`WebPageLoader.scriptHash`) to
 `script-src`.
 
+`spring.flutter.web.page.wasm-allow-list` (`gecko: true`, `webkit: true`;
+`blink` too) goes into the same block (`WasmAllowList`): the page passes it
+to `_flutter.loader.load` as `config.wasmAllowList`, under the app's own
+from `flutter_bootstrap.js`, so a `--wasm` build runs its WebAssembly in
+Firefox and Safari as well. With a splash the loader's script passes it
+(`WebPageLoader.scriptFor`, a script of another hash); without one the block
+has only a script that does (`WebPageLoader.wasmScript`). Another engine or
+a value that is not `true` or `false` fails the build; not set, nothing
+changes and Flutter's default (Blink only) applies.
+
 The same builder keeps the rest of `web/index.html` and `web/manifest.json`
 in step with the configuration (`WebPageHead`): the title and description
 of `spring.flutter.app.*` and the active theme's colors; Flutter's
@@ -830,6 +840,7 @@ lib/
     test_builder.dart           @SpringBootTest, @DataTest → test/spring_gen/*.test.spring.dart
     web_dev_config_builder.dart spring.flutter.web.dev-server.* → web_dev_config.yaml
     web_page_loader.dart        the page loader block of web/index.html; web_page_loader_builder.dart writes it
+    web_wasm_allow_list.dart    spring.flutter.web.page.wasm-allow-list for the page's script
 build.yaml
 test/                           generated output and every rejected declaration
 ```

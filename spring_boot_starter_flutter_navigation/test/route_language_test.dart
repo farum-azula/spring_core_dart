@@ -3,10 +3,12 @@
 // address keeps the prefix while the app navigates, switchLanguage changes
 // both; the default language has no prefix; without languages /ja is no
 // address of the app.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
+
+import 'support/design_starters.dart';
 
 SpringApplication Function() _application({bool languages = true}) =>
     () => SpringApplication(
@@ -57,7 +59,9 @@ SpringApplication Function() _application({bool languages = true}) =>
         springBootAutoConfiguration,
         springBootStarterFlutterAutoConfiguration,
         springBootStarterFlutterNavigationAutoConfiguration,
+        ...DesignStarters.onlyMaterial.autoConfigurations,
       ],
+      autoConfigurationMetadata: DesignStarters.onlyMaterial.metadata,
       bannerMode: BannerMode.off,
     );
 

@@ -123,9 +123,13 @@ export 'src/splash/splash_tasks.dart';
 export 'src/splash/splash_trace.dart';
 export 'src/splash/startup_events.dart';
 export 'src/splash/text_warm_up.dart';
+export 'src/design_scope.dart';
+export 'src/text/selection_controls.dart';
 export 'src/theme/loader_tracks.dart';
-export 'src/theme/spring_theme_data.dart'
-    show SpringThemeData, SpringTextSpec, SpringThemeExtension;
+export 'src/theme/spring_color_scheme.dart';
+export 'src/theme/spring_theme_data.dart' show SpringThemeData, SpringTextSpec;
+export 'src/theme/spring_type_scale.dart';
+export 'src/theme/theme_design.dart';
 export 'src/theme/spring_themes.dart';
 export 'src/theme/theme_animation.dart';
 export 'src/theme/theme_background.dart';

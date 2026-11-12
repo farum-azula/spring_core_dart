@@ -1,7 +1,7 @@
 // motion.content-change: the kinds by name (an app's own registered), the
 // map form, a wrong kind or key named; MarkdownView.resource keeps the
 // page shown until the next is read, then changes the theme's way.
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 

@@ -1,8 +1,7 @@
 // Themes from spring.flutter.theme.*: the shared part, named themes with
-// extends, Material / Cupertino conversion, selection at run time and
-// themes loaded from YAML.
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+// extends, selection at run time and themes loaded from YAML, in an app
+// without a design library.
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
@@ -12,48 +11,14 @@ Matcher throwsProperty(String key) => throwsA(
   isA<ThemePropertyException>().having((e) => e.key, 'key', contains(key)),
 );
 
+// The colors the themes name, as Material's palette has them.
+const _deepPurple = Color(0xFF673AB7);
+const _deepPurple200 = Color(0xFFB39DDB);
+const _teal = Color(0xFF009688);
+const _lightBlue = Color(0xFF03A9F4);
+
 void main() {
-  group('defaults', () {
-    test('no properties: Flutter\'s own Material 3 themes', () {
-      final t = themes(const {});
-      expect(t.names, ['light', 'dark']);
-      final light = t.material('light');
-      expect(light.colorScheme, ThemeData().colorScheme);
-      expect(light.textTheme, ThemeData().textTheme);
-      expect(light.cardTheme, ThemeData().cardTheme);
-      expect(
-        t.material('dark').colorScheme,
-        ThemeData(brightness: Brightness.dark).colorScheme,
-      );
-      // Cupertino keeps iOS's look: no primary color forced.
-      expect(t.cupertino('light').primaryColor, CupertinoColors.systemBlue);
-    });
-
-    test('made once', () {
-      final t = themes(const {'seed-color': 'teal'});
-      expect(t.material('light'), same(t.material('light')));
-      expect(t.data('Light'), same(t.data('light')));
-    });
-  });
-
   group('colors', () {
-    test('seed, variant, contrast and explicit roles', () {
-      final t = themes(const {
-        'seed-color': 'deepPurple',
-        'scheme-variant': 'vibrant',
-        'colors.error': '#B3261E',
-        'colors.surfaceContainer': 'grey.shade200',
-      });
-      final scheme = t.material('light').colorScheme;
-      final seeded = ColorScheme.fromSeed(
-        seedColor: Colors.deepPurple,
-        dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
-      );
-      expect(scheme.primary, seeded.primary);
-      expect(scheme.error, const Color(0xFFB3261E));
-      expect(scheme.surfaceContainer, Colors.grey.shade200);
-    });
-
     test('an invalid color or role names the property', () {
       expect(
         () => themes(const {'seed-color': 'purpel'}),
@@ -67,30 +32,6 @@ void main() {
   });
 
   group('typography', () {
-    test('family, fallback, groups and single styles', () {
-      final t = themes(const {
-        'typography.font-family': 'Inter',
-        'typography.font-family-fallback': 'Noto Sans JP, Roboto',
-        'typography.display.font-family': 'Playfair Display',
-        'typography.display.weight': 'bold',
-        'typography.display-small.size': '30',
-        'typography.title-large.weight': '600',
-        'typography.code.font-family': 'JetBrains Mono',
-      });
-      final text = t.material('light').textTheme;
-      expect(text.bodyMedium!.fontFamily, 'Inter');
-      expect(text.bodyMedium!.fontFamilyFallback, ['Noto Sans JP', 'Roboto']);
-      expect(text.displayLarge!.fontFamily, 'Playfair Display');
-      expect(text.displayLarge!.fontWeight, FontWeight.w700);
-      expect(text.displayLarge!.fontVariations, [
-        const FontVariation('wght', 700),
-      ]);
-      expect(text.displaySmall!.fontSize, 30);
-      expect(text.displaySmall!.fontFamily, 'Playfair Display');
-      expect(text.titleLarge!.fontWeight, FontWeight.w600);
-      expect(t.data('light').textStyle('code').fontFamily, 'JetBrains Mono');
-    });
-
     test('a list in a theme replaces the shared one', () {
       final t = themes(const {
         'typography.font-family-fallback.0': 'A',
@@ -109,100 +50,12 @@ void main() {
     });
   });
 
-  group('shapes and components', () {
-    test('a changed scale value reaches the components using it', () {
-      final t = themes(const {'shape.medium': '20'});
-      expect(
-        t.material('light').cardTheme.shape,
-        RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      );
-      // Untouched components keep Material's defaults.
-      expect(t.material('light').dialogTheme, ThemeData().dialogTheme);
-    });
-
-    test('component properties reference tokens', () {
-      final t = themes(const {
-        'components.card.shape': 'large',
-        'components.card.color': r'$colors.surface-container',
-        'components.card.elevation': 'level2',
-        'components.app-bar.center-title': 'true',
-        'components.app-bar.title-style': 'title-medium',
-        'components.button.shape': 'full',
-        'components.filled-button.padding': '24, 10',
-        'components.input.style': 'outline',
-        'components.navigation-bar.label-behavior': 'onlyShowSelected',
-      });
-      final theme = t.material('light');
-      expect(
-        theme.cardTheme.shape,
-        RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      );
-      expect(theme.cardTheme.color, theme.colorScheme.surfaceContainer);
-      expect(theme.cardTheme.elevation, 3);
-      expect(theme.appBarTheme.centerTitle, isTrue);
-      expect(
-        theme.appBarTheme.titleTextStyle!.fontSize,
-        theme.textTheme.titleMedium!.fontSize,
-      );
-      expect(
-        theme.filledButtonTheme.style!.shape!.resolve({}),
-        const StadiumBorder(),
-      );
-      expect(
-        theme.filledButtonTheme.style!.padding!.resolve({}),
-        const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-      );
-      expect(
-        theme.outlinedButtonTheme.style!.shape!.resolve({}),
-        const StadiumBorder(),
-      );
-      expect(theme.inputDecorationTheme.border, isA<OutlineInputBorder>());
-      expect(
-        theme.navigationBarTheme.labelBehavior,
-        NavigationDestinationLabelBehavior.onlyShowSelected,
-      );
-    });
-
-    test('unknown components, properties and references fail', () {
-      expect(
-        () => themes(const {'components.carrd.shape': 'large'}),
-        throwsProperty('components.carrd'),
-      );
-      expect(
-        () => themes(const {'components.card.radius': '4'}),
-        throwsProperty('components.card.radius'),
-      );
-      expect(
-        () => themes(const {'components.card.shape': 'hugee'}),
-        throwsProperty('components.card.shape'),
-      );
-      expect(
-        () => themes(const {'components.card.color': 'surfase'}),
-        throwsProperty('components.card.color'),
-      );
-    });
-
-    test('density, splash, page transitions', () {
-      final theme = themes(const {
-        'visual-density': 'compact',
-        'splash': 'none',
-        'motion.page-transition': 'zoom',
-      }).material('light');
-      expect(theme.visualDensity, VisualDensity.compact);
-      expect(theme.splashFactory, NoSplash.splashFactory);
-      expect(
-        theme.pageTransitionsTheme.builders[TargetPlatform.iOS],
-        isA<ZoomPageTransitionsBuilder>(),
-      );
-    });
-  });
-
   group('named themes', () {
     final properties = {
-      'seed-color': 'deepPurple',
+      'colors.primary': 'deepPurple',
       'shape.large': '20',
-      'themes.dark.seed-color': 'deepPurple.shade200',
-      'themes.ocean.seed-color': 'teal',
+      'themes.dark.colors.primary': 'deepPurple.shade200',
+      'themes.ocean.colors.primary': 'teal',
       'themes.ocean.shape.large': '28',
       'themes.ocean-night.extends': 'ocean',
       'themes.ocean-night.brightness': 'dark',
@@ -224,12 +77,15 @@ void main() {
     test('a theme is the shared part with its own on top', () {
       final t = themes(properties);
       expect(t.data('dark').brightness, Brightness.dark);
-      expect(
-        t.data('dark').seedColor!.toARGB32(),
-        Colors.deepPurple.shade200.toARGB32(),
-      );
+      expect(t.data('light').colorScheme.primary, _deepPurple);
+      expect(t.data('dark').colorScheme.primary, _deepPurple200);
       expect(t.data('ocean').brightness, Brightness.light);
-      expect(t.data('ocean').seedColor!.toARGB32(), Colors.teal.toARGB32());
+      expect(t.data('ocean').colorScheme.primary, _teal);
+      // What a theme does not set is the baseline of its brightness.
+      expect(
+        t.data('dark').colorScheme.surface,
+        SpringColorScheme.baseline(Brightness.dark).surface,
+      );
       expect(t.data('ocean').shape('large'), 28);
       expect(t.data('sepia').shape('large'), 20); // shared
       expect(t.data('sepia').colorScheme.surface, const Color(0xFFF4ECD8));
@@ -245,7 +101,7 @@ void main() {
 
     test('extends: the parent, then the theme', () {
       final night = themes(properties).data('ocean-night');
-      expect(night.seedColor!.toARGB32(), Colors.teal.toARGB32());
+      expect(night.colorScheme.primary, _teal);
       expect(night.shape('large'), 28);
       expect(night.brightness, Brightness.dark);
     });
@@ -287,7 +143,7 @@ void main() {
         themes(const {
           'active': 'ocean',
           'system-dark': 'ocean-night',
-          'themes.ocean.seed-color': 'teal',
+          'themes.ocean.colors.primary': 'teal',
           'themes.ocean-night.extends': 'ocean',
           'themes.ocean-night.brightness': 'dark',
         }),
@@ -314,7 +170,7 @@ void main() {
 
   group('themes at run time', () {
     test('loadYaml adds themes; invalid ones change nothing', () {
-      final t = themes(const {'seed-color': 'deepPurple'});
+      final t = themes(const {'colors.primary': 'deepPurple'});
       final selection = ThemeSelection(t);
       var notified = 0;
       t.addListener(() => notified++);
@@ -325,15 +181,13 @@ spring:
     theme:
       themes:
         winter:
-          seed-color: lightBlue
+          colors:
+            primary: lightBlue
           typography:
             font-family-fallback: [Noto Sans JP]
 ''');
       expect(t.names, contains('winter'));
-      expect(
-        t.data('winter').seedColor!.toARGB32(),
-        Colors.lightBlue.toARGB32(),
-      );
+      expect(t.data('winter').colorScheme.primary, _lightBlue);
       expect(t.data('winter').fontFamilyFallback, ['Noto Sans JP']);
       expect(notified, 1);
       selection.select('winter');
@@ -366,33 +220,6 @@ spring:
             },
           ),
         ], bannerMode: BannerMode.off);
-
-    testWidgets('the active theme, switched at run time', (tester) async {
-      await tester.pumpWidget(
-        SpringApplicationWidget(
-          application: () => application({
-            'spring.flutter.app.type': 'material',
-            'spring.flutter.theme.active': 'ocean',
-            'spring.flutter.theme.themes.ocean.seed-color': 'teal',
-          }),
-          home: Builder(
-            builder: (context) => Text(
-              '${SpringTheme.of(context).name} ${Theme.of(context).colorScheme.primary.toARGB32()}',
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      final teal = ColorScheme.fromSeed(seedColor: Colors.teal).primary
-          .toARGB32();
-      expect(find.text('ocean $teal'), findsOneWidget);
-
-      final context = SpringScope.of(tester.element(find.byType(Text)));
-      ThemeSelection.of(context).select('light');
-      await tester.pumpAndSettle();
-      final purple = ThemeData().colorScheme.primary.toARGB32();
-      expect(find.text('light $purple'), findsOneWidget);
-    });
 
     testWidgets('an invalid theme property fails the start', (tester) async {
       await tester.pumpWidget(

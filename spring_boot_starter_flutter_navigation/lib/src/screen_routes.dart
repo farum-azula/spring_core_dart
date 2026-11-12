@@ -31,7 +31,8 @@ bool isPathUnder(String path, String prefix) {
 /// navigation (`context.route.go(path, transition: ...)`), with the
 /// theme's duration and curve.
 enum PageTransition {
-  /// The theme's `motion.page-transition` (none when it sets nothing).
+  /// The theme's `motion.page-transition` (the platform's when it sets
+  /// nothing, as in Flutter).
   /// The default.
   theme,
 

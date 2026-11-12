@@ -6,6 +6,12 @@ on a **`CupertinoApp`**, with Cupertino widgets only (no Material). There is no
 `CupertinoThemeData` in the Dart code: the iOS look, four themes and the looks
 of the app's own widgets are YAML in [`lib/resources/`](lib/resources/).
 
+The `CupertinoApp` (`spring.flutter.app.type: cupertino`) and the
+`cupertino:` section of the theme come from
+[`spring_boot_starter_flutter_cupertino`](../../../spring_boot_starter_flutter_cupertino/README.md),
+which the app depends on next to `cupertino_ui`, the library of the widgets
+its pages import. No Material library is in the build.
+
 ## Run
 
 ```bash
@@ -63,8 +69,9 @@ Markdown, `MarkdownView.code`, split by the languages of
    the splash into `web/index.html`, so the page shows it before Flutter runs.
 8. **Background**: `background` and `ThemeBackground`.
 9. **Images**: asset images and the network profile.
-10. **Transitions**: how a screen comes in: none by default (the theme sets
-    no `motion.page-transition`), the platform's iOS slide
+10. **Transitions**: how a screen comes in: the platform's iOS slide by
+    default, as in Flutter (the theme sets no `motion.page-transition`;
+    `none` would make the pages switch at once), the same for one screen
     (`transition: PageTransition.platform`), a custom fade, and one
     navigation's (the sidebar's, `PageTransition.none`).
 11. **Themes**: switching with `ThemeSelection` (the choice is kept between

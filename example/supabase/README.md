@@ -276,8 +276,11 @@ stack tests of the server and of the function in the `stack` job of
 
 ## Dependencies
 
-The app lists `spring_boot_starter_flutter_security` and
-`spring_boot_starter_supabase`. The server lists the web, the security and
+The app lists `spring_boot_starter_flutter_security`,
+`spring_boot_starter_supabase` and, as an app of
+`spring.flutter.app.type: material`, `spring_boot_starter_flutter_material`
+with `material_ui` (the Material widgets of its pages; the login form is
+drawn with Material's fields through that starter). The server lists the web, the security and
 the Supabase starters, and for the SQL path `postgres`: the generator wires
 a database driver for an application that lists the driver's package itself
 (the data starter comes with the Supabase starter, and the web starter's

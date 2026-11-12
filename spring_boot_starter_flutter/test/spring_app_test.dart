@@ -1,9 +1,11 @@
 // SpringApp: the app widget built from `spring.flutter.app.*` and the
-// theme beans, put at the root by `SpringApplicationWidget(home: ...)`.
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+// themes, put at the root by `SpringApplicationWidget(home: ...)`; without
+// a design starter it is a WidgetsApp.
+import 'package:cupertino_ui/cupertino_ui.dart' show CupertinoApp;
+import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart' show MaterialApp;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
@@ -71,9 +73,11 @@ void main() {
     expect(find.byType(CupertinoApp), findsNothing);
     expect(find.byType(CheckedModeBanner), findsOneWidget);
     expect(settings(tester).supportedLocales, [const Locale('en')]);
+    // Made once per context: the same settings on every build.
+    expect(settings(tester), same(settings(tester)));
   });
 
-  testWidgets('motion.overscroll: none turns the stretch off', (
+  testWidgets('motion.overscroll: none turns the stretch or glow off', (
     tester,
   ) async {
     bool overscroll(WidgetTester tester) {
@@ -85,36 +89,27 @@ void main() {
       ) is! SizedBox;
     }
 
-    await pump(
-      tester,
-      () => application(
-        autoConfiguration: true,
-        properties: {'spring.flutter.app.type': 'material'},
-      ),
-    );
-    expect(overscroll(tester), isTrue); // Android in tests: the stretch
+    await pump(tester, () => application(autoConfiguration: true));
+    expect(overscroll(tester), isTrue); // Android in tests: the glow
     await tester.pumpWidget(const SizedBox());
     await pump(
       tester,
       () => application(
         autoConfiguration: true,
-        properties: {
-          'spring.flutter.app.type': 'material',
-          'spring.flutter.theme.motion.overscroll': 'none',
-        },
+        properties: {'spring.flutter.theme.motion.overscroll': 'none'},
       ),
     );
     expect(overscroll(tester), isFalse);
   });
 
-  testWidgets('properties: type, title, debug banner, theme, locales', (
+  testWidgets('properties: title, debug banner, theme, locales', (
     tester,
   ) async {
     await pump(
       tester,
       () => application(
         properties: {
-          'spring.flutter.app.type': 'material',
+          'spring.flutter.app.type': 'Widgets',
           'spring.flutter.app.title': 'Counter',
           'spring.flutter.app.debug-banner': 'false',
           'spring.flutter.theme.active': 'dark',
@@ -122,11 +117,18 @@ void main() {
         },
       ),
     );
-    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    final app = tester.widget<WidgetsApp>(find.byType(WidgetsApp));
+    expect(settings(tester).type, 'widgets');
     expect(app.title, 'Counter');
     expect(app.debugShowCheckedModeBanner, isFalse);
-    expect(app.theme!.brightness, Brightness.dark);
-    expect(app.themeMode, ThemeMode.light); // one theme picked, not system
+    // The one theme picked: its primary color and its text on the surface.
+    final dark = SpringColorScheme.baseline(Brightness.dark);
+    expect(app.color, dark.primary);
+    expect(app.textStyle!.color, dark.onSurface);
+    expect(
+      SpringTheme.of(tester.element(find.byType(Page))).brightness,
+      Brightness.dark,
+    );
     expect(app.supportedLocales, [
       const Locale('en'),
       const Locale('pt', 'BR'),
@@ -136,10 +138,8 @@ void main() {
         countryCode: 'TW',
       ),
     ]);
-    expect(
-      app.localizationsDelegates,
-      containsAll(GlobalMaterialLocalizations.delegates),
-    );
+    // Flutter's own for the widgets library, no design's.
+    expect(app.localizationsDelegates, [GlobalWidgetsLocalizations.delegate]);
     expect(find.byType(CheckedModeBanner), findsNothing);
   });
 
@@ -160,58 +160,6 @@ void main() {
       const Locale('ja'),
       const Locale('pt', 'BR'),
     ]);
-  });
-
-  testWidgets('the ThemeData beans theme and darkTheme', (tester) async {
-    final light = ThemeData(colorSchemeSeed: Colors.teal);
-    final dark = ThemeData(
-      colorSchemeSeed: Colors.teal,
-      brightness: Brightness.dark,
-    );
-    await pump(
-      tester,
-      () => application(
-        properties: {'spring.flutter.app.type': 'material'},
-        autoConfiguration: true,
-        beans: [
-          BeanDefinition<ThemeData>(
-            name: 'theme',
-            types: const [ThemeData],
-            create: (_) => light,
-          ),
-          BeanDefinition<ThemeData>(
-            name: 'darkTheme',
-            types: const [ThemeData],
-            create: (_) => dark,
-          ),
-        ],
-      ),
-    );
-    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
-    expect(app.theme, same(light));
-    expect(app.darkTheme, same(dark));
-    // Made once per context: the same settings on every build.
-    expect(settings(tester), same(settings(tester)));
-  });
-
-  testWidgets('cupertino: the CupertinoThemeData bean', (tester) async {
-    const theme = CupertinoThemeData(primaryColor: Color(0xFF0057B8));
-    await pump(
-      tester,
-      () => application(
-        properties: {'spring.flutter.app.type': 'cupertino'},
-        autoConfiguration: true,
-        beans: [
-          BeanDefinition<CupertinoThemeData>(
-            name: 'cupertinoTheme',
-            types: const [CupertinoThemeData],
-            create: (_) => theme,
-          ),
-        ],
-      ),
-    );
-    expect(tester.widget<CupertinoApp>(find.byType(CupertinoApp)).theme, theme);
-    expect(find.text('page'), findsOneWidget);
   });
 
   testWidgets('NavigatorObserver beans and customizers', (tester) async {
@@ -277,7 +225,7 @@ void main() {
 
   test('settings made by hand: Flutter\'s defaults', () {
     final app = FlutterAppSettings();
-    expect(app.type, AppType.widgets);
+    expect(app.type, 'widgets');
     expect(app.debugShowCheckedModeBanner, isTrue);
     expect(app.supportedLocales, [const Locale('en')]);
     expect(app.localizationsDelegates, isEmpty);
@@ -314,7 +262,7 @@ void main() {
       () => application(properties: {'spring.flutter.app.type': 'swing'}),
     );
     expect(find.textContaining('spring.flutter.app.type'), findsOneWidget);
-    expect(find.textContaining('widgets, material, cupertino'), findsOneWidget);
+    expect(find.textContaining('one of: widgets'), findsOneWidget);
     expect(find.text('page'), findsNothing);
   });
 }

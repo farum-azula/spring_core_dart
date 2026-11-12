@@ -60,6 +60,10 @@ const flutterApps = {
     'spring_boot_starter_flutter_security',
     'spring_boot_starter_supabase',
   ],
+  // The design starters, each in the theme showcase built on it: with
+  // material_ui and cupertino_ui, which they bring.
+  'example/themes/material': ['spring_boot_starter_flutter_material'],
+  'example/themes/cupertino': ['spring_boot_starter_flutter_cupertino'],
 };
 
 Future<void> main(List<String> args) async {

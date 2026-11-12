@@ -9,7 +9,9 @@ keywords: [flutter, theme, yaml, cupertino, ios, CupertinoThemeData, text theme,
 
 # Cupertino theme
 
-With `spring.flutter.app.type: cupertino` the app is a `CupertinoApp`, and it
+With `spring_boot_starter_flutter_cupertino` the app is a `CupertinoApp`
+(`spring.flutter.app.type: cupertino`, deduced when it is the one design
+starter and needed when the Material starter is in the application too), and it
 uses a `CupertinoThemeData` made from the same theme as the Material one. The
 `cupertino` section adjusts it. Without it, iOS's own look is kept, with the
 theme's primary color where iOS uses its blue.
@@ -27,8 +29,8 @@ spring:
         primary-color: $colors.secondary
         primary-contrasting-color: white
         scaffold-background-color: '#F2F2F7'
-        bar-background-color: surface-container
-        selection-handle-color: primary
+        bar-background-color: $colors.surface-container
+        selection-handle-color: $colors.primary
         apply-theme-to-all: false
         text-theme:
           primary-color: $colors.primary
@@ -50,13 +52,13 @@ Any other key stops the start and lists the valid ones.
 
 | Property | Type | Values | Default | What it does |
 |---|---|---|---|---|
-| `cupertino.primary-color` | color | role or color | `colors.primary` if you set it, else the seed palette's primary if there is a `seed-color`, else iOS blue | The accent: actions, links, active controls, the cursor |
-| `cupertino.primary-contrasting-color` | color | role or color | iOS's | The color shown on `primary-color`, such as the label of a filled button |
-| `cupertino.scaffold-background-color` | color | role or color | the theme's `colors.surface` if you set it; transparent if the theme has a [background](background.md); else iOS's | The page background |
-| `cupertino.bar-background-color` | color | role or color | `components.app-bar.background-color`, else iOS's | The background of navigation bars and tab bars |
-| `cupertino.selection-handle-color` | color | role or color | iOS's | The color of the text selection handles |
-| `cupertino.apply-theme-to-all` | bool | `true`, `false` | Flutter's (`false`) | Whether the Cupertino theme's text styles apply to every Cupertino widget, not only those that read the theme's primary color |
-| `cupertino.text-theme.primary-color` | color | role or color | `cupertino.primary-color` | The primary color used by the text styles that carry it (actions, nav actions) |
+| `cupertino.primary-color` | color | a color, or `$colors.<role>` | `colors.primary` if you set it, else the seed palette's primary if there is a `seed-color`, else iOS blue | The accent: actions, links, active controls, the cursor |
+| `cupertino.primary-contrasting-color` | color | a color, or `$colors.<role>` | iOS's | The color shown on `primary-color`, such as the label of a filled button |
+| `cupertino.scaffold-background-color` | color | a color, or `$colors.<role>` | the theme's `colors.surface` if you set it; transparent if the theme has a [background](background.md); else iOS's | The page background |
+| `cupertino.bar-background-color` | color | a color, or `$colors.<role>` | `components.app-bar.background-color`, else iOS's | The background of navigation bars and tab bars |
+| `cupertino.selection-handle-color` | color | a color, or `$colors.<role>` | iOS's | The color of the text selection handles |
+| `cupertino.apply-theme-to-all` | bool | `true`, `false` | Flutter's (`false`) | Whether Cupertino widgets that use iOS's fixed colors by default take the theme's instead. Today only `CupertinoSwitch` (and `Switch.adaptive`): on, it is the primary color instead of iOS green (Flutter's `CupertinoThemeData.applyThemeToAll`) |
+| `cupertino.text-theme.primary-color` | color | a color, or `$colors.<role>` | `cupertino.primary-color` | The primary color used by the text styles that carry it (actions, nav actions) |
 | `cupertino.text-theme.text-style` | text style | see below | iOS's body style | The default style of text |
 | `cupertino.text-theme.action-text-style` | text style | see below | iOS's | Text of actions and buttons |
 | `cupertino.text-theme.tab-label-text-style` | text style | see below | iOS's | Labels of tab bars |
@@ -95,7 +97,7 @@ spring:
 |---|---|---|---|
 | a name | text | `display-large` ... `label-small`, or `code` | Uses that style of the theme's [typography](typography.md) |
 | `style` | text | the same names | The base the other keys change. Without it the base is iOS's own style for that slot |
-| `color` | color | role or color | Text color |
+| `color` | color | a color, or `$colors.<role>` | Text color |
 | `font-family` | text | a family | Font |
 | `size` | number | logical pixels | Font size |
 | `weight` | number or name | `100`..`900`, `bold`, `semibold` ... | Font weight |
@@ -129,6 +131,12 @@ spring:
 
    A style you write under `cupertino.text-theme` wins over this. Without a
    `typography` and without `text-theme`, the text theme is iOS's untouched.
+   A style named after a theme style (`nav-large-title-text-style:
+   display-small`) is that style as the theme sets it: its font and what
+   `typography.display-small` says, not the size of the Material 3 type
+   scale; give it a `size` under `typography` when the large title should
+   be large. A style written as a map without `style` starts from iOS's
+   own style, so it keeps iOS's font unless the map names one.
 3. **Customizing in code.** A bean that implements `CupertinoThemeCustomizer`
    changes every Cupertino theme after it is made; a `CupertinoThemeData`
    bean replaces it.
@@ -145,8 +153,9 @@ class SurfaceBars implements CupertinoThemeCustomizer {
 ## Differences from Material
 
 - **Page transitions.** A `CupertinoApp` routed by the navigation starter
-  follows `motion.page-transition` like any app: none by default,
-  `platform` for the iOS slide with the swipe-back gesture. Without the router, `Navigator.push` with a `CupertinoPageRoute`
+  follows `motion.page-transition` like any app: `platform` by default,
+  the iOS slide with the swipe-back gesture, as a `CupertinoApp` of
+  Flutter's has it; `none` switches pages at once. Without the router, `Navigator.push` with a `CupertinoPageRoute`
   keeps Cupertino's own slide.
 - **Components.** `components.*` configure Material's `ThemeData`. A
   `CupertinoApp` shows Cupertino widgets, which read only `cupertino.*`

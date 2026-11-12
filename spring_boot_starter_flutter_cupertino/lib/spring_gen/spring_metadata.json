@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_flutter_cupertino",
+  "properties": [],
+  "hints": [],
+  "beans": [
+    {
+      "name": "cupertinoAppFactory",
+      "type": "CupertinoAppFactory",
+      "types": [
+        "CupertinoAppFactory",
+        "SpringAppFactory"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_cupertino/spring_auto_configuration.dart",
+      "line": 71,
+      "injects": [],
+      "members": [
+        {
+          "name": "build",
+          "kind": "method",
+          "type": "Widget",
+          "parameters": [
+            "BuildContext context",
+            "SpringAppRequest app"
+          ]
+        },
+        {
+          "name": "localizationsDelegates",
+          "kind": "getter",
+          "type": "List<LocalizationsDelegate<Object?>>"
+        },
+        {
+          "name": "type",
+          "kind": "getter",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "cupertinoDesignControls",
+      "type": "CupertinoDesignControls",
+      "types": [
+        "CupertinoDesignControls",
+        "DesignControls"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_cupertino/spring_auto_configuration.dart",
+      "line": 77,
+      "injects": [],
+      "members": [
+        {
+          "name": "errorColor",
+          "kind": "method",
+          "type": "Color",
+          "parameters": [
+            "BuildContext context"
+          ]
+        },
+        {
+          "name": "filledButton",
+          "kind": "method",
+          "type": "Widget",
+          "parameters": [
+            "BuildContext context",
+            "DesignButton button"
+          ]
+        },
+        {
+          "name": "isAppAbove",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "BuildContext context"
+          ]
+        },
+        {
+          "name": "surface",
+          "kind": "method",
+          "type": "Widget",
+          "parameters": [
+            "BuildContext context",
+            "Widget child"
+          ]
+        },
+        {
+          "name": "textField",
+          "kind": "method",
+          "type": "Widget",
+          "parameters": [
+            "BuildContext context",
+            "DesignTextField field"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cupertinoPageRoutes",
+      "type": "CupertinoPageRoutes",
+      "types": [
+        "CupertinoPageRoutes",
+        "DesignPageRoutes"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_cupertino/spring_auto_configuration.dart",
+      "line": 83,
+      "injects": [],
+      "members": [
+        {
+          "name": "heroController",
+          "kind": "method",
+          "type": "HeroController?",
+          "parameters": [
+            "String appType"
+          ]
+        },
+        {
+          "name": "pageRoute",
+          "kind": "method",
+          "type": "PageRoute<Object?>?",
+          "parameters": [
+            "PageTransitionType transition",
+            "String appType",
+            "SpringPageRequest page"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cupertinoThemes",
+      "type": "CupertinoThemes",
+      "types": [
+        "CupertinoThemes"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_cupertino/spring_auto_configuration.dart",
+      "line": 60,
+      "injects": [],
+      "members": [
+        {
+          "name": "cupertino",
+          "kind": "method",
+          "type": "CupertinoThemeData",
+          "parameters": [
+            "SpringThemeData spring"
+          ]
+        },
+        {
+          "name": "customizers",
+          "kind": "field",
+          "type": "List<CupertinoThemeCustomizer>"
+        },
+        {
+          "name": "theme",
+          "kind": "method",
+          "type": "CupertinoThemeData",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "themes",
+          "kind": "field",
+          "type": "SpringThemes"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

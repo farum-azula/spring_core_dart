@@ -9,7 +9,7 @@ keywords: [flutter, theme, yaml, text selection, TextSelectionThemeData]
 
 # Text selection theme in YAML
 
-The cursor, the highlight and the handles when you select text. It configures Flutter's `TextSelectionThemeData`. Set it under `spring.flutter.theme.components.text-selection`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.text-selection`.
+The cursor, the highlight and the handles when you select text. It configures Flutter's `TextSelectionThemeData`. Set it under `spring.flutter.theme.components.text-selection`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.text-selection`. The Material starter, `spring_boot_starter_flutter_material`, reads it: an app without that package in its dependencies shows nothing of it.
 
 ## Example
 
@@ -36,7 +36,7 @@ Every property is optional. One you leave out keeps Flutter's value.
 
 ## Read it in Dart
 
-The starter sets `ThemeData.textSelectionTheme` from these properties. In a widget, read the result with:
+The Material starter sets `ThemeData.textSelectionTheme` from these properties. In a widget, read the result with:
 
 ```dart
 final theme = Theme.of(context).textSelectionTheme;
@@ -54,4 +54,4 @@ final theme = Theme.of(context).textSelectionTheme;
 
 ---
 
-*Property descriptions are adapted from the documentation of the Flutter SDK (3.47.9), copyright The Flutter Authors, BSD 3-Clause license.*
+*Property descriptions are adapted from the documentation of the Flutter SDK (3.50.0), copyright The Flutter Authors, BSD 3-Clause license.*

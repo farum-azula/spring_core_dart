@@ -1,8 +1,8 @@
 // Chapter 7, "Login & roles": the Login screen, the user in Spring
 // Security's SecurityContextHolder, @PreAuthorize on the app's services,
 // the Admin screen for admins only, logout.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/admin/admin_service.dart';
 import 'package:neon_books_app/src/api/cookie_jar.dart';

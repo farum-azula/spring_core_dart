@@ -1,7 +1,7 @@
 // What the YAML says is what the app shows: the themes, the Cupertino
 // theme, the references, the typed keys, the switcher, the states, the
 // motion, the backgrounds and the images (without the network).
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';

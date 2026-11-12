@@ -3,8 +3,8 @@
 // screen's ShortcutHandlers, labels by platform, and the start stopping on
 // keys that are no keys.
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
@@ -105,7 +105,6 @@ SpringApplication _app(
       resources: {
         'application.properties': EmbeddedResource.text(
           [
-            'spring.flutter.app.type=material',
             for (final MapEntry(:key, :value) in properties.entries)
               '$key=$value',
           ].join('\n'),
@@ -123,14 +122,42 @@ class _Page extends StatelessWidget {
   final Widget? child;
 
   @override
-  Widget build(BuildContext context) => Material(
-    child: Column(
-      children: [
-        const ShortcutLabel('search.open'),
-        ?child,
-        const Focus(autofocus: true, child: SizedBox(width: 10, height: 10)),
-      ],
-    ),
+  Widget build(BuildContext context) => Column(
+    children: [
+      const ShortcutLabel('search.open'),
+      ?child,
+      const Focus(autofocus: true, child: SizedBox(width: 10, height: 10)),
+    ],
+  );
+}
+
+// A text field of the widgets library alone, with the focus.
+class _TextField extends StatefulWidget {
+  const _TextField();
+
+  @override
+  State<_TextField> createState() => _TextFieldState();
+}
+
+class _TextFieldState extends State<_TextField> {
+  final _controller = TextEditingController();
+  final _focus = FocusNode();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => EditableText(
+    controller: _controller,
+    focusNode: _focus,
+    autofocus: true,
+    style: DefaultTextStyle.of(context).style,
+    cursorColor: const Color(0xFF000000),
+    backgroundCursorColor: const Color(0xFF808080),
   );
 }
 
@@ -349,9 +376,9 @@ void main() {
         },
         beans: [_actions()],
       ),
-      page: const _Page(child: TextField(autofocus: true)),
+      page: const _Page(child: _TextField()),
     );
-    await tester.showKeyboard(find.byType(TextField));
+    await tester.showKeyboard(find.byType(EditableText));
     await _press(tester, LogicalKeyboardKey.slash);
     expect(context.getBean<Calls>().list, isEmpty);
     await _press(

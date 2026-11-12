@@ -30,6 +30,7 @@ spring:
     app:
       # A CupertinoApp: CupertinoPageScaffold, CupertinoTabScaffold and the
       # other iOS widgets. Its theme is the `cupertino` block below.
+      # spring_boot_starter_flutter_cupertino builds it.
       type: cupertino
       title: Theme Showcase Cupertino
       debug-banner: false

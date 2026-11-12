@@ -19,6 +19,7 @@
 // needs the Flutter SDK: CI runs it in the `flutter` job): the starter
 // alone in `dependencies`, the same core, Boot and @Log code, the
 // starter's feature (the HTTP client of spring_web_dart with the Flutter
+// starter, the Material or Cupertino themes and app factory with a design
 // starter, a screen with the navigation starter, method security and
 // `withMockUser` from `testing.dart` with the Flutter security starter),
 // then `flutter pub get`, the generator, `flutter analyze --fatal-infos`
@@ -39,6 +40,7 @@ final class _Starter {
     this.featureTest = '',
     this.testImports = const [],
     this.properties = '',
+    this.router = false,
   });
 
   /// The package name (`spring_boot_starter_feign`).
@@ -57,6 +59,10 @@ final class _Starter {
 
   /// More libraries the test imports (the starter's test support).
   final List<String> testImports;
+
+  /// Whether a Flutter starter brings the router: its app shows the
+  /// feature's `@ScreenRoute` screen, and no `home` of its own.
+  final bool router;
 
   String get short => package.replaceFirst('spring_boot_starter_', '');
 
@@ -420,8 +426,63 @@ class Home extends StatelessWidget {
   });
 ''',
   ),
+  // No design library in the app's pubspec: the starter's beans and the
+  // app type are enough for a MaterialApp around a widget of its own.
+  _Starter(
+    'spring_boot_starter_flutter_material',
+    properties: 'spring.flutter.app.type=material\n',
+    feature: '''
+class Home extends StatelessWidget {
+  const Home({super.key});
+
+  @override
+  Widget build(BuildContext context) => const Text('home');
+}
+
+@Component()
+class Palette {
+  Palette(this.themes);
+
+  final MaterialThemes themes;
+}
+''',
+    featureTest: '''
+  test('Material comes with the starter', () {
+    expect(app.getBean<Palette>().themes, isA<MaterialThemes>());
+    expect(app.getBean<MaterialAppFactory>(), isA<SpringAppFactory>());
+    expect(const Home().key, isNull);
+  });
+''',
+  ),
+  _Starter(
+    'spring_boot_starter_flutter_cupertino',
+    properties: 'spring.flutter.app.type=cupertino\n',
+    feature: '''
+class Home extends StatelessWidget {
+  const Home({super.key});
+
+  @override
+  Widget build(BuildContext context) => const Text('home');
+}
+
+@Component()
+class Palette {
+  Palette(this.themes);
+
+  final CupertinoThemes themes;
+}
+''',
+    featureTest: '''
+  test('Cupertino comes with the starter', () {
+    expect(app.getBean<Palette>().themes, isA<CupertinoThemes>());
+    expect(app.getBean<CupertinoAppFactory>(), isA<SpringAppFactory>());
+    expect(const Home().key, isNull);
+  });
+''',
+  ),
   _Starter(
     'spring_boot_starter_flutter_navigation',
+    router: true,
     feature: '''
 @ScreenRoute('/', title: 'Home')
 class Home extends StatelessWidget {
@@ -440,6 +501,7 @@ class Home extends StatelessWidget {
   ),
   _Starter(
     'spring_boot_starter_flutter_security',
+    router: true,
     testImports: ['package:spring_boot_starter_flutter_security/testing.dart'],
     feature: '''
 @Service()
@@ -700,8 +762,11 @@ linter:
   rules:
     - depend_on_referenced_packages
 ''');
-  file('lib/resources/application.properties', 'greeting.name=World\n');
-  final router = starter.package != 'spring_boot_starter_flutter';
+  file(
+    'lib/resources/application.properties',
+    'greeting.name=World\n${starter.properties}',
+  );
+  final router = starter.router;
   file('lib/main.dart', '''
 import 'package:flutter/widgets.dart';
 import '${starter.library}';

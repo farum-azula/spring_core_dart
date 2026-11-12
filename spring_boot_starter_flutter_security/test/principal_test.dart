@@ -2,8 +2,8 @@
 // logouts (through the holder's strategy and through the authentication
 // events), context.principal, PrincipalBuilder and PrincipalView rebuild
 // with them. Display only: nothing here protects anything.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_security/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 

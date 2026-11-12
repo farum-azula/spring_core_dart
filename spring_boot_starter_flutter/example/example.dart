@@ -1,7 +1,7 @@
 // The Flutter counter as a Spring Boot application: the count is a bean,
 // widgets get beans by type, and the generator writes the rest
 // (example.spring.dart, from `dart run build_runner build`).
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
 import 'spring_gen/example.spring.dart';

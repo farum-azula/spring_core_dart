@@ -17,6 +17,13 @@ const _start = '<!-- theme-components:start -->';
 const _end = '<!-- theme-components:end -->';
 const _baseDefault = "Flutter's Material 3 default";
 
+// The design starters that read what the pages describe: the core starter
+// reads neither `components` nor `cupertino`.
+const _materialStarter =
+    'The Material starter, `spring_boot_starter_flutter_material`,';
+const _cupertinoStarter =
+    'The Cupertino starter, `spring_boot_starter_flutter_cupertino`,';
+
 void main() {
   Directory.current = File.fromUri(Platform.script).parent.parent;
   final meta = jsonDecode(
@@ -277,16 +284,21 @@ String _intro(_Component c) {
       '`${c.path}`.',
     );
   }
-  b.write(
-    ' You can also set it inside a named theme, under '
-    '`spring.flutter.theme.themes.<name>.${c.ownRoot ? c.name : 'components.${c.name}'}`.',
-  );
+  b
+    ..write(
+      ' You can also set it inside a named theme, under '
+      '`spring.flutter.theme.themes.<name>.${c.ownRoot ? c.name : 'components.${c.name}'}`.',
+    )
+    ..write(
+      ' ${c.ownRoot ? _cupertinoStarter : _materialStarter} reads it: an '
+      'app without that package in its dependencies shows nothing of it.',
+    );
   return b.toString();
 }
 
 String? _dartNote(_Component c) {
   if (c.ownRoot) {
-    return 'The starter builds a `CupertinoThemeData` from these '
+    return 'The Cupertino starter builds a `CupertinoThemeData` from these '
         'properties. In a widget:\n\n'
         '```dart\nfinal cupertino = CupertinoTheme.of(context);\n```';
   }
@@ -297,8 +309,8 @@ String? _dartNote(_Component c) {
   final access = c.flutterClass == 'ButtonStyle' || c.base != null
       ? 'Theme.of(context).$field.style'
       : 'Theme.of(context).$field';
-  return 'The starter sets `ThemeData.$field` from these properties. In a '
-      'widget, read the result with:\n\n'
+  return 'The Material starter sets `ThemeData.$field` from these '
+      'properties. In a widget, read the result with:\n\n'
       '```dart\nfinal theme = $access;\n```';
 }
 
@@ -515,11 +527,20 @@ String _index(List<_Component> components, String flutterVersion) {
     ..writeln()
     ..writeln(
       'Each Material component has a theme in Flutter: the look every '
-      'widget of that kind starts from. Spring for Dart reads them from '
+      'widget of that kind starts from. $_materialStarter reads them from '
       '`spring.flutter.theme.components.<name>`, with the same names and '
       'values as Flutter, in kebab case (`background-color` for '
       '`backgroundColor`). Pick a component below to see all its '
       'properties, what they do and an example.',
+    )
+    ..writeln()
+    ..writeln(
+      'An app needs the Material starter in its dependencies to show them: '
+      'without it the `components` of a theme are accepted, not checked and '
+      'not shown, and a line of the log names the package. The last row is '
+      'not a Material component: '
+      '${_cupertinoStarter.replaceFirst('The', 'the')} reads '
+      '`spring.flutter.theme.cupertino` in the same way.',
     )
     ..writeln()
     ..writeln('| Component | Flutter class | What it styles | Properties |')

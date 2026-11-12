@@ -14,7 +14,6 @@ spring:
       themes:
         neon:
           brightness: dark
-          seed-color: $colors.primary
 
           # ------------------------------------------------------ colors
           colors:
@@ -38,6 +37,34 @@ spring:
             surface-container-highest: '#222733'
             outline: '#343A48'
             outline-variant: '#232834'
+            # The other roles, as Material 3 makes them of the primary color:
+            # written out, so the theme needs no design library to make them.
+            primary-fixed: '#F0E58B'
+            primary-fixed-dim: '#D3C972'
+            on-primary-fixed: '#1F1C00'
+            on-primary-fixed-variant: '#4E4800'
+            secondary-container: '#4B472B'
+            on-secondary-container: '#EAE3BD'
+            secondary-fixed: '#EAE3BD'
+            secondary-fixed-dim: '#CEC7A3'
+            on-secondary-fixed: '#1F1C05'
+            on-secondary-fixed-variant: '#4B472B'
+            tertiary-container: '#284E3C'
+            on-tertiary-container: '#C2ECD3'
+            tertiary-fixed: '#C2ECD3'
+            tertiary-fixed-dim: '#A6D0B8'
+            on-tertiary-fixed: '#002113'
+            on-tertiary-fixed-variant: '#284E3C'
+            error-container: '#93000A'
+            on-error-container: '#FFDAD6'
+            surface-dim: '#15140C'
+            surface-bright: '#3B3930'
+            surface-tint: '#D3C972'
+            inverse-surface: '#E7E2D5'
+            on-inverse-surface: '#323127'
+            inverse-primary: '#676013'
+            shadow: '#000000'
+            scrim: '#000000'
 
           # --------------------------------------------------- typography
           # Space Grotesk for headings, JetBrains Mono for the rest (the

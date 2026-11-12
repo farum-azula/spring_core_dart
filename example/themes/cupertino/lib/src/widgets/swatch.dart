@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:theme_showcase_cupertino/spring_gen/main.spring.dart';
 
 /// A color with its name and hex value, over a checkerboard so that a

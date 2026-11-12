@@ -1,0 +1,26 @@
+# The example app: a CupertinoApp built by spring_boot_starter_flutter_cupertino,
+# and its two themes. Change a value and run again: no Dart code changes.
+spring:
+  flutter:
+    app:
+      # No type: with this starter alone the app is a CupertinoApp
+      # (spring.flutter.app.type: cupertino says the same).
+      title: Themes
+    theme:
+      active: light
+      # The palette's roles, written out: the dark theme has its own.
+      colors:
+        primary: '#007AFF'
+        surface: '#F2F2F7'
+      # Cupertino's own theme; a value may name a role of the palette.
+      cupertino:
+        primary-color: $colors.primary
+        bar-background-color: '#F0F9F9F9'  # #AARRGGBB: a little see-through
+      themes:
+        dark:
+          brightness: dark
+          colors:
+            primary: '#0A84FF'
+            surface: '#000000'
+          cupertino:
+            bar-background-color: '#F01D1D1F'

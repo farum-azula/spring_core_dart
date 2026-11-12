@@ -1,7 +1,6 @@
 import 'dart:ui' show Color, FontWeight;
 
 import 'package:flutter/animation.dart' show Cubic, Curve, Curves;
-import 'package:flutter/material.dart' show Easing;
 import 'package:spring_boot_starter_flutter/src/theme/material_colors.dart';
 
 /// The error thrown when a theme property has a value (or a key) that
@@ -195,6 +194,11 @@ abstract final class ThemeValues {
   /// The names [anyCurve] knows, in kebab case.
   static List<String> get curveNames => List.unmodifiable(_curveNames.keys);
 
+  /// Material 3's standard easing, the curve of a motion the theme names
+  /// none for. The Material 3 easings are numbers here, so a theme has
+  /// them without the Material library.
+  static const Curve standardEasing = Cubic(0.2, 0, 0, 1);
+
   static final _curveNames = <String, Curve>{
     'linear': Curves.linear,
     'ease': Curves.ease,
@@ -203,12 +207,12 @@ abstract final class ThemeValues {
     'ease-in-out': Curves.easeInOut,
     'fast-out-slow-in': Curves.fastOutSlowIn,
     'decelerate': Curves.decelerate,
-    'standard': Easing.standard,
-    'standard-accelerate': Easing.standardAccelerate,
-    'standard-decelerate': Easing.standardDecelerate,
+    'standard': standardEasing,
+    'standard-accelerate': const Cubic(0.3, 0, 1, 1),
+    'standard-decelerate': const Cubic(0, 0, 0, 1),
     'emphasized': const Cubic(0.2, 0, 0, 1),
-    'emphasized-accelerate': Easing.emphasizedAccelerate,
-    'emphasized-decelerate': Easing.emphasizedDecelerate,
+    'emphasized-accelerate': const Cubic(0.3, 0, 0.8, 0.15),
+    'emphasized-decelerate': const Cubic(0.05, 0.7, 0.1, 1),
     'ease-in-sine': Curves.easeInSine,
     'ease-out-sine': Curves.easeOutSine,
     'ease-in-out-sine': Curves.easeInOutSine,

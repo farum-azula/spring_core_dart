@@ -4,7 +4,7 @@
 // is drawn.
 import 'dart:ui' show FrameTiming;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
@@ -84,7 +84,6 @@ void main() {
 
     await _start(
       tester,
-      'spring.flutter.app.type=material\n'
       'spring.flutter.frame-meter.enabled=true\n'
       'spring.flutter.frame-meter.position=bottom-left',
     );

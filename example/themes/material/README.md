@@ -5,6 +5,15 @@ A Flutter app about one thing: the theme of
 Every look in it, colors, text, components, states, motion, backgrounds, is
 a line of YAML. There is no `ThemeData` in the Dart code.
 
+The app is a `MaterialApp` (`spring.flutter.app.type: material`), so it
+depends on
+[`spring_boot_starter_flutter_material`](../../../spring_boot_starter_flutter_material/README.md),
+which builds the app widget and reads `components.*` and the seed colors,
+and on `material_ui` for the widgets of its pages. The Cupertino section of
+the Components page needs
+[`spring_boot_starter_flutter_cupertino`](../../../spring_boot_starter_flutter_cupertino/README.md)
+(the `cupertino.*` properties, `CupertinoThemes`) and `cupertino_ui`.
+
 Open the app and the YAML side by side. Each page shows a capability, the
 lines of YAML that make it (boxes of Markdown, `MarkdownView.code`, split by
 the languages of `themes/code.yml` and colored by the theme's `styles.code`,
@@ -78,8 +87,10 @@ the not-found page.
    effect), `ThemeBackground.screen('showcase')` and `ThemeBackground.none`.
 9. **Images**: `ThemeImage` from an asset, and the same from https with a
    cache and an asset `fallback` (profile `network`).
-10. **Transitions**: how a screen comes in: none by default, a theme's own
-   (`motion.page-transition: zoom` in neon), the platform's
+10. **Transitions**: how a screen comes in: the platform's by default, as
+   in Flutter (Material's own, per platform), a theme's own
+   (`motion.page-transition: zoom` in neon, `none` in high-contrast, whose
+   pages switch at once), the platform's for one screen in any theme
    (`transition: PageTransition.platform`), a custom fade, and one
    navigation's (`go(path, transition: ...)`).
 11. **Themes**: six themes (`light`, `dark`, `ocean`, `ocean-night` which

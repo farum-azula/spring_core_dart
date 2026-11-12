@@ -24,6 +24,7 @@ import 'package:spring_boot_starter_flutter/src/spring_widgets.dart';
 import 'package:spring_boot_starter_flutter/src/sqlite_directories.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_design.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_fonts.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_splash.dart';
 
@@ -373,6 +374,12 @@ class _SpringApplicationWidgetState extends State<SpringApplicationWidget> {
       final themes = SpringThemes.fromEnvironment(
         event.environment,
         addresses: event.springApplication.remoteAddresses,
+        // No bean exists yet: the design libraries come from the
+        // factories of the starters.
+        designs: ThemeDesigns.of(
+          event.springApplication.factories,
+          event.environment,
+        ),
       );
       theme = themes.data(_splashThemeName(themes));
     } on Object catch (error) {

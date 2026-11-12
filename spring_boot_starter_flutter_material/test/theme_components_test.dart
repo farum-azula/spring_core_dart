@@ -1,36 +1,21 @@
 // Every component of ThemeData from properties: values by type, a value
 // per state, a sample of components end to end (the ThemeData they give
-// and the colors they render), Cupertino, and the errors.
+// and the colors they render), and the errors.
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
-import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
-import 'package:spring_boot_starter_flutter/src/theme/theme_reader.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:spring_boot_starter_flutter/theme_design.dart';
+import 'package:spring_boot_starter_flutter_material/spring_boot_starter_flutter_material.dart';
 
 import 'support/theme_catalog.dart';
-
-SpringThemeData theme(Map<String, String> properties) =>
-    SpringThemeData.of(ThemeConfig(properties), 'light');
-
-ThemeData material(Map<String, String> properties) =>
-    theme(properties).toMaterial();
+import 'support/themes.dart' as support;
+import 'support/themes.dart' hide themes;
 
 /// [properties] with the `components.` prefix.
 Map<String, String> c(String component, Map<String, String> properties) => {
   for (final MapEntry(:key, :value) in properties.entries)
     'components.$component.$key': value,
 };
-
-Matcher invalid(String key, [String? expected]) => throwsA(
-  isA<ThemePropertyException>()
-      .having((e) => e.key, 'key', contains(key))
-      .having(
-        (e) => e.expected,
-        'expected',
-        expected == null ? anything : contains(expected),
-      ),
-);
 
 const _hovered = {WidgetState.hovered};
 
@@ -213,7 +198,7 @@ void main() {
     });
 
     test('from YAML, as a theme loaded at run time', () {
-      final themes = SpringThemes(const {});
+      final themes = support.themes(const {});
       themes.loadYaml(r'''
 themes:
   states:
@@ -225,7 +210,7 @@ themes:
           disabled: $colors.outline
         track-outline-width: { default: 1, focused: 3 }
 ''');
-      final t = themes.material('states').switchTheme;
+      final t = themes.data('states').toMaterial().switchTheme;
       expect(t.thumbColor!.resolve({}), const Color(0xFF9E9E9E));
       expect(t.thumbColor!.resolve({WidgetState.disabled}), isNotNull);
       expect(t.trackOutlineWidth!.resolve({WidgetState.focused}), 3);
@@ -821,69 +806,16 @@ themes:
     });
 
     test('the same property in a theme that extends another', () {
-      final themes = SpringThemes({
+      final themes = support.themes({
         'components.checkbox.fill-color.selected': r'$colors.primary',
         'themes.ocean.components.checkbox.fill-color.selected':
             r'$colors.tertiary',
       });
       expect(
-        themes.material('ocean').checkboxTheme.fillColor!.resolve({
+        themes.data('ocean').toMaterial().checkboxTheme.fillColor!.resolve({
           WidgetState.selected,
         }),
         themes.data('ocean').colorScheme.tertiary,
-      );
-    });
-  });
-
-  group('Cupertino', () {
-    test('colors and text styles of CupertinoThemeData', () {
-      final t = theme({
-        'cupertino.primary-color': r'$colors.tertiary',
-        'cupertino.primary-contrasting-color': '#FFFFFF',
-        'cupertino.scaffold-background-color': '#F0F0F0',
-        'cupertino.bar-background-color': r'$colors.surface',
-        'cupertino.selection-handle-color': '#00FF00',
-        'cupertino.apply-theme-to-all': 'true',
-        'cupertino.text-theme.text-style.size': '17',
-        'cupertino.text-theme.nav-title-text-style': 'title-large',
-        'cupertino.text-theme.action-text-style.color': r'$colors.error',
-      }).toCupertino();
-      final scheme = theme({}).colorScheme;
-      expect(t.primaryColor, scheme.tertiary);
-      expect(t.primaryContrastingColor, const Color(0xFFFFFFFF));
-      expect(t.scaffoldBackgroundColor, const Color(0xFFF0F0F0));
-      expect(t.barBackgroundColor, scheme.surface);
-      expect(t.selectionHandleColor, const Color(0xFF00FF00));
-      expect(t.applyThemeToAll, isTrue);
-      expect(t.textTheme.textStyle.fontSize, 17);
-      expect(t.textTheme.navTitleTextStyle, material({}).textTheme.titleLarge);
-      expect(t.textTheme.actionTextStyle.color, scheme.error);
-    });
-
-    test('without cupertino keys it keeps the earlier behavior', () {
-      final t = theme({
-        'colors.surface': '#EEEEEE',
-        'components.app-bar.background': '#111111',
-      }).toCupertino();
-      expect(t.scaffoldBackgroundColor, const Color(0xFFEEEEEE));
-      expect(t.barBackgroundColor, const Color(0xFF111111));
-    });
-
-    test('mistakes name the valid keys', () {
-      expect(
-        () => theme({'cupertino.primay-color': 'x'}),
-        invalid(
-          'cupertino.primaycolor'.replaceAll('primay', 'primay'),
-          "did you mean 'primary-color'",
-        ),
-      );
-      expect(
-        () => theme({'cupertino.text-theme.nav-title': 'title-large'}),
-        invalid('cupertino.texttheme.navtitle', 'nav-title-text-style'),
-      );
-      expect(
-        () => theme({'cupertino.bar-background-color': 'nope'}),
-        invalid('cupertino.barbackgroundcolor'),
       );
     });
   });
@@ -953,9 +885,9 @@ themes:
       return result;
     }
 
-    test('at least 48 components and Cupertino, with their properties', () {
-      expect(catalog.length, greaterThanOrEqualTo(49));
-      expect(catalog.keys, containsAll(['app-bar', 'checkbox', 'cupertino']));
+    test('at least 48 components, with their properties', () {
+      expect(catalog.length, greaterThanOrEqualTo(48));
+      expect(catalog.keys, containsAll(['app-bar', 'checkbox']));
       final total = catalog.values.fold<int>(0, (n, p) => n + p.length);
       expect(total, greaterThan(800));
     });
@@ -963,13 +895,12 @@ themes:
     for (final states in [false, true]) {
       for (final MapEntry(key: name, value: properties) in catalog.entries) {
         test('$name: every property is read${states ? ' per state' : ''}', () {
-          final root = name == 'cupertino' ? 'cupertino' : 'components.$name';
+          final root = 'components.$name';
           final values = entries(root, properties, states: states);
           // Reading and checking every key must not fail, and the keys
           // are exactly the ones the mapping lists.
           final t = theme(values);
           t.toMaterial();
-          t.toCupertino();
         });
       }
     }
@@ -977,7 +908,7 @@ themes:
     test('every property is rejected with a wrong value of its type', () {
       var checked = 0;
       for (final MapEntry(key: name, value: properties) in catalog.entries) {
-        final root = name == 'cupertino' ? 'cupertino' : 'components.$name';
+        final root = 'components.$name';
         for (final p in properties) {
           final wrong = switch (p.kind) {
             'color' => 'notacolor',
@@ -1006,7 +937,7 @@ themes:
           }
           checked++;
           expect(
-            () => theme({'$root.${p.name}': wrong}).toCupertino(),
+            () => theme({'$root.${p.name}': wrong}),
             throwsA(isA<ThemePropertyException>()),
             reason: '$name.${p.name} (${p.kind}) = $wrong',
           );
@@ -1049,7 +980,8 @@ themes:
 
     test('the error names the property as the files do, with the theme', () {
       expect(
-        () => SpringThemes(const {'themes.ocean.components.card.colour': 'x'}),
+        () =>
+            support.themes(const {'themes.ocean.components.card.colour': 'x'}),
         throwsA(
           isA<ThemePropertyException>().having(
             (e) => e.key,
@@ -1061,7 +993,7 @@ themes:
     });
 
     test('a theme loaded at run time is checked before it is used', () {
-      final themes = SpringThemes(const {});
+      final themes = support.themes(const {});
       expect(
         () => themes.loadYaml('''
 themes:

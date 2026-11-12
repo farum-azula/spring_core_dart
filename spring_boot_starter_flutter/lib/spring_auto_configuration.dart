@@ -6,8 +6,6 @@
 /// builds a context by hand imports it to name the module.
 library;
 
-import 'package:flutter/cupertino.dart' show CupertinoThemeData;
-import 'package:flutter/material.dart' show ThemeData;
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/asset_resource.dart';
 import 'package:spring_boot_starter_flutter/src/bean_reads.dart';
@@ -51,6 +49,7 @@ import 'package:spring_boot_starter_flutter/src/splash/startup_events.dart';
 import 'package:spring_boot_starter_flutter/src/splash/text_warm_up.dart';
 import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_design.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_choice_store.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_image.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_source.dart';
@@ -227,14 +226,13 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
       source: _source,
       create: (r) => SpringThemes.fromEnvironment(
         r.dependency<ConfigurableEnvironment>(),
-        customizers: r.optionalDependencyList<ThemeCustomizer>() ?? const [],
-        cupertinoCustomizers:
-            r.optionalDependencyList<CupertinoThemeCustomizer>() ?? const [],
-        light: r.optionalDependency<ThemeData>(qualifier: 'theme'),
-        dark: r.optionalDependency<ThemeData>(qualifier: 'darkTheme'),
-        cupertino: r.optionalDependency<CupertinoThemeData>(),
         addresses:
             r.optionalDependency<RemoteAddresses>() ?? const RemoteAddresses(),
+        // The design libraries of the application's starters.
+        designs: ThemeDesigns.of(
+          r.optionalDependency<SpringFactories>() ?? const SpringFactories(),
+          r.dependency<ConfigurableEnvironment>(),
+        ),
       ),
     ),
     BeanDefinition<ThemeSelection>(

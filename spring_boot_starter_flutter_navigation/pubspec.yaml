@@ -12,8 +12,8 @@ topics:
   - spring
 
 environment:
-  sdk: ^3.13.0
-  flutter: '>=3.47.0'
+  sdk: ^3.14.0
+  flutter: '>=3.50.0'
 
 dependencies:
   flutter:
@@ -34,4 +34,10 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   spring_boot_starter_test: ^0.7.4
+  # For the tests in a Material and in a Cupertino app only: the package
+  # itself depends on no design library.
+  spring_boot_starter_flutter_material: ^0.7.4
+  spring_boot_starter_flutter_cupertino: ^0.7.4
+  material_ui: ^1.11.0
+  cupertino_ui: ^1.1.6
   lints: ^6.0.0

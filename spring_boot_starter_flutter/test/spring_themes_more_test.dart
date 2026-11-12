@@ -1,44 +1,11 @@
 // SpringThemes, ThemeSelection, SpringTheme and SpringApp beyond the
-// basics: bean overrides, customizers, property sources and their
-// precedence, run-time loading, the device's light / dark mode, every
-// app type with a picked theme.
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+// basics, in an app without a design library: property sources and their
+// precedence, run-time loading, the device's light / dark mode, a picked
+// theme in the app.
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
-
-final class Rounded implements ThemeCustomizer {
-  Rounded(this.log);
-  final List<String> log;
-
-  @override
-  ThemeData customize(ThemeData theme, SpringThemeData spring) {
-    log.add('rounded ${spring.name}');
-    return theme.copyWith(
-      chipTheme: const ChipThemeData(shape: StadiumBorder()),
-    );
-  }
-}
-
-final class Dense implements ThemeCustomizer {
-  Dense(this.log);
-  final List<String> log;
-
-  @override
-  ThemeData customize(ThemeData theme, SpringThemeData spring) {
-    log.add('dense ${spring.name}');
-    return theme.copyWith(visualDensity: VisualDensity.compact);
-  }
-}
-
-final class Blue implements CupertinoThemeCustomizer {
-  @override
-  CupertinoThemeData customize(
-    CupertinoThemeData theme,
-    SpringThemeData spring,
-  ) => theme.copyWith(primaryColor: CupertinoColors.activeBlue);
-}
 
 SpringApplication application({
   Map<String, String> properties = const {},
@@ -68,62 +35,17 @@ SpringApplication application({
   bannerMode: BannerMode.off,
 );
 
+// The colors the themes name, as Material's palette has them.
+const _deepPurple = Color(0xFF673AB7);
+const _indigo = Color(0xFF3F51B5);
+const _teal = Color(0xFF009688);
+
 void main() {
   group('SpringThemes', () {
-    test('customizers in order on every Material theme, once each', () {
-      final log = <String>[];
-      final themes = SpringThemes(
-        const {'themes.ocean.seed-color': 'teal'},
-        customizers: [Rounded(log), Dense(log)],
-        cupertinoCustomizers: [Blue()],
-      );
-      final ocean = themes.material('ocean');
-      expect(ocean.chipTheme.shape, const StadiumBorder());
-      expect(ocean.visualDensity, VisualDensity.compact);
-      themes.material('ocean');
-      expect(log, ['rounded ocean', 'dense ocean']);
-      expect(
-        themes.cupertino('ocean').primaryColor,
-        CupertinoColors.activeBlue,
-      );
-      expect(themes.cupertino('ocean'), same(themes.cupertino('Ocean')));
-    });
-
-    test(
-      'bean overrides: theme / darkTheme / CupertinoThemeData, customized too',
-      () {
-        final light = ThemeData(colorSchemeSeed: Colors.orange);
-        final dark = ThemeData(
-          colorSchemeSeed: Colors.orange,
-          brightness: Brightness.dark,
-        );
-        const cupertino = CupertinoThemeData(
-          primaryColor: CupertinoColors.systemPink,
-        );
-        final log = <String>[];
-        final themes = SpringThemes(
-          const {'themes.ocean.seed-color': 'teal'},
-          light: light,
-          dark: dark,
-          cupertino: cupertino,
-          customizers: [Rounded(log)],
-        );
-        expect(themes.material('light').colorScheme, light.colorScheme);
-        expect(themes.material('light').chipTheme.shape, const StadiumBorder());
-        expect(themes.material('dark').colorScheme, dark.colorScheme);
-        // Custom themes are still made from the properties.
-        expect(
-          themes.material('ocean').colorScheme.primary,
-          themes.data('ocean').colorScheme.primary,
-        );
-        expect(themes.cupertino('ocean'), cupertino);
-      },
-    );
-
     test('unknown names throw with the known ones', () {
       final themes = SpringThemes(const {});
       expect(
-        () => themes.material('lava'),
+        () => themes.data('lava'),
         throwsA(
           isA<ArgumentError>().having(
             (e) => e.message,
@@ -138,31 +60,25 @@ void main() {
 
     test('load: relative keys, over the files, replacing the last load', () {
       final themes = SpringThemes(const {
-        'seed-color': 'deepPurple',
-        'themes.ocean.seed-color': 'teal',
+        'colors.primary': 'deepPurple',
+        'themes.ocean.colors.primary': 'teal',
       });
       var notified = 0;
       themes.addListener(() => notified++);
       themes.load(const {
-        'themes.ocean.seed-color': 'indigo',
-        'themes.winter.seed-color': 'lightBlue',
+        'themes.ocean.colors.primary': 'indigo',
+        'themes.winter.colors.primary': 'lightBlue',
       });
-      expect(
-        themes.data('ocean').seedColor!.toARGB32(),
-        Colors.indigo.toARGB32(),
-      );
+      expect(themes.data('ocean').colorScheme.primary, _indigo);
       expect(themes.names, ['light', 'dark', 'ocean', 'winter']);
-      themes.load(const {'themes.spring.seed-color': 'green'});
+      themes.load(const {'themes.spring.colors.primary': 'green'});
       expect(themes.names, [
         'light',
         'dark',
         'ocean',
         'spring',
       ]); // winter replaced
-      expect(
-        themes.data('ocean').seedColor!.toARGB32(),
-        Colors.teal.toARGB32(),
-      );
+      expect(themes.data('ocean').colorScheme.primary, _teal);
       expect(notified, 2);
     });
 
@@ -177,7 +93,7 @@ themes:
       font-family-fallback: [A, B]
 ''');
         themes.loadYaml('''
-spring.flutter.theme.themes.summer.seed-color: orange
+spring.flutter.theme.themes.summer.colors.primary: orange
 ''');
         expect(themes.names, ['light', 'dark', 'summer', 'winter']);
         expect(themes.data('winter').fontFamilyFallback, ['A', 'B']);
@@ -187,8 +103,10 @@ spring.flutter.theme.themes.summer.seed-color: orange
     );
 
     test('an invalid load changes nothing and tells no one', () {
-      final themes = SpringThemes(const {'themes.ocean.seed-color': 'teal'});
-      final before = themes.material('ocean');
+      final themes = SpringThemes(const {
+        'themes.ocean.colors.primary': 'teal',
+      });
+      final before = themes.data('ocean');
       var notified = 0;
       themes.addListener(() => notified++);
       expect(
@@ -196,10 +114,11 @@ spring.flutter.theme.themes.summer.seed-color: orange
         throwsStateError,
       );
       expect(
-        () => themes.loadYaml('themes: {x: {splash: wave}}'),
+        () => themes.loadYaml('themes: {x: {shape: {medium: round}}}'),
         throwsA(isA<ThemePropertyException>()),
       );
-      expect(themes.material('ocean'), same(before));
+      expect(themes.data('ocean'), same(before));
+      expect(themes.names, ['light', 'dark', 'ocean']);
       expect(notified, 0);
     });
 
@@ -211,12 +130,12 @@ spring.flutter.theme.themes.summer.seed-color: orange
               files: {
                 'application.yml': '''
 spring.flutter.theme:
-  seed-color: deepPurple
+  colors.primary: deepPurple
   themes:
-    ocean: { seed-color: teal }
+    ocean: { colors.primary: teal }
 ''',
                 'application-prod.properties':
-                    'spring.flutter.theme.themes.ocean.seed-color=indigo',
+                    'spring.flutter.theme.themes.ocean.colors.primary=indigo',
               },
             ).runAsync(const [
               '--spring.profiles.active=prod',
@@ -224,14 +143,9 @@ spring.flutter.theme:
             ]);
         addTearDown(context.close);
         final themes = context.getBean<SpringThemes>();
-        expect(
-          themes.data('light').seedColor!.toARGB32(),
-          Colors.deepPurple.toARGB32(),
-        );
-        expect(
-          themes.data('ocean').seedColor!.toARGB32(),
-          Colors.indigo.toARGB32(),
-        ); // profile wins
+        expect(themes.data('light').colorScheme.primary, _deepPurple);
+        // The profile's file wins.
+        expect(themes.data('ocean').colorScheme.primary, _indigo);
         expect(themes.data('ocean').shape('large'), 24); // command line
         expect(SpringThemes.of(context), same(themes)); // the bean
         expect(
@@ -282,7 +196,9 @@ spring.flutter.theme:
     test(
       'selecting the shown theme again tells no one; dispose stops listening',
       () {
-        final themes = SpringThemes(const {'themes.ocean.seed-color': 'teal'});
+        final themes = SpringThemes(const {
+          'themes.ocean.colors.primary': 'teal',
+        });
         final selection = ThemeSelection(themes);
         var notified = 0;
         selection
@@ -301,11 +217,13 @@ spring.flutter.theme:
     );
 
     test('a load keeping the shown theme only tells', () {
-      final themes = SpringThemes(const {'themes.ocean.seed-color': 'teal'});
+      final themes = SpringThemes(const {
+        'themes.ocean.colors.primary': 'teal',
+      });
       final selection = ThemeSelection(themes)..select('ocean');
       var notified = 0;
       selection.addListener(() => notified++);
-      themes.load(const {'themes.ocean.seed-color': 'indigo'});
+      themes.load(const {'themes.ocean.colors.primary': 'indigo'});
       expect(selection.active, 'ocean');
       expect(notified, 1);
     });
@@ -329,7 +247,9 @@ spring.flutter.theme:
     });
 
     testWidgets('dependents rebuild when the theme changes', (tester) async {
-      final themes = SpringThemes(const {'themes.ocean.seed-color': 'teal'});
+      final themes = SpringThemes(const {
+        'themes.ocean.colors.primary': 'teal',
+      });
       _ThemeName.builds = 0;
       Widget app(String name) =>
           SpringTheme(data: themes.data(name), child: const _ThemeName());
@@ -367,47 +287,24 @@ spring.flutter.theme:
     ) async {
       addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
       tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
-      await pump(tester, const {
-        'spring.flutter.app.type': 'material',
+      final context = await pump(tester, const {
         'spring.flutter.theme.system-dark': 'night',
         'spring.flutter.theme.themes.night.brightness': 'dark',
-        'spring.flutter.theme.themes.night.seed-color': 'indigo',
+        'spring.flutter.theme.themes.night.colors.primary': 'indigo',
       });
+      WidgetsApp app() => tester.widget<WidgetsApp>(find.byType(WidgetsApp));
       expect(find.text('light'), findsOneWidget);
-      final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
-      expect(app.themeMode, ThemeMode.system);
-      expect(app.darkTheme!.colorScheme.brightness, Brightness.dark);
+      expect(ThemeSelection.of(context).followsSystem, isTrue);
+      expect(app().color, SpringColorScheme.baseline(Brightness.light).primary);
 
       tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
       await tester.pumpAndSettle();
       expect(find.text('night'), findsOneWidget);
-    });
-
-    testWidgets('cupertino: the picked theme\'s CupertinoThemeData', (
-      tester,
-    ) async {
-      final context = await pump(tester, const {
-        'spring.flutter.app.type': 'cupertino',
-        'spring.flutter.theme.active': 'ocean',
-        'spring.flutter.theme.themes.ocean.cupertino.primary-color': '#00ACC1',
-      });
+      expect(app().color, const Color(0xFF3F51B5));
       expect(
-        tester
-            .widget<CupertinoApp>(find.byType(CupertinoApp))
-            .theme!
-            .primaryColor,
-        const Color(0xFF00ACC1),
+        app().textStyle!.color,
+        SpringColorScheme.baseline(Brightness.dark).onSurface,
       );
-      ThemeSelection.of(context).select('light');
-      await tester.pumpAndSettle();
-      expect(
-        tester
-            .widget<CupertinoApp>(find.byType(CupertinoApp))
-            .theme!
-            .primaryColor,
-        CupertinoColors.systemBlue,
-      );
-      expect(find.text('light'), findsOneWidget);
     });
 
     testWidgets('widgets: color and text style of the picked theme', (
@@ -427,18 +324,20 @@ spring.flutter.theme:
     });
 
     testWidgets('a theme loaded at run time shows at once', (tester) async {
-      final context = await pump(tester, const {
-        'spring.flutter.app.type': 'material',
-      });
-      SpringThemes.of(context)
-          .loadYaml('themes: {winter: {seed-color: lightBlue}}');
+      final context = await pump(tester, const {});
+      SpringThemes.of(
+        context,
+      ).loadYaml('themes: {winter: {colors: {primary: lightBlue}}}');
       ThemeSelection.of(context).select('winter');
       await tester.pumpAndSettle();
       expect(find.text('winter'), findsOneWidget);
-      final theme = Theme.of(tester.element(find.text('winter')));
       expect(
-        theme.colorScheme.primary,
-        SpringThemes.of(context).material('winter').colorScheme.primary,
+        SpringTheme.of(tester.element(find.text('winter'))).colorScheme.primary,
+        const Color(0xFF03A9F4),
+      );
+      expect(
+        tester.widget<WidgetsApp>(find.byType(WidgetsApp)).color,
+        const Color(0xFF03A9F4),
       );
     });
   });

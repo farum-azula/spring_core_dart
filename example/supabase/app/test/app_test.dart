@@ -3,8 +3,8 @@
 // the Edge Function, each as the signed-in user.
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_supabase/spring_boot_starter_supabase.dart'
     show HttpMethod, SupabaseAuth, SupabaseCredentials;
 import 'package:supabase_example_app/src/account/login_page.dart';

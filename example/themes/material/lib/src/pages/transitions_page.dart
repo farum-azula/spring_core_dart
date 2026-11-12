@@ -1,14 +1,15 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
 import 'package:theme_showcase_material/src/widgets/page_frame.dart';
 import 'package:theme_showcase_material/src/widgets/section.dart';
 import 'package:theme_showcase_material/src/widgets/yaml_box.dart';
 
-/// Transitions: how a screen comes in. None by default, in every app
-/// type; a theme turns one on for every screen (`motion.page-transition`:
-/// zoom in neon), a screen or one navigation for itself. The rail switches
-/// pages at once (each page is a branch of the shell).
+/// Transitions: how a screen comes in. As in Flutter, the app type's own
+/// (Material's, per platform) unless a theme names one
+/// (`motion.page-transition`: zoom in neon, none in high-contrast); a
+/// screen or one navigation chooses for itself. The rail switches pages at
+/// once (each page is a branch of the shell).
 @ScreenRoute('/transitions', title: '#{nav.transitions}')
 class TransitionsPage extends StatelessWidget {
   const TransitionsPage({super.key});
@@ -29,17 +30,20 @@ class TransitionsPage extends StatelessWidget {
     return PageFrame(
       title: context.messages.nav.transitions,
       intro:
-          'A screen shows at once unless something asks for a transition: '
-          'the theme for every screen (motion.page-transition), a screen for '
-          'itself, or one navigation. The light and dark themes ask for '
-          'none; neon zooms. Switching pages in the rail never animates: '
-          'each page is a branch of the shell.',
+          "As in Flutter, a screen comes in with the app type's own "
+          "transition (Material's, per platform) unless the theme names one "
+          'for every screen (motion.page-transition); a screen for itself, '
+          "or one navigation, can choose too. The light and dark themes name "
+          "none, so they have Material's; neon zooms; high-contrast writes "
+          'none, and none makes pages switch at once. Switching pages in the '
+          'rail never animates: each page is a branch of the shell.',
       children: [
         Section(
-          title: 'The default: none',
+          title: "The default: the platform's",
           note:
-              'Not set in application.yml: none. A theme sets its own: switch '
-              'to neon in the menu and open the screen again.',
+              "Not set in application.yml: Material's own, per platform. A "
+              'theme names its own: switch to neon (zoom) or high-contrast '
+              '(none, at once) in the menu and open the screen again.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -66,7 +70,9 @@ class TransitionsPage extends StatelessWidget {
         ),
         Section(
           title: "The platform's",
-          note: "PageTransition.platform: Material's own transition.",
+          note:
+              "PageTransition.platform: Material's own transition, even in a "
+              'theme that names another.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -107,7 +113,8 @@ class TransitionsPage extends StatelessWidget {
   }
 }
 
-/// A screen with the theme's transition: none in light, zoom in neon.
+/// A screen with the theme's transition: Material's in light and dark,
+/// zoom in neon, none in high-contrast.
 @ScreenRoute(TransitionThemePage.path, title: 'With the default')
 class TransitionThemePage extends StatelessWidget {
   const TransitionThemePage({super.key});
@@ -117,7 +124,9 @@ class TransitionThemePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const _Demo(
     title: 'With the default',
-    text: "It came in the theme's way: at once, or zooming in neon.",
+    text:
+        "It came in the theme's way: Material's own in light and dark, "
+        'zooming in neon, at once in high-contrast.',
   );
 }
 

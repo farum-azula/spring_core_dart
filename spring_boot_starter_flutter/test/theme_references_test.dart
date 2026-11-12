@@ -1,11 +1,13 @@
 // References (`$colors.primary`), color objects and nested tokens.
 
-import 'package:flutter/material.dart';
-
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart'
+    show ColorScheme, DynamicSchemeVariant;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
-import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
-import 'package:spring_boot_starter_flutter/src/theme/theme_values.dart';
+import 'package:spring_boot_starter_flutter/theme_design.dart';
+
+import 'support/designs.dart' show testDesigns;
 
 SpringThemeData theme(
   Map<String, String> properties, [
@@ -14,6 +16,11 @@ SpringThemeData theme(
 
 Map<String, String> resolved(Map<String, String> properties) =>
     ThemeConfig(properties).resolve('light');
+
+/// [theme] in an app with a design library, which makes the palette of a
+/// seed color.
+SpringThemeData seeded(Map<String, String> properties) =>
+    SpringThemeData.of(ThemeConfig(properties, designs: testDesigns), 'light');
 
 void main() {
   group('references', () {
@@ -41,7 +48,7 @@ void main() {
     });
 
     test('seed-color can be a reference; chains resolve', () {
-      final data = theme({
+      final data = seeded({
         'colors.secondary': '#00FF00',
         'colors.tertiary': r'$colors.secondary',
         'seed-color': r'$colors.tertiary',
@@ -145,7 +152,7 @@ void main() {
       );
       String hex(Color c) =>
           '#${c.toARGB32().toRadixString(16).padLeft(8, '0')}';
-      final values = resolved({
+      final values = ThemeConfig({
         'brightness': 'dark',
         'seed-color': '#008080',
         'scheme-variant': 'vibrant',
@@ -158,7 +165,7 @@ void main() {
         'tokens.a.soft.alpha': '50%',
         'tokens.a.small': r'$shape.extra-small',
         'tokens.a.full': r'$shape.full',
-      });
+      }, designs: testDesigns).resolve('light');
       expect(values['tokens.a.outline'], hex(scheme.outline));
       expect(
         values['tokens.a.lowest'],
@@ -176,7 +183,7 @@ void main() {
         'seed-color': '#008080',
         'tokens.a.outline': r'$colors.outline',
         'themes.dark.seed-color': '#AA0000',
-      });
+      }, designs: testDesigns);
       expect(
         config.resolve('light')['tokens.a.outline'],
         isNot(config.resolve('dark')['tokens.a.outline']),
@@ -185,7 +192,7 @@ void main() {
 
     test('a seed that needs an undeclared role is an error, not a loop', () {
       expect(
-        () => theme({'seed-color': r'$colors.outline'}),
+        () => seeded({'seed-color': r'$colors.outline'}),
         throwsA(isA<ThemePropertyException>()),
       );
     });
@@ -286,7 +293,7 @@ void main() {
     });
 
     test('a color object in colors.* and seed-color', () {
-      final data = theme({
+      final data = seeded({
         'colors.primary.color': '#FF0000',
         'colors.primary.alpha': '50%',
         'seed-color.color': '#0000FF',

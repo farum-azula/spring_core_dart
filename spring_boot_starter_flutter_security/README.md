@@ -49,7 +49,7 @@ security when it needs it.
   only, like the widgets: the server checks access.
 
 ```dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 @Service()

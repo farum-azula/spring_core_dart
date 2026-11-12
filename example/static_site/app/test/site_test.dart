@@ -1,7 +1,7 @@
 // The site's pages: Markdown with links between them, the server's
 // /api/info on the page's origin, an address the app does not know.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:static_site_app/src/pages.dart';

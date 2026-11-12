@@ -84,7 +84,7 @@ changed without code, in `.properties` or `.yml` alike:
 spring:
   flutter:
     app:
-      type: material              # widgets (default) | material | cupertino
+      type: material              # not set: the one design starter's, else widgets
       title: ${counter.title}
       debug-banner: false         # default true, as in Flutter
       locales: [en, ja]           # default: the languages of messages_*.properties

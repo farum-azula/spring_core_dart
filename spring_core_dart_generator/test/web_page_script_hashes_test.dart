@@ -5,6 +5,7 @@ import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart';
 import 'package:spring_core_dart_generator/src/web_page_head.dart';
+import 'package:spring_core_dart_generator/src/web_page_loader.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
@@ -87,6 +88,16 @@ void main() {
     expect(
       scripts,
       contains(WebPageHead.hashOf(WebPageHead.pixelRatioScript(2))),
+    );
+  });
+
+  test('spa mode allows the script of wasm-allow-list', () async {
+    final scripts = await _scriptSrc(
+      'spring.flutter.web.page.wasm-allow-list.gecko=true\n',
+    );
+    expect(
+      scripts,
+      contains(WebPageHead.hashOf(WebPageLoader.wasmScript({'gecko': true}))),
     );
   });
 

@@ -36,7 +36,7 @@ buildscript {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    id("com.android.application") version "9.1.0" apply false
+    id("com.android.application") version "9.3.1" apply false
     // 2.4.20+: the build cache deserialization advisory of 2.4.0 is fixed.
     id("org.jetbrains.kotlin.android") version "2.4.21" apply false
 }

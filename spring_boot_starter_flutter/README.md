@@ -36,7 +36,7 @@ share code and habits with a Spring (or Dart Spring) server. You do not
 need to know Spring to use it.
 
 ```dart
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart'; // with spring_boot_starter_flutter_material
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
 import 'spring_gen/main.spring.dart'; // written by the generator
@@ -91,8 +91,8 @@ class CounterText extends SpringStatelessWidget<(Counter,)> {
 
 ```properties
 # lib/resources/application.properties
-# Scaffold needs a MaterialApp; the default is a plain WidgetsApp.
-spring.flutter.app.type=material
+# Scaffold needs a MaterialApp: with spring_boot_starter_flutter_material,
+# the one design starter, the app is one (spring.flutter.app.type not needed).
 spring.flutter.app.title=Counter
 ```
 
@@ -270,6 +270,7 @@ With `home:`, `SpringApplicationWidget` puts a `SpringApp` at the root:
 a `WidgetsApp`, `MaterialApp` or `CupertinoApp` set up by properties
 instead of code. The properties can differ per profile, so iPhones can
 get a `CupertinoApp` while the other platforms get a `MaterialApp`.
+With both design starters in the dependencies, as here, the type is set:
 
 ```properties
 # lib/resources/application.properties
@@ -286,10 +287,23 @@ spring.flutter.app.type=cupertino
 
 | Key | Default | Meaning |
 |---|---|---|
-| `spring.flutter.app.type` | `widgets` | `widgets` (a `WidgetsApp`, no Material or Cupertino design), `material` (needed by `Scaffold`, `AppBar` and the other Material widgets) or `cupertino` |
+| `spring.flutter.app.type` | not set: the one design starter's type (`material`, `cupertino`), else `widgets`; with several, required | `widgets` (a `WidgetsApp`, no Material or Cupertino design), `material` (needed by `Scaffold`, `AppBar` and the other Material widgets) or `cupertino` |
 | `spring.flutter.app.title` | empty | The app's name for the OS: the task switcher, the browser tab |
 | `spring.flutter.app.debug-banner` | `true` | Flutter's DEBUG banner in debug builds |
 | `spring.flutter.app.locales` | the languages of the messages files | The locales the app supports, comma-separated (`en,ja,pt_BR`) |
+
+**The type need not be set.** As Spring Boot deduces
+`spring.main.web-application-type` from the class path, the application's
+starters decide: with one design starter
+(`spring_boot_starter_flutter_material` → `material`,
+`spring_boot_starter_flutter_cupertino` → `cupertino`) or one
+`SpringAppFactory` bean of the app's own type, the app is of that type;
+with none, `widgets`. With app factories of several types (both design
+starters, say) the start fails, naming the property and the types, and
+asks to choose one, for every platform or per platform in a profile
+(`spring.flutter.app.type=cupertino` in `application-ios.properties`).
+Set, the property always wins: `widgets` keeps a `WidgetsApp` although a
+design starter came in through another package.
 
 - **Locales.** By default the app supports the languages it has texts
   for: `messages.properties` counts as English, and each

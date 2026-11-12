@@ -9,7 +9,7 @@ keywords: [flutter, theme, yaml, navigation rail, NavigationRailThemeData]
 
 # Navigation rail theme in YAML
 
-A narrow bar at the side of the screen to switch between pages. It configures Flutter's `NavigationRailThemeData`. Set it under `spring.flutter.theme.components.navigation-rail`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.navigation-rail`.
+A narrow bar at the side of the screen to switch between pages. It configures Flutter's `NavigationRailThemeData`. Set it under `spring.flutter.theme.components.navigation-rail`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.navigation-rail`. The Material starter, `spring_boot_starter_flutter_material`, reads it: an app without that package in its dependencies shows nothing of it.
 
 ## Example
 
@@ -49,7 +49,7 @@ Every property is optional. One you leave out keeps Flutter's value.
 
 ## Read it in Dart
 
-The starter sets `ThemeData.navigationRailTheme` from these properties. In a widget, read the result with:
+The Material starter sets `ThemeData.navigationRailTheme` from these properties. In a widget, read the result with:
 
 ```dart
 final theme = Theme.of(context).navigationRailTheme;
@@ -69,4 +69,4 @@ final theme = Theme.of(context).navigationRailTheme;
 
 ---
 
-*Property descriptions are adapted from the documentation of the Flutter SDK (3.47.9), copyright The Flutter Authors, BSD 3-Clause license.*
+*Property descriptions are adapted from the documentation of the Flutter SDK (3.50.0), copyright The Flutter Authors, BSD 3-Clause license.*

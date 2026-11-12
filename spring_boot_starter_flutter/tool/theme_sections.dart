@@ -262,7 +262,7 @@ List<ThemeProp> _colors() {
       found[m[1]!] = m[2]!.trim();
     }
   }
-  final source = File('lib/src/theme/spring_theme_data.dart')
+  final source = File('lib/src/theme/spring_color_scheme.dart')
       .readAsStringSync();
   final list = RegExp(
     r'const colorRoles = \[(.*?)\];',
@@ -437,8 +437,11 @@ List<ThemeProp> _motion() => [
     'motion.page-transition',
     'choice',
     'How a new screen comes in, on every platform: a kind, or a map of '
-        '`type`, `duration`, `curve`.',
-    defaultValue: 'none',
+        '`type`, `duration`, `curve`. Not set, the app type\'s own, as in '
+        'Flutter: Material\'s per platform in a `MaterialApp`, the iOS slide '
+        'in a `CupertinoApp`, none without a design library; `none` switches '
+        'pages at once.',
+    defaultValue: 'platform',
     values: [
       'none',
       'platform',
@@ -453,7 +456,7 @@ List<ThemeProp> _motion() => [
     'motion.page-transition.type',
     'choice',
     'The map form\'s kind.',
-    defaultValue: 'none',
+    defaultValue: 'platform',
     values: [
       'none',
       'platform',

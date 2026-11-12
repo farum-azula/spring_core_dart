@@ -2,9 +2,9 @@
 // properties of spring.flutter.desktop.window.* reach the native window
 // before the first frame, and the plugin reads it back. Run on a desktop:
 //   flutter test integration_test/desktop_window_test.dart -d macos
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 SpringApplication application(

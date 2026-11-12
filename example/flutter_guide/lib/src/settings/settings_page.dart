@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:neon_books_app/src/about/app_assets.dart';
 import 'package:neon_books_app/src/app/language.dart';
 import 'package:neon_books_app/src/settings/loaders_preview.dart';

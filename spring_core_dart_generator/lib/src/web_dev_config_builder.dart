@@ -11,6 +11,7 @@ import 'package:spring_core_dart_generator/src/theme_references.dart';
 import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
 import 'package:spring_core_dart_generator/src/web_page_head.dart';
 import 'package:spring_core_dart_generator/src/web_page_loader.dart';
+import 'package:spring_core_dart_generator/src/web_wasm_allow_list.dart';
 
 /// Writes the Flutter web dev server's `web_dev_config.yaml` from the
 /// `spring.flutter.web.*` properties in `lib/resources/`.
@@ -258,7 +259,8 @@ StandardEnvironment readPlatformEnvironment(
 
 // The hashes of the scripts the build writes into web/index.html, so the
 // policy of spa mode lets them run: the page loader's when the app has a
-// splash, the swipe block's with `spring.flutter.web.page.swipe-to-close:
+// splash (or the script of `wasm-allow-list` without one), the swipe
+// block's with `spring.flutter.web.page.swipe-to-close:
 // false`, the pixel ratio block's with `max-pixel-ratio`.
 Future<List<String>> _pageLoaderHashes(
   BuildStep buildStep,
@@ -288,8 +290,20 @@ Future<List<String>> _pageLoaderHashes(
   }
 
   final max = double.tryParse(page('max-pixel-ratio') ?? '');
+  Map<String, bool>? wasmAllowList;
+  try {
+    wasmAllowList = WasmAllowList.read(
+      readPlatformEnvironment(texts, profiles: const ['web']),
+      problem: (_) {}, // the page loader's builder reports it
+    );
+  } on Exception {
+    wasmAllowList = null;
+  }
   return [
-    if (set != null && WebPageLoader.hasSplash(set)) WebPageLoader.scriptHash,
+    if (set != null && WebPageLoader.hasSplash(set))
+      WebPageHead.hashOf(WebPageLoader.scriptFor(wasmAllowList: wasmAllowList))
+    else if (wasmAllowList != null)
+      WebPageHead.hashOf(WebPageLoader.wasmScript(wasmAllowList)),
     if (page('swipe-to-close') == 'false')
       WebPageHead.hashOf(WebPageHead.swipeScript),
     if (max != null && max >= 1)

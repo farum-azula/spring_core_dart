@@ -247,12 +247,12 @@ _i1.BeanModule get $application => _i1.BeanModule(
             source: r'package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionPlatformPage',
           )
           .screen(
-            r'/transitions/zoom',
-            (r) => const _i16.TransitionZoomPage(),
-            name: r'transition-zoom-page',
-            title: r'With a zoom',
-            transition: _i3.PageTransition.zoom,
-            source: r'package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionZoomPage',
+            r'/transitions/fade-upwards',
+            (r) => const _i16.TransitionFadeUpwardsPage(),
+            name: r'transition-fade-upwards-page',
+            title: r'With a fade upwards',
+            transition: _i3.PageTransition.fadeUpwards,
+            source: r'package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionFadeUpwardsPage',
           )
           .build(),
     ),
@@ -1135,7 +1135,7 @@ _i17.SpringApplication get springApplication => _i17.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'd6073b00',
+  fingerprint: '5e194d39',
 );
 
 /// Starts the application: config files, environment, context, runners
@@ -1308,13 +1308,13 @@ extension TransitionPlatformPageRoute on _i16.TransitionPlatformPage {
   static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
 }
 
-/// The route of [TransitionZoomPage]: its path, name, values and `to`.
-extension TransitionZoomPageRoute on _i16.TransitionZoomPage {
+/// The route of [TransitionFadeUpwardsPage]: its path, name, values and `to`.
+extension TransitionFadeUpwardsPageRoute on _i16.TransitionFadeUpwardsPage {
   /// The path pattern.
-  static const pattern = r'/transitions/zoom';
+  static const pattern = r'/transitions/fade-upwards';
 
   /// The route's name.
-  static const routeName = r'transition-zoom-page';
+  static const routeName = r'transition-fade-upwards-page';
 
   /// The location of this screen with these values.
   static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);

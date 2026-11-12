@@ -150,7 +150,8 @@ void main() {
     await stopApp(tester);
   });
 
-  testWidgets("the Transitions page: none by default, the platform's, a zoom", (
+  testWidgets("the Transitions page: the platform's by default (none in a "
+      "WidgetsApp), the platform's for a screen, a fade upwards", (
     tester,
   ) async {
     await startApp(tester);
@@ -168,7 +169,7 @@ void main() {
       return route;
     }
 
-    // The default: none; the platform's: none too in a WidgetsApp.
+    // The default: the platform's, which is none in a WidgetsApp.
     final theme = await open('OPEN WITH THE DEFAULT', 'With the default');
     expect(theme.transitionDuration, Duration.zero);
     final platform = await open(
@@ -176,8 +177,11 @@ void main() {
       "With the platform's",
     );
     expect(platform.transitionDuration, Duration.zero);
-    final zoom = await open('OPEN WITH A ZOOM', 'With a zoom');
-    expect(zoom.transitionDuration, const Duration(milliseconds: 300));
+    final fadeUpwards = await open(
+      'OPEN WITH A FADE UPWARDS',
+      'With a fade upwards',
+    );
+    expect(fadeUpwards.transitionDuration, const Duration(milliseconds: 300));
     expect(tester.takeException(), isNull);
     await stopApp(tester);
   });

@@ -1,0 +1,25 @@
+# The example app: a MaterialApp built by spring_boot_starter_flutter_material,
+# and its two themes. Change a value and run again: no Dart code changes.
+spring:
+  flutter:
+    app:
+      # No type: with this starter alone the app is a MaterialApp
+      # (spring.flutter.app.type: material says the same).
+      title: Themes
+    theme:
+      active: light
+      # Shared by both themes: the palette from one color, the shapes,
+      # Material's components.
+      seed-color: '#3F51B5'
+      scheme-variant: tonalSpot
+      shape:
+        medium: 16
+      components:
+        app-bar:
+          center-title: true
+          background-color: $colors.primary-container
+        card:
+          elevation: 2
+      themes:
+        dark:
+          brightness: dark

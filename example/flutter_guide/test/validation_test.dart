@@ -1,8 +1,8 @@
 // Chapter 9, "Validation": the Admin form binds its texts onto a NewBook
 // (DataBinder) and checks its constraints (BeanValidator) before anything
 // is sent; the errors carry Spring's codes, the messages files say them.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/admin/book_form.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart'

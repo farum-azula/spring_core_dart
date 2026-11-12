@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_cupertino/spring_gen/main.spring.dart';
 import 'package:theme_showcase_cupertino/src/widgets/page_frame.dart';
@@ -281,8 +281,9 @@ class _MotionPageState extends State<MotionPage> {
           note:
               'A CupertinoApp pushes CupertinoPageRoute: the iOS slide, and '
               'on iOS and macOS the swipe from the edge to go back. It does '
-              'not read motion.page-transition (a MaterialApp does); the '
-              'durations and curves above are for your own animations.',
+              'not read motion.page-transition (the screens of the router '
+              'do, and without one they slide too); the durations and curves '
+              'above are for your own animations.',
           child: CupertinoButton.tinted(
             onPressed: () => Navigator.of(context).push<void>(
               CupertinoPageRoute(

@@ -3,7 +3,7 @@
 // over the tabs that returns a result, and a not-found screen. The
 // generator writes example.spring.dart (`dart run build_runner build`):
 // the routes and `BookPageRoute.to(...)`.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 
 import 'spring_gen/example.spring.dart';

@@ -15,12 +15,16 @@ import 'package:spring_boot_dart/spring_boot_dart.dart' as _i4;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
     as _i6;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
-import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_flutter_material/spring_auto_configuration.dart'
     as _i7;
+import 'package:spring_boot_starter_flutter_material/src/material_theme_design.dart'
+    as _i10;
+import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
+    as _i8;
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
     as _i2;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i8;
+    as _i9;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
 
 part 'messages.spring.keys.dart';
@@ -155,9 +159,16 @@ _i4.SpringApplication get springApplication => _i4.SpringApplication(
       _i6.springBootStarterFlutterDebugMotionAutoConfiguration,
     if (!const bool.fromEnvironment('dart.vm.product'))
       _i6.springBootStarterFlutterDebugTimelineAutoConfiguration,
-    _i7.springBootStarterFlutterNavigationAutoConfiguration,
-    _i8.springBootStarterLoggingAutoConfiguration,
+    _i7.springBootStarterFlutterMaterialAutoConfiguration,
+    _i8.springBootStarterFlutterNavigationAutoConfiguration,
+    _i9.springBootStarterLoggingAutoConfiguration,
   ],
+  autoConfigurationMetadata: {
+    _i7.springBootStarterFlutterMaterialAutoConfiguration:
+        const _i4.AutoConfigurationModule(
+          factories: [_i10.MaterialThemeDesign()],
+        ),
+  },
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
       'DEBUG': const String.fromEnvironment('DEBUG'),
@@ -399,7 +410,7 @@ _i4.SpringApplication get springApplication => _i4.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '903f7024',
+  fingerprint: '061cd130',
 );
 
 /// Starts the application: config files, environment, context, runners

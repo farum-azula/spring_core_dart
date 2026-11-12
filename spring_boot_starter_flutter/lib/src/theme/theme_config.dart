@@ -1,5 +1,6 @@
 import 'dart:ui' show Color;
 
+import 'package:spring_boot_starter_flutter/src/theme/theme_design.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_reader.dart'
     show didYouMean;
 import 'package:spring_boot_starter_flutter/src/theme/theme_references.dart';
@@ -21,6 +22,7 @@ final class ThemeConfig {
   ThemeConfig(
     Map<String, String> properties, {
     this.addresses = const RemoteAddresses(),
+    this.designs = ThemeDesigns.none,
   }) {
     for (final MapEntry(:key, :value) in properties.entries) {
       final segments = key.split('.');
@@ -54,6 +56,10 @@ final class ThemeConfig {
   /// Reads the addresses of the themes (sources, images): the
   /// application's resolvers, then the built-in ones.
   final RemoteAddresses addresses;
+
+  /// The designs the themes are read with: what makes a palette from a
+  /// seed color and reads the properties of a design's own widgets.
+  final ThemeDesigns designs;
 
   /// The theme to show at the start, from `active`: `system` (the default)
   /// or a theme name.
@@ -108,7 +114,11 @@ final class ThemeConfig {
           'name',
           'no such theme; one of ${names.join(', ')}',
         ));
-    return ThemeReferences.resolve(resolved, _resolve(resolved, []));
+    return ThemeReferences.resolve(
+      resolved,
+      _resolve(resolved, []),
+      designs: designs,
+    );
   }
 
   Map<String, String> _resolve(String name, List<String> chain) {

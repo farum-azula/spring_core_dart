@@ -6,6 +6,10 @@ dependency_overrides:
     path: ../spring_boot_dart
   spring_boot_starter_flutter:
     path: ../spring_boot_starter_flutter
+  spring_boot_starter_flutter_cupertino:
+    path: ../spring_boot_starter_flutter_cupertino
+  spring_boot_starter_flutter_material:
+    path: ../spring_boot_starter_flutter_material
   spring_boot_starter_logging:
     path: ../spring_boot_starter_logging
   spring_boot_starter_test:

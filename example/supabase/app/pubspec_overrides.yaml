@@ -13,6 +13,8 @@ dependency_overrides:
     path: ../../../spring_boot_starter_feign
   spring_boot_starter_flutter:
     path: ../../../spring_boot_starter_flutter
+  spring_boot_starter_flutter_material:
+    path: ../../../spring_boot_starter_flutter_material
   spring_boot_starter_flutter_navigation:
     path: ../../../spring_boot_starter_flutter_navigation
   spring_boot_starter_flutter_security:

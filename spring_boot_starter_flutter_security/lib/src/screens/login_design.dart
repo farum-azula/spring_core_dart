@@ -1,9 +1,8 @@
 import 'dart:math' as math;
 import 'dart:ui' show PlatformDispatcher;
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
 /// The look the login widgets ([LoginForm], [OAuth2LoginButton]) draw
@@ -11,49 +10,44 @@ import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 /// of the app.
 ///
 /// They find it by themselves from the app widget above them, the one
-/// `spring.flutter.app.type` chooses: a `MaterialApp` gives [material]
-/// (text fields and filled buttons of Material 3, styled by the app's
-/// `ThemeData`, so `spring.flutter.theme.components.input.*` and
-/// `button.*` apply), a `CupertinoApp` gives [cupertino] (the iOS fields
-/// and buttons, styled by the `CupertinoTheme`), a plain `WidgetsApp`
-/// gives [widgets] (simple fields and buttons drawn from the colours of
-/// the `SpringTheme`, needing neither Material nor Cupertino). Pass a
-/// design to a widget only to override that choice.
+/// `spring.flutter.app.type` chooses. The app widget of a design starter
+/// gives its library's controls: with `spring_boot_starter_flutter_material`
+/// the text fields and filled buttons of Material 3, styled by the app's
+/// `ThemeData` (so `spring.flutter.theme.components.input.*` and
+/// `button.*` apply); with `spring_boot_starter_flutter_cupertino` the iOS
+/// fields and buttons, styled by the `CupertinoTheme`. That is [app]. An
+/// app without a design library gets [widgets]: simple fields and buttons
+/// drawn from the colours of the `SpringTheme`. Pass a design to a widget
+/// only to override that choice.
+///
+/// This starter itself needs no design library: the controls of [app]
+/// come through the `DesignScope` of `spring_boot_starter_flutter`.
 ///
 /// Spring has no counterpart: its default login page is HTML of the
 /// server.
 enum LoginDesign {
-  /// Material 3: `TextField`, `FilledButton`, `CircularProgressIndicator`.
-  material,
-
-  /// Cupertino: `CupertinoTextField`, `CupertinoButton.filled`,
-  /// `CupertinoActivityIndicator`.
-  cupertino,
+  /// The controls of the app's design library: Material's `TextField` and
+  /// `FilledButton`, Cupertino's `CupertinoTextField` and
+  /// `CupertinoButton.filled`. Plain widgets where the app has none.
+  app,
 
   /// Plain widgets (`EditableText`, a button drawn here), coloured from
   /// the `SpringTheme`.
   widgets;
 
-  /// The design of the app above [context]: [material] below a
-  /// `MaterialApp` (its Material localizations), [cupertino] below a
-  /// `CupertinoApp`, [widgets] otherwise.
-  static LoginDesign of(BuildContext context) {
-    if (Localizations.of<MaterialLocalizations>(
-          context,
-          MaterialLocalizations,
-        ) !=
-        null) {
-      return material;
-    }
-    if (Localizations.of<CupertinoLocalizations>(
-          context,
-          CupertinoLocalizations,
-        ) !=
-        null) {
-      return cupertino;
-    }
-    return widgets;
-  }
+  /// The design of the app above [context]: [app] below the app widget of
+  /// a design starter, or below a `MaterialApp` / `CupertinoApp` of the
+  /// app's own when its starter is in the application; [widgets]
+  /// otherwise.
+  static LoginDesign of(BuildContext context) =>
+      DesignScope.controlsOf(context) == null ? widgets : app;
+
+  /// The controls this design draws with at [context]; `null` for plain
+  /// widgets.
+  DesignControls? controlsOf(BuildContext context) => switch (this) {
+    app => DesignScope.controlsOf(context),
+    widgets => null,
+  };
 }
 
 /// The text of message [code] from the app's messages files, in the
@@ -86,9 +80,9 @@ String loginMessage(
 
 /// The colours of the plain [LoginDesign.widgets] design, from the
 /// `SpringTheme` (Material 3's baseline without one).
-ColorScheme loginColorScheme(BuildContext context) =>
+SpringColorScheme loginColorScheme(BuildContext context) =>
     SpringTheme.maybeOf(context)?.colorScheme ??
-    ThemeData(brightness: Brightness.light).colorScheme;
+    SpringColorScheme.baseline(Brightness.light);
 
 /// A small spinner of [color], drawn without Material or Cupertino: the
 /// progress of the plain design and of the brand buttons.

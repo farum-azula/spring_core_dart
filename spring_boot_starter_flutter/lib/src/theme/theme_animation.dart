@@ -298,9 +298,9 @@ enum PageTransitionType {
 @immutable
 final class PageTransitionSpec {
   /// A transition of [type], [duration] and [curve] (`null`: the kind's
-  /// own). None by default.
+  /// own). The platform's by default, as in Flutter.
   const PageTransitionSpec({
-    this.type = PageTransitionType.none,
+    this.type = PageTransitionType.platform,
     this.duration,
     this.curve,
   });
@@ -329,7 +329,7 @@ final class PageTransitionSpec {
       }
     }
     return PageTransitionSpec(
-      type: p.read('$base.type', kind, kinds) ?? PageTransitionType.none,
+      type: p.read('$base.type', kind, kinds) ?? PageTransitionType.platform,
       duration: p.read(
         '$base.duration',
         ThemeValues.duration,

@@ -1,14 +1,17 @@
 // tool/theme_metadata.json (the source of the theme pages in docs/ and,
-// later, of the language server) lists exactly what the theme reader
-// accepts: no missing property, no extra one. When this fails, run
+// later, of the language server) describes every property it lists, and
+// its flat `properties` have every key a theme may have. That it lists
+// exactly what the mapping of the components reads is the Material
+// starter's test (its theme_metadata_test.dart); what the Cupertino
+// starter reads under `cupertino` is checked here. When this fails, run
 //   dart run tool/theme_metadata.dart
 // in spring_boot_starter_flutter, then dart run tool/theme_docs.dart.
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 
+import 'support/designs.dart';
 import 'support/theme_catalog.dart';
 
 void main() {
@@ -20,38 +23,37 @@ void main() {
       (c as Map)['name'] as String: c.cast<String, dynamic>(),
   };
 
-  test('lists the same components as the reader, in the same order', () {
-    expect(components.keys.toList(), themeCatalog().keys.toList());
-  });
-
-  test('lists exactly the properties the reader accepts', () {
-    for (final MapEntry(key: name, value: properties)
-        in themeCatalog().entries) {
-      final listed = {
-        for (final p in components[name]!['properties'] as List)
-          (p as Map<String, dynamic>)['key'] as String: p,
-      };
+  test('lists cupertino last, with a root of its own and exactly the '
+      'properties the Cupertino starter reads', () {
+    expect(components.keys.last, 'cupertino');
+    expect(
+      [
+        for (final component in components.values)
+          if (component['ownRoot'] == true) component['name'],
+      ],
+      ['cupertino'],
+    );
+    final properties = themeCatalog()['cupertino']!;
+    final listed = {
+      for (final p in components['cupertino']!['properties'] as List)
+        (p as Map<String, dynamic>)['key'] as String: p,
+    };
+    expect(listed.keys.toList(), [for (final p in properties) p.name]);
+    for (final p in properties) {
+      final entry = listed[p.name]!;
+      expect(entry['states'], p.states, reason: p.name);
+      final choice = p.kind.startsWith('one of: ');
       expect(
-        listed.keys.toList(),
-        [for (final p in properties) p.name],
-        reason: 'the properties of $name',
+        entry['type'],
+        choice ? 'choice' : p.kind,
+        reason: 'the type of ${p.name}',
       );
-      for (final p in properties) {
-        final entry = listed[p.name]!;
-        expect(entry['states'], p.states, reason: '${p.name} of $name');
-        final choice = p.kind.startsWith('one of: ');
+      if (choice) {
         expect(
-          entry['type'],
-          choice ? 'choice' : p.kind,
-          reason: 'the type of ${p.name} of $name',
+          (entry['values'] as List).join(' | '),
+          p.kind.substring('one of: '.length),
+          reason: 'the choices of ${p.name}',
         );
-        if (choice) {
-          expect(
-            (entry['values'] as List).join(' | '),
-            p.kind.substring('one of: '.length),
-            reason: 'the choices of ${p.name} of $name',
-          );
-        }
       }
     }
   });
@@ -96,7 +98,11 @@ void main() {
 
     test('has every top-level key the reader accepts', () {
       final sections = {for (final n in names) n.split('.').first};
-      for (final key in SpringThemeData.themeProperties) {
+      for (final key in [
+        ...SpringThemeData.themeProperties,
+        // Those of the design starters.
+        for (final design in testDesigns.all) ...design.themeProperties,
+      ]) {
         expect(sections, contains(key), reason: key);
       }
       for (final key in [

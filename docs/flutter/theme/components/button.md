@@ -9,7 +9,7 @@ keywords: [flutter, theme, yaml, button, ButtonStyle]
 
 # Button theme in YAML
 
-The settings every button shares: elevated, filled, outlined and text buttons start from them. It configures Flutter's `ButtonStyle`. The properties below are shared: [elevated-button](elevated-button.md), [filled-button](filled-button.md), [outlined-button](outlined-button.md) and [text-button](text-button.md) start from them, and a value a button sets itself wins. Set them under `spring.flutter.theme.components.button`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.button`.
+The settings every button shares: elevated, filled, outlined and text buttons start from them. It configures Flutter's `ButtonStyle`. The properties below are shared: [elevated-button](elevated-button.md), [filled-button](filled-button.md), [outlined-button](outlined-button.md) and [text-button](text-button.md) start from them, and a value a button sets itself wins. Set them under `spring.flutter.theme.components.button`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.button`. The Material starter, `spring_boot_starter_flutter_material`, reads it: an app without that package in its dependencies shows nothing of it.
 
 ## Example
 
@@ -84,4 +84,4 @@ A property with **yes** in the States column takes one value, or a map with a va
 
 ---
 
-*Property descriptions are adapted from the documentation of the Flutter SDK (3.47.9), copyright The Flutter Authors, BSD 3-Clause license.*
+*Property descriptions are adapted from the documentation of the Flutter SDK (3.50.0), copyright The Flutter Authors, BSD 3-Clause license.*

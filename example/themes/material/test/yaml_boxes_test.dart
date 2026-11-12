@@ -3,8 +3,8 @@
 // something the files do not.
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:theme_showcase_material/src/widgets/yaml_box.dart';
 
 import 'support/app.dart';

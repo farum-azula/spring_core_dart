@@ -2,10 +2,14 @@
 // colored by the theme's languages (syntax.<name>, CodeSyntax), links
 // handed to onLink, HTML in the Markdown shown as text, a front matter
 // left out.
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
+
+// The icons of a code block's copy button, of the Material Icons font.
+const _copyIcon = IconData(0xf66c, fontFamily: 'MaterialIcons');
+const _checkIcon = IconData(0xf636, fontFamily: 'MaterialIcons');
 
 List<(String, CodeTokenKind)> _pieces(List<CodeToken> tokens) => [
   for (final token in tokens)
@@ -343,11 +347,14 @@ void main() {
         .text
         .style
         ?.color;
-    // Not Material's light fallback: the dark theme's light text.
-    expect(colorOf('body'), data.toMaterial().textTheme.bodyLarge!.color);
+    // The dark theme's light text: the on-surface color of its palette.
+    expect(
+      colorOf('body'),
+      SpringColorScheme.baseline(Brightness.dark).onSurface,
+    );
     expect(colorOf('body')!.computeLuminance(), greaterThan(0.5));
     expect(colorOf('Big')!.computeLuminance(), greaterThan(0.5));
-    // The sizes of Material's typography, as Theme.of would give them.
+    // The sizes of the Material 3 type scale, without Material.
     double? sizeOf(String text) => tester
         .widget<RichText>(
           find.byWidgetPredicate(
@@ -360,8 +367,8 @@ void main() {
     expect(sizeOf('Big'), greaterThan(sizeOf('body')! * 1.5));
   });
 
-  testWidgets("in a SpringTheme: headings in Theme.of's sizes, code in "
-      'styles.code', (tester) async {
+  testWidgets('in a SpringTheme: headings in the sizes of the type scale, '
+      'code in styles.code', (tester) async {
     final themes = SpringThemes({
       ..._java,
       'syntax.java.aliases': 'jav, dart',
@@ -375,9 +382,9 @@ void main() {
     });
     final data = themes.data('light');
     await tester.pumpWidget(
-      MaterialApp(
-        theme: data.toMaterial(),
-        home: SpringTheme(
+      WidgetsApp(
+        color: const Color(0xFF000000),
+        builder: (context, _) => SpringTheme(
           data: data,
           child: const MarkdownView(
             '# Big\n\nbody\n\n```dart\npublic a = 1;\n```\n',
@@ -386,7 +393,9 @@ void main() {
         ),
       ),
     );
-    final text = Theme.of(tester.element(find.byType(MarkdownView))).textTheme;
+    double? size(String style) =>
+        data.localizedTextStyle(style, TextScript.englishLike).fontSize;
+    expect((size('headlineLarge'), size('bodyLarge')), (32, 16));
     final heading = tester.widget<RichText>(
       find.descendant(
         of: find.byType(MarkdownView),
@@ -395,11 +404,16 @@ void main() {
         ),
       ),
     );
-    expect(heading.text.style?.fontSize, text.headlineLarge!.fontSize);
-    expect(
-      heading.text.style?.fontSize,
-      greaterThan(text.bodyLarge!.fontSize!),
+    expect(heading.text.style?.fontSize, size('headlineLarge'));
+    final body = tester.widget<RichText>(
+      find.descendant(
+        of: find.byType(MarkdownView),
+        matching: find.byWidgetPredicate(
+          (w) => w is RichText && w.text.toPlainText() == 'body',
+        ),
+      ),
     );
+    expect(body.text.style?.fontSize, size('bodyLarge'));
 
     Color? keyword;
     for (final rich in tester.widgetList<RichText>(find.byType(RichText))) {
@@ -455,7 +469,7 @@ void main() {
     expect(spans.map((s) => s.$1).join(), 'a: "```"\nb: 1 # c');
   });
 
-  testWidgets('selectable without MaterialLocalizations (a CupertinoApp)', (
+  testWidgets('selectable without a design library (a WidgetsApp)', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -526,9 +540,9 @@ void main() {
     ) {
       final data = SpringThemes(theme).data('light');
       return tester.pumpWidget(
-        MaterialApp(
-          theme: data.toMaterial(),
-          home: SpringTheme(
+        WidgetsApp(
+          color: const Color(0xFF000000),
+          builder: (context, _) => SpringTheme(
             data: data,
             child: MarkdownView(markdown, selectable: false),
           ),
@@ -577,12 +591,12 @@ void main() {
       expect(find.text('lib/main.dart'), findsOneWidget);
       // Every block has one: the titled in its header, the other in its
       // corner.
-      expect(find.byIcon(Icons.copy_rounded), findsNWidgets(2));
-      await tester.tap(find.byIcon(Icons.copy_rounded).first);
+      expect(find.byIcon(_copyIcon), findsNWidgets(2));
+      await tester.tap(find.byIcon(_copyIcon).first);
       await tester.pump();
       expect(copied, 'void main() {}');
-      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
-      await tester.tap(find.byIcon(Icons.copy_rounded));
+      expect(find.byIcon(_checkIcon), findsOneWidget);
+      await tester.tap(find.byIcon(_copyIcon));
       await tester.pump();
       expect(copied, 'untitled');
       // The untitled block is as wide as the titled one, the button in its
@@ -607,7 +621,7 @@ void main() {
         const {'styles.code.copy': 'false'},
         '```dart title="a.dart"\na\n```\n\n```dart\nb\n```\n',
       );
-      expect(find.byIcon(Icons.copy_rounded), findsNothing);
+      expect(find.byIcon(_copyIcon), findsNothing);
     });
 
     testWidgets('themes=: a button per palette switches the colors', (

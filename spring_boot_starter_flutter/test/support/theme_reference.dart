@@ -1,4 +1,5 @@
-import 'package:spring_boot_starter_flutter/src/theme/theme_reader.dart';
+import 'package:spring_boot_starter_flutter/theme_design.dart'
+    show ThemeProperty;
 
 import 'theme_catalog.dart';
 

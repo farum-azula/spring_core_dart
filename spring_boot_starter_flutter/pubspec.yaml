@@ -11,9 +11,11 @@ topics:
   - spring
 
 environment:
-  sdk: ^3.13.0
-  # The Flutter that ships Dart 3.13; plugins must name one.
-  flutter: '>=3.47.0'
+  sdk: ^3.14.0
+  # The Flutter that ships Dart 3.14: the first whose widgets library has
+  # all the starter needs without a design library (material_ui,
+  # cupertino_ui). Plugins must name one.
+  flutter: '>=3.50.0'
 
 
 dependencies:
@@ -39,6 +41,13 @@ dev_dependencies:
   spring_boot_starter_test: ^0.7.4
   lints: ^6.0.0
   plugin_platform_interface: ^2.1.8
+  # The design starters, for tests and tools only (the reference of the
+  # theme properties, tool/theme_metadata.dart, lists theirs too). The
+  # starter itself depends on no design library.
+  spring_boot_starter_flutter_material: ^0.7.4
+  spring_boot_starter_flutter_cupertino: ^0.7.4
+  material_ui: ^1.11.0
+  cupertino_ui: ^1.1.6
 
 # A Flutter plugin on the desktops only: the window's title bar, size and
 # drag from `spring.flutter.desktop.window.*` (no community plugin such as

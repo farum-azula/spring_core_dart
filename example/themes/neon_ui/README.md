@@ -6,6 +6,10 @@ It is the example of a **library that ships a theme**, on the "themes without
 Dart" of `spring_boot_starter_flutter` 0.6.3. Not published (`publish_to:
 none`). The app that shows it is [`theme_showcase_neon`](../neon/README.md).
 
+It depends on `spring_boot_starter_flutter` alone: no `material_ui`, no
+`cupertino_ui`, no design starter. Its theme names every color role it
+uses under `colors.*` and has no `seed-color`, which needs a design starter.
+
 ## Use it
 
 ```yaml

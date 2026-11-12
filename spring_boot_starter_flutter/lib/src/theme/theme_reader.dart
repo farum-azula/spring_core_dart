@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
@@ -870,23 +870,6 @@ final class ThemeReader {
         : Radius.circular(radius.isInfinite ? 999 : radius);
   }, 'a shape token or a radius');
 
-  VisualDensity? _densityAt(String path) => _leaf(path, (raw) {
-    switch (ThemeValues.canonical(raw)) {
-      case 'adaptive':
-        return VisualDensity.adaptivePlatformDensity;
-      case 'standard':
-        return VisualDensity.standard;
-      case 'comfortable':
-        return VisualDensity.comfortable;
-      case 'compact':
-        return VisualDensity.compact;
-    }
-    final parts = [for (final part in raw.split(',')) _number(part)];
-    return parts.length == 2 && !parts.contains(null)
-        ? VisualDensity(horizontal: parts[0]!, vertical: parts[1]!)
-        : null;
-  }, "adaptive, standard, comfortable, compact or 'horizontal, vertical'");
-
   Decoration? _decorationAt(String path) {
     final children = _kids(path);
     if (children.isEmpty) {
@@ -912,43 +895,6 @@ final class ThemeReader {
       border: side == null ? null : Border.fromBorderSide(side),
       shape: circle ? BoxShape.circle : BoxShape.rectangle,
     );
-  }
-
-  InputBorder? _inputBorderAt(String path) {
-    final raw = properties[path];
-    final children = _kids(path);
-    if (children.isEmpty && raw == null) {
-      return null;
-    }
-    if (children.isNotEmpty) {
-      _keys(path, {'type', 'radius', 'side'}, 'an input border');
-    }
-    final type = children.isEmpty
-        ? raw
-        : (properties['$path.type'] ?? raw ?? 'outline');
-    final side = children.isEmpty ? null : _sideAt('$path.side');
-    final radius = children.isEmpty ? null : _borderRadiusAt('$path.radius');
-    return switch (ThemeValues.canonical(type!)) {
-      'outline' => OutlineInputBorder(
-        borderSide: side ?? const BorderSide(),
-        borderRadius: radius ?? const BorderRadius.all(Radius.circular(4)),
-      ),
-      'underline' => UnderlineInputBorder(
-        borderSide: side ?? const BorderSide(),
-        borderRadius:
-            radius ??
-            const BorderRadius.only(
-              topLeft: Radius.circular(4),
-              topRight: Radius.circular(4),
-            ),
-      ),
-      'none' => InputBorder.none,
-      _ => throw ThemePropertyException(
-        properties.propertyName(children.isEmpty ? path : '$path.type'),
-        type,
-        'outline, underline or none, or a map of type, radius and side',
-      ),
-    };
   }
 
   // ---------------------------------------------------------------------
@@ -1111,34 +1057,46 @@ final class ThemeReader {
   /// A corner radius.
   Radius? radius(String name) => _plain(name, 'corner radius', _radiusAt);
 
-  /// A visual density.
-  VisualDensity? density(String name) =>
-      _plain(name, 'visual density', _densityAt);
-
   /// A box decoration: a color, or a map of color, radius, border, shape.
   Decoration? decoration(String name) =>
       _plain(name, 'decoration', _decorationAt);
 
-  /// An input border: `outline`, `underline`, `none`, or a map of type,
-  /// radius and side.
-  InputBorder? inputBorder(String name) =>
-      _plain(name, 'input border', _inputBorderAt);
+  /// A value of a kind this reader has no method for (a design's own: an
+  /// input border, an ink splash). [at] reads it at the property's path
+  /// with [leaf], [keys], [kids], [sideAt] and [borderRadiusAt]; [kind]
+  /// names it in the reference of the properties.
+  T? custom<T>(String name, String kind, T? Function(String path) at) =>
+      _plain(name, kind, at);
 
-  /// An ink splash: `ripple`, `sparkle`, `none`.
-  InteractiveInkFeatureFactory? splash(String name) => _plain(
-    name,
-    'one of: ripple | sparkle | none',
-    (path) => _leaf(
-      path,
-      (raw) => switch (ThemeValues.canonical(raw)) {
-        'ripple' => InkRipple.splashFactory,
-        'sparkle' => InkSparkle.splashFactory,
-        'none' => NoSplash.splashFactory,
-        _ => null,
-      },
-      'ripple, sparkle or none',
-    ),
-  );
+  /// Like [custom], or one value per state.
+  WidgetStateProperty<T?>? customStates<T extends Object>(
+    String name,
+    String kind,
+    T? Function(String path) at,
+  ) => _states(name, kind, at);
+
+  /// The single value at [path], parsed by [parse]; `null` when it is not
+  /// set. Throws a [ThemePropertyException] saying [expected] when [parse]
+  /// gives `null` or the property is a map.
+  T? leaf<T>(String path, T? Function(String raw) parse, String expected) =>
+      _leaf(path, parse, expected);
+
+  /// The keys of the map at [path]; empty for a single value.
+  Set<String> kids(String path) => _kids(path);
+
+  /// The keys of the map at [path], each of which must be one of
+  /// [allowed]; [what] names the map in the error.
+  Set<String> keys(String path, Set<String> allowed, String what) =>
+      _keys(path, allowed, what);
+
+  /// The border side at [path], as [side] reads one.
+  BorderSide? sideAt(String path) => _sideAt(path);
+
+  /// The corner radius at [path], as [borderRadius] reads one.
+  BorderRadius? borderRadiusAt(String path) => _borderRadiusAt(path);
+
+  /// [raw] as a number; `null` when it is none.
+  static double? parseNumber(String raw) => _number(raw);
 
   /// The overlay style of the status bar: `light` or `dark`.
   SystemUiOverlayStyle? overlayStyle(String name) => _plain(

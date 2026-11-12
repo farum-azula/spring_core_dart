@@ -1013,14 +1013,30 @@ final class _GuardedSocket extends Stream<Uint8List> implements io.Socket {
   @override
   io.InternetAddress get address => _socket.address;
 
+  // dart:io reads the remote address and port when it makes the
+  // WebSocket (for the profiler of its tools), and a socket the other
+  // side has reset by then throws for them: no address then, and the
+  // reset shows where it is handled, at the first read or write.
   @override
-  io.InternetAddress get remoteAddress => _socket.remoteAddress;
+  io.InternetAddress get remoteAddress {
+    try {
+      return _socket.remoteAddress;
+    } on io.SocketException {
+      return io.InternetAddress.anyIPv4;
+    }
+  }
 
   @override
   int get port => _socket.port;
 
   @override
-  int get remotePort => _socket.remotePort;
+  int get remotePort {
+    try {
+      return _socket.remotePort;
+    } on io.SocketException {
+      return 0;
+    }
+  }
 
   @override
   bool setOption(io.SocketOption option, bool enabled) =>

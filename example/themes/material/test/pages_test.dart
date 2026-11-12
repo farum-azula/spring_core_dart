@@ -1,7 +1,7 @@
 // Every page in every theme: the app starts from the properties, each page
 // builds without an error (a layout overflow is one) and has its title.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
 import 'package:theme_showcase_material/spring_gen/main.spring.dart';
 import 'package:theme_showcase_material/src/app/shell.dart';
@@ -108,13 +108,20 @@ void main() {
     await stopApp(tester);
   });
 
-  testWidgets("the Transitions page: none by default, the platform's, a fade", (
-    tester,
-  ) async {
-    // The light theme sets no transition (neon zooms).
-    await startApp(tester, theme: AppThemes.light);
+  testWidgets("the Transitions page: the platform's by default, the "
+      "platform's for a screen, a fade", (tester) async {
+    // The light theme sets no transition (neon zooms, high-contrast none).
+    final context = await startApp(tester, theme: AppThemes.light);
     await openPage(tester, 'Transitions');
-    Future<PageRoute<Object?>> open(String button, String title) async {
+    // Flutter's own transition on the test's platform.
+    final flutters = const PageTransitionsTheme()
+        .builders[Theme.of(tester.element(find.byType(Shell))).platform]!
+        .transitionDuration;
+    // The route of the screen, and its duration while it is open.
+    Future<(PageRoute<Object?>, Duration)> open(
+      String button,
+      String title,
+    ) async {
       await tester.ensureVisible(find.text(button));
       await settle(tester);
       await tester.tap(find.text(button));
@@ -131,21 +138,35 @@ void main() {
                 ),
               )!
               as PageRoute<Object?>;
+      final duration = route.transitionDuration;
       await tester.tap(find.text('Back'));
       await settle(tester);
-      return route;
+      return (route, duration);
     }
 
-    // The default: none (the light theme sets no transition).
-    final theme = await open('Open with the default', 'With the default');
-    expect(theme.transitionDuration, Duration.zero);
-    final platform = await open(
+    // The default: the platform's (the light theme sets no transition):
+    // Material's route, with Flutter's duration.
+    final (theme, themeDuration) = await open(
+      'Open with the default',
+      'With the default',
+    );
+    expect(theme, isA<MaterialRouteTransitionMixin<Object?>>());
+    expect(themeDuration, flutters);
+    final (platform, _) = await open(
       "Open with the platform's",
       "With the platform's",
     );
     expect(platform, isA<MaterialRouteTransitionMixin<Object?>>());
-    final fade = await open('Open with a fade', 'With a fade');
-    expect(fade.transitionDuration, const Duration(milliseconds: 250));
+    final (_, fade) = await open('Open with a fade', 'With a fade');
+    expect(fade, const Duration(milliseconds: 250));
+    // High-contrast writes none: the screen is there at once.
+    context.getBean<ThemeSelection>().select(AppThemes.highContrast);
+    await settle(tester);
+    final (_, instant) = await open(
+      'Open with the default',
+      'With the default',
+    );
+    expect(instant, Duration.zero);
     expect(tester.takeException(), isNull);
     await stopApp(tester);
   });

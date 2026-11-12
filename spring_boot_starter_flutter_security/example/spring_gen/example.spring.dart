@@ -15,19 +15,27 @@ import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
     as _i8;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
     as _i5;
-import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_flutter_cupertino/spring_auto_configuration.dart'
     as _i9;
-import 'package:spring_boot_starter_flutter_security/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_flutter_cupertino/src/cupertino_theme_design.dart'
+    as _i16;
+import 'package:spring_boot_starter_flutter_material/spring_auto_configuration.dart'
     as _i10;
+import 'package:spring_boot_starter_flutter_material/src/material_theme_design.dart'
+    as _i17;
+import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
+    as _i11;
+import 'package:spring_boot_starter_flutter_security/spring_auto_configuration.dart'
+    as _i12;
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_login_service.dart'
     as _i3;
 import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_template.dart'
     as _i4;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i11;
+    as _i13;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
-    as _i12;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i13;
+    as _i14;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i15;
 
 import '../example.dart' as _i1;
 
@@ -35,6 +43,8 @@ const _$knownAdvisors0 = {
   r'package:spring_boot_dart',
   r'package:spring_boot_starter_feign',
   r'package:spring_boot_starter_flutter',
+  r'package:spring_boot_starter_flutter_cupertino',
+  r'package:spring_boot_starter_flutter_material',
   r'package:spring_boot_starter_flutter_navigation',
   r'package:spring_boot_starter_flutter_security',
   r'package:spring_boot_starter_logging',
@@ -146,14 +156,24 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
       _i8.springBootStarterFlutterDebugMotionAutoConfiguration,
     if (!const bool.fromEnvironment('dart.vm.product'))
       _i8.springBootStarterFlutterDebugTimelineAutoConfiguration,
-    _i9.springBootStarterFlutterNavigationAutoConfiguration,
-    _i10.springBootStarterFlutterSecurityAutoConfiguration,
-    _i11.springBootStarterLoggingAutoConfiguration,
-    _i12.springBootStarterOauth2ClientAutoConfiguration,
-    _i13.springSecurityCoreAutoConfiguration,
+    _i9.springBootStarterFlutterCupertinoAutoConfiguration,
+    _i10.springBootStarterFlutterMaterialAutoConfiguration,
+    _i11.springBootStarterFlutterNavigationAutoConfiguration,
+    _i12.springBootStarterFlutterSecurityAutoConfiguration,
+    _i13.springBootStarterLoggingAutoConfiguration,
+    _i14.springBootStarterOauth2ClientAutoConfiguration,
+    _i15.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
-    _i10.springBootStarterFlutterSecurityAutoConfiguration:
+    _i9.springBootStarterFlutterCupertinoAutoConfiguration:
+        const _i2.AutoConfigurationModule(
+          factories: [_i16.CupertinoThemeDesign()],
+        ),
+    _i10.springBootStarterFlutterMaterialAutoConfiguration:
+        const _i2.AutoConfigurationModule(
+          factories: [_i17.MaterialThemeDesign()],
+        ),
+    _i12.springBootStarterFlutterSecurityAutoConfiguration:
         const _i2.AutoConfigurationModule(
           before: [
             r'springBootStarterOauth2ClientAutoConfiguration',
@@ -208,7 +228,7 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '8eadec81',
+  fingerprint: '4ac30b4d',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -17,6 +17,7 @@ Markdown files the app shows. The reference is
 | Japanese | `spring.flutter.navigation.languages: [en, ja]` in `application.yml`: English at `/docs`, Japanese at `/ja/docs`; `messages_ja.properties` for `#{key}`; `index.ja.md` and `getting-started.ja.md` next to their English files (`guides/routing.md` has no translation: its `/ja` page keeps the English text, `noindex`); the 日本語 / EN button switches the language at the same page |
 | `lib/resources/images/` | the preview pictures (`og:image`), listed under `flutter: assets:` so the build serves them |
 | `web/` | what the generator wrote, committed: `<path>/index.html` per page, the root page in `web/index.html`, `sitemap.xml`, `robots.txt`, `llms.txt`, `llms-full.txt`, the `.md` copies, `.spring-seo` (the list of what it wrote) |
+| `pubspec.yaml` | `spring_boot_starter_flutter_navigation` for the pages and their addresses; `spring_boot_starter_flutter_material` with `material_ui` for the `MaterialApp` of `spring.flutter.app.type: material` and the Material widgets of `lib/src/pages.dart` |
 
 ## Build
 

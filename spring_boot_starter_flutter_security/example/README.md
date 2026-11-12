@@ -30,7 +30,8 @@ declare the redirect activity (README, "Android: declare the redirect"):
 
 ```sh
 flutter create pin_app && cd pin_app
-flutter pub add spring_boot_starter_flutter_security
+# material_ui: the example's own MaterialApp, Scaffold and icons
+flutter pub add spring_boot_starter_flutter_security material_ui
 flutter pub add dev:build_runner dev:spring_core_dart_generator
 # copy example.dart to lib/main.dart, and change its import
 # 'spring_gen/example.spring.dart' to 'spring_gen/main.spring.dart'

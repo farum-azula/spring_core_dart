@@ -1,0 +1,192 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_flutter_material",
+  "properties": [],
+  "hints": [],
+  "beans": [
+    {
+      "name": "materialAppFactory",
+      "type": "MaterialAppFactory",
+      "types": [
+        "MaterialAppFactory",
+        "SpringAppFactory"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_material/spring_auto_configuration.dart",
+      "line": 54,
+      "injects": [],
+      "members": [
+        {
+          "name": "build",
+          "kind": "method",
+          "type": "Widget",
+          "parameters": [
+            "BuildContext context",
+            "SpringAppRequest app"
+          ]
+        },
+        {
+          "name": "localizationsDelegates",
+          "kind": "getter",
+          "type": "List<LocalizationsDelegate<Object?>>"
+        },
+        {
+          "name": "type",
+          "kind": "getter",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "materialDesignControls",
+      "type": "MaterialDesignControls",
+      "types": [
+        "MaterialDesignControls",
+        "DesignControls",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_material/spring_auto_configuration.dart",
+      "line": 60,
+      "injects": [],
+      "members": [
+        {
+          "name": "errorColor",
+          "kind": "method",
+          "type": "Color",
+          "parameters": [
+            "BuildContext context"
+          ]
+        },
+        {
+          "name": "filledButton",
+          "kind": "method",
+          "type": "Widget",
+          "parameters": [
+            "BuildContext context",
+            "DesignButton button"
+          ]
+        },
+        {
+          "name": "isAppAbove",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "BuildContext context"
+          ]
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "surface",
+          "kind": "method",
+          "type": "Widget",
+          "parameters": [
+            "BuildContext context",
+            "Widget child"
+          ]
+        },
+        {
+          "name": "textField",
+          "kind": "method",
+          "type": "Widget",
+          "parameters": [
+            "BuildContext context",
+            "DesignTextField field"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "materialPageRoutes",
+      "type": "MaterialPageRoutes",
+      "types": [
+        "MaterialPageRoutes",
+        "DesignPageRoutes"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_material/spring_auto_configuration.dart",
+      "line": 66,
+      "injects": [],
+      "members": [
+        {
+          "name": "heroController",
+          "kind": "method",
+          "type": "HeroController?",
+          "parameters": [
+            "String appType"
+          ]
+        },
+        {
+          "name": "pageRoute",
+          "kind": "method",
+          "type": "PageRoute<Object?>?",
+          "parameters": [
+            "PageTransitionType transition",
+            "String appType",
+            "SpringPageRequest page"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "materialThemes",
+      "type": "MaterialThemes",
+      "types": [
+        "MaterialThemes"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_material/spring_auto_configuration.dart",
+      "line": 44,
+      "injects": [],
+      "members": [
+        {
+          "name": "customizers",
+          "kind": "field",
+          "type": "List<ThemeCustomizer>"
+        },
+        {
+          "name": "material",
+          "kind": "method",
+          "type": "ThemeData",
+          "parameters": [
+            "SpringThemeData spring"
+          ]
+        },
+        {
+          "name": "theme",
+          "kind": "method",
+          "type": "ThemeData",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "themes",
+          "kind": "field",
+          "type": "SpringThemes"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

@@ -9,7 +9,7 @@ keywords: [flutter, theme, yaml, menu, MenuThemeData]
 
 # Menu theme in YAML
 
-The panel of a menu that opens from a button. It configures Flutter's `MenuThemeData`. Set it under `spring.flutter.theme.components.menu`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.menu`.
+The panel of a menu that opens from a button. It configures Flutter's `MenuThemeData`. Set it under `spring.flutter.theme.components.menu`. You can also set it inside a named theme, under `spring.flutter.theme.themes.<name>.components.menu`. The Material starter, `spring_boot_starter_flutter_material`, reads it: an app without that package in its dependencies shows nothing of it.
 
 ## Example
 
@@ -60,7 +60,7 @@ A property with **yes** in the States column takes one value, or a map with a va
 
 ## Read it in Dart
 
-The starter sets `ThemeData.menuTheme` from these properties. In a widget, read the result with:
+The Material starter sets `ThemeData.menuTheme` from these properties. In a widget, read the result with:
 
 ```dart
 final theme = Theme.of(context).menuTheme;
@@ -79,4 +79,4 @@ final theme = Theme.of(context).menuTheme;
 
 ---
 
-*Property descriptions are adapted from the documentation of the Flutter SDK (3.47.9), copyright The Flutter Authors, BSD 3-Clause license.*
+*Property descriptions are adapted from the documentation of the Flutter SDK (3.50.0), copyright The Flutter Authors, BSD 3-Clause license.*

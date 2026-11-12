@@ -1,7 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/bound_properties.dart';
@@ -16,19 +15,197 @@ import 'package:spring_boot_starter_flutter/src/theme/theme_background_widget.da
 import 'package:spring_boot_starter_flutter/src/theme/theme_fonts.dart';
 import 'package:spring_boot_starter_flutter/src/theme/wheel_scroll.dart';
 
-/// The kind of app widget [SpringApp] builds, chosen with
-/// `spring.flutter.app.type` (`widgets`, `material` or `cupertino`).
-enum AppType {
-  /// A `WidgetsApp`, with no Material or Cupertino design; the default.
-  widgets,
+/// Builds the app widget of one `spring.flutter.app.type`: a `WidgetsApp`
+/// (this starter's own, type `widgets`), a `MaterialApp`
+/// (`spring_boot_starter_flutter_material`, type `material`), a
+/// `CupertinoApp` (`spring_boot_starter_flutter_cupertino`, type
+/// `cupertino`).
+///
+/// [SpringApp] finds the bean whose [type] the property names, so this
+/// starter needs no design library, and a design of your own is one more
+/// bean.
+///
+/// ```dart
+/// // An app widget of the company's own design system.
+/// @Component()
+/// class OceanAppFactory implements SpringAppFactory {
+///   @override
+///   String get type => 'ocean';
+///
+///   @override
+///   List<LocalizationsDelegate<Object?>> get localizationsDelegates =>
+///       const [GlobalWidgetsLocalizations.delegate];
+///
+///   @override
+///   Widget build(BuildContext context, SpringAppRequest app) =>
+///       OceanApp(title: app.settings.title, home: app.home);
+/// }
+/// ```
+abstract interface class SpringAppFactory {
+  /// The value of `spring.flutter.app.type` this factory is for
+  /// (`widgets`, `material`), compared without case.
+  String get type;
 
-  /// A `MaterialApp`, needed by `Scaffold`, `AppBar` and the other
-  /// Material widgets.
-  material,
+  /// Flutter's own localization delegates for the app widget: the texts of
+  /// its widgets in every language. They start
+  /// [FlutterAppSettings.localizationsDelegates].
+  List<LocalizationsDelegate<Object?>> get localizationsDelegates;
 
-  /// A `CupertinoApp`, for the iOS look (for example with
-  /// `spring.flutter.app.type=cupertino` in `application-ios.properties`).
-  cupertino,
+  /// The app widget for [app]: with [SpringAppRequest.home] as its first
+  /// page, else on [SpringAppRequest.router].
+  Widget build(BuildContext context, SpringAppRequest app);
+}
+
+/// What a [SpringAppFactory] builds its app widget from.
+final class SpringAppRequest {
+  /// The request of [SpringApp]; a test of a factory makes its own.
+  const SpringAppRequest({
+    required this.settings,
+    required this.themes,
+    required this.selection,
+    required this.shown,
+    required this.builder,
+    this.home,
+    this.router,
+  });
+
+  /// Title, locales, delegates, observers and the rest of
+  /// `spring.flutter.app.*`.
+  final FlutterAppSettings settings;
+
+  /// Every theme of the app.
+  final SpringThemes themes;
+
+  /// Which theme is shown, and whether it follows the device.
+  final ThemeSelection selection;
+
+  /// The theme shown now.
+  final SpringThemeData shown;
+
+  /// The app widget's `builder`: the theme's background, the motion
+  /// settings and the frame meter around the navigator, then the
+  /// customizers' own builder. Pass it on as it is.
+  final TransitionBuilder builder;
+
+  /// The first page; `null` when the app has a router.
+  final Widget? home;
+
+  /// The application's router; `null` when the app has a [home].
+  final RouterConfig<Object>? router;
+}
+
+/// The [SpringAppFactory] of type `widgets`: a `WidgetsApp`, no design
+/// library. The default of `spring.flutter.app.type`.
+final class WidgetsAppFactory implements SpringAppFactory {
+  /// The factory.
+  const WidgetsAppFactory();
+
+  /// `widgets`.
+  static const typeName = 'widgets';
+
+  @override
+  String get type => typeName;
+
+  @override
+  List<LocalizationsDelegate<Object?>> get localizationsDelegates => const [
+    GlobalWidgetsLocalizations.delegate,
+  ];
+
+  @override
+  Widget build(BuildContext context, SpringAppRequest app) {
+    final settings = app.settings;
+    final shown = app.shown;
+    if (app.router case final router?) {
+      return WidgetsApp.router(
+        routerConfig: router,
+        title: settings.title,
+        debugShowCheckedModeBanner: settings.debugShowCheckedModeBanner,
+        color: shown.appColor,
+        textStyle: shown.widgetsTextStyle,
+        locale: settings.locale,
+        supportedLocales: settings.supportedLocales,
+        localizationsDelegates: settings.localizationsDelegates,
+        builder: app.builder,
+        shortcuts: settings.shortcuts,
+      );
+    }
+    return WidgetsApp(
+      title: settings.title,
+      debugShowCheckedModeBanner: settings.debugShowCheckedModeBanner,
+      color: shown.appColor,
+      textStyle: shown.widgetsTextStyle,
+      locale: settings.locale,
+      supportedLocales: settings.supportedLocales,
+      localizationsDelegates: settings.localizationsDelegates,
+      navigatorObservers: settings.navigatorObservers,
+      builder: app.builder,
+      shortcuts: settings.shortcuts,
+      // WidgetsApp needs a route for `home`.
+      pageRouteBuilder: <T>(settings, builder) => PageRouteBuilder<T>(
+        settings: settings,
+        pageBuilder: (context, _, _) => builder(context),
+      ),
+      home: app.home,
+    );
+  }
+}
+
+/// A page of the application's router, for a design library to make its
+/// page route of.
+final class SpringPageRequest {
+  /// The page [settings] names, showing [child].
+  const SpringPageRequest({
+    required this.settings,
+    required this.child,
+    this.content,
+    this.duration,
+    this.curve,
+  });
+
+  /// The route's settings: the router's page (its name and arguments).
+  final RouteSettings settings;
+
+  /// What the page shows when its route is made.
+  final Widget child;
+
+  /// What the page of [settings] shows; `null` when it is always [child].
+  /// A router may replace the page of a route in place, and the route then
+  /// has new settings: [childOf] asks this for them.
+  final Widget Function(RouteSettings settings)? content;
+
+  /// What the route shows now, given its current [settings]: a route
+  /// builds its content with this, not with [child].
+  Widget childOf(RouteSettings settings) => content?.call(settings) ?? child;
+
+  /// How long the transition takes, both ways; `null` for the route's own.
+  final Duration? duration;
+
+  /// The curve of the transition; `null` for the route's own.
+  final Curve? curve;
+}
+
+/// The page routes and hero flights of a design library, for the router
+/// of `spring_boot_starter_flutter_navigation`: Material's route (the
+/// transition its theme has per platform), Cupertino's (the swipe back).
+///
+/// The router knows no design library. For a page whose transition is
+/// `platform` or `cupertino` it asks these beans, in `@Order`, and shows
+/// the first route it gets; a design starter has one.
+abstract interface class DesignPageRoutes {
+  /// The design's route for [page] with [transition] in an app of
+  /// [appType] (`spring.flutter.app.type`); `null` when the route is not
+  /// this design's: Material's for `platform` in an app of type
+  /// `material`, Cupertino's for `cupertino` anywhere and for `platform`
+  /// in an app of type `cupertino`.
+  PageRoute<Object?>? pageRoute(
+    PageTransitionType transition,
+    String appType,
+    SpringPageRequest page,
+  );
+
+  /// The controller of the hero flights of a navigator in an app of
+  /// [appType]; `null` when the app is not of this design.
+  HeroController? heroController(String appType);
 }
 
 /// Changes the settings of the app widget that [SpringApp] builds, for
@@ -38,8 +215,8 @@ enum AppType {
 /// Declare a bean that implements it. Every such bean receives the
 /// [FlutterAppSettings] once, before the app widget is first built, in
 /// `@Order`. It is only for apps that let the starter build the app widget
-/// (`SpringApplicationWidget(home: ...)`); an app with its own
-/// `MaterialApp` sets these on it directly.
+/// (`SpringApplicationWidget(home: ...)`); an app with its own app widget
+/// sets these on it directly.
 ///
 /// ```dart
 /// // The app's own translations, and text that never grows past 130 %.
@@ -77,7 +254,7 @@ final class FlutterAppSettings {
   /// Settings for an app of [type] (`widgets` by default); every other
   /// value has Flutter's default, the locales default to English only.
   FlutterAppSettings({
-    this.type = AppType.widgets,
+    this.type = WidgetsAppFactory.typeName,
     this.title = '',
     this.debugShowCheckedModeBanner = true,
     List<Locale>? supportedLocales,
@@ -95,9 +272,11 @@ final class FlutterAppSettings {
   /// frame.
   Locale? locale;
 
-  /// The kind of app widget, from `spring.flutter.app.type`; `widgets` by
-  /// default.
-  AppType type;
+  /// The kind of app widget: the [SpringAppFactory.type] of the factory
+  /// that builds it, from `spring.flutter.app.type` or, when that is not
+  /// set, the one the starters decide on ([SpringAppFactories.resolve]):
+  /// `material` or `cupertino` with one design starter, else `widgets`.
+  String type;
 
   /// The app's name for the OS (task switcher, browser tab), from
   /// `spring.flutter.app.title`; empty by default.
@@ -147,7 +326,7 @@ final class FlutterAppSettings {
       context.environment,
       'flutterAppProperties',
     );
-    final type = properties.type;
+    final factory = SpringAppFactories.of(context).resolve(properties.type);
     // A list with no tag is no list: the messages files decide.
     final tags = [
       for (final tag in properties.locales ?? const <String>[])
@@ -157,15 +336,11 @@ final class FlutterAppSettings {
         ? messageLocales(context)
         : [for (final tag in tags) _locale(tag)];
     final settings = FlutterAppSettings(
-      type: type,
+      type: factory.type,
       title: properties.title ?? '',
       debugShowCheckedModeBanner: properties.debugBanner,
       supportedLocales: locales,
-      localizationsDelegates: switch (type) {
-        AppType.material => [...GlobalMaterialLocalizations.delegates],
-        AppType.cupertino => [...GlobalCupertinoLocalizations.delegates],
-        AppType.widgets => [GlobalWidgetsLocalizations.delegate],
-      },
+      localizationsDelegates: [...factory.localizationsDelegates],
       navigatorObservers: context.getSortedBeans<NavigatorObserver>(),
     );
     for (final customizer in context.getSortedBeans<FlutterAppCustomizer>()) {
@@ -224,11 +399,90 @@ final class FlutterAppSettings {
   }
 }
 
-/// An app widget set up by properties instead of code: a `WidgetsApp`,
-/// `MaterialApp` or `CupertinoApp` with the title, debug banner, locales
-/// and themes of the configuration.
+/// The [SpringAppFactory] beans of an application, by type.
+final class SpringAppFactories {
+  /// The factories [all]; the first of a type wins.
+  const SpringAppFactories(this.all);
+
+  /// The factories of [context]: its [SpringAppFactory] beans in `@Order`,
+  /// then this starter's own for `widgets` (which a context without the
+  /// starter's auto-configuration, in a test, has no bean of).
+  factory SpringAppFactories.of(ApplicationContext context) =>
+      SpringAppFactories([
+        ...context.getSortedBeans<SpringAppFactory>(),
+        const WidgetsAppFactory(),
+      ]);
+
+  // The starter of each type of this family, for the message.
+  static const _starters = {
+    'material': 'spring_boot_starter_flutter_material',
+    'cupertino': 'spring_boot_starter_flutter_cupertino',
+  };
+
+  /// Every factory, in order.
+  final List<SpringAppFactory> all;
+
+  /// The factory of `spring.flutter.app.type` [type], or, when it is not
+  /// set, the one the application's starters decide on, as Spring Boot
+  /// deduces the web application type from the class path: the factory of
+  /// the one type besides `widgets` (a design starter's, or the app's
+  /// own), else `widgets`. With factories of several types the choice is
+  /// the application's: an `ArgumentError` naming the property and the
+  /// types. Otherwise as [named].
+  SpringAppFactory resolve(String? type) {
+    if (type != null && type.trim().isNotEmpty) {
+      return named(type);
+    }
+    final designed = <String, SpringAppFactory>{};
+    for (final factory in all) {
+      final name = factory.type.toLowerCase();
+      if (name != WidgetsAppFactory.typeName) {
+        designed.putIfAbsent(name, () => factory);
+      }
+    }
+    return switch (designed.values.toList()) {
+      [] => named(WidgetsAppFactory.typeName),
+      [final only] => only,
+      final several => throw ArgumentError(
+        'not set, and the application has app widgets of several types: '
+            '${[for (final factory in several) factory.type].join(', ')}. '
+            'Choose one, for every platform or in a profile of each '
+            '(spring.flutter.app.type=cupertino in '
+            'application-ios.properties)',
+        'spring.flutter.app.type',
+      ),
+    };
+  }
+
+  /// The factory of [type], compared without case. Throws an
+  /// `ArgumentError` naming `spring.flutter.app.type` for a type no
+  /// factory has, with the starter to add when it is one of this family's.
+  SpringAppFactory named(String type) {
+    final wanted = type.trim().toLowerCase();
+    for (final factory in all) {
+      if (factory.type.toLowerCase() == wanted) {
+        return factory;
+      }
+    }
+    final known = {for (final factory in all) factory.type}.join(', ');
+    throw ArgumentError.value(
+      type,
+      'spring.flutter.app.type',
+      switch (_starters[wanted]) {
+        final starter? =>
+          'the app widget of type $wanted is built by $starter: add it to '
+              'the dependencies (this application has: $known)',
+        null => 'one of: $known',
+      },
+    );
+  }
+}
+
+/// An app widget set up by properties instead of code: a `WidgetsApp`, or
+/// with a design starter a `MaterialApp` or `CupertinoApp`, with the
+/// title, debug banner, locales and themes of the configuration.
 ///
-/// It saves writing and keeping a `MaterialApp` in step with the
+/// It saves writing and keeping an app widget in step with the
 /// configuration: the type comes from `spring.flutter.app.type`, the other
 /// settings from `spring.flutter.app.*` ([FlutterAppSettings]), the theme
 /// from `spring.flutter.theme.*`. The theme shown is the one the
@@ -382,121 +636,22 @@ class _SpringAppState extends State<SpringApp> with WidgetsBindingObserver {
     ThemeSelection selection,
     SpringThemeData shown,
   ) {
+    final spring = SpringScope.of(context);
     final home = widget.home;
-    if (home == null) {
-      return _routerApp(app, themes, selection, shown);
-    }
-    return switch (app.type) {
-      AppType.material => MaterialApp(
-        title: app.title,
-        debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
-        // `system`: Material switches between the two with the device.
-        theme: themes.material(
-          selection.followsSystem ? selection.systemLight : shown.name,
-        ),
-        darkTheme: selection.followsSystem
-            ? themes.material(selection.systemDark)
-            : null,
-        themeMode: selection.followsSystem ? ThemeMode.system : ThemeMode.light,
-        color: shown.appColor,
-        locale: app.locale,
-        supportedLocales: app.supportedLocales,
-        localizationsDelegates: app.localizationsDelegates,
-        navigatorObservers: app.navigatorObservers,
-        builder: _builder(app),
-        scrollBehavior: app.scrollBehavior,
-        shortcuts: app.shortcuts,
-        home: home,
-      ),
-      AppType.cupertino => CupertinoApp(
-        title: app.title,
-        debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
-        theme: themes.cupertino(shown.name),
-        color: shown.appColor,
-        locale: app.locale,
-        supportedLocales: app.supportedLocales,
-        localizationsDelegates: app.localizationsDelegates,
-        navigatorObservers: app.navigatorObservers,
-        builder: _builder(app),
-        scrollBehavior: app.scrollBehavior,
-        shortcuts: app.shortcuts,
-        home: home,
-      ),
-      AppType.widgets => WidgetsApp(
-        title: app.title,
-        debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
-        color: shown.appColor,
-        textStyle: shown.widgetsTextStyle,
-        locale: app.locale,
-        supportedLocales: app.supportedLocales,
-        localizationsDelegates: app.localizationsDelegates,
-        navigatorObservers: app.navigatorObservers,
-        builder: _builder(app),
-        shortcuts: app.shortcuts,
-        // WidgetsApp needs a route for `home`.
-        pageRouteBuilder: <T>(settings, builder) => PageRouteBuilder<T>(
-          settings: settings,
-          pageBuilder: (context, _, _) => builder(context),
-        ),
-        home: home,
-      ),
-    };
-  }
-
-  // The app widget on the router bean, the same settings as with a home.
-  Widget _routerApp(
-    FlutterAppSettings app,
-    SpringThemes themes,
-    ThemeSelection selection,
-    SpringThemeData shown,
-  ) {
-    final router = SpringApp.routerOf(SpringScope.of(context));
-    return switch (app.type) {
-      AppType.material => MaterialApp.router(
-        routerConfig: router,
-        title: app.title,
-        debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
-        theme: themes.material(
-          selection.followsSystem ? selection.systemLight : shown.name,
-        ),
-        darkTheme: selection.followsSystem
-            ? themes.material(selection.systemDark)
-            : null,
-        themeMode: selection.followsSystem ? ThemeMode.system : ThemeMode.light,
-        color: shown.appColor,
-        locale: app.locale,
-        supportedLocales: app.supportedLocales,
-        localizationsDelegates: app.localizationsDelegates,
-        builder: _builder(app),
-        scrollBehavior: app.scrollBehavior,
-        shortcuts: app.shortcuts,
-      ),
-      AppType.cupertino => CupertinoApp.router(
-        routerConfig: router,
-        title: app.title,
-        debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
-        theme: themes.cupertino(shown.name),
-        color: shown.appColor,
-        locale: app.locale,
-        supportedLocales: app.supportedLocales,
-        localizationsDelegates: app.localizationsDelegates,
-        builder: _builder(app),
-        scrollBehavior: app.scrollBehavior,
-        shortcuts: app.shortcuts,
-      ),
-      AppType.widgets => WidgetsApp.router(
-        routerConfig: router,
-        title: app.title,
-        debugShowCheckedModeBanner: app.debugShowCheckedModeBanner,
-        color: shown.appColor,
-        textStyle: shown.widgetsTextStyle,
-        locale: app.locale,
-        supportedLocales: app.supportedLocales,
-        localizationsDelegates: app.localizationsDelegates,
-        builder: _builder(app),
-        shortcuts: app.shortcuts,
-      ),
-    };
+    return SpringAppFactories.of(spring)
+        .named(app.type)
+        .build(
+          context,
+          SpringAppRequest(
+            settings: app,
+            themes: themes,
+            selection: selection,
+            shown: shown,
+            builder: _builder(app),
+            home: home,
+            router: home == null ? SpringApp.routerOf(spring) : null,
+          ),
+        );
   }
 }
 

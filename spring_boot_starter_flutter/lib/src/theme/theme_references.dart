@@ -1,8 +1,8 @@
-import 'dart:ui' show Color;
+import 'dart:ui' show Brightness, Color;
 
-import 'package:flutter/material.dart'
-    show Brightness, ColorScheme, DynamicSchemeVariant;
+import 'package:spring_boot_starter_flutter/src/theme/spring_color_scheme.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
+import 'package:spring_boot_starter_flutter/src/theme/theme_design.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_config.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_reader.dart'
     show didYouMean;
@@ -38,11 +38,18 @@ abstract final class ThemeReferences {
   );
 
   /// The [values] of theme [name] with every reference replaced.
-  static Map<String, String> resolve(String name, Map<String, String> values) {
+  ///
+  /// [designs] make the palette a reference to an undeclared role
+  /// (`$colors.outline`) reads, when the theme has a seed color.
+  static Map<String, String> resolve(
+    String name,
+    Map<String, String> values, {
+    ThemeDesigns designs = ThemeDesigns.none,
+  }) {
     if (!values.values.any((value) => value.contains(r'$'))) {
       return values;
     }
-    final context = _Context(name, values);
+    final context = _Context(name, values, designs);
     return {
       for (final MapEntry(:key, :value) in values.entries)
         key: context.value(key, value, const []),
@@ -51,12 +58,16 @@ abstract final class ThemeReferences {
 }
 
 final class _Context {
-  _Context(this.name, this.values)
+  _Context(this.name, this.values, this.designs)
     : properties = ThemeProperties(name, values),
       roots = {
         for (final key in SpringThemeData.themeProperties)
           ThemeValues.canonical(key),
+        ...designs.themeProperties,
+        ...ThemeDesigns.familyProperties,
       };
+
+  final ThemeDesigns designs;
 
   final String name;
   final Map<String, String> values;
@@ -184,7 +195,7 @@ final class _Context {
 
   // The palette without the declared roles, built once from the theme's
   // own seed, brightness, variant and contrast.
-  ColorScheme? _base;
+  SpringColorScheme? _base;
   bool _building = false;
 
   String Function(List<String> chain)? _computed(String path) {
@@ -196,7 +207,7 @@ final class _Context {
     switch (path.substring(0, dot)) {
       case 'colors' when colorRoles.contains(name) && !_building:
         return (chain) {
-          return _hex(SpringThemeData.roleIn(_scheme(chain), name)!);
+          return _hex(_scheme(chain).role(name)!);
         };
       case 'shape' when m3ShapeScale.containsKey(name):
         return (_) {
@@ -209,7 +220,7 @@ final class _Context {
     return null;
   }
 
-  ColorScheme _scheme(List<String> chain) {
+  SpringColorScheme _scheme(List<String> chain) {
     if (_base case final base?) {
       return base;
     }
@@ -224,18 +235,28 @@ final class _Context {
           (_isColorObject('seedcolor') ? _object('seedcolor', chain) : null);
       final variant = read('schemevariant');
       final contrast = read('contrast');
-      return _base = SpringThemeData.baseScheme(
-        brightness:
-            ThemeValues.enumValue(
-              Brightness.values,
-              read('brightness') ?? '',
-            ) ??
-            Brightness.light,
-        seedColor: seed == null ? null : ThemeValues.color(seed),
-        schemeVariant: variant == null
-            ? null
-            : ThemeValues.enumValue(DynamicSchemeVariant.values, variant),
-        contrast: contrast == null ? null : ThemeValues.number(contrast),
+      return _base = designs.colorScheme(
+        ColorSchemeSpec(
+          brightness:
+              ThemeValues.enumValue(
+                Brightness.values,
+                read('brightness') ?? '',
+              ) ??
+              Brightness.light,
+          seedColor: seed == null ? null : ThemeValues.color(seed),
+          schemeVariant: variant == null
+              ? null
+              : designs.schemeVariant(variant),
+          contrast: contrast == null ? null : ThemeValues.number(contrast),
+        ),
+        property: properties.propertyName(
+          seed != null
+              ? 'seedcolor'
+              : variant != null
+              ? 'schemevariant'
+              : 'contrast',
+        ),
+        value: seed ?? variant ?? contrast ?? '',
       );
     } finally {
       _building = false;
