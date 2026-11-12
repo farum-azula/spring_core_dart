@@ -37,16 +37,6 @@ dev_dependencies:
   test: ^1.33.0
 ```
 
-Until `spring_boot_starter_edge` and `spring_boot_starter_supabase` are
-on pub.dev, take those two from the repository instead:
-
-```yaml
-  spring_boot_starter_edge:
-    git:
-      url: https://github.com/farum-azula/spring_core_dart.git
-      path: spring_boot_starter_edge
-```
-
 ```bash
 dart pub get
 ```

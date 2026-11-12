@@ -5372,7 +5372,7 @@ stored at version 0 can be updated (Spring Data's rule for `long` and `Long`).
 
 ### Supabase: `spring.supabase.*`
 
-The keys of `spring_boot_starter_supabase` (not on pub.dev yet): the
+The keys of `spring_boot_starter_supabase`: the
 project, how the repositories reach its database, Auth, Realtime,
 Storage, Edge Functions and the caches. They are this starter's own:
 Spring has no Supabase support.

@@ -130,9 +130,10 @@ verify_jwt = false
 [functions.edge-test]
 verify_jwt = false
 
+# Compiled by Dart 3.13 (EDGE_WASM_DART): the Edge Runtime runs no
+# WebAssembly of a later Dart. The module is one of its static files.
 [functions.edge-test-wasm]
 verify_jwt = false
-# The WebAssembly module the function loads when it starts.
 static_files = ["./functions/edge-test-wasm/*.wasm"]
 
 [functions.api]

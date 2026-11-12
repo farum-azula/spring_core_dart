@@ -4,8 +4,17 @@ import 'package:spring_boot_starter_edge/src/function_build/entry_templates.dart
 
 /// The platforms a function is built for.
 enum EdgePlatform {
-  /// Supabase Edge Functions (Deno): `index.ts`, `main.js`.
-  supabase('supabase/functions', 'deno'),
+  /// Supabase Edge Functions (Deno): `index.ts`, `main.js`. WebAssembly
+  /// compiled by Dart 3.13 only, for now ([newestWasmDart]).
+  supabase(
+    'supabase/functions',
+    'deno',
+    newestWasmDart: '3.13.7',
+    wasmLimit:
+        "Supabase's Edge Runtime is Deno 2.1, whose V8 (13.0) lacks the "
+        'WebAssembly exception handling (exnref) that dart compile wasm '
+        'uses from Dart 3.14 on',
+  ),
 
   /// Cloudflare Workers: `worker.mjs`, `main.js`, and `wrangler.toml` in
   /// the application's directory.
@@ -24,7 +33,12 @@ enum EdgePlatform {
   /// `main.cjs`.
   vercel('build/vercel', 'node');
 
-  EdgePlatform(this.defaultOutput, this.runtime);
+  EdgePlatform(
+    this.defaultOutput,
+    this.runtime, {
+    this.newestWasmDart,
+    this.wasmLimit,
+  });
 
   /// Where the function goes by default, from the application's
   /// directory; on Supabase and Netlify the function's name is added.
@@ -33,6 +47,15 @@ enum EdgePlatform {
   /// The JavaScript runtime of the platform: `deno`, `node`,
   /// `cloudflare`.
   final String runtime;
+
+  /// The newest Dart whose WebAssembly the platform runs (its minor
+  /// version counts: `3.13.7` allows every 3.13); `null` when it runs that
+  /// of every Dart. A deploy workflow installs this one for such a build.
+  final String? newestWasmDart;
+
+  /// Why the platform runs no WebAssembly of a newer Dart than
+  /// [newestWasmDart].
+  final String? wasmLimit;
 
   /// Whether the function's name is a directory under [defaultOutput].
   bool get namedDirectory => this == supabase || this == netlify;
@@ -144,9 +167,58 @@ final class EdgeBuild {
     );
   }
 
+  // A WebAssembly build of a platform that runs only that of an older
+  // Dart than [dart]: refused, before anything is compiled, with what
+  // works instead.
+  Future<void> _checkWasmDart() async {
+    final newest = platform.newestWasmDart;
+    if (newest == null) {
+      return;
+    }
+    final version = await _dartVersion();
+    if (version == null || !_newerMinor(version, newest)) {
+      return;
+    }
+    final minor = newest.split('.').take(2).join('.');
+    throw UnsupportedError(
+      'A WebAssembly build for ${platform.name} works only when Dart '
+      '$minor compiles it, until Supabase updates its Edge Runtime: '
+      "${platform.wasmLimit}. This build's Dart is $version. Build it "
+      'with Dart $minor (--dart <the dart of a Dart $newest SDK>), or with '
+      '--target js.',
+    );
+  }
+
+  // The version of [dart] (`3.14.0`); `null` when it does not say.
+  Future<String?> _dartVersion() async {
+    final ProcessResult result;
+    try {
+      result = await Process.run(dart, const ['--version']);
+    } on ProcessException {
+      return null;
+    }
+    return RegExp(
+      r'(\d+\.\d+\.\d+)',
+    ).firstMatch('${result.stdout}${result.stderr}')?.group(1);
+  }
+
+  // Whether [version] is of a later minor version than [newest].
+  static bool _newerMinor(String version, String newest) {
+    List<int> minor(String v) => [
+      for (final part in v.split('.').take(2)) int.parse(part),
+    ];
+    final (a, b) = (minor(version), minor(newest));
+    return a[0] != b[0] ? a[0] > b[0] : a[1] > b[1];
+  }
+
   /// Compiles and writes. Throws a [ProcessException] with the compiler's
-  /// output when the application does not compile.
+  /// output when the application does not compile, and an
+  /// [UnsupportedError] for a WebAssembly build that [dart] is too new
+  /// for on the platform ([EdgePlatform.newestWasmDart]).
   Future<EdgeBuildResult> run() async {
+    if (target == EdgeTarget.wasm) {
+      await _checkWasmDart();
+    }
     if (!RegExp(r'^[A-Za-z0-9][A-Za-z0-9_-]*$').hasMatch(name)) {
       throw ArgumentError.value(
         name,

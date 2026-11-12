@@ -29,14 +29,9 @@ import 'version.dart' as family;
 
 /// Packages of the family kept in the repository, not on pub.dev yet: a
 /// git dependency until they are released (their version stays the
-/// family's). `spring_boot_starter_supabase` waits for its tests against
-/// the whole of Supabase (its roadmap, "Tests", level 4);
-/// `spring_boot_starter_edge` for its first release to be decided.
-const notPublished = {
-  'spring_search_dart',
-  'spring_boot_starter_supabase',
-  'spring_boot_starter_edge',
-};
+/// family's). `spring_search_dart` waits for its first release to be
+/// decided.
+const notPublished = {'spring_search_dart'};
 
 Future<void> main(List<String> args) async {
   Directory.current = File.fromUri(Platform.script).parent.parent;

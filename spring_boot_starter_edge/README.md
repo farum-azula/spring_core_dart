@@ -62,6 +62,7 @@ nothing of it is committed.
 | `--entry` | The Dart file with `main`, `bin/main.dart` by default |
 | `--output`, `-o` | The function's directory |
 | `--optimization` | The `-O` level of the compiler, 0 to 4, 2 by default |
+| `--dart` | The `dart` that compiles; `dart` on the PATH by default. WebAssembly for Supabase needs that of Dart 3.13 |
 | `--streaming` | AWS: a response-streaming handler (see below) |
 | `--path` | Netlify: the paths the function answers, `/*` by default |
 | `-D<name>=<value>` | A definition for the compiler |
@@ -82,11 +83,13 @@ Cloudflare and AWS, by hand and from GitHub Actions.
 `--target wasm` compiles with `dart compile wasm` (WasmGC): `app.wasm`
 (about 1.7 MB) with its `app.mjs`, and a small loader in place of the
 script; the entry file is the same. The code of the application does not
-change.
+change. The loader gives the module stand-ins for the JavaScript string
+builtins (`wasm:js-string`), which Dart 3.14's module needs and the V8 of
+Cloudflare's workerd does not have.
 
 | Platform | WebAssembly |
 |---|---|
-| Supabase | yes; list the module in `config.toml`: `[functions.<name>] static_files = ["./functions/<name>/*.wasm"]` |
+| Supabase | compiled by Dart 3.13 only, until Supabase updates its Edge Runtime: it is Deno 2.1, whose V8 (13.0) lacks the WebAssembly exception handling (`exnref`) that `dart compile wasm` uses from Dart 3.14 on. Build with `--dart <the dart of a Dart 3.13 SDK>` (the build itself runs on any Dart; a later Dart is refused, saying so), and list the module in `config.toml`: `[functions.<name>] static_files = ["./functions/<name>/*.wasm"]` |
 | Cloudflare | yes: wrangler compiles the module at deploy (a Worker may not at run time) |
 | AWS Lambda (Node.js 22) | yes |
 | Deno Deploy | yes |

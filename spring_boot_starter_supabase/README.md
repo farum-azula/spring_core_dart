@@ -22,44 +22,15 @@ bean, `SupabaseCredentials`, gives each call its key and its token, and
 what a user may read and write is decided by the database (row-level
 security).
 
-**Not on pub.dev yet.** The package waits for its tests against the
-whole of Supabase (see [Tests](#tests)); take it from the repository
-until then (see [Install](#install)).
-
 ## Install
 
 ```yaml
 dependencies:
-  spring_boot_starter_supabase:
-    git:
-      url: https://github.com/farum-azula/spring_core_dart.git
-      path: spring_boot_starter_supabase
+  spring_boot_starter_supabase: ^0.7.4
 
 dev_dependencies:
   build_runner: ^2.17.0
   spring_core_dart_generator: ^0.7.4   # required: writes the repositories and the declared interfaces
-```
-
-The starter uses what the other packages of the family have under
-`Unreleased` in their changelogs (the Phoenix Channels client of the
-WebSocket starter, the store capabilities of the data starter,
-`LoginSession` of `spring_security_core`, modules of one platform). Until
-the next release of the family, take those packages from the same
-repository:
-
-```yaml
-dependency_overrides:
-  spring_core_dart: {git: {url: https://github.com/farum-azula/spring_core_dart.git, path: spring_core_dart}}
-  spring_core_dart_generator: {git: {url: https://github.com/farum-azula/spring_core_dart.git, path: spring_core_dart_generator}}
-  spring_boot_dart: {git: {url: https://github.com/farum-azula/spring_core_dart.git, path: spring_boot_dart}}
-  spring_web_dart: {git: {url: https://github.com/farum-azula/spring_core_dart.git, path: spring_web_dart}}
-  spring_boot_actuator: {git: {url: https://github.com/farum-azula/spring_core_dart.git, path: spring_boot_actuator}}
-  spring_boot_starter_logging: {git: {url: https://github.com/farum-azula/spring_core_dart.git, path: spring_boot_starter_logging}}
-  spring_boot_starter_cache: {git: {url: https://github.com/farum-azula/spring_core_dart.git, path: spring_boot_starter_cache}}
-  spring_boot_starter_data: {git: {url: https://github.com/farum-azula/spring_core_dart.git, path: spring_boot_starter_data}}
-  spring_boot_starter_feign: {git: {url: https://github.com/farum-azula/spring_core_dart.git, path: spring_boot_starter_feign}}
-  spring_boot_starter_websocket: {git: {url: https://github.com/farum-azula/spring_core_dart.git, path: spring_boot_starter_websocket}}
-  spring_security_core: {git: {url: https://github.com/farum-azula/spring_core_dart.git, path: spring_security_core}}
 ```
 
 ```bash
@@ -992,12 +963,12 @@ dart test --tags supabase-docker                               # levels 2 and 3
 dart test --tags supabase-stack                                # level 4
 ```
 
-Levels 1 to 3 run in a pipeline of their own
-(`.github/workflows/supabase.yml`, the jobs `unit` and `containers`), not
-in the main one. The tests of level 4 (`test/stack_*_test.dart`, the
-Supabase CLI's configuration in `test/stack/`) are written; they run against a
-stack given by the environment variables above, and no pipeline runs them
-yet.
+The levels run in a pipeline of their own
+(`.github/workflows/supabase.yml`), not in the main one: levels 1 to 3 in
+the jobs `unit` and `containers`, level 4 (`test/stack_*_test.dart`, the
+Supabase CLI's configuration in `test/stack/`) in the job `stack`, against
+the Supabase CLI's local stack, and in `hosted`, against a hosted project
+when its address and keys are in the repository's secrets.
 
 ## An example
 
@@ -1010,9 +981,7 @@ Supabase CLI and tests of both, without a project and against one.
 
 ## Not there yet
 
-- **Not on pub.dev**: after level 4 of the tests has run in a pipeline.
-- **A pipeline for level 4** of the tests, and a `SupabaseContainer` for
-  an application's tests.
+- **A `SupabaseContainer`** for an application's tests.
 - **Streamed uploads** and resumable uploads (TUS): an upload is read
   whole before it is sent.
 - **`resource(bucket, path)`**: no `Resource` of an object.

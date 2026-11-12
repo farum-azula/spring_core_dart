@@ -133,9 +133,20 @@ jobs:
       - name: Install dependencies
         run: dart pub get
 
+      # Supabase's Edge Runtime (Deno 2.1, V8 13.0) runs no WebAssembly of
+      # Dart 3.14 or later (exnref): the WebAssembly function is compiled
+      # by Dart 3.13, beside the stable Dart of the rest.
+      - name: Dart 3.13, for the WebAssembly function
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/dart-3.13.zip" \
+            https://storage.googleapis.com/dart-archive/channels/stable/release/3.13.7/sdk/dartsdk-linux-x64-release.zip
+          unzip -q "$RUNNER_TEMP/dart-3.13.zip" -d "$RUNNER_TEMP/dart-3.13"
+          echo "EDGE_WASM_DART=$RUNNER_TEMP/dart-3.13/dart-sdk/bin/dart" >> "$GITHUB_ENV"
+          "$RUNNER_TEMP/dart-3.13/dart-sdk/bin/dart" --version
+
       # The functions written in Dart (spring_boot_starter_edge) are
-      # compiled to JavaScript before the stack starts: its config.toml
-      # declares them, and the CLI wants every declared function there.
+      # compiled before the stack starts: its config.toml declares them,
+      # and the CLI wants every declared function there.
       - name: Build the Dart functions
         run: |
           functions="$PWD/spring_boot_starter_supabase/test/stack/supabase/functions"
@@ -143,7 +154,7 @@ jobs:
             --platform supabase --name edge-test --output "$functions/edge-test")
           (cd tool/edge_checks && dart run spring_boot_starter_edge:build \
             --platform supabase --name edge-test-wasm --target wasm \
-            --output "$functions/edge-test-wasm")
+            --dart "$EDGE_WASM_DART" --output "$functions/edge-test-wasm")
           (cd example/supabase/function && dart run spring_boot_starter_edge:build \
             --platform supabase --name api --output "$functions/api")
           echo "SUPABASE_FUNCTIONS=$functions" >> "$GITHUB_ENV"

@@ -1,7 +1,9 @@
 // The function built for Supabase Edge Functions, run by Supabase's Edge
 // Runtime behind its gateway: the Supabase CLI's stack
 // (spring_boot_starter_supabase/test/stack), whose config.toml declares
-// the functions `edge-test` and `edge-test-wasm`. Given by SUPABASE_URL;
+// the functions `edge-test` and `edge-test-wasm`; the latter is compiled by
+// the Dart of EDGE_WASM_DART, Dart 3.13's dart: Supabase's Edge Runtime
+// runs no WebAssembly of a later Dart. Given by SUPABASE_URL;
 // the functions are built into SUPABASE_FUNCTIONS (the stack's
 // supabase/functions directory).
 @Tags(['supabase-stack'])
@@ -26,6 +28,14 @@ void main() {
       : null;
   late HttpFunctionClient client;
   late HttpFunctionClient wasm;
+  // Dart 3.13's dart, which compiles the WebAssembly function.
+  final wasmDart = Platform.environment['EDGE_WASM_DART'];
+  final skipWasm =
+      skip ??
+      (wasmDart == null
+          ? "no EDGE_WASM_DART (Dart 3.13's dart): Supabase runs no "
+                'WebAssembly of a later Dart'
+          : null);
 
   setUpAll(() async {
     if (skip != null) {
@@ -35,34 +45,45 @@ void main() {
       EdgePlatform.supabase,
       output: Directory('$functions/edge-test').absolute.path,
     );
-    await buildFunction(
-      EdgePlatform.supabase,
-      name: 'edge-test-wasm',
-      output: Directory('$functions/edge-test-wasm').absolute.path,
-      target: EdgeTarget.wasm,
-    );
     client = HttpFunctionClient(Uri.parse('$url/functions/v1/edge-test'));
     await client.ready('/hello');
-    wasm = HttpFunctionClient(Uri.parse('$url/functions/v1/edge-test-wasm'));
-    await wasm.ready('/hello');
+    if (skipWasm == null) {
+      await buildFunction(
+        EdgePlatform.supabase,
+        name: 'edge-test-wasm',
+        output: Directory('$functions/edge-test-wasm').absolute.path,
+        target: EdgeTarget.wasm,
+        dart: wasmDart!,
+      );
+      wasm = HttpFunctionClient(
+        Uri.parse('$url/functions/v1/edge-test-wasm'),
+      );
+      await wasm.ready('/hello');
+    }
   });
 
   tearDownAll(() {
     if (skip == null) {
       client.close();
+    }
+    if (skipWasm == null) {
       wasm.close();
     }
   });
 
   // config.toml of the stack lists the module among the function's
   // static files, which the Edge Runtime needs to read it.
-  group('a Supabase Edge Function compiled to WebAssembly', skip: skip, () {
-    platformChecks(
-      () => wasm,
-      platform: 'supabase',
-      greeting: 'hello-from-env',
-    );
-  });
+  group(
+    'a Supabase Edge Function compiled to WebAssembly by Dart 3.13',
+    skip: skipWasm,
+    () {
+      platformChecks(
+        () => wasm,
+        platform: 'supabase',
+        greeting: 'hello-from-env',
+      );
+    },
+  );
 
   group('a Supabase Edge Function', skip: skip, () {
     platformChecks(

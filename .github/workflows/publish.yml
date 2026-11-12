@@ -15,6 +15,9 @@ name: 'Release: publish to pub.dev'
 #         → spring_boot_starter_data (after spring_boot_actuator)
 #         → spring_security_core → spring_boot_starter_oauth2_client
 #         → spring_boot_starter_security
+#         → spring_boot_starter_supabase (after the data and the security
+#           packages)
+#         → spring_boot_starter_edge (after the web starter)
 #         → spring_boot_starter_flutter (with the Flutter SDK)
 #         → spring_boot_starter_flutter_material,
 #           spring_boot_starter_flutter_cupertino (after the Flutter
@@ -218,6 +221,37 @@ jobs:
       - run: dart run tool/publish.dart --package spring_security_core
       - run: dart run tool/publish.dart --package spring_boot_starter_oauth2_client
       - run: dart run tool/publish.dart --package spring_boot_starter_security
+
+  # spring_boot_starter_supabase needs the data starter (with the cache,
+  # Feign and WebSocket starters) and spring_security_core.
+  supabase:
+    name: Publish spring_boot_starter_supabase
+    needs: [data, security]
+    runs-on: ubuntu-26.04
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: dart run tool/publish.dart --package spring_boot_starter_supabase
+
+  # spring_boot_starter_edge needs the web starter.
+  edge:
+    name: Publish spring_boot_starter_edge
+    needs: starters
+    runs-on: ubuntu-26.04
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: dart run tool/publish.dart --package spring_boot_starter_edge
 
   # spring_boot_starter_flutter needs the Flutter SDK; it is outside the pub workspace,
   # so without its pubspec_overrides.yaml it resolves the family versions

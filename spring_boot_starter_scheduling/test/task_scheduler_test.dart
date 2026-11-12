@@ -308,7 +308,7 @@ void main() {
       final ran = Completer<void>();
       real.schedule(ran.complete, OneShotTrigger(DateTime.now()));
       await ran.future.timeout(const Duration(seconds: 5));
-      real.destroy();
+      await real.destroy();
       expect(real.isShutdown, isTrue);
     });
 

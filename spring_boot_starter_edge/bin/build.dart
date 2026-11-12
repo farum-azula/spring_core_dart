@@ -23,6 +23,8 @@ Builds the application as a function.
                    supabase/functions/<name>, netlify/edge-functions/<name>,
                    build/<platform> for the others)
   --optimization   the -O level of dart compile js, 0 to 4 (default: 2)
+  --dart           the dart that compiles (default: dart on the PATH);
+                   WebAssembly for Supabase needs that of Dart 3.13
   --path           netlify: the paths the function answers (default: /*)
   --streaming      aws: a response-streaming handler (function URLs with
                    InvokeMode RESPONSE_STREAM; needed by server-sent events)
@@ -110,6 +112,7 @@ Future<void> main(List<String> args) async {
     target: target,
     path: options['path'] ?? '/*',
     defines: defines,
+    dart: options['dart'] ?? 'dart',
   );
   try {
     final result = await build.run();
@@ -124,6 +127,8 @@ Future<void> main(List<String> args) async {
     exit(error.errorCode == 0 ? 1 : error.errorCode);
   } on ArgumentError catch (error) {
     _fail('${error.message}: ${error.invalidValue}');
+  } on UnsupportedError catch (error) {
+    _fail(error.message ?? '$error');
   }
 }
 

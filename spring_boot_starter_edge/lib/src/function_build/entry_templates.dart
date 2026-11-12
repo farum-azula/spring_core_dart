@@ -379,6 +379,57 @@ export const handler = awslambda.streamifyResponse(async (event, stream) => {
 });
 ''';
 
+// What a runtime without the JavaScript string builtins of WebAssembly
+// (`wasm:js-string`) is given in their place. Dart 3.14's dart2wasm
+// compiles for them and its `app.mjs` brings no stand-in, and the V8 of
+// Cloudflare's workerd and of Supabase's Edge Runtime does not have them.
+// A runtime that has them takes its own and never asks for these. The
+// functions that read and write a Dart string's characters call the
+// module's own exports, there once it is instantiated.
+const _jsStrings = r'''
+let appExports;
+const jsStrings = {
+  cast: (s) => {
+    if (typeof s !== "string") throw new TypeError("not a string");
+    return s;
+  },
+  test: (s) => (typeof s === "string" ? 1 : 0),
+  length: (s) => s.length,
+  charCodeAt: (s, i) => s.charCodeAt(i),
+  codePointAt: (s, i) => s.codePointAt(i),
+  concat: (a, b) => a + b,
+  substring: (s, start, end) => s.substring(start, end),
+  equals: (a, b) => (a === b ? 1 : 0),
+  compare: (a, b) => (a < b ? -1 : a > b ? 1 : 0),
+  fromCharCode: (c) => String.fromCharCode(c),
+  fromCodePoint: (c) => String.fromCodePoint(c),
+  fromCharCodeArray: (array, start, end) => {
+    const read = appExports.$wasmI16ArrayGet;
+    let text = "";
+    for (let i = start; i < end; ) {
+      const chunk = [];
+      for (const stop = Math.min(end, i + 4096); i < stop; i++) {
+        chunk.push(read(array, i));
+      }
+      text += String.fromCharCode(...chunk);
+    }
+    return text;
+  },
+  intoCharCodeArray: (s, array, start) => {
+    const write = appExports.$wasmI16ArraySet;
+    for (let i = 0; i < s.length; i++) write(array, start + i, s.charCodeAt(i));
+    return s.length;
+  },
+};
+''';
+
+// Instantiates `app` with [_jsStrings] and runs the application's `main`.
+const _run = '''
+const instance = await app.instantiate({ "wasm:js-string": jsStrings });
+appExports = instance.instantiatedModule.exports;
+instance.invokeMain();
+''';
+
 /// `main.js` (`main.mjs` on Node) of a WebAssembly build: loads the
 /// module `dart compile wasm` wrote (`app.wasm`, with its `app.mjs`) and
 /// runs the application's `main`, which the entry file then finds as it
@@ -389,6 +440,9 @@ export const handler = awslambda.streamifyResponse(async (event, stream) => {
 /// - `cloudflare`: a Worker may not compile WebAssembly at run time, so
 ///   the module is imported (wrangler compiles it at deploy) and given to
 ///   `app.mjs` in place of its own compilation.
+///
+/// Every one gives the module stand-ins for the JavaScript string
+/// builtins, which a runtime without them needs.
 String wasmLoader(String runtime) => switch (runtime) {
   'node' =>
     '''
@@ -396,28 +450,26 @@ String wasmLoader(String runtime) => switch (runtime) {
 import "./prelude.js";
 import { readFileSync } from "node:fs";
 import { compile } from "./app.mjs";
-
+$_jsStrings
 const app = await compile(readFileSync(new URL("./app.wasm", import.meta.url)));
-(await app.instantiate({})).invokeMain();
-''',
+$_run''',
   'deno' =>
     '''
 // Written by spring_boot_starter_edge; do not edit.
 import "./prelude.js";
 import { compile } from "./app.mjs";
-
+$_jsStrings
 const app = await compile(
   await Deno.readFile(new URL("./app.wasm", import.meta.url)),
 );
-(await app.instantiate({})).invokeMain();
-''',
+$_run''',
   'cloudflare' =>
     '''
 // Written by spring_boot_starter_edge; do not edit.
 import "./prelude.js";
 import module from "./app.wasm";
 import { compile } from "./app.mjs";
-
+$_jsStrings
 const compileWasm = WebAssembly.compile;
 WebAssembly.compile = async () => module;
 let app;
@@ -426,7 +478,6 @@ try {
 } finally {
   WebAssembly.compile = compileWasm;
 }
-(await app.instantiate({})).invokeMain();
-''',
+$_run''',
   _ => throw ArgumentError.value(runtime, 'runtime'),
 };

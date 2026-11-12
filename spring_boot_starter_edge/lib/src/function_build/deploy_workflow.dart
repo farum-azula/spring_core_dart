@@ -30,6 +30,11 @@ String deployWorkflow({
   if (!RegExp(r'^[A-Za-z0-9._/ -]+$').hasMatch(directory)) {
     throw ArgumentError.value(directory, 'directory', 'Not a plain path');
   }
+  // The platform's newest Dart for WebAssembly when it runs only an
+  // older one's (Supabase: 3.13), else the stable Dart.
+  final sdk = target == EdgeTarget.wasm
+      ? platform.newestWasmDart ?? 'stable'
+      : 'stable';
   final build =
       'dart run spring_boot_starter_edge:build --platform ${platform.name} '
       '--name $name${target == EdgeTarget.wasm ? ' --target wasm' : ''}'
@@ -134,7 +139,7 @@ jobs:
 
       - uses: dart-lang/setup-dart@v1
         with:
-          sdk: stable
+          sdk: $sdk
 
       - name: Install dependencies
         run: dart pub get

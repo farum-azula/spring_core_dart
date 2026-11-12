@@ -51,6 +51,30 @@ void main() {
     expect(aws, contains('aws lambda update-function-code'));
   });
 
+  test('WebAssembly for Supabase is built with Dart 3.13, what its runtime '
+      'runs; JavaScript and the other platforms with the stable Dart', () {
+    expect(
+      deployWorkflow(
+        platform: EdgePlatform.supabase,
+        name: 'api',
+        target: EdgeTarget.wasm,
+      ),
+      allOf(contains('sdk: 3.13.7'), contains('--target wasm')),
+    );
+    expect(
+      deployWorkflow(platform: EdgePlatform.supabase, name: 'api'),
+      contains('sdk: stable'),
+    );
+    expect(
+      deployWorkflow(
+        platform: EdgePlatform.cloudflare,
+        name: 'api',
+        target: EdgeTarget.wasm,
+      ),
+      contains('sdk: stable'),
+    );
+  });
+
   test('no secret is written, only named', () {
     for (final platform in [
       EdgePlatform.supabase,

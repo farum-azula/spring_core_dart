@@ -1,7 +1,7 @@
 ## Unreleased
 
-- The iOS route draws no dimming layer under its page when the theme has a `background`: iOS dims the page below with a light black while a page slides in and keeps it under the page, and a theme's background, which shows through every screen, stayed darker than the theme says. Without a background the page covers it, as in Flutter.
 - First version: Cupertino for apps of `spring_boot_starter_flutter`, which knows no design library from this release on. Built on `cupertino_ui`, the Flutter team's library that replaces `package:flutter/cupertino.dart`; no dependency on `material_ui`.
+- The iOS route draws no dimming layer under its page when the theme has a `background`: iOS dims the page below with a light black while a page slides in and keeps it under the page, and a theme's background, which shows through every screen, stayed darker than the theme says. Without a background the page covers it, as in Flutter.
 - The app widget of `spring.flutter.app.type: cupertino` (`CupertinoAppFactory`, the bean `cupertinoAppFactory`): a `CupertinoApp` with the title, locales, observers and theme of the configuration, as the Flutter starter built it before.
 - `CupertinoThemeDesign`: the `cupertino.*` theme properties, the Material 3 palette of `seed-color`, `scheme-variant` and `contrast` (the same colors a Material app has, from `material_color_utilities`), and `motion.page-transition: cupertino`. The starter lists it in the factories of its module, so the themes have it while the splash shows.
 - `SpringThemeData.toCupertino()`, `cupertinoPrimaryColor` and `cupertinoProperties` are an extension of this package (`CupertinoSpringThemeData`).

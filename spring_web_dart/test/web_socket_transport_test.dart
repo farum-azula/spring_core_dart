@@ -1973,6 +1973,15 @@ final class _FailingSocket extends Stream<Uint8List> implements io.Socket {
   @override
   Future<void> get done => _done.future;
 
+  // dart:io asks for them when it makes the WebSocket. A socket that was
+  // reset has none: it throws, as a closed socket of dart:io does.
+  @override
+  io.InternetAddress get remoteAddress =>
+      throw const io.SocketException.closed();
+
+  @override
+  int get remotePort => throw const io.SocketException.closed();
+
   @override
   Object? noSuchMethod(Invocation invocation) => null;
 }

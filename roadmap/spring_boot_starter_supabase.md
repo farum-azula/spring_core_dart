@@ -302,8 +302,9 @@ own (`.github/workflows/supabase.yml`), not in the main one.
   (`required-claims`, `secret-key`, a path in `authorities-claim-name`):
   general features there, set by this starter as defaults the application
   can override. The starter does not depend on the security starters.
-- **Not on pub.dev yet** (`tool/publish.dart`, `notPublished`): after
-  level 4 of the tests.
+- **On pub.dev from 0.8.0**, once level 4 of the tests ran in the `stack`
+  job of `supabase.yml` (`tool/publish.dart` no longer lists it in
+  `notPublished`).
 - **Its tests run only in `.github/workflows/supabase.yml`**
   (`tool/test_all.dart`, `ownPipeline`).
 - **The example is `example/supabase`**: `app/` (Flutter, outside the

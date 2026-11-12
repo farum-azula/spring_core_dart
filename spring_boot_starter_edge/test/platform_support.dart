@@ -29,6 +29,7 @@ Future<Directory> buildFunction(
   String? output,
   bool streaming = false,
   EdgeTarget target = EdgeTarget.js,
+  String dart = 'dart',
 }) async {
   final directory =
       output ?? Directory.systemTemp.createTempSync('spring_edge_').path;
@@ -39,6 +40,7 @@ Future<Directory> buildFunction(
     output: directory,
     streaming: streaming,
     target: target,
+    dart: dart,
   ).run();
   return result.directory;
 }
