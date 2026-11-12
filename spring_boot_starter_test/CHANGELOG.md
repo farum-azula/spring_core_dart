@@ -4,6 +4,10 @@
 - **Fixed:** a `GenericContainer` whose start fails before its container exists (the network or the container could not be created) releases the reaper: its connection stayed open for the rest of the process.
 - **Fixed:** `Network`: a creation the daemon refused is not remembered, so the next container of the network tries again instead of failing with the same error, and `close()` of a network that was never created (or could not be) does nothing instead of throwing that error in the teardown.
 
+## 0.7.4
+
+- No changes of its own; released with the family version 0.7.4.
+
 ## 0.7.3
 
 - No changes of its own; released with the family version 0.7.3.

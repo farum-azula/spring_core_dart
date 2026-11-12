@@ -27,6 +27,10 @@
 - `@DataStoreDeclaration`, `DataStoreDescriptor` and `DataStoreDefault`: a package describes its store to the build in `lib/spring_auto_configuration.dart` (name, capabilities, when it is the default, its own fixes); the starter describes `memory` and `jdbc` (`memoryStore`, `jdbcStore`). With them a capability the store of a repository lacks, and a `@Transactional` bean on a default store without transactions, are build errors.
 - The web glue answers a `PermissionDeniedDataAccessException` with a 403 ("Access denied"); the generated module of an application with the web and the data starter changes.
 
+## 0.7.4
+
+- No changes of its own; released with the family version 0.7.4.
+
 ## 0.7.3
 
 - No changes of its own; released with the family version 0.7.3.

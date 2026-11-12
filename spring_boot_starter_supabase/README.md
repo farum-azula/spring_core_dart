@@ -37,7 +37,7 @@ dependencies:
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.7.3   # required: writes the repositories and the declared interfaces
+  spring_core_dart_generator: ^0.7.4   # required: writes the repositories and the declared interfaces
 ```
 
 The starter uses what the other packages of the family have under

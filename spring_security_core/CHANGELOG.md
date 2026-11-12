@@ -1,13 +1,16 @@
-## 0.7.4
+## Unreleased
 
 - `ZoneSecurityContextHolderStrategy.onProgramWideAuthentication` is told, with the place, each time an authentication is set outside every scope (into the one context of the whole program), and `programWideAuthentication` is who is there now. In a Flutter app that is the login; on a server it is how one user's identity outlives the work it was for, and the security starter logs it. Nothing is told by default, and nothing is refused.
 - `testing.dart`: `withMockUsersAtOnce(usernames, body, rounds:)` runs a body as several users at the same time, the calls overtaking each other at their `await`s, and returns what each got: the test of "one user never sees another's" (a bean that remembers the user in a field, a cache key without the user, a shared result). `programWideAuthentication()` is the authentication left outside every scope, to expect `null` of after a test.
-- `SecurityContextChangedEvent` names itself (`eventName`), readable in a release build.
 - `OAuth2Token`: what every OAuth 2.0 token has (`tokenValue`, `issuedAt`, `expiresAt`), Spring's `OAuth2Token`; the OAuth2 client's `AbstractOAuth2Token` and the security starter's `Jwt` implement it.
 - `LoginSession`: the login of the current user of a client application, whatever the provider (`authentication`, `isLoggedIn`, `authenticationChanges`, `accessToken()`, `restore()`, `logout()`); an interface only.
 - `SecretStore` and `InMemorySecretStore`, moved here from `spring_boot_starter_flutter_security` (which still exports them): a provider's login can keep its tokens without depending on Flutter.
 - `AuthorizationWindow` and `AuthorizationCancelledException`, moved here from `spring_boot_starter_flutter_security` (which still exports them).
 - `sha256Digest(bytes)` and `pkceS256Challenge(verifier)`: SHA-256 and the `S256` code challenge of PKCE (RFC 7636), for a login that is not built on the OAuth2 client.
+
+## 0.7.4
+
+- `SecurityContextChangedEvent` names itself (`eventName`), readable in a release build.
 
 ## 0.7.3
 

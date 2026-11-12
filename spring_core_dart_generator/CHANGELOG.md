@@ -1,4 +1,4 @@
-## 0.7.4
+## Unreleased
 
 - **Regenerate:** the typed keys and the classes of JSON Schemas are written under new names: `lib/spring_gen/theme.spring.keys.dart`, `lib/spring_gen/messages.spring.keys.dart` and `lib/spring_gen/json_schemas.spring.classes.dart` (they were `theme.spring.dart`, `messages.spring.dart` and `json_schemas.spring.dart`). Under the old names a package with `lib/theme.dart`, `lib/messages.dart` or `lib/json_schemas.dart` could not be built at all ("outputs collide"), a server application too. They are parts of the generated library, so no import changes; the build removes the old files.
 - Fixed: `00000000` anywhere in the generated file before the fingerprint (an embedded resource such as `app.tenant=00000000-0000-…`, a colour) was replaced instead of it: the resource was changed, and the fingerprint stayed `00000000`, so a hot reload never saw new generated code.
@@ -20,6 +20,8 @@
 - Fixed: the typed keys found a `@ThemeLoaderKind` class by a pattern over the source text, which missed a trailing comma in the annotation, a comment or an annotation with nested brackets between it and the class, `mixin class`, an import prefix, and named a class with a primary constructor (`class const X()`) `const` in `spring_metadata.json`, while the module still registered `XLoaderProps._`; the source is parsed now. A kind whose name is not a string literal (a constant) is a build error that says so.
 - Fixed: with module variables that read each other, a module always built could lose the proxy of a bean it reaches through them when a module the build leaves out was read first.
 - Fixed: `source` of a loader kind declared in `bin/` was `package:pkg/main.dart` in `spring_metadata.json`; it is `bin/main.dart`, as for a bean of `bin/`.
+
+## 0.7.4
 
 - `AutoConfigurationModule(platform:)`: the module is listed under `const bool.fromEnvironment('dart.library.io')` (native) or `'dart.library.js_interop'` (web), together with the condition of its build property when it has one; the proxies of beans only such modules define are under the same condition, so they leave the other platform's build with the module. Compiled with `-DSPRING_ALL_PLATFORMS=true` every such module stays.
 - A module under a condition (not in a release, a platform) keeps its `order`, `before` and `after`: the generated map of the orderings has the same condition.
