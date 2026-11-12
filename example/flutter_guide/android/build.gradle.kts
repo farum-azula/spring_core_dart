@@ -23,6 +23,10 @@ subprojects {
         "org.jdom:jdom2:2.0.6.1",
         "org.apache.commons:commons-lang3:3.21.0",
         "org.apache.commons:commons-compress:1.28.0",
+        // The Android Gradle plugin 9 brings Kotlin's 2.2.10 into the
+        // buildscript of a plugin that names no Kotlin of its own (jni,
+        // jni_flutter of Flutter 3.50), with an advisory; the app's.
+        "org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.21",
     )) {
         classpath.constraints.add("classpath", fixed)
     }

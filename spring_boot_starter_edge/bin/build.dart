@@ -75,6 +75,7 @@ Future<void> main(List<String> args) async {
     'entry',
     'output',
     'optimization',
+    'dart',
     'target',
     'path',
   };

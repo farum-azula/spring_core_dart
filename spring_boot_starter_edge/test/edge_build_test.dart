@@ -79,6 +79,29 @@ void main() {
     }
   }, testOn: 'posix');
 
+  test('the command takes --dart and says why it refuses', () async {
+    final result = await Process.run(Platform.resolvedExecutable, [
+      'run',
+      'spring_boot_starter_edge:build',
+      '--platform',
+      'supabase',
+      '--target',
+      'wasm',
+      '--dart',
+      fakeDart('3.14.0'),
+      '--output',
+      output().path,
+    ]);
+    expect(result.exitCode, 64);
+    expect(
+      '${result.stderr}',
+      allOf(
+        contains('works only when Dart 3.13 compiles it'),
+        isNot(contains('Unknown option')),
+      ),
+    );
+  }, testOn: 'posix');
+
   test('the other platforms take WebAssembly of every Dart', () async {
     for (final platform in EdgePlatform.values) {
       expect(
