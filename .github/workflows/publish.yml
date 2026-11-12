@@ -231,9 +231,12 @@ jobs:
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
-      - name: Flutter SDK (stable)
+      # Pinned until 0.8.0 moves to Flutter 3.50: 3.50 deprecates
+      # package:flutter/material.dart and cupertino.dart, and the analysis
+      # fails on a deprecation. Back to `stable` with that release.
+      - name: Flutter SDK (3.47.9)
         run: |
-          git clone https://github.com/flutter/flutter.git --branch stable --depth 1 "$RUNNER_TEMP/flutter"
+          git clone https://github.com/flutter/flutter.git --branch 3.47.9 --depth 1 "$RUNNER_TEMP/flutter"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
       - run: dart pub get
       # The family was published seconds ago; pub.dev's cache may not list
@@ -267,9 +270,9 @@ jobs:
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
-      - name: Flutter SDK (stable)
+      - name: Flutter SDK (3.47.9)
         run: |
-          git clone https://github.com/flutter/flutter.git --branch stable --depth 1 "$RUNNER_TEMP/flutter"
+          git clone https://github.com/flutter/flutter.git --branch 3.47.9 --depth 1 "$RUNNER_TEMP/flutter"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
       - run: dart pub get
       - name: Tests against the published family
@@ -300,9 +303,9 @@ jobs:
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
-      - name: Flutter SDK (stable)
+      - name: Flutter SDK (3.47.9)
         run: |
-          git clone https://github.com/flutter/flutter.git --branch stable --depth 1 "$RUNNER_TEMP/flutter"
+          git clone https://github.com/flutter/flutter.git --branch 3.47.9 --depth 1 "$RUNNER_TEMP/flutter"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
       - run: dart pub get
       - name: Tests against the published family
