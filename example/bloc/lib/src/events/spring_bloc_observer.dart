@@ -14,16 +14,19 @@ import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutt
 /// Bloc has one observer for the whole app (`Bloc.observer`): this bean
 /// takes its place when the application starts, before any bloc is made
 /// (a `BeanFactoryPostProcessor` runs first), and gives it back when it
-/// closes. Written by hand, in forty lines: the framework has no part in
+/// closes. The publisher is given by the container
+/// (`ApplicationEventPublisherAware`), not through the constructor: a
+/// post-processor is made too early for ordinary injection. Written by hand, in forty lines: the framework has no part in
 /// it but the events.
 @Component()
 class SpringBlocObserver extends BlocObserver
-    implements BeanFactoryPostProcessor {
-  /// The observer that publishes to [events].
-  SpringBlocObserver(this.events);
+    implements BeanFactoryPostProcessor, ApplicationEventPublisherAware {
+  /// Where the events go: given by the container.
+  late ApplicationEventPublisher events;
 
-  /// Where the events go.
-  final ApplicationEventPublisher events;
+  @override
+  void setApplicationEventPublisher(ApplicationEventPublisher publisher) =>
+      events = publisher;
 
   BlocObserver? _previous;
 

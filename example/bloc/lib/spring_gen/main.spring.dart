@@ -75,8 +75,8 @@ _i1.BeanModule get $application => _i1.BeanModule(
       ],
       create: (r) =>
           _i2.BooksBloc(r.dependency<_i7.BookRepository>(name: r'repository')),
-      preDestroy: (bean) async {
-        await bean.closeWithBean();
+      preDestroy: (bean) {
+        bean.closeWithBean();
       },
       annotations: const [_i1.Component()],
       aopProxy: const _i1.AopProxyFactory.pruned(
@@ -109,8 +109,8 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i6.ClosedWithBean<dynamic>,
       ],
       create: (r) => _i8.CounterCubit(),
-      preDestroy: (bean) async {
-        await bean.closeWithBean();
+      preDestroy: (bean) {
+        bean.closeWithBean();
       },
       annotations: const [_i1.Component()],
       aopProxy: const _i1.AopProxyFactory.pruned(
@@ -143,8 +143,8 @@ _i1.BeanModule get $application => _i1.BeanModule(
       ],
       scope: r'route',
       create: (r) => _i9.DraftCubit(),
-      preDestroy: (bean) async {
-        await bean.closeWithBean();
+      preDestroy: (bean) {
+        bean.closeWithBean();
       },
       annotations: const [_i1.Component(), _i1.Scope(r'route')],
       aopProxy: const _i1.AopProxyFactory.pruned(
@@ -167,13 +167,10 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i10.SpringBlocObserver,
         _i3.BlocObserver,
         _i1.BeanFactoryPostProcessor,
+        _i1.ApplicationEventPublisherAware,
+        _i1.Aware,
       ],
-      dependencies: const [
-        _i1.Dependency(_i1.ApplicationEventPublisher, name: r'events'),
-      ],
-      create: (r) => _i10.SpringBlocObserver(
-        r.dependency<_i1.ApplicationEventPublisher>(name: r'events'),
-      ),
+      create: (r) => _i10.SpringBlocObserver(),
       preDestroy: (bean) {
         bean.uninstall();
       },
@@ -346,7 +343,7 @@ _i17.SpringApplication get springApplication => _i17.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '31aa3bdc',
+  fingerprint: 'da84e257',
 );
 
 /// Starts the application: config files, environment, context, runners
