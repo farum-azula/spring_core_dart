@@ -1754,6 +1754,11 @@ class ProxyModel {
   /// build pruned it ([pruned]: nothing but the reason is emitted).
   String? unavailableReason;
 
+  /// Whether a member of the class carries an annotation marked
+  /// `@ProxyTargetClass()`: the proxy extends the class and keeps every
+  /// member, since the advice follows what the bean does to itself.
+  bool targetClass = false;
+
   /// Whether [unavailableReason] is the build's pruning (no pointcut it
   /// knows matches the bean), not a type that cannot be proxied: then no
   /// signatures are emitted either (`AopProxyFactory.pruned`).

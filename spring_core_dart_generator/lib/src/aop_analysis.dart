@@ -263,6 +263,7 @@ void analyzeAop(
     if (proxy == null ||
         proxy.unavailableReason != null ||
         mixesChangeNotifierIn(proxy.classAnnotations, proxy.targetType) ||
+        proxy.targetClass ||
         proxy.introductions.isNotEmpty ||
         bean.aspect != null ||
         _classMayBeAdvised(proxy, foreign)) {

@@ -37,6 +37,7 @@ jobs:
       flutter_security: ${{ steps.affected.outputs.flutter_security }}
       flutter_navigation: ${{ steps.affected.outputs.flutter_navigation }}
       flutter_scene: ${{ steps.affected.outputs.flutter_scene }}
+      flutter_signals: ${{ steps.affected.outputs.flutter_signals }}
       bloc_showcase: ${{ steps.affected.outputs.bloc_showcase }}
       flutter_guide: ${{ steps.affected.outputs.flutter_guide }}
       theme_showcase_neon: ${{ steps.affected.outputs.theme_showcase_neon }}
@@ -654,7 +655,8 @@ jobs:
   # spring_boot_starter_flutter_cupertino,
   # spring_boot_starter_flutter_security,
   # spring_boot_starter_flutter_navigation,
-  # spring_boot_starter_flutter_scene and the Flutter guide: outside
+  # spring_boot_starter_flutter_scene,
+  # spring_boot_starter_flutter_signals and the Flutter guide: outside
   # the pub workspace (flutter_test pins versions that package:test of the
   # workspace cannot use), so they get the Flutter SDK and their own
   # resolution. Only when one of them, or the server guide
@@ -681,6 +683,7 @@ jobs:
           (cd spring_boot_starter_flutter_security && flutter pub get)
           (cd spring_boot_starter_flutter_navigation && flutter pub get)
           (cd spring_boot_starter_flutter_scene && flutter pub get)
+          (cd spring_boot_starter_flutter_signals && flutter pub get)
           (cd example/flutter_guide && flutter pub get)
           (cd example/themes/neon_ui && flutter pub get)
           (cd example/themes/neon && flutter pub get)
@@ -726,7 +729,7 @@ jobs:
 
       - name: Generated code is up to date (Flutter guide, theme examples and packages)
         run: |
-          for example in example/flutter_guide example/themes/neon_ui example/themes/neon example/themes/material example/themes/cupertino example/static_site/app example/seo_site example/scene example/bloc example/supabase/app spring_boot_starter_flutter spring_boot_starter_flutter_material spring_boot_starter_flutter_cupertino spring_boot_starter_flutter_security spring_boot_starter_flutter_navigation spring_boot_starter_flutter_scene; do
+          for example in example/flutter_guide example/themes/neon_ui example/themes/neon example/themes/material example/themes/cupertino example/static_site/app example/seo_site example/scene example/bloc example/supabase/app spring_boot_starter_flutter spring_boot_starter_flutter_material spring_boot_starter_flutter_cupertino spring_boot_starter_flutter_security spring_boot_starter_flutter_navigation spring_boot_starter_flutter_scene spring_boot_starter_flutter_signals; do
             (cd $example && dart run build_runner build)
             git diff --exit-code -- $example
             test -z "$(git status --porcelain -- $example)"
@@ -748,6 +751,7 @@ jobs:
           (cd spring_boot_starter_flutter_security && flutter analyze --fatal-infos)
           (cd spring_boot_starter_flutter_navigation && flutter analyze --fatal-infos)
           (cd spring_boot_starter_flutter_scene && flutter analyze --fatal-infos)
+          (cd spring_boot_starter_flutter_signals && flutter analyze --fatal-infos)
           (cd example/flutter_guide && flutter analyze --fatal-infos)
           (cd example/themes/neon_ui && flutter analyze --fatal-infos)
           (cd example/themes/neon && flutter analyze --fatal-infos)
@@ -817,6 +821,14 @@ jobs:
       - name: Tests of spring_boot_starter_flutter_scene
         if: needs.changes.outputs.flutter_scene == 'true'
         working-directory: spring_boot_starter_flutter_scene
+        run: flutter test
+
+      # Followed state in beans, on the package's generated example:
+      # fields, computed values, effects, asynchronous values, the widgets
+      # that follow them, the State tab.
+      - name: Tests of spring_boot_starter_flutter_signals
+        if: needs.changes.outputs.flutter_signals == 'true'
+        working-directory: spring_boot_starter_flutter_signals
         run: flutter test
 
       # The showcase as an app, its scenes as placeholders. Its device

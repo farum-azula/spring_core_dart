@@ -23,6 +23,7 @@
 //   flutter_cupertino spring_boot_starter_flutter_cupertino affected
 //   flutter_security spring_boot_starter_flutter_security affected
 //   flutter_navigation spring_boot_starter_flutter_navigation affected
+//   flutter_signals  spring_boot_starter_flutter_signals affected
 //   bloc_showcase    example/bloc affected (Bloc and Cubit as beans)
 //   flutter_scene    spring_boot_starter_flutter_scene or its showcase
 //                    (example/scene) affected
@@ -57,6 +58,7 @@ const flutterPackages = [
   'spring_boot_starter_flutter_security',
   'spring_boot_starter_flutter_navigation',
   'spring_boot_starter_flutter_scene',
+  'spring_boot_starter_flutter_signals',
   'example/flutter_guide',
   'example/scene',
   'example/bloc',
@@ -141,6 +143,7 @@ Future<void> main(List<String> args) async {
     final navigation = has('spring_boot_starter_flutter_navigation');
     final scene =
         has('spring_boot_starter_flutter_scene') || has('example/scene');
+    final signals = has('spring_boot_starter_flutter_signals');
     final blocShowcase = has('example/bloc');
     final server = has('example/server_guide');
     // The app's end-to-end tests run against the server guide: a change of
@@ -161,6 +164,7 @@ Future<void> main(List<String> args) async {
         security ||
         navigation ||
         scene ||
+        signals ||
         blocShowcase ||
         app ||
         showcaseNeon ||
@@ -186,6 +190,7 @@ Future<void> main(List<String> args) async {
         'flutter_navigation=$navigation',
         'flutter_scene=$scene',
         'bloc_showcase=$blocShowcase',
+        'flutter_signals=$signals',
         'flutter_guide=$app',
         'theme_showcase_neon=$showcaseNeon',
         'theme_showcase_material=$showcaseMaterial',

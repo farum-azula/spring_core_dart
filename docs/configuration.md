@@ -4336,6 +4336,20 @@ A model without a `source` stops the app at startup with the key's name.
 A value for one platform goes into its profile file: `render: still` in
 `application-android.yml`, say.
 
+### Signals
+
+`spring_boot_starter_flutter_signals` follows state in beans (`@Signal`,
+`@Computed`, `@Effect`): see the
+[starter's README](../spring_boot_starter_flutter_signals/README.md). It
+has one property.
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.flutter.signals.debug.enabled` | `true` / `false` | not set: debug and profile builds | The "State" tab of [the debug panel](#the-debug-panel), with every bean and member by name: `true` in every build, `false` in none (no code) |
+
+Every assignment and every run of an effect is logged at `debug` by the
+logger `spring.flutter.signals` (`logging.level.spring.flutter.signals`).
+
 ### The site's pages: `spring.flutter.web.seo.*`
 
 A Flutter web app draws on a canvas: its HTML holds no text, so a search

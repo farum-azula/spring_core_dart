@@ -1,0 +1,35 @@
+name: spring_boot_starter_flutter_signals
+description: >-
+  Reactive state in the beans of Spring Boot Flutter apps, on signals: @Signal fields, @Computed values (also from a Future or a Stream), @Effect methods.
+version: 0.8.0
+repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_flutter_signals
+documentation: https://farum-azula.org/components
+issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
+topics:
+  - flutter
+  - state
+  - signals
+  - spring
+
+environment:
+  sdk: ^3.14.0
+  flutter: '>=3.50.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # The reactive core: the one exception to the dependency policy, for
+  # this starter only (docs/dependencies.md).
+  signals_core: ^7.0.0
+  spring_boot_dart: ^0.8.0
+  # Re-exported: an app lists only this package.
+  spring_boot_starter_flutter: ^0.8.0
+
+dev_dependencies:
+  # For example/ and the typed properties (lib/src/properties/).
+  build_runner: ^2.17.0
+  spring_core_dart_generator: ^0.8.0
+  flutter_test:
+    sdk: flutter
+  spring_boot_starter_test: ^0.8.0
+  lints: ^6.0.0

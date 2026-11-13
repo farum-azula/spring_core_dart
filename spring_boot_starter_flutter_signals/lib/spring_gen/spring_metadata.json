@@ -1,0 +1,346 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_flutter_signals",
+  "properties": [
+    {
+      "name": "spring.flutter.signals.debug.enabled",
+      "type": "bool?",
+      "description": "Whether the app has the tab: `true` in every build, `false` in none (the build leaves its code out), not set in debug and profile builds only (a release build compiles it away).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 21,
+      "class": "SignalsDebugProperties"
+    }
+  ],
+  "hints": [],
+  "beans": [
+    {
+      "name": "signalBeanNames",
+      "type": "SignalBeanNames",
+      "types": [
+        "SignalBeanNames",
+        "BeanFactoryPostProcessor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
+      "line": 59,
+      "injects": [],
+      "members": [
+        {
+          "name": "beans",
+          "kind": "field",
+          "type": "SignalBeans"
+        },
+        {
+          "name": "postProcessBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ConfigurableListableBeanFactory beanFactory"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "signalBeans",
+      "type": "SignalBeans",
+      "types": [
+        "SignalBeans",
+        "ChangeNotifier",
+        "Listenable"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
+      "line": 52,
+      "injects": [],
+      "members": [
+        {
+          "name": "addListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object bean"
+          ]
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "find",
+          "kind": "method",
+          "type": "SignalBean?",
+          "parameters": [
+            "Object bean"
+          ]
+        },
+        {
+          "name": "hasListeners",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "live",
+          "kind": "getter",
+          "type": "Iterable<SignalBean>"
+        },
+        {
+          "name": "names",
+          "kind": "field",
+          "type": "Set<String>"
+        },
+        {
+          "name": "notifyListeners",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "of",
+          "kind": "method",
+          "type": "SignalBean",
+          "parameters": [
+            "Object bean",
+            "String label"
+          ]
+        },
+        {
+          "name": "removeListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "signalBuildTracker",
+      "type": "SignalBuildTracker",
+      "types": [
+        "SignalBuildTracker",
+        "WidgetBuildTracker"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
+      "line": 91,
+      "injects": [],
+      "members": [
+        {
+          "name": "attach",
+          "kind": "method",
+          "type": "WidgetBuildTracking",
+          "parameters": [
+            "void Function() rebuild"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "signalEffects",
+      "type": "SignalEffects",
+      "types": [
+        "SignalEffects",
+        "DestructionAwareBeanPostProcessor",
+        "BeanPostProcessor",
+        "BeanFactoryAware",
+        "Aware",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
+      "line": 80,
+      "injects": [],
+      "members": [
+        {
+          "name": "beans",
+          "kind": "field",
+          "type": "SignalBeans"
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "postProcessAfterInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "postProcessBeforeDestruction",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "postProcessBeforeInitialization",
+          "kind": "method",
+          "type": "Object",
+          "parameters": [
+            "Object bean",
+            "String beanName"
+          ]
+        },
+        {
+          "name": "requiresDestruction",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Object bean"
+          ]
+        },
+        {
+          "name": "setBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BeanFactory beanFactory"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "signalsAdvisor",
+      "type": "DefaultPointcutAdvisor",
+      "types": [
+        "DefaultPointcutAdvisor",
+        "PointcutAdvisor",
+        "Advisor",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
+      "line": 65,
+      "injects": [],
+      "members": [
+        {
+          "name": "advice",
+          "kind": "field",
+          "type": "MethodInterceptor"
+        },
+        {
+          "name": "order",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "pointcut",
+          "kind": "field",
+          "type": "AopPointcut"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "signalsDebugSection",
+      "type": "SignalsDebugSection",
+      "types": [
+        "SignalsDebugSection",
+        "DebugPanelSection",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.signals.debug.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
+      "line": 119,
+      "injects": [],
+      "members": [
+        {
+          "name": "beans",
+          "kind": "field",
+          "type": "SignalBeans"
+        },
+        {
+          "name": "build",
+          "kind": "method",
+          "type": "Widget",
+          "parameters": [
+            "BuildContext context"
+          ]
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "title",
+          "kind": "getter",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "signalsProperties",
+      "type": "SignalsProperties",
+      "types": [
+        "SignalsProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 5,
+      "injects": [],
+      "members": [
+        {
+          "name": "debug",
+          "kind": "field",
+          "type": "SignalsDebugProperties"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

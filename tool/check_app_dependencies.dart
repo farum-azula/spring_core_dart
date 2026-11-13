@@ -21,7 +21,8 @@
 // starter's feature (the HTTP client of spring_web_dart with the Flutter
 // starter, the Material or Cupertino themes and app factory with a design
 // starter, a screen with the navigation starter, a scene of a model of
-// the properties with the scene starter, method security and
+// the properties with the scene starter, followed state with the signals
+// starter, method security and
 // `withMockUser` from `testing.dart` with the Flutter security starter),
 // then `flutter pub get`, the generator, `flutter analyze --fatal-infos`
 // and `flutter test`.
@@ -496,6 +497,51 @@ class Home extends StatelessWidget {
     featureTest: '''
   test('the screens come with the starter', () {
     expect(app.getBean<RouteTemplate>(), isA<RouteTemplate>());
+    expect(const Home().key, isNull);
+  });
+''',
+  ),
+  // signals_core is not in the app's pubspec: the annotations, the
+  // widgets and `untracked` come with the starter.
+  _Starter(
+    'spring_boot_starter_flutter_signals',
+    feature: r'''
+@Component()
+class Basket {
+  @Signal()
+  List<String> items = [];
+
+  @Signal()
+  String? coupon;
+
+  @Computed()
+  int get count => items.length;
+
+  int saved = -1;
+
+  @Effect()
+  void save() {
+    untracked(() => coupon);
+    saved = count;
+  }
+
+  void add(String item) => items.add(item);
+}
+
+class Home extends StatelessWidget {
+  const Home({super.key});
+
+  @override
+  Widget build(BuildContext context) =>
+      Watch((context) => Text('${context.bean<Basket>().count}'));
+}
+''',
+    featureTest: '''
+  test('followed state comes with the starter', () {
+    final basket = app.getBean<Basket>()..add('Dune');
+    expect(basket.count, 1);
+    expect(basket.saved, 1);
+    expect(app.getBean<SignalBeans>().find(basket), isNotNull);
     expect(const Home().key, isNull);
   });
 ''',

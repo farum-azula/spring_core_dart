@@ -44,6 +44,7 @@ const family = [
   'spring_boot_starter_flutter_security',
   'spring_boot_starter_flutter_navigation',
   'spring_boot_starter_flutter_scene',
+  'spring_boot_starter_flutter_signals',
 ];
 
 /// Packages that only depend on the family (not published).

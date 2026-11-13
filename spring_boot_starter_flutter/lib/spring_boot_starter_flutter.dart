@@ -84,6 +84,7 @@ export 'src/shortcuts/shortcut_label.dart';
 export 'src/spring_app.dart';
 export 'src/spring_application_widget.dart';
 export 'src/spring_scope.dart';
+export 'src/widget_build_tracker.dart';
 export 'src/spring_widgets.dart';
 export 'src/text/highlighted_text.dart';
 export 'src/text/text_morph.dart';

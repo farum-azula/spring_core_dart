@@ -1,7 +1,109 @@
-# flutter_spring_signals (planned)
+# spring_boot_starter_flutter_signals (first version built)
 
-On `signals` — an allowed exception to the dependency policy, only in this
-starter. Part of the [Flutter plan](spring_boot_starter_flutter.md).
+On `signals_core`: an allowed exception to the dependency policy, only in
+this starter. Part of the [Flutter plan](spring_boot_starter_flutter.md).
+
+The first version is in the repository
+(`spring_boot_starter_flutter_signals`; its README is the reference, its
+`example/example.dart` the app the tests run). It goes to pub.dev with the
+family's next version.
+
+## Built (November 2026)
+
+| Part | What is there |
+|---|---|
+| Annotations | `@Signal()` on a field, `@Computed()` on a getter or a method without parameters, `@Effect()` on a method; on the members of a component only |
+| Plain fields | No wrapper type and no `.value`: the bean's proxy follows the reads and the assignments |
+| Collections | A `List`, `Set`, `Map` or `Queue` field is handed out as one that tells of a change in place (`FollowedList` and the others), typed by the element types the generator writes |
+| Asynchronous | A `@Computed` getter returning a `Future` or a `Stream`: one request until what it read changes; `books.state` (`AsyncValue`), `refresh()`, `reload()`; a late answer of an older request is dropped |
+| One change for a method | Every method of such a bean is a batch; `batch` and `untracked` are exported |
+| Widgets | `SpringStatelessWidget` and `SpringState` built again for the fields their `build` read (the Flutter starter's new `WidgetBuildTracker`); `Watch`; `AsyncView` |
+| Lifetime | The state ends with the bean; its own `@PreDestroy` still reads its fields |
+| Build checks | A misplaced annotation, a private or final field, a class that cannot be extended fail the build |
+| Debugging | The State tab of the debug panel; `@Signal(hidden: true)`; the logger `spring.flutter.signals` |
+
+How it is made, which is not what the plan below expected: the state is
+**advice** (an interceptor on the bean's proxy), not code the generator
+writes for each field. That took three things in the framework, each
+useful apart from signals:
+
+- `@ProxyTargetClass()` on an annotation class (`spring_core_dart`): a
+  bean with such a member gets a proxy that extends its class, with every
+  member kept and the calls the bean makes on itself seen by the advice
+  that asks for them (`SelfCallInterceptor`, `adviseSelfCalls`). Other
+  advice and other beans are as before.
+- `TypeCapture` and `MethodSignature.returnTypeArguments`: the element
+  type of `List<Book>` written by the generator, so advice can make a
+  typed collection.
+- `WidgetBuildTracker` (`spring_boot_starter_flutter`): how a state
+  library joins the Spring widgets.
+
+Found while building it:
+
+- **The package's own collection signals do not tell of a change made
+  inside a batch** (`ListSignal.add` inside `batch()`, signals_core
+  7.0.0; seen in an isolated test). Every method of a bean is a batch
+  here, so the starter has collections of its own over a counter. To
+  report upstream.
+- **An asynchronous getter's type arrives without its arguments** in the
+  signature (`Future`), so its state is kept untyped and given its type
+  where it is read (`books.state` on a `Future<List<Book>>`).
+- **The bean's own calls** were first given to every advice on it
+  (`@Cacheable` applied to a call from inside the bean, unlike
+  everywhere else). Changed after the owner's question about a guarded
+  value (below): only the advice that follows state sees them.
+
+Checked after the owner asked what happens with the annotations where
+they do not belong (a repository, and the rest):
+
+- **Where no proxy follows them the build fails** instead of doing
+  nothing: a class that is no bean (a widget, a `State`), the class a
+  `@Bean` method returns, a `@Configuration` or `@ConfigurationProperties`
+  class, an `@Aspect` or a post-processor, a repository or an HTTP client
+  (their methods are generated), an enum, an extension, the top level,
+  an abstract member, an override without the annotation, a member the
+  proxy cannot override. An abstract class and a mixin may declare them.
+- **Found on the way and fixed**: an error from a computed value or an
+  effect came wrapped in the signals package's own exception; a `late`
+  field read before its first assignment left a computed value that
+  never computed again; a setter that is no field was not one change; a
+  field declared as a collection class of its own (`HashSet`) would have
+  been handed out as the follower, which is not one; the State tab
+  failed on a computed value that throws; the states of prototypes were
+  kept for ever.
+- **Beside other advice** (asked by the owner: a signal with a
+  transaction). Tried with an aspect standing for the transaction, not
+  with the data starter itself: both run in one chain; a rollback does
+  not undo the fields (said in the
+  README); the advice of the default order ran for every read of a kept
+  computed value (a transaction per read), so the signals' advice got an
+  order of its own, one step before the default. Method security has
+  an earlier order (`methodSecurityAdvisorOrder`), so `@PreAuthorize` on
+  a `@Computed` member is checked for every read of the kept value; an
+  ordered aspect stands for it in the starter's test.
+- **A guarded value over a plain field, and a guarded effect** (asked by
+  the owner). Found: the guard ran on the bean's own read too, so a
+  value made from the guarded one failed for whoever happened to
+  compute it; a run that was refused before it read anything followed
+  nothing from then on (an effect dead without a word, a value that kept
+  the refusal for every later caller); an effect's failure was thrown at
+  whoever assigned the field, an anonymous caller too. Now: other advice
+  skips the bean's own calls, as in Spring; a run that fails goes on
+  following what the last good run followed (`FollowKeeper`); a computed
+  value's failure is not kept; an effect's later failure is reported,
+  not thrown (the owner has not decided this last one: it follows
+  `ChangeNotifier` and MobX, and is one place to change back).
+- **Not verified**: a bean with such members in a library package used
+  by an application (its proxy is generated in the library, as for any
+  subclass proxy; no test of the two together); an application whose
+  build leaves the starter's auto-configuration out has such beans made
+  and nothing followed, without a word.
+
+Not built, though talked through (below): a build check for a field read
+after an `await` in an asynchronous `@Computed` getter; which fields a
+computed value or an effect depends on, and which widget was built for
+which field, in the State tab; changes on the debug timeline; state kept
+between runs; a history with undo; the state of a running action.
 
 ## Reactive state in beans
 

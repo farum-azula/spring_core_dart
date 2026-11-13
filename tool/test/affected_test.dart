@@ -168,11 +168,14 @@ targets:
         'spring_boot_starter_supabase',
         // Its test function is generated.
         'spring_boot_starter_edge',
+        // The application of its edge cases (test/cases/) is generated:
+        // the proxies that follow state are the generator's.
+        'spring_boot_starter_flutter_signals',
       });
     });
 
     test('the Flutter starter reaches the design starters and the Flutter '
-        'security, navigation and scene packages', () {
+        'security, navigation, scene and signals packages', () {
       expect(affected('spring_boot_starter_flutter/lib/x.dart'), {
         'spring_boot_starter_flutter',
         'spring_boot_starter_flutter_material',
@@ -180,6 +183,7 @@ targets:
         'spring_boot_starter_flutter_security',
         'spring_boot_starter_flutter_navigation',
         'spring_boot_starter_flutter_scene',
+        'spring_boot_starter_flutter_signals',
       });
       expect(affected('spring_boot_starter_oauth2_client/lib/x.dart'), {
         'spring_boot_starter_oauth2_client',

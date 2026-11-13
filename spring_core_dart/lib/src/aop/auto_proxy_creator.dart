@@ -9,7 +9,10 @@ import 'package:spring_core_dart/src/beans/bean_factory.dart';
 import 'package:spring_core_dart/src/beans/exceptions.dart';
 import 'package:spring_core_dart/src/beans/post_processors.dart';
 import 'package:spring_core_dart/src/context/application_context.dart';
+import 'package:spring_core_dart/src/core/log.dart';
 import 'package:spring_core_dart/src/core/order.dart';
+
+const _log = SpringLog('spring_core_dart.aop');
 
 /// The bean post-processor that puts advice into effect: it replaces each
 /// bean that some advice matches with the bean's generated proxy.
@@ -126,6 +129,10 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
   // checked them against: created later, they are not checked again while
   // all three are the same.
   List<PointcutAdvisor>? _checkedAdvisors;
+
+  // The beans already warned about ([postProcessAfterInitialization]): a
+  // prototype is made many times.
+  final _unadvisedTargetClass = <String>{};
   final _checkedDeferred =
       <String, (BeanDefinition<Object>, AopProxyFactory)>{};
 
@@ -343,6 +350,18 @@ class AspectAutoProxyCreator extends BeanPostProcessor implements Ordered {
         !proxyFactory.introductions.any(
           (introduction) => _aspectTypes.contains(introduction.aspectType),
         )) {
+      // A member annotated for advice on the bean's own calls, and no
+      // advice for it: the annotation would do nothing without a word.
+      if (proxyFactory.adviseSelfCalls && _unadvisedTargetClass.add(beanName)) {
+        _log.warning(
+          "The bean '$beanName' has members annotated for advice that "
+          "follows the bean's own calls (an annotation marked "
+          '@ProxyTargetClass), and no advice matches it: the annotations '
+          'do nothing. Is the auto-configuration of the starter they come '
+          'from left out of the application (spring.autoconfigure.exclude, '
+          'or an application put together by hand)?',
+        );
+      }
       return bean;
     }
     return proxyFactory.createProxy(

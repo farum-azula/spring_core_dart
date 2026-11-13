@@ -49,6 +49,7 @@ import 'package:spring_core_dart_generator/src/part_tree_reader.dart';
 import 'package:spring_core_dart_generator/src/query_expressions.dart';
 import 'package:spring_core_dart_generator/src/query_text_checker.dart';
 import 'package:spring_core_dart_generator/src/schema_sources.dart';
+import 'package:spring_core_dart_generator/src/signals_scanning.dart';
 import 'package:spring_core_dart_generator/src/spel_compiler.dart';
 
 part 'advisor_pointcuts.dart';
@@ -102,6 +103,7 @@ final TypeChecker _propertySource = _spring('PropertySource');
 final TypeChecker _configurable = _spring('Configurable');
 final TypeChecker _eventListener = _spring('EventListener');
 final TypeChecker _beanMethodAnnotation = _spring('BeanMethodAnnotation');
+final TypeChecker _proxyTargetClass = _spring('ProxyTargetClass');
 final TypeChecker _jsonCreator = _spring('JsonCreator');
 final TypeChecker _jsonSubTypes = _spring('JsonSubTypes');
 final TypeChecker _jsonTypeInfo = _spring('JsonTypeInfo');
@@ -696,9 +698,14 @@ class BeanScanner {
       // spring_boot_starter_flutter_navigation: screens and shells.
       collectErrors(() => scanNavigation(element, module));
       collectErrors(() => checkChangeNotifierComponent(element));
+      collectErrors(() => checkSignals(element));
       collectErrors(() => scanLog(element, module));
     }
+    for (final mixin in library.mixins) {
+      collectErrors(() => checkSignals(mixin));
+    }
     _rejectUnsupportedTargets(library);
+    _rejectTargetClassOutsideBeans(library);
   }
 
   /// Adds the aspects and advisor beans of [library], a library of another
@@ -809,6 +816,7 @@ class BeanScanner {
   void throwErrors() {
     collectErrors(_checkQueries);
     _checkTransactionalBeans();
+    _checkTargetClassDeclarers();
     switch (errors) {
       case []:
         return;
@@ -1078,7 +1086,7 @@ class BeanScanner {
               implementSelf: true,
               constructor: constructor,
             )
-          : null,
+          : _withoutProxy(type),
     );
     if (constructors.length > 1 &&
         (configuration != null ||
@@ -1939,7 +1947,7 @@ class BeanScanner {
           _notProxied.any((c) => c.isAssignableFromType(returnType)) ||
               _aspectAnnotation.hasAnnotationOf(returnType.element) ||
               _configuration.hasAnnotationOf(returnType.element)
-          ? null
+          ? _withoutProxy(returnType)
           : _proxyModel(
               returnType,
               '_\$${owner.type.element.name}\$${_capitalize(methodName)}Proxy',
@@ -2532,6 +2540,52 @@ class BeanScanner {
     // the bean could not be injected by its class). CGLIB subclasses it,
     // so a subclass proxy is preferred; implementing the supertypes is the
     // fallback when the class cannot be extended either.
+    // A member annotated for advice that follows the bean's own calls
+    // (`@ProxyTargetClass()` on the annotation's class): only a subclass
+    // sees them, and it is not an advice-mode choice.
+    final targetClassBy = implementSelf && !targetType.element.library.isInSdk
+        ? _targetClassAnnotation(targetType)
+        : null;
+    if (targetClassBy != null) {
+      final typeName = targetType.element.name;
+      _targetClassBeans.addAll(_hierarchy(targetType));
+      if (constructor == null || (mode ?? proxyMode) != ProxyMode.all) {
+        final element = targetType.element;
+        _fail(
+          element is ClassElement && element.isAbstract
+              ? '@$targetClassBy on a member of $typeName, whose '
+                    'implementation is generated (a repository, an HTTP '
+                    'client): the annotation works on the members of a '
+                    'component class, whose proxy extends it. Put it on a '
+                    'member of a component that calls $typeName.'
+              : '@$targetClassBy on a member of $typeName needs a proxy '
+                    'that extends $typeName: declare $typeName as a '
+                    'component class with one constructor (not as the '
+                    'result of a @Bean method), and leave aop_proxies at '
+                    '`all`.',
+          element,
+        );
+      }
+      final subclass = _subclassProxyModel(
+        targetType,
+        className,
+        constructor,
+        '@$targetClassBy on a member of $typeName needs a proxy that '
+        'extends $typeName.',
+        interfaceAlternative: false,
+      );
+      if (subclass?.subclass == null) {
+        _fail(
+          subclass?.unavailableReason ??
+              '@$targetClassBy on a member of $typeName needs a proxy that '
+                  'extends $typeName, which cannot be made.',
+          targetType.element,
+        );
+      }
+      subclass!.targetClass = true;
+      _checkTargetClassMembers(targetType, subclass);
+      return _withImplementations(_rejectCachedStreams(subclass));
+    }
     if (constructor != null &&
         implementSelf &&
         (mode ?? proxyMode) == ProxyMode.all &&
@@ -2651,22 +2705,222 @@ class BeanScanner {
   // cannot be extended either, only its signatures (like any type that
   // cannot be proxied): the context fails at startup, saying what to
   // change, only if advice matches the bean.
+  // The name of the first annotation on a member of [type] (or of a
+  // class it inherits from) whose class is marked `@ProxyTargetClass()`;
+  // `null` when there is none.
+  String? _targetClassAnnotation(InterfaceType type) {
+    for (final element in _hierarchy(type)) {
+      if (_targetClassMembers(element).firstOrNull case (final by, _)?) {
+        return by;
+      }
+    }
+    return null;
+  }
+
+  // The members that [element] itself declares with an annotation whose
+  // class is marked `@ProxyTargetClass()`, each with the annotation's name.
+  Iterable<(String, Element)> _targetClassMembers(InstanceElement element) =>
+      _targetClassAnnotated([
+        ...element.fields,
+        ...element.getters,
+        ...element.setters,
+        ...element.methods,
+      ]);
+
+  Iterable<(String, Element)> _targetClassAnnotated(
+    Iterable<Element> members,
+  ) sync* {
+    for (final member in members) {
+      for (final annotation in member.metadata.annotations) {
+        if (annotation.computeConstantValue()?.type
+            case final InterfaceType annotationType
+            when _proxyTargetClass.hasAnnotationOf(annotationType.element)) {
+          yield (annotationType.element.name!, member);
+          break;
+        }
+      }
+    }
+  }
+
+  // The classes and mixins of the beans whose proxy extends them for such
+  // a member, and of the beans told why they get none.
+  final _targetClassBeans = <InterfaceElement>{};
+
+  // The classes that declare such a member and could be created (they are
+  // not abstract): each must be a bean, or a base of one.
+  final _targetClassDeclarers = <ClassElement, (String, Element)>{};
+
+  // A public member annotated for a target-class proxy that the subclass
+  // could not override would be left out of the advice without a word.
+  void _checkTargetClassMembers(InterfaceType targetType, ProxyModel proxy) {
+    final overridden = {for (final member in proxy.members) member.name};
+    final typeName = targetType.element.name;
+    for (final element in _hierarchy(targetType)) {
+      for (final (by, member) in _targetClassMembers(element)) {
+        final name = member.name;
+        if (name == null ||
+            member.isPrivate ||
+            (member is ExecutableElement && member.isStatic) ||
+            (member is FieldElement && member.isStatic) ||
+            overridden.contains(name)) {
+          continue;
+        }
+        _fail(
+          '@$by on ${element.name}.$name: the proxy of $typeName cannot '
+          'override it (it is an operator or @nonVirtual, its type is '
+          'private, or a default value of a parameter is not a public '
+          'constant), so it would not be followed.',
+          member,
+        );
+      }
+    }
+  }
+
+  // No proxy for a bean the container does not proxy (an aspect, a
+  // post-processor), which must have no member annotated for a
+  // target-class proxy.
+  ProxyModel? _withoutProxy(DartType type) {
+    if (type is InterfaceType && !type.element.library.isInSdk) {
+      _rejectTargetClassWithoutProxy(type);
+    }
+    return null;
+  }
+
+  void _rejectTargetClassWithoutProxy(InterfaceType type) {
+    final by = _targetClassAnnotation(type);
+    if (by == null) {
+      return;
+    }
+    _targetClassBeans.addAll(_hierarchy(type));
+    final element = type.element;
+    if (_configuration.hasAnnotationOf(element)) {
+      // The starter of the annotation says it in its own words.
+      return;
+    }
+    final typeName = element.name;
+    _fail(
+      proxyMode == ProxyMode.none
+          ? '@$by on a member of $typeName needs a proxy that extends '
+                '$typeName, and aop_proxies is `none`: leave it at `all`.'
+          : '@$by on a member of $typeName, a bean the container does not '
+                'proxy (an @Aspect, a post-processor, an Advisor or a '
+                'FactoryBean): the annotation would do nothing. Move the '
+                'member into a component of its own.',
+      element,
+    );
+  }
+
+  // `@ProxyTargetClass` annotations where no bean's proxy can follow them:
+  // a member of an enum, an extension or an extension type, a top-level
+  // variable or function. Like a stereotype there, they would be ignored
+  // without a word.
+  void _rejectTargetClassOutsideBeans(LibraryElement library) {
+    final places = <(String, Iterable<Element>)>[
+      for (final element in library.enums)
+        (
+          'the enum ${element.name}',
+          [
+            ...element.fields,
+            ...element.getters,
+            ...element.setters,
+            ...element.methods,
+          ],
+        ),
+      for (final element in library.extensions)
+        (
+          'the extension ${element.name ?? 'on ${element.extendedType}'}',
+          [
+            ...element.fields,
+            ...element.getters,
+            ...element.setters,
+            ...element.methods,
+          ],
+        ),
+      for (final element in library.extensionTypes)
+        (
+          'the extension type ${element.name}',
+          [
+            ...element.fields,
+            ...element.getters,
+            ...element.setters,
+            ...element.methods,
+          ],
+        ),
+      (
+        'the top level of ${library.uri}',
+        [
+          ...library.topLevelVariables,
+          ...library.getters,
+          ...library.setters,
+          ...library.topLevelFunctions,
+        ],
+      ),
+    ];
+    for (final (place, members) in places) {
+      for (final (by, member) in _targetClassAnnotated(members)) {
+        collectErrors(
+          () => _fail(
+            '@$by on ${member.displayName}, in $place: it goes on a member '
+            'of a component class (@Component, @Service), whose proxy '
+            'follows it. Move ${member.displayName} into one.',
+            member,
+          ),
+        );
+      }
+    }
+    for (final element in library.classes) {
+      if (element.isAbstract) {
+        continue;
+      }
+      if (_targetClassMembers(element).firstOrNull case final found?) {
+        _targetClassDeclarers[element] = found;
+      }
+    }
+  }
+
+  // Once every library is scanned: a class that can be created and
+  // declares such a member, and is neither a bean nor a base of one.
+  void _checkTargetClassDeclarers() {
+    for (final MapEntry(key: element, value: (by, member))
+        in _targetClassDeclarers.entries) {
+      if (_targetClassBeans.contains(element)) {
+        continue;
+      }
+      collectErrors(
+        () => _fail(
+          '@$by on ${element.name}.${member.displayName}, and '
+          '${element.name} is no bean: the annotation works on the members '
+          'of a component class (@Component, @Service), whose proxy '
+          'follows them, and would do nothing here. Annotate '
+          '${element.name} as a component, or make it abstract when it is '
+          'only a base of components.',
+          member,
+        ),
+      );
+    }
+  }
+
   ProxyModel? _subclassProxyModel(
     InterfaceType targetType,
     String className,
     ConstructorElement constructor,
-    String implementFailure,
-  ) {
+    String implementFailure, {
+    bool interfaceAlternative = true,
+  }) {
     final element = targetType.element;
     final typeName = element.name!;
     ProxyModel unavailable(String problem, String change) =>
         _signatureOnlyModel(
           targetType,
           className,
-          '$implementFailure A subclass proxy (the bean created as a '
-          'generated subclass of $typeName) is not possible either, because '
-          '$typeName $problem. $change, or add an interface with the advised '
-          'methods and inject the bean by it.',
+          interfaceAlternative
+              ? '$implementFailure A subclass proxy (the bean created as a '
+                    'generated subclass of $typeName) is not possible '
+                    'either, because $typeName $problem. $change, or add an '
+                    'interface with the advised methods and inject the bean '
+                    'by it.'
+              : '$implementFailure It cannot be made, because $typeName '
+                    '$problem. $change.',
         );
     if (element is! ClassElement) {
       return unavailable('is not a class', 'Make it a class');

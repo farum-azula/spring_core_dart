@@ -89,6 +89,9 @@ Not even other Dart team packages are allowed there. Eight exceptions:
 - ⚠️ `pointycastle`, a **third-party** package, for the two security
   packages and the OAuth2 client only, **until it can be removed**
   ([section 2](#pointycastle-third-party-to-be-removed));
+- ⚠️ `signals_core`, a **third-party** package (reactive state), for
+  `spring_boot_starter_flutter_signals` alone: the owner allowed it for
+  that starter ([section 2](#2-exceptions));
 - ⚠️ `flutter_scene`, a **third-party** package (the 3D engine on Flutter
   GPU), for `spring_boot_starter_flutter_scene` alone, with the `hooks`,
   `path` and `vector_math` of the Dart and Flutter teams it needs beside
@@ -170,6 +173,7 @@ too, but only through it.
 | `material_color_utilities` | `material.io` (Google's Material team) | The Material 3 color math (pure Dart). `package:flutter` still depends on it in Flutter 3.50 and the Flutter SDK pins its version, so no Flutter package can avoid it. `material_ui` depends on it too, and `spring_boot_starter_flutter_cupertino` lists it itself, for the palette of a theme's seed color. | the Flutter packages only |
 | `pointycastle` | ⚠️ `bouncycastle.org` (Legion of the Bouncy Castle) | **Third-party, temporary.** The JWT signatures and the password hashes of the security packages, and the SHA-256 of PKCE and the ES256 DPoP proofs in the OAuth2 client, until a Dart team package covers them: [below](#pointycastle-third-party-to-be-removed). | `spring_security_core`, `spring_boot_starter_oauth2_client`, `spring_boot_starter_security`; the Flutter guide as a dev dependency (its integration test verifies the DPoP proofs of the platform keys) |
 | `flutter_scene` | ⚠️ `bdero.dev` (Brandon DeRosier) | **Third-party, allowed by the owner for one starter.** The 3D engine on Flutter GPU: WebGL2 in a browser, Impeller elsewhere. `spring_boot_starter_flutter_scene` is built on it; nothing else of the family depends on it, and an app without that starter does not get it. It brings packages of its own, allowed through it only: `scene` and `flutter_gpu_shaders` (`bdero.dev`), `image` and `archive` (`taosengine.com`), `posix` (`onepub.dev`), `flat_buffers` (no publisher on pub.dev), and the Dart team's `data_assets`, `web`, `yaml_edit`; `flutter_gpu` is the Flutter SDK's. | `spring_boot_starter_flutter_scene`; the scene showcase (`example/scene`, not published) |
+| `signals_core` | ⚠️ `rodydavis.com` (Rody Davis) | **Third-party, allowed by the owner for one starter.** Reactive state: a Dart port of Preact signals. `spring_boot_starter_flutter_signals` is built on its signals, computed values and effects; nothing else of the family depends on it. It brings `preact_signals` (the same publisher), allowed through it only. | `spring_boot_starter_flutter_signals` |
 | `flutter_bloc` | ⚠️ `bloclibrary.dev` (Felix Angelov) | **Third-party, in one example only.** Bloc and Cubit. The Bloc showcase (`example/bloc`, not published) shows them as beans of an app, with no starter for them; no package of the family depends on it, and it brings `bloc`, `provider` and `nested`, allowed through it only. | the Bloc showcase (`example/bloc`) only |
 | `node_preamble` | none | `package:test` (Dart team) pulls it for browser tests. It has no publisher on pub.dev. | any package (through `test`) |
 
@@ -278,6 +282,7 @@ in its `pubspec.yaml`.
 | `spring_boot_starter_flutter_security` | Security of Flutter apps, a plugin with its own platform code: the app login (`OAuth2LoginService`), `PlatformSecretStore` (Keychain, Keystore, DPAPI, libsecret), `PlatformAuthorizationWindow` and `LoopbackAuthorizationWindow` (the system's login window), `SecretTemplate`, `PrincipalNotifier` and the widgets that follow the user | yes | `flutter`, `flutter_web_plugins` (SDK), `spring_boot_dart`, `spring_boot_starter_feign`, `spring_boot_starter_flutter`, `spring_boot_starter_flutter_navigation`, `spring_boot_starter_oauth2_client`, `spring_security_core` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
 | `spring_boot_starter_flutter_navigation` | Navigation of Flutter apps: `@ScreenRoute` screens, shells with a stack per branch, `RouteTemplate` and `context.route`, the browser's addresses, route and branch scopes, `RouteContentView` | yes | `flutter`, `flutter_web_plugins` (SDK), `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_web_dart` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
 | `spring_boot_starter_flutter_scene` | 3D scenes of Flutter apps on `flutter_scene`: `SpringSceneView` and `SceneBackdrop` (plain widgets where scenes do not draw), the engine's one start with the splash, the models of `spring.flutter.scene.models.*`, the application's scene, the scenes' tab of the debug panel | yes (from its first release, the one after 0.8.0) | `flutter` (SDK), `flutter_scene` (⚠️ third-party, [an exception](#2-exceptions)), `hooks` and `path` (for `build_hooks.dart`), `vector_math`, `clock` (a scene's time without its pauses), `spring_boot_dart`, `spring_boot_starter_flutter` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
+| `spring_boot_starter_flutter_signals` | Reactive state in the beans of Flutter apps: `@Signal` fields, `@Computed` values (also from a `Future` or a `Stream`), `@Effect` methods, widgets built again for the fields they read, the State tab of the debug panel | yes (from its first release, the one after 0.8.0) | `flutter` (SDK), `signals_core` (⚠️ third-party, [an exception](#2-exceptions)), `spring_boot_dart`, `spring_boot_starter_flutter` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
 | `spring_boot_starter_supabase` | Supabase: its database through Spring Data (the REST API, or SQL), its Auth through Spring Security, Realtime as streams, Storage as a template and as declared buckets, Edge Functions as declared interfaces; its own client, no third-party package | not yet (after its tests against the whole of Supabase; a git dependency until then) | `spring_boot_dart`, `spring_boot_starter_cache`, `spring_boot_starter_data`, `spring_boot_starter_feign`, `spring_boot_starter_logging`, `spring_boot_starter_websocket`, `spring_security_core`, `spring_web_dart` | same as logging |
 | `spring_boot_starter_edge` | The application as a function behind the fetch API: Supabase Edge Functions, Cloudflare Workers, AWS Lambda, Deno Deploy, Netlify, Vercel; the build to JavaScript or WebAssembly and the platforms' entry files | not yet (its first release is to be decided) | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_boot_starter_web`, `spring_web_dart` | `build_runner`, `spring_boot_starter_security`, `spring_boot_starter_test`, `spring_core_dart_generator`, `test` |
 | `spring_boot_starter_test` | Tests (`springBootTest`, `@SpringBootTest`) | yes | `spring_boot_dart`, `spring_web_dart`, `matcher`, `test_api` | `test` |
@@ -336,6 +341,7 @@ graph TD
   flutterMaterial[spring_boot_starter_flutter_material]
   flutterCupertino[spring_boot_starter_flutter_cupertino]
   flutterScene[spring_boot_starter_flutter_scene]
+  flutterSignals[spring_boot_starter_flutter_signals]
   flutterSecurity[spring_boot_starter_flutter_security]
   supabase[spring_boot_starter_supabase]
   testStarter[spring_boot_starter_test]
@@ -354,6 +360,7 @@ graph TD
   analyzer([analyzer, yaml])
   pointycastle(["⚠️ pointycastle (third-party, to be removed)"])
   flutterSceneEngine(["⚠️ flutter_scene (third-party, the scene starter alone)"])
+  signalsCore(["⚠️ signals_core (third-party, the signals starter alone)"])
 
   core --> yaml
   boot --> core
@@ -417,6 +424,10 @@ graph TD
   flutterScene --> flutterStarter
   flutterScene --> flutterSdk
   flutterScene --> flutterSceneEngine
+  flutterSignals --> boot
+  flutterSignals --> flutterStarter
+  flutterSignals --> flutterSdk
+  flutterSignals --> signalsCore
   flutterSecurity --> boot
   flutterSecurity --> flutterStarter
   flutterSecurity --> oauth2Client
@@ -461,6 +472,7 @@ spring_core_dart ─────────────── yaml
 │   │       ├── spring_boot_starter_flutter_material (+ spring_boot_dart, material_ui)
 │   │       ├── spring_boot_starter_flutter_cupertino (+ spring_boot_dart, cupertino_ui, material_color_utilities)
 │   │       ├── spring_boot_starter_flutter_scene (+ spring_boot_dart, ⚠️ flutter_scene, clock, hooks, path, vector_math)
+│   │       ├── spring_boot_starter_flutter_signals (+ spring_boot_dart, ⚠️ signals_core)
 │   │       └── spring_boot_starter_flutter_security (+ the OAuth2 client, spring_security_core, flutter_web_plugins)
 │   ├── spring_boot_starter_test             (+ spring_web_dart, matcher, test_api)
 │   └── dart_spring_language_server          (+ spring_core_dart, analyzer, yaml)
@@ -523,6 +535,7 @@ package of the family. Packages of the repository are left out.
 | `spring_boot_starter_flutter_cupertino` | those of the Flutter starter, plus `cupertino_ui` (`flutter.dev`); the `material_color_utilities` it lists is there already, with `flutter` |
 | `spring_boot_starter_flutter_security` | those of the Flutter starter, plus `flutter_web_plugins` (Flutter SDK) and those of the security packages: ⚠️ `pointycastle`, `convert`, `typed_data` |
 | `spring_boot_starter_flutter_scene` | those of the Flutter starter, plus ⚠️ `flutter_scene` (third-party, `bdero.dev`) and what it brings: `scene` and `flutter_gpu_shaders` (`bdero.dev`), `image` and `archive` (`taosengine.com`), `posix` (`onepub.dev`), `flat_buffers` (no publisher), `data_assets`, `web`, `yaml_edit` (the Dart team), `flutter_gpu` (Flutter SDK) |
+| `spring_boot_starter_flutter_signals` | those of the Flutter starter, plus ⚠️ `signals_core` and its `preact_signals` (third-party, `rodydavis.com`) |
 
 All of them are Dart or Flutter team packages, except
 `material_color_utilities` (Google's Material team), which `package:flutter` itself depends on, and ⚠️ `pointycastle`, the security

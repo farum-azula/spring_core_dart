@@ -1,3 +1,9 @@
+## Unreleased
+
+- `@ProxyTargetClass()` (`package:spring_core_dart/spring_core_dart.dart`), for an annotation class: a bean with a member that carries such an annotation gets a proxy that extends its class, with every member in it, and the calls the bean makes on itself run the advice that asks for them: a `SelfCallInterceptor` (`package:spring_core_dart/aop.dart`; `AopProxyFactory.subclass(adviseSelfCalls: true)`, `ProxyInvoker.adviseSelfCalls` and `ownChainFor`). For advice that follows a bean's own state (reactive fields), where a method of the bean assigns a field another member is computed from. Every other advice on such a bean, and every other bean, is as before: a call on `this` skips the advice, as in Spring.
+- A bean with such a member that no advice matches (the starter of the annotation left out of the application) is said so once in a warning of the logger `spring_core_dart.aop`, instead of the annotation doing nothing without a word.
+- `TypeCapture<T>` and `MethodSignature.returnTypeArguments` (`package:spring_core_dart/aop.dart`): the type arguments of a getter's type, kept so that advice can use them as types again (`List<Book>` gives `TypeCapture<Book>()`, opened with `run(<E>() => ...)`). Written by the generator for the getters of a `@ProxyTargetClass` bean.
+
 ## 0.8.0
 
 - `TimerDrivenWork` (`package:spring_core_dart/core.dart`): a bean that runs work on timers names it (`timerDrivenWork`), for whoever runs the application where timers do not fire between requests (the edge starter's warning list), as `IsolateLocalState` names state kept in memory.

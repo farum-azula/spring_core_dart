@@ -1852,6 +1852,8 @@ class ModuleEmitter {
         'signatures': signatures,
         if (proxy.introductions.isNotEmpty) 'introductions': introductions,
         ..._knownAdvisorsArgument(proxy),
+        // The bean's own calls are advised too (`@ProxyTargetClass()`).
+        if (proxy.targetClass) 'adviseSelfCalls': literalTrue,
         'advise': _closure(
           ['bean', 'invoker'],
           bean
@@ -1912,6 +1914,22 @@ class ModuleEmitter {
         'kind': _spring('MemberKind').property(member.kind.name),
       if (_simpleName(member.returnType) != 'dynamic')
         'returnType': _str(_simpleName(member.returnType)),
+      // The type arguments of a getter's type, for advice that follows
+      // the bean's state and must make typed objects of it.
+      if (proxy.targetClass &&
+          member.kind == ProxyMemberKind.getter &&
+          member.returnType is InterfaceType &&
+          (member.returnType as InterfaceType).typeArguments.isNotEmpty &&
+          (member.returnType as InterfaceType).typeArguments.every(
+            _canCapture,
+          ))
+        'returnTypeArguments': literalConstList([
+          for (final argument
+              in (member.returnType as InterfaceType).typeArguments)
+            _spring(
+              'TypeCapture',
+            ).constInstance([], {}, [_anyType(argument, element)]),
+        ]),
       if (member.kind == ProxyMemberKind.method && member.parameters.isNotEmpty)
         'parameterTypes': literalConstList([
           for (final parameter in member.parameters)
@@ -2814,6 +2832,15 @@ class ModuleEmitter {
               ? _constant(parameter.defaultValue!, element).code
               : null,
       );
+
+  // Whether [type] can be written in generated code as a type argument:
+  // made of public classes only.
+  bool _canCapture(DartType type) => switch (type) {
+    InterfaceType(:final element, :final typeArguments) =>
+      element.isPublic && typeArguments.every(_canCapture),
+    DynamicType() || VoidType() || NeverType() => true,
+    _ => false,
+  };
 
   /// A reference to [type] as generated code writes it, with its import:
   /// classes, type parameters, function and record types, with `?` kept.

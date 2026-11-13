@@ -1,0 +1,10 @@
+# What pub.dev gets: lib/, example/, the docs (and a plugin's native code).
+# The tests and the development tools stay in the repository: they need its
+# fixtures, servers and Spring reference application, and only add weight.
+# This file replaces the package's own .gitignore when publishing; the
+# repository's root .gitignore still applies.
+/test/
+/coverage/
+/dart_test.yaml
+/benchmark/
+/tool/

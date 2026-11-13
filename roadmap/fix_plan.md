@@ -86,6 +86,79 @@ redirects, no `max-delay >= delay` check, wildcard parameters in full-mode
 `@Bean` methods, interface parameter constraints on subclass proxies and
 `BeanWrapper` list growth. Ninth batch (fifth review): zero WebSocket reconnect delays, the list grow limit in `DataBinder.construct`, method annotations not inherited from superclasses for `@annotation`, and parenthesised ternary / Elvis in `toStringAST`; starters (cache, method validation) read annotations over the whole hierarchy like Spring's find semantics. Tenth batch (sixth review): selected imports before the importer's beans under registerBean-phase conditions, and cache defaults and class-level annotations from the declaring class and its superclasses. Eleventh batch (seventh review): import order per configuration class like Spring's parser and reader, and runners registered as singletons. Twelfth batch (eighth review): Boot's bean conditions decided when beans register, like `OnBeanCondition`, and one decision per configuration class for its imports and registrars. Thirteenth batch (ninth review): components and imported classes with bean conditions decided in the reader, in class order.
 
+## For the next full review: annotations where they do not belong
+
+Asked for by the owner (November 2026), after the signals starter: its
+`@Signal`, `@Computed` and `@Effect` did nothing, without a word, on a
+class that is no bean, an enum, an `@Aspect`, a post-processor and a
+`@ConfigurationProperties` class, and nobody had tried them there. They
+fail the build now (the generator's
+`test/spring_boot_starter_flutter_signals_test.dart`). The next full
+review does the same for every other annotation of the framework.
+
+For each annotation: put it on each of the places below, build and start.
+Each case ends as one of two things, with a test: it works there (and
+the docs say so), or the build fails (or, where the build cannot know,
+the start) and says what to change. An annotation that is accepted and
+does nothing is a finding.
+
+The places:
+
+- a class that is no bean (a data class, a widget, a `State`), and a
+  member of one;
+- the class a `@Bean` method returns, and the `@Bean` method itself;
+- a `@Configuration` class and a `@ConfigurationProperties` class;
+- an interface whose implementation is generated: a `DataRepository`, a
+  `@FeignClient`;
+- a bean the container does not proxy: an `@Aspect`, a
+  `BeanPostProcessor`, a `BeanFactoryPostProcessor`, an `Advisor`, a
+  `FactoryBean`;
+- an abstract class, a mixin, a member that is abstract, static or
+  private, an operator, a getter or setter where a method is meant (and
+  the other way round);
+- an override that does not repeat the annotation, and the member of a
+  base class or mixin a component inherits;
+- a generic class, a `final` / `sealed` / `base` class, a class with a
+  factory constructor or several constructors;
+- an enum, an extension, an extension type, a top-level variable or
+  function, a parameter, a local;
+- a bean of a library package used by an application, and an application
+  with the annotation's starter left out (`spring.autoconfigure.exclude`).
+
+The annotations, by package (every one the package exports, these first):
+
+- the container: `@Autowired`, `@Value`, `@Qualifier`, `@Primary`,
+  `@Lazy`, `@Scope`, `@Order`, `@DependsOn`, `@PostConstruct`,
+  `@PreDestroy`, `@Lookup`, `@EventListener`, `@Conditional...`,
+  `@Profile`, `@Import`;
+- AOP and what rides on it: `@Around` and the other advice,
+  `@Transactional`, `@Cacheable` / `@CachePut` / `@CacheEvict`,
+  `@Async`, `@Scheduled`, `@Validated` and the constraints,
+  `@Observed`, `@Log`;
+- security: `@PreAuthorize`, `@PostAuthorize`, `@Secured`,
+  `@PreFilter`, `@PostFilter`;
+- web, Feign and WebSocket: the mapping annotations outside a controller
+  or a client, the parameter annotations outside a handler,
+  `@ControllerAdvice` members, `@OnMessage`;
+- data: `@Query`, `@Modifying`, `@Procedure`, `@Lock`, `@Table` and the
+  column annotations outside an entity, `@Version`;
+- JSON: the Jackson annotations on a class nothing introspects;
+- Flutter: `@ChangeNotifierComponent`, `@NotifyListeners`,
+  `@BuildContextAccess`, the navigation annotations (screens, shells,
+  guards), the theme and loader annotations, the security widgets'.
+
+Known to answer already (keep as tests): `@Async` outside an
+`@EventListener` method and `@EventListener` without an event fail the
+build; a stereotype on a mixin, an enum or an extension and `@Bean` on a
+top-level function fail the build; advice that matches a bean that
+cannot be proxied fails the start.
+
+At runtime, for the annotations that change how a member behaves (as was
+done for the signals, in the starter's `test/signal_edges_test.dart`):
+state from a base class and a mixin, a `late` field and one the
+container injects, a constructor and `@PostConstruct`, a prototype and a
+custom scope, a method that throws, an asynchronous method.
+
 ## Before 0.5.0 (the review of October 2026)
 
 Everything changed since the last review (commit `fb30bf5`): 44 commits,

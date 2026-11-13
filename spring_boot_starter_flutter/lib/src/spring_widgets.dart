@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_flutter/src/widget_build_tracker.dart';
 import 'package:spring_boot_starter_flutter/src/bean_lookup_scope.dart';
 import 'package:spring_boot_starter_flutter/src/bean_reads.dart';
 import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
@@ -205,7 +206,10 @@ class _SpringStatefulElement extends StatefulElement {
   @override
   Widget build() => switch (state) {
     final SpringState<SpringStatefulWidget<Record>, Record> state =>
-      state._listening.track(super.build),
+      state._trackings.track(
+        SpringScope.of(this),
+        () => state._listening.track(super.build),
+      ),
     _ => super.build(),
   };
 }
@@ -227,6 +231,10 @@ abstract class SpringState<W extends SpringStatefulWidget<B>, B extends Record>
   B? _beans;
 
   late final _listening = BeanReads(_onBeanChanged);
+
+  // What other state libraries follow of this widget's `build`
+  // (`WidgetBuildTracker` beans).
+  late final _trackings = WidgetBuildTrackings(_onBeanChanged);
 
   /// The beans named in this state's type, from the application context.
   ///
@@ -257,6 +265,7 @@ abstract class SpringState<W extends SpringStatefulWidget<B>, B extends Record>
   @override
   void dispose() {
     _listening.dispose();
+    _trackings.dispose();
     super.dispose();
   }
 
@@ -283,6 +292,16 @@ class SpringStatelessElement extends ComponentElement {
 
   late final _listening = BeanReads(markNeedsBuild);
 
+  // What other state libraries follow of this widget's `build`
+  // (`WidgetBuildTracker` beans).
+  late final _trackings = WidgetBuildTrackings(_rebuild);
+
+  void _rebuild() {
+    if (mounted) {
+      markNeedsBuild();
+    }
+  }
+
   @override
   Widget build() {
     final widget = this.widget as SpringStatelessWidget<Record>;
@@ -298,7 +317,10 @@ class SpringStatelessElement extends ComponentElement {
     _listening.setBeans(
       SpringWidgetBindings.valuesOf(context, widget.beansType, beans),
     );
-    return _listening.track(() => widget._buildWith(this, beans));
+    return _trackings.track(
+      context,
+      () => _listening.track(() => widget._buildWith(this, beans)),
+    );
   }
 
   @override
@@ -310,6 +332,7 @@ class SpringStatelessElement extends ComponentElement {
   @override
   void unmount() {
     _listening.dispose();
+    _trackings.dispose();
     super.unmount();
   }
 }

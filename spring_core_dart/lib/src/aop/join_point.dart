@@ -93,6 +93,7 @@ final class MethodSignature {
     this.implementingTypeAnnotationTypes,
     this.superclassAnnotations = const [],
     this.isProtected = false,
+    this.returnTypeArguments = const [],
   }) : _target = null;
 
   /// Describes the member [name] of the bean class `target` (an
@@ -125,6 +126,7 @@ final class MethodSignature {
     this.implementingTypeAnnotationTypes,
     this.superclassAnnotations = const [],
     this.isProtected = false,
+    this.returnTypeArguments = const [],
   }) : _targetType = null,
        _targetTypes = const [],
        _targetAnnotations = const [],
@@ -154,6 +156,13 @@ final class MethodSignature {
 
   /// Whether the member is a method, a getter or a setter.
   final MemberKind kind;
+
+  /// The type arguments of the return type, kept so that code can use
+  /// them as types again (`List<Book>` gives one, of `Book`; `Map<K, V>`
+  /// two). The generator writes them for the getters of a bean whose
+  /// proxy follows its own calls (`@ProxyTargetClass()`); empty otherwise,
+  /// and for a type that has none.
+  final List<TypeCapture<Object?>> returnTypeArguments;
 
   /// The return type's name without type arguments; `void` when it
   /// returns nothing, `dynamic` when unknown.
@@ -482,4 +491,52 @@ abstract interface class MethodInterceptor {
   /// itself, and return its result or a replacement. Not calling it skips
   /// the member. An error thrown here reaches the caller.
   Object? invoke(MethodInvocation invocation);
+}
+
+/// A [MethodInterceptor] that also runs for the calls a bean makes on
+/// itself, in a proxy that advises them
+/// (`AopProxyFactory.adviseSelfCalls`, a bean with a member whose
+/// annotation is marked `@ProxyTargetClass()`).
+///
+/// Only such advice sees those calls: advice that follows what the bean
+/// does to its own state. Every other advice on the same bean (a
+/// transaction, a security check, a cache) skips them, as it does in any
+/// other bean and as in Spring, where a call on `this` goes past the
+/// proxy.
+///
+/// ```dart
+/// final class TrackedInterceptor implements SelfCallInterceptor {
+///   @override
+///   Object? invoke(MethodInvocation invocation) {
+///     note(invocation.signature.name);   // also for `this.count++`
+///     return invocation.proceed();
+///   }
+/// }
+/// ```
+///
+/// Spring has no counterpart.
+abstract interface class SelfCallInterceptor implements MethodInterceptor {}
+
+/// A type kept as a value, to be used as a type again: what a generic
+/// method needs when it is given only an object.
+///
+/// Dart cannot ask a `List<Book>` for `Book`. The generator knows it and
+/// writes `TypeCapture<Book>()`, and code that has the capture opens it:
+///
+/// ```dart
+/// // A list of the same element type as the one given, whatever it is.
+/// List<Object?> emptyLike(TypeCapture<Object?> element) =>
+///     element.run(<E>() => <E>[]);
+/// ```
+///
+/// Spring reads such types by reflection (`ResolvableType`).
+final class TypeCapture<T> {
+  /// The capture of [T].
+  const TypeCapture();
+
+  /// Calls [body] with [T] as its type argument.
+  R run<R>(R Function<X>() body) => body<T>();
+
+  @override
+  String toString() => 'TypeCapture<$T>';
 }

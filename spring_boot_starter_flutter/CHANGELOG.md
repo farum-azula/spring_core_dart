@@ -1,3 +1,7 @@
+## Unreleased
+
+- `WidgetBuildTracker` (and `WidgetBuildTracking`): a bean of this type follows what the `build` of a `SpringStatelessWidget` or `SpringState` reads and asks for a new build when that changes. The way a state library of another package joins the Spring widgets; `spring_boot_starter_flutter_signals` declares one.
+
 ## 0.8.0
 
 - **Breaking: Flutter 3.50 (Dart 3.14) and no design library.** Flutter 3.50 moves Material and Cupertino out of the SDK's `package:flutter` into the packages `material_ui` and `cupertino_ui`. The starter follows: it imports `package:flutter/widgets.dart` only, and an app of `spring.flutter.app.type: widgets` (the default) has neither library in its build. What is Material's or Cupertino's is in two new starters: **`spring_boot_starter_flutter_material`** (the `MaterialApp`, `toMaterial()`, `ThemeCustomizer`, the `components.*`, `visual-density`, `tap-target-size` and ink `splash` theme properties, the palette from `seed-color`) and **`spring_boot_starter_flutter_cupertino`** (the `CupertinoApp`, `toCupertino()`, `CupertinoThemeCustomizer`, the `cupertino.*` theme properties). An app of type `material` or `cupertino` adds its starter to the dependencies and rebuilds; nothing else changes for it. Requires Flutter 3.50.

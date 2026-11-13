@@ -1367,3 +1367,57 @@ class BeanMethodAnnotation {
   /// Marks the annotation class.
   const BeanMethodAnnotation();
 }
+
+/// Marks an annotation class whose members' advice must also see the calls
+/// a bean makes on itself, and every member of the bean, not only the
+/// annotated ones: reactive state, where a method of the bean assigns a
+/// field another member is computed from.
+///
+/// For a bean with a member (a field, a getter or a method) carrying such
+/// an annotation, the generator writes a proxy that **extends** the bean's
+/// class, whatever the class looks like, and keeps every member in it. A
+/// proxy that wraps the bean would not do: the bean's own code would read
+/// and write its fields past it.
+///
+/// ```dart
+/// // In a library: @Tracked fields are seen from inside the bean too.
+/// @ProxyTargetClass()
+/// class Tracked {
+///   const Tracked();
+/// }
+///
+/// @Component()
+/// class Basket {
+///   @Tracked()
+///   int count = 0;
+///
+///   void add() => count++;   // advised, though called by nobody outside
+/// }
+/// ```
+///
+/// The class must be one a generated class can extend (not `final`,
+/// `sealed` or generic, with a constructor that is not a factory); the
+/// build fails otherwise, naming the class. A private member cannot be
+/// overridden from another library and is not advised.
+///
+/// Such an annotation works on the members of a component class, of its
+/// base classes and of its mixins. Anywhere else the build fails rather
+/// than leave it without effect: on a member of a class that is no bean
+/// (and can be created), of the class a `@Bean` method returns, of a bean
+/// the container does not proxy (an `@Aspect`, a post-processor), of an
+/// interface whose implementation is generated (a repository, an HTTP
+/// client), of an enum or an extension, on a top-level declaration, and
+/// on a public member the subclass cannot override (an operator).
+///
+/// The bean's own calls reach only the advice that asks for them, a
+/// `SelfCallInterceptor` (the advice of the annotation). Every other
+/// advice on the bean (a transaction, a security check) skips them, as it
+/// does in any other bean.
+///
+/// Spring (Java) proxies a class by subclassing it (CGLIB) when
+/// `proxyTargetClass` is set, which Spring Boot does by default; there a
+/// call on `this` goes past the proxy for every advice.
+class ProxyTargetClass {
+  /// Marks the annotation class.
+  const ProxyTargetClass();
+}

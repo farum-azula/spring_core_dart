@@ -55,6 +55,7 @@ const repositoryOnly = {
   'spring_boot_starter_flutter_security',
   'spring_boot_starter_flutter_navigation',
   'spring_boot_starter_flutter_scene',
+  'spring_boot_starter_flutter_signals',
 };
 
 /// Packages outside the pub workspace, with their own resolution (Flutter:
@@ -71,6 +72,7 @@ const flutterPackages = [
   'spring_boot_starter_flutter_security',
   'spring_boot_starter_flutter_navigation',
   'spring_boot_starter_flutter_scene',
+  'spring_boot_starter_flutter_signals',
   'example/flutter_guide',
   'example/scene',
   'example/bloc',
@@ -141,6 +143,11 @@ const repositoryOnlyExceptions = {
       "The vectors and matrices of the engine's API (flutter.dev): a "
       'position, a rotation and a colour in linear light are its types '
       '(repositoryOnlyExceptionsOnlyIn: the scene starter alone).',
+  'signals_core':
+      'THIRD-PARTY, allowed by the owner for one starter: reactive state '
+      '(rodydavis.com, an exception of allowedPackages too); '
+      'spring_boot_starter_flutter_signals is built on it '
+      '(repositoryOnlyExceptionsOnlyIn: that starter alone).',
   'pointycastle':
       "THIRD-PARTY, to be removed: Bouncy Castle's Dart port "
       '(bouncycastle.org), RSA, ECDSA, Argon2, PBKDF2, scrypt and SHA-256 '
@@ -161,6 +168,7 @@ const repositoryOnlyExceptionsOnlyIn = {
   'hooks': {'spring_boot_starter_flutter_scene'},
   'path': {'spring_boot_starter_flutter_scene'},
   'vector_math': {'spring_boot_starter_flutter_scene'},
+  'signals_core': {'spring_boot_starter_flutter_signals'},
 };
 
 /// A package allowed although it is not published by the Dart team.
@@ -247,6 +255,7 @@ const allowedPackages = {
       'spring_boot_starter_flutter_security',
       'spring_boot_starter_flutter_navigation',
       'spring_boot_starter_flutter_scene',
+      'spring_boot_starter_flutter_signals',
       'scene_showcase',
       'bloc_showcase',
       'neon_books_app',
@@ -282,6 +291,14 @@ const allowedPackages = {
     'scene widgets. What it depends on is allowed through it only. See '
     'docs/dependencies.md.',
     onlyIn: {'spring_boot_starter_flutter_scene', 'scene_showcase'},
+  ),
+  'signals_core': AllowedPackage(
+    'THIRD-PARTY, allowed by the owner for one starter: reactive state, a '
+    'Dart port of Preact signals (verified publisher rodydavis.com). '
+    'spring_boot_starter_flutter_signals is built on it; it brings '
+    'preact_signals (the same publisher), allowed through it only. See '
+    'docs/dependencies.md.',
+    onlyIn: {'spring_boot_starter_flutter_signals'},
   ),
   'flutter_bloc': AllowedPackage(
     'THIRD-PARTY, in one example only: Bloc and Cubit (verified publisher '

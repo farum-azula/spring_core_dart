@@ -331,6 +331,7 @@ final class AopProxyFactory {
   }) : signatures = List.unmodifiable(signatures),
        introductions = List.unmodifiable(introductions),
        _advise = null,
+       adviseSelfCalls = false,
        unavailableReason = null,
        isDeferred = false;
 
@@ -349,6 +350,7 @@ final class AopProxyFactory {
        knownAdvisors = null,
        _create = null,
        _advise = null,
+       adviseSelfCalls = false,
        unavailableReason = reason,
        isDeferred = false;
 
@@ -373,6 +375,7 @@ final class AopProxyFactory {
       knownAdvisors = null,
       _create = null,
       _advise = null,
+      adviseSelfCalls = false,
       unavailableReason = deferredReason,
       isDeferred = true;
 
@@ -390,6 +393,7 @@ final class AopProxyFactory {
        introductions = const [],
        _create = null,
        _advise = null,
+       adviseSelfCalls = false,
        unavailableReason = reason ?? prunedReason,
        isDeferred = false;
 
@@ -420,11 +424,21 @@ final class AopProxyFactory {
     required Object? Function(Object bean, ProxyInvoker invoker) this._advise,
     List<Introduction> introductions = const [],
     this.knownAdvisors,
+    this.adviseSelfCalls = false,
   }) : signatures = List.unmodifiable(signatures),
        introductions = List.unmodifiable(introductions),
        _create = null,
        unavailableReason = null,
        isDeferred = false;
+
+  /// Whether a call the bean makes on itself goes through the advice that
+  /// asks for such calls (a [SelfCallInterceptor]; a subclass proxy only).
+  /// Off by default, as in Spring, where a call on `this` skips the proxy;
+  /// the generator turns it on for a bean with a member whose annotation
+  /// is marked `@ProxyTargetClass()`: such advice follows what the bean
+  /// does to its own state. Every other advice skips those calls either
+  /// way.
+  final bool adviseSelfCalls;
 
   /// The [unavailableReason] of [AopProxyFactory.deferred].
   static const deferredReason =
@@ -527,6 +541,7 @@ final class AopProxyFactory {
       beanAliases: beanAliases,
       introductions: introductions,
       partial: isPartial,
+      adviseSelfCalls: adviseSelfCalls,
     );
     if (_advise case final advise?) {
       return advise(target, invoker) ??
@@ -647,6 +662,7 @@ final class ProxyInvoker {
     List<String> beanAliases = const [],
     List<Introduction> introductions = const [],
     this.partial = false,
+    this.adviseSelfCalls = false,
   }) : _advisors = [...advisors],
        beanAliases = List.unmodifiable(beanAliases),
        introductions = List.unmodifiable(introductions),
@@ -703,6 +719,10 @@ final class ProxyInvoker {
   /// advice for; [addAdvisor] and [addAdvice] then throw.
   final bool partial;
 
+  /// Whether a call the bean makes on itself runs the advice that asks
+  /// for such calls ([AopProxyFactory.adviseSelfCalls]).
+  final bool adviseSelfCalls;
+
   /// Throws the [AopConfigException] for advice added at run time to a
   /// proxy whose class the build pruned to some of the bean's members
   /// ([AopProxyFactory.isPartial]): the advice could not reach the others.
@@ -723,6 +743,7 @@ final class ProxyInvoker {
     }
     _advisors.add(advisor);
     _chains.clear();
+    _ownChains.clear();
   }
 
   /// Removes [advisor]; returns `false` when it was not there.
@@ -730,6 +751,7 @@ final class ProxyInvoker {
     final removed = _advisors.remove(advisor);
     if (removed) {
       _chains.clear();
+      _ownChains.clear();
     }
     return removed;
   }
@@ -759,6 +781,24 @@ final class ProxyInvoker {
   // Interceptor chains per member index, computed on first call.
   final _chains = <int, List<MethodInterceptor>>{};
 
+  // The same for the calls the bean makes on itself.
+  final _ownChains = <int, List<MethodInterceptor>>{};
+
+  /// The interceptors of member [index] for a call the bean makes on
+  /// itself: those of [chainFor] that ask for such calls
+  /// ([SelfCallInterceptor]).
+  List<MethodInterceptor> ownChainFor(int index) => _ownChains.putIfAbsent(
+    index,
+    () => [
+      for (final interceptor in chainFor(index))
+        if (switch (interceptor) {
+          _DynamicInterceptor(:final advice) => advice,
+          _ => interceptor,
+        } is SelfCallInterceptor)
+          interceptor,
+    ],
+  );
+
   /// The interceptors for member [index], outermost first, computed on
   /// the first call and cached until the advisors change.
   ///
@@ -787,11 +827,15 @@ final class ProxyInvoker {
   // A subclass proxy (the bean is its own proxy, [target] is [proxy])
   // calling itself from its own code: like a `this.` call on Spring's
   // target, the call skips the advice (unless made through
-  // `AopContext.currentProxy()`).
-  static bool _isSelfCall(Object proxy, Object target) =>
+  // `AopContext.currentProxy()`), but for the advice that asks for such
+  // calls in a proxy that advises them ([ownChainFor]).
+  bool _isSelfCall(Object proxy, Object target) =>
       identical(proxy, target) &&
       isInProxyBody(proxy) &&
       !takeCallThroughProxy(proxy);
+
+  List<MethodInterceptor> _chain(int index, {required bool own}) =>
+      own ? ownChainFor(index) : chainFor(index);
 
   /// Calls the synchronous member [index] through its advice and returns
   /// the result.
@@ -807,14 +851,15 @@ final class ProxyInvoker {
     List<Object?> arguments,
     Object? Function(List<Object?> arguments) call,
   ) {
-    if (_isSelfCall(proxy, target)) {
+    final own = _isSelfCall(proxy, target);
+    if (own && !adviseSelfCalls) {
       return call(arguments);
     }
     final body = identical(proxy, target)
         ? (List<Object?> args) => runProxyBody(proxy, () => call(args))
         : call;
     return runWithCurrentProxy(proxy, () {
-      final chain = chainFor(index);
+      final chain = _chain(index, own: own);
       if (chain.isEmpty) {
         return body(arguments);
       }
@@ -844,7 +889,8 @@ final class ProxyInvoker {
     List<Object?> arguments,
     Future<T> Function(List<Object?> arguments) call,
   ) {
-    if (_isSelfCall(proxy, target)) {
+    final own = _isSelfCall(proxy, target);
+    if (own && !adviseSelfCalls) {
       return call(arguments);
     }
     final body = identical(proxy, target)
@@ -852,7 +898,7 @@ final class ProxyInvoker {
               runProxyBody(proxy, () => call(args), async: true)
         : call;
     return runAsyncWithCurrentProxy(proxy, () {
-      final chain = chainFor(index);
+      final chain = _chain(index, own: own);
       if (chain.isEmpty) {
         return body(arguments);
       }
@@ -883,7 +929,8 @@ final class ProxyInvoker {
     List<Object?> arguments,
     FutureOr<T> Function(List<Object?> arguments) call,
   ) {
-    if (_isSelfCall(proxy, target)) {
+    final own = _isSelfCall(proxy, target);
+    if (own && !adviseSelfCalls) {
       return call(arguments);
     }
     final body = identical(proxy, target)
@@ -891,7 +938,7 @@ final class ProxyInvoker {
               runProxyBody(proxy, () => call(args), async: true)
         : call;
     return runAsyncWithCurrentProxy(proxy, () {
-      final chain = chainFor(index);
+      final chain = _chain(index, own: own);
       if (chain.isEmpty) {
         return body(arguments);
       }
