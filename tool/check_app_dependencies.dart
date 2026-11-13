@@ -20,7 +20,8 @@
 // alone in `dependencies`, the same core, Boot and @Log code, the
 // starter's feature (the HTTP client of spring_web_dart with the Flutter
 // starter, the Material or Cupertino themes and app factory with a design
-// starter, a screen with the navigation starter, method security and
+// starter, a screen with the navigation starter, a scene of a model of
+// the properties with the scene starter, method security and
 // `withMockUser` from `testing.dart` with the Flutter security starter),
 // then `flutter pub get`, the generator, `flutter analyze --fatal-infos`
 // and `flutter test`.
@@ -495,6 +496,39 @@ class Home extends StatelessWidget {
     featureTest: '''
   test('the screens come with the starter', () {
     expect(app.getBean<RouteTemplate>(), isA<RouteTemplate>());
+    expect(const Home().key, isNull);
+  });
+''',
+  ),
+  // flutter_scene is not in the app's pubspec: the starter's own scene
+  // widgets and beans are enough for a scene of the properties' models.
+  _Starter(
+    'spring_boot_starter_flutter_scene',
+    properties:
+        'spring.flutter.scene.models.hero.source=asset:assets/hero.glb\n',
+    feature: '''
+class Home extends StatelessWidget {
+  const Home({super.key});
+
+  @override
+  Widget build(BuildContext context) => const SpringSceneView.declarative(
+    placeholder: Text('home'),
+    children: [SpringSceneModel('hero')],
+  );
+}
+
+@Component()
+class Showroom {
+  Showroom(this.models);
+
+  final ObjectProvider<SceneModels> models;
+}
+''',
+    featureTest: '''
+  test('the scenes come with the starter', () {
+    final models = app.getBean<Showroom>().models.getObject();
+    expect(models['hero'].state, SceneModelState.idle);
+    expect(app.getBean<SceneEngine>().state, SceneEngineState.idle);
     expect(const Home().key, isNull);
   });
 ''',

@@ -1,0 +1,12 @@
+# BLOC SHOWCASE: the app, its first screen and the port of `flutter run`.
+spring:
+  flutter:
+    web:
+      dev-server:
+        # `flutter run -d chrome` serves the app on http://localhost:5076/.
+        port: 5076
+    app:
+      title: Bloc Showcase
+      debug-banner: false
+    navigation:
+      initial: /

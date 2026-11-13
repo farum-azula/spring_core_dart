@@ -1,0 +1,640 @@
+{
+  "version": 1,
+  "package": "bloc_showcase",
+  "properties": [],
+  "hints": [],
+  "beans": [
+    {
+      "name": "bookRepository",
+      "type": "BookRepository",
+      "types": [
+        "BookRepository"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:bloc_showcase/src/books/book_repository.dart",
+      "line": 8,
+      "injects": [],
+      "members": [
+        {
+          "name": "add",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String title"
+          ]
+        },
+        {
+          "name": "all",
+          "kind": "method",
+          "type": "Future<List<Book>>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "booksBloc",
+      "type": "BooksBloc",
+      "types": [
+        "BooksBloc",
+        "Bloc<BooksEvent, BooksState>",
+        "BlocBase<BooksState>",
+        "EmittableStateStreamableSource<BooksState>",
+        "StateStreamableSource<BooksState>",
+        "StateStreamable<BooksState>",
+        "Streamable<BooksState>",
+        "Closable",
+        "Emittable<BooksState>",
+        "ErrorSink",
+        "BlocEventSink<BooksEvent>",
+        "ClosedWithBean<BooksState>",
+        "Bloc<dynamic, dynamic>",
+        "BlocBase<dynamic>",
+        "EmittableStateStreamableSource<dynamic>",
+        "StateStreamableSource<dynamic>",
+        "StateStreamable<dynamic>",
+        "Streamable<Object?>",
+        "Emittable<Object?>",
+        "BlocEventSink<Object?>",
+        "ClosedWithBean<dynamic>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:bloc_showcase/src/blocs/books_bloc.dart",
+      "line": 12,
+      "injects": [
+        {
+          "parameter": "repository",
+          "type": "BookRepository",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "add",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BooksEvent event"
+          ]
+        },
+        {
+          "name": "addError",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object error",
+            "[StackTrace? stackTrace]"
+          ]
+        },
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "closeWithBean",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "emit",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BooksState state"
+          ]
+        },
+        {
+          "name": "isClosed",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "on",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "FutureOr<void> Function(E, Emitter<BooksState>) handler",
+            "{Stream<E> Function(Stream<E>, Stream<E> Function(E))? transformer}"
+          ]
+        },
+        {
+          "name": "onChange",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Change<BooksState> change"
+          ]
+        },
+        {
+          "name": "onDone",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BooksEvent event",
+            "[Object? error]",
+            "[StackTrace? stackTrace]"
+          ]
+        },
+        {
+          "name": "onError",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object error",
+            "StackTrace stackTrace"
+          ]
+        },
+        {
+          "name": "onEvent",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BooksEvent event"
+          ]
+        },
+        {
+          "name": "onTransition",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Transition<BooksEvent, BooksState> transition"
+          ]
+        },
+        {
+          "name": "repository",
+          "kind": "field",
+          "type": "BookRepository"
+        },
+        {
+          "name": "state",
+          "kind": "getter",
+          "type": "BooksState"
+        },
+        {
+          "name": "stream",
+          "kind": "getter",
+          "type": "Stream<BooksState>"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "counterCubit",
+      "type": "CounterCubit",
+      "types": [
+        "CounterCubit",
+        "Cubit<int>",
+        "BlocBase<int>",
+        "EmittableStateStreamableSource<int>",
+        "StateStreamableSource<int>",
+        "StateStreamable<int>",
+        "Streamable<int>",
+        "Closable",
+        "Emittable<int>",
+        "ErrorSink",
+        "ClosedWithBean<int>",
+        "Cubit<dynamic>",
+        "BlocBase<dynamic>",
+        "EmittableStateStreamableSource<dynamic>",
+        "StateStreamableSource<dynamic>",
+        "StateStreamable<dynamic>",
+        "Streamable<Object?>",
+        "Emittable<Object?>",
+        "ClosedWithBean<dynamic>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:bloc_showcase/src/blocs/counter_cubit.dart",
+      "line": 12,
+      "injects": [],
+      "members": [
+        {
+          "name": "addError",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object error",
+            "[StackTrace? stackTrace]"
+          ]
+        },
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "closeWithBean",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "decrement",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "emit",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "int state"
+          ]
+        },
+        {
+          "name": "increment",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "isClosed",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "onChange",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Change<int> change"
+          ]
+        },
+        {
+          "name": "onError",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object error",
+            "StackTrace stackTrace"
+          ]
+        },
+        {
+          "name": "state",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "stream",
+          "kind": "getter",
+          "type": "Stream<int>"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "draftCubit",
+      "type": "DraftCubit",
+      "types": [
+        "DraftCubit",
+        "Cubit<String>",
+        "BlocBase<String>",
+        "EmittableStateStreamableSource<String>",
+        "StateStreamableSource<String>",
+        "StateStreamable<String>",
+        "Streamable<String>",
+        "Closable",
+        "Emittable<String>",
+        "ErrorSink",
+        "ClosedWithBean<String>",
+        "Cubit<dynamic>",
+        "BlocBase<dynamic>",
+        "EmittableStateStreamableSource<dynamic>",
+        "StateStreamableSource<dynamic>",
+        "StateStreamable<dynamic>",
+        "Streamable<Object?>",
+        "Emittable<Object?>",
+        "ClosedWithBean<dynamic>"
+      ],
+      "scope": "route",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:bloc_showcase/src/blocs/draft_cubit.dart",
+      "line": 11,
+      "injects": [],
+      "members": [
+        {
+          "name": "addError",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object error",
+            "[StackTrace? stackTrace]"
+          ]
+        },
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "closeWithBean",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "emit",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String state"
+          ]
+        },
+        {
+          "name": "isClosed",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "onChange",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Change<String> change"
+          ]
+        },
+        {
+          "name": "onError",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object error",
+            "StackTrace stackTrace"
+          ]
+        },
+        {
+          "name": "state",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "stream",
+          "kind": "getter",
+          "type": "Stream<String>"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "type",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "String title"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "journal",
+      "type": "Journal",
+      "types": [
+        "Journal",
+        "ChangeNotifier",
+        "Listenable"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:bloc_showcase/src/journal.dart",
+      "line": 12,
+      "injects": [],
+      "members": [
+        {
+          "name": "addListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "counterChanges",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "hasListeners",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "lines",
+          "kind": "getter",
+          "type": "List<String>"
+        },
+        {
+          "name": "notifyListeners",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "onChange",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BlocStateChanged change"
+          ]
+        },
+        {
+          "name": "onCounter",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BlocStateChanged change"
+          ]
+        },
+        {
+          "name": "onEvent",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BlocEventAdded added"
+          ]
+        },
+        {
+          "name": "onFailure",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BlocFailed failed"
+          ]
+        },
+        {
+          "name": "removeListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "springBlocObserver",
+      "type": "SpringBlocObserver",
+      "types": [
+        "SpringBlocObserver",
+        "BlocObserver",
+        "BeanFactoryPostProcessor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:bloc_showcase/src/events/spring_bloc_observer.dart",
+      "line": 20,
+      "injects": [
+        {
+          "parameter": "events",
+          "type": "ApplicationEventPublisher",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "events",
+          "kind": "field",
+          "type": "ApplicationEventPublisher"
+        },
+        {
+          "name": "onChange",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BlocBase<dynamic> bloc",
+            "Change<dynamic> change"
+          ]
+        },
+        {
+          "name": "onClose",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BlocBase<dynamic> bloc"
+          ]
+        },
+        {
+          "name": "onCreate",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BlocBase<dynamic> bloc"
+          ]
+        },
+        {
+          "name": "onDone",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Bloc<dynamic, dynamic> bloc",
+            "Object? event",
+            "[Object? error]",
+            "[StackTrace? stackTrace]"
+          ]
+        },
+        {
+          "name": "onError",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "BlocBase<dynamic> bloc",
+            "Object error",
+            "StackTrace stackTrace"
+          ]
+        },
+        {
+          "name": "onEvent",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Bloc<dynamic, dynamic> bloc",
+            "Object? event"
+          ]
+        },
+        {
+          "name": "onTransition",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Bloc<dynamic, dynamic> bloc",
+            "Transition<dynamic, dynamic> transition"
+          ]
+        },
+        {
+          "name": "postProcessBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ConfigurableListableBeanFactory beanFactory"
+          ]
+        },
+        {
+          "name": "uninstall",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    }
+  ],
+  "profiles": [],
+  "routes": [
+    {
+      "path": "/",
+      "name": "home-page",
+      "class": "HomePage",
+      "source": "package:bloc_showcase/src/pages/home_page.dart#HomePage",
+      "title": "Bloc Showcase"
+    },
+    {
+      "path": "/new",
+      "name": "new-book-page",
+      "class": "NewBookPage",
+      "source": "package:bloc_showcase/src/pages/new_book_page.dart#NewBookPage",
+      "title": "A new book"
+    }
+  ]
+}

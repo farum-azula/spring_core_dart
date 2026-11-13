@@ -4262,6 +4262,80 @@ hash: a block changed by hand, or a key of the block the file declares
 outside it (`CFBundleURLTypes`), fails the build. It never edits the Xcode
 project.
 
+### Scenes
+
+`spring_boot_starter_flutter_scene` puts 3D scenes among the app's
+widgets, on `flutter_scene`. How to write a scene, the models, the
+application's scene, the start's events and the debug tab are in the
+[starter's README](../spring_boot_starter_flutter_scene/README.md); these
+are its properties.
+
+<table>
+<tr><th>YAML</th><th>.properties</th></tr>
+<tr><td>
+
+```yaml
+spring:
+  flutter:
+    scene:
+      render: animated
+      max-frame-rate: 30
+      pixel-ratio: 1.5
+      preload: eager
+      models:
+        hero:
+          source: asset:assets/models/hero.glb
+          preload: lazy
+      app:
+        enabled: true
+        placement: background
+        camera:
+          position: 0, 1.5, -4
+          target: 0, 1, 0
+          fov: 45
+```
+
+</td><td>
+
+```properties
+spring.flutter.scene.render=animated
+spring.flutter.scene.max-frame-rate=30
+spring.flutter.scene.pixel-ratio=1.5
+spring.flutter.scene.preload=eager
+spring.flutter.scene.models.hero.source=asset:assets/models/hero.glb
+spring.flutter.scene.models.hero.preload=lazy
+spring.flutter.scene.app.enabled=true
+spring.flutter.scene.app.placement=background
+spring.flutter.scene.app.camera.position=0,1.5,-4
+spring.flutter.scene.app.camera.target=0,1,0
+spring.flutter.scene.app.camera.fov=45
+```
+
+</td></tr>
+</table>
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.flutter.scene.enabled` | `true` / `false` | `true` | Whether the app has scenes. `false`: no scene bean exists, the engine never starts, every scene widget shows its placeholder; set in the application's own configuration (not a profile's), the build leaves the starter's module out (the engine's code stays while the app has scene widgets) |
+| `spring.flutter.scene.render` | `animated` / `still` / `off` | `animated` | How scenes draw: up to `max-frame-rate` frames a second; one frame that stands, drawn again when what it shows changes; or placeholders only |
+| `spring.flutter.scene.max-frame-rate` | number | `30` | The most frames a second any scene draws; a widget may ask for fewer. Every frame of a scene has Flutter draw the page again |
+| `spring.flutter.scene.pixel-ratio` | number | the device's | The scenes' own pixel ratio |
+| `spring.flutter.scene.pause-off-screen` | `true` / `false` | `true` | Whether a scene scrolled off the screen stops drawing |
+| `spring.flutter.scene.preload` | `eager` / `lazy` | `lazy` | When the engine starts: with the splash, or when the first scene shows. The default of a model's own `preload` |
+| `spring.flutter.scene.engine-log` | `true` / `false` | `true` | Whether the engine's own messages (it writes them with `debugPrint`) are records of the application's log, under the logger `flutter_scene` (`logging.level.flutter_scene`) |
+| `spring.flutter.scene.models.<name>.source` | asset or address | none (required) | The model's `.glb` file: an asset (`asset:assets/models/hero.glb`) or an `https` address (`http` with `spring.remote.allow-insecure`; in a browser its server must allow the page's origin). Not a file of `lib/resources/`, which is embedded into the code |
+| `spring.flutter.scene.models.<name>.preload` | `eager` / `lazy` | as `spring.flutter.scene.preload` | When the model is loaded: with the splash, or when a scene first shows it |
+| `spring.flutter.scene.app.enabled` | `true` / `false` | `false` | Whether the app has one scene of its own (the `applicationScene` bean), made with the splash |
+| `spring.flutter.scene.app.placement` | `background` / `none` | `background` | Where it shows: under every screen, or only in the app's `SpringSceneView` widgets |
+| `spring.flutter.scene.app.camera.position` | three numbers | `0, 0, -5` | Where the camera of the application's scene is |
+| `spring.flutter.scene.app.camera.target` | three numbers | `0, 0, 0` | What it looks at |
+| `spring.flutter.scene.app.camera.fov` | degrees | `45` | Its vertical field of view |
+| `spring.flutter.scene.debug.enabled` | `true` / `false` | not set: debug and profile builds | The "Scenes" tab of [the debug panel](#the-debug-panel): `true` in every build, `false` in none (no code) |
+
+A model without a `source` stops the app at startup with the key's name.
+A value for one platform goes into its profile file: `render: still` in
+`application-android.yml`, say.
+
 ### The site's pages: `spring.flutter.web.seo.*`
 
 A Flutter web app draws on a canvas: its HTML holds no text, so a search

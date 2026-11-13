@@ -23,6 +23,9 @@
 //   flutter_cupertino spring_boot_starter_flutter_cupertino affected
 //   flutter_security spring_boot_starter_flutter_security affected
 //   flutter_navigation spring_boot_starter_flutter_navigation affected
+//   bloc_showcase    example/bloc affected (Bloc and Cubit as beans)
+//   flutter_scene    spring_boot_starter_flutter_scene or its showcase
+//                    (example/scene) affected
 //   flutter_guide    example/flutter_guide affected, or the server guide
 //                    its end-to-end tests run against (incl. goldens)
 //   theme_showcase_neon, theme_showcase_material, theme_showcase_cupertino
@@ -53,7 +56,10 @@ const flutterPackages = [
   'spring_boot_starter_flutter_cupertino',
   'spring_boot_starter_flutter_security',
   'spring_boot_starter_flutter_navigation',
+  'spring_boot_starter_flutter_scene',
   'example/flutter_guide',
+  'example/scene',
+  'example/bloc',
   'example/themes/neon',
   'example/themes/material',
   'example/themes/cupertino',
@@ -133,6 +139,9 @@ Future<void> main(List<String> args) async {
     final cupertino = has('spring_boot_starter_flutter_cupertino');
     final security = has('spring_boot_starter_flutter_security');
     final navigation = has('spring_boot_starter_flutter_navigation');
+    final scene =
+        has('spring_boot_starter_flutter_scene') || has('example/scene');
+    final blocShowcase = has('example/bloc');
     final server = has('example/server_guide');
     // The app's end-to-end tests run against the server guide: a change of
     // the server tests the app too.
@@ -151,6 +160,8 @@ Future<void> main(List<String> args) async {
         cupertino ||
         security ||
         navigation ||
+        scene ||
+        blocShowcase ||
         app ||
         showcaseNeon ||
         showcaseMaterial ||
@@ -173,6 +184,8 @@ Future<void> main(List<String> args) async {
         'flutter_cupertino=$cupertino',
         'flutter_security=$security',
         'flutter_navigation=$navigation',
+        'flutter_scene=$scene',
+        'bloc_showcase=$blocShowcase',
         'flutter_guide=$app',
         'theme_showcase_neon=$showcaseNeon',
         'theme_showcase_material=$showcaseMaterial',

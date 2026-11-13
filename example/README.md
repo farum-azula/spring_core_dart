@@ -16,6 +16,8 @@ The documentation links to their chapters.
 | [`static_site/`](static_site/README.md) | A Flutter web site served by its own Spring server: the files of `flutter build web` and an API on one port, the app's addresses answered with `index.html` | `flutter build web`, then `dart run bin/main.dart` |
 | [`supabase/`](supabase/README.md) | A todo list on a Supabase project (`spring_boot_starter_supabase`): a Flutter app (sign-in, a live list, an avatar in Storage, an Edge Function) and a server (the project's tokens as bearer tokens, SQL with transactions as the caller, a role check), with the project for the Supabase CLI beside them | `supabase start`, then `dart run bin/main.dart` and `flutter run` |
 | [`seo_site/`](seo_site/README.md) | A Flutter web site that search engines, link previews and language models can read: a page per route and Markdown file, `sitemap.xml`, `robots.txt`, `llms.txt` (`spring.flutter.web.seo.*`, `@RouteInfo`) | `dart run build_runner build`, then `flutter build web` |
+| [`scene/`](scene/README.md) | 3D scenes among Flutter widgets (`spring_boot_starter_flutter_scene`): a model named in the properties, the application's scene under the page, a scene behind a widget, the scenes' tab of the debug panel; every platform set up | `flutter run` |
+| [`bloc/`](bloc/README.md) | Bloc and Cubit as beans, with no starter for them: a Cubit for the app, a Bloc with an injected service, a Cubit that lives as long as one screen, their events and state changes heard with `@EventListener` | `flutter run` |
 
 The three designs together are explained in [`themes/`](themes/README.md).
 

@@ -1,0 +1,1054 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_flutter_scene",
+  "properties": [
+    {
+      "name": "spring.flutter.scene.app.camera.fov",
+      "type": "double",
+      "description": "Its vertical field of view, in degrees.",
+      "default": 45,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 151,
+      "class": "SceneCameraProperties"
+    },
+    {
+      "name": "spring.flutter.scene.app.camera.position",
+      "type": "List<double>",
+      "description": "Where the camera is: `x, y, z`.",
+      "default": [
+        0,
+        0,
+        -5
+      ],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 145,
+      "class": "SceneCameraProperties"
+    },
+    {
+      "name": "spring.flutter.scene.app.camera.target",
+      "type": "List<double>",
+      "description": "What it looks at: `x, y, z`.",
+      "default": [
+        0,
+        0,
+        0
+      ],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 148,
+      "class": "SceneCameraProperties"
+    },
+    {
+      "name": "spring.flutter.scene.app.enabled",
+      "type": "bool",
+      "description": "Whether the app has one scene of its own (the `applicationScene` bean), made with the splash.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 116,
+      "class": "ApplicationSceneProperties"
+    },
+    {
+      "name": "spring.flutter.scene.app.placement",
+      "type": "ApplicationScenePlacement",
+      "description": "Where it shows: `background` under every screen, `none` only where the app puts a `SpringSceneView`.",
+      "default": "background",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 120,
+      "class": "ApplicationSceneProperties"
+    },
+    {
+      "name": "spring.flutter.scene.debug.enabled",
+      "type": "bool?",
+      "description": "Whether the app has the tab: `true` in every build, `false` in none (the build leaves its code out), not set in debug and profile builds only (a release build compiles it away).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 162,
+      "class": "SceneDebugProperties"
+    },
+    {
+      "name": "spring.flutter.scene.enabled",
+      "type": "bool",
+      "description": "Whether the app has scenes. With `false` no scene bean exists, the engine never starts and every scene widget shows its placeholder.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 27,
+      "class": "SceneProperties"
+    },
+    {
+      "name": "spring.flutter.scene.engine-log",
+      "type": "bool",
+      "description": "Whether the engine's own messages (it writes them with Flutter's `debugPrint`) are records of the application's log, under the logger `flutter_scene`: with a time and a level, set by `logging.level.flutter_scene`.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 54,
+      "class": "SceneProperties"
+    },
+    {
+      "name": "spring.flutter.scene.max-frame-rate",
+      "type": "double",
+      "description": "The most frames a second a scene draws; a widget may ask for fewer. Every frame of a scene has Flutter draw the page again, so this is what a scene costs.",
+      "default": 30,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 37,
+      "class": "SceneProperties"
+    },
+    {
+      "name": "spring.flutter.scene.models.*.preload",
+      "type": "SceneLoad?",
+      "description": "When it is loaded: `eager` with the splash, `lazy` when a scene first shows it. Not set: as `spring.flutter.scene.preload`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 102,
+      "class": "SceneModelProperties"
+    },
+    {
+      "name": "spring.flutter.scene.models.*.source",
+      "type": "String?",
+      "description": "Where the model's `.glb` file is: an asset of the app (`asset:assets/models/hero.glb`, listed under `flutter: assets:`) or an address (`https://cdn.example.com/hero.glb`; in a browser its server must allow the page's origin). Not a file of `lib/resources/`: those are embedded into the app's code, a megabyte at most.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 98,
+      "class": "SceneModelProperties"
+    },
+    {
+      "name": "spring.flutter.scene.pause-off-screen",
+      "type": "bool",
+      "description": "Whether a scene scrolled off the screen stops drawing.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 44,
+      "class": "SceneProperties"
+    },
+    {
+      "name": "spring.flutter.scene.pixel-ratio",
+      "type": "double?",
+      "description": "The scenes' own pixel ratio, under the device's (`1` on a screen of `3` draws a ninth of the pixels). Not set: the device's.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 41,
+      "class": "SceneProperties"
+    },
+    {
+      "name": "spring.flutter.scene.preload",
+      "type": "SceneLoad",
+      "description": "When the engine starts: `eager` with the splash, `lazy` when the first scene shows. A model has its own (`models.<name>.preload`).",
+      "default": "lazy",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 48,
+      "class": "SceneProperties"
+    },
+    {
+      "name": "spring.flutter.scene.render",
+      "type": "SceneRenderMode",
+      "description": "How the scenes draw: `animated`, `still` (one frame, drawn again only when what it shows changes) or `off` (the widgets show their placeholders).",
+      "default": "animated",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 32,
+      "class": "SceneProperties"
+    }
+  ],
+  "hints": [
+    {
+      "name": "spring.flutter.scene.app.placement",
+      "values": [
+        {
+          "value": "background",
+          "description": "Under every screen of the app."
+        },
+        {
+          "value": "none",
+          "description": "Only in the `SpringSceneView` widgets of the app."
+        }
+      ]
+    },
+    {
+      "name": "spring.flutter.scene.models.*.preload",
+      "values": [
+        {
+          "value": "eager",
+          "description": "While the splash shows: the app appears with it ready."
+        },
+        {
+          "value": "lazy",
+          "description": "When it is first needed."
+        }
+      ]
+    },
+    {
+      "name": "spring.flutter.scene.preload",
+      "values": [
+        {
+          "value": "eager",
+          "description": "While the splash shows: the app appears with it ready."
+        },
+        {
+          "value": "lazy",
+          "description": "When it is first needed."
+        }
+      ]
+    },
+    {
+      "name": "spring.flutter.scene.render",
+      "values": [
+        {
+          "value": "animated",
+          "description": "Up to `max-frame-rate` frames a second."
+        },
+        {
+          "value": "still",
+          "description": "One frame that stands; drawn again when what it shows changes (its size, a property of a widget in it)."
+        },
+        {
+          "value": "off",
+          "description": "No scene: the widgets show their placeholders."
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "applicationScene",
+      "type": "ApplicationScene",
+      "types": [
+        "ApplicationScene",
+        "ChangeNotifier",
+        "Listenable"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)",
+        "@ConditionalOnProperty('spring.flutter.scene.app.enabled', havingValue: 'true')"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 183,
+      "injects": [],
+      "members": [
+        {
+          "name": "addListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "camera",
+          "kind": "getter",
+          "type": "Camera"
+        },
+        {
+          "name": "create",
+          "kind": "method",
+          "type": "Future<Scene?>",
+          "parameters": []
+        },
+        {
+          "name": "customizers",
+          "kind": "field",
+          "type": "List<SceneCustomizer>"
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "engine",
+          "kind": "field",
+          "type": "SceneEngine"
+        },
+        {
+          "name": "events",
+          "kind": "field",
+          "type": "ApplicationEventPublisher"
+        },
+        {
+          "name": "hasListeners",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "notifyListeners",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "ApplicationSceneProperties"
+        },
+        {
+          "name": "removeListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "scene",
+          "kind": "getter",
+          "type": "Scene?"
+        }
+      ]
+    },
+    {
+      "name": "applicationSceneBackground",
+      "type": "ApplicationSceneBackground",
+      "types": [
+        "ApplicationSceneBackground",
+        "FlutterAppCustomizer",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)",
+        "@ConditionalOnProperty('spring.flutter.scene.app.enabled', havingValue: 'true')",
+        "@ConditionalOnProperty('spring.flutter.scene.app.placement', havingValue: 'background', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 196,
+      "injects": [],
+      "members": [
+        {
+          "name": "customize",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "FlutterAppSettings app"
+          ]
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "sceneAvailability",
+      "type": "SceneAvailability",
+      "types": [
+        "SceneAvailability",
+        "ChangeNotifier",
+        "Listenable"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 136,
+      "injects": [],
+      "members": [
+        {
+          "name": "addListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "animates",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "draws",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "engine",
+          "kind": "field",
+          "type": "SceneEngine"
+        },
+        {
+          "name": "frameRate",
+          "kind": "method",
+          "type": "double",
+          "parameters": [
+            "[double? asked]"
+          ]
+        },
+        {
+          "name": "hasListeners",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isReady",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "notifyListeners",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "SceneProperties"
+        },
+        {
+          "name": "reason",
+          "kind": "getter",
+          "type": "SceneUnavailable?"
+        },
+        {
+          "name": "removeListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sceneBackend",
+      "type": "SceneBackend",
+      "types": [
+        "SceneBackend"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)",
+        "@ConditionalOnMissingBean(SceneBackend)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 107,
+      "injects": [],
+      "members": [
+        {
+          "name": "name",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "sceneDebug",
+      "type": "SceneDebug",
+      "types": [
+        "SceneDebug",
+        "ChangeNotifier",
+        "Listenable",
+        "SceneViewObserver"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)",
+        "@ConditionalOnProperty('spring.flutter.scene.debug.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 235,
+      "injects": [],
+      "members": [
+        {
+          "name": "addListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "hasListeners",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "notifyListeners",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "opened",
+          "kind": "method",
+          "type": "SceneViewMeasure",
+          "parameters": [
+            "String name",
+            "SceneViewState state"
+          ]
+        },
+        {
+          "name": "removeListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "views",
+          "kind": "getter",
+          "type": "List<SceneViewRecord>"
+        }
+      ]
+    },
+    {
+      "name": "sceneDebugSection",
+      "type": "SceneDebugSection",
+      "types": [
+        "SceneDebugSection",
+        "DebugPanelSection",
+        "Ordered"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)",
+        "@ConditionalOnProperty('spring.flutter.scene.debug.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 248,
+      "injects": [],
+      "members": [
+        {
+          "name": "availability",
+          "kind": "field",
+          "type": "SceneAvailability"
+        },
+        {
+          "name": "build",
+          "kind": "method",
+          "type": "Widget",
+          "parameters": [
+            "BuildContext context"
+          ]
+        },
+        {
+          "name": "debug",
+          "kind": "field",
+          "type": "SceneDebug"
+        },
+        {
+          "name": "models",
+          "kind": "field",
+          "type": "SceneModels"
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "status",
+          "kind": "field",
+          "type": "SceneStatus"
+        },
+        {
+          "name": "title",
+          "kind": "getter",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "sceneEngine",
+      "type": "SceneEngine",
+      "types": [
+        "SceneEngine",
+        "ChangeNotifier",
+        "Listenable"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 125,
+      "injects": [],
+      "members": [
+        {
+          "name": "addListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "backend",
+          "kind": "field",
+          "type": "SceneBackend"
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "events",
+          "kind": "field",
+          "type": "ApplicationEventPublisher"
+        },
+        {
+          "name": "failure",
+          "kind": "getter",
+          "type": "Object?"
+        },
+        {
+          "name": "hasFailed",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "hasListeners",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "isReady",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "notifyListeners",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "removeListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "Future<bool>",
+          "parameters": []
+        },
+        {
+          "name": "state",
+          "kind": "getter",
+          "type": "SceneEngineState"
+        },
+        {
+          "name": "took",
+          "kind": "getter",
+          "type": "Duration?"
+        }
+      ]
+    },
+    {
+      "name": "sceneEngineLog",
+      "type": "SceneEngineLog",
+      "types": [
+        "SceneEngineLog"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)",
+        "@ConditionalOnProperty('spring.flutter.scene.engine-log', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 118,
+      "injects": [],
+      "members": [
+        {
+          "name": "install",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "installed",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "uninstall",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "sceneModelImporter",
+      "type": "SceneModelImporter",
+      "types": [
+        "SceneModelImporter"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)",
+        "@ConditionalOnMissingBean(SceneModelImporter)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 147,
+      "injects": [],
+      "members": [
+        {
+          "name": "import",
+          "kind": "method",
+          "type": "Future<Node>",
+          "parameters": [
+            "Uint8List bytes",
+            "{String name}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sceneModels",
+      "type": "SceneModels",
+      "types": [
+        "SceneModels"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 158,
+      "injects": [],
+      "members": [
+        {
+          "name": "[]",
+          "kind": "method",
+          "type": "SceneModelHandle",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "all",
+          "kind": "getter",
+          "type": "Iterable<SceneModelHandle>"
+        },
+        {
+          "name": "contains",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "eager",
+          "kind": "getter",
+          "type": "Iterable<SceneModelHandle>"
+        },
+        {
+          "name": "names",
+          "kind": "getter",
+          "type": "Iterable<String>"
+        },
+        {
+          "name": "preload",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "{void Function(double)? progress}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sceneProperties",
+      "type": "SceneProperties",
+      "types": [
+        "SceneProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 9,
+      "injects": [],
+      "members": [
+        {
+          "name": "app",
+          "kind": "field",
+          "type": "ApplicationSceneProperties"
+        },
+        {
+          "name": "debug",
+          "kind": "field",
+          "type": "SceneDebugProperties"
+        },
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "engineLog",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "maxFrameRate",
+          "kind": "field",
+          "type": "double"
+        },
+        {
+          "name": "models",
+          "kind": "field",
+          "type": "Map<String, SceneModelProperties>?"
+        },
+        {
+          "name": "pauseOffScreen",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "pixelRatio",
+          "kind": "field",
+          "type": "double?"
+        },
+        {
+          "name": "preload",
+          "kind": "field",
+          "type": "SceneLoad"
+        },
+        {
+          "name": "render",
+          "kind": "field",
+          "type": "SceneRenderMode"
+        }
+      ]
+    },
+    {
+      "name": "sceneStart",
+      "type": "SceneStart",
+      "types": [
+        "SceneStart",
+        "SplashTask"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 207,
+      "injects": [],
+      "members": [
+        {
+          "name": "engine",
+          "kind": "field",
+          "type": "SceneEngine"
+        },
+        {
+          "name": "events",
+          "kind": "field",
+          "type": "ApplicationEventPublisher"
+        },
+        {
+          "name": "models",
+          "kind": "field",
+          "type": "SceneModels"
+        },
+        {
+          "name": "name",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "SceneProperties"
+        },
+        {
+          "name": "run",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "SplashTaskContext task"
+          ]
+        },
+        {
+          "name": "scene",
+          "kind": "field",
+          "type": "ApplicationScene?"
+        }
+      ]
+    },
+    {
+      "name": "sceneStatus",
+      "type": "SceneStatus",
+      "types": [
+        "SceneStatus",
+        "ValueNotifier<SceneEvent?>",
+        "ChangeNotifier",
+        "Listenable",
+        "ValueListenable<SceneEvent?>",
+        "GenericApplicationListener"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 175,
+      "injects": [],
+      "members": [
+        {
+          "name": "addListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "hasListeners",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "history",
+          "kind": "field",
+          "type": "List<SceneEvent>"
+        },
+        {
+          "name": "messages",
+          "kind": "field",
+          "type": "MessageSource"
+        },
+        {
+          "name": "notifyListeners",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "onApplicationEvent",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object event"
+          ]
+        },
+        {
+          "name": "removeListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "supportsEvent",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Object event"
+          ]
+        },
+        {
+          "name": "text",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "value",
+          "kind": "getter",
+          "type": "SceneEvent?"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

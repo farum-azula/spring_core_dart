@@ -172,13 +172,14 @@ targets:
     });
 
     test('the Flutter starter reaches the design starters and the Flutter '
-        'security and navigation packages', () {
+        'security, navigation and scene packages', () {
       expect(affected('spring_boot_starter_flutter/lib/x.dart'), {
         'spring_boot_starter_flutter',
         'spring_boot_starter_flutter_material',
         'spring_boot_starter_flutter_cupertino',
         'spring_boot_starter_flutter_security',
         'spring_boot_starter_flutter_navigation',
+        'spring_boot_starter_flutter_scene',
       });
       expect(affected('spring_boot_starter_oauth2_client/lib/x.dart'), {
         'spring_boot_starter_oauth2_client',

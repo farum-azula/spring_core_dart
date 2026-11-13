@@ -43,6 +43,7 @@ const family = [
   'spring_boot_starter_flutter_cupertino',
   'spring_boot_starter_flutter_security',
   'spring_boot_starter_flutter_navigation',
+  'spring_boot_starter_flutter_scene',
 ];
 
 /// Packages that only depend on the family (not published).
@@ -55,6 +56,8 @@ const dependents = [
   'example/static_site/server',
   'example/static_site/app',
   'example/seo_site',
+  'example/scene',
+  'example/bloc',
   'example/supabase/server',
   'example/supabase/function',
   'example/supabase/app',

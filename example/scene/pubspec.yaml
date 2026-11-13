@@ -1,0 +1,35 @@
+name: scene_showcase
+description: "Scene Showcase: 3D scenes of spring_boot_starter_flutter_scene: a model from properties, the application's scene, a scene behind a widget, the scenes' debug tab."
+publish_to: none
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.14.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # The scenes: SpringSceneView, SceneBackdrop, the models of the
+  # properties, the application's scene. It brings and exports the Flutter
+  # starter (SpringApplicationWidget, the debug panel).
+  spring_boot_starter_flutter_scene: ^0.8.0
+  # The engine's own scene widgets and geometry, which the pages use.
+  flutter_scene: ^0.24.3
+  vector_math: ^2.2.0
+
+dev_dependencies:
+  build_runner: ^2.17.0
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  # integration_test/: the scenes drawing on a device, where there is a GPU.
+  integration_test:
+    sdk: flutter
+  spring_boot_starter_test: ^0.8.0
+  spring_core_dart_generator: ^0.8.0
+
+flutter:
+  assets:
+    # The model of spring.flutter.scene.models.crate.
+    - assets/models/

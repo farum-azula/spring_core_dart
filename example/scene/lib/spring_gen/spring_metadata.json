@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "package": "scene_showcase",
+  "properties": [],
+  "hints": [],
+  "beans": [
+    {
+      "name": "backdrop",
+      "type": "Backdrop",
+      "types": [
+        "Backdrop",
+        "SceneCustomizer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:scene_showcase/src/backdrop.dart",
+      "line": 17,
+      "injects": [
+        {
+          "parameter": "models",
+          "type": "SceneModels",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "customize",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Scene scene"
+          ]
+        },
+        {
+          "name": "models",
+          "kind": "field",
+          "type": "ObjectProvider<SceneModels>"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

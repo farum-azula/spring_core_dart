@@ -1,16 +1,101 @@
-# flutter_spring_scene (planned)
+# spring_boot_starter_flutter_scene (first version built, released with the next version)
 
-On `flutter_scene` — an allowed exception to the dependency policy, only in
+On `flutter_scene`: an allowed exception to the dependency policy, only in
 this starter. Part of the [Flutter plan](spring_boot_starter_flutter.md).
-The package's name will follow the other Flutter starters
-(`spring_boot_starter_flutter_scene`).
 
-Nothing is built in the framework yet. A prototype exists in the Dota
-Passport site (`~/dev/dota2passport`, `app/packages/neon_scene`, not pushed):
-a neon frame with a hologram glass around ordinary widgets, on
-`flutter_scene` 0.24.3 as published. Everything under
+The first version is in the repository (`spring_boot_starter_flutter_scene`,
+its README is the reference; `example/scene` shows it). The owner decided
+to release it: it goes to pub.dev with the family's next version (a new
+package's first version is published by a person, `tool/publish.dart`);
+until then an app takes it by git. It grew out of a prototype in the Dota
+Passport site (`~/dev/dota2passport`, `app/packages/neon_scene`): a neon
+frame with a hologram glass around ordinary widgets, on `flutter_scene`
+0.24.3 as published. Everything under
 [What the prototype showed](#what-the-prototype-showed) was measured there
 in November 2026.
+
+## Built (the first version, November 2026)
+
+What went into it was decided by the owner: the core, the models of the
+properties, the application's scene and the debug tab; the neon widgets
+stay outside (they are a look: a theme's or an app's).
+
+| Part | What is there |
+|---|---|
+| Properties | `spring.flutter.scene.*`: `enabled`, `render` (`animated`, `still`, `off`), `max-frame-rate`, `pixel-ratio`, `pause-off-screen`, `preload`, `engine-log`, `models.<name>` (`source`, `preload`), `app.*` (`enabled`, `placement`, `camera`), `debug.enabled` |
+| The engine | `SceneEngine`: one start for the app, with the splash or when the first scene shows, a failure kept and not thrown; `SceneBackend` and `SceneModelImporter` are beans an app or a test replaces |
+| Whether scenes draw | `SceneAvailability`; with `enabled: false` no scene bean exists and the build leaves the module out (decision 9) |
+| Widgets | `SpringSceneView` (declarative, or the application's scene), `SceneBackdrop` (a scene behind a widget, `SceneSurface`), `SpringSceneModel`; placeholders where scenes do not draw; the frame ceiling, the still frame, the pause off the screen; a scene is shown only whole (its loads done, its programs compiled) |
+| Models | `SceneModels`, `SceneModelHandle`: an asset or an address (`RemoteModelResource`: the framework's `UrlResource` does not read in a browser), loaded once, eager with the splash or lazy, a clone per use, kept when they leave the screen |
+| The application's scene | `ApplicationScene`, `SceneCustomizer` beans, under every screen (`ApplicationSceneBackground`) or in `SpringSceneView()` |
+| The start | `SceneEvent`s with message codes, `SceneStatus` (the current step in words), `SceneStart` (a `SplashTask`: the splash waits and its loader moves) |
+| The debug tab | `SceneDebugSection`: the engine, every scene and model by name; a module of its own, out of release builds |
+| The engine's log | `SceneEngineLog`: the engine's `debugPrint` lines as records of the logger `flutter_scene`, with a level (asked for by the owner) |
+| The shaders | `buildSceneShaders` for an app's `hook/build.dart` (`build_hooks.dart`) |
+
+Seen drawing in a browser (Chrome, a release build of `example/scene`):
+the three kinds of scene, a model from the properties and from an
+address, the tab, the still frame, scenes turned off. And on macOS
+(Impeller, Metal): the showcase's device test
+(`integration_test/scenes_test.dart`) finds the engine started, the model
+loaded and every scene drawing frames with draw calls. Not run: iOS,
+Android, Windows, Linux (the showcase is set up for them), a phone.
+
+Found while building it:
+
+- **A still frame was drawn before its model came**, and nothing drew it
+  again: the engine repaints a view that does not tick only when its
+  widget is rebuilt. So every view of the starter is gated on its loads
+  (the engine then waits for the models of its scene widgets and shows
+  the scene whole), and `SpringSceneView.repaintOf(context)` asks for a
+  frame after a change without a rebuild.
+- **The warm-up does not take every program out of the first frame.**
+  With `warmUp` the browser's first frame built none (before: four, and
+  32 ms), but on macOS, in a debug run, the engine still logged
+  "pipeline build took 173ms mid-frame" for the model's material. To
+  look into: which targets the warm-up compiles for.
+- **The engine's view cannot be told to tick again.** Its state is a
+  `SingleTickerProviderStateMixin` and makes a new ticker each time
+  `autoTick` goes back to `true`: Flutter refuses the second one (an
+  assertion, so a debug build shows the red box; found by the owner,
+  turning animations off and on in the showcase). The starter never
+  changes `autoTick` after a view is made: a pause (less motion, off the
+  screen) mutes the view's ticker (`TickerMode`) and stops the clock the
+  engine steps by (`SceneClock`), so a scene goes on from where it stood
+  and does not jump by the time of the pause. The time of the view
+  itself (`SceneScope.elapsed`, a shader's phase) still includes the
+  pause: it is the ticker's. To report upstream.
+- **`Component` is two classes**: the engine's and Spring's `@Component()`
+  meet in a file that imports both. The README says to import the engine
+  with `show` or `hide` there. A rename is not ours to make.
+- **A test has no GPU.** A `Scene` cannot be made in `flutter test`, so the
+  tests cover the beans, the events and the widgets as placeholders, and
+  a scene that draws is looked at in the showcase.
+- **The engine does not give a geometry's vertex count**, so the tab says
+  what a model is made of (nodes, meshes, draw calls, materials) and
+  reads vertices from a frame's counters only.
+
+## Later
+
+Not in the first version, in the order they are likely to come:
+
+- **The generator's part**: the app's `hook/build.dart`, the asset
+  entries and the shader list (`spring.flutter.scene.shaders`) written
+  by the build, so an app writes none of it; `resources:` models
+  converted at build time; Flutter GPU turned on per native platform.
+- **The theme section** (`scene:`, `context.theme.scene`) with typed
+  keys, once the starter has widgets with a look of their own (decision 1).
+- **A line of the splash for the status** (`splash.status`): today a
+  loader of the app shows `SceneStatus` itself.
+- **Stereotypes** (`@SceneMaterial`, `@SceneModel`, `@SceneComponent`),
+  `@OnFrame`, scene state in `@Signal` fields.
+- **A cheaper debug run by default** (a lower frame ceiling or a still
+  frame in a debug build): today the app's profile file sets it.
+- The engine's code out of a build with scenes off: the module is left
+  out, but the widgets still name the engine, so the compiler keeps it.
+- The environment of the application's scene from properties; a poster
+  of a model as its placeholder; the cost of a model measured by the tab
+  itself (hidden for a second, compared).
 
 ## What the starter is for
 
@@ -479,9 +564,10 @@ Things of the engine an app trips over, for the starter to hide:
 
 ## Not checked yet
 
-- Native platforms. The prototype ran on the web only. Off the web the
-  engine runs on Impeller through Flutter GPU, which has to be turned on
-  once per platform: the generator could write that.
+- Native platforms other than macOS. The showcase draws on macOS (its
+  device test); iOS, Android, Windows and Linux are set up in it (Flutter
+  GPU turned on in each platform's file, by hand: the generator could
+  write that) and were not run.
 - Phones: frames per second, heat, battery. The web views of apps
   (Telegram).
 - CI with the hooks (the app's and the engine's).

@@ -64,6 +64,8 @@ const flutterApps = {
   // material_ui and cupertino_ui, which they bring.
   'example/themes/material': ['spring_boot_starter_flutter_material'],
   'example/themes/cupertino': ['spring_boot_starter_flutter_cupertino'],
+  // The scene starter, with flutter_scene under it.
+  'example/scene': ['spring_boot_starter_flutter_scene'],
 };
 
 Future<void> main(List<String> args) async {

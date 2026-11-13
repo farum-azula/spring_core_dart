@@ -54,6 +54,7 @@ const repositoryOnly = {
   'spring_boot_starter_flutter_cupertino',
   'spring_boot_starter_flutter_security',
   'spring_boot_starter_flutter_navigation',
+  'spring_boot_starter_flutter_scene',
 };
 
 /// Packages outside the pub workspace, with their own resolution (Flutter:
@@ -69,7 +70,10 @@ const flutterPackages = [
   'spring_boot_starter_flutter_cupertino',
   'spring_boot_starter_flutter_security',
   'spring_boot_starter_flutter_navigation',
+  'spring_boot_starter_flutter_scene',
   'example/flutter_guide',
+  'example/scene',
+  'example/bloc',
   'example/themes/neon_ui',
   'example/themes/neon',
   'example/themes/material',
@@ -119,6 +123,24 @@ const repositoryOnlyExceptions = {
       'spring_boot_starter_flutter_cupertino makes the palette of a '
       "theme's seed color with it, without Material's widgets "
       '(repositoryOnlyExceptionsOnlyIn: that starter alone).',
+  'flutter_scene':
+      'THIRD-PARTY, allowed by the owner for one starter: the 3D engine on '
+      'Flutter GPU (bdero.dev, an exception of allowedPackages too); '
+      'spring_boot_starter_flutter_scene is built on it '
+      '(repositoryOnlyExceptionsOnlyIn: that starter alone).',
+  'hooks':
+      "The Dart team's build hooks (dart.dev): the scene starter's "
+      "build_hooks.dart builds the engine's shader bundle in an app's "
+      'hook/build.dart (repositoryOnlyExceptionsOnlyIn: that starter '
+      'alone).',
+  'path':
+      "The Dart team's paths (dart.dev): the same build hook writes the "
+      "shader manifest with paths relative to the app's root "
+      '(repositoryOnlyExceptionsOnlyIn: the scene starter alone).',
+  'vector_math':
+      "The vectors and matrices of the engine's API (flutter.dev): a "
+      'position, a rotation and a colour in linear light are its types '
+      '(repositoryOnlyExceptionsOnlyIn: the scene starter alone).',
   'pointycastle':
       "THIRD-PARTY, to be removed: Bouncy Castle's Dart port "
       '(bouncycastle.org), RSA, ECDSA, Argon2, PBKDF2, scrypt and SHA-256 '
@@ -135,6 +157,10 @@ const repositoryOnlyExceptionsOnlyIn = {
   'material_ui': {'spring_boot_starter_flutter_material'},
   'cupertino_ui': {'spring_boot_starter_flutter_cupertino'},
   'material_color_utilities': {'spring_boot_starter_flutter_cupertino'},
+  'flutter_scene': {'spring_boot_starter_flutter_scene'},
+  'hooks': {'spring_boot_starter_flutter_scene'},
+  'path': {'spring_boot_starter_flutter_scene'},
+  'vector_math': {'spring_boot_starter_flutter_scene'},
 };
 
 /// A package allowed although it is not published by the Dart team.
@@ -220,6 +246,9 @@ const allowedPackages = {
       'spring_boot_starter_flutter_cupertino',
       'spring_boot_starter_flutter_security',
       'spring_boot_starter_flutter_navigation',
+      'spring_boot_starter_flutter_scene',
+      'scene_showcase',
+      'bloc_showcase',
       'neon_books_app',
       'neon_ui',
       'theme_showcase_neon',
@@ -244,6 +273,23 @@ const allowedPackages = {
       'spring_boot_starter_security',
       'neon_books_app',
     },
+  ),
+  'flutter_scene': AllowedPackage(
+    'THIRD-PARTY, allowed by the owner for one starter: the 3D engine on '
+    'Flutter GPU (verified publisher bdero.dev), WebGL2 in a browser and '
+    'Impeller elsewhere. spring_boot_starter_flutter_scene is built on '
+    'it, and the scene showcase (example/scene, not published) uses its '
+    'scene widgets. What it depends on is allowed through it only. See '
+    'docs/dependencies.md.',
+    onlyIn: {'spring_boot_starter_flutter_scene', 'scene_showcase'},
+  ),
+  'flutter_bloc': AllowedPackage(
+    'THIRD-PARTY, in one example only: Bloc and Cubit (verified publisher '
+    'bloclibrary.dev). The Bloc showcase (example/bloc, not published) '
+    'shows them as beans of an app with no starter for them; no package '
+    'of the family depends on it. What it depends on (bloc, provider, '
+    'nested) is allowed through it only. See docs/dependencies.md.',
+    onlyIn: {'bloc_showcase'},
   ),
   'node_preamble': AllowedPackage(
     'Pulled by package:test (Dart team) for browser tests; it has no '

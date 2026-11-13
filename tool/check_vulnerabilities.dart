@@ -25,12 +25,15 @@ const _flutterLocks = [
   'spring_boot_starter_flutter_cupertino/pubspec.lock',
   'spring_boot_starter_flutter_security/pubspec.lock',
   'spring_boot_starter_flutter_navigation/pubspec.lock',
+  'spring_boot_starter_flutter_scene/pubspec.lock',
   'example/flutter_guide/pubspec.lock',
   'example/themes/neon/pubspec.lock',
   'example/themes/material/pubspec.lock',
   'example/themes/cupertino/pubspec.lock',
   'example/static_site/app/pubspec.lock',
   'example/seo_site/pubspec.lock',
+  'example/scene/pubspec.lock',
+  'example/bloc/pubspec.lock',
   'example/supabase/app/pubspec.lock',
 ];
 

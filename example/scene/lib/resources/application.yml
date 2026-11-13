@@ -1,0 +1,47 @@
+# SCENE SHOWCASE: every scene of this app is set up here.
+spring:
+  flutter:
+    web:
+      dev-server:
+        # `flutter run -d chrome` serves the app on http://localhost:5075/.
+        port: 5075
+        # Flutter draws in a worker, not on the page's thread, when the
+        # page is cross-origin isolated: a scene costs half as much.
+        headers:
+          Cross-Origin-Opener-Policy: same-origin
+          Cross-Origin-Embedder-Policy: require-corp
+    app:
+      title: Scene Showcase
+      debug-banner: false
+    debug:
+      # The debug panel in a release build too: this app is for looking at
+      # what the scenes cost, and only a release shows that truly.
+      enabled: true
+
+    scene:
+      # animated | still (one frame that stands) | off (placeholders only)
+      render: animated
+      # The most frames a second any scene draws. Every frame of a scene
+      # has Flutter draw the page again: this is what scenes cost.
+      max-frame-rate: 30
+      # The engine starts while the splash shows, not when a scene appears.
+      preload: eager
+      debug:
+        # The scenes' tab of the debug panel, in every build (see above).
+        enabled: true
+      models:
+        # A model by name: SpringSceneModel('crate') shows it, the
+        # `sceneModels` bean gives it to code.
+        crate:
+          source: asset:assets/models/crate.glb
+          # Loaded with the splash too: the first screen has it at once.
+          preload: eager
+      app:
+        # One scene of the app's own, under every screen (Backdrop in
+        # lib/src/backdrop.dart puts the crates into it).
+        enabled: true
+        placement: background
+        camera:
+          position: 0, 0.6, -6
+          target: 0, 0, 0
+          fov: 40
