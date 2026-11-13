@@ -307,9 +307,28 @@ class _MarkdownViewState extends State<MarkdownView>
         : location;
   }
 
+  // The scrollable the page is in: the outline's current heading follows
+  // it.
+  ScrollPosition? _position;
+
+  void _track() {
+    final position = _position;
+    if (mounted && position != null) {
+      _outline.track(position);
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final position = Scrollable.maybeOf(
+      context,
+      axis: Axis.vertical,
+    )?.position;
+    if (!identical(position, _position)) {
+      _position?.removeListener(_track);
+      _position = position?..addListener(_track);
+    }
     final location = widget.location;
     if (location != null) {
       final file = _localized(location);
@@ -364,6 +383,7 @@ class _MarkdownViewState extends State<MarkdownView>
 
   @override
   void dispose() {
+    _position?.removeListener(_track);
     if (_outline.buildAll == _buildAll) {
       _outline.buildAll = null;
     }
@@ -550,6 +570,7 @@ class _MarkdownViewState extends State<MarkdownView>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _outline.update(headings, page: page);
+          _track();
         }
       });
     }
@@ -571,6 +592,8 @@ class _MarkdownViewState extends State<MarkdownView>
             _growing = true;
             _built = _grow(_built);
           });
+          // More of the page is laid out: its headings have places now.
+          WidgetsBinding.instance.addPostFrameCallback((_) => _track());
         }
       });
     }

@@ -1,5 +1,7 @@
 ## Unreleased
 
+- `MarkdownOutline.current`: the heading being read as the page scrolls (the last one in the top part of the screen; the last on the screen at the end of the page; the one `show(id)` went to until the reader scrolls again), kept up to date by the `MarkdownView` from the scrollable it is in. It notifies only at a change of heading. `currentAmong(shown)` gives the entry to mark in a list of some levels.
+- The frame meter tells a late frame from a frame nobody waited for: as each frame ends it notes whether the next was asked for. While something moves at every frame the time between frames is measured, as before; an animation that asks for a frame now and then (a background drifting 15 times a second) shows its rate in the plain color, with each frame measured by its build and raster, where it showed a red `19 fps` and `worst 67 ms`. A frame the app waited more than a quarter of a second for is late too (it was taken for a pause). Fixed: a frame drawn for the meter alone made the app's frames look closer to each other (19 a second for 15).
 - `WidgetBuildTracker` (and `WidgetBuildTracking`): a bean of this type follows what the `build` of a `SpringStatelessWidget` or `SpringState` reads and asks for a new build when that changes. The way a state library of another package joins the Spring widgets; `spring_boot_starter_flutter_signals` declares one.
 
 ## 0.8.0

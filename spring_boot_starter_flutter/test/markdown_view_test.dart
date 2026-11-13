@@ -758,6 +758,127 @@ void main() {
     expect(scroll.position.pixels, greaterThan(0));
   });
 
+  group('the heading being read', () {
+    // Sections longer than the screen, so each heading can reach its top.
+    final section = 'word ' * 900;
+    final page =
+        '# Guide\n\n$section\n\n'
+        '## Setup\n\n$section\n\n'
+        '### A detail\n\n$section\n\n'
+        '## Use\n\n$section\n\n'
+        '## See also\n\nShort.\n';
+
+    Future<(MarkdownOutline, ScrollPosition)> shown(
+      WidgetTester tester,
+    ) async {
+      final outline = MarkdownOutline();
+      addTearDown(outline.dispose);
+      await tester.pumpWidget(
+        _app(
+          SingleChildScrollView(
+            child: MarkdownView(page, outline: outline, selectable: false),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final position = tester
+          .state<ScrollableState>(find.byType(Scrollable).first)
+          .position;
+      return (outline, position);
+    }
+
+    double topOf(WidgetTester tester, String heading) =>
+        tester.getTopLeft(find.text(heading)).dy;
+
+    testWidgets('follows the page as it scrolls, and tells of a change of '
+        'heading only', (tester) async {
+      final (outline, position) = await shown(tester);
+      expect(outline.current.value?.text, 'Guide');
+      var told = 0;
+      outline.current.addListener(() => told++);
+
+      // Inside a section: many scroll steps, no news.
+      position.jumpTo(40);
+      position.jumpTo(80);
+      await tester.pump();
+      expect(outline.current.value?.text, 'Guide');
+      expect(told, 0);
+
+      position.jumpTo(position.pixels + topOf(tester, 'Setup'));
+      await tester.pump();
+      expect(outline.current.value?.text, 'Setup');
+      expect(told, 1);
+
+      position.jumpTo(position.pixels + topOf(tester, 'A detail'));
+      await tester.pump();
+      expect(outline.current.value?.text, 'A detail');
+      // A list of the second-level headings marks the one it is under.
+      final second = [
+        for (final heading in outline.headings)
+          if (heading.level == 2) heading,
+      ];
+      expect(outline.currentAmong(second)?.text, 'Setup');
+
+      // Back up, above a heading again.
+      position.jumpTo(position.pixels + topOf(tester, 'Setup') - 300);
+      await tester.pump();
+      expect(outline.current.value?.text, 'Guide');
+      expect(outline.currentAmong(second), isNull);
+    });
+
+    testWidgets('at the end of the page the last heading on the screen is '
+        'read, though it never reaches the top', (tester) async {
+      final (outline, position) = await shown(tester);
+      position.jumpTo(position.maxScrollExtent);
+      await tester.pump();
+      expect(topOf(tester, 'See also'), greaterThan(200));
+      expect(outline.current.value?.text, 'See also');
+    });
+
+    testWidgets('a heading gone to by its link is the current one at once, '
+        'and until the reader scrolls again', (tester) async {
+      final (outline, position) = await shown(tester);
+      expect(outline.show('see-also'), isTrue);
+      // While the page scrolls there the headings it passes are not read.
+      expect(outline.current.value?.text, 'See also');
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(outline.current.value?.text, 'See also');
+      await tester.pumpAndSettle();
+      expect(outline.current.value?.text, 'See also');
+
+      // The reader scrolls up: the page says where it is again.
+      position.jumpTo(position.pixels - 700);
+      await tester.pump();
+      expect(outline.current.value?.text, isNot('See also'));
+    });
+
+    testWidgets('another page starts with none', (tester) async {
+      final (outline, position) = await shown(tester);
+      position.jumpTo(position.pixels + topOf(tester, 'Use'));
+      await tester.pump();
+      expect(outline.current.value?.text, 'Use');
+
+      await tester.pumpWidget(
+        _app(
+          SingleChildScrollView(
+            child: MarkdownView(
+              'No heading up here.\n\n${'word ' * 2000}\n\n## Later\n\nEnd.\n',
+              outline: outline,
+              selectable: false,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(outline.headings.map((h) => h.text), ['Later']);
+      // The heading of the page before is not kept.
+      expect(outline.current.value?.text, isNot('Use'));
+      position.jumpTo(0);
+      await tester.pump();
+      expect(outline.current.value, isNull);
+    });
+  });
+
   testWidgets('a long page is whole after a few frames', (tester) async {
     await tester.pumpWidget(
       _app(

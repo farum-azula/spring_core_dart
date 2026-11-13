@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 /// A heading of a Markdown page: its [level] (1 for `#`), its [text]
@@ -66,10 +70,109 @@ final class MarkdownHeading {
 ///   ]),
 /// );
 /// ```
+///
+/// [current] is the heading being read as the page scrolls, for a list
+/// that marks where the reader is:
+///
+/// ```dart
+/// ValueListenableBuilder(
+///   valueListenable: outline.current,
+///   builder: (context, _, _) {
+///     final shown = outline.headings.where((h) => h.level == 2).toList();
+///     final reading = outline.currentAmong(shown);
+///     return Column(children: [
+///       for (final h in shown) Entry(h, selected: h == reading),
+///     ]);
+///   },
+/// );
+/// ```
 class MarkdownOutline extends ChangeNotifier {
   List<MarkdownHeading> _headings = const [];
   final Map<(Object?, String), GlobalKey> _keys = {};
   Object? _page;
+  final ValueNotifier<MarkdownHeading?> _current = ValueNotifier(null);
+
+  // The heading [show] went to: it stays the current one while the page
+  // scrolls there, and after it until the reader scrolls again (a heading
+  // near the end of a page cannot come to the top of the screen).
+  MarkdownHeading? _shown;
+  Timer? _arriving;
+  double? _arrivedAt;
+
+  /// The heading being read: the last one whose line has reached the top
+  /// part of the screen as the page scrolls, `null` above the first. It
+  /// notifies when the reader comes to another heading, and only then, so
+  /// a list that marks the current entry is built again once a section.
+  ///
+  /// The `MarkdownView` keeps it up to date from the scrollable it is in.
+  ValueListenable<MarkdownHeading?> get current => _current;
+
+  /// The entry of [shown] to mark for [current]: the last of [shown] at or
+  /// before it. A list of the second-level headings marks `## Setup` while
+  /// the reader is in a `###` of it.
+  MarkdownHeading? currentAmong(Iterable<MarkdownHeading> shown) {
+    final current = _current.value;
+    if (current == null) {
+      return null;
+    }
+    final at = _headings.indexOf(current);
+    MarkdownHeading? found;
+    for (final heading in shown) {
+      final index = _headings.indexOf(heading);
+      if (index >= 0 && index <= at) {
+        found = heading;
+      }
+    }
+    return found;
+  }
+
+  /// Works out [current] from where the headings are in the scrollable of
+  /// [position]. Called by the `MarkdownView` when the page scrolls and
+  /// when it is laid out.
+  void track(ScrollPosition position) {
+    if (!position.hasPixels || !position.hasViewportDimension) {
+      return;
+    }
+    final shown = _shown;
+    if (shown != null) {
+      if (_arriving != null) {
+        return;
+      }
+      final arrived = _arrivedAt ??= position.pixels;
+      if ((position.pixels - arrived).abs() < 4) {
+        return;
+      }
+      _shown = null;
+      _arrivedAt = null;
+    }
+    // A heading is being read once it is in the top fifth of the screen.
+    final line =
+        position.pixels + (position.viewportDimension * 0.2).clamp(48.0, 160.0);
+    final end =
+        position.maxScrollExtent > 0 &&
+        position.pixels >= position.maxScrollExtent - 1;
+    final bottom = position.pixels + position.viewportDimension;
+    MarkdownHeading? found;
+    for (final heading in _headings) {
+      final box = _keys[(_page, heading.id)]?.currentContext
+          ?.findRenderObject();
+      if (box == null || !box.attached) {
+        continue;
+      }
+      final at = RenderAbstractViewport.maybeOf(
+        box,
+      )?.getOffsetToReveal(box, 0).offset;
+      if (at == null) {
+        continue;
+      }
+      // At the end of the page the last heading on the screen is read:
+      // it may never reach the top.
+      if (at <= line || (end && at < bottom)) {
+        found = heading;
+      }
+    }
+    _current.value = found;
+  }
 
   /// The headings, in order.
   List<MarkdownHeading> get headings => _headings;
@@ -82,6 +185,18 @@ class MarkdownOutline extends ChangeNotifier {
   }) {
     final key = _keys[(_page, id)];
     final target = key?.currentContext;
+    for (final heading in _headings) {
+      if (heading.id == id) {
+        _shown = heading;
+        _arrivedAt = null;
+        _arriving?.cancel();
+        _arriving = Timer(duration + const Duration(milliseconds: 100), () {
+          _arriving = null;
+        });
+        _current.value = heading;
+        break;
+      }
+    }
     if (target != null) {
       Scrollable.ensureVisible(target, duration: duration, curve: curve);
       return true;
@@ -125,7 +240,21 @@ class MarkdownOutline extends ChangeNotifier {
       return;
     }
     _headings = List.unmodifiable(headings);
+    if (!samePage || !_headings.contains(_current.value)) {
+      _shown = null;
+      _arrivedAt = null;
+      _arriving?.cancel();
+      _arriving = null;
+      _current.value = null;
+    }
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _arriving?.cancel();
+    _current.dispose();
+    super.dispose();
   }
 
   static bool _listEquals(List<MarkdownHeading> a, List<MarkdownHeading> b) {

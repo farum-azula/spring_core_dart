@@ -2097,9 +2097,13 @@ The frame meter: a small panel over the app with the frames a second it
 really draws, the average time of their build and raster, the worst frame,
 and a bar per frame (within the budget, up to twice it, over). The times are
 Flutter's own (`FrameTiming`), on every platform the web included, so it
-shows on a phone what a desktop browser cannot. The panel is drawn again at
-most four times a second and its own frames are not counted: an app that
-draws nothing shows `idle`. Turn it on in a profile you test with.
+shows on a phone what a desktop browser cannot. A frame is late only when
+the app was waiting for it (something moves at every frame); an animation
+that asks for a frame now and then (a background drifting 15 times a
+second) shows its rate in the plain color, each frame measured by what it
+cost. The panel is drawn again at most four times a second and its own
+frames are not counted: an app that draws nothing shows `idle`. Turn it on
+in a profile you test with.
 
 ```yaml
 spring:
