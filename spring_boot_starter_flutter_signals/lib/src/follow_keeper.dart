@@ -13,11 +13,20 @@ import 'package:signals_core/signals_core.dart' as signals;
 final class FollowKeeper {
   static List<void Function()>? _recording;
 
-  List<void Function()> _kept = const [];
+  // Two lists that take turns, so a run makes none: what the last good
+  // run followed, and what the run of the moment follows.
+  List<void Function()> _kept = [];
+  List<void Function()> _spare = [];
+  bool _running = false;
+
+  /// Whether a run is noting what it follows: a read asks before it makes
+  /// anything to [note].
+  static bool get isNoting => _recording != null;
 
   /// Notes that the run of the moment follows what [follow] reads;
   /// [follow] is called again after a later run of it fails. Called by
-  /// every followed read.
+  /// every followed read, with a function it keeps (not one made for the
+  /// call).
   static void note(void Function() follow) => _recording?.add(follow);
 
   /// Runs [body] with nothing noted: for a read that is not followed.
@@ -36,10 +45,18 @@ final class FollowKeeper {
   /// goes on.
   T run<T>(T Function() body) {
     final outer = _recording;
-    final mine = _recording = <void Function()>[];
+    // A run inside itself (a value that reads itself) gets a list of its
+    // own.
+    final nested = _running;
+    final mine = nested ? <void Function()>[] : (_spare..clear());
+    _recording = mine;
+    _running = true;
     try {
       final result = body();
-      _kept = mine;
+      if (!nested) {
+        _spare = _kept;
+        _kept = mine;
+      }
       return result;
     } on Object {
       _recording = null;
@@ -54,6 +71,7 @@ final class FollowKeeper {
       rethrow;
     } finally {
       _recording = outer;
+      _running = nested;
     }
   }
 }

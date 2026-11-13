@@ -99,16 +99,54 @@ void callThroughProxyReference(Object bean) {
 final _bodies = <Object>[];
 final _bodyZoneKey = Object();
 
+// Whether a `Future` member of a subclass proxy has ever run: before
+// that no zone carries a body, and none is looked for.
+bool _zonedBodies = false;
+
 /// Whether code of the subclass proxy [proxy] itself is running, so a
 /// call it makes on itself is a self-call and not advised, as in Spring.
 ///
 /// Used by `ProxyInvoker`; not exported.
-bool isInProxyBody(Object proxy) =>
-    _bodies.any((body) => identical(body, proxy)) ||
-    ((Zone.current[_bodyZoneKey] as List<Object>?)?.any(
-          (body) => identical(body, proxy),
-        ) ??
-        false);
+bool isInProxyBody(Object proxy) {
+  for (var i = _bodies.length - 1; i >= 0; i--) {
+    if (identical(_bodies[i], proxy)) {
+      return true;
+    }
+  }
+  if (!_zonedBodies) {
+    return false;
+  }
+  final zone = Zone.current;
+  if (identical(zone, Zone.root)) {
+    return false;
+  }
+  final zoned = zone[_bodyZoneKey] as List<Object>?;
+  if (zoned != null) {
+    for (final body in zoned) {
+      if (identical(body, proxy)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/// Notes that the own code of the subclass proxy [proxy] runs from now
+/// until [leaveProxyBody]: the synchronous form of [runProxyBody], for the
+/// path of every advised call, which makes no closure for it.
+///
+/// Used by `ProxyInvoker`; not exported.
+void enterProxyBody(Object proxy) => _bodies.add(proxy);
+
+/// Ends what [enterProxyBody] began.
+///
+/// Used by `ProxyInvoker`; not exported.
+void leaveProxyBody(Object proxy) {
+  _bodies.removeLast();
+  if (identical(_throughProxy, proxy)) {
+    _throughProxy = null;
+  }
+}
 
 /// Runs [body], the own code of the subclass proxy [proxy], and returns
 /// its result; with [async], the code it schedules counts too (through a
@@ -121,6 +159,7 @@ T runProxyBody<T>(Object proxy, T Function() body, {bool async = false}) {
     if (!async) {
       return body();
     }
+    _zonedBodies = true;
     final outer = Zone.current[_bodyZoneKey] as List<Object>? ?? const [];
     return runZoned(
       body,
@@ -141,6 +180,22 @@ Object? _current;
 
 // Zone value carrying the proxy into asynchronous continuations.
 final _zoneKey = Object();
+
+/// Makes [proxy] the proxy of the synchronous call in progress and
+/// returns the one there was, for [leaveProxyCall]: [runWithCurrentProxy]
+/// without a closure.
+///
+/// Used by `ProxyInvoker`; not exported.
+Object? enterProxyCall(Object proxy) {
+  final previous = _current;
+  _current = proxy;
+  return previous;
+}
+
+/// Ends what [enterProxyCall] began.
+///
+/// Used by `ProxyInvoker`; not exported.
+void leaveProxyCall(Object? previous) => _current = previous;
 
 /// Runs [body] with [proxy] as the current proxy, for the synchronous
 /// part of a call.

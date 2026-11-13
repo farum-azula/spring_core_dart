@@ -70,8 +70,22 @@ final class SignalsInterceptor implements SelfCallInterceptor {
   final SignalBeans beans;
 
   @override
-  Object? invoke(MethodInvocation invocation) =>
-      unwrapped(() => _invoke(invocation));
+  Object? invoke(MethodInvocation invocation) {
+    // On the path of every read of a followed field: no closure for it.
+    try {
+      return _invoke(invocation);
+    } on signals.SignalEffectException catch (wrapped) {
+      // What the bean's own code threw, not the signals package's wrapper.
+      final error = wrapped.error;
+      if (error == null) {
+        rethrow;
+      }
+      Error.throwWithStackTrace(
+        error,
+        wrapped.stackTrace ?? StackTrace.current,
+      );
+    }
+  }
 
   Object? _invoke(MethodInvocation invocation) {
     final signature = invocation.signature;

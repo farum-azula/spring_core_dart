@@ -15,11 +15,16 @@ base mixin FollowedCollection {
 
   /// Notes a read: whatever reads now is told of the next change.
   void touch() {
-    FollowKeeper.note(_follow);
+    if (FollowKeeper.isNoting) {
+      FollowKeeper.note(_refollow);
+    }
     version.value;
   }
 
   void _follow() => version.value;
+
+  // The same function each time, not one made for each read.
+  late final void Function() _refollow = _follow;
 
   /// Tells the readers of a change.
   void changed() => version.value = version.peek() + 1;

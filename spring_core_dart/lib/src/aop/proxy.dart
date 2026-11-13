@@ -742,16 +742,14 @@ final class ProxyInvoker {
       partialProxy(beanName);
     }
     _advisors.add(advisor);
-    _chains.clear();
-    _ownChains.clear();
+    _forgetChains();
   }
 
   /// Removes [advisor]; returns `false` when it was not there.
   bool removeAdvisor(PointcutAdvisor advisor) {
     final removed = _advisors.remove(advisor);
     if (removed) {
-      _chains.clear();
-      _ownChains.clear();
+      _forgetChains();
     }
     return removed;
   }
@@ -778,26 +776,35 @@ final class ProxyInvoker {
   /// `bean(...)` pointcuts also match.
   final List<String> beanAliases;
 
-  // Interceptor chains per member index, computed on first call.
-  final _chains = <int, List<MethodInterceptor>>{};
+  // Interceptor chains by member index, computed on first call. A list,
+  // not a map: every call of every advised member looks its chain up.
+  late final List<List<MethodInterceptor>?> _chains = List.filled(
+    signatures.length,
+    null,
+  );
 
   // The same for the calls the bean makes on itself.
-  final _ownChains = <int, List<MethodInterceptor>>{};
+  late final List<List<MethodInterceptor>?> _ownChains = List.filled(
+    signatures.length,
+    null,
+  );
+
+  void _forgetChains() {
+    _chains.fillRange(0, _chains.length, null);
+    _ownChains.fillRange(0, _ownChains.length, null);
+  }
 
   /// The interceptors of member [index] for a call the bean makes on
   /// itself: those of [chainFor] that ask for such calls
   /// ([SelfCallInterceptor]).
-  List<MethodInterceptor> ownChainFor(int index) => _ownChains.putIfAbsent(
-    index,
-    () => [
-      for (final interceptor in chainFor(index))
-        if (switch (interceptor) {
-          _DynamicInterceptor(:final advice) => advice,
-          _ => interceptor,
-        } is SelfCallInterceptor)
-          interceptor,
-    ],
-  );
+  List<MethodInterceptor> ownChainFor(int index) => _ownChains[index] ??= [
+    for (final interceptor in chainFor(index))
+      if (switch (interceptor) {
+        _DynamicInterceptor(:final advice) => advice,
+        _ => interceptor,
+      } is SelfCallInterceptor)
+        interceptor,
+  ];
 
   /// The interceptors for member [index], outermost first, computed on
   /// the first call and cached until the advisors change.
@@ -805,7 +812,10 @@ final class ProxyInvoker {
   /// Advice whose pointcut depends on the call (bound parameters,
   /// `args(...)` type tests) is included wrapped, and skipped for the calls
   /// it does not match.
-  List<MethodInterceptor> chainFor(int index) => _chains.putIfAbsent(index, () {
+  List<MethodInterceptor> chainFor(int index) =>
+      _chains[index] ??= _buildChain(index);
+
+  List<MethodInterceptor> _buildChain(int index) {
     final signature = signatures[index];
     return [
       for (final advisor in _advisors)
@@ -822,7 +832,7 @@ final class ProxyInvoker {
             _ => advisor.advice,
           },
     ];
-  });
+  }
 
   // A subclass proxy (the bean is its own proxy, [target] is [proxy])
   // calling itself from its own code: like a `this.` call on Spring's
@@ -851,28 +861,53 @@ final class ProxyInvoker {
     List<Object?> arguments,
     Object? Function(List<Object?> arguments) call,
   ) {
-    final own = _isSelfCall(proxy, target);
+    // The path of every call of every advised member (a followed field
+    // is read through it): no closure and no object more than it needs.
+    final subclass = identical(proxy, target);
+    final own =
+        subclass && isInProxyBody(proxy) && !takeCallThroughProxy(proxy);
     if (own && !adviseSelfCalls) {
       return call(arguments);
     }
-    final body = identical(proxy, target)
-        ? (List<Object?> args) => runProxyBody(proxy, () => call(args))
-        : call;
-    return runWithCurrentProxy(proxy, () {
-      final chain = _chain(index, own: own);
+    final chain = own ? ownChainFor(index) : chainFor(index);
+    final previous = enterProxyCall(proxy);
+    try {
       if (chain.isEmpty) {
-        return body(arguments);
+        if (!subclass) {
+          return call(arguments);
+        }
+        enterProxyBody(proxy);
+        try {
+          return call(arguments);
+        } finally {
+          leaveProxyBody(proxy);
+        }
       }
-      return _Invocation(
-        proxy,
-        target,
-        signatures[index],
-        [...arguments],
-        chain,
-        0,
-        body,
-      ).proceed();
-    });
+      final body = subclass
+          ? (List<Object?> args) {
+              enterProxyBody(proxy);
+              try {
+                return call(args);
+              } finally {
+                leaveProxyBody(proxy);
+              }
+            }
+          : call;
+      // The first interceptor at once, with the invocation of the next.
+      return chain[0].invoke(
+        _Invocation(
+          proxy,
+          target,
+          signatures[index],
+          arguments.isEmpty ? const [] : [...arguments],
+          chain,
+          1,
+          body,
+        ),
+      );
+    } finally {
+      leaveProxyCall(previous);
+    }
   }
 
   /// Calls member [index], which returns `Future<T>`, through its advice.

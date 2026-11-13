@@ -99,11 +99,16 @@ final class ValueMember extends SignalMember {
 
   /// Tells the reader of the first assignment of a field that is [unset].
   void follow() {
-    FollowKeeper.note(_follow);
+    if (FollowKeeper.isNoting) {
+      FollowKeeper.note(_refollow);
+    }
     _signal.value;
   }
 
   void _follow() => _signal.value;
+
+  // The same function each time, not one made for each read.
+  late final void Function() _refollow = _follow;
 
   /// Whether the value is kept out of the debug tab and the log.
   final bool hidden;
@@ -114,7 +119,9 @@ final class ValueMember extends SignalMember {
   /// The value as the bean's readers get it; the reader is told of the
   /// next assignment (and, for a collection, of a change in place).
   Object? read() {
-    FollowKeeper.note(_follow);
+    if (FollowKeeper.isNoting) {
+      FollowKeeper.note(_refollow);
+    }
     return _signal.value;
   }
 
@@ -239,7 +246,9 @@ final class ComputedMember extends SignalMember {
   /// The value; the reader is told when it is computed again. Fails with
   /// what the computation threw.
   Object? read() {
-    FollowKeeper.note(_subscribe);
+    if (FollowKeeper.isNoting) {
+      FollowKeeper.note(_resubscribe);
+    }
     _retryAfterFailure();
     return _valueOf(unwrapped(() => _computed.value));
   }
@@ -252,6 +261,9 @@ final class ComputedMember extends SignalMember {
   }
 
   void _subscribe() => _computed.value;
+
+  // The same function each time, not one made for each read.
+  late final void Function() _resubscribe = _subscribe;
 
   // A failure is not kept: this read computes again.
   void _retryAfterFailure() {

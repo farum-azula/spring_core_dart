@@ -93,6 +93,18 @@ they do not belong (a repository, and the rest):
   value's failure is not kept; an effect's later failure is reported,
   not thrown (the owner has not decided this last one: it follows
   `ChangeNotifier` and MobX, and is one place to change back).
+- **What it costs** (the owner, November 2026: frames must not suffer
+  when everything is used together; more generated code is accepted for
+  speed and for less to declare). Measured in a debug build
+  (`spring_boot_starter_flutter_signals/benchmark`, Apple M5): a read of
+  a `@Signal` field 45 ns against 3 for a plain one, a kept `@Computed`
+  53, an assignment nobody reads 68, the build of a Spring widget 230 ns
+  more than without the starter. Nearly all of a read was the proxy's
+  call path, not the signals: it was 124 ns before the path was made
+  shorter (in the core, for every advised member). 200 widgets built in
+  one frame with five reads each are about 0.1 ms of 16. **Owed: the
+  frames of an application with every starter at once, in a release
+  build, on a phone and in a browser**; none of this was measured there.
 - **Not verified**: a bean with such members in a library package used
   by an application (its proxy is generated in the library, as for any
   subclass proxy; no test of the two together); an application whose
