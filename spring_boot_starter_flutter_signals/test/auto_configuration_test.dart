@@ -104,4 +104,48 @@ void main() {
     );
     expect(failing.read, throwsStateError);
   });
+
+  test('a bean whose proxy cannot follow its own calls (an application '
+      'built by an older generator) stops the start, saying what to '
+      'update', () {
+    final factory = DefaultListableBeanFactory()
+      ..registerBeanDefinition(
+        BeanDefinition<Object>(
+          name: 'pageLamps',
+          create: (_) => Object(),
+          // What a generator before 0.8.1 wrote for such a bean: a proxy
+          // that wraps it.
+          aopProxy: AopProxyFactory(
+            signatures: const [
+              MethodSignature.of(
+                'lamps',
+                AopTarget(r'PageLamps', types: [r'PageLamps']),
+                kind: MemberKind.getter,
+                returnType: 'Map',
+                annotations: [Signal()],
+                annotationTypes: ['Signal'],
+              ),
+            ],
+            create: (target, invoker) => target,
+          ),
+        ),
+      );
+    final beans = SignalBeans();
+    addTearDown(beans.dispose);
+    expect(
+      () => SignalBeanNames(beans).postProcessBeanFactory(factory),
+      throwsA(
+        isA<StateError>().having(
+          (error) => error.message,
+          'message',
+          allOf(
+            contains("The bean 'pageLamps'"),
+            contains('spring_core_dart_generator older than 0.8.1'),
+            contains('build again'),
+          ),
+        ),
+      ),
+    );
+    expect(beans.names, isEmpty);
+  });
 }

@@ -86,6 +86,25 @@ void main() {
     );
   });
 
+  test('asked for something else than the last time, the stand-in starts '
+      'anew: a bundle the hook no longer asks for does not stay', () {
+    final made = stage()..prepare();
+    final bundle = File(
+      p.join(made.root, 'flutter_scene_generated', 'base.shaderbundle'),
+    )..createSync(recursive: true);
+
+    made.renew('shaders: a b');
+    // The first time: what was there was made by nobody knows what.
+    expect(bundle.existsSync(), isFalse);
+
+    bundle.createSync(recursive: true);
+    made.renew('shaders: a b');
+    expect(bundle.existsSync(), isTrue);
+
+    made.renew("shaders: the engine's");
+    expect(bundle.existsSync(), isFalse);
+  });
+
   test('a pubspec without the entry says what to add', () {
     File(
       p.join(app.path, 'pubspec.yaml'),

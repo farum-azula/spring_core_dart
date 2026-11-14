@@ -93,6 +93,26 @@ final class SceneStage {
     return BuildInput({...input.json, 'package_root': '$root${p.separator}'});
   }
 
+  /// Starts the stand-in's output anew when [made] (what the hook is
+  /// asked to make, in a few words) is not what it made the last time.
+  /// The engine's hooks add to what is there and remove only their own
+  /// kind: a bundle of a few shaders would stay, and go on taking the
+  /// place of the engine's, after the hook stopped asking for one.
+  void renew(String made) {
+    final note = File(p.join(root, 'made'));
+    if (note.existsSync() && note.readAsStringSync() == made) {
+      return;
+    }
+    for (final folder in [_engineDirectory, 'build']) {
+      final directory = Directory(p.join(root, folder));
+      if (directory.existsSync()) {
+        directory.deleteSync(recursive: true);
+      }
+    }
+    Directory(root).createSync(recursive: true);
+    note.writeAsStringSync(made);
+  }
+
   /// Copies what the engine's hooks made in the stand-in to
   /// [sceneGeneratedDirectory]: new and changed files are written, the
   /// ones no longer made are removed. A file that did not change is left

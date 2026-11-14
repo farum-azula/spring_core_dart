@@ -2,6 +2,7 @@
 
 - **To do in an app with a scene hook:** what the hook makes goes into `lib/spring_gen/flutter_scene_generated/`, with the rest of the generated code, and no longer into `flutter_scene_generated/` at the app's root. List `lib/spring_gen/flutter_scene_generated/` (and `lib/spring_gen/flutter_scene_generated/opengl_es/` for the web) under `flutter: assets:` in place of the old entries, and remove the old folder. The engine's hooks are run for a stand-in of the app under `.dart_tool/spring_scene/` (`SceneStage`) and their output is copied over; the build says what to add when the entry is missing.
 - `buildSceneAssets` (`build_hooks.dart`): one call for an app's `hook/build.dart` that makes the engine's shader bundle with only what the app's scenes draw with, the app's materials (`.fmat`) and its models and scenes (`.glb`, `.fscene`). `buildSceneShaders` is the bundle alone, as before.
+- `SceneBackdrop(pixelRatio:)`: the pixels a backdrop draws for one of the screen's, in place of the properties'; a scene of soft light under a whole page costs a quarter at half the pixels. `environment` and `environmentIntensity`: the light around a backdrop's lit materials (0 leaves them to the scene's own lights).
 - The package's topic `3d` is `graphics`: pub.dev takes no topic that starts with a digit (what was published as 0.8.1 has it already).
 
 ## 0.8.1

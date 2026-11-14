@@ -92,6 +92,10 @@ Future<void> buildSceneAssets({
     sources: [p.posix.split(p.posix.normalize(sources)).first],
   );
   buildOutput.dependencies.add(buildInput.packageRoot.resolve('pubspec.yaml'));
+  stage.renew(
+    'shaders: ${shaders == null ? 'the engine\'s' : (shaders.toList()..sort()).join(' ')}; '
+    'materials: $materials; models: $models; sources: $sources',
+  );
   if (shaders != null) {
     await _engineShaders(stage, staged, buildOutput, shaders);
   }

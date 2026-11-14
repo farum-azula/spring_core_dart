@@ -11,7 +11,9 @@ const _log = SpringLog('spring.flutter.signals');
 
 /// Finds, before any bean is made, the beans that have a `@Signal`,
 /// `@Computed` or `@Effect` member: the advice then covers each of their
-/// methods, not only the annotated members.
+/// methods, not only the annotated members. It stops the start for one
+/// whose proxy cannot follow the bean's own calls (an application built
+/// by a generator older than this starter).
 final class SignalBeanNames implements BeanFactoryPostProcessor {
   /// The finder that fills [beans].
   const SignalBeanNames(this.beans);
@@ -25,9 +27,24 @@ final class SignalBeanNames implements BeanFactoryPostProcessor {
       final proxy = beanFactory.aopProxyOf(
         beanFactory.getBeanDefinition(name),
       );
-      if (proxy != null && proxy.signatures.any(SignalsPointcut.isAnnotated)) {
-        beans.names.add(name);
+      if (proxy == null || !proxy.signatures.any(SignalsPointcut.isAnnotated)) {
+        continue;
       }
+      // The proxy of such a bean extends it and follows its own calls. One
+      // that wraps the bean was written by a generator that knows nothing
+      // of followed state: the bean's own code would read and assign its
+      // fields past it, and nothing would be told.
+      if (!proxy.adviseSelfCalls) {
+        throw StateError(
+          "The bean '$name' has @Signal, @Computed or @Effect members, but "
+          'its generated proxy does not follow them: the application was '
+          'built by a spring_core_dart_generator older than 0.8.1, or with '
+          'aop_proxies other than `all`. Update the generator '
+          '(dev_dependencies: spring_core_dart_generator: ^0.8.1), leave '
+          'aop_proxies at its default, and build again.',
+        );
+      }
+      beans.names.add(name);
     }
   }
 }

@@ -1,3 +1,7 @@
+## Unreleased
+
+- An application built by a generator older than 0.8.1 (or with `aop_proxies` other than `all`) no longer starts with beans whose `@Signal` state nobody follows: the start stops and says to update `spring_core_dart_generator` and build again. Before, such a bean got a proxy that wraps it, and its own assignments told no one.
+
 ## 0.8.1
 
 - The first release. `@Signal()` on a field of a component (its readers are told of an assignment; a `List`, `Set`, `Map` or `Queue` also of a change in place), `@Computed()` on a getter or a method without parameters (a value kept until what it read changes), `@Effect()` on a method (run again when what it read changes). The fields stay plain fields.

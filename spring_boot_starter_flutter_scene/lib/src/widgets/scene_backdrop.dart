@@ -46,6 +46,9 @@ class SceneBackdrop extends StatefulWidget {
     this.margin = 0,
     this.padding = EdgeInsets.zero,
     this.maxFrameRate,
+    this.pixelRatio,
+    this.environment,
+    this.environmentIntensity = 1,
     this.tilt = 0,
     this.toneMapping = ToneMappingMode.linear,
   });
@@ -71,6 +74,21 @@ class SceneBackdrop extends StatefulWidget {
 
   /// The most frames a second the scene draws, under the properties'.
   final double? maxFrameRate;
+
+  /// The pixels the scene draws for one of the screen's, in place of the
+  /// properties' (`spring.flutter.scene.pixel-ratio`). A scene of soft
+  /// light under a whole page looks the same at half the pixels and costs
+  /// a quarter.
+  final double? pixelRatio;
+
+  /// The light around the scene that its lit materials are shown in; not
+  /// set, the engine's studio light.
+  final EnvironmentMap? environment;
+
+  /// How strongly [environment] lights the scene. 0 leaves a lit surface
+  /// to the scene's own lights alone: a wall that is dark where no lamp
+  /// of the page reaches it.
+  final double environmentIntensity;
 
   /// How far the scene turns after the pointer, in degrees; 0 keeps it
   /// flat.
@@ -161,6 +179,9 @@ class _SceneBackdropState extends State<SceneBackdrop> {
             ),
       toneMapping: widget.toneMapping,
       maxFrameRate: widget.maxFrameRate,
+      pixelRatio: widget.pixelRatio,
+      environment: widget.environment,
+      environmentIntensity: widget.environmentIntensity,
       camera: PerspectiveCamera(
         fovRadiansY: _fieldOfView,
         position: vm.Vector3(0, 0, -distance),
