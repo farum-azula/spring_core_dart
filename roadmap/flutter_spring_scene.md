@@ -31,7 +31,7 @@ stay outside (they are a look: a theme's or an app's).
 | The start | `SceneEvent`s with message codes, `SceneStatus` (the current step in words), `SceneStart` (a `SplashTask`: the splash waits and its loader moves) |
 | The debug tab | `SceneDebugSection`: the engine, every scene and model by name; a module of its own, out of release builds |
 | The engine's log | `SceneEngineLog`: the engine's `debugPrint` lines as records of the logger `flutter_scene`, with a level (asked for by the owner) |
-| The shaders | `buildSceneShaders` for an app's `hook/build.dart` (`build_hooks.dart`) |
+| The shaders, the materials, the models | `buildSceneAssets` for an app's `hook/build.dart` (`build_hooks.dart`): what it makes goes into `lib/spring_gen/flutter_scene_generated/`, not into a folder of the engine's at the app's root (the owner, November 2026: everything generated is in `spring_gen`). The hook stays the app's: a build hook writes into its own package alone |
 
 Seen drawing in a browser (Chrome, a release build of `example/scene`):
 the three kinds of scene, a model from the properties and from an

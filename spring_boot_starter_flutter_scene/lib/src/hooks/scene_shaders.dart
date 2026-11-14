@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:flutter_scene/build_hooks.dart';
 import 'package:hooks/hooks.dart';
 import 'package:path/path.dart' as p;
+import 'package:spring_boot_starter_flutter_scene/src/hooks/scene_stage.dart';
 
 const String _engine = 'flutter_scene';
 const String _engineManifest = 'shaders/base.shaderbundle.json';
@@ -22,8 +23,15 @@ const Set<String> unlitSceneShaders = {
   'PrefilterRadianceCubeFragment',
 };
 
-/// Builds the engine's shader bundle with [shaders] alone, into the tree
-/// of the app whose `hook/build.dart` calls this:
+/// Makes, for the app whose `hook/build.dart` calls this, everything of
+/// its scenes that is made at build time, into the app's
+/// `lib/spring_gen/flutter_scene_generated/`:
+///
+/// - the engine's shader bundle with [shaders] alone (`null`: no bundle
+///   of the app's own, the engine's whole one is used);
+/// - the app's materials ([materials]: the `.fmat` files under [sources]);
+/// - its models and scenes ([models]: the `.glb` and `.fscene` files
+///   under [sources]), loadable by the path of their source.
 ///
 /// ```dart
 /// // hook/build.dart of the app
@@ -32,7 +40,7 @@ const Set<String> unlitSceneShaders = {
 ///
 /// void main(List<String> args) async {
 ///   await build(args, (input, output) async {
-///     await buildSceneShaders(buildInput: input, buildOutput: output);
+///     await buildSceneAssets(buildInput: input, buildOutput: output);
 ///   });
 /// }
 /// ```
@@ -43,10 +51,15 @@ const Set<String> unlitSceneShaders = {
 ///   hooks: ^2.0.0
 /// flutter:
 ///   assets:
-///     - flutter_scene_generated/
-///     - path: flutter_scene_generated/opengl_es/
+///     - lib/spring_gen/flutter_scene_generated/
+///     - path: lib/spring_gen/flutter_scene_generated/opengl_es/
 ///       platforms: [web]
 /// ```
+///
+/// The hook is the app's because Dart runs a build hook for one package
+/// and lets it write into that package alone: a bundle that takes the
+/// place of the engine's has to be in the app's own tree, and only the
+/// app knows what its scenes draw with.
 ///
 /// `flutter_scene` compiles every shader of its bundle before the first
 /// frame, the lit materials and every effect among them: in a browser
@@ -60,11 +73,65 @@ const Set<String> unlitSceneShaders = {
 /// A shader that is not in the bundle fails at draw time with no name in
 /// the error: after changing the list, look at every scene of the app.
 /// Without the hook everything works, with the engine's whole bundle.
+///
+/// The engine's own hooks write into a `flutter_scene_generated/` folder
+/// at the app's root. Here they are run for a stand-in of the app under
+/// `.dart_tool/spring_scene/` and their output is copied into
+/// `lib/spring_gen/`, where the rest of the generated code is: the app's
+/// root gets no folder for it ([SceneStage]).
+Future<void> buildSceneAssets({
+  required BuildInput buildInput,
+  required BuildOutputBuilder buildOutput,
+  Set<String>? shaders = unlitSceneShaders,
+  bool materials = true,
+  bool models = true,
+  String sources = 'assets/',
+}) async {
+  final stage = SceneStage(buildInput);
+  final staged = stage.prepare(
+    sources: [p.posix.split(p.posix.normalize(sources)).first],
+  );
+  buildOutput.dependencies.add(buildInput.packageRoot.resolve('pubspec.yaml'));
+  if (shaders != null) {
+    await _engineShaders(stage, staged, buildOutput, shaders);
+  }
+  if (models) {
+    buildScenes(
+      buildInput: staged,
+      buildOutput: buildOutput,
+      discoveryRoot: sources,
+    );
+  }
+  if (materials) {
+    await buildMaterials(
+      buildInput: staged,
+      buildOutput: buildOutput,
+      discoveryRoot: sources,
+    );
+  }
+  stage.publish();
+}
+
+/// The engine's shader bundle with [shaders] alone, and nothing else:
+/// [buildSceneAssets] without the app's materials and models.
 Future<void> buildSceneShaders({
   required BuildInput buildInput,
   required BuildOutputBuilder buildOutput,
   Set<String> shaders = unlitSceneShaders,
-}) async {
+}) => buildSceneAssets(
+  buildInput: buildInput,
+  buildOutput: buildOutput,
+  shaders: shaders,
+  materials: false,
+  models: false,
+);
+
+Future<void> _engineShaders(
+  SceneStage stage,
+  BuildInput staged,
+  BuildOutputBuilder buildOutput,
+  Set<String> shaders,
+) async {
   final engineRoot = await _engineRoot();
   final source = File.fromUri(engineRoot.resolve(_engineManifest));
   buildOutput.dependencies.add(source.uri);
@@ -79,23 +146,22 @@ Future<void> buildSceneShaders({
     );
   }
 
-  final packageRoot = buildInput.packageRoot.toFilePath();
   final manifest = <String, Object?>{
     for (final name in shaders)
       name: {
         ...(entries[name] as Map).cast<String, Object?>(),
         'file': _relative(
           engineRoot.resolve((entries[name] as Map)['file'] as String),
-          packageRoot,
+          stage.root,
         ),
       },
   };
-  File(p.join(packageRoot, _ownManifest))
+  File(p.join(stage.root, _ownManifest))
     ..parent.createSync(recursive: true)
     ..writeAsStringSync(const JsonEncoder.withIndent('  ').convert(manifest));
 
   await buildTargetShaderBundleJson(
-    buildInput: buildInput,
+    buildInput: staged,
     buildOutput: buildOutput,
     manifestFileName: _ownManifest,
     includeDirectories: [engineRoot.resolve('shaders/')],

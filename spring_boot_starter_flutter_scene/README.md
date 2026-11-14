@@ -340,7 +340,7 @@ import 'package:spring_boot_starter_flutter_scene/build_hooks.dart';
 
 void main(List<String> args) async {
   await build(args, (input, output) async {
-    await buildSceneShaders(buildInput: input, buildOutput: output);
+    await buildSceneAssets(buildInput: input, buildOutput: output);
   });
 }
 ```
@@ -351,10 +351,36 @@ dependencies:
   hooks: ^2.0.0
 flutter:
   assets:
-    - flutter_scene_generated/
-    - path: flutter_scene_generated/opengl_es/
+    - lib/spring_gen/flutter_scene_generated/
+    - path: lib/spring_gen/flutter_scene_generated/opengl_es/
       platforms: [web]
 ```
+
+`buildSceneAssets` makes everything of the app's scenes that is made at
+build time: the engine's shader bundle with only `shaders`, the app's
+materials (`.fmat` under `assets/`) and its models and scenes (`.glb`,
+`.fscene`), loadable by the path of their source. `buildSceneShaders` is
+the bundle alone.
+
+What is made goes into `lib/spring_gen/flutter_scene_generated/`, with
+the rest of the generated code. The engine's own hooks write into a
+folder at the app's root and cannot be told another place, so they are
+run for a stand-in of the app under `.dart_tool/spring_scene/` and their
+output is copied over; at run time the engine finds its assets by the
+end of their address, wherever the folder is. The folder is kept in git
+by the two `.gitignore` files the build writes in it (they ignore
+everything else there), so the asset entries name folders that exist
+before the first build. An app that ignores `spring_gen/` as a whole
+keeps this one folder:
+
+```
+**/spring_gen/*
+!**/spring_gen/flutter_scene_generated/
+```
+
+The hook is the app's because Dart runs a build hook for one package and
+lets it write into that package alone, and only the app knows what its
+scenes draw with.
 
 The default list (`unlitSceneShaders`, six shaders) is for scenes of
 unlit and custom unlit (`.fmat`) materials. A scene with lit materials
@@ -402,8 +428,9 @@ Apple M5, a release build):
 - **Per-frame values** are set on a material or a node by a component or
   a listener of the scene's clock (`SceneScope.of(context).elapsed`), not
   by rebuilding widgets.
-- **Generated assets are bound to the Flutter that compiled them**:
-  `flutter_scene_generated/` is never committed.
+- **Generated assets are bound to the Flutter that compiled them**: what
+  is in `lib/spring_gen/flutter_scene_generated/` is never committed
+  (its own `.gitignore` sees to it).
 - **A test has no GPU**: a `Scene` cannot be made there, so in a widget
   test of the app the engine fails to start (logged once, as a warning)
   and the scene widgets are their placeholders. A test that wants it
