@@ -7,9 +7,13 @@
 /// - `SceneModels` and `SpringSceneModel`: the models of
 ///   `spring.flutter.scene.models.*`, loaded with the splash or when first
 ///   shown;
+/// - `SceneMaterials` and `SpringSceneMesh`: the materials of
+///   `spring.flutter.scene.materials.*` (`.fmat` files the build hook
+///   compiles), by name;
 /// - `ApplicationScene`: one scene for the whole app, under every screen;
 /// - the start in events (`SceneEvent`) and in words (`SceneStatus`);
-/// - a tab of the debug panel with every scene and model by name.
+/// - a tab of the debug panel with every scene, model and material by
+///   name.
 ///
 /// The engine itself is `package:flutter_scene/scene.dart`: its scene
 /// widgets (`SceneNode`, `SceneMesh`, ...) go into a `SpringSceneView`.
@@ -27,6 +31,9 @@ export 'src/engine/scene_availability.dart';
 export 'src/engine/scene_backend.dart';
 export 'src/engine/scene_engine.dart';
 export 'src/engine/scene_engine_log.dart';
+export 'src/materials/scene_material_handle.dart';
+export 'src/materials/scene_material_loader.dart';
+export 'src/materials/scene_materials.dart';
 export 'src/models/remote_model_resource.dart';
 export 'src/models/scene_model_handle.dart';
 export 'src/models/scene_model_importer.dart';
@@ -41,5 +48,6 @@ export 'src/widgets/scene_backdrop.dart';
 export 'src/widgets/scene_clock.dart';
 export 'src/widgets/scene_surface.dart';
 export 'src/widgets/scene_view_observer.dart';
+export 'src/widgets/spring_scene_mesh.dart';
 export 'src/widgets/spring_scene_model.dart';
 export 'src/widgets/spring_scene_view.dart';

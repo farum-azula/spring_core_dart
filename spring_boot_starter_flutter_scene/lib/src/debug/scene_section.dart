@@ -10,6 +10,8 @@ import 'package:spring_boot_starter_flutter_scene/src/debug/scene_debug.dart';
 import 'package:spring_boot_starter_flutter_scene/src/debug/scene_model_shape.dart';
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_availability.dart';
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_engine.dart';
+import 'package:spring_boot_starter_flutter_scene/src/materials/scene_material_handle.dart';
+import 'package:spring_boot_starter_flutter_scene/src/materials/scene_materials.dart';
 import 'package:spring_boot_starter_flutter_scene/src/models/scene_model_handle.dart';
 import 'package:spring_boot_starter_flutter_scene/src/models/scene_models.dart';
 import 'package:spring_boot_starter_flutter_scene/src/scene_status.dart';
@@ -28,16 +30,24 @@ import 'package:spring_boot_starter_flutter_scene/src/scene_status.dart';
 ///   file, size, time to read and to import, what it is made of, and a
 ///   switch that hides it everywhere: the frame's numbers with and
 ///   without it are what it costs.
+/// - **A material** (by its name in `spring.flutter.scene.materials`):
+///   its file, how it is lit and blended, its parameters, when and how
+///   long its first load took (one made while the app ran held back the
+///   first frame of its scene: such a material wants `preload: eager`),
+///   its uses on
+///   the screen by scene, and the same switch that hides it.
 /// - **Memory**: what the engine's caches hold.
 ///
 /// The engine gives no time on the GPU, and nothing per model: a model's
 /// cost is seen by hiding it.
 final class SceneDebugSection implements DebugPanelSection, Ordered {
-  /// The tab over [debug]'s views, the [availability] and the [models].
+  /// The tab over [debug]'s views, the [availability], the [models] and
+  /// the [materials].
   const SceneDebugSection({
     required this.debug,
     required this.availability,
     required this.models,
+    required this.materials,
     required this.status,
   });
 
@@ -49,6 +59,9 @@ final class SceneDebugSection implements DebugPanelSection, Ordered {
 
   /// The models of the properties.
   final SceneModels models;
+
+  /// The materials of the properties.
+  final SceneMaterials materials;
 
   /// The steps of the start.
   final SceneStatus status;
@@ -101,6 +114,7 @@ class _SceneDebugViewState extends State<_SceneDebugView> {
         section.debug,
         section.availability,
         ...section.models.all,
+        ...section.materials.all,
       ]),
       builder: (context, _) => SingleChildScrollView(
         child: Column(
@@ -123,6 +137,14 @@ class _SceneDebugViewState extends State<_SceneDebugView> {
               _muted(style, 'None in spring.flutter.scene.models.')
             else
               for (final model in section.models.all) ..._model(style, model),
+            const SizedBox(height: 16),
+            Text('Materials', style: style.title),
+            const SizedBox(height: 8),
+            if (section.materials.all.isEmpty)
+              _muted(style, 'None in spring.flutter.scene.materials.')
+            else
+              for (final material in section.materials.all)
+                ..._material(style, material),
             const SizedBox(height: 16),
             Text('Memory', style: style.title),
             const SizedBox(height: 8),
@@ -218,6 +240,8 @@ class _SceneDebugViewState extends State<_SceneDebugView> {
               '${stats.counters.culled} culled, '
               '${stats.counters.instances} instances',
         ),
+        if (_materialsOf(view.name) case final used? when used.isNotEmpty)
+          _row(style, 'Materials', used),
         if (surface != null)
           for (final pass in surface.passes)
             _row(
@@ -276,6 +300,88 @@ class _SceneDebugViewState extends State<_SceneDebugView> {
               '${shape.primitives} draw calls a use, '
               '${shape.materials} materials',
         ),
+      const SizedBox(height: 10),
+    ];
+  }
+
+  // The materials a scene draws with, and how many times: `glass x1,
+  // neon x2`.
+  String? _materialsOf(String scene) {
+    final used = [
+      for (final material in widget.section.materials.all)
+        if (material.uses[scene] case final count?) '${material.name} x$count',
+    ];
+    return used.isEmpty ? null : used.join(', ');
+  }
+
+  List<Widget> _material(DebugStyle style, SceneMaterialHandle material) {
+    final took = material.took;
+    // A first load made while the app ran held back the first frame of
+    // its scene (a view waits for its loads): longer than a frame is seen,
+    // and worth loading with the splash. The time is the load's, not the
+    // page's thread held: the engine reads the compiled programs
+    // asynchronously.
+    final late =
+        took != null &&
+        material.loadedWithSplash == false &&
+        took > const Duration(milliseconds: 16);
+    final shading = material.shading;
+    final opaque = material.opaque;
+    return [
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              material.name,
+              style: style.code.copyWith(color: style.accent),
+            ),
+          ),
+          if (material.state == SceneMaterialState.ready)
+            DebugChip(
+              material.hidden ? 'Hidden' : 'Shown',
+              selected: !material.hidden,
+              onTap: () => material.hidden = !material.hidden,
+            ),
+        ],
+      ),
+      _row(style, 'Source', material.location),
+      _row(
+        style,
+        'State',
+        '${material.state.name}${material.eager ? ', eager' : ', lazy'}',
+        color: material.state == SceneMaterialState.failed ? style.error : null,
+      ),
+      if (material.failure case final failure?)
+        _row(style, 'Failure', '$failure', color: style.error),
+      if (shading != null && opaque != null)
+        _row(
+          style,
+          'Shading',
+          '$shading, ${opaque ? 'opaque' : 'blended'}',
+        ),
+      if (took != null)
+        _row(
+          style,
+          'Load',
+          '${_ms(took)}, '
+              '${material.loadedWithSplash ?? false ? 'with the splash' : 'while the app ran'}'
+              '${late ? ': its scene waited, preload it with the splash' : ''}',
+          color: late ? style.warning : null,
+        ),
+      _row(
+        style,
+        'Used',
+        material.useCount == 0
+            ? 'not on the screen'
+            : [
+                for (final MapEntry(key: scene, value: count)
+                    in material.uses.entries)
+                  '$scene x$count',
+              ].join(', '),
+        color: material.useCount == 0 ? style.muted : null,
+      ),
+      if (material.parameters.isNotEmpty)
+        _row(style, 'Parameters', material.parameters.join(' ')),
       const SizedBox(height: 10),
     ];
   }

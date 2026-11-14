@@ -153,6 +153,16 @@ class SpringSceneView extends StatefulWidget {
   static void repaintOf(BuildContext context) =>
       context.getInheritedWidgetOfExactType<_SceneRepaint>()?.repaint();
 
+  /// The [name] of the view above [context], `null` without a view: what
+  /// the scenes' debug panel counts the uses of a material by.
+  static String? nameOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<_SceneRepaint>()?.name;
+
+  /// The loads the view above [context] waits for before its first
+  /// frame, `null` without a view: a scene widget adds its own.
+  static ResourceGroup? loadsOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<_SceneRepaint>()?.loads;
+
   @override
   State<SpringSceneView> createState() => _SpringSceneViewState();
 }
@@ -299,6 +309,8 @@ class _SpringSceneViewState extends State<SpringSceneView> {
     // A scene's frame is its own layer: the widgets around it are not
     // painted again for it.
     return _SceneRepaint(
+      name: widget.name,
+      loads: widget.loading ?? _loads,
       repaint: _repaint,
       child: TickerMode(
         enabled: paused == null,
@@ -379,7 +391,16 @@ class _SpringSceneViewState extends State<SpringSceneView> {
 
 /// Gives the scene widgets below a way to ask for a frame.
 class _SceneRepaint extends InheritedWidget {
-  const _SceneRepaint({required this.repaint, required super.child});
+  const _SceneRepaint({
+    required this.name,
+    required this.loads,
+    required this.repaint,
+    required super.child,
+  });
+
+  final String name;
+
+  final ResourceGroup loads;
 
   final VoidCallback repaint;
 

@@ -43,12 +43,18 @@ final class SceneStatus extends ValueNotifier<SceneEvent?>
     final step = event as SceneEvent;
     history.add(step);
     switch (step) {
-      case SceneEngineStartingEvent() || SceneModelLoadingEvent():
+      case SceneEngineStartingEvent() ||
+          SceneModelLoadingEvent() ||
+          SceneMaterialLoadingEvent():
         _loading++;
         value = step;
-      case SceneEngineReadyEvent() || SceneModelLoadedEvent():
+      case SceneEngineReadyEvent() ||
+          SceneModelLoadedEvent() ||
+          SceneMaterialLoadedEvent():
         _ended();
-      case SceneFailedEvent(step: SceneStep.engine || SceneStep.model):
+      case SceneFailedEvent(
+        step: SceneStep.engine || SceneStep.model || SceneStep.material,
+      ):
         _ended();
       case SceneFailedEvent() || SceneReadyEvent() || SceneUnavailableEvent():
         break;

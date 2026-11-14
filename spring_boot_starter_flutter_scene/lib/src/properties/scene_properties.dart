@@ -18,6 +18,7 @@ final class SceneProperties {
     this.preload = SceneLoad.lazy,
     this.engineLog = true,
     this.models,
+    this.materials,
     this.app = const ApplicationSceneProperties(),
     this.debug = const SceneDebugProperties(),
   });
@@ -55,6 +56,9 @@ final class SceneProperties {
 
   /// The models by name, `spring.flutter.scene.models.<name>.*`.
   final Map<String, SceneModelProperties>? models;
+
+  /// The materials by name, `spring.flutter.scene.materials.<name>.*`.
+  final Map<String, SceneMaterialProperties>? materials;
 
   /// The scene of the whole application.
   final ApplicationSceneProperties app;
@@ -99,6 +103,23 @@ final class SceneModelProperties {
 
   /// When it is loaded: `eager` with the splash, `lazy` when a scene first
   /// shows it. Not set: as `spring.flutter.scene.preload`.
+  final SceneLoad? preload;
+}
+
+/// A material of `spring.flutter.scene.materials.<name>`.
+final class SceneMaterialProperties {
+  /// Settings with these values.
+  const SceneMaterialProperties({this.source, this.preload});
+
+  /// The material's `.fmat` file, by its path from the app's root
+  /// (`assets/materials/glass.fmat`). The app's build hook compiles it
+  /// (`buildSceneAssets`) and fails when a material named here is not
+  /// there; at run time the compiled material is loaded, not this file.
+  final String? source;
+
+  /// When its programs are loaded: `eager` while the splash shows, `lazy`
+  /// when a scene first shows it. Not set: as
+  /// `spring.flutter.scene.preload`.
   final SceneLoad? preload;
 }
 

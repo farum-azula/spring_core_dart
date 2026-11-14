@@ -1,6 +1,9 @@
 import 'dart:typed_data';
 
+// ignore: implementation_imports
+import 'package:flutter_scene/src/fmat/fmat_ast.dart' show FmatShadingModel;
 import 'package:flutter_scene/scene.dart';
+import 'package:flutter_test/flutter_test.dart' show Fake;
 import 'package:spring_boot_starter_flutter_scene/spring_boot_starter_flutter_scene.dart';
 
 /// An engine without a GPU: starts, or fails when told to.
@@ -102,4 +105,49 @@ final class FakeTransport implements HttpTransport {
 
   @override
   void close() => closed = true;
+}
+
+/// A material without a GPU: its parameters by name, how it is lit.
+final class FakeMaterial extends Fake implements PreprocessedMaterial {
+  FakeMaterial(this.id, {this.names = const ['tint', 'time']});
+
+  final int id;
+  final List<String> names;
+
+  @override
+  FmatShadingModel get shadingModel => FmatShadingModel.unlit;
+
+  @override
+  bool isOpaque() => false;
+
+  @override
+  MaterialParameters get parameters => FakeParameters(names);
+}
+
+/// The names of a material's parameters.
+final class FakeParameters extends Fake implements MaterialParameters {
+  FakeParameters(this.names);
+
+  final List<String> names;
+
+  @override
+  Iterable<String> get parameterNames => names;
+}
+
+/// Makes a new material for every load and counts them; a source in
+/// [failing] fails.
+final class FakeMaterialLoader implements SceneMaterialLoader {
+  FakeMaterialLoader({this.failing = const {}});
+
+  final Set<String> failing;
+  final List<String> loaded = [];
+
+  @override
+  Future<PreprocessedMaterial> load(String source) async {
+    if (failing.contains(source)) {
+      throw StateError('$source was not compiled');
+    }
+    loaded.add(source);
+    return FakeMaterial(loaded.length);
+  }
 }

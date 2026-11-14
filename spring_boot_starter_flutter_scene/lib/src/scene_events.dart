@@ -136,8 +136,73 @@ final class SceneModelLoadedEvent extends SceneEvent {
   String get defaultMessage => '{0} is loaded';
 }
 
+/// A material is being loaded: its compiled programs, for its first use.
+final class SceneMaterialLoadingEvent extends SceneEvent {
+  /// The load of material [name] from [location], the [index]th of
+  /// [count] loaded together (both 1 for a material loaded alone).
+  SceneMaterialLoadingEvent(
+    super.source, {
+    required this.name,
+    required this.location,
+    this.index = 1,
+    this.count = 1,
+  });
+
+  /// The material's name (`spring.flutter.scene.materials.<name>`).
+  final String name;
+
+  /// Its `.fmat` file.
+  final String location;
+
+  /// Its place among the materials loaded together, from 1.
+  final int index;
+
+  /// How many are loaded together.
+  final int count;
+
+  @override
+  String get eventName => 'SceneMaterialLoading';
+
+  @override
+  String get code => 'scene.loading.material';
+
+  @override
+  List<Object?> get arguments => [name, index, count];
+
+  @override
+  String get defaultMessage => 'Preparing {0}, {1} of {2}';
+}
+
+/// A material is loaded.
+final class SceneMaterialLoadedEvent extends SceneEvent {
+  /// Material [name] loaded in [took].
+  SceneMaterialLoadedEvent(
+    super.source, {
+    required this.name,
+    required this.took,
+  });
+
+  /// The material's name.
+  final String name;
+
+  /// How long its first load took.
+  final Duration took;
+
+  @override
+  String get eventName => 'SceneMaterialLoaded';
+
+  @override
+  String get code => 'scene.ready.material';
+
+  @override
+  List<Object?> get arguments => [name];
+
+  @override
+  String get defaultMessage => '{0} is ready';
+}
+
 /// Everything asked for with the splash is ready: the engine, the eager
-/// models, the application's scene.
+/// models and materials, the application's scene.
 final class SceneReadyEvent extends SceneEvent {
   /// The scenes ready in [took].
   SceneReadyEvent(super.source, {required this.took});
@@ -157,7 +222,8 @@ final class SceneReadyEvent extends SceneEvent {
 
 /// A step failed. The app goes on: what failed shows its placeholder.
 final class SceneFailedEvent extends SceneEvent {
-  /// The failure of [step] (of model [name], when it is one) with [error].
+  /// The failure of [step] (of the model or material [name], when it is
+  /// one) with [error].
   SceneFailedEvent(
     super.source, {
     required this.step,
@@ -168,7 +234,8 @@ final class SceneFailedEvent extends SceneEvent {
   /// What failed.
   final SceneStep step;
 
-  /// The model's name, for [SceneStep.model].
+  /// The model's or material's name, for [SceneStep.model] and
+  /// [SceneStep.material].
   final String? name;
 
   /// What was thrown.
@@ -187,6 +254,7 @@ final class SceneFailedEvent extends SceneEvent {
   String get defaultMessage => switch (step) {
     SceneStep.engine => 'The 3D engine did not start',
     SceneStep.model => '{0} did not load',
+    SceneStep.material => '{0} did not load',
     SceneStep.application => "The application's scene was not made",
   };
 }
@@ -220,6 +288,9 @@ enum SceneStep {
 
   /// The load of a model.
   model,
+
+  /// The load of a material.
+  material,
 
   /// The making of the application's scene.
   application,

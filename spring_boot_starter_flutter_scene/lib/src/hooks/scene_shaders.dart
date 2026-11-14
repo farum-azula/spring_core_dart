@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:flutter_scene/build_hooks.dart';
 import 'package:hooks/hooks.dart';
 import 'package:path/path.dart' as p;
+import 'package:spring_boot_starter_flutter_scene/src/hooks/scene_material_check.dart';
 import 'package:spring_boot_starter_flutter_scene/src/hooks/scene_stage.dart';
 
 const String _engine = 'flutter_scene';
@@ -30,6 +31,8 @@ const Set<String> unlitSceneShaders = {
 /// - the engine's shader bundle with [shaders] alone (`null`: no bundle
 ///   of the app's own, the engine's whole one is used);
 /// - the app's materials ([materials]: the `.fmat` files under [sources]);
+///   the build fails when a material of `spring.flutter.scene.materials`
+///   (in `lib/resources/application*`) is not one of them;
 /// - its models and scenes ([models]: the `.glb` and `.fscene` files
 ///   under [sources]), loadable by the path of their source.
 ///
@@ -106,11 +109,21 @@ Future<void> buildSceneAssets({
       discoveryRoot: sources,
     );
   }
+  final declared = declaredSceneMaterials(stage.app, buildOutput: buildOutput);
+  if (!materials && declared.isNotEmpty) {
+    throw StateError(
+      'The configuration names materials '
+      '(spring.flutter.scene.materials: '
+      '${declared.map((material) => material.name).toSet().join(', ')}), '
+      'but the hook is asked not to compile any (materials: false).',
+    );
+  }
   if (materials) {
     // Found here and named one by one: the engine's function has no
     // folder to search in where it stands in for the web, and a library
     // of the starter must compile there too.
     final found = _materials(stage, sources, buildOutput);
+    checkSceneMaterials(declared, found, sources: sources);
     if (found.isNotEmpty) {
       await buildMaterials(
         buildInput: staged,

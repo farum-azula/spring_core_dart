@@ -37,6 +37,7 @@ browser, Impeller elsewhere).
 - [Properties](#properties)
 - [Where scenes do not draw](#where-scenes-do-not-draw)
 - [Models](#models)
+- [Materials](#materials)
 - [The application's scene](#the-applications-scene)
 - [The start: events and words](#the-start-events-and-words)
 - [The engine's log](#the-engines-log)
@@ -152,6 +153,10 @@ spring:
         hero:
           source: asset:assets/models/hero.glb
           preload: eager     # not set: as `preload` above
+      materials:
+        glass:
+          source: assets/materials/glass.fmat
+          preload: eager     # not set: as `preload` above
       app:
         enabled: false       # true: the application's scene
         placement: background  # background | none
@@ -219,6 +224,64 @@ app.
 - An eager model is loaded while the splash shows; a lazy one when a
   scene first shows it. Either way it is loaded once and kept: a model
   that left the screen and came back is not imported again.
+
+## Materials
+
+A material of the app's own is a `.fmat` file under `assets/`, which the
+app's build hook compiles (`buildSceneAssets`, [the engine's
+shaders](#the-engines-shaders)). It is named in the properties by the
+path of that file from the app's root, without `asset:`: at run time the
+compiled material is loaded, not the file.
+
+```yaml
+spring:
+  flutter:
+    scene:
+      materials:
+        glass:
+          source: assets/materials/glass.fmat
+          preload: eager
+        neon:
+          source: assets/materials/neon.fmat
+```
+
+```dart
+SceneBackdrop(
+  name: 'match-header',
+  scene: (context, surface) => [
+    SpringSceneMesh(
+      material: 'glass',
+      geometry: panel,
+      parameters: (p) => p
+        ..setColor('tint', tint)
+        ..setFloat('strength', 0.2),
+      everyFrame: (p, elapsed) =>
+          p.setFloat('time', elapsed.inMicroseconds / 1e6),
+    ),
+  ],
+  child: header,
+)
+```
+
+- `SpringSceneMesh` draws its geometry with a material of its own: the
+  compiled programs are shared, the parameters are the mesh's.
+  `parameters` sets them on every build, `everyFrame` on every frame of
+  the scene, without a build. Nothing is drawn until the material is
+  there; the scene waits for it before its first frame, as for a model.
+- `SceneMaterials` (`sceneMaterials`) gives one to code:
+  `materials['glass'].create()` is a new material; an unknown name fails
+  naming those there are. The `sceneMaterialLoader` bean makes them (the
+  engine's `loadFmatMaterial`; one of the app's replaces it).
+- An eager material is loaded while the splash shows, and its first use
+  takes the one made then; a lazy one when a scene first shows it. A
+  first load made while the app runs holds back the first frame of its
+  scene (a view waits for its loads): the debug tab says how long, and
+  which material wants `preload: eager`.
+- The build fails when a material of the properties is not among the
+  `.fmat` files it compiled, naming the key, the file it is set in
+  (`lib/resources/application*.yml`, `.properties`, profiles too) and
+  the files there are. A source written with a placeholder (`${...}`) is
+  known only when the app runs, and is not checked.
 
 ## The application's scene
 
@@ -319,6 +382,12 @@ caught: the few lines the engine writes with `print`.
 - **every model by its name**: its file, size, time to read and to
   import, what it is made of, and a switch that hides it everywhere: the
   frame's numbers with and without it are what it costs;
+- **every material by its name**: its file, how it is lit and whether
+  it is blended, its parameters, how long its first load took and
+  whether with the splash or while the app ran (longer than a frame
+  then: a warning to preload it), its uses on the screen by scene, and
+  the same switch. A scene's own lines say which materials it draws
+  with;
 - **memory**: what the engine's caches hold.
 
 The engine gives no time on the GPU, and nothing per model: a model's

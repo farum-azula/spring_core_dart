@@ -19,6 +19,8 @@ import 'package:spring_boot_starter_flutter_scene/src/engine/scene_availability.
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_backend.dart';
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_engine.dart';
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_engine_log.dart';
+import 'package:spring_boot_starter_flutter_scene/src/materials/scene_material_loader.dart';
+import 'package:spring_boot_starter_flutter_scene/src/materials/scene_materials.dart';
 import 'package:spring_boot_starter_flutter_scene/src/models/scene_model_importer.dart';
 import 'package:spring_boot_starter_flutter_scene/src/models/scene_models.dart';
 import 'package:spring_boot_starter_flutter_scene/src/properties/properties_beans.dart';
@@ -82,6 +84,9 @@ const _debugOn = ConditionalOnProperty(
 ///   widget reads;
 /// - the models of `spring.flutter.scene.models.*` (`sceneModels`), read
 ///   with the `sceneModelImporter` (`.glb`; replaceable);
+/// - the materials of `spring.flutter.scene.materials.*`
+///   (`sceneMaterials`), made by the `sceneMaterialLoader` (the `.fmat`
+///   files the build hook compiled; replaceable);
 /// - the scenes' part of the start (`sceneStart`, a `SplashTask`): the
 ///   splash waits for what is eager;
 /// - what the scenes are doing, in words (`sceneStatus`);
@@ -172,6 +177,29 @@ final BeanModule springBootStarterFlutterSceneAutoConfiguration = BeanModule(
         ).allowInsecure,
       ),
     ),
+    BeanDefinition<SceneMaterialLoader>(
+      name: 'sceneMaterialLoader',
+      source: _source,
+      conditions: const [
+        _scenesOn,
+        ConditionGroup('$_source.sceneMaterialLoader', [
+          ConditionalOnMissingBean(SceneMaterialLoader),
+        ]),
+      ],
+      create: (_) => const FmatMaterialLoader(),
+    ),
+    BeanDefinition<SceneMaterials>(
+      name: 'sceneMaterials',
+      source: _source,
+      conditions: const [_scenesOn],
+      preDestroy: (materials) => materials.dispose(),
+      create: (r) => SceneMaterials(
+        properties: r.dependency<SceneProperties>(),
+        engine: r.dependency<SceneEngine>(),
+        loader: r.dependency<SceneMaterialLoader>(),
+        events: r.dependency<ApplicationEventPublisher>(),
+      ),
+    ),
     BeanDefinition<SceneStatus>(
       name: 'sceneStatus',
       types: const [SceneStatus, GenericApplicationListener],
@@ -213,6 +241,7 @@ final BeanModule springBootStarterFlutterSceneAutoConfiguration = BeanModule(
         properties: r.dependency<SceneProperties>(),
         engine: r.dependency<SceneEngine>(),
         models: r.dependency<SceneModels>(),
+        materials: r.dependency<SceneMaterials>(),
         events: r.dependency<ApplicationEventPublisher>(),
         scene: r.optionalDependency<ApplicationScene>(),
       ),
@@ -254,6 +283,7 @@ final BeanModule springBootStarterFlutterSceneDebugAutoConfiguration =
           debug: r.dependency<SceneDebug>(),
           availability: r.dependency<SceneAvailability>(),
           models: r.dependency<SceneModels>(),
+          materials: r.dependency<SceneMaterials>(),
           status: r.dependency<SceneStatus>(),
         ),
       ),

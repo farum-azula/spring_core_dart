@@ -1,8 +1,11 @@
 // The scene widgets where scenes do not draw: plain widgets over their
 // placeholders, with nothing of the engine built. (A scene that draws
 // needs a GPU: that is seen in an app, not here.)
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
-import 'package:flutter_scene/scene.dart' show SceneView;
+import 'package:flutter_scene/scene.dart'
+    show Geometry, Node, PreprocessedMaterial, SceneSubtree, SceneView;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_flutter_scene/spring_boot_starter_flutter_scene.dart';
@@ -28,6 +31,7 @@ Widget _backdrop() => Center(
 );
 
 void main() {
+  _meshTests();
   final runner = const ApplicationContextRunner()
       .withAutoConfiguration(springBootAutoConfiguration)
       .withAutoConfiguration(springBootStarterFlutterAutoConfiguration)
@@ -222,5 +226,80 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(debug.views, isEmpty);
     expect(notified, 3);
+  });
+}
+
+/// A loader whose material never comes: the mesh stays empty, so no GPU
+/// is needed.
+final class _PendingLoader implements SceneMaterialLoader {
+  @override
+  Future<PreprocessedMaterial> load(String source) =>
+      Completer<PreprocessedMaterial>().future;
+}
+
+/// Geometry that is never drawn (a real one needs a GPU).
+final class _NoGeometry extends Fake implements Geometry {}
+
+void _meshTests() {
+  final runner = const ApplicationContextRunner()
+      .withAutoConfiguration(springBootAutoConfiguration)
+      .withAutoConfiguration(springBootStarterFlutterAutoConfiguration)
+      .withAutoConfiguration(springBootStarterFlutterSceneAutoConfiguration)
+      .withBean<SceneBackend>(FakeBackend.new)
+      .withBean<SceneMaterialLoader>(_PendingLoader.new)
+      .withPropertyValues([
+        'spring.flutter.scene.materials.glass.source=assets/glass.fmat',
+      ]);
+
+  testWidgets('a mesh is a use of its material while it is there', (
+    tester,
+  ) async {
+    await runner.runAsync((context) async {
+      final glass = context.getBean<SceneMaterials>()['glass'];
+      Widget app({required bool shown}) => SpringScope(
+        applicationContext: context.context,
+        child: shown
+            ? SceneSubtree(
+                parent: Node(),
+                children: [
+                  SpringSceneMesh(material: 'glass', geometry: _NoGeometry()),
+                ],
+              )
+            : const SizedBox(),
+      );
+
+      await tester.pumpWidget(app(shown: true));
+      await tester.pump();
+      expect(glass.uses, {'scene': 1});
+      expect(glass.state, SceneMaterialState.loading);
+
+      await tester.pumpWidget(app(shown: false));
+      await tester.pump();
+      expect(glass.uses, isEmpty);
+    });
+  });
+
+  testWidgets('a mesh of a material that is not declared says which are', (
+    tester,
+  ) async {
+    await runner.runAsync((context) async {
+      await tester.pumpWidget(
+        SpringScope(
+          applicationContext: context.context,
+          child: SpringSceneMesh(
+            material: 'neon',
+            geometry: _NoGeometry(),
+          ),
+        ),
+      );
+      expect(
+        tester.takeException(),
+        isA<StateError>().having(
+          (e) => e.message,
+          'message',
+          allOf(contains('"neon"'), contains('glass')),
+        ),
+      );
+    });
   });
 }

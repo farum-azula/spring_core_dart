@@ -20,7 +20,8 @@ void main() {
         springBootStarterFlutterSceneDebugAutoConfiguration,
       )
       .withBean<SceneBackend>(FakeBackend.new)
-      .withBean<SceneModelImporter>(FakeImporter.new);
+      .withBean<SceneModelImporter>(FakeImporter.new)
+      .withBean<SceneMaterialLoader>(FakeMaterialLoader.new);
 
   test('with scenes: the engine, the availability, the models, the start', () {
     runner.run((context) {
@@ -28,6 +29,8 @@ void main() {
       expect(context, hasSingleBean<SceneEngine>());
       expect(context, hasSingleBean<SceneAvailability>());
       expect(context, hasSingleBean<SceneModels>());
+      expect(context, hasSingleBean<SceneMaterials>());
+      expect(context.getBean<SceneMaterialLoader>(), isA<FakeMaterialLoader>());
       expect(context, hasSingleBean<SceneStatus>());
       expect(context, hasSingleBean<SceneStart>());
       expect(context.getBean<SplashTask>(qualifier: 'sceneStart'), isNotNull);
@@ -48,6 +51,7 @@ void main() {
       expect(context, doesNotHaveBean<SceneEngine>());
       expect(context, doesNotHaveBean<SceneAvailability>());
       expect(context, doesNotHaveBean<SceneModels>());
+      expect(context, doesNotHaveBean<SceneMaterials>());
       expect(context, doesNotHaveBean<SceneStart>());
       expect(context, doesNotHaveBean<SceneDebug>());
       expect(
@@ -67,6 +71,9 @@ void main() {
           'spring.flutter.scene.preload=eager',
           'spring.flutter.scene.models.hero.source=resources:models/hero.glb',
           'spring.flutter.scene.models.hero.preload=lazy',
+          'spring.flutter.scene.materials.glass.source=assets/glass.fmat',
+          'spring.flutter.scene.materials.neon.source=assets/neon.fmat',
+          'spring.flutter.scene.materials.neon.preload=lazy',
           'spring.flutter.scene.app.camera.position=0,1.5,-4',
           'spring.flutter.scene.app.camera.fov=30',
         ])
@@ -83,6 +90,26 @@ void main() {
           final hero = context.getBean<SceneModels>()['hero'];
           expect(hero.location, 'resources:models/hero.glb');
           expect(hero.eager, isFalse);
+          final materials = context.getBean<SceneMaterials>();
+          expect(materials.names, unorderedEquals(['glass', 'neon']));
+          expect(materials['glass'].location, 'assets/glass.fmat');
+          expect(materials['glass'].eager, isTrue, reason: 'as preload');
+          expect(materials['neon'].eager, isFalse);
+        });
+  });
+
+  test('with the engine of the app: the engine\'s material loader', () {
+    const ApplicationContextRunner()
+        .withAutoConfiguration(springBootAutoConfiguration)
+        .withAutoConfiguration(springBootStarterFlutterAutoConfiguration)
+        .withAutoConfiguration(springBootStarterFlutterSceneAutoConfiguration)
+        .withBean<SceneBackend>(FakeBackend.new)
+        .run((context) {
+          expect(context.startupFailure, isNull);
+          expect(
+            context.getBean<SceneMaterialLoader>(),
+            isA<FmatMaterialLoader>(),
+          );
         });
   });
 
@@ -147,25 +174,40 @@ void main() {
       });
     });
 
-    test('preload: eager starts the engine', () async {
-      await runner
-          .withPropertyValues(['spring.flutter.scene.preload=eager'])
-          .runAsync((context) async {
-            final progress = await start(
-              context.getBean<SceneStart>(),
-              context.context,
-            );
-            expect(context.getBean<SceneEngine>().isReady, isTrue);
-            expect(progress.last, 1);
-            final status = context.getBean<SceneStatus>();
-            expect(
-              [for (final step in status.history) step.eventName],
-              ['SceneEngineStarting', 'SceneEngineReady', 'SceneReady'],
-            );
-            // Nothing is being loaded any more.
-            expect(status.value, isNull);
-          });
-    });
+    test(
+      'eager materials: loaded with the splash, the lazy ones not',
+      () async {
+        await runner
+            .withPropertyValues([
+              'spring.flutter.scene.materials.glass.source=assets/glass.fmat',
+              'spring.flutter.scene.materials.glass.preload=eager',
+              'spring.flutter.scene.materials.neon.source=assets/neon.fmat',
+            ])
+            .runAsync((context) async {
+              final progress = await start(
+                context.getBean<SceneStart>(),
+                context.context,
+              );
+              final materials = context.getBean<SceneMaterials>();
+              expect(materials['glass'].state, SceneMaterialState.ready);
+              expect(materials['glass'].loadedWithSplash, isTrue);
+              expect(materials['neon'].state, SceneMaterialState.idle);
+              expect(progress, [0.4, 1.0]);
+              final status = context.getBean<SceneStatus>();
+              expect(
+                [for (final step in status.history) step.eventName],
+                [
+                  'SceneEngineStarting',
+                  'SceneEngineReady',
+                  'SceneMaterialLoading',
+                  'SceneMaterialLoaded',
+                  'SceneReady',
+                ],
+              );
+              expect(status.value, isNull);
+            });
+      },
+    );
 
     test('render: off starts nothing, whatever is eager', () async {
       await runner
@@ -277,6 +319,14 @@ void main() {
       ),
     );
     expect(status.text, isNull);
-    expect(status.history, hasLength(4));
+    status.onApplicationEvent(
+      SceneMaterialLoadingEvent(source, name: 'glass', location: 'a'),
+    );
+    expect(status.text, 'Preparing glass, 1 of 1');
+    status.onApplicationEvent(
+      SceneMaterialLoadedEvent(source, name: 'glass', took: Duration.zero),
+    );
+    expect(status.text, isNull);
+    expect(status.history, hasLength(6));
   });
 }

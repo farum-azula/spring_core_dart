@@ -9,7 +9,7 @@
       "default": 45,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 151,
+      "line": 172,
       "class": "SceneCameraProperties"
     },
     {
@@ -23,7 +23,7 @@
       ],
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 145,
+      "line": 166,
       "class": "SceneCameraProperties"
     },
     {
@@ -37,7 +37,7 @@
       ],
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 148,
+      "line": 169,
       "class": "SceneCameraProperties"
     },
     {
@@ -47,7 +47,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 116,
+      "line": 137,
       "class": "ApplicationSceneProperties"
     },
     {
@@ -57,7 +57,7 @@
       "default": "background",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 120,
+      "line": 141,
       "class": "ApplicationSceneProperties"
     },
     {
@@ -67,7 +67,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 162,
+      "line": 183,
       "class": "SceneDebugProperties"
     },
     {
@@ -77,7 +77,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 27,
+      "line": 28,
       "class": "SceneProperties"
     },
     {
@@ -87,8 +87,28 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 54,
+      "line": 55,
       "class": "SceneProperties"
+    },
+    {
+      "name": "spring.flutter.scene.materials.*.preload",
+      "type": "SceneLoad?",
+      "description": "When its programs are loaded: `eager` while the splash shows, `lazy` when a scene first shows it. Not set: as `spring.flutter.scene.preload`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 123,
+      "class": "SceneMaterialProperties"
+    },
+    {
+      "name": "spring.flutter.scene.materials.*.source",
+      "type": "String?",
+      "description": "The material's `.fmat` file, by its path from the app's root (`assets/materials/glass.fmat`). The app's build hook compiles it (`buildSceneAssets`) and fails when a material named here is not there; at run time the compiled material is loaded, not this file.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 118,
+      "class": "SceneMaterialProperties"
     },
     {
       "name": "spring.flutter.scene.max-frame-rate",
@@ -97,7 +117,7 @@
       "default": 30,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 37,
+      "line": 38,
       "class": "SceneProperties"
     },
     {
@@ -107,7 +127,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 102,
+      "line": 106,
       "class": "SceneModelProperties"
     },
     {
@@ -117,7 +137,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 98,
+      "line": 102,
       "class": "SceneModelProperties"
     },
     {
@@ -127,7 +147,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 44,
+      "line": 45,
       "class": "SceneProperties"
     },
     {
@@ -137,7 +157,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 41,
+      "line": 42,
       "class": "SceneProperties"
     },
     {
@@ -147,7 +167,7 @@
       "default": "lazy",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 48,
+      "line": 49,
       "class": "SceneProperties"
     },
     {
@@ -157,7 +177,7 @@
       "default": "animated",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 32,
+      "line": 33,
       "class": "SceneProperties"
     }
   ],
@@ -172,6 +192,19 @@
         {
           "value": "none",
           "description": "Only in the `SpringSceneView` widgets of the app."
+        }
+      ]
+    },
+    {
+      "name": "spring.flutter.scene.materials.*.preload",
+      "values": [
+        {
+          "value": "eager",
+          "description": "While the splash shows: the app appears with it ready."
+        },
+        {
+          "value": "lazy",
+          "description": "When it is first needed."
         }
       ]
     },
@@ -237,7 +270,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.app.enabled', havingValue: 'true')"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 183,
+      "line": 211,
       "injects": [],
       "members": [
         {
@@ -329,7 +362,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.app.placement', havingValue: 'background', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 196,
+      "line": 224,
       "injects": [],
       "members": [
         {
@@ -363,7 +396,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 136,
+      "line": 141,
       "injects": [],
       "members": [
         {
@@ -454,7 +487,7 @@
         "@ConditionalOnMissingBean(SceneBackend)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 107,
+      "line": 112,
       "injects": [],
       "members": [
         {
@@ -488,7 +521,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 235,
+      "line": 264,
       "injects": [],
       "members": [
         {
@@ -557,7 +590,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 248,
+      "line": 277,
       "injects": [],
       "members": [
         {
@@ -577,6 +610,11 @@
           "name": "debug",
           "kind": "field",
           "type": "SceneDebug"
+        },
+        {
+          "name": "materials",
+          "kind": "field",
+          "type": "SceneMaterials"
         },
         {
           "name": "models",
@@ -616,7 +654,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 125,
+      "line": 130,
       "injects": [],
       "members": [
         {
@@ -710,7 +748,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.engine-log', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 118,
+      "line": 123,
       "injects": [],
       "members": [
         {
@@ -733,6 +771,98 @@
       ]
     },
     {
+      "name": "sceneMaterialLoader",
+      "type": "SceneMaterialLoader",
+      "types": [
+        "SceneMaterialLoader"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)",
+        "@ConditionalOnMissingBean(SceneMaterialLoader)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 180,
+      "injects": [],
+      "members": [
+        {
+          "name": "load",
+          "kind": "method",
+          "type": "Future<PreprocessedMaterial>",
+          "parameters": [
+            "String source"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sceneMaterials",
+      "type": "SceneMaterials",
+      "types": [
+        "SceneMaterials"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 191,
+      "injects": [],
+      "members": [
+        {
+          "name": "[]",
+          "kind": "method",
+          "type": "SceneMaterialHandle",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "all",
+          "kind": "getter",
+          "type": "Iterable<SceneMaterialHandle>"
+        },
+        {
+          "name": "contains",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "eager",
+          "kind": "getter",
+          "type": "Iterable<SceneMaterialHandle>"
+        },
+        {
+          "name": "names",
+          "kind": "getter",
+          "type": "Iterable<String>"
+        },
+        {
+          "name": "preload",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "{void Function(double)? progress}"
+          ]
+        }
+      ]
+    },
+    {
       "name": "sceneModelImporter",
       "type": "SceneModelImporter",
       "types": [
@@ -747,7 +877,7 @@
         "@ConditionalOnMissingBean(SceneModelImporter)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 147,
+      "line": 152,
       "injects": [],
       "members": [
         {
@@ -775,7 +905,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 158,
+      "line": 163,
       "injects": [],
       "members": [
         {
@@ -861,6 +991,11 @@
           "type": "bool"
         },
         {
+          "name": "materials",
+          "kind": "field",
+          "type": "Map<String, SceneMaterialProperties>?"
+        },
+        {
           "name": "maxFrameRate",
           "kind": "field",
           "type": "double"
@@ -907,7 +1042,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 207,
+      "line": 235,
       "injects": [],
       "members": [
         {
@@ -919,6 +1054,11 @@
           "name": "events",
           "kind": "field",
           "type": "ApplicationEventPublisher"
+        },
+        {
+          "name": "materials",
+          "kind": "field",
+          "type": "SceneMaterials"
         },
         {
           "name": "models",
@@ -969,7 +1109,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 175,
+      "line": 203,
       "injects": [],
       "members": [
         {
