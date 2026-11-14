@@ -41,11 +41,11 @@ its `build` read. It is on
 
 ```yaml
 dependencies:
-  spring_boot_starter_flutter_signals: ^0.8.1
+  spring_boot_starter_flutter_signals: ^0.8.2
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.8.1
+  spring_core_dart_generator: ^0.8.2
 ```
 
 The package re-exports the Flutter starter: an app lists it instead. The

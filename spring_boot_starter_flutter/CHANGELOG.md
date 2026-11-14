@@ -1,3 +1,7 @@
+## 0.8.2
+
+- No changes of its own; released with the family version 0.8.2.
+
 ## 0.8.1
 
 - `MarkdownOutline.current`: the heading being read as the page scrolls (the last one in the top part of the screen; the last on the screen at the end of the page; the one `show(id)` went to until the reader scrolls again), kept up to date by the `MarkdownView` from the scrollable it is in. It notifies only at a change of heading. `currentAmong(shown)` gives the entry to mark in a list of some levels.

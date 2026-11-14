@@ -1,3 +1,7 @@
+## 0.8.2
+
+- No changes of its own; released with the family version 0.8.2.
+
 ## 0.8.1
 
 - `@ProxyTargetClass()` (`package:spring_core_dart/spring_core_dart.dart`), for an annotation class: a bean with a member that carries such an annotation gets a proxy that extends its class, with every member in it, and the calls the bean makes on itself run the advice that asks for them: a `SelfCallInterceptor` (`package:spring_core_dart/aop.dart`; `AopProxyFactory.subclass(adviseSelfCalls: true)`, `ProxyInvoker.adviseSelfCalls` and `ownChainFor`). For advice that follows a bean's own state (reactive fields), where a method of the bean assigns a field another member is computed from. Every other advice on such a bean, and every other bean, is as before: a call on `this` skips the advice, as in Spring.

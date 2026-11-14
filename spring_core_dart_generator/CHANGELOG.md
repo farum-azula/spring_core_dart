@@ -1,3 +1,7 @@
+## 0.8.2
+
+- No changes of its own; released with the family version 0.8.2.
+
 ## 0.8.1
 
 - A bean with a member annotated by an annotation whose class is marked `@ProxyTargetClass()` gets a subclass proxy whatever its class looks like (also with only public members), with every member kept by the pruning, `adviseSelfCalls: true` and the type arguments of its getters (`returnTypeArguments`). The build fails, naming the class, when it cannot be extended (`final`, `sealed`, generic, a factory constructor).
