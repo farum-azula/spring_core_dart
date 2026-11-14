@@ -103,13 +103,46 @@ Future<void> buildSceneAssets({
     );
   }
   if (materials) {
-    await buildMaterials(
-      buildInput: staged,
-      buildOutput: buildOutput,
-      discoveryRoot: sources,
-    );
+    // Found here and named one by one: the engine's function has no
+    // folder to search in where it stands in for the web, and a library
+    // of the starter must compile there too.
+    final found = _materials(stage, sources, buildOutput);
+    if (found.isNotEmpty) {
+      await buildMaterials(
+        buildInput: staged,
+        buildOutput: buildOutput,
+        materials: found,
+      );
+    }
   }
   stage.publish();
+}
+
+// The `.fmat` files under [sources] of the app, by the address the app
+// loads them with (`assets/materials/glow.fmat`), in a stable order. Each
+// folder there is a dependency of the hook, so a material added or
+// removed runs it again.
+List<String> _materials(
+  SceneStage stage,
+  String sources,
+  BuildOutputBuilder buildOutput,
+) {
+  final root = Directory(p.join(stage.app, p.normalize(sources)));
+  if (!root.existsSync()) {
+    return const [];
+  }
+  final found = <String>[];
+  buildOutput.dependencies.add(root.uri);
+  for (final entity in root.listSync(recursive: true)) {
+    if (entity is Directory) {
+      buildOutput.dependencies.add(entity.uri);
+    } else if (entity is File && entity.path.endsWith('.fmat')) {
+      found.add(
+        p.posix.joinAll(p.split(p.relative(entity.path, from: stage.app))),
+      );
+    }
+  }
+  return found..sort();
 }
 
 /// The engine's shader bundle with [shaders] alone, and nothing else:
