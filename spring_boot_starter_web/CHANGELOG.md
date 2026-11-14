@@ -1,3 +1,7 @@
+## 0.8.1
+
+- No changes of its own; released with the family version 0.8.1.
+
 ## 0.8.0
 
 - The rate limiter's store is asked at startup that it is set up (`RateLimitStoreVerifier`, an `ApplicationRunner`; stores that implement `VerifiableRateLimitStore`: the SQL store, Supabase's database function, Cloudflare D1). A table, a function or a binding that is missing fails the start with what to run; before, a forgotten migration showed only at the first request under a limit, as a 503. A store that cannot be reached at that moment is a WARN and the start goes on. `spring.web.rate-limit.verify-store=false` skips the check and its one call to the store.

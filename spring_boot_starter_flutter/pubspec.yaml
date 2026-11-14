@@ -1,7 +1,7 @@
 name: spring_boot_starter_flutter
 description: >-
   Spring Boot for Flutter apps: SpringApplicationWidget, beans in widgets, state beans that rebuild widgets, lifecycle, platform profiles, themes from properties.
-version: 0.8.0
+version: 0.8.1
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_flutter
 documentation: https://farum-azula.org/components
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
@@ -27,25 +27,25 @@ dependencies:
   markdown: ^7.3.0
   path_provider: ^2.1.6
   path_provider_platform_interface: ^2.1.3
-  spring_boot_dart: ^0.8.0
-  spring_boot_starter_logging: ^0.8.0
+  spring_boot_dart: ^0.8.1
+  spring_boot_starter_logging: ^0.8.1
   # The HTTP client under the theme from a URL (dart:io; the browser's fetch).
-  spring_web_dart: ^0.8.0
+  spring_web_dart: ^0.8.1
 
 dev_dependencies:
   # For example/: the generator writes example/spring_gen/example.spring.dart.
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.8.0
+  spring_core_dart_generator: ^0.8.1
   flutter_test:
     sdk: flutter
-  spring_boot_starter_test: ^0.8.0
+  spring_boot_starter_test: ^0.8.1
   lints: ^6.0.0
   plugin_platform_interface: ^2.1.8
   # The design starters, for tests and tools only (the reference of the
   # theme properties, tool/theme_metadata.dart, lists theirs too). The
   # starter itself depends on no design library.
-  spring_boot_starter_flutter_material: ^0.8.0
-  spring_boot_starter_flutter_cupertino: ^0.8.0
+  spring_boot_starter_flutter_material: ^0.8.1
+  spring_boot_starter_flutter_cupertino: ^0.8.1
   material_ui: ^1.11.0
   cupertino_ui: ^1.1.6
 

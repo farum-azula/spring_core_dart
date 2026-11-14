@@ -1,3 +1,7 @@
+## 0.8.1
+
+- No changes of its own; released with the family version 0.8.1.
+
 ## 0.8.0
 
 - `ZoneSecurityContextHolderStrategy.onProgramWideAuthentication` is told, with the place, each time an authentication is set outside every scope (into the one context of the whole program), and `programWideAuthentication` is who is there now. In a Flutter app that is the login; on a server it is how one user's identity outlives the work it was for, and the security starter logs it. Nothing is told by default, and nothing is refused.

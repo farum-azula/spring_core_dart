@@ -13,7 +13,7 @@ dependencies:
   # The scenes: SpringSceneView, SceneBackdrop, the models of the
   # properties, the application's scene. It brings and exports the Flutter
   # starter (SpringApplicationWidget, the debug panel).
-  spring_boot_starter_flutter_scene: ^0.8.0
+  spring_boot_starter_flutter_scene: ^0.8.1
   # The engine's own scene widgets and geometry, which the pages use.
   flutter_scene: ^0.24.3
   vector_math: ^2.2.0
@@ -26,8 +26,8 @@ dev_dependencies:
   # integration_test/: the scenes drawing on a device, where there is a GPU.
   integration_test:
     sdk: flutter
-  spring_boot_starter_test: ^0.8.0
-  spring_core_dart_generator: ^0.8.0
+  spring_boot_starter_test: ^0.8.1
+  spring_core_dart_generator: ^0.8.1
 
 flutter:
   assets:

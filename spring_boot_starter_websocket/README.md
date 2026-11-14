@@ -40,11 +40,11 @@ are read and written as JSON through the `ObjectMapper` of
 
 ```yaml
 dependencies:
-  spring_boot_starter_websocket: ^0.8.0
+  spring_boot_starter_websocket: ^0.8.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.8.0   # required: writes the client implementations
+  spring_core_dart_generator: ^0.8.1   # required: writes the client implementations
 ```
 
 ```bash
@@ -512,8 +512,8 @@ authenticates it like any other, before the endpoint takes it.
 
 ```yaml
 dependencies:
-  spring_boot_starter_web: ^0.8.0
-  spring_boot_starter_websocket: ^0.8.0
+  spring_boot_starter_web: ^0.8.1
+  spring_boot_starter_websocket: ^0.8.1
 ```
 
 ### `@WebSocketEndpoint`

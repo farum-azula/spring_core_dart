@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.1
 
 - The first release. `@Signal()` on a field of a component (its readers are told of an assignment; a `List`, `Set`, `Map` or `Queue` also of a change in place), `@Computed()` on a getter or a method without parameters (a value kept until what it read changes), `@Effect()` on a method (run again when what it read changes). The fields stay plain fields.
 - Asynchronous state: a `@Computed` getter that returns a `Future` or a `Stream` is loaded once and again when what it read before its first `await` changes; `books.state` (`AsyncValue`), `books.refresh()`, `books.reload()`; an answer that came after a newer request is dropped.

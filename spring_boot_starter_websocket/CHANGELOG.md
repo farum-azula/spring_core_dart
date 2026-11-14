@@ -1,3 +1,7 @@
+## 0.8.1
+
+- No changes of its own; released with the family version 0.8.1.
+
 ## 0.8.0
 
 - Fixed: `PhoenixChannelSession.send` made while the channel is not joined waits at most the push timeout (`phoenix.push-timeout`): its future then fails with a `TimeoutException` and the event is dropped. Before, such events waited without limit while the server was away and were all sent at once after the join.

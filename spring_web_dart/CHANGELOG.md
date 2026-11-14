@@ -1,3 +1,7 @@
+## 0.8.1
+
+- No changes of its own; released with the family version 0.8.1.
+
 ## 0.8.0
 
 - **Fixed (Dart 3.14):** a WebSocket connection whose socket the other side reset before the session was made no longer fails the upgrade. Dart 3.14 reads the socket's remote address and port when it makes the `WebSocket` (for the profiler of its tools), and a socket closed by then throws for them; the session is made without them, and the reset shows where it is handled, as a close with 1006 and the error as the reason.

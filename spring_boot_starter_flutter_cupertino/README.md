@@ -40,13 +40,13 @@ starter knows no design library; this package adds the iOS one:
 
 ```yaml
 dependencies:
-  spring_boot_starter_flutter_cupertino: ^0.8.0
+  spring_boot_starter_flutter_cupertino: ^0.8.1
   # The widgets themselves.
   cupertino_ui: ^1.1.6
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.8.0
+  spring_core_dart_generator: ^0.8.1
 ```
 
 The starter brings and re-exports `spring_boot_starter_flutter`; an app

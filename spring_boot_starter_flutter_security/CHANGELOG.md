@@ -1,3 +1,7 @@
+## 0.8.1
+
+- No changes of its own; released with the family version 0.8.1.
+
 ## 0.8.0
 
 - **Breaking: Flutter 3.50 and no design library.** `LoginForm` and `OAuth2LoginButton` import neither Material nor Cupertino. In an app of type `material` or `cupertino` they are drawn by the controls of the app's design starter (`DesignControls` of `spring_boot_starter_flutter`) and look as before; so do they below a `MaterialApp` or `CupertinoApp` the app builds itself, when the application has that design's starter. In an app without a design library they are the plain widgets, as before. `LoginDesign` is `app` (the controls of the app's design library) or `widgets`; `LoginDesign.material` and `LoginDesign.cupertino` are gone. Requires Flutter 3.50.

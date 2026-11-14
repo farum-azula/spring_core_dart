@@ -1,3 +1,7 @@
+## 0.8.1
+
+- No changes of its own; released with the family version 0.8.1.
+
 ## 0.8.0
 
 - `KeyScopingCache`: a `Cache` that keeps its entries under another key than the one it is asked with (one that adds the caller or a tenant) says so with `storedKey`. **Fixed** with it: `@Cacheable(sync: true)` shared one run of the method between every call that missed the same key of the annotation at once, also when the cache keeps that key apart per caller, so one caller could get the answer of another.

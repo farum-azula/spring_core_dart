@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.1
 
 - The first release. `SpringSceneView` (a view that owns its scene, or the application's) and `SceneBackdrop` (a scene behind a widget) over `flutter_scene`'s `SceneView`: plain widgets over their placeholders where scenes do not draw, a ceiling on frames, a still frame, a pause off the screen, a scene shown only whole.
 - `spring.flutter.scene.*`: `enabled`, `render` (`animated`, `still`, `off`), `max-frame-rate`, `pixel-ratio`, `pause-off-screen`, `preload`, `models.<name>`, `app.*`, `debug.enabled`.

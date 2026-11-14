@@ -29,11 +29,11 @@ the web starter.
 
 ```yaml
 dependencies:
-  spring_boot_starter_actuator: ^0.8.0
+  spring_boot_starter_actuator: ^0.8.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.8.0   # required: finds the starter and your beans
+  spring_core_dart_generator: ^0.8.1   # required: finds the starter and your beans
 ```
 
 ```bash

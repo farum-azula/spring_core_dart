@@ -1,3 +1,7 @@
+## 0.8.1
+
+- No changes of its own; released with the family version 0.8.1.
+
 ## 0.8.0
 
 - `JdbcRateLimitStore.verify()`: at startup the store creates its table when `spring.data.jdbc.rate-limit.create-table` says so and reads it once; a table that is not there fails the start, naming the migration (`sql/rate_limit/postgresql.sql`, `sql/rate_limit/sqlite.sql`) and the property.

@@ -1,3 +1,7 @@
+## 0.8.1
+
+- No changes of its own; released with the family version 0.8.1.
+
 ## 0.8.0
 
 - Fixed: cancelling a `Stream<List<int>>` or an `EventStream` before the answer's status and headers arrived (also through `timeout()` or a `first` that fails) closes the connection at once and `cancel()` completes at once; before, the connection stayed open until the server answered, and for a byte stream `cancel()` waited as long. A stream cancelled while the interceptors run sends no request. The request is given up through the new `HttpRequest.abort` of spring_web_dart.

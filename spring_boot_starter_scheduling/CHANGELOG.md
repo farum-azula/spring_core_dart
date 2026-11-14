@@ -1,3 +1,7 @@
+## 0.8.1
+
+- No changes of its own; released with the family version 0.8.1.
+
 ## 0.8.0
 
 - `ScheduledAnnotationBeanPostProcessor` is a `TimerDrivenWork`: it names every `@Scheduled` method with its trigger. The class in that name, in the task's name and in the messages about a method is the one the generator wrote, so a minified JavaScript build shows `BooksJobs.refresh`, not a shortened name.

@@ -1,3 +1,7 @@
+## 0.8.1
+
+- No changes of its own; released with the family version 0.8.1.
+
 ## 0.8.0
 
 - The first version: `runFetchApplication`, the `main` of an application that runs as a function behind the fetch API (and as an ordinary server on the Dart VM); `FetchWebServer`, the web starter's `WebServer` without a socket, with the built-in server's checks of the request target, the body size limit and the error answers; complete responses with their length, streamed ones (server-sent events, downloads) when the handler flushes.

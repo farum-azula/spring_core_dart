@@ -50,15 +50,15 @@ golden screenshots: the
 dependencies:
   flutter:
     sdk: flutter
-  spring_boot_starter_flutter: ^0.8.0
+  spring_boot_starter_flutter: ^0.8.1
   # The counter's Scaffold and AppBar: Material's app widget and theme,
   # and its widgets (Flutter 3.50 has them in material_ui, not the SDK).
-  spring_boot_starter_flutter_material: ^0.8.0
+  spring_boot_starter_flutter_material: ^0.8.1
   material_ui: ^1.11.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.8.0
+  spring_core_dart_generator: ^0.8.1
 ```
 
 ### 1. Start the application

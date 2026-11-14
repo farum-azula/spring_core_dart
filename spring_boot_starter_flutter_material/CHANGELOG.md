@@ -1,3 +1,7 @@
+## 0.8.1
+
+- No changes of its own; released with the family version 0.8.1.
+
 ## 0.8.0
 
 - First version: Material Design for `spring_boot_starter_flutter`, which knows no design library from this release on. Built on the Flutter team's `material_ui` (Flutter 3.50 deprecates `package:flutter/material.dart`).

@@ -14,11 +14,11 @@ server. It shows:
 
 ```yaml
 dependencies:
-  spring_security_core: ^0.8.0
+  spring_security_core: ^0.8.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.8.0   # required: generates the proxies the checks run on
+  spring_core_dart_generator: ^0.8.1   # required: generates the proxies the checks run on
 ```
 
 ## Run it

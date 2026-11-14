@@ -23,8 +23,8 @@ Material starter and on `material_ui`:
 
 ```yaml
 dependencies:
-  spring_boot_starter_flutter_navigation: ^0.8.0
-  spring_boot_starter_flutter_material: ^0.8.0
+  spring_boot_starter_flutter_navigation: ^0.8.1
+  spring_boot_starter_flutter_material: ^0.8.1
   material_ui: ^1.11.0
 ```
 

@@ -44,11 +44,11 @@ class Books {
 
 ```yaml
 dependencies:
-  spring_boot_starter_cache: ^0.8.0
+  spring_boot_starter_cache: ^0.8.1
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.8.0   # required: generates the proxies caching runs on
+  spring_core_dart_generator: ^0.8.1   # required: generates the proxies caching runs on
 ```
 
 ```bash

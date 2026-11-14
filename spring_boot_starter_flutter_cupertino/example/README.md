@@ -25,13 +25,13 @@ The app's dependencies:
 
 ```yaml
 dependencies:
-  spring_boot_starter_flutter_cupertino: ^0.8.0
+  spring_boot_starter_flutter_cupertino: ^0.8.1
   # Cupertino's widgets, which the page itself uses.
   cupertino_ui: ^1.1.6
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.8.0
+  spring_core_dart_generator: ^0.8.1
 ```
 
 To run it, make an app around it:

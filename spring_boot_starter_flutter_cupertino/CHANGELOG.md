@@ -1,3 +1,7 @@
+## 0.8.1
+
+- No changes of its own; released with the family version 0.8.1.
+
 ## 0.8.0
 
 - First version: Cupertino for apps of `spring_boot_starter_flutter`, which knows no design library from this release on. Built on `cupertino_ui`, the Flutter team's library that replaces `package:flutter/cupertino.dart`; no dependency on `material_ui`.

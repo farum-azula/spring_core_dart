@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.1
 
 - A bean with a member annotated by an annotation whose class is marked `@ProxyTargetClass()` gets a subclass proxy whatever its class looks like (also with only public members), with every member kept by the pruning, `adviseSelfCalls: true` and the type arguments of its getters (`returnTypeArguments`). The build fails, naming the class, when it cannot be extended (`final`, `sealed`, generic, a factory constructor).
 - Such an annotation where no proxy can follow it fails the build instead of doing nothing: on a member of a class that can be created and is neither a bean nor a base of one, of the class a `@Bean` method returns, of a bean the container does not proxy (an `@Aspect`, a post-processor, an `Advisor`, a `FactoryBean`), of an interface whose implementation is generated (a repository, an HTTP client), of an enum, an extension or an extension type, on a top-level variable or function, and on a public member the subclass cannot override (an operator, a private type, `@nonVirtual`). An abstract class and a mixin may declare such members for the components that extend them.

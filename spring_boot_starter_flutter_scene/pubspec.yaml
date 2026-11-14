@@ -1,7 +1,7 @@
 name: spring_boot_starter_flutter_scene
 description: >-
   3D scenes for Spring Boot Flutter apps on flutter_scene: scenes that are plain widgets where they cannot draw, models from properties, the application's scene.
-version: 0.8.0
+version: 0.8.1
 repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_flutter_scene
 documentation: https://farum-azula.org/components
 issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
@@ -26,16 +26,16 @@ dependencies:
   # For build_hooks.dart: the app's hook that builds the engine's shaders.
   hooks: ^2.0.0
   path: ^1.9.0
-  spring_boot_dart: ^0.8.0
+  spring_boot_dart: ^0.8.1
   # Re-exported: an app lists only this package.
-  spring_boot_starter_flutter: ^0.8.0
+  spring_boot_starter_flutter: ^0.8.1
   vector_math: ^2.2.0
 
 dev_dependencies:
   # For example/ and the typed properties (lib/src/properties/).
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.8.0
+  spring_core_dart_generator: ^0.8.1
   flutter_test:
     sdk: flutter
-  spring_boot_starter_test: ^0.8.0
+  spring_boot_starter_test: ^0.8.1
   lints: ^6.0.0

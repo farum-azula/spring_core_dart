@@ -16,12 +16,12 @@ client, and asks the authorized client manager what it holds.
 
 ```yaml
 dependencies:
-  spring_boot_starter_oauth2_client: ^0.8.0
-  spring_boot_starter_feign: ^0.8.0     # the Feign client of the example
+  spring_boot_starter_oauth2_client: ^0.8.1
+  spring_boot_starter_feign: ^0.8.1     # the Feign client of the example
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.8.0
+  spring_core_dart_generator: ^0.8.1
 ```
 
 From the package directory:

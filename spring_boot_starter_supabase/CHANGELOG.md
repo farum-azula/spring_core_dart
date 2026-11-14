@@ -1,3 +1,7 @@
+## 0.8.1
+
+- No changes of its own; released with the family version 0.8.1.
+
 ## 0.8.0
 
 - The first version: Supabase for spring_boot_dart, on a server and in Flutter apps, with a client of its own (no third-party package; it compiles to WebAssembly). Not on pub.dev yet: a git dependency until its tests against the whole of Supabase have run. Its tests: without a network, on PostgreSQL and PostgREST in containers (its own pipeline), and against a whole stack (written, not in a pipeline yet).

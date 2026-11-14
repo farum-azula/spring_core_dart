@@ -1,3 +1,7 @@
+## 0.8.1
+
+- No changes of its own; released with the family version 0.8.1.
+
 ## 0.8.0
 
 - **Breaking: Flutter 3.50 and no design library.** The router imports neither Material nor Cupertino: the route of the page transition `platform` in a `MaterialApp`, and of `cupertino` (the swipe back), come from the `DesignPageRoutes` beans of `spring_boot_starter_flutter_material` and `spring_boot_starter_flutter_cupertino`. An app of type `material` or `cupertino` has them with its starter. In an app without a design library `platform` has no transition, as before; `PageTransition.zoom` and `PageTransition.cupertino` need their starter: the theme's fails the start naming it, a screen's own is reported (naming it) and the page shows without a transition; the heroes of a shell's navigators fly straight, as those of the root navigator always did (they flew along Material's arc). Requires Flutter 3.50.

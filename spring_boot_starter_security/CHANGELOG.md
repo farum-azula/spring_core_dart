@@ -1,3 +1,7 @@
+## 0.8.1
+
+- No changes of its own; released with the family version 0.8.1.
+
 ## 0.8.0
 
 - An authentication set outside a request (by a `@Scheduled` method, a timer, a listener of a stream opened at startup) is the one of the whole program and stays: a WARN on `spring.security.context.ProgramWideAuthentication` says so once per place in the code, with the place and without the user (`ProgramWideAuthenticationMonitor`; nothing is refused). With `management.health.securityContext.enabled=true` the health has `securityContext`: whether there is such an authentication now and how many times one was set, always `UP`. Off by default, so the health is Spring Boot's.

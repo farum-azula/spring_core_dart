@@ -18,12 +18,12 @@ Kubernetes probes on.
 
 ```yaml
 dependencies:
-  spring_boot_starter_actuator: ^0.8.0
-  spring_boot_starter_security: ^0.8.0   # only to secure the endpoints
+  spring_boot_starter_actuator: ^0.8.1
+  spring_boot_starter_security: ^0.8.1   # only to secure the endpoints
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.8.0   # required: finds the starters and your beans
+  spring_core_dart_generator: ^0.8.1   # required: finds the starters and your beans
 ```
 
 From the package directory:
