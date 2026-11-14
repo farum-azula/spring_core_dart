@@ -91,6 +91,20 @@ Future<void> main(List<String> args) async {
     stdout.writeln(
       '\n=== ${dryRun ? 'Validating' : 'Publishing'} $package $version ===',
     );
+    // What only pub.dev's server refuses, and a dry run lets through.
+    final topics = invalidTopics(
+      File('$package/pubspec.yaml').readAsStringSync(),
+    );
+    if (topics.isNotEmpty) {
+      stderr.writeln(
+        'Publishing $package failed: pub.dev refuses the topics '
+        "${topics.map((topic) => "'$topic'").join(', ')} of its pubspec.yaml. "
+        'A topic is 2 to 32 lowercase letters, digits and dashes, starts '
+        'with a letter, ends with a letter or a digit, has no double dash; '
+        'a package has at most 5.',
+      );
+      exit(1);
+    }
     // Flutter packages need the Flutter SDK's pub (FLUTTER_ROOT).
     final flutter = _usesFlutter(package);
     final executable = flutter ? 'flutter' : Platform.resolvedExecutable;
@@ -119,6 +133,44 @@ Future<void> main(List<String> args) async {
       exit(1);
     }
   }
+}
+
+/// The `topics` of a `pubspec.yaml` ([pubspec], its text) that pub.dev
+/// refuses when the package is uploaded, though `pub publish --dry-run`
+/// accepts them: a topic is 2 to 32 lowercase letters, digits and dashes,
+/// starting with a letter and ending with a letter or a digit, without a
+/// double dash (`3d` is refused); every topic past the fifth is one too.
+List<String> invalidTopics(String pubspec) {
+  final block = RegExp(
+    r'^topics:[ \t]*\n((?:[ \t]+-[ \t]*.*\n?)*)',
+    multiLine: true,
+  ).firstMatch(pubspec);
+  if (block == null) {
+    return const [];
+  }
+  final topics = [
+    for (final line in block[1]!.split('\n'))
+      if (line.trim().startsWith('-'))
+        line
+            .trim()
+            .substring(1)
+            .split('#')
+            .first
+            .trim()
+            .replaceAll(
+              RegExp(r"""^['"]|['"]$"""),
+              '',
+            ),
+  ];
+  final valid = RegExp(r'^[a-z][a-z0-9-]*[a-z0-9]$');
+  return [
+    for (final (index, topic) in topics.indexed)
+      if (index >= 5 ||
+          topic.length > 32 ||
+          topic.contains('--') ||
+          !valid.hasMatch(topic))
+        topic,
+  ];
 }
 
 /// Whether a failed dry run of [package] (its [output]) still passes: its
