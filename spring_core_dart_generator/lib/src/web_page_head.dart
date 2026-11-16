@@ -31,6 +31,13 @@ abstract final class WebPageHead {
   /// (on all four sides, so it fills the screen whatever `100vh` is there),
   /// and the browser's own scrolling of the page is stopped (`touchmove`),
   /// so the page is never at its top: a swipe down is Flutter's.
+  ///
+  /// Telegram's browser on iOS drags its sheet down on any vertical swipe,
+  /// wherever the page is scrolled; it lets go of the drag when the page
+  /// says a touch is its own (`TelegramWebviewProxy.postEvent` with
+  /// `cancellingTouch`, what its own script sends when something moves
+  /// under the finger, and what a Flutter page, one canvas, never makes it
+  /// send). The block says it on every move of a touch, in Telegram only.
   static const swipeBlock =
       '''
   $swipeStart
@@ -43,7 +50,7 @@ abstract final class WebPageHead {
       // The script as the page has it, in one piece: a policy hashes the
       // exact text.
       // ignore: lines_longer_than_80_chars
-      "(function(){if(!(window.matchMedia&&matchMedia('(pointer: coarse)').matches))return;function end(){window.scrollTo(0,document.body.scrollHeight);}addEventListener('DOMContentLoaded',end);addEventListener('load',end);addEventListener('resize',end);document.addEventListener('touchmove',function(e){e.preventDefault();},{passive:false});})();";
+      "(function(){if(!(window.matchMedia&&matchMedia('(pointer: coarse)').matches))return;function end(){window.scrollTo(0,document.body.scrollHeight);}addEventListener('DOMContentLoaded',end);addEventListener('load',end);addEventListener('resize',end);document.addEventListener('touchmove',function(e){e.preventDefault();var t=window.TelegramWebviewProxy;if(t&&t.postEvent){t.postEvent('cancellingTouch','{}');}},{passive:false});})();";
 
   /// The script of the [pixelRatio] block for [max].
   static String pixelRatioScript(double max) {

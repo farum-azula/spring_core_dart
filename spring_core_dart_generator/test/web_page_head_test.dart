@@ -159,4 +159,20 @@ void main() {
     expect(once(moved), moved);
     expect(once(first), first);
   });
+
+  test("the swipe block tells Telegram's browser a touch is the page's", () {
+    const script = WebPageHead.swipeScript;
+    expect(script, contains('var t=window.TelegramWebviewProxy;'));
+    expect(
+      script,
+      contains("if(t&&t.postEvent){t.postEvent('cancellingTouch','{}');}"),
+    );
+    expect(
+      WebPageHead.swipe(
+        '<html>\n<head>\n</head>\n</html>\n',
+        swipeToClose: false,
+      ),
+      contains(script),
+    );
+  });
 }

@@ -1,3 +1,7 @@
+## Unreleased
+
+- The `swipe` block of the web page: in Telegram's in-app browser on iOS a vertical swipe pulled the sheet down instead of scrolling the page, since Telegram's gesture does not look at the page's scroll. On every move of a finger the block now tells Telegram the touch is the page's (`TelegramWebviewProxy.postEvent('cancellingTouch')`), as Telegram's own script does for a map or a slider; elsewhere nothing changes.
+
 ## 0.8.2
 
 - No changes of its own; released with the family version 0.8.2.
