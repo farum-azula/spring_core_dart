@@ -3,6 +3,13 @@
 Done: `@Cacheable`, `@CachePut`, `@CacheEvict`, `@Caching` with SpEL keys
 and conditions, the in-memory `CacheManager` with TTL and size limits.
 
+In the next release (the owner, 16 November 2026;
+[release_optimizations.md](release_optimizations.md)): the asynchronous
+cache, a stored `CacheManager` (on `FileTemplate` in Flutter, a directory
+on a server), Spring's `CompositeCacheManager` and a layered cache of our
+own (a fast cache in front of a slower one, a hit in the slower copied
+into the faster).
+
 ## An asynchronous cache (planned; the owner, November 2026)
 
 The `Cache` interface is synchronous (`ValueWrapper? get(key)`,

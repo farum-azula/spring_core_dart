@@ -40,6 +40,20 @@ a folder and one interface per starter in the generator, a part runs only
 when the application depends on its starter, tests per part; no change of
 the generated code. Before any new starter adds to the generator.
 
+**The next releases (the owner, 16 November 2026): speed, then caches**
+([release_optimizations.md](release_optimizations.md)): first the scenes'
+and the web's speed measured on phones (the engine's canvas behind the
+page, the beat on the screen's frames, the frame meter's 3D line; built,
+its tests and docs to finish); in the release right after it, properties
+that change at runtime
+([runtime_properties.md](runtime_properties.md): the debug window and an
+app's settings screen, `EnvironmentChangeEvent` and the rebound
+`@ConfigurationProperties` beans as in Spring Cloud, kept across starts by
+a store of each platform); caches that outlive a restart (a stored
+`CacheManager`, Spring's `CompositeCacheManager`, a layered cache), resources
+from the network kept on disk behind one `ResourceView` widget (any resource: images now, video later), and the web build's cache headers from
+`spring.web.resources.cache.cachecontrol.*`.
+
 What comes next, in order:
 
 1. ~~**Files on the web starter:** multipart uploads (`MultipartFile`,
