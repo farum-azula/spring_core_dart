@@ -38,6 +38,10 @@ final class SceneStage {
   /// The stand-in's root.
   String get root => p.join(app, _stageDirectory);
 
+  /// The stand-in's folder the engine's hooks write into, which
+  /// [publish] copies to [generated].
+  String get output => p.join(root, _engineDirectory);
+
   /// The app's folder the generated assets end in.
   String get generated =>
       p.joinAll([app, ...sceneGeneratedDirectory.split('/')]);

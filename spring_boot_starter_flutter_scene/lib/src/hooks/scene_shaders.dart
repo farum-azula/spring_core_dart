@@ -6,6 +6,7 @@ import 'package:flutter_scene/build_hooks.dart';
 import 'package:hooks/hooks.dart';
 import 'package:path/path.dart' as p;
 import 'package:spring_boot_starter_flutter_scene/src/hooks/scene_material_check.dart';
+import 'package:spring_boot_starter_flutter_scene/src/hooks/scene_material_precision.dart';
 import 'package:spring_boot_starter_flutter_scene/src/hooks/scene_stage.dart';
 
 const String _engine = 'flutter_scene';
@@ -32,7 +33,8 @@ const Set<String> unlitSceneShaders = {
 ///   of the app's own, the engine's whole one is used);
 /// - the app's materials ([materials]: the `.fmat` files under [sources]);
 ///   the build fails when a material of `spring.flutter.scene.materials`
-///   (in `lib/resources/application*`) is not one of them;
+///   (in `lib/resources/application*`) is not one of them; how precise
+///   each computes goes to the debug tab (`SceneMaterialPrecision`);
 /// - its models and scenes ([models]: the `.glb` and `.fscene` files
 ///   under [sources]), loadable by the path of their source.
 ///
@@ -130,6 +132,7 @@ Future<void> buildSceneAssets({
         buildOutput: buildOutput,
         materials: found,
       );
+      writeSceneMaterialPrecision(stage.output, stage.app, found);
     }
   }
   stage.publish();

@@ -13,12 +13,17 @@ import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
 import 'package:spring_boot_starter_flutter_scene/src/app/application_scene.dart';
 import 'package:spring_boot_starter_flutter_scene/src/app/application_scene_background.dart';
 import 'package:spring_boot_starter_flutter_scene/src/app/scene_customizer.dart';
+import 'package:spring_boot_starter_flutter_scene/src/conditions/scene_condition.dart';
+import 'package:spring_boot_starter_flutter_scene/src/conditions/slow_frames_scene_condition.dart';
+import 'package:spring_boot_starter_flutter_scene/src/conditions/touch_scene_condition.dart';
 import 'package:spring_boot_starter_flutter_scene/src/debug/scene_debug.dart';
+import 'package:spring_boot_starter_flutter_scene/src/debug/scene_material_precisions.dart';
 import 'package:spring_boot_starter_flutter_scene/src/debug/scene_section.dart';
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_availability.dart';
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_backend.dart';
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_engine.dart';
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_engine_log.dart';
+import 'package:spring_boot_starter_flutter_scene/src/engine/scene_frames.dart';
 import 'package:spring_boot_starter_flutter_scene/src/materials/scene_material_loader.dart';
 import 'package:spring_boot_starter_flutter_scene/src/materials/scene_materials.dart';
 import 'package:spring_boot_starter_flutter_scene/src/models/scene_model_importer.dart';
@@ -118,7 +123,10 @@ final BeanModule springBootStarterFlutterSceneAutoConfiguration = BeanModule(
           ConditionalOnMissingBean(SceneBackend),
         ]),
       ],
-      create: (_) => const FlutterSceneBackend(),
+      create: (r) => FlutterSceneBackend(
+        onEngineCanvas:
+            r.dependency<SceneProperties>().canvas == SceneCanvas.engine,
+      ),
     ),
     BeanDefinition<SceneEngineLog>(
       name: 'sceneEngineLog',
@@ -147,7 +155,41 @@ final BeanModule springBootStarterFlutterSceneAutoConfiguration = BeanModule(
       create: (r) => SceneAvailability(
         properties: r.dependency<SceneProperties>(),
         engine: r.dependency<SceneEngine>(),
+        conditions: r.optionalDependencyList<SceneCondition>() ?? const [],
       ),
+    ),
+    BeanDefinition<TouchSceneCondition>(
+      name: 'sceneTouchCondition',
+      types: const [TouchSceneCondition, SceneCondition],
+      source: _source,
+      conditions: const [_scenesOn],
+      create: (_) => TouchSceneCondition(),
+    ),
+    BeanDefinition<SlowFramesSceneCondition>(
+      name: 'sceneSlowCondition',
+      types: const [SlowFramesSceneCondition, SceneCondition],
+      source: _source,
+      conditions: const [_scenesOn],
+      preDestroy: (condition) => condition.dispose(),
+      create: (r) {
+        final properties = r.dependency<SceneProperties>();
+        final condition = SlowFramesSceneCondition(
+          frames: r.dependency<SceneFrames>(),
+          frameTime: properties.slow.frameTime,
+          after: properties.slow.after,
+        );
+        if (properties.when?.containsKey(condition.name) ?? false) {
+          condition.start();
+        }
+        return condition;
+      },
+    ),
+    BeanDefinition<SceneFrames>(
+      name: 'sceneFrames',
+      source: _source,
+      conditions: const [_scenesOn],
+      preDestroy: (frames) => frames.dispose(),
+      create: (_) => SceneFrames(),
     ),
     BeanDefinition<SceneModelImporter>(
       name: 'sceneModelImporter',
@@ -244,6 +286,7 @@ final BeanModule springBootStarterFlutterSceneAutoConfiguration = BeanModule(
         materials: r.dependency<SceneMaterials>(),
         events: r.dependency<ApplicationEventPublisher>(),
         scene: r.optionalDependency<ApplicationScene>(),
+        availability: r.dependency<SceneAvailability>(),
       ),
     ),
   ],
@@ -284,6 +327,9 @@ final BeanModule springBootStarterFlutterSceneDebugAutoConfiguration =
           availability: r.dependency<SceneAvailability>(),
           models: r.dependency<SceneModels>(),
           materials: r.dependency<SceneMaterials>(),
+          precisions: SceneMaterialPrecisions(
+            r.dependency<ApplicationContext>(),
+          ),
           status: r.dependency<SceneStatus>(),
         ),
       ),

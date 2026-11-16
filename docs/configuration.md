@@ -4285,6 +4285,7 @@ spring:
       render: animated
       max-frame-rate: 30
       pixel-ratio: 1.5
+      canvas: engine
       preload: eager
       models:
         hero:
@@ -4305,6 +4306,7 @@ spring:
 spring.flutter.scene.render=animated
 spring.flutter.scene.max-frame-rate=30
 spring.flutter.scene.pixel-ratio=1.5
+spring.flutter.scene.canvas=engine
 spring.flutter.scene.preload=eager
 spring.flutter.scene.models.hero.source=asset:assets/models/hero.glb
 spring.flutter.scene.models.hero.preload=lazy
@@ -4322,8 +4324,10 @@ spring.flutter.scene.app.camera.fov=45
 |---|---|---|---|
 | `spring.flutter.scene.enabled` | `true` / `false` | `true` | Whether the app has scenes. `false`: no scene bean exists, the engine never starts, every scene widget shows its placeholder; set in the application's own configuration (not a profile's), the build leaves the starter's module out (the engine's code stays while the app has scene widgets) |
 | `spring.flutter.scene.render` | `animated` / `still` / `off` | `animated` | How scenes draw: up to `max-frame-rate` frames a second; one frame that stands, drawn again when what it shows changes; or placeholders only |
-| `spring.flutter.scene.max-frame-rate` | number | `30` | The most frames a second any scene draws; a widget may ask for fewer. Every frame of a scene has Flutter draw the page again |
+| `spring.flutter.scene.max-frame-rate` | number | `30` | The most frames a second any scene draws; a widget may ask for fewer. `0`: as many as the screen shows (in a browser each of its frames, 60, 120 or 144; elsewhere the display's refresh rate) |
 | `spring.flutter.scene.pixel-ratio` | number | the device's | The scenes' own pixel ratio |
+| `spring.flutter.scene.canvas` | `page` / `layer` / `engine` | `page` | Where a frame of a scene goes in a browser: Flutter draws it into the page (and the page again around it); a canvas of the scene's own under the page, each frame handed over by the browser (copied in Firefox and WebKit); or the engine's own canvas, every scene drawn on it where it stands, nothing handed over (behind the page when the first scene fills the screen). `engine` is the whole app's, set when the engine starts |
+| `spring.flutter.scene.light-clustering` | `true` / `false` | `true` | Whether the scenes' lamps are shaded through the engine's clustering (`Scene.punctualLightClustering`). `false`: each mesh shades the lamps that reach it, cheaper with a few lamps; the clustering makes its lamp textures anew when a lamp comes into the view or leaves it |
 | `spring.flutter.scene.pause-off-screen` | `true` / `false` | `true` | Whether a scene scrolled off the screen stops drawing |
 | `spring.flutter.scene.preload` | `eager` / `lazy` | `lazy` | When the engine starts: with the splash, or when the first scene shows. The default of a model's own `preload` |
 | `spring.flutter.scene.engine-log` | `true` / `false` | `true` | Whether the engine's own messages (it writes them with `debugPrint`) are records of the application's log, under the logger `flutter_scene` (`logging.level.flutter_scene`) |

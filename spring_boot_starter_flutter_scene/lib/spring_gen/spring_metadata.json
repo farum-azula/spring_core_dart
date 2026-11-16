@@ -9,7 +9,7 @@
       "default": 45,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 172,
+      "line": 248,
       "class": "SceneCameraProperties"
     },
     {
@@ -23,7 +23,7 @@
       ],
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 166,
+      "line": 242,
       "class": "SceneCameraProperties"
     },
     {
@@ -37,7 +37,7 @@
       ],
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 169,
+      "line": 245,
       "class": "SceneCameraProperties"
     },
     {
@@ -47,7 +47,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 137,
+      "line": 213,
       "class": "ApplicationSceneProperties"
     },
     {
@@ -57,8 +57,18 @@
       "default": "background",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 141,
+      "line": 217,
       "class": "ApplicationSceneProperties"
+    },
+    {
+      "name": "spring.flutter.scene.canvas",
+      "type": "SceneCanvas",
+      "description": "Which canvas the scenes are on in a browser: `page` (Flutter draws each frame of a scene into the page, which it draws again around it), `layer` (each scene is a canvas of its own under the page, its frames handed over by the browser, which copies them in Firefox and WebKit) or `engine` (the engine's own canvas under the page, the scenes drawn on it where they stand: nothing is handed over or copied). A view may say otherwise (`SpringSceneView.canvas`), but for `engine`, which is the whole app's.",
+      "default": "page",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 69,
+      "class": "SceneProperties"
     },
     {
       "name": "spring.flutter.scene.debug.enabled",
@@ -67,7 +77,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 183,
+      "line": 259,
       "class": "SceneDebugProperties"
     },
     {
@@ -77,7 +87,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 28,
+      "line": 32,
       "class": "SceneProperties"
     },
     {
@@ -87,7 +97,17 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 55,
+      "line": 92,
+      "class": "SceneProperties"
+    },
+    {
+      "name": "spring.flutter.scene.light-clustering",
+      "type": "bool",
+      "description": "Whether the scenes' lamps (point, spot and area lights) are shaded through the engine's clustering: the view cut into cells, each with the lamps that reach it (`Scene.punctualLightClustering`, the engine's default). Without it every mesh shades the lamps that reach it, which costs less with a few lamps. The clustering keeps its lamp lists in textures sized to the lamps in the view: one coming into or leaving the view (a lamp scrolled out with its card) has the engine make them all anew, a frame of about 30 ms on an iPhone.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 82,
       "class": "SceneProperties"
     },
     {
@@ -97,7 +117,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 123,
+      "line": 199,
       "class": "SceneMaterialProperties"
     },
     {
@@ -107,17 +127,17 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 118,
+      "line": 194,
       "class": "SceneMaterialProperties"
     },
     {
       "name": "spring.flutter.scene.max-frame-rate",
       "type": "double",
-      "description": "The most frames a second a scene draws; a widget may ask for fewer. Every frame of a scene has Flutter draw the page again, so this is what a scene costs.",
+      "description": "The most frames a second a scene draws; a widget may ask for fewer. `0`: as many as the screen shows, as Flutter draws its own frames (in a browser each of its frames, 60, 120 or 144 a second by the monitor; elsewhere the display's refresh rate). Each frame of a scene is what it costs.",
       "default": 30,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 38,
+      "line": 55,
       "class": "SceneProperties"
     },
     {
@@ -127,7 +147,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 106,
+      "line": 182,
       "class": "SceneModelProperties"
     },
     {
@@ -137,7 +157,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 102,
+      "line": 178,
       "class": "SceneModelProperties"
     },
     {
@@ -147,7 +167,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 45,
+      "line": 72,
       "class": "SceneProperties"
     },
     {
@@ -157,7 +177,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 42,
+      "line": 59,
       "class": "SceneProperties"
     },
     {
@@ -167,7 +187,7 @@
       "default": "lazy",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 49,
+      "line": 86,
       "class": "SceneProperties"
     },
     {
@@ -177,7 +197,37 @@
       "default": "animated",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
-      "line": 33,
+      "line": 37,
+      "class": "SceneProperties"
+    },
+    {
+      "name": "spring.flutter.scene.slow.after",
+      "type": "Duration",
+      "description": "How long frames are slow, on end, before the condition holds; it then holds for the rest of the run.",
+      "default": "3s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 123,
+      "class": "SceneSlowProperties"
+    },
+    {
+      "name": "spring.flutter.scene.slow.frame-time",
+      "type": "Duration",
+      "description": "The time of a frame of the app (its build and its drawing, the middle one of each batch Flutter reports) past which it is slow, while scenes move.",
+      "default": "16ms",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 119,
+      "class": "SceneSlowProperties"
+    },
+    {
+      "name": "spring.flutter.scene.when.*",
+      "type": "SceneRenderMode",
+      "description": "The mode scenes take while a condition holds, by the condition's name: `touch` (the main pointer is a finger), `slow` (frames too slow on this device, see [slow]) or one of the app's (a `SceneCondition` bean). `still` or `off`; the least of [render] and those of the conditions that hold wins. A condition not named here changes nothing.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
+      "line": 45,
       "class": "SceneProperties"
     }
   ],
@@ -192,6 +242,23 @@
         {
           "value": "none",
           "description": "Only in the `SpringSceneView` widgets of the app."
+        }
+      ]
+    },
+    {
+      "name": "spring.flutter.scene.canvas",
+      "values": [
+        {
+          "value": "page",
+          "description": "The page's: Flutter draws a frame of a scene with the page around it."
+        },
+        {
+          "value": "layer",
+          "description": "A canvas of each scene's own under the page; the browser hands each frame over to it (Chrome gives it away, Firefox reads it back from the GPU, WebKit copies it)."
+        },
+        {
+          "value": "engine",
+          "description": "The engine's canvas itself, under the page: every scene is drawn on it where it stands on the screen, nothing handed over. A scene shows inside the first scene of the page and over what is drawn under that one."
         }
       ]
     },
@@ -250,6 +317,23 @@
           "description": "No scene: the widgets show their placeholders."
         }
       ]
+    },
+    {
+      "name": "spring.flutter.scene.when.*",
+      "values": [
+        {
+          "value": "animated",
+          "description": "Up to `max-frame-rate` frames a second."
+        },
+        {
+          "value": "still",
+          "description": "One frame that stands; drawn again when what it shows changes (its size, a property of a widget in it)."
+        },
+        {
+          "value": "off",
+          "description": "No scene: the widgets show their placeholders."
+        }
+      ]
     }
   ],
   "beans": [
@@ -270,7 +354,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.app.enabled', havingValue: 'true')"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 211,
+      "line": 253,
       "injects": [],
       "members": [
         {
@@ -362,7 +446,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.app.placement', havingValue: 'background', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 224,
+      "line": 266,
       "injects": [],
       "members": [
         {
@@ -396,7 +480,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 141,
+      "line": 149,
       "injects": [],
       "members": [
         {
@@ -411,6 +495,11 @@
           "name": "animates",
           "kind": "getter",
           "type": "bool"
+        },
+        {
+          "name": "conditions",
+          "kind": "field",
+          "type": "List<SceneCondition>"
         },
         {
           "name": "dispose",
@@ -442,6 +531,11 @@
           "type": "bool"
         },
         {
+          "name": "held",
+          "kind": "getter",
+          "type": "List<(SceneCondition, SceneRenderMode)>"
+        },
+        {
           "name": "isReady",
           "kind": "getter",
           "type": "bool"
@@ -469,6 +563,11 @@
           "parameters": [
             "void Function() listener"
           ]
+        },
+        {
+          "name": "render",
+          "kind": "getter",
+          "type": "SceneRenderMode"
         }
       ]
     },
@@ -487,7 +586,7 @@
         "@ConditionalOnMissingBean(SceneBackend)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 112,
+      "line": 117,
       "injects": [],
       "members": [
         {
@@ -521,7 +620,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 264,
+      "line": 307,
       "injects": [],
       "members": [
         {
@@ -590,7 +689,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 277,
+      "line": 320,
       "injects": [],
       "members": [
         {
@@ -627,6 +726,11 @@
           "type": "int"
         },
         {
+          "name": "precisions",
+          "kind": "field",
+          "type": "SceneMaterialPrecisions"
+        },
+        {
           "name": "status",
           "kind": "field",
           "type": "SceneStatus"
@@ -654,7 +758,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 130,
+      "line": 138,
       "injects": [],
       "members": [
         {
@@ -748,7 +852,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.engine-log', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 123,
+      "line": 131,
       "injects": [],
       "members": [
         {
@@ -771,6 +875,59 @@
       ]
     },
     {
+      "name": "sceneFrames",
+      "type": "SceneFrames",
+      "types": [
+        "SceneFrames"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 187,
+      "injects": [],
+      "members": [
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "join",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object view",
+            "double rate",
+            "bool Function() beat"
+          ]
+        },
+        {
+          "name": "leave",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object view"
+          ]
+        },
+        {
+          "name": "moving",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "rate",
+          "kind": "getter",
+          "type": "double"
+        }
+      ]
+    },
+    {
       "name": "sceneMaterialLoader",
       "type": "SceneMaterialLoader",
       "types": [
@@ -785,7 +942,7 @@
         "@ConditionalOnMissingBean(SceneMaterialLoader)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 180,
+      "line": 222,
       "injects": [],
       "members": [
         {
@@ -812,7 +969,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 191,
+      "line": 233,
       "injects": [],
       "members": [
         {
@@ -877,7 +1034,7 @@
         "@ConditionalOnMissingBean(SceneModelImporter)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 152,
+      "line": 194,
       "injects": [],
       "members": [
         {
@@ -905,7 +1062,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 163,
+      "line": 205,
       "injects": [],
       "members": [
         {
@@ -976,6 +1133,11 @@
           "type": "ApplicationSceneProperties"
         },
         {
+          "name": "canvas",
+          "kind": "field",
+          "type": "SceneCanvas"
+        },
+        {
           "name": "debug",
           "kind": "field",
           "type": "SceneDebugProperties"
@@ -987,6 +1149,11 @@
         },
         {
           "name": "engineLog",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "lightClustering",
           "kind": "field",
           "type": "bool"
         },
@@ -1024,6 +1191,120 @@
           "name": "render",
           "kind": "field",
           "type": "SceneRenderMode"
+        },
+        {
+          "name": "slow",
+          "kind": "field",
+          "type": "SceneSlowProperties"
+        },
+        {
+          "name": "when",
+          "kind": "field",
+          "type": "Map<String, SceneRenderMode>?"
+        }
+      ]
+    },
+    {
+      "name": "sceneSlowCondition",
+      "type": "SlowFramesSceneCondition",
+      "types": [
+        "SlowFramesSceneCondition",
+        "ChangeNotifier",
+        "Listenable",
+        "SceneCondition"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 168,
+      "injects": [],
+      "members": [
+        {
+          "name": "addListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "after",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "frameTime",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "frames",
+          "kind": "field",
+          "type": "SceneFrames"
+        },
+        {
+          "name": "hasListeners",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "holds",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "middle",
+          "kind": "getter",
+          "type": "Duration?"
+        },
+        {
+          "name": "name",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "notifyListeners",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "removeListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "state",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "timings",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "List<FrameTiming> batch"
+          ]
         }
       ]
     },
@@ -1042,9 +1323,14 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 235,
+      "line": 277,
       "injects": [],
       "members": [
+        {
+          "name": "availability",
+          "kind": "field",
+          "type": "SceneAvailability?"
+        },
         {
           "name": "engine",
           "kind": "field",
@@ -1109,7 +1395,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 203,
+      "line": 245,
       "injects": [],
       "members": [
         {
@@ -1186,6 +1472,76 @@
           "name": "value",
           "kind": "getter",
           "type": "SceneEvent?"
+        }
+      ]
+    },
+    {
+      "name": "sceneTouchCondition",
+      "type": "TouchSceneCondition",
+      "types": [
+        "TouchSceneCondition",
+        "ChangeNotifier",
+        "Listenable",
+        "SceneCondition"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 161,
+      "injects": [],
+      "members": [
+        {
+          "name": "addListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "hasListeners",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "holds",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "name",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "notifyListeners",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "removeListener",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() listener"
+          ]
+        },
+        {
+          "name": "state",
+          "kind": "getter",
+          "type": "String"
         }
       ]
     }

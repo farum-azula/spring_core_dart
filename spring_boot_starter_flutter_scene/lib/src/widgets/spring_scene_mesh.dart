@@ -102,7 +102,9 @@ class _SpringSceneMeshState extends State<SpringSceneMesh> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _take();
-    final clock = SceneScope.maybeOf(context)?.elapsed;
+    final clock =
+        SpringSceneView.elapsedOf(context) ??
+        SceneScope.maybeOf(context)?.elapsed;
     if (!identical(clock, _clock)) {
       _clock?.removeListener(_frame);
       _clock = clock?..addListener(_frame);

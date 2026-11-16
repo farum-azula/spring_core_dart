@@ -823,6 +823,15 @@ jobs:
         working-directory: spring_boot_starter_flutter_scene
         run: flutter test
 
+      # The browser's side in a real browser (dart:js_interop, WebGL2 in
+      # the runner's Chrome): the beat on requestAnimationFrame, the
+      # engine's canvas (`canvas: engine`) drawn from the scenes' textures,
+      # read back pixel by pixel. The run above skips it: @TestOn('browser').
+      - name: Tests of spring_boot_starter_flutter_scene in Chrome
+        if: needs.changes.outputs.flutter_scene == 'true'
+        working-directory: spring_boot_starter_flutter_scene
+        run: flutter test --platform chrome test/scene_web_test.dart
+
       # Followed state in beans, on the package's generated example:
       # fields, computed values, effects, asynchronous values, the widgets
       # that follow them, the State tab.

@@ -108,7 +108,9 @@ Around the engine's `SceneView` the starter:
   first frame then built no program; on macOS the engine still reported
   programs built in the first frame;
 - draws at most `spring.flutter.scene.max-frame-rate` frames a second
-  (`maxFrameRate` on the widget asks for fewer);
+  (`maxFrameRate` on the widget asks for fewer; `0` as many as the screen
+  shows), every moving scene on one beat: in a browser its frames
+  (`requestAnimationFrame`), elsewhere a timer;
 - draws one frame that stands with `render: still` or when the system
   asks for less motion;
 - stops drawing when scrolled off the screen (`pause-off-screen`).
@@ -144,8 +146,10 @@ spring:
     scene:
       enabled: true          # false: no scene bean, placeholders only
       render: animated       # animated | still | off
-      max-frame-rate: 30     # the ceiling of every scene
+      max-frame-rate: 30     # the ceiling of every scene; 0: the screen's (60, 120, 144)
       pixel-ratio: 1.5       # the scenes' own; not set: the device's
+      canvas: page           # in a browser: page | layer | engine (below)
+      light-clustering: true # false: each mesh shades the lamps that reach it
       pause-off-screen: true
       preload: lazy          # eager: the engine starts with the splash
       engine-log: true       # the engine's messages in the app's log
@@ -171,6 +175,41 @@ spring:
 A value for one platform goes into its profile file, as everywhere:
 `render: still` in `application-android.yml`, or in the profile a debug
 run uses, where a frame costs several times a release's.
+
+## The canvas in a browser
+
+`spring.flutter.scene.canvas` says where a frame of a scene goes in a
+browser (elsewhere Flutter draws it):
+
+- `page` (the default): Flutter draws it into the page, and draws the
+  page again around it on each frame of the scene.
+- `layer`: each scene is a canvas of its own under the page, its frames
+  handed over by the browser (`transferToImageBitmap`): free in Chrome,
+  copied by Firefox (read back from the GPU) and WebKit.
+- `engine`: the engine's own canvas, shown as it is. Every scene draws
+  into a texture of its own, and the canvas is drawn from them where the
+  scenes stand, clipped as the page clips them (a scrolled list), after
+  each beat that drew and on each frame of Flutter that moved them;
+  nothing is handed over or copied. When the first scene of the page
+  fills the screen (a scene behind the whole page) the canvas stands
+  behind the page, and the theme's background steps aside for it
+  (`PageUnderlay`): Flutter draws the page on one canvas. Otherwise it
+  stands in that scene as a platform view, and a scene shows only inside
+  it and over what is drawn under it. The whole app's: it is set when the
+  engine starts.
+
+Measured on an iPhone (Safari) scrolling a page with two moving scenes:
+43 frames a second with `layer`, 60 with `engine` behind the page; on a
+Mac, a beat of two scenes 12 → 1.2 ms in Firefox, 6.6 → 1.2 in Safari.
+The frame meter shows the scenes' frames on a line of their own (`3D 60
+fps · 0.9 ms`), apart from Flutter's.
+
+`light-clustering: false` turns off the engine's clustering of lamps
+(`Scene.punctualLightClustering`): each mesh shades the lamps that reach
+it. The clustering keeps its lamp lists in textures sized to the lamps in
+the view and makes them all anew when one comes into it or leaves it (a
+lamp scrolled out with its card), a frame of about 30 ms on an iPhone;
+with a few lamps the meshes' own lists cost less.
 
 ## Where scenes do not draw
 
@@ -283,6 +322,37 @@ SceneBackdrop(
   the files there are. A source written with a placeholder (`${...}`) is
   known only when the app runs, and is not checked.
 
+### Precision: what a phone draws differently
+
+`flutter_scene` opens a material's fragment code with `precision mediump
+float;`. A float without a qualifier is then half precision (a 10-bit
+mantissa, a largest value of 65504) on the GPUs that honor it, the ones
+of phones (every browser of an iPhone, Mali, Adreno), and float32 on a
+desktop, which ignores it. A material that computes in pixels, in
+seconds or with a hash of `sin` looks right on every desktop and wrong
+on a phone: the square of a distance of 300 pixels is already out of the
+range, and a neon glow measured in pixels fills its whole scene.
+
+```glsl
+fragment {
+  precision highp float;
+
+  void Surface(inout MaterialInputs material) {
+    ...
+  }
+}
+```
+
+The line runs all of the material's code in float32; `highp` on the
+variables that need it (`highp vec2 p = GetUV0() * size;`) keeps the
+rest at half. A material of texture coordinates from 0 to 1 and colours
+is fine at the default.
+
+The build hook finds which each material does, and the debug tab says
+it under **Precision**: `highp`, or `mediump` with the places written
+`highp`, as a warning when there are none. A desktop does not show the
+difference: look at the material on a phone.
+
 ## The application's scene
 
 With `spring.flutter.scene.app.enabled: true` the app has one scene of
@@ -374,7 +444,8 @@ caught: the few lines the engine writes with `print`.
 (`spring.flutter.scene.debug.enabled`; not set: debug and profile builds):
 
 - **the engine**: its state, the time of its start, whether the web page
-  is cross-origin isolated, the steps of the start in words;
+  is cross-origin isolated, how its frames reach Flutter in a browser,
+  the steps of the start in words;
 - **every scene on the screen by its name**: frames a second against
   those it may draw, why it stands still, the surface, the engine's
   numbers of its last frame (draw calls, vertices, programs bound and
@@ -385,8 +456,9 @@ caught: the few lines the engine writes with `print`.
 - **every material by its name**: its file, how it is lit and whether
   it is blended, its parameters, how long its first load took and
   whether with the splash or while the app ran (longer than a frame
-  then: a warning to preload it), its uses on the screen by scene, and
-  the same switch. A scene's own lines say which materials it draws
+  then: a warning to preload it), its precision
+  ([what a phone draws differently](#precision-what-a-phone-draws-differently)),
+  its uses on the screen by scene, and the same switch. A scene's own lines say which materials it draws
   with;
 - **memory**: what the engine's caches hold.
 
@@ -488,6 +560,17 @@ Apple M5, a release build):
 - **An additive material leaves no alpha**, so its light does not show
   outside the scene's own surfaces. A glow over the page is alpha
   blending with the brightness as alpha.
+- **Safari passes a frame of WebGL with its colour divided by its
+  alpha.** The engine hands each frame to Flutter by
+  `transferToImageBitmap`, and Flutter takes the bitmap as
+  premultiplied; Chrome, Edge and Firefox keep it so, WebKit (Safari,
+  every browser of an iPhone) does not, and a half-transparent glow
+  comes out as solid colour. The starter passes one pixel that way
+  before the engine starts: for WebKit the engine's canvas is asked for
+  without premultiplied alpha, and its bytes reach Flutter unchanged; a
+  browser that passes a frame neither way fails the start, and the
+  scenes are their placeholders. The debug tab says which (**Frames**).
+  A desktop Safari shows what an iPhone does.
 - **A pause is not `autoTick`.** The engine's view fails in a debug
   build when its `autoTick` goes from `false` back to `true` (it makes a
   second ticker). The starter's views pause by muting the ticker and

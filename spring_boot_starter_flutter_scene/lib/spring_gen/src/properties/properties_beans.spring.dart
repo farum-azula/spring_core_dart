@@ -19,24 +19,32 @@ const _$target0 = _i1.AopTarget(
 );
 Object? _$get1(_i2.SceneProperties bean) => bean.enabled;
 Object? _$get2(_i2.SceneProperties bean) => bean.render;
-Object? _$get3(_i2.SceneProperties bean) => bean.maxFrameRate;
-Object? _$get4(_i2.SceneProperties bean) => bean.pixelRatio;
-Object? _$get5(_i2.SceneProperties bean) => bean.pauseOffScreen;
-Object? _$get6(_i2.SceneProperties bean) => bean.preload;
-Object? _$get7(_i2.SceneProperties bean) => bean.engineLog;
-Object? _$get8(_i2.SceneProperties bean) => bean.models;
-Object? _$get9(_i2.SceneProperties bean) => bean.materials;
-Object? _$get10(_i2.SceneProperties bean) => bean.app;
-Object? _$get11(_i2.SceneProperties bean) => bean.debug;
-_i2.SceneProperties _$create12(
+Object? _$get3(_i2.SceneProperties bean) => bean.when;
+Object? _$get4(_i2.SceneProperties bean) => bean.slow;
+Object? _$get5(_i2.SceneProperties bean) => bean.maxFrameRate;
+Object? _$get6(_i2.SceneProperties bean) => bean.pixelRatio;
+Object? _$get7(_i2.SceneProperties bean) => bean.canvas;
+Object? _$get8(_i2.SceneProperties bean) => bean.pauseOffScreen;
+Object? _$get9(_i2.SceneProperties bean) => bean.lightClustering;
+Object? _$get10(_i2.SceneProperties bean) => bean.preload;
+Object? _$get11(_i2.SceneProperties bean) => bean.engineLog;
+Object? _$get12(_i2.SceneProperties bean) => bean.models;
+Object? _$get13(_i2.SceneProperties bean) => bean.materials;
+Object? _$get14(_i2.SceneProperties bean) => bean.app;
+Object? _$get15(_i2.SceneProperties bean) => bean.debug;
+_i2.SceneProperties _$create16(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SceneProperties(
   enabled: named.argumentOr(#enabled, true),
   render: named.argumentOr(#render, _i2.SceneRenderMode.animated),
+  when: named.argumentOr(#when, null),
+  slow: named.argumentOr(#slow, const _i2.SceneSlowProperties()),
   maxFrameRate: named.argumentOr(#maxFrameRate, 30.0),
   pixelRatio: named.argumentOr(#pixelRatio, null),
+  canvas: named.argumentOr(#canvas, _i2.SceneCanvas.page),
   pauseOffScreen: named.argumentOr(#pauseOffScreen, true),
+  lightClustering: named.argumentOr(#lightClustering, true),
   preload: named.argumentOr(#preload, _i2.SceneLoad.lazy),
   engineLog: named.argumentOr(#engineLog, true),
   models: named.argumentOr(#models, null),
@@ -44,28 +52,37 @@ _i2.SceneProperties _$create12(
   app: named.argumentOr(#app, const _i2.ApplicationSceneProperties()),
   debug: named.argumentOr(#debug, const _i2.SceneDebugProperties()),
 );
-Object? _$get13(_i2.SceneModelProperties bean) => bean.source;
-Object? _$get14(_i2.SceneModelProperties bean) => bean.preload;
-_i2.SceneModelProperties _$create15(
+Object? _$get17(_i2.SceneSlowProperties bean) => bean.frameTime;
+Object? _$get18(_i2.SceneSlowProperties bean) => bean.after;
+_i2.SceneSlowProperties _$create19(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.SceneSlowProperties(
+  frameTime: named.argumentOr(#frameTime, const Duration(milliseconds: 16)),
+  after: named.argumentOr(#after, const Duration(seconds: 3)),
+);
+Object? _$get20(_i2.SceneModelProperties bean) => bean.source;
+Object? _$get21(_i2.SceneModelProperties bean) => bean.preload;
+_i2.SceneModelProperties _$create22(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SceneModelProperties(
   source: named.argumentOr(#source, null),
   preload: named.argumentOr(#preload, null),
 );
-Object? _$get16(_i2.SceneMaterialProperties bean) => bean.source;
-Object? _$get17(_i2.SceneMaterialProperties bean) => bean.preload;
-_i2.SceneMaterialProperties _$create18(
+Object? _$get23(_i2.SceneMaterialProperties bean) => bean.source;
+Object? _$get24(_i2.SceneMaterialProperties bean) => bean.preload;
+_i2.SceneMaterialProperties _$create25(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SceneMaterialProperties(
   source: named.argumentOr(#source, null),
   preload: named.argumentOr(#preload, null),
 );
-Object? _$get19(_i2.ApplicationSceneProperties bean) => bean.enabled;
-Object? _$get20(_i2.ApplicationSceneProperties bean) => bean.placement;
-Object? _$get21(_i2.ApplicationSceneProperties bean) => bean.camera;
-_i2.ApplicationSceneProperties _$create22(
+Object? _$get26(_i2.ApplicationSceneProperties bean) => bean.enabled;
+Object? _$get27(_i2.ApplicationSceneProperties bean) => bean.placement;
+Object? _$get28(_i2.ApplicationSceneProperties bean) => bean.camera;
+_i2.ApplicationSceneProperties _$create29(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.ApplicationSceneProperties(
@@ -76,10 +93,10 @@ _i2.ApplicationSceneProperties _$create22(
   ),
   camera: named.argumentOr(#camera, const _i2.SceneCameraProperties()),
 );
-Object? _$get23(_i2.SceneCameraProperties bean) => bean.position;
-Object? _$get24(_i2.SceneCameraProperties bean) => bean.target;
-Object? _$get25(_i2.SceneCameraProperties bean) => bean.fov;
-_i2.SceneCameraProperties _$create26(
+Object? _$get30(_i2.SceneCameraProperties bean) => bean.position;
+Object? _$get31(_i2.SceneCameraProperties bean) => bean.target;
+Object? _$get32(_i2.SceneCameraProperties bean) => bean.fov;
+_i2.SceneCameraProperties _$create33(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SceneCameraProperties(
@@ -87,8 +104,8 @@ _i2.SceneCameraProperties _$create26(
   target: named.argumentOr(#target, const [0.0, 0.0, 0.0]),
   fov: named.argumentOr(#fov, 45.0),
 );
-Object? _$get27(_i2.SceneDebugProperties bean) => bean.enabled;
-_i2.SceneDebugProperties _$create28(
+Object? _$get34(_i2.SceneDebugProperties bean) => bean.enabled;
+_i2.SceneDebugProperties _$create35(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SceneDebugProperties(enabled: named.argumentOr(#enabled, null));
@@ -120,6 +137,20 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
             returnType: r'SceneRenderMode',
           ),
           _i1.MethodSignature.of(
+            r'when',
+            _$target0,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
+            returnType: r'Map',
+          ),
+          _i1.MethodSignature.of(
+            r'slow',
+            _$target0,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
+            returnType: r'SceneSlowProperties',
+          ),
+          _i1.MethodSignature.of(
             r'maxFrameRate',
             _$target0,
             declaringTypes: [],
@@ -134,7 +165,21 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
             returnType: r'double',
           ),
           _i1.MethodSignature.of(
+            r'canvas',
+            _$target0,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
+            returnType: r'SceneCanvas',
+          ),
+          _i1.MethodSignature.of(
             r'pauseOffScreen',
+            _$target0,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'lightClustering',
             _$target0,
             declaringTypes: [],
             kind: _i1.MemberKind.getter,
@@ -204,30 +249,55 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
           get: _$get2,
         ),
         _i1.BeanProperty<_i2.SceneProperties>(
+          r'when',
+          nullable: true,
+          typeInfo: _i1.MapType<String, _i2.SceneRenderMode>(
+            _i1.ClassType<String>(),
+            _i1.EnumType<_i2.SceneRenderMode>(_i2.SceneRenderMode.values),
+            nullable: true,
+          ),
+          get: _$get3,
+        ),
+        _i1.BeanProperty<_i2.SceneProperties>(
+          r'slow',
+          typeInfo: _i1.ClassType<_i2.SceneSlowProperties>(),
+          get: _$get4,
+        ),
+        _i1.BeanProperty<_i2.SceneProperties>(
           r'maxFrameRate',
           typeInfo: _i1.ClassType<double>(),
-          get: _$get3,
+          get: _$get5,
         ),
         _i1.BeanProperty<_i2.SceneProperties>(
           r'pixelRatio',
           nullable: true,
           typeInfo: _i1.ClassType<double>(nullable: true),
-          get: _$get4,
+          get: _$get6,
+        ),
+        _i1.BeanProperty<_i2.SceneProperties>(
+          r'canvas',
+          typeInfo: _i1.EnumType<_i2.SceneCanvas>(_i2.SceneCanvas.values),
+          get: _$get7,
         ),
         _i1.BeanProperty<_i2.SceneProperties>(
           r'pauseOffScreen',
           typeInfo: _i1.ClassType<bool>(),
-          get: _$get5,
+          get: _$get8,
+        ),
+        _i1.BeanProperty<_i2.SceneProperties>(
+          r'lightClustering',
+          typeInfo: _i1.ClassType<bool>(),
+          get: _$get9,
         ),
         _i1.BeanProperty<_i2.SceneProperties>(
           r'preload',
           typeInfo: _i1.EnumType<_i2.SceneLoad>(_i2.SceneLoad.values),
-          get: _$get6,
+          get: _$get10,
         ),
         _i1.BeanProperty<_i2.SceneProperties>(
           r'engineLog',
           typeInfo: _i1.ClassType<bool>(),
-          get: _$get7,
+          get: _$get11,
         ),
         _i1.BeanProperty<_i2.SceneProperties>(
           r'models',
@@ -237,7 +307,7 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
             _i1.ClassType<_i2.SceneModelProperties>(),
             nullable: true,
           ),
-          get: _$get8,
+          get: _$get12,
         ),
         _i1.BeanProperty<_i2.SceneProperties>(
           r'materials',
@@ -247,17 +317,17 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
             _i1.ClassType<_i2.SceneMaterialProperties>(),
             nullable: true,
           ),
-          get: _$get9,
+          get: _$get13,
         ),
         _i1.BeanProperty<_i2.SceneProperties>(
           r'app',
           typeInfo: _i1.ClassType<_i2.ApplicationSceneProperties>(),
-          get: _$get10,
+          get: _$get14,
         ),
         _i1.BeanProperty<_i2.SceneProperties>(
           r'debug',
           typeInfo: _i1.ClassType<_i2.SceneDebugProperties>(),
-          get: _$get11,
+          get: _$get15,
         ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.flutter.scene')],
@@ -280,6 +350,22 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
             defaultValue: _i2.SceneRenderMode.animated,
           ),
           _i1.BeanParameter(
+            r'when',
+            type: _i1.MapType<String, _i2.SceneRenderMode>(
+              _i1.ClassType<String>(),
+              _i1.EnumType<_i2.SceneRenderMode>(_i2.SceneRenderMode.values),
+              nullable: true,
+            ),
+            symbol: #when,
+          ),
+          _i1.BeanParameter(
+            r'slow',
+            type: _i1.ClassType<_i2.SceneSlowProperties>(),
+            symbol: #slow,
+            hasDefaultValue: true,
+            defaultValue: _i2.SceneSlowProperties(),
+          ),
+          _i1.BeanParameter(
             r'maxFrameRate',
             type: _i1.ClassType<double>(),
             symbol: #maxFrameRate,
@@ -292,9 +378,23 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
             symbol: #pixelRatio,
           ),
           _i1.BeanParameter(
+            r'canvas',
+            type: _i1.EnumType<_i2.SceneCanvas>(_i2.SceneCanvas.values),
+            symbol: #canvas,
+            hasDefaultValue: true,
+            defaultValue: _i2.SceneCanvas.page,
+          ),
+          _i1.BeanParameter(
             r'pauseOffScreen',
             type: _i1.ClassType<bool>(),
             symbol: #pauseOffScreen,
+            hasDefaultValue: true,
+            defaultValue: true,
+          ),
+          _i1.BeanParameter(
+            r'lightClustering',
+            type: _i1.ClassType<bool>(),
+            symbol: #lightClustering,
             hasDefaultValue: true,
             defaultValue: true,
           ),
@@ -345,7 +445,43 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
             defaultValue: _i2.SceneDebugProperties(),
           ),
         ],
-        create: _$create12,
+        create: _$create16,
+      ),
+    ),
+    const _i1.BeanIntrospection<_i2.SceneSlowProperties>(
+      className: r'SceneSlowProperties',
+      properties: [
+        _i1.BeanProperty<_i2.SceneSlowProperties>(
+          r'frameTime',
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get17,
+        ),
+        _i1.BeanProperty<_i2.SceneSlowProperties>(
+          r'after',
+          typeInfo: _i1.ClassType<Duration>(),
+          get: _$get18,
+        ),
+      ],
+      parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
+      instantiate: _i2.SceneSlowProperties.new,
+      constructor: _i1.BeanConstructor<_i2.SceneSlowProperties>(
+        parameters: [
+          _i1.BeanParameter(
+            r'frameTime',
+            type: _i1.ClassType<Duration>(),
+            symbol: #frameTime,
+            hasDefaultValue: true,
+            defaultValue: Duration(milliseconds: 16),
+          ),
+          _i1.BeanParameter(
+            r'after',
+            type: _i1.ClassType<Duration>(),
+            symbol: #after,
+            hasDefaultValue: true,
+            defaultValue: Duration(seconds: 3),
+          ),
+        ],
+        create: _$create19,
       ),
     ),
     const _i1.BeanIntrospection<_i2.SceneModelProperties>(
@@ -355,7 +491,7 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
           r'source',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get13,
+          get: _$get20,
         ),
         _i1.BeanProperty<_i2.SceneModelProperties>(
           r'preload',
@@ -364,7 +500,7 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
             _i2.SceneLoad.values,
             nullable: true,
           ),
-          get: _$get14,
+          get: _$get21,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -385,7 +521,7 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
             symbol: #preload,
           ),
         ],
-        create: _$create15,
+        create: _$create22,
       ),
     ),
     const _i1.BeanIntrospection<_i2.SceneMaterialProperties>(
@@ -395,7 +531,7 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
           r'source',
           nullable: true,
           typeInfo: _i1.ClassType<String>(nullable: true),
-          get: _$get16,
+          get: _$get23,
         ),
         _i1.BeanProperty<_i2.SceneMaterialProperties>(
           r'preload',
@@ -404,7 +540,7 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
             _i2.SceneLoad.values,
             nullable: true,
           ),
-          get: _$get17,
+          get: _$get24,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -425,7 +561,7 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
             symbol: #preload,
           ),
         ],
-        create: _$create18,
+        create: _$create25,
       ),
     ),
     const _i1.BeanIntrospection<_i2.ApplicationSceneProperties>(
@@ -434,19 +570,19 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.ApplicationSceneProperties>(
           r'enabled',
           typeInfo: _i1.ClassType<bool>(),
-          get: _$get19,
+          get: _$get26,
         ),
         _i1.BeanProperty<_i2.ApplicationSceneProperties>(
           r'placement',
           typeInfo: _i1.EnumType<_i2.ApplicationScenePlacement>(
             _i2.ApplicationScenePlacement.values,
           ),
-          get: _$get20,
+          get: _$get27,
         ),
         _i1.BeanProperty<_i2.ApplicationSceneProperties>(
           r'camera',
           typeInfo: _i1.ClassType<_i2.SceneCameraProperties>(),
-          get: _$get21,
+          get: _$get28,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -477,7 +613,7 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
             defaultValue: _i2.SceneCameraProperties(),
           ),
         ],
-        create: _$create22,
+        create: _$create29,
       ),
     ),
     const _i1.BeanIntrospection<_i2.SceneCameraProperties>(
@@ -486,17 +622,17 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
         _i1.BeanProperty<_i2.SceneCameraProperties>(
           r'position',
           typeInfo: _i1.ListType<double>(_i1.ClassType<double>()),
-          get: _$get23,
+          get: _$get30,
         ),
         _i1.BeanProperty<_i2.SceneCameraProperties>(
           r'target',
           typeInfo: _i1.ListType<double>(_i1.ClassType<double>()),
-          get: _$get24,
+          get: _$get31,
         ),
         _i1.BeanProperty<_i2.SceneCameraProperties>(
           r'fov',
           typeInfo: _i1.ClassType<double>(),
-          get: _$get25,
+          get: _$get32,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -525,7 +661,7 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
             defaultValue: 45.0,
           ),
         ],
-        create: _$create26,
+        create: _$create33,
       ),
     ),
     const _i1.BeanIntrospection<_i2.SceneDebugProperties>(
@@ -535,7 +671,7 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
           r'enabled',
           nullable: true,
           typeInfo: _i1.ClassType<bool>(nullable: true),
-          get: _$get27,
+          get: _$get34,
         ),
       ],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
@@ -548,7 +684,7 @@ _i1.BeanModule get $sceneConfigBeans => _i1.BeanModule(
             symbol: #enabled,
           ),
         ],
-        create: _$create28,
+        create: _$create35,
       ),
     ),
   ],

@@ -96,6 +96,18 @@ void main() {
       expect(scenes.frameRate(), 30);
       expect(scenes.frameRate(12), 12);
       expect(scenes.frameRate(60), 30);
+      expect(scenes.frameRate(0), 30);
+    });
+
+    test('the frame ceiling of the screen', () {
+      final scenes = availability(const SceneProperties(maxFrameRate: 0));
+      final screen = SceneAvailability.screenFrameRate;
+      expect(screen, greaterThan(0));
+      // Off the web the display's rate; in a browser as many as it shows.
+      expect(screen.isFinite, isTrue);
+      expect(scenes.frameRate(), screen);
+      expect(scenes.frameRate(0), screen);
+      expect(scenes.frameRate(12), 12);
     });
   });
 }

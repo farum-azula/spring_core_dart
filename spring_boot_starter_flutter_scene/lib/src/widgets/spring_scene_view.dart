@@ -1,10 +1,19 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
+
+import 'dart:ui' show Canvas, PictureRecorder;
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_scene/scene.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
     show SpringScope;
 import 'package:spring_boot_starter_flutter_scene/src/app/application_scene.dart';
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_availability.dart';
+import 'package:spring_boot_starter_flutter_scene/src/engine/scene_frames.dart';
+import 'package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart';
 import 'package:spring_boot_starter_flutter_scene/src/widgets/on_screen.dart';
+import 'package:spring_boot_starter_flutter_scene/src/widgets/scene_canvas_target.dart';
+import 'package:spring_boot_starter_flutter_scene/src/widgets/scene_layer.dart';
+import 'package:spring_boot_starter_flutter_scene/src/widgets/scene_screen.dart';
 import 'package:spring_boot_starter_flutter_scene/src/widgets/scene_clock.dart';
 import 'package:spring_boot_starter_flutter_scene/src/widgets/scene_view_observer.dart';
 
@@ -33,12 +42,20 @@ import 'package:spring_boot_starter_flutter_scene/src/widgets/scene_view_observe
 ///   (unless the splash already did) and shows [placeholder] meanwhile.
 /// - **A ceiling on frames.** It draws at most
 ///   `spring.flutter.scene.max-frame-rate` frames a second, or
-///   [maxFrameRate] when that is fewer.
+///   [maxFrameRate] when that is fewer, and the page is drawn for those
+///   frames alone: the view does not tick with the display, it is given
+///   its frames by the app's [SceneFrames], with every other moving view
+///   on the same beat.
 /// - **A still frame.** With `render: still`, or when the system asks for
 ///   less motion, it draws one frame and draws again only when what it
 ///   shows changes.
 /// - **A pause off the screen** (`pause-off-screen`): scrolled away, it
 ///   stops drawing.
+/// - **A canvas under the page** on the web ([canvas],
+///   `spring.flutter.scene.canvas`): a layer of the scene's own, its frames
+///   handed over to it, or the engine's own canvas, every scene drawn on
+///   it where it stands; Flutter does not draw the page for a frame of
+///   either.
 /// - **A whole scene or none.** The scene shows once its models are
 ///   loaded and the engine was asked to compile its materials' programs
 ///   ([warmUp]), with [placeholder] until then: a half-built scene is
@@ -63,6 +80,7 @@ class SpringSceneView extends StatefulWidget {
     this.cameraBuilder,
     this.maxFrameRate,
     this.pixelRatio,
+    this.canvas,
     this.onTick,
     this.loading,
     this.warmUp = true,
@@ -87,6 +105,7 @@ class SpringSceneView extends StatefulWidget {
     this.cameraBuilder,
     this.maxFrameRate,
     this.pixelRatio,
+    this.canvas,
     this.onTick,
     this.loading,
     this.warmUp = true,
@@ -121,12 +140,22 @@ class SpringSceneView extends StatefulWidget {
   final SceneCameraBuilder? cameraBuilder;
 
   /// The most frames a second this view draws, under the properties'
-  /// `max-frame-rate`.
+  /// `max-frame-rate`; `0` asks for no fewer than they let it.
   final double? maxFrameRate;
 
   /// The view's own pixel ratio; the properties' `pixel-ratio` when
   /// `null`.
   final double? pixelRatio;
+
+  /// Which canvas the scene is on in a browser: `page`, or `layer`, a
+  /// canvas of its own under the page's that each frame is handed over
+  /// to, and the browser puts together with the page. A frame of the
+  /// scene then costs the scene alone, not the page drawn again around
+  /// it; widgets of the page over the scene still draw over it. The
+  /// properties' `canvas` when `null`. With `canvas: engine` in the
+  /// properties every view is on the engine's canvas, whatever this says;
+  /// elsewhere than on the web the view draws as always.
+  final SceneCanvas? canvas;
 
   /// Called for each frame the view draws, with the time since the last.
   final SceneTickCallback? onTick;
@@ -147,6 +176,16 @@ class SpringSceneView extends StatefulWidget {
   static bool reducedMotionOf(BuildContext context) =>
       MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
+  /// Whether the view above [context] stands still: `render: still`, a
+  /// condition of `spring.flutter.scene.when` that asks for it, or the
+  /// system asking for less motion. A scene widget that moves by the time
+  /// draws its resting look then (a neon lit, not striking). The widget
+  /// that asks is built again when it changes. Without a view, whether
+  /// the system asks for less motion.
+  static bool stillOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_SceneRepaint>()?.still ??
+      reducedMotionOf(context);
+
   /// Asks the view above [context] for one more frame: for a scene widget
   /// that changed what is drawn without a rebuild, so a still frame shows
   /// it. Does nothing in a view that moves anyway, or without a view.
@@ -157,6 +196,11 @@ class SpringSceneView extends StatefulWidget {
   /// the scenes' debug panel counts the uses of a material by.
   static String? nameOf(BuildContext context) =>
       context.getInheritedWidgetOfExactType<_SceneRepaint>()?.name;
+
+  /// The time the scene of the view above [context] has run, notified on
+  /// each of its frames; `null` without a view.
+  static ValueListenable<Duration>? elapsedOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<_SceneRepaint>()?.elapsed;
 
   /// The loads the view above [context] waits for before its first
   /// frame, `null` without a view: a scene widget adds its own.
@@ -177,6 +221,21 @@ class _SpringSceneViewState extends State<SpringSceneView> {
   // engine then waits for the models of its scene widgets too.
   final ResourceGroup _loads = ResourceGroup();
   final SceneClock _clock = SceneClock();
+  final ValueNotifier<Duration> _elapsed = ValueNotifier(Duration.zero);
+  SceneFrames? _frames;
+  SceneFrames? _ownFrames;
+  DateTime? _origin;
+  Duration? _last;
+  Duration? _due;
+  double _rate = 0;
+  SceneCanvasTarget? _target;
+  bool _canvasFailed = false;
+  bool _revealed = false;
+  bool _presenting = false;
+  Size _size = Size.zero;
+  double _ratio = 1;
+  Camera? _camera;
+  SceneCameraBuilder? _cameraBuilder;
 
   @override
   void didChangeDependencies() {
@@ -197,15 +256,26 @@ class _SpringSceneViewState extends State<SpringSceneView> {
       _application = application?..addListener(_changed);
     }
     _observer = beans?.getBeanProvider<SceneViewObserver>().getIfAvailable();
+    final frames =
+        beans?.getBeanProvider<SceneFrames>().getIfAvailable() ??
+        (_ownFrames ??= SceneFrames());
+    if (!identical(frames, _frames)) {
+      _frames?.leave(this);
+      _frames = frames;
+    }
     _start();
   }
 
   @override
   void dispose() {
+    _frames?.leave(this);
+    _ownFrames?.dispose();
     _availability?.removeListener(_changed);
     _application?.removeListener(_changed);
     _measure?.closed();
+    _target?.dispose();
     _loads.dispose();
+    _elapsed.dispose();
     super.dispose();
   }
 
@@ -237,7 +307,8 @@ class _SpringSceneViewState extends State<SpringSceneView> {
         availability != null &&
         availability.isReady &&
         (widget._declarative || scene != null);
-    if (!shows) {
+    if (!shows || (_canvasFailed && sceneScreenOn)) {
+      _frames?.leave(this);
       _close();
       return widget.placeholder ?? const SizedBox.shrink();
     }
@@ -254,6 +325,9 @@ class _SpringSceneViewState extends State<SpringSceneView> {
     Scene? scene, {
     required bool onScreen,
   }) {
+    if (scene != null) {
+      _configure(scene);
+    }
     final paused = _paused(context, availability, onScreen: onScreen);
     final frameRate = availability.frameRate(widget.maxFrameRate);
     final pixelRatio = widget.pixelRatio ?? availability.properties.pixelRatio;
@@ -269,6 +343,16 @@ class _SpringSceneViewState extends State<SpringSceneView> {
     final camera =
         widget.camera ??
         (widget.cameraBuilder == null ? _application?.camera : null);
+    final cameraBuilder = widget.cameraBuilder;
+    final ownCamera = cameraBuilder == null
+        ? null
+        : (Duration _) => cameraBuilder(_elapsed.value);
+    final canvas = _canvasOf(availability);
+    final layered = canvas != SceneCanvas.page;
+    if (!layered) {
+      _leaveCanvas();
+    }
+    _move(paused == null ? frameRate : 0);
     final view = widget._declarative
         ? SceneView.declarative(
             environment: widget.environment,
@@ -276,47 +360,235 @@ class _SpringSceneViewState extends State<SpringSceneView> {
             exposure: widget.exposure,
             toneMapping: widget.toneMapping!,
             camera: camera,
-            cameraBuilder: widget.cameraBuilder,
-            autoTick: availability.animates,
+            cameraBuilder: ownCamera,
+            autoTick: false,
             clock: _clock.clock,
-            maxFrameRate: frameRate,
             pixelRatio: pixelRatio,
-            onTick: _tick,
             loading: widget.loading ?? _loads,
-            loadingBuilder: _loading,
+            loadingBuilder: layered ? _layerLoading : _loading,
             warmUp: widget.warmUp,
             children: [_SceneProbe(_found), ...widget.children],
           )
         : SceneView(
             scene!,
             camera: camera,
-            cameraBuilder: widget.cameraBuilder,
-            autoTick: availability.animates,
+            cameraBuilder: ownCamera,
+            autoTick: false,
             clock: _clock.clock,
-            maxFrameRate: frameRate,
             pixelRatio: pixelRatio,
-            onTick: _tick,
             loading: widget.loading ?? _loads,
-            loadingBuilder: _loading,
+            loadingBuilder: layered ? _layerLoading : _loading,
             warmUp: widget.warmUp,
             children: widget.children,
           );
-    // A pause mutes the view's ticker and stops its clock. The view's own
-    // `autoTick` is never changed after it is made: the engine's view
-    // makes a second ticker when it goes back on, which Flutter refuses
-    // (flutter_scene 0.24.3).
+    // A pause leaves the beat and stops the clock: back on the screen the
+    // scene moves on by one frame, not by the time it was away.
     _clock.paused = paused != null;
     // A scene's frame is its own layer: the widgets around it are not
     // painted again for it.
     return _SceneRepaint(
       name: widget.name,
       loads: widget.loading ?? _loads,
+      elapsed: _elapsed,
+      still: paused == 'still' || paused == 'motion',
       repaint: _repaint,
-      child: TickerMode(
-        enabled: paused == null,
-        child: RepaintBoundary(child: view),
-      ),
+      child: layered
+          ? _layered(canvas, view, camera, ownCamera, pixelRatio)
+          : RepaintBoundary(child: view),
     );
+  }
+
+  // The canvas the view is on: the engine's for every view when the
+  // engine started on it, the page's after a layer failed.
+  SceneCanvas _canvasOf(SceneAvailability availability) {
+    if (sceneScreenOn) {
+      return SceneCanvas.engine;
+    }
+    if (!sceneLayers || _canvasFailed) {
+      return SceneCanvas.page;
+    }
+    return switch (widget.canvas ?? availability.properties.canvas) {
+      SceneCanvas.page => SceneCanvas.page,
+      SceneCanvas.layer || SceneCanvas.engine => SceneCanvas.layer,
+    };
+  }
+
+  void _leaveCanvas() {
+    _target?.dispose();
+    _target = null;
+  }
+
+  // The engine's view builds the scene and is not painted; its frames go
+  // on the layer's canvas or the engine's, the placeholder over it until
+  // the first.
+  Widget _layered(
+    SceneCanvas canvas,
+    Widget view,
+    Camera? camera,
+    SceneCameraBuilder? cameraBuilder,
+    double? pixelRatio,
+  ) {
+    final onScreen = canvas == SceneCanvas.engine;
+    if (_target != null && (_target is SceneScreenPlace) != onScreen) {
+      _leaveCanvas();
+    }
+    final target = _target ??= onScreen
+        ? SceneScreenPlace(context, _changed)
+        : SceneLayer();
+    final devicePixelRatio = View.of(context).devicePixelRatio;
+    if (target is SceneScreenPlace) {
+      target
+        ..visible = TickerMode.valuesOf(context).enabled
+        ..ratio = devicePixelRatio
+        ..screen = MediaQuery.sizeOf(context);
+    }
+    _camera = camera;
+    _cameraBuilder = cameraBuilder;
+    _ratio = pixelRatio ?? devicePixelRatio;
+    _presentAfterFrame();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _size = constraints.biggest;
+        if (target is SceneScreenPlace) {
+          target.box = context;
+        }
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            Offstage(child: view),
+            IgnorePointer(child: target.build()),
+            if (!_revealed) ?widget.placeholder,
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _layerLoading(BuildContext context, double progress) =>
+      _LayerLoading(shown: _shown);
+
+  // The engine's view shows its scene (false: it loads again).
+  void _shown(bool revealed) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _revealed != revealed) {
+        setState(() => _revealed = revealed);
+      }
+    });
+  }
+
+  void _presentAfterFrame() {
+    if (_presenting) {
+      return;
+    }
+    _presenting = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _presenting = false;
+      _present();
+    });
+  }
+
+  // The engine draws the scene, into a picture nobody paints, and the
+  // frame goes on the layer's canvas or the engine's; `true` when it drew.
+  bool _present() {
+    final target = _target;
+    final scene = _state?.scene;
+    if (!mounted || target == null || scene == null || !_revealed) {
+      return false;
+    }
+    if (_size.isEmpty || !_size.isFinite) {
+      return false;
+    }
+    final camera =
+        _camera ??
+        _cameraBuilder?.call(_elapsed.value) ??
+        scene.camera ??
+        _defaultCamera;
+    final recorder = PictureRecorder();
+    try {
+      return target.present(
+        () => scene.render(
+          camera,
+          Canvas(recorder),
+          viewport: Offset.zero & _size,
+          pixelRatio: _ratio,
+        ),
+      );
+    } on Object catch (error, stack) {
+      // The view draws as the others then: the scene stays.
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stack,
+          library: 'spring_boot_starter_flutter_scene',
+          context: ErrorDescription(
+            'while putting a frame of the scene "${widget.name}" on its '
+            'canvas; ${sceneScreenOn ? 'its placeholder shows' : 'it is drawn by Flutter'} '
+            'from now on',
+          ),
+        ),
+      );
+      setState(() {
+        _leaveCanvas();
+        _canvasFailed = true;
+      });
+      return false;
+    } finally {
+      recorder.endRecording().dispose();
+    }
+  }
+
+  // Joins the beat at [rate] frames a second, or leaves it at 0.
+  void _move(double rate) {
+    if (rate <= 0) {
+      _frames?.leave(this);
+      _rate = 0;
+      return;
+    }
+    if (rate != _rate) {
+      _due = null;
+    }
+    _rate = rate;
+    _frames?.join(this, rate, _beat);
+  }
+
+  // A beat: when the view is due, the time moves on, the engine steps the
+  // scene by it and draws it, on its canvas or by a build of the view.
+  // `true` when it drew a frame Flutter does not draw.
+  bool _beat() {
+    if (!mounted || _rate <= 0) {
+      return false;
+    }
+    final now = _clock.clock.now();
+    final origin = _origin ??= now;
+    final elapsed = now.difference(origin);
+    // As many as the screen shows: due at each beat.
+    final period = _rate.isInfinite
+        ? Duration.zero
+        : Duration(
+            microseconds: (Duration.microsecondsPerSecond / _rate).round(),
+          );
+    final due = _due;
+    // Two fifths of a period of slack: the beat nearest the deadline,
+    // whether the beats are a timer's or the screen's frames (a frame of
+    // 60 a second is due at each of them, one of 30 at every other).
+    if (due != null && elapsed < due - period * 2 ~/ 5) {
+      return false;
+    }
+    _due = due == null || elapsed - due > period
+        ? elapsed + period
+        : due + period;
+    final last = _last ?? elapsed;
+    _last = elapsed;
+    final delta =
+        (elapsed - last).inMicroseconds / Duration.microsecondsPerSecond;
+    _elapsed.value = elapsed;
+    _state?.scene?.update(delta);
+    _tick(elapsed, delta);
+    if (_target != null) {
+      return _present();
+    }
+    setState(() {});
+    return false;
   }
 
   Widget _loading(BuildContext context, double progress) =>
@@ -349,6 +621,7 @@ class _SpringSceneViewState extends State<SpringSceneView> {
 
   /// The scene a declarative view made for itself, for the observer.
   void _found(Scene scene) {
+    _configure(scene);
     final state = _state;
     if (state != null && !identical(state.scene, scene)) {
       _observe(
@@ -360,6 +633,14 @@ class _SpringSceneViewState extends State<SpringSceneView> {
           paused: state.paused,
         ),
       );
+    }
+  }
+
+  // The properties the engine reads from the scene itself.
+  void _configure(Scene scene) {
+    final clustering = _availability?.properties.lightClustering;
+    if (clustering != null && scene.punctualLightClustering != clustering) {
+      scene.punctualLightClustering = clustering;
     }
   }
 
@@ -383,10 +664,41 @@ class _SpringSceneViewState extends State<SpringSceneView> {
   }
 
   void _close() {
+    _leaveCanvas();
     _measure?.closed();
     _measure = null;
     _state = null;
   }
+}
+
+final Camera _defaultCamera = PerspectiveCamera();
+
+/// Stands in the engine's view while it loads: tells the layered view
+/// when its scene shows.
+class _LayerLoading extends StatefulWidget {
+  const _LayerLoading({required this.shown});
+
+  final void Function(bool revealed) shown;
+
+  @override
+  State<_LayerLoading> createState() => _LayerLoadingState();
+}
+
+class _LayerLoadingState extends State<_LayerLoading> {
+  @override
+  void initState() {
+    super.initState();
+    widget.shown(false);
+  }
+
+  @override
+  void dispose() {
+    widget.shown(true);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
 /// Gives the scene widgets below a way to ask for a frame.
@@ -394,18 +706,24 @@ class _SceneRepaint extends InheritedWidget {
   const _SceneRepaint({
     required this.name,
     required this.loads,
+    required this.elapsed,
+    required this.still,
     required this.repaint,
     required super.child,
   });
+
+  final bool still;
 
   final String name;
 
   final ResourceGroup loads;
 
+  final ValueListenable<Duration> elapsed;
+
   final VoidCallback repaint;
 
   @override
-  bool updateShouldNotify(_SceneRepaint oldWidget) => false;
+  bool updateShouldNotify(_SceneRepaint oldWidget) => still != oldWidget.still;
 }
 
 /// Finds the scene a declarative view owns: the engine gives it to the

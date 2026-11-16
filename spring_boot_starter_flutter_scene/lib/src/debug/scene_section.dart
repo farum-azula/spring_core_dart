@@ -5,12 +5,16 @@ import 'package:flutter_scene/scene.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
     show DebugChip, DebugPanelSection, DebugStyle;
+import 'package:spring_boot_starter_flutter_scene/src/conditions/scene_condition.dart';
 import 'package:spring_boot_starter_flutter_scene/src/debug/page_isolation.dart';
 import 'package:spring_boot_starter_flutter_scene/src/debug/scene_debug.dart';
+import 'package:spring_boot_starter_flutter_scene/src/debug/scene_material_precisions.dart';
 import 'package:spring_boot_starter_flutter_scene/src/debug/scene_model_shape.dart';
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_availability.dart';
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_engine.dart';
+import 'package:spring_boot_starter_flutter_scene/src/engine/scene_frame_transfer.dart';
 import 'package:spring_boot_starter_flutter_scene/src/materials/scene_material_handle.dart';
+import 'package:spring_boot_starter_flutter_scene/src/materials/scene_material_precision.dart';
 import 'package:spring_boot_starter_flutter_scene/src/materials/scene_materials.dart';
 import 'package:spring_boot_starter_flutter_scene/src/models/scene_model_handle.dart';
 import 'package:spring_boot_starter_flutter_scene/src/models/scene_models.dart';
@@ -42,12 +46,13 @@ import 'package:spring_boot_starter_flutter_scene/src/scene_status.dart';
 /// cost is seen by hiding it.
 final class SceneDebugSection implements DebugPanelSection, Ordered {
   /// The tab over [debug]'s views, the [availability], the [models] and
-  /// the [materials].
+  /// the [materials], with the [precisions] the build found.
   const SceneDebugSection({
     required this.debug,
     required this.availability,
     required this.models,
     required this.materials,
+    required this.precisions,
     required this.status,
   });
 
@@ -62,6 +67,9 @@ final class SceneDebugSection implements DebugPanelSection, Ordered {
 
   /// The materials of the properties.
   final SceneMaterials materials;
+
+  /// How precise each material computes.
+  final SceneMaterialPrecisions precisions;
 
   /// The steps of the start.
   final SceneStatus status;
@@ -93,10 +101,19 @@ class _SceneDebugViewState extends State<_SceneDebugView> {
     (_) => setState(() {}),
   );
 
+  Map<String, SceneMaterialPrecision> _precisions = const {};
+
   @override
   void initState() {
     super.initState();
     _refresh;
+    unawaited(
+      widget.section.precisions.load().then((precisions) {
+        if (mounted) {
+          setState(() => _precisions = precisions);
+        }
+      }),
+    );
   }
 
   @override
@@ -155,6 +172,25 @@ class _SceneDebugViewState extends State<_SceneDebugView> {
     );
   }
 
+  // The conditions that changed the mode: ` (touch)`.
+  String _heldBy(SceneAvailability availability) {
+    final held = [
+      for (final (condition, _) in availability.held) condition.name,
+    ];
+    return held.isEmpty ? '' : ' (${held.join(', ')})';
+  }
+
+  // What a condition sees, and what it does: `a touch screen: still`.
+  String _condition(SceneAvailability availability, SceneCondition condition) {
+    final mode = availability.properties.when?[condition.name];
+    if (mode == null) {
+      return '${condition.state}: not followed';
+    }
+    return condition.holds
+        ? '${condition.state}: ${mode.name}'
+        : '${condition.state} (${mode.name} when it holds)';
+  }
+
   List<Widget> _engine(DebugStyle style, SceneAvailability availability) {
     final engine = availability.engine;
     final isolated = pageIsolated;
@@ -172,9 +208,21 @@ class _SceneDebugViewState extends State<_SceneDebugView> {
       _row(
         style,
         'Render',
-        '${availability.properties.render.name}, at most '
+        '${availability.render.name}${_heldBy(availability)}, at most '
             '${_number(availability.properties.maxFrameRate)} frames a second',
+        color: availability.held.isEmpty ? null : style.warning,
       ),
+      for (final condition in availability.conditions)
+        _row(
+          style,
+          'When ${condition.name}',
+          _condition(availability, condition),
+          color:
+              condition.holds &&
+                  availability.properties.when?[condition.name] != null
+              ? style.warning
+              : style.muted,
+        ),
       if (isolated != null)
         _row(
           style,
@@ -184,6 +232,21 @@ class _SceneDebugViewState extends State<_SceneDebugView> {
               : "no: Flutter draws on the page's thread "
                     '(Cross-Origin-Opener-Policy, Cross-Origin-Embedder-Policy)',
           color: isolated ? null : style.warning,
+        ),
+      if (sceneFrameTransfer case final transfer?)
+        _row(
+          style,
+          'Frames',
+          switch (transfer) {
+            'unpremultiplied' =>
+              'given to CanvasKit as not premultiplied: this browser '
+                  '(WebKit) divides a bitmap of WebGL by its alpha',
+            'straight' =>
+              'passed without premultiplied alpha: this browser (WebKit) '
+                  'divides a bitmap of WebGL by its alpha; the faintest '
+                  'light loses some colour',
+            _ => 'passed premultiplied',
+          },
         ),
       for (final step in widget.section.status.history)
         _row(
@@ -314,6 +377,20 @@ class _SceneDebugViewState extends State<_SceneDebugView> {
     return used.isEmpty ? null : used.join(', ');
   }
 
+  // flutter_scene's fragment default is mediump: half precision on the
+  // GPUs of phones, float32 on a desktop, so what breaks there is not
+  // seen here.
+  String _precision(SceneMaterialPrecision precision) {
+    if (precision.highp) {
+      return 'highp, float32 everywhere';
+    }
+    final places = precision.declarations;
+    return 'mediump'
+        '${places == 0 ? '' : ', highp in $places ${places == 1 ? 'place' : 'places'}'}'
+        ': half precision on phones (up to 65504), float32 on a desktop; '
+        'pixels, time and sin hashes want precision highp float';
+  }
+
   List<Widget> _material(DebugStyle style, SceneMaterialHandle material) {
     final took = material.took;
     // A first load made while the app ran held back the first frame of
@@ -358,6 +435,15 @@ class _SceneDebugViewState extends State<_SceneDebugView> {
           style,
           'Shading',
           '$shading, ${opaque ? 'opaque' : 'blended'}',
+        ),
+      if (_precisions[material.location] case final precision?)
+        _row(
+          style,
+          'Precision',
+          _precision(precision),
+          color: precision.highp || precision.declarations > 0
+              ? null
+              : style.warning,
         ),
       if (took != null)
         _row(
@@ -433,8 +519,11 @@ class _SceneDebugViewState extends State<_SceneDebugView> {
   static String _micros(int micros) =>
       '${(micros / 1000).toStringAsFixed(2)} ms';
 
-  static String _number(double value) =>
-      value == value.roundToDouble() ? '${value.round()}' : '$value';
+  static String _number(double value) => value.isInfinite
+      ? 'the screen'
+      : value == value.roundToDouble()
+      ? '${value.round()}'
+      : '$value';
 
   static String _bytes(int bytes) => bytes < 1024 * 1024
       ? '${(bytes / 1024).toStringAsFixed(1)} kB'

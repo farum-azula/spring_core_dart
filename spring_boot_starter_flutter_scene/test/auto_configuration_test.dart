@@ -61,6 +61,45 @@ void main() {
     });
   });
 
+  test("the canvas, the screen's frame rate, the lamps' clustering", () {
+    // The starter's own backend: made, not started (that needs a GPU).
+    const ApplicationContextRunner()
+        .withAutoConfiguration(springBootAutoConfiguration)
+        .withAutoConfiguration(springBootStarterFlutterAutoConfiguration)
+        .withAutoConfiguration(springBootStarterFlutterSceneAutoConfiguration)
+        .withBean<SceneModelImporter>(FakeImporter.new)
+        .withBean<SceneMaterialLoader>(FakeMaterialLoader.new)
+        .withPropertyValues([
+          'spring.flutter.scene.canvas=engine',
+          'spring.flutter.scene.max-frame-rate=0',
+          'spring.flutter.scene.light-clustering=false',
+        ])
+        .run((context) {
+          expect(context.startupFailure, isNull);
+          final properties = context.getBean<SceneProperties>();
+          expect(properties.canvas, SceneCanvas.engine);
+          expect(properties.maxFrameRate, 0);
+          expect(properties.lightClustering, isFalse);
+          expect(
+            context.getBean<SceneBackend>(),
+            isA<FlutterSceneBackend>().having(
+              (backend) => backend.onEngineCanvas,
+              'onEngineCanvas',
+              isTrue,
+            ),
+          );
+        });
+  });
+
+  test("the defaults: the page's canvas, the engine's clustering", () {
+    runner.run((context) {
+      final properties = context.getBean<SceneProperties>();
+      expect(properties.canvas, SceneCanvas.page);
+      expect(properties.maxFrameRate, 30);
+      expect(properties.lightClustering, isTrue);
+    });
+  });
+
   test('the properties', () {
     runner
         .withPropertyValues([

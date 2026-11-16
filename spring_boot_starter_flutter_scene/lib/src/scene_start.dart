@@ -2,6 +2,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
     show SplashTask, SplashTaskContext;
 import 'package:spring_boot_starter_flutter_scene/src/app/application_scene.dart';
+import 'package:spring_boot_starter_flutter_scene/src/engine/scene_availability.dart';
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_engine.dart';
 import 'package:spring_boot_starter_flutter_scene/src/materials/scene_materials.dart';
 import 'package:spring_boot_starter_flutter_scene/src/models/scene_models.dart';
@@ -30,7 +31,13 @@ final class SceneStart implements SplashTask {
     required this.materials,
     required this.events,
     this.scene,
+    this.availability,
   });
+
+  /// Whether scenes draw here: a condition that holds at the start may
+  /// turn them off (`spring.flutter.scene.when`), and the splash then
+  /// starts nothing.
+  final SceneAvailability? availability;
 
   /// What the app asks for.
   final SceneProperties properties;
@@ -58,7 +65,8 @@ final class SceneStart implements SplashTask {
     final eager = models.eager.isNotEmpty || materials.eager.isNotEmpty;
     final wanted =
         properties.preload == SceneLoad.eager || eager || scene != null;
-    if (!wanted || properties.render == SceneRenderMode.off) {
+    if (!wanted ||
+        (availability?.render ?? properties.render) == SceneRenderMode.off) {
       return;
     }
     final watch = Stopwatch()..start();
