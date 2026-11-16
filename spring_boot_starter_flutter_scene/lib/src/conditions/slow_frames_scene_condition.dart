@@ -89,7 +89,7 @@ final class SlowFramesSceneCondition extends ChangeNotifier
         ? 'not measured'
         : '${_ms(middle)} a beat of the scenes, of ${_ms(frameTime ~/ 2)}';
     return switch (_phase) {
-      _Phase.idle => 'not followed',
+      _Phase.idle => 'nothing measured',
       _Phase.probing =>
         'measuring the first scenes ($_measuredCount of $probe frames)',
       _Phase.watching => measured,

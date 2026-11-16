@@ -120,7 +120,7 @@ void main() {
       final condition = slow(SceneFrames());
       expect(condition.settled, isTrue);
       expect(condition.holds, isFalse);
-      expect(condition.state, 'not followed');
+      expect(condition.state, 'nothing measured');
     });
 
     test('decided before the scenes show, the first frames left out', () {

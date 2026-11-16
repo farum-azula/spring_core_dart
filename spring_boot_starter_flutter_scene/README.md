@@ -202,7 +202,10 @@ once cost the page's thread. When the middle one takes more than half of
 `frame-time` the scenes show in the mode of `when.slow` from their first
 frame. After they show a scene is never switched off in front of the
 user: beats slow for `after` only mark it, and it holds at the next
-moment no scene moves. An app's own condition is a `SceneCondition`
+moment no scene moves. Those beats are measured where the scenes draw
+apart from Flutter's frames (`canvas: engine` or `layer` in a browser);
+with `page` and on the native platforms only the frames before they show
+decide. An app's own condition is a `SceneCondition`
 bean; one that is still finding out (`settled: false`) keeps the moving
 scenes behind their placeholders.
 
@@ -229,7 +232,8 @@ browser (elsewhere Flutter draws it):
   engine starts.
 
 Measured on an iPhone (Safari) scrolling a page with two moving scenes:
-43 frames a second with `layer`, 60 with `engine` behind the page; on a
+43 frames a second on a timer of its own, 52 on the browser's frames
+(`layer`), 60 with `engine` behind the page; on a
 Mac, a beat of two scenes 12 → 1.2 ms in Firefox, 6.6 → 1.2 in Safari.
 The frame meter shows the scenes' frames on a line of their own (`3D 60
 fps · 0.9 ms`), apart from Flutter's.
@@ -603,10 +607,11 @@ Apple M5, a release build):
   A desktop Safari shows what an iPhone does.
 - **A pause is not `autoTick`.** The engine's view fails in a debug
   build when its `autoTick` goes from `false` back to `true` (it makes a
-  second ticker). The starter's views pause by muting the ticker and
-  stopping the scene's clock, so they come back without a jump; a
-  `SceneView` of the app's own should pause the same way
-  (`TickerMode`), not by its `autoTick`.
+  second ticker). The starter's views never tick themselves
+  (`autoTick: false`): one beat draws them all (`SceneFrames`), and a
+  paused view leaves it and stops its scene's clock, so it comes back
+  without a jump. A `SceneView` of the app's own should pause by
+  `TickerMode`, not by switching its `autoTick`.
 - **Per-frame values** are set on a material or a node by a component or
   a listener of the scene's clock (`SceneScope.of(context).elapsed`), not
   by rebuilding widgets.

@@ -180,6 +180,11 @@ class _SceneDebugViewState extends State<_SceneDebugView> {
     return held.isEmpty ? '' : ' (${held.join(', ')})';
   }
 
+  // `at most 30 frames a second`; `0` and less: the screen's rate.
+  String _ceiling(double maxFrameRate) => maxFrameRate > 0
+      ? 'at most ${_number(maxFrameRate)} frames a second'
+      : "at the screen's rate";
+
   // What a condition sees, and what it does: `a touch screen: still`.
   String _condition(SceneAvailability availability, SceneCondition condition) {
     final mode = availability.properties.when?[condition.name];
@@ -208,8 +213,8 @@ class _SceneDebugViewState extends State<_SceneDebugView> {
       _row(
         style,
         'Render',
-        '${availability.render.name}${_heldBy(availability)}, at most '
-            '${_number(availability.properties.maxFrameRate)} frames a second',
+        '${availability.render.name}${_heldBy(availability)}, '
+            '${_ceiling(availability.properties.maxFrameRate)}',
         color: availability.held.isEmpty ? null : style.warning,
       ),
       for (final condition in availability.conditions)
@@ -245,6 +250,8 @@ class _SceneDebugViewState extends State<_SceneDebugView> {
               'passed without premultiplied alpha: this browser (WebKit) '
                   'divides a bitmap of WebGL by its alpha; the faintest '
                   'light loses some colour',
+            'screen' =>
+              "drawn on the engine's canvas the page shows: nothing passed",
             _ => 'passed premultiplied',
           },
         ),
