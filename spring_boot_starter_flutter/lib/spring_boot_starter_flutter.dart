@@ -112,6 +112,7 @@ export 'src/debug/timeline/timeline_observations.dart';
 export 'src/debug/timeline/timeline_section.dart';
 export 'src/debug/timeline/timeline_view.dart';
 export 'src/frame_meter/frame_meter.dart';
+export 'src/frame_meter/outside_frames.dart';
 export 'src/isolates/engine_load_probe.dart';
 export 'src/isolates/flutter_engine_loads.dart';
 export 'src/splash/frame_pacer.dart';
@@ -135,6 +136,7 @@ export 'src/theme/spring_themes.dart';
 export 'src/theme/theme_animation.dart';
 export 'src/theme/theme_background.dart';
 export 'src/theme/theme_background_widget.dart' show ThemeBackground;
+export 'src/theme/page_underlay.dart';
 export 'src/theme/theme_fonts.dart';
 export 'src/theme/theme_image.dart' show ThemeImage;
 export 'src/theme/theme_loader.dart'

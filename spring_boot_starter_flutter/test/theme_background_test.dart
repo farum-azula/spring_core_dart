@@ -398,6 +398,57 @@ void main() {
       );
     });
 
+    testWidgets('steps aside while a page underlay shows; a screen\'s stays', (
+      tester,
+    ) async {
+      addTearDown(() => PageUnderlay.showing = false);
+      final data = SpringThemes({
+        'background.color': '#101010',
+        'background.screens.login.color': '#202020',
+      }).data('light');
+      bool shows(int color) => find
+          .byWidgetPredicate((w) => w is ColoredBox && w.color == Color(color))
+          .evaluate()
+          .isNotEmpty;
+      final counter = GlobalKey<_CounterState>();
+      await tester.pumpWidget(
+        app(
+          data,
+          Column(
+            children: [
+              Expanded(
+                child: ThemeBackground(child: _Counter(key: counter)),
+              ),
+              const Expanded(
+                child: ThemeBackground.screen('login', child: Text('login')),
+              ),
+            ],
+          ),
+        ),
+      );
+      expect(shows(0xFF101010), isTrue);
+      counter.currentState!.count++;
+
+      PageUnderlay.showing = true;
+      await tester.pumpAndSettle();
+      expect(
+        shows(0xFF101010),
+        isFalse,
+        reason: 'the theme\'s own steps aside',
+      );
+      expect(shows(0xFF202020), isTrue, reason: 'a screen\'s draws over it');
+      expect(
+        counter.currentState!.count,
+        1,
+        reason: 'the child keeps its state',
+      );
+
+      PageUnderlay.showing = false;
+      await tester.pumpAndSettle();
+      expect(shows(0xFF101010), isTrue);
+      expect(counter.currentState!.count, 1);
+    });
+
     testWidgets('without a background it is just the child', (tester) async {
       final data = SpringThemes({}).data('light');
       await tester.pumpWidget(
@@ -596,4 +647,18 @@ void main() {
       );
     });
   });
+}
+
+class _Counter extends StatefulWidget {
+  const _Counter({super.key});
+
+  @override
+  State<_Counter> createState() => _CounterState();
+}
+
+class _CounterState extends State<_Counter> {
+  int count = 0;
+
+  @override
+  Widget build(BuildContext context) => Text('$count');
 }

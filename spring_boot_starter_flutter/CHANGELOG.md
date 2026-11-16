@@ -1,3 +1,8 @@
+## Unreleased
+
+- `PageUnderlay`: what the browser shows under the page, covering the view (the scenes' canvas with `spring.flutter.scene.canvas: engine`). While one shows, the theme's background around the navigator draws nothing, which would hide it; a screen's own background (`ThemeBackground.screen`) and an opaque one (`ThemeBackground.none`) still draw.
+- `OutsideFrames`: frames an app draws without Flutter (a 3D scene on a canvas of its own), reported with what they cost the page's thread. The frame meter shows each source on a line of its own (`3D 60 fps · 0.9 ms`) beside Flutter's frames.
+
 ## 0.8.2
 
 - No changes of its own; released with the family version 0.8.2.

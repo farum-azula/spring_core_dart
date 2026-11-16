@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:ui' show FramePhase, FrameTiming;
 
+import 'package:spring_boot_starter_flutter/src/frame_meter/outside_frames.dart';
+
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -40,7 +42,9 @@ enum FrameMeterPosition {
 /// `frame-meter`.
 ///
 /// The times are Flutter's own (`FrameTiming`), on every platform the web
-/// included. The panel is drawn again at most four times a second, and
+/// included. Frames drawn without Flutter (a 3D scene on a canvas of its
+/// own, [OutsideFrames]) have a line of their own: how many a second, and
+/// what one cost the page's thread. The panel is drawn again at most four times a second, and
 /// its own frames are not counted, so an idle app shows `idle`, not the
 /// meter.
 class FrameMeter extends StatelessWidget {
@@ -148,6 +152,8 @@ class _FrameMeterState extends State<FrameMeterGauge> {
   // when the meter asked to be drawn again.
   bool _mine = false;
   bool _fresh = false;
+  int _outside = 0;
+  bool _outsideShown = false;
   Timer? _timer;
 
   @override
@@ -157,8 +163,13 @@ class _FrameMeterState extends State<FrameMeterGauge> {
     _watch();
     widget.stages?.addListener(_stageChanged);
     _timer = Timer.periodic(const Duration(milliseconds: 250), (_) {
-      if (_fresh && mounted) {
+      // Frames drawn without Flutter (OutsideFrames) show too.
+      final outside = OutsideFrames.all.fold(0, (sum, s) => sum + s.count);
+      final moved = outside != _outside;
+      _outside = outside;
+      if ((_fresh || moved || _outsideShown) && mounted) {
         _fresh = false;
+        _outsideShown = moved;
         // A frame that is coming anyway carries the meter with it, and
         // stays the app's.
         _mine = !SchedulerBinding.instance.hasScheduledFrame;
@@ -337,6 +348,16 @@ class _Panel extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            for (final source in OutsideFrames.all)
+              if (source.recent case final recent?)
+                Text(
+                  '${source.name} ${recent.rate} fps · '
+                  '${recent.cost.toStringAsFixed(1)} ms',
+                  style: style.copyWith(
+                    color: colorOf(1000000 ~/ recent.rate.clamp(1, 1000)),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
             Text(
               'build ${average((f) => f.build).toStringAsFixed(1)} ms\n'
               'raster ${average((f) => f.raster).toStringAsFixed(1)} ms\n'

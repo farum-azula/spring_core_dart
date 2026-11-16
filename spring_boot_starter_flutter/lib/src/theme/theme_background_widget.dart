@@ -1,6 +1,7 @@
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/widgets.dart';
+import 'package:spring_boot_starter_flutter/src/theme/page_underlay.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_theme_data.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 import 'package:spring_boot_starter_flutter/src/theme/theme_animation.dart';
@@ -116,18 +117,28 @@ class _ThemeBackgroundState extends State<ThemeBackground> {
     final reduced = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     final transition = background.transitionOrDefault;
     final listenable = background.image?.image?.listenable;
+    final back = listenable == null
+        ? _switcher(theme!, background, null, reduced, transition)
+        : ValueListenableBuilder<ImageProvider?>(
+            valueListenable: listenable,
+            builder: (context, provider, _) => _switcher(
+              theme!,
+              background,
+              _gate(provider),
+              reduced,
+              transition,
+            ),
+          );
+    // The theme's own background steps aside for what the browser shows
+    // under the page (PageUnderlay); a screen's draws over it.
     return _stack(
-      listenable == null
-          ? _switcher(theme!, background, null, reduced, transition)
-          : ValueListenableBuilder<ImageProvider?>(
-              valueListenable: listenable,
-              builder: (context, provider, _) => _switcher(
-                theme!,
-                background,
-                _gate(provider),
-                reduced,
-                transition,
-              ),
+      widget._screen != null || widget._data != null
+          ? back
+          : ValueListenableBuilder<bool>(
+              valueListenable: PageUnderlay.shows,
+              builder: (context, under, back) =>
+                  under ? const SizedBox.shrink() : back!,
+              child: back,
             ),
     );
   }
