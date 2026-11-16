@@ -701,6 +701,25 @@ final class BeanIntrospection<T extends Object> {
   /// The introspected class.
   Type get beanType => T;
 
+  /// The [TypeInfo] of the class, to read a JSON tree as one when only this
+  /// description is at hand (a value kept on disk by the name of its type).
+  ClassType<T> get classType => ClassType<T>();
+
+  /// [items], each a [T], as a `List<T>`.
+  List<T> listOf(Iterable<Object?> items) => [
+    for (final item in items) item! as T,
+  ];
+
+  /// [items], each a [T], as a `Set<T>`.
+  Set<T> setOf(Iterable<Object?> items) => {
+    for (final item in items) item! as T,
+  };
+
+  /// [entries], each value a [T], as a `Map<String, T>`.
+  Map<String, T> mapOf(Map<String, Object?> entries) => {
+    for (final MapEntry(:key, :value) in entries.entries) key: value! as T,
+  };
+
   /// Whether [value] is a [T] (or a subtype).
   bool isInstance(Object? value) => value is T;
 
@@ -822,6 +841,18 @@ class BeanIntrospector {
   final BeanIntrospector? parent;
   final _byType = <Type, BeanIntrospection<Object>>{};
   final _enums = <Type, EnumType<Enum>>{};
+
+  /// The description of the class named `name` in its source
+  /// ([BeanIntrospection.className], the same in a minified build), here or
+  /// in [parent]; `null` when none is registered.
+  BeanIntrospection<Object>? byClassName(String name) {
+    for (final introspection in _byType.values) {
+      if (introspection.className == name) {
+        return introspection;
+      }
+    }
+    return parent?.byClassName(name);
+  }
 
   /// Adds [introspection], replacing any for the same type. The enums its
   /// properties and constructor parameters use are registered too (see

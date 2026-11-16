@@ -1,3 +1,9 @@
+## Unreleased
+
+- `CacheStore`, where a cache keeps what it may lose: bytes by a path, read and written asynchronously, kept across restarts when the store can (a folder, the browser's IndexedDB); `InMemoryCacheStore` for tests. The cache starter keeps `@Cacheable` results of `spring.cache.type: disk` in one, the Flutter starter the resources it downloads; an app with both shares the place, each in a folder of its own with a limit of its own.
+- `VersionedResource`, a resource that knows the version of its content (a digest of the file it holds): with `spring.cache.resource-version` a cache key made of one is its address and that version.
+- `BeanIntrospection.classType`, `listOf`, `setOf` and `mapOf`, and `BeanIntrospector.byClassName` (the class's name in its source, the same in a minified build): a value kept on disk by the name of its class is read back as that class.
+
 ## 0.8.2
 
 - No changes of its own; released with the family version 0.8.2.
