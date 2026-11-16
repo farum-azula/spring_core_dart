@@ -1,3 +1,7 @@
+## 0.8.3
+
+- No changes of its own; released with the family version 0.8.3.
+
 ## 0.8.2
 
 - An application built by a generator older than 0.8.1 (or with `aop_proxies` other than `all`) no longer starts with beans whose `@Signal` state nobody follows: the start stops and says to update `spring_core_dart_generator` and build again. Before, such a bean got a proxy that wraps it, and its own assignments told no one.
