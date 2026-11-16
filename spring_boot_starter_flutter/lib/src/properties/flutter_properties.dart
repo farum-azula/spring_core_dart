@@ -615,6 +615,71 @@ final class FlutterWebSeoProperties {
   final String pageFiles;
 }
 
+/// The browser cache of a web build, Spring Boot's
+/// `spring.web.resources.cache.cachecontrol.*`.
+///
+/// Nothing reads it at run time: the generator reads these keys from the
+/// configuration files at build time and writes a block of rules into the
+/// app's `web/_headers` (Cloudflare Pages): `no-cache` for the files without
+/// a hash in their names, the `Cache-Control` these keys build for the
+/// app's images and fonts (`/assets/*`). The class describes them for
+/// editors; a server of `spring_boot_starter_web` reads the same keys for
+/// its static resources.
+@ConfigurationProperties('spring.web.resources.cache.cachecontrol')
+final class FlutterWebCacheControlProperties {
+  /// Settings with these values; all unset by default.
+  const FlutterWebCacheControlProperties({
+    this.maxAge,
+    this.noCache,
+    this.noStore,
+    this.mustRevalidate,
+    this.noTransform,
+    this.cachePublic,
+    this.cachePrivate,
+    this.proxyRevalidate,
+    this.staleWhileRevalidate,
+    this.staleIfError,
+    this.sMaxAge,
+  });
+
+  /// `max-age`: how long the app's images and fonts are kept without
+  /// asking again (`30d`). A number without a unit is seconds.
+  final Duration? maxAge;
+
+  /// `no-cache`: kept, used only after the server confirmed it.
+  final bool? noCache;
+
+  /// `no-store`: never kept. Wins over `no-cache` and `max-age`.
+  final bool? noStore;
+
+  /// `must-revalidate`: once stale, not used without asking the server.
+  final bool? mustRevalidate;
+
+  /// `no-transform`: proxies must not change the content.
+  final bool? noTransform;
+
+  /// `public`: shared caches (a CDN) may keep them too.
+  final bool? cachePublic;
+
+  /// `private`: only the user's own browser may keep them.
+  final bool? cachePrivate;
+
+  /// `proxy-revalidate`: `must-revalidate` for shared caches only.
+  final bool? proxyRevalidate;
+
+  /// `stale-while-revalidate`: how long a stale file may be used while a
+  /// fresh one is fetched. A number without a unit is seconds.
+  final Duration? staleWhileRevalidate;
+
+  /// `stale-if-error`: how long a stale file may be used when the server
+  /// fails. A number without a unit is seconds.
+  final Duration? staleIfError;
+
+  /// `s-maxage`: how long shared caches may keep them. A number without a
+  /// unit is seconds.
+  final Duration? sMaxAge;
+}
+
 /// A folder of Markdown files, `spring.flutter.web.seo.content[n]`.
 final class FlutterWebSeoContent {
   /// A folder with these values.
@@ -737,8 +802,8 @@ final class FlutterResourcesCacheProperties {
   final bool enabled;
 
   /// How long a kept resource is used as it is; past it, it is still used
-  /// and asked again in the background (`If-None-Match`: an unchanged one
-  /// costs no download).
+  /// and asked again in the background (`If-None-Match` /
+  /// `If-Modified-Since`: an unchanged one costs no download).
   final Duration maxAge;
 
   /// The largest resource kept; a larger one is read from the network

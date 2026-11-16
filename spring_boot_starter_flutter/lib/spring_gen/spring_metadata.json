@@ -9,7 +9,7 @@
       "default": "support",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 705,
+      "line": 770,
       "class": "FlutterSqliteProperties"
     },
     {
@@ -19,7 +19,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 689,
+      "line": 754,
       "class": "FlutterDataSourceProperties"
     },
     {
@@ -29,7 +29,7 @@
       "default": "support",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 705,
+      "line": 770,
       "class": "FlutterSqliteProperties"
     },
     {
@@ -39,7 +39,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 689,
+      "line": 754,
       "class": "FlutterDataSourceProperties"
     },
     {
@@ -49,7 +49,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 670,
+      "line": 735,
       "class": "FlutterRestartProperties"
     },
     {
@@ -419,7 +419,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 737,
+      "line": 802,
       "class": "FlutterResourcesCacheProperties"
     },
     {
@@ -429,7 +429,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 777,
+      "line": 842,
       "class": "ResourceCacheLocation"
     },
     {
@@ -439,7 +439,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 774,
+      "line": 839,
       "class": "ResourceCacheLocation"
     },
     {
@@ -449,17 +449,17 @@
       "default": "",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 771,
+      "line": 836,
       "class": "ResourceCacheLocation"
     },
     {
       "name": "spring.flutter.resources.cache.max-age",
       "type": "Duration",
-      "description": "How long a kept resource is used as it is; past it, it is still used and asked again in the background (`If-None-Match`: an unchanged one costs no download).",
+      "description": "How long a kept resource is used as it is; past it, it is still used and asked again in the background (`If-None-Match` / `If-Modified-Since`: an unchanged one costs no download).",
       "default": "7d",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 742,
+      "line": 807,
       "class": "FlutterResourcesCacheProperties"
     },
     {
@@ -469,7 +469,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 746,
+      "line": 811,
       "class": "FlutterResourcesCacheProperties"
     },
     {
@@ -479,7 +479,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 753,
+      "line": 818,
       "class": "FlutterResourcesCacheProperties"
     },
     {
@@ -489,7 +489,7 @@
       "default": "200ms",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 790,
+      "line": 855,
       "class": "FlutterResourcesViewProperties"
     },
     {
@@ -801,7 +801,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 631,
+      "line": 696,
       "class": "FlutterWebSeoContent"
     },
     {
@@ -811,7 +811,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 624,
+      "line": 689,
       "class": "FlutterWebSeoContent"
     },
     {
@@ -821,7 +821,7 @@
       "default": "/",
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 628,
+      "line": 693,
       "class": "FlutterWebSeoContent"
     },
     {
@@ -921,7 +921,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 652,
+      "line": 717,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -931,7 +931,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 655,
+      "line": 720,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -941,7 +941,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 659,
+      "line": 724,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -951,7 +951,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 646,
+      "line": 711,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -961,7 +961,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 649,
+      "line": 714,
       "class": "FlutterWebSeoPage"
     },
     {
@@ -1003,6 +1003,116 @@
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
       "line": 577,
       "class": "FlutterWebSeoProperties"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.cache-private",
+      "type": "bool?",
+      "description": "`private`: only the user's own browser may keep them.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 665,
+      "class": "FlutterWebCacheControlProperties"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.cache-public",
+      "type": "bool?",
+      "description": "`public`: shared caches (a CDN) may keep them too.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 662,
+      "class": "FlutterWebCacheControlProperties"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.max-age",
+      "type": "Duration?",
+      "description": "`max-age`: how long the app's images and fonts are kept without asking again (`30d`). A number without a unit is seconds.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 647,
+      "class": "FlutterWebCacheControlProperties"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.must-revalidate",
+      "type": "bool?",
+      "description": "`must-revalidate`: once stale, not used without asking the server.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 656,
+      "class": "FlutterWebCacheControlProperties"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.no-cache",
+      "type": "bool?",
+      "description": "`no-cache`: kept, used only after the server confirmed it.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 650,
+      "class": "FlutterWebCacheControlProperties"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.no-store",
+      "type": "bool?",
+      "description": "`no-store`: never kept. Wins over `no-cache` and `max-age`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 653,
+      "class": "FlutterWebCacheControlProperties"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.no-transform",
+      "type": "bool?",
+      "description": "`no-transform`: proxies must not change the content.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 659,
+      "class": "FlutterWebCacheControlProperties"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.proxy-revalidate",
+      "type": "bool?",
+      "description": "`proxy-revalidate`: `must-revalidate` for shared caches only.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 668,
+      "class": "FlutterWebCacheControlProperties"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.s-max-age",
+      "type": "Duration?",
+      "description": "`s-maxage`: how long shared caches may keep them. A number without a unit is seconds.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 680,
+      "class": "FlutterWebCacheControlProperties"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.stale-if-error",
+      "type": "Duration?",
+      "description": "`stale-if-error`: how long a stale file may be used when the server fails. A number without a unit is seconds.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 676,
+      "class": "FlutterWebCacheControlProperties"
+    },
+    {
+      "name": "spring.web.resources.cache.cachecontrol.stale-while-revalidate",
+      "type": "Duration?",
+      "description": "`stale-while-revalidate`: how long a stale file may be used while a fresh one is fetched. A number without a unit is seconds.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 672,
+      "class": "FlutterWebCacheControlProperties"
     }
   ],
   "hints": [
@@ -2925,7 +3035,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 677,
+      "line": 742,
       "injects": [],
       "members": [
         {
@@ -2952,7 +3062,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 710,
+      "line": 775,
       "injects": [],
       "members": [
         {
@@ -3211,7 +3321,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 726,
+      "line": 791,
       "injects": [],
       "members": [
         {
@@ -3253,7 +3363,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 782,
+      "line": 847,
       "injects": [],
       "members": [
         {
@@ -3275,13 +3385,85 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
-      "line": 664,
+      "line": 729,
       "injects": [],
       "members": [
         {
           "name": "enabled",
           "kind": "field",
           "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "flutterWebCacheControlProperties",
+      "type": "FlutterWebCacheControlProperties",
+      "types": [
+        "FlutterWebCacheControlProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 629,
+      "injects": [],
+      "members": [
+        {
+          "name": "cachePrivate",
+          "kind": "field",
+          "type": "bool?"
+        },
+        {
+          "name": "cachePublic",
+          "kind": "field",
+          "type": "bool?"
+        },
+        {
+          "name": "maxAge",
+          "kind": "field",
+          "type": "Duration?"
+        },
+        {
+          "name": "mustRevalidate",
+          "kind": "field",
+          "type": "bool?"
+        },
+        {
+          "name": "noCache",
+          "kind": "field",
+          "type": "bool?"
+        },
+        {
+          "name": "noStore",
+          "kind": "field",
+          "type": "bool?"
+        },
+        {
+          "name": "noTransform",
+          "kind": "field",
+          "type": "bool?"
+        },
+        {
+          "name": "proxyRevalidate",
+          "kind": "field",
+          "type": "bool?"
+        },
+        {
+          "name": "sMaxAge",
+          "kind": "field",
+          "type": "Duration?"
+        },
+        {
+          "name": "staleIfError",
+          "kind": "field",
+          "type": "Duration?"
+        },
+        {
+          "name": "staleWhileRevalidate",
+          "kind": "field",
+          "type": "Duration?"
         }
       ]
     },
