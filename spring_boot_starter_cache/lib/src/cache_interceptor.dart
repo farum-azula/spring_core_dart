@@ -115,10 +115,15 @@ final class CacheInterceptor implements MethodInterceptor {
     AnnotationCacheOperationSource? cacheOperationSource,
     BeanIntrospector? introspector,
     ExpressionParser? parser,
+    this.resourceVersion = false,
   }) : cacheOperationSource =
            cacheOperationSource ?? AnnotationCacheOperationSource(),
        introspector = introspector ?? BeanIntrospector.shared,
        _parser = parser ?? SpelExpressionParser();
+
+  /// Whether the default key generator keys a `VersionedResource` by its
+  /// content's version too (`spring.cache.resource-version`).
+  final bool resourceVersion;
 
   /// The container in which bean names from annotations, the
   /// `CachingConfigurer` and the `CacheManager` bean are looked up; `null`
@@ -187,7 +192,9 @@ final class CacheInterceptor implements MethodInterceptor {
   /// else [SimpleKeyGenerator].
   KeyGenerator get keyGenerator {
     _configure();
-    return _keyGenerator ??= const SimpleKeyGenerator();
+    return _keyGenerator ??= SimpleKeyGenerator(
+      resourceVersion: resourceVersion,
+    );
   }
 
   /// What happens when a cache throws: the handler passed in, else the
@@ -218,8 +225,45 @@ final class CacheInterceptor implements MethodInterceptor {
           'on the class, or give a cacheResolver',
         );
       }
+      _checkWaits(signature, operation);
     }
     return operations;
+  }
+
+  // A method that does not return a Future cannot wait for a store that
+  // answers later: found at the start, for the caches a name and a manager
+  // give (a resolver of the app's own picks them only when called).
+  void _checkWaits(MethodSignature signature, CacheOperation operation) {
+    final returns = signature.returnType;
+    if (returns.startsWith('Future') || operation.cacheResolver != null) {
+      return;
+    }
+    final CacheManager manager;
+    try {
+      if (operation.cacheManager case final name?) {
+        manager = _bean<CacheManager>(name, 'CacheManager');
+      } else {
+        _configure();
+        if (_cacheResolver case final resolver?
+            when resolver is! SimpleCacheResolver) {
+          return;
+        }
+        manager = cacheManager;
+      }
+    } on Object {
+      return; // no manager yet: the call says what is missing
+    }
+    for (final name in operation.cacheNames) {
+      final cache = manager.getCache(name);
+      if (cache is AsyncCache && !cache.answersSynchronously) {
+        throw StateError(
+          '${operation.description} returns $returns, not a Future, but the '
+          "cache '$name' keeps its entries where they are read later "
+          '(${cache.runtimeType}): make the method return a Future, or '
+          'give it a cache in memory',
+        );
+      }
+    }
   }
 
   // A resolver other than SimpleCacheResolver may pick caches by itself.
@@ -276,6 +320,24 @@ final class CacheInterceptor implements MethodInterceptor {
     final keys = {
       for (final operation in cacheables) operation: call.key(operation),
     };
+    // A store that answers later (AsyncCache) is waited for: only a
+    // method that returns a Future can wait.
+    if (isAsync &&
+        cacheables.any(
+          (operation) => call.caches(operation).any((c) => c is AsyncCache),
+        )) {
+      return _retrieve(call, cacheables, keys).then(
+        (hit) => _afterSearch(
+          invocation,
+          operations,
+          call,
+          cacheables,
+          keys,
+          hit,
+          isAsync: true,
+        ),
+      );
+    }
     ValueWrapper? hit;
     search:
     for (final operation in cacheables) {
@@ -286,6 +348,46 @@ final class CacheInterceptor implements MethodInterceptor {
         }
       }
     }
+    return _afterSearch(
+      invocation,
+      operations,
+      call,
+      cacheables,
+      keys,
+      hit,
+      isAsync: isAsync,
+    );
+  }
+
+  // The caches of [cacheables] in order, each waited for when it answers
+  // later; the first entry found.
+  Future<ValueWrapper?> _retrieve(
+    _Call call,
+    List<CacheableOperation> cacheables,
+    Map<CacheableOperation, Object?> keys,
+  ) async {
+    for (final operation in cacheables) {
+      for (final cache in call.caches(operation)) {
+        final hit = cache is AsyncCache
+            ? await call.retrieve(cache, keys[operation])
+            : call.get(cache, keys[operation]);
+        if (hit != null) {
+          return hit;
+        }
+      }
+    }
+    return null;
+  }
+
+  Object? _afterSearch(
+    MethodInvocation invocation,
+    List<CacheOperation> operations,
+    _Call call,
+    List<CacheableOperation> cacheables,
+    Map<CacheableOperation, Object?> keys,
+    ValueWrapper? hit, {
+    required bool isAsync,
+  }) {
     // Like Spring's hasCachePut: a @CachePut whose condition already fails
     // does not force the call (one needing #result is assumed to pass).
     final hasPut = operations.any(
@@ -527,6 +629,21 @@ final class _Call {
       );
     }
     return caches;
+  }
+
+  Future<ValueWrapper?> retrieve(AsyncCache cache, Object? key) async {
+    try {
+      return await cache.retrieve(key);
+    } on Object catch (error, stackTrace) {
+      final Cache plain = cache;
+      _interceptor.errorHandler.handleCacheGetError(
+        error,
+        stackTrace,
+        cache,
+        plain is KeyScopingCache ? plain.storedKey(key) : key,
+      );
+      return null; // handled: a miss
+    }
   }
 
   ValueWrapper? get(Cache cache, Object? key) {

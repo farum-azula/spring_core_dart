@@ -77,12 +77,24 @@ abstract interface class KeyGenerator {
 /// Spring wraps only a single array argument; here a single list, set or
 /// map is wrapped too, because Dart collections compare by identity.
 final class SimpleKeyGenerator implements KeyGenerator {
-  /// The generator; it has no settings.
-  const SimpleKeyGenerator();
+  /// The generator; with [resourceVersion] a [VersionedResource] among the
+  /// arguments is its address and the version of its content
+  /// (`spring.cache.resource-version`), so a result made from a file that
+  /// changed at the same address is made again.
+  const SimpleKeyGenerator({this.resourceVersion = false});
+
+  /// Whether a [VersionedResource] is keyed by its content's version too.
+  /// Off by default: the version is a digest of the content, which the
+  /// resource has to have been read for.
+  final bool resourceVersion;
 
   @override
   Object? generate(Object target, MethodSignature method, List<Object?> args) =>
-      generateKey(args);
+      generateKey(resourceVersion ? args.map(_versioned).toList() : args);
+
+  static Object? _versioned(Object? arg) => arg is VersionedResource
+      ? ('${arg.uri ?? arg.description}', arg.version)
+      : arg;
 
   /// The key of a call with [args], by the rules above; usable without an
   /// instance, for a key generator of your own that falls back to them.

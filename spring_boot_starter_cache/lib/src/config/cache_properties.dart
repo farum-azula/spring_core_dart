@@ -10,6 +10,11 @@ enum CacheType {
 
   /// Caches nothing, so the methods always run (a `NoOpCacheManager`).
   none,
+
+  /// Keeps entries on disk, so they survive a restart (a
+  /// `DiskCacheManager`): the app's `cache` place in Flutter, a folder
+  /// elsewhere. Not Spring Boot's.
+  disk,
 }
 
 /// The `spring.cache.*` properties.
@@ -28,6 +33,50 @@ class CacheProperties {
 
   /// The settings of the `simple` cache manager.
   SimpleCacheProperties simple = SimpleCacheProperties();
+
+  /// The settings of the `disk` cache manager.
+  DiskCacheProperties disk = DiskCacheProperties();
+
+  /// Whether a key made of a resource that knows the version of its
+  /// content (a file the Flutter starter downloaded and keeps) is its
+  /// address and that version, so a result made from a file that changed
+  /// at the same address is made again. Off by default: the version is a
+  /// digest of the content. Not Spring Boot's.
+  bool resourceVersion = false;
+}
+
+/// The `spring.cache.disk.*` properties: `spring.cache.type: disk`.
+@Introspected()
+class DiskCacheProperties {
+  /// An entry expires this long after it was written, by the wall clock
+  /// (it outlives a restart). Default: none; `0` keeps nothing.
+  Duration? timeToLive;
+
+  /// The most bytes each cache keeps on disk; past it the oldest written
+  /// go. Only the cache's own folder counts (`spring/caches/<name>/`): the
+  /// resources the Flutter starter downloads have a limit of their own,
+  /// `spring.flutter.resources.cache.max-size`. Default: none.
+  DataSize? maxSize;
+
+  /// The folder of the entries where no `CacheStore` bean gives a place
+  /// (a server, a program without Flutter). Default: `.spring/cache` in the
+  /// working folder.
+  String? directory;
+
+  /// The version entries are written by; an entry of another one is not
+  /// read, so results made from what a new version changed are made
+  /// again. Default: none (every entry is read).
+  String? version;
+
+  /// The time an entry of single caches lives, by cache name.
+  Map<String, DiskCacheLimits> caches = {};
+}
+
+/// The settings of one cache of `spring.cache.disk.caches.<name>.*`.
+@Introspected()
+class DiskCacheLimits {
+  /// The same as `spring.cache.disk.time-to-live`, for this cache.
+  Duration? timeToLive;
 }
 
 /// The `spring.cache.simple.*` properties.

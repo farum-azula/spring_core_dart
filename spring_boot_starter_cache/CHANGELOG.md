@@ -1,3 +1,11 @@
+## Unreleased
+
+- `spring.cache.type: disk`: caches whose entries are kept on disk and survive a restart (`DiskCacheManager`): the app's `cache` place in Flutter (the Flutter starter's `CacheStore`), a folder elsewhere (`spring.cache.disk.directory`, `DirectoryCacheStore`). One file an entry, `spring/caches/<cache>/<hash of the key>.json`, with its key, its expiry by the wall clock (`spring.cache.disk.time-to-live`, per cache `caches.<name>.time-to-live`), its version (`spring.cache.disk.version`: an entry of another one is not read) and the value as JSON through the application's `ObjectMapper` (`String`, numbers, `bool`, `null`, an object the mapper reads, a `List`, `Set` or `Map<String, …>` of those, a `Resource` with an address, kept as its address); another value is not kept, and logged once. `spring.cache.disk.max-size` keeps each cache under a number of bytes, the oldest written going first.
+- `AsyncCache`, a cache whose store answers later: Spring's `Cache.retrieve`. For a method that returns a `Future` the interceptor waits for it; a put, an evict and a clear start at once and finish in order. A method that does not return a `Future` on such a cache is a start-up error naming the method and the cache.
+- `CompositeCacheManager`, Spring's: a cache name looked up in several managers, the first that has it giving it (`fallbackToNoOpCache` for a name none has).
+- `LayeredCacheManager` and `LayeredCache` (not Spring's): a fast cache in front of slower ones (memory in front of the disk), a hit in a slower one copied into the faster ones, a put and an evict going to every layer.
+- `spring.cache.resource-version` (off by default): a key made of a `VersionedResource` (a file the Flutter starter keeps) is its address and its content's version, so a result made from a file that changed at the same address is made again (`SimpleKeyGenerator(resourceVersion: true)`).
+
 ## 0.8.2
 
 - No changes of its own; released with the family version 0.8.2.

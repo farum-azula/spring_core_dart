@@ -26,33 +26,65 @@ void _$set4(_i2.CacheProperties bean, Object? value) =>
 Object? _$get5(_i2.CacheProperties bean) => bean.simple;
 void _$set6(_i2.CacheProperties bean, Object? value) =>
     bean.simple = (value as _i2.SimpleCacheProperties);
-_i2.CacheProperties _$create7(
+Object? _$get7(_i2.CacheProperties bean) => bean.disk;
+void _$set8(_i2.CacheProperties bean, Object? value) =>
+    bean.disk = (value as _i2.DiskCacheProperties);
+Object? _$get9(_i2.CacheProperties bean) => bean.resourceVersion;
+void _$set10(_i2.CacheProperties bean, Object? value) =>
+    bean.resourceVersion = (value as bool);
+_i2.CacheProperties _$create11(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.CacheProperties();
-Object? _$get8(_i2.SimpleCacheProperties bean) => bean.timeToLive;
-void _$set9(_i2.SimpleCacheProperties bean, Object? value) =>
-    bean.timeToLive = (value as Duration?);
-Object? _$get10(_i2.SimpleCacheProperties bean) => bean.maxSize;
-void _$set11(_i2.SimpleCacheProperties bean, Object? value) =>
-    bean.maxSize = (value as int?);
-Object? _$get12(_i2.SimpleCacheProperties bean) => bean.caches;
+Object? _$get12(_i2.SimpleCacheProperties bean) => bean.timeToLive;
 void _$set13(_i2.SimpleCacheProperties bean, Object? value) =>
+    bean.timeToLive = (value as Duration?);
+Object? _$get14(_i2.SimpleCacheProperties bean) => bean.maxSize;
+void _$set15(_i2.SimpleCacheProperties bean, Object? value) =>
+    bean.maxSize = (value as int?);
+Object? _$get16(_i2.SimpleCacheProperties bean) => bean.caches;
+void _$set17(_i2.SimpleCacheProperties bean, Object? value) =>
     bean.caches = (value as Map<String, _i2.CacheLimits>);
-_i2.SimpleCacheProperties _$create14(
+_i2.SimpleCacheProperties _$create18(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.SimpleCacheProperties();
-Object? _$get15(_i2.CacheLimits bean) => bean.timeToLive;
-void _$set16(_i2.CacheLimits bean, Object? value) =>
+Object? _$get19(_i2.CacheLimits bean) => bean.timeToLive;
+void _$set20(_i2.CacheLimits bean, Object? value) =>
     bean.timeToLive = (value as Duration?);
-Object? _$get17(_i2.CacheLimits bean) => bean.maxSize;
-void _$set18(_i2.CacheLimits bean, Object? value) =>
+Object? _$get21(_i2.CacheLimits bean) => bean.maxSize;
+void _$set22(_i2.CacheLimits bean, Object? value) =>
     bean.maxSize = (value as int?);
-_i2.CacheLimits _$create19(
+_i2.CacheLimits _$create23(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i2.CacheLimits();
+Object? _$get24(_i2.DiskCacheProperties bean) => bean.timeToLive;
+void _$set25(_i2.DiskCacheProperties bean, Object? value) =>
+    bean.timeToLive = (value as Duration?);
+Object? _$get26(_i2.DiskCacheProperties bean) => bean.maxSize;
+void _$set27(_i2.DiskCacheProperties bean, Object? value) =>
+    bean.maxSize = (value as _i1.DataSize?);
+Object? _$get28(_i2.DiskCacheProperties bean) => bean.directory;
+void _$set29(_i2.DiskCacheProperties bean, Object? value) =>
+    bean.directory = (value as String?);
+Object? _$get30(_i2.DiskCacheProperties bean) => bean.version;
+void _$set31(_i2.DiskCacheProperties bean, Object? value) =>
+    bean.version = (value as String?);
+Object? _$get32(_i2.DiskCacheProperties bean) => bean.caches;
+void _$set33(_i2.DiskCacheProperties bean, Object? value) =>
+    bean.caches = (value as Map<String, _i2.DiskCacheLimits>);
+_i2.DiskCacheProperties _$create34(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.DiskCacheProperties();
+Object? _$get35(_i2.DiskCacheLimits bean) => bean.timeToLive;
+void _$set36(_i2.DiskCacheLimits bean, Object? value) =>
+    bean.timeToLive = (value as Duration?);
+_i2.DiskCacheLimits _$create37(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.DiskCacheLimits();
 
 /// Beans found by `@ComponentScan` in `lib/src/config`.
 _i1.BeanModule get $cacheConfigBeans => _i1.BeanModule(
@@ -84,6 +116,18 @@ _i1.BeanModule get $cacheConfigBeans => _i1.BeanModule(
             returnType: r'SimpleCacheProperties',
           ),
           _i1.MethodSignature.of(
+            r'disk',
+            _$target0,
+            kind: _i1.MemberKind.getter,
+            returnType: r'DiskCacheProperties',
+          ),
+          _i1.MethodSignature.of(
+            r'resourceVersion',
+            _$target0,
+            kind: _i1.MemberKind.getter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
             r'type',
             _$target0,
             kind: _i1.MemberKind.setter,
@@ -100,6 +144,18 @@ _i1.BeanModule get $cacheConfigBeans => _i1.BeanModule(
             _$target0,
             kind: _i1.MemberKind.setter,
             returnType: r'SimpleCacheProperties',
+          ),
+          _i1.MethodSignature.of(
+            r'disk',
+            _$target0,
+            kind: _i1.MemberKind.setter,
+            returnType: r'DiskCacheProperties',
+          ),
+          _i1.MethodSignature.of(
+            r'resourceVersion',
+            _$target0,
+            kind: _i1.MemberKind.setter,
+            returnType: r'bool',
           ),
         ],
       ),
@@ -131,13 +187,27 @@ _i1.BeanModule get $cacheConfigBeans => _i1.BeanModule(
           get: _$get5,
           set: _$set6,
         ),
+        _i1.BeanProperty<_i2.CacheProperties>(
+          r'disk',
+          typeInfo: _i1.ClassType<_i2.DiskCacheProperties>(),
+          get: _$get7,
+          set: _$set8,
+        ),
+        _i1.BeanProperty<_i2.CacheProperties>(
+          r'resourceVersion',
+          typeInfo: _i1.ClassType<bool>(),
+          hasInitialValue: true,
+          initialValue: false,
+          get: _$get9,
+          set: _$set10,
+        ),
       ],
       annotations: [_i1.ConfigurationProperties(r'spring.cache')],
       parts: {_i1.IntrospectionPart.read, _i1.IntrospectionPart.write},
       instantiate: _i2.CacheProperties.new,
       constructor: _i1.BeanConstructor<_i2.CacheProperties>(
         parameters: [],
-        create: _$create7,
+        create: _$create11,
       ),
     ),
     const _i1.BeanIntrospection<_i2.SimpleCacheProperties>(
@@ -147,15 +217,15 @@ _i1.BeanModule get $cacheConfigBeans => _i1.BeanModule(
           r'timeToLive',
           nullable: true,
           typeInfo: _i1.ClassType<Duration>(nullable: true),
-          get: _$get8,
-          set: _$set9,
+          get: _$get12,
+          set: _$set13,
         ),
         _i1.BeanProperty<_i2.SimpleCacheProperties>(
           r'maxSize',
           nullable: true,
           typeInfo: _i1.ClassType<int>(nullable: true),
-          get: _$get10,
-          set: _$set11,
+          get: _$get14,
+          set: _$set15,
         ),
         _i1.BeanProperty<_i2.SimpleCacheProperties>(
           r'caches',
@@ -163,14 +233,14 @@ _i1.BeanModule get $cacheConfigBeans => _i1.BeanModule(
             _i1.ClassType<String>(),
             _i1.ClassType<_i2.CacheLimits>(),
           ),
-          get: _$get12,
-          set: _$set13,
+          get: _$get16,
+          set: _$set17,
         ),
       ],
       instantiate: _i2.SimpleCacheProperties.new,
       constructor: _i1.BeanConstructor<_i2.SimpleCacheProperties>(
         parameters: [],
-        create: _$create14,
+        create: _$create18,
       ),
     ),
     const _i1.BeanIntrospection<_i2.CacheLimits>(
@@ -180,21 +250,85 @@ _i1.BeanModule get $cacheConfigBeans => _i1.BeanModule(
           r'timeToLive',
           nullable: true,
           typeInfo: _i1.ClassType<Duration>(nullable: true),
-          get: _$get15,
-          set: _$set16,
+          get: _$get19,
+          set: _$set20,
         ),
         _i1.BeanProperty<_i2.CacheLimits>(
           r'maxSize',
           nullable: true,
           typeInfo: _i1.ClassType<int>(nullable: true),
-          get: _$get17,
-          set: _$set18,
+          get: _$get21,
+          set: _$set22,
         ),
       ],
       instantiate: _i2.CacheLimits.new,
       constructor: _i1.BeanConstructor<_i2.CacheLimits>(
         parameters: [],
-        create: _$create19,
+        create: _$create23,
+      ),
+    ),
+    const _i1.BeanIntrospection<_i2.DiskCacheProperties>(
+      className: r'DiskCacheProperties',
+      properties: [
+        _i1.BeanProperty<_i2.DiskCacheProperties>(
+          r'timeToLive',
+          nullable: true,
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get24,
+          set: _$set25,
+        ),
+        _i1.BeanProperty<_i2.DiskCacheProperties>(
+          r'maxSize',
+          nullable: true,
+          typeInfo: _i1.ClassType<_i1.DataSize>(nullable: true),
+          get: _$get26,
+          set: _$set27,
+        ),
+        _i1.BeanProperty<_i2.DiskCacheProperties>(
+          r'directory',
+          nullable: true,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get28,
+          set: _$set29,
+        ),
+        _i1.BeanProperty<_i2.DiskCacheProperties>(
+          r'version',
+          nullable: true,
+          typeInfo: _i1.ClassType<String>(nullable: true),
+          get: _$get30,
+          set: _$set31,
+        ),
+        _i1.BeanProperty<_i2.DiskCacheProperties>(
+          r'caches',
+          typeInfo: _i1.MapType<String, _i2.DiskCacheLimits>(
+            _i1.ClassType<String>(),
+            _i1.ClassType<_i2.DiskCacheLimits>(),
+          ),
+          get: _$get32,
+          set: _$set33,
+        ),
+      ],
+      instantiate: _i2.DiskCacheProperties.new,
+      constructor: _i1.BeanConstructor<_i2.DiskCacheProperties>(
+        parameters: [],
+        create: _$create34,
+      ),
+    ),
+    const _i1.BeanIntrospection<_i2.DiskCacheLimits>(
+      className: r'DiskCacheLimits',
+      properties: [
+        _i1.BeanProperty<_i2.DiskCacheLimits>(
+          r'timeToLive',
+          nullable: true,
+          typeInfo: _i1.ClassType<Duration>(nullable: true),
+          get: _$get35,
+          set: _$set36,
+        ),
+      ],
+      instantiate: _i2.DiskCacheLimits.new,
+      constructor: _i1.BeanConstructor<_i2.DiskCacheLimits>(
+        parameters: [],
+        create: _$create37,
       ),
     ),
   ],

@@ -2,6 +2,8 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_cache/src/cache.dart';
 import 'package:spring_boot_starter_cache/src/cache_interceptor.dart';
 import 'package:spring_boot_starter_cache/src/config/cache_properties.dart';
+import 'package:spring_boot_starter_cache/src/directory_cache_store.dart';
+import 'package:spring_boot_starter_cache/src/disk_cache.dart';
 import 'package:spring_boot_starter_cache/src/in_memory_cache.dart';
 import 'package:spring_boot_starter_cache/src/no_op_cache.dart';
 
@@ -63,12 +65,68 @@ CacheManager cacheManagerFromProperties(
   Environment environment, {
   List<Cache> caches = const [],
   List<CacheManagerCustomizer> customizers = const [],
+  CacheStore? store,
+  ObjectMapper? mapper,
+  BeanIntrospector? introspector,
+  ResourceLoader? resources,
 }) {
-  final manager = _cacheManager(properties, environment, caches);
+  final manager = properties.type == CacheType.disk
+      ? _diskCacheManager(
+          properties,
+          store: store,
+          mapper: mapper,
+          introspector: introspector ?? BeanIntrospector.shared,
+          resources: resources,
+        )
+      : _cacheManager(properties, environment, caches);
   for (final customizer in customizers) {
     customizer.customize(manager);
   }
   return manager;
+}
+
+// `spring.cache.type: disk`: entries in [store] (the Flutter starter's in
+// the app's `cache` place, else a folder), so they survive a restart.
+CacheManager _diskCacheManager(
+  CacheProperties properties, {
+  required CacheStore? store,
+  required ObjectMapper? mapper,
+  required BeanIntrospector introspector,
+  required ResourceLoader? resources,
+}) {
+  final disk = properties.disk;
+  Duration? timeToLive(String key, Duration? value) {
+    if (value != null && value.isNegative) {
+      throw ArgumentError.value(
+        '$value',
+        key,
+        'must not be negative (0 keeps no entry)',
+      );
+    }
+    return value;
+  }
+
+  final cacheNames = [
+    for (final name in properties.cacheNames)
+      if (name.trim().isNotEmpty) name.trim(),
+  ];
+  return DiskCacheManager(
+    store: store ?? DirectoryCacheStore(disk.directory ?? '.spring/cache'),
+    mapper: mapper ?? ObjectMapper(introspector: introspector),
+    introspector: introspector,
+    resources: resources,
+    cacheNames: cacheNames.isEmpty ? null : cacheNames,
+    timeToLive: timeToLive('spring.cache.disk.time-to-live', disk.timeToLive),
+    timeToLives: {
+      for (final MapEntry(:key, :value) in disk.caches.entries)
+        key: timeToLive(
+          'spring.cache.disk.caches.$key.time-to-live',
+          value.timeToLive,
+        ),
+    },
+    maxSize: disk.maxSize?.toBytes(),
+    version: disk.version,
+  );
 }
 
 CacheManager _cacheManager(
@@ -93,6 +151,8 @@ CacheManager _cacheManager(
       return SimpleCacheManager(caches);
     case CacheType.simple:
       break;
+    case CacheType.disk:
+      throw StateError('spring.cache.type=disk is made by _diskCacheManager');
   }
   // Like Boot's SimpleCacheConfiguration: only a non-empty list fixes the
   // caches (`spring.cache.cache-names=` keeps them dynamic).
@@ -287,6 +347,10 @@ final cacheAutoConfiguration = <BeanDefinition<Object>>[
       caches: r.optionalDependencyList<Cache>() ?? const [],
       customizers:
           r.optionalDependencyList<CacheManagerCustomizer>() ?? const [],
+      store: r.optionalDependency<CacheStore>(),
+      mapper: r.optionalDependency<ObjectMapper>(),
+      introspector: r.optionalDependency<BeanIntrospector>(),
+      resources: r.optionalDependency<ResourceLoader>(),
     ),
   ),
   BeanDefinition<CacheInterceptor>(
@@ -296,6 +360,7 @@ final cacheAutoConfiguration = <BeanDefinition<Object>>[
     create: (r) => CacheInterceptor(
       beanFactory: r.dependency<BeanFactory>(),
       introspector: r.dependency<BeanIntrospector>(),
+      resourceVersion: r.dependency<CacheProperties>().resourceVersion,
     ),
   ),
   BeanDefinition<CacheOperationValidator>(

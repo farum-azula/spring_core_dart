@@ -45,7 +45,12 @@ export 'src/cache_interceptor.dart';
 export 'src/cache_operation.dart';
 export 'src/cache_resolver.dart';
 export 'src/caching_configurer.dart';
+export 'src/composite_cache_manager.dart';
 export 'src/config/cache_properties.dart';
+export 'src/directory_cache_store.dart';
+export 'src/disk_cache.dart'
+    show DiskCache, DiskCacheManager, cacheFileHash, canonicalCacheKey;
 export 'src/in_memory_cache.dart';
 export 'src/key_generator.dart';
+export 'src/layered_cache.dart';
 export 'src/no_op_cache.dart';

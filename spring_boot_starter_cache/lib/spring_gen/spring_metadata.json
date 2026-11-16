@@ -9,7 +9,67 @@
       "default": [],
       "deprecated": null,
       "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
-      "line": 27,
+      "line": 32,
+      "class": "CacheProperties"
+    },
+    {
+      "name": "spring.cache.disk.caches.*.time-to-live",
+      "type": "Duration?",
+      "description": "The same as `spring.cache.disk.time-to-live`, for this cache.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
+      "line": 79,
+      "class": "DiskCacheLimits"
+    },
+    {
+      "name": "spring.cache.disk.directory",
+      "type": "String?",
+      "description": "The folder of the entries where no `CacheStore` bean gives a place (a server, a program without Flutter). Default: `.spring/cache` in the working folder.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
+      "line": 64,
+      "class": "DiskCacheProperties"
+    },
+    {
+      "name": "spring.cache.disk.max-size",
+      "type": "DataSize?",
+      "description": "The most bytes each cache keeps on disk; past it the oldest written go. Only the cache's own folder counts (`spring/caches/<name>/`): the resources the Flutter starter downloads have a limit of their own, `spring.flutter.resources.cache.max-size`. Default: none.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
+      "line": 59,
+      "class": "DiskCacheProperties"
+    },
+    {
+      "name": "spring.cache.disk.time-to-live",
+      "type": "Duration?",
+      "description": "An entry expires this long after it was written, by the wall clock (it outlives a restart). Default: none; `0` keeps nothing.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
+      "line": 53,
+      "class": "DiskCacheProperties"
+    },
+    {
+      "name": "spring.cache.disk.version",
+      "type": "String?",
+      "description": "The version entries are written by; an entry of another one is not read, so results made from what a new version changed are made again. Default: none (every entry is read).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
+      "line": 69,
+      "class": "DiskCacheProperties"
+    },
+    {
+      "name": "spring.cache.resource-version",
+      "type": "bool",
+      "description": "Whether a key made of a resource that knows the version of its content (a file the Flutter starter downloaded and keeps) is its address and that version, so a result made from a file that changed at the same address is made again. Off by default: the version is a digest of the content. Not Spring Boot's.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
+      "line": 45,
       "class": "CacheProperties"
     },
     {
@@ -19,7 +79,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
-      "line": 62,
+      "line": 111,
       "class": "CacheLimits"
     },
     {
@@ -29,7 +89,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
-      "line": 58,
+      "line": 107,
       "class": "CacheLimits"
     },
     {
@@ -39,7 +99,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
-      "line": 45,
+      "line": 94,
       "class": "SimpleCacheProperties"
     },
     {
@@ -49,7 +109,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
-      "line": 40,
+      "line": 89,
       "class": "SimpleCacheProperties"
     },
     {
@@ -59,7 +119,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
-      "line": 22,
+      "line": 27,
       "class": "CacheProperties"
     }
   ],
@@ -78,6 +138,10 @@
         {
           "value": "none",
           "description": "Caches nothing, so the methods always run (a `NoOpCacheManager`)."
+        },
+        {
+          "value": "disk",
+          "description": "Keeps entries on disk, so they survive a restart (a `DiskCacheManager`): the app's `cache` place in Flutter, a folder elsewhere. Not Spring Boot's."
         }
       ]
     }
@@ -98,7 +162,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_cache/src/cache_auto_configuration.dart",
-      "line": 312,
+      "line": 377,
       "injects": [],
       "members": [
         {
@@ -137,7 +201,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_cache/src/cache_auto_configuration.dart",
-      "line": 292,
+      "line": 356,
       "injects": [],
       "members": [
         {
@@ -190,6 +254,11 @@
           "name": "keyGenerator",
           "kind": "getter",
           "type": "KeyGenerator"
+        },
+        {
+          "name": "resourceVersion",
+          "kind": "field",
+          "type": "bool"
         }
       ]
     },
@@ -208,7 +277,7 @@
         "@ConditionalOnMissingBean.named('cacheResolver')"
       ],
       "source": "package:spring_boot_starter_cache/src/cache_auto_configuration.dart",
-      "line": 273,
+      "line": 333,
       "injects": [],
       "members": [
         {
@@ -241,7 +310,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_cache/src/cache_auto_configuration.dart",
-      "line": 301,
+      "line": 366,
       "injects": [],
       "members": [
         {
@@ -289,13 +358,23 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_cache/src/config/cache_properties.dart",
-      "line": 19,
+      "line": 24,
       "injects": [],
       "members": [
         {
           "name": "cacheNames",
           "kind": "field",
           "type": "List<String>"
+        },
+        {
+          "name": "disk",
+          "kind": "field",
+          "type": "DiskCacheProperties"
+        },
+        {
+          "name": "resourceVersion",
+          "kind": "field",
+          "type": "bool"
         },
         {
           "name": "simple",

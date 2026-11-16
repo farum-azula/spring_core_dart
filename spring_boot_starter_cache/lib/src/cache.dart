@@ -313,3 +313,21 @@ abstract interface class KeyScopingCache implements Cache {
   /// `hashCode`.
   Object? storedKey(Object? key);
 }
+
+/// A [Cache] whose store answers later (files on a disk, the browser's
+/// IndexedDB, a server over the network): Spring's `Cache.retrieve`.
+///
+/// For a method that returns a `Future`, the interceptor asks [retrieve]
+/// and waits; [Cache.put], [Cache.evict] and [Cache.clear] start their work
+/// at once and finish it in order, so a [retrieve] right after a put finds
+/// what was put. A method that does not return a `Future` cannot wait:
+/// on a cache that does not [answersSynchronously] it is a start-up error
+/// naming the method and the cache.
+abstract interface class AsyncCache implements Cache {
+  /// The entry of [key] when the store answers, `null` for none.
+  Future<ValueWrapper?> retrieve(Object? key);
+
+  /// Whether [Cache.get] answers too, from the store itself; `false` when
+  /// it only knows what this run already read or wrote.
+  bool get answersSynchronously;
+}

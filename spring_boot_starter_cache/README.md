@@ -301,6 +301,76 @@ each one is called once with the new manager. The function
 `cacheManagerFromProperties(environment)` builds the same manager for a
 `CacheManager` bean of your own, such as one that wraps it.
 
+## Caches that outlive a restart: `type: disk`
+
+```yaml
+spring:
+  cache:
+    type: disk                # simple: memory; disk: kept across restarts
+    disk:
+      time-to-live: 1h        # by the wall clock: it outlives a restart
+      max-size: 50MB          # per cache; the oldest written go first
+      caches:
+        profiles: { time-to-live: 10m }
+```
+
+Each entry is one file, `spring/caches/<cache>/<hash of the key>.json`,
+in the application's `CacheStore`: a Flutter app's `cache` place
+(IndexedDB in a browser; the Flutter starter gives it), a folder
+elsewhere (`spring.cache.disk.directory`, `.spring/cache` by default). The
+value goes through the application's `ObjectMapper`, so a cached class needs
+`@Introspected()` or a JSON serializer; a `Resource` with an address is kept
+as its address. The store answers later, so the caches are `AsyncCache`s:
+the methods return a `Future` (a method that does not is a start-up error
+naming it).
+
+The caches on disk hold data, the results of methods. The files an app
+downloads (images, videos) are the Flutter starter's resources' cache,
+`spring.flutter.resources.cache.*`: a folder of their own beside
+`spring/caches/`, with a limit of their own; neither counts towards the
+other's, and clearing one leaves the other.
+
+```dart
+@Cacheable('profiles')
+Future<Profile> profile(String steamId) => api.profile(steamId);
+```
+
+### Several stores: memory in front of the disk
+
+```dart
+@Configuration()
+class CacheConfig {
+  @Bean()
+  @Primary()
+  CacheManager memory() => InMemoryCacheManager(
+    timeToLive: const Duration(minutes: 1),
+  );
+
+  @Bean()
+  CacheManager disk(CacheStore store, ObjectMapper mapper,
+          BeanIntrospector introspector) =>
+      DiskCacheManager(store: store, mapper: mapper,
+          introspector: introspector,
+          timeToLive: const Duration(days: 1));
+
+  // Not Spring's: memory first, then the disk; a hit on the disk is
+  // copied into memory, a put and an evict go to both.
+  @Bean()
+  CacheManager layered(CacheManager memory, CacheManager disk) =>
+      LayeredCacheManager([memory, disk]);
+}
+
+@Cacheable('heroes', cacheManager: 'layered')
+Future<List<Hero>> heroes() => api.heroes();
+```
+
+`CompositeCacheManager` (Spring's) instead asks several managers for a
+cache name, the first that has it giving it.
+
+A result made from a file the Flutter starter keeps can be keyed by the
+version of that file's content: `spring.cache.resource-version: true` (off
+by default, as the version is a digest of the file).
+
 ## Your own cache or manager
 
 The annotations only talk to two interfaces, so anything can stand behind
