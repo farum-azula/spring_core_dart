@@ -413,6 +413,86 @@
       "class": "FlutterMarkdownProperties"
     },
     {
+      "name": "spring.flutter.resources.cache.enabled",
+      "type": "bool",
+      "description": "Whether `http:` and `https:` resources are kept on disk.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 737,
+      "class": "FlutterResourcesCacheProperties"
+    },
+    {
+      "name": "spring.flutter.resources.cache.locations[*].enabled",
+      "type": "bool",
+      "description": "`false`: they are not kept.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 777,
+      "class": "ResourceCacheLocation"
+    },
+    {
+      "name": "spring.flutter.resources.cache.locations[*].max-age",
+      "type": "Duration?",
+      "description": "Their age; not set: `spring.flutter.resources.cache.max-age`.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 774,
+      "class": "ResourceCacheLocation"
+    },
+    {
+      "name": "spring.flutter.resources.cache.locations[*].pattern",
+      "type": "String",
+      "description": "The addresses it is for: `https://avatars.steamstatic.com/**`.",
+      "default": "",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 771,
+      "class": "ResourceCacheLocation"
+    },
+    {
+      "name": "spring.flutter.resources.cache.max-age",
+      "type": "Duration",
+      "description": "How long a kept resource is used as it is; past it, it is still used and asked again in the background (`If-None-Match`: an unchanged one costs no download).",
+      "default": "7d",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 742,
+      "class": "FlutterResourcesCacheProperties"
+    },
+    {
+      "name": "spring.flutter.resources.cache.max-entry-size",
+      "type": "DataSize?",
+      "description": "The largest resource kept; a larger one is read from the network every time. Not set: 50 MB.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 746,
+      "class": "FlutterResourcesCacheProperties"
+    },
+    {
+      "name": "spring.flutter.resources.cache.max-size",
+      "type": "DataSize?",
+      "description": "The most bytes the kept resources take together; past it the least recently used go first. Their own folder of the app's `cache` place, `spring/resources/`: the `@Cacheable` caches on disk (`spring.cache.type: disk`) keep theirs with limits of their own. Not set: no limit but the system's.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 753,
+      "class": "FlutterResourcesCacheProperties"
+    },
+    {
+      "name": "spring.flutter.resources.view.fade",
+      "type": "Duration",
+      "description": "How long a resource fades in over its placeholder once it is there; `0` shows it at once (and so does less motion asked by the system).",
+      "default": "200ms",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 790,
+      "class": "FlutterResourcesViewProperties"
+    },
+    {
       "name": "spring.flutter.scan-os-environment",
       "type": "bool",
       "description": "Whether the operating system environment is read as properties. The application reads it before it has an environment, from the `--dart-define` values (`scanOsEnvironmentIn`).",
@@ -1183,7 +1263,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 110,
+      "line": 113,
       "injects": [],
       "members": [
         {
@@ -1219,7 +1299,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 129,
+      "line": 132,
       "injects": [],
       "members": [
         {
@@ -1246,6 +1326,42 @@
       ]
     },
     {
+      "name": "cachedResourceRegistrar",
+      "type": "CachedResourceRegistrar",
+      "types": [
+        "CachedResourceRegistrar",
+        "BeanFactoryPostProcessor",
+        "ApplicationContextAware",
+        "Aware"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
+      "line": 314,
+      "injects": [],
+      "members": [
+        {
+          "name": "postProcessBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ConfigurableListableBeanFactory beanFactory"
+          ]
+        },
+        {
+          "name": "setApplicationContext",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ApplicationContext applicationContext"
+          ]
+        }
+      ]
+    },
+    {
       "name": "debugBeansSection",
       "type": "DebugBeansSection",
       "types": [
@@ -1261,7 +1377,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 400,
+      "line": 444,
       "injects": [],
       "members": [
         {
@@ -1305,7 +1421,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 391,
+      "line": 435,
       "injects": [],
       "members": [
         {
@@ -1355,7 +1471,7 @@
         "@ConditionalOnMissingBean(DebugDockCustomizer)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 480,
+      "line": 524,
       "injects": [],
       "members": [
         {
@@ -1410,7 +1526,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 457,
+      "line": 501,
       "injects": [],
       "members": [
         {
@@ -1530,7 +1646,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 366,
+      "line": 410,
       "injects": [],
       "members": [
         {
@@ -1575,7 +1691,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 670,
+      "line": 714,
       "injects": [],
       "members": [
         {
@@ -1688,7 +1804,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 691,
+      "line": 735,
       "injects": [],
       "members": [
         {
@@ -1732,7 +1848,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 359,
+      "line": 403,
       "injects": [],
       "members": [
         {
@@ -1776,7 +1892,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 521,
+      "line": 565,
       "injects": [],
       "members": [
         {
@@ -1850,7 +1966,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 534,
+      "line": 578,
       "injects": [],
       "members": [
         {
@@ -1884,7 +2000,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 384,
+      "line": 428,
       "injects": [],
       "members": [
         {
@@ -1927,7 +2043,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 557,
+      "line": 601,
       "injects": [],
       "members": [
         {
@@ -2022,7 +2138,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 374,
+      "line": 418,
       "injects": [],
       "members": [
         {
@@ -2073,7 +2189,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 346,
+      "line": 390,
       "injects": [],
       "members": [
         {
@@ -2161,7 +2277,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 424,
+      "line": 468,
       "injects": [],
       "members": [
         {
@@ -2200,7 +2316,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 417,
+      "line": 461,
       "injects": [],
       "members": [
         {
@@ -2244,7 +2360,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 407,
+      "line": 451,
       "injects": [],
       "members": [
         {
@@ -2294,7 +2410,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 604,
+      "line": 648,
       "injects": [],
       "members": [
         {
@@ -2423,7 +2539,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 625,
+      "line": 669,
       "injects": [],
       "members": [
         {
@@ -2460,7 +2576,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 636,
+      "line": 680,
       "injects": [],
       "members": [
         {
@@ -2531,6 +2647,66 @@
       ]
     },
     {
+      "name": "fileCacheStore",
+      "type": "CacheStore",
+      "types": [
+        "CacheStore"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(CacheStore)"
+      ],
+      "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
+      "line": 283,
+      "injects": [],
+      "members": [
+        {
+          "name": "delete",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String path"
+          ]
+        },
+        {
+          "name": "list",
+          "kind": "method",
+          "type": "Future<List<String>>",
+          "parameters": [
+            "String path"
+          ]
+        },
+        {
+          "name": "read",
+          "kind": "method",
+          "type": "Future<Uint8List?>",
+          "parameters": [
+            "String path"
+          ]
+        },
+        {
+          "name": "size",
+          "kind": "method",
+          "type": "Future<int?>",
+          "parameters": [
+            "String path"
+          ]
+        },
+        {
+          "name": "write",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String path",
+            "List<int> bytes"
+          ]
+        }
+      ]
+    },
+    {
       "name": "fileTemplate",
       "type": "FileTemplate",
       "types": [
@@ -2544,7 +2720,7 @@
         "@ConditionalOnMissingBean(FileTemplate)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 280,
+      "line": 324,
       "injects": [],
       "members": [
         {
@@ -2676,7 +2852,7 @@
         "@ConditionalOnMissingBean(ThemeChoiceStore)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 247,
+      "line": 250,
       "injects": [],
       "members": [
         {
@@ -2851,7 +3027,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 662,
+      "line": 706,
       "injects": [],
       "members": [
         {
@@ -3020,6 +3196,70 @@
           "name": "shortcuts",
           "kind": "field",
           "type": "Map<String, List<String>>"
+        }
+      ]
+    },
+    {
+      "name": "flutterResourcesCacheProperties",
+      "type": "FlutterResourcesCacheProperties",
+      "types": [
+        "FlutterResourcesCacheProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 726,
+      "injects": [],
+      "members": [
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "locations",
+          "kind": "field",
+          "type": "List<ResourceCacheLocation>"
+        },
+        {
+          "name": "maxAge",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "maxEntrySize",
+          "kind": "field",
+          "type": "DataSize?"
+        },
+        {
+          "name": "maxSize",
+          "kind": "field",
+          "type": "DataSize?"
+        }
+      ]
+    },
+    {
+      "name": "flutterResourcesViewProperties",
+      "type": "FlutterResourcesViewProperties",
+      "types": [
+        "FlutterResourcesViewProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter/src/properties/flutter_properties.dart",
+      "line": 782,
+      "injects": [],
+      "members": [
+        {
+          "name": "fade",
+          "kind": "field",
+          "type": "Duration"
         }
       ]
     },
@@ -3252,7 +3492,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 138,
+      "line": 141,
       "injects": [],
       "members": [
         {
@@ -3354,7 +3594,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 149,
+      "line": 152,
       "injects": [],
       "members": [
         {
@@ -3387,7 +3627,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 120,
+      "line": 123,
       "injects": [],
       "members": [
         {
@@ -3427,7 +3667,7 @@
         "@ConditionalOnMissingBean(FileStore)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 269,
+      "line": 272,
       "injects": [],
       "members": [
         {
@@ -3508,6 +3748,83 @@
       ]
     },
     {
+      "name": "resourceCache",
+      "type": "ResourceCache",
+      "types": [
+        "ResourceCache"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
+      "line": 294,
+      "injects": [],
+      "members": [
+        {
+          "name": "clear",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "evict",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Uri uri"
+          ]
+        },
+        {
+          "name": "keeps",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Uri uri"
+          ]
+        },
+        {
+          "name": "maxAgeOf",
+          "kind": "method",
+          "type": "Duration",
+          "parameters": [
+            "Uri uri"
+          ]
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "FlutterResourcesCacheProperties"
+        },
+        {
+          "name": "resource",
+          "kind": "method",
+          "type": "CachedResource",
+          "parameters": [
+            "Uri uri"
+          ]
+        },
+        {
+          "name": "size",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "store",
+          "kind": "field",
+          "type": "CacheStore"
+        }
+      ]
+    },
+    {
       "name": "resourcePrefetch",
       "type": "ResourcePrefetch",
       "types": [
@@ -3521,7 +3838,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 163,
+      "line": 166,
       "injects": [],
       "members": [
         {
@@ -3612,7 +3929,7 @@
         "@ConditionalOnProperty('spring.flutter.splash.warm-up.text.enabled', havingValue: 'true')"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 175,
+      "line": 178,
       "injects": [],
       "members": [
         {
@@ -3711,7 +4028,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 223,
+      "line": 226,
       "injects": [],
       "members": [
         {
@@ -3839,7 +4156,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 157,
+      "line": 160,
       "injects": [],
       "members": [
         {
@@ -3880,7 +4197,7 @@
         "@ConditionalOnProperty('spring.flutter.splash.warm-up.text.enabled', havingValue: 'true')"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 188,
+      "line": 191,
       "injects": [],
       "members": [
         {
@@ -4003,7 +4320,7 @@
         "@ConditionalOnProperty('spring.flutter.theme.remember', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 259,
+      "line": 262,
       "injects": [],
       "members": [
         {
@@ -4044,7 +4361,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 306,
+      "line": 350,
       "injects": [],
       "members": [
         {
@@ -4108,7 +4425,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 238,
+      "line": 241,
       "injects": [],
       "members": [
         {
@@ -4213,7 +4530,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 294,
+      "line": 338,
       "injects": [],
       "members": [
         {
@@ -4283,7 +4600,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 592,
+      "line": 636,
       "injects": [],
       "members": [
         {

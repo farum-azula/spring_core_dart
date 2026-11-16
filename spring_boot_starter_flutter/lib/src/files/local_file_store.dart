@@ -54,6 +54,10 @@ class LocalFileStore implements FileStore {
     return path;
   }();
 
+  /// The file of [path] in [place] on the disk, for code that needs a real
+  /// file (a player); it may not exist.
+  Future<String> pathOf(FilePlace place, String path) => _full(place, path);
+
   Future<String> _full(FilePlace place, String path) async {
     final relative = normalizeFilePath(path);
     final root = await _root(place);

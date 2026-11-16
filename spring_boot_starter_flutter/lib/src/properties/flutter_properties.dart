@@ -717,3 +717,75 @@ final class FlutterDataSourcesProperties {
   /// The named databases; each is read like `spring.datasource`.
   final Map<String, FlutterDataSourceProperties>? datasources;
 }
+
+/// The resources downloaded and kept, `spring.flutter.resources.cache.*`:
+/// an `http:` or `https:` resource (`ResourceView`, `ResourceImage`, a
+/// `Resource` of `@Value` or the `ResourceLoader`) is read from the app's
+/// files once kept, and asked again in the background past its age.
+@ConfigurationProperties('spring.flutter.resources.cache')
+final class FlutterResourcesCacheProperties {
+  /// Settings with these values.
+  const FlutterResourcesCacheProperties({
+    this.enabled = true,
+    this.maxAge = const Duration(days: 7),
+    this.maxEntrySize,
+    this.maxSize,
+    this.locations = const [],
+  });
+
+  /// Whether `http:` and `https:` resources are kept on disk.
+  final bool enabled;
+
+  /// How long a kept resource is used as it is; past it, it is still used
+  /// and asked again in the background (`If-None-Match`: an unchanged one
+  /// costs no download).
+  final Duration maxAge;
+
+  /// The largest resource kept; a larger one is read from the network
+  /// every time. Not set: 50 MB.
+  final DataSize? maxEntrySize;
+
+  /// The most bytes the kept resources take together; past it the least
+  /// recently used go first. Their own folder of the app's `cache` place,
+  /// `spring/resources/`: the `@Cacheable` caches on disk
+  /// (`spring.cache.type: disk`) keep theirs with limits of their own. Not
+  /// set: no limit but the system's.
+  final DataSize? maxSize;
+
+  /// Rules by address, the first that matches wins: `pattern` (`**` any
+  /// path, `*` one segment), and its own `max-age` or `enabled: false`.
+  final List<ResourceCacheLocation> locations;
+}
+
+/// A rule of `spring.flutter.resources.cache.locations`.
+@Introspected()
+final class ResourceCacheLocation {
+  /// A rule with these values.
+  const ResourceCacheLocation({
+    this.pattern = '',
+    this.maxAge,
+    this.enabled = true,
+  });
+
+  /// The addresses it is for: `https://avatars.steamstatic.com/**`.
+  final String pattern;
+
+  /// Their age; not set: `spring.flutter.resources.cache.max-age`.
+  final Duration? maxAge;
+
+  /// `false`: they are not kept.
+  final bool enabled;
+}
+
+/// How `ResourceView` shows a resource, `spring.flutter.resources.view.*`.
+@ConfigurationProperties('spring.flutter.resources.view')
+final class FlutterResourcesViewProperties {
+  /// Settings with these values.
+  const FlutterResourcesViewProperties({
+    this.fade = const Duration(milliseconds: 200),
+  });
+
+  /// How long a resource fades in over its placeholder once it is there;
+  /// `0` shows it at once (and so does less motion asked by the system).
+  final Duration fade;
+}

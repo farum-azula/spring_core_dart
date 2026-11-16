@@ -119,6 +119,7 @@ system (an app of type `widgets`) built from the library
 - [Platform profiles](#platform-profiles)
 - [Assets](#assets)
 - [Files of the app](#files-of-the-app)
+- [Resources from the network](#resources-from-the-network)
 - [SQLite databases](#sqlite-databases)
 - [Desktop window](#desktop-window)
 - [The splash, shortcuts and the debug panel](#the-splash-shortcuts-and-the-debug-panel)
@@ -1330,6 +1331,54 @@ class Library {
 - Replaceable: declare a `FileStore` bean (an encrypting one, a remote one)
   and `FileTemplate` and the theme cache follow; declare a `FileTemplate` to
   replace the template itself.
+
+## Resources from the network
+
+An `http:` or `https:` resource of the `ResourceLoader` (a `Resource` of
+`@Value`, `getResource`, a `ResourceView`, a `ResourceImage`) is downloaded
+once and kept in the files' `cache` place: read from the disk from then on,
+across starts too, and asked again in the background past its age.
+
+```yaml
+spring:
+  flutter:
+    files:
+      cache:
+        max-size: 300MB          # everything the caches keep, together
+    resources:
+      cache:
+        max-age: 7d              # past it: used, and asked again
+        max-entry-size: 50MB     # larger: read from the network each time
+        locations:               # the first rule that matches
+          - pattern: https://avatars.steamstatic.com/**
+            max-age: 1d
+          - pattern: https://api.example.com/**
+            enabled: false
+      view:
+        fade: 200ms
+```
+
+```dart
+// Any resource; an image now, a type of the app's own by a renderer bean.
+ResourceView(player.avatarUrl, width: 40, height: 40, fit: BoxFit.cover,
+    shape: const CircleBorder(), placeholder: const AvatarPlaceholder())
+
+// For Flutter's widgets that take an ImageProvider.
+CircleAvatar(backgroundImage: ResourceImage(player.avatarUrl))
+```
+
+A `ResourceRenderer` bean shows a media type of the app's own in a
+`ResourceView` (a document, a video). The framework has no player: a kept
+resource gives `playableUri()` (the kept file, a `blob:` in a browser, or its
+address while it is still being kept) for the player the app chose:
+
+```dart
+final clip = resources.getResource(url) as CachedResource;
+final uri = await clip.playableUri();
+final controller = uri.scheme == 'file'
+    ? VideoPlayerController.file(File(uri.toFilePath()))
+    : VideoPlayerController.networkUrl(uri);
+```
 
 ## SQLite databases
 

@@ -24,9 +24,11 @@ import 'package:spring_boot_starter_flutter/src/debug/sections/motion_section.da
 import 'package:spring_boot_starter_flutter/src/debug/sections/logs_section.dart';
 import 'package:spring_boot_starter_flutter/src/debug/sections/start_section.dart';
 import 'package:spring_boot_starter_flutter/src/debug/sections/theme_section.dart';
+import 'package:spring_boot_starter_flutter/src/files/file_cache_store.dart';
 import 'package:spring_boot_starter_flutter/src/files/file_store.dart';
 import 'package:spring_boot_starter_flutter/src/files/file_template.dart';
 import 'package:spring_boot_starter_flutter/src/files/platform_file_store.dart';
+import 'package:spring_boot_starter_flutter/src/files/remote_cache.dart';
 import 'package:spring_boot_starter_flutter/src/notify_listeners.dart';
 import 'package:spring_boot_starter_flutter/src/properties/properties_beans.dart';
 import 'package:flutter/foundation.dart' show ChangeNotifier, Listenable;
@@ -43,6 +45,7 @@ import 'package:spring_boot_starter_flutter/src/debug/timeline/debug_timeline.da
 import 'package:spring_boot_starter_flutter/src/debug/timeline/timeline_observations.dart';
 import 'package:spring_boot_starter_flutter/src/debug/timeline/timeline_section.dart';
 import 'package:spring_boot_starter_flutter/src/resource_prefetch.dart';
+import 'package:spring_boot_starter_flutter/src/resources/resource_cache.dart';
 import 'package:spring_boot_starter_flutter/src/splash/splash_task.dart';
 import 'package:spring_boot_starter_flutter/src/splash/splash_trace.dart';
 import 'package:spring_boot_starter_flutter/src/splash/startup_events.dart';
@@ -276,6 +279,47 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
         ]),
       ],
       create: (_) => createPlatformFileStore(),
+    ),
+    BeanDefinition<CacheStore>(
+      name: 'fileCacheStore',
+      types: const [CacheStore],
+      source: _source,
+      conditions: const [
+        ConditionGroup('$_source.fileCacheStore', [
+          ConditionalOnMissingBean(CacheStore),
+        ]),
+      ],
+      create: (r) => FileCacheStore(r.dependency<FileStore>()),
+    ),
+    BeanDefinition<ResourceCache>(
+      name: 'resourceCache',
+      source: _source,
+      preDestroy: (cache) => cache.close(),
+      create: (r) {
+        final properties = r.dependency<FlutterResourcesCacheProperties>();
+        return ResourceCache(
+          store: r.dependency<CacheStore>(),
+          properties: properties,
+          fetcher: RemoteFetcher(
+            transport: r.optionalDependency<HttpTransport>(),
+            timeout: const Duration(seconds: 30),
+            maxBytes: properties.maxEntrySize?.toBytes() ?? 50 * 1024 * 1024,
+            allowInsecure: RemoteAddressPolicy.of(
+              r.dependency<ConfigurableEnvironment>(),
+            ).allowInsecure,
+          ),
+        );
+      },
+    ),
+    BeanDefinition<CachedResourceRegistrar>(
+      name: 'cachedResourceRegistrar',
+      types: const [
+        CachedResourceRegistrar,
+        BeanFactoryPostProcessor,
+        ApplicationContextAware,
+      ],
+      source: _source,
+      create: (_) => CachedResourceRegistrar(),
     ),
     BeanDefinition<FileTemplate>(
       name: 'fileTemplate',

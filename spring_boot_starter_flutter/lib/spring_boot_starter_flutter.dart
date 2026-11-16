@@ -62,6 +62,7 @@ export 'src/bean_reads.dart' show BeanReadsPointcut, BeanReadsInterceptor;
 export 'src/context_extensions.dart';
 export 'src/desktop_window/desktop_window.dart';
 export 'src/desktop_window/desktop_window_settings.dart';
+export 'src/files/file_cache_store.dart';
 export 'src/files/file_store.dart';
 export 'src/files/file_template.dart' show FileArea, FileTemplate;
 export 'src/files/memory_file_store.dart' show InMemoryFileStore;
@@ -69,6 +70,10 @@ export 'src/markdown/code_tokens.dart';
 export 'src/markdown/markdown_outline.dart';
 export 'src/markdown/markdown_view.dart';
 export 'src/properties/flutter_properties.dart';
+export 'src/resources/resource_cache.dart'
+    show CachedResource, CachedResourceRegistrar, ResourceCache;
+export 'src/resources/resource_image.dart';
+export 'src/resources/resource_view.dart';
 export 'src/notify_listeners.dart';
 export 'src/platform_profiles.dart';
 export 'src/shortcuts/touch_pattern.dart';
