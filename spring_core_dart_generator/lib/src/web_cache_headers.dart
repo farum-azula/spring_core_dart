@@ -46,8 +46,8 @@ abstract final class WebCacheHeaders {
   /// The assets of a Flutter web build that have no hash in their names
   /// and change with every build, asked again as the page is: the asset
   /// manifests, the fonts' manifest, the licences, flutter_scene's shader
-  /// manifests, the engine's shaders and the icon fonts Flutter cuts to the
-  /// icons the app uses.
+  /// manifests, the engine's shaders, the icon fonts Flutter cuts to the
+  /// icons the app uses and the app's resources read at run time.
   static const changingAssets = [
     '/assets/AssetManifest*',
     '/assets/FontManifest.json',
@@ -58,6 +58,11 @@ abstract final class WebCacheHeaders {
     // name every build: a new icon would show as a box from a kept one.
     '/assets/fonts/MaterialIcons-Regular.otf',
     '/assets/packages/cupertino_icons/*',
+    // The app's resources not embedded in its code (`lib/resources/`, read
+    // through `resources:`): Markdown pages, messages, the generated search
+    // index. No hash, and they change with the content: a kept one would
+    // show last week's page after a deploy.
+    '/assets/lib/resources/*',
   ];
 
   /// The `Cache-Control` value of the app's assets that the keys of

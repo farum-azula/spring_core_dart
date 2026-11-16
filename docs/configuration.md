@@ -4662,11 +4662,13 @@ gives every path `no-cache`, the keys' `Cache-Control` to `/assets/*`
 (the app's images and fonts; `max-age=2592000, public` above), and
 `no-cache` again to the assets that change with every build:
 `/assets/AssetManifest*`, `/assets/FontManifest.json`, `/assets/NOTICES`,
-`/assets/*/manifest.json`, `/assets/shaders/*` and the icon fonts Flutter
+`/assets/*/manifest.json`, `/assets/shaders/*`, the icon fonts Flutter
 cuts to the icons the app uses (`/assets/fonts/MaterialIcons-Regular.otf`,
-`/assets/packages/cupertino_icons/*`). Each rule first takes off the
-earlier rules' header (`! Cache-Control`, Cloudflare's syntax), so the
-last rule that matches wins. The app's own rules before and after the
+`/assets/packages/cupertino_icons/*`) and the app's resources read at run
+time (`/assets/lib/resources/*`: Markdown pages, messages, a search
+index). Each rule first takes off the earlier rules' header
+(`! Cache-Control`, Cloudflare's syntax), so the last rule that matches
+wins. The app's own rules before and after the
 block stay as they are; the file is made when missing. Without the keys
 the block is removed (the file too when nothing else is in it); a value
 that cannot be read fails the build and leaves the file as it is.

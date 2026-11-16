@@ -60,6 +60,9 @@ const _block = '''
 /assets/packages/cupertino_icons/*
   ! Cache-Control
   Cache-Control: no-cache
+/assets/lib/resources/*
+  ! Cache-Control
+  Cache-Control: no-cache
 # spring:cache:end''';
 
 const _before = '''
