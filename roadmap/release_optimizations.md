@@ -31,7 +31,7 @@ generator; see the changelogs' `Unreleased`):
 - [ ] The alpha probe's two lost WebGL contexts quiet in the console.
 - [x] Tests: `engine` (placement, clip, scroll, host change), `layer`,
   `PageUnderlay`, `OutsideFrames`, the screen's rate.
-- [ ] README, changelogs, the site's docs (farum-azula.org).
+- [x] README, changelogs, the site's docs (farum-azula.org).
 
 ## The release right after it: caches (built) and runtime properties
 
@@ -126,13 +126,14 @@ generator; see the changelogs' `Unreleased`):
   - On iOS, Android and the desktops this is what keeps the app's images
     from the network across starts (avatars): `Image.network` keeps them
     in memory only and downloads them again after every start.
-- [ ] **The web build's cache headers from the configuration** (being built): the
-  generator writes the host's headers (`_headers` for Cloudflare Pages
-  and Netlify, later the others) from Spring Boot's keys
-  `spring.web.resources.cache.cachecontrol.*`: `no-cache` for what has no
-  hash in its name (`index.html`, `main.dart.js`, `main.dart.wasm`, the
-  manifests), a long `max-age` for the app's images and fonts, `immutable`
-  for hashed files (the scenes' shader bundles). Dota Passport wrote its
+- [x] **The web build's cache headers from the configuration** (built):
+  the generator writes the host's headers (`web/_headers` of Cloudflare
+  Pages; its `! Cache-Control` lines are Cloudflare's, other hosts later)
+  from Spring Boot's keys `spring.web.resources.cache.cachecontrol.*`:
+  `no-cache` for what has no hash in its name (`index.html`,
+  `main.dart.js`, `main.dart.wasm`, the manifests, the shaders, the icon
+  fonts), the keys' value for the app's images and fonts. Not built:
+  `immutable` for hashed files. Dota Passport wrote its
   own by hand (`web/_headers`, November 2026): every path was `no-cache`,
   so each open downloaded all 65 images of a match again.
 

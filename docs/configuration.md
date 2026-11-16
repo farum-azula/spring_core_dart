@@ -4356,7 +4356,7 @@ spring.flutter.scene.app.camera.fov=45
 | `spring.flutter.scene.when.<condition>` | `still` / `off` | none | The mode every scene takes while the condition holds; the least of `render` and the conditions that hold wins. The starter's conditions: `touch` (the main pointer is a finger) and `slow` (below); an app's own is a `SceneCondition` bean. A condition not named here changes nothing |
 | `spring.flutter.scene.slow.frame-time` | duration | `16ms` | For `when.slow`: a beat of the scenes (drawing every moving scene once, on the page's thread) taking more than half of it is slow. Decided by the first scenes' own frames while their placeholders show (the first few left out, on which the engine builds its programs), so they show in the mode they keep; never by switching a scene off in front of the user |
 | `spring.flutter.scene.slow.probe` | number | `24` | How many frames of the first scenes are measured before they show |
-| `spring.flutter.scene.slow.after` | duration | `3s` | How long beats are slow, on end, after the scenes showed, before `slow` holds: at the next moment no scene moves, then for the rest of the run |
+| `spring.flutter.scene.slow.after` | duration | `3s` | How long beats are slow, on end, after the scenes showed, before `slow` holds: at the next moment no scene moves, then for the rest of the run. Measured where the scenes draw apart from Flutter's frames (`canvas: engine` or `layer` in a browser); with `page` and on the native platforms only the frames before they show decide |
 | `spring.flutter.scene.canvas` | `page` / `layer` / `engine` | `page` | Where a frame of a scene goes in a browser: Flutter draws it into the page (and the page again around it); a canvas of the scene's own under the page, each frame handed over by the browser (copied in Firefox and WebKit); or the engine's own canvas, every scene drawn on it where it stands, nothing handed over (behind the page when the first scene fills the screen). `engine` is the whole app's, set when the engine starts |
 | `spring.flutter.scene.light-clustering` | `true` / `false` | `true` | Whether the scenes' lamps are shaded through the engine's clustering (`Scene.punctualLightClustering`). `false`: each mesh shades the lamps that reach it, cheaper with a few lamps; the clustering makes its lamp textures anew when a lamp comes into the view or leaves it |
 | `spring.flutter.scene.pause-off-screen` | `true` / `false` | `true` | Whether a scene scrolled off the screen stops drawing |
@@ -4636,6 +4636,42 @@ spring.flutter.navigation.languages=en,ja
   translated page with its `xhtml:link` alternates. `llms.txt` and
   `llms-full.txt` stay in the default language; the `.md` copy of a
   translation is at `/ja/<path>.md`.
+
+### The browser cache of the web build: `web/_headers`
+
+The generator reads Spring Boot's keys
+`spring.web.resources.cache.cachecontrol.*` (the same as the web server's,
+section 18) at build time and writes the app's `web/_headers`, the headers
+file of Cloudflare Pages, which `flutter build web` copies into the build.
+
+```yaml
+# lib/resources/application-web.yml
+spring:
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          max-age: 30d
+          cache-public: true
+```
+
+A Flutter web build names its files without a hash (`index.html`,
+`main.dart.js`, `main.dart.wasm`, `flutter_bootstrap.js`), so the block
+the build writes between `# spring:cache:start` and `# spring:cache:end`
+gives every path `no-cache`, the keys' `Cache-Control` to `/assets/*`
+(the app's images and fonts; `max-age=2592000, public` above), and
+`no-cache` again to the assets that change with every build:
+`/assets/AssetManifest*`, `/assets/FontManifest.json`, `/assets/NOTICES`,
+`/assets/*/manifest.json`, `/assets/shaders/*` and the icon fonts Flutter
+cuts to the icons the app uses (`/assets/fonts/MaterialIcons-Regular.otf`,
+`/assets/packages/cupertino_icons/*`). Each rule first takes off the
+earlier rules' header (`! Cache-Control`, Cloudflare's syntax), so the
+last rule that matches wins. The app's own rules before and after the
+block stay as they are; the file is made when missing. Without the keys
+the block is removed (the file too when nothing else is in it); a value
+that cannot be read fails the build and leaves the file as it is.
+`spring.web.resources.cache.period` and `use-last-modified` are the
+server's alone.
 
 ---
 

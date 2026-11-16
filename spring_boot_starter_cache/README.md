@@ -251,12 +251,18 @@ application declares no `CacheManager` of its own:
 
 | Property | Default | Meaning |
 |---|---|---|
-| `spring.cache.type` | `generic` with `Cache` beans, else `simple` | `generic`: a `SimpleCacheManager` of the `Cache` beans (at least one needed); `simple`: caches in memory; `none`: cache nothing (the annotations stay, the methods always run). Another value fails the start |
+| `spring.cache.type` | `generic` with `Cache` beans, else `simple` | `generic`: a `SimpleCacheManager` of the `Cache` beans (at least one needed); `simple`: caches in memory; `disk`: caches on disk that outlive a restart (below; not Spring Boot's); `none`: cache nothing (the annotations stay, the methods always run). Another value fails the start |
 | `spring.cache.cache-names` | — | a fixed set of caches, such as `books,authors` or a YAML list; an annotation naming another cache then fails. Without it (or empty), caches are created on first use |
 | `spring.cache.simple.time-to-live` | none | how long entries live: `10m`, `30s`, `PT1H`, or milliseconds. `0` or more: `0` keeps nothing (as Caffeine's `expireAfterWrite(Duration.ZERO)`); a negative value fails the start with an error naming the property, as Caffeine refuses one |
 | `spring.cache.simple.max-size` | none | the most entries per cache; the least recently used go first. `0` or more: `0` keeps nothing (as Caffeine's `maximumSize(0)`); a negative value fails the start with an error naming the property |
 | `spring.cache.simple.caches.<name>.time-to-live` | — | the same for one cache (also checked at the start) |
 | `spring.cache.simple.caches.<name>.max-size` | — | the same for one cache (also checked at the start) |
+| `spring.cache.disk.time-to-live` | none | `type: disk`: how long entries live, by the wall clock (it outlives a restart) |
+| `spring.cache.disk.caches.<name>.time-to-live` | — | the same for one cache |
+| `spring.cache.disk.max-size` | none | the most bytes each cache keeps on disk, only its own folder counted; the oldest written go first |
+| `spring.cache.disk.directory` | `.spring/cache` | the folder where no `CacheStore` bean gives a place (a server; a Flutter app keeps them in its `cache` place) |
+| `spring.cache.disk.version` | none | the version entries are written by; an entry of another one is not read |
+| `spring.cache.resource-version` | `false` | a key made of a resource that knows its content's version is its address and that version |
 
 A cache name with dots goes in brackets, as in any Spring Boot map
 (`spring.cache.simple.caches[books.byIsbn].max-size=2`; in YAML the key
@@ -343,7 +349,7 @@ class CacheConfig {
   @Bean()
   @Primary()
   CacheManager memory() => InMemoryCacheManager(
-    timeToLive: const Duration(minutes: 1),
+    defaultSpec: const CacheSpec(timeToLive: Duration(minutes: 1)),
   );
 
   @Bean()
@@ -782,14 +788,16 @@ entry 1.2 seconds later; now it is gone. So, to test expiry:
   `KeyScopingCache`, whose `storedKey(key)` is then what the calls are
   shared by; without it two callers that the cache keeps apart would
   share one answer. `KeyScopingCache` is this starter's own interface.
-- Built-in store: memory, with time to live and size limit. Spring's
-  `ConcurrentMapCacheManager` has neither; it needs Caffeine for that.
+- Built-in stores: memory, with time to live and size limit (Spring's
+  `ConcurrentMapCacheManager` has neither; it needs Caffeine for that),
+  and the disk (`type: disk`, `DiskCacheManager`), which Spring Boot does
+  not have.
 - `spring.cache.simple.time-to-live`, `spring.cache.simple.max-size` and
   `spring.cache.simple.caches.<name>.*` are this starter's: Spring Boot's
   `simple` type has no settings (time to live and size come from Caffeine
   or Redis there, under `spring.cache.caffeine.*` /
-  `spring.cache.redis.*`). `spring.cache.type` knows `generic`, `simple`
-  and `none` only.
+  `spring.cache.redis.*`). `spring.cache.type` knows `generic`, `simple`,
+  `none` and this starter's `disk` (no `caffeine`, `redis`, `jcache`).
 - `SimpleKeyGenerator` wraps a single collection argument in a
   `SimpleKey`, because Dart lists, sets and maps compare by identity and
   the key compares by content; Spring wraps only arrays.
@@ -799,9 +807,10 @@ entry 1.2 seconds later; now it is gone. So, to test expiry:
   `Stream<T>` of the right type without reflection. Return a
   `Future<List<T>>`.
 - The `Cache` API is a subset of Spring's: `name`, `get`, `put`,
-  `putIfAbsent`, `evict`, `evictIfPresent`, `clear`, `invalidate`. There
-  is no `get(key, Class)`, `get(key, Callable)` (value loader), `retrieve`
-  (asynchronous) or `getNativeCache`.
+  `putIfAbsent`, `evict`, `evictIfPresent`, `clear`, `invalidate`, and
+  `retrieve` on an `AsyncCache` (a cache whose store answers later, as the
+  caches on disk). There is no `get(key, Class)`, `get(key, Callable)`
+  (value loader) or `getNativeCache`.
 - `invalidate()` returns `true` for a cache that had nothing left to
   remove in two cases: `CacheDefaults` always returns `true`, and
   `InMemoryCache` counts entries that have expired but were neither read

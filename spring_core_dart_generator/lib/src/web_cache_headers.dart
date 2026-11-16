@@ -1,9 +1,10 @@
 import 'package:spring_core_dart/core.dart'
     show ChronoUnit, ConversionException, DurationStyle, PropertyResolver;
 
-/// The app's `web/_headers` (the headers file of Cloudflare Pages and
-/// Netlify) from Spring Boot's `spring.web.resources.cache.cachecontrol.*`:
-/// how long browsers keep the files of a Flutter web build.
+/// The app's `web/_headers` (the headers file of Cloudflare Pages; its
+/// `! Cache-Control` lines are Cloudflare's) from Spring Boot's
+/// `spring.web.resources.cache.cachecontrol.*`: how long browsers keep the
+/// files of a Flutter web build.
 ///
 /// A Flutter web build names its files without a hash (`index.html`,
 /// `main.dart.js`, `main.dart.wasm`, `flutter_bootstrap.js`, the asset
