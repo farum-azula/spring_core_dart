@@ -39,6 +39,15 @@ final class SceneAvailability extends ChangeNotifier {
           (condition, mode),
   ];
 
+  /// Whether a condition of `spring.flutter.scene.when` is still finding
+  /// out ([SceneCondition.settled]): a scene that moves draws frames
+  /// nobody sees meanwhile, its placeholder over it.
+  bool get deciding => conditions.any(
+    (condition) =>
+        !condition.settled &&
+        (properties.when?.containsKey(condition.name) ?? false),
+  );
+
   /// How scenes draw now: [SceneProperties.render], or less while a
   /// condition holds.
   SceneRenderMode get render {

@@ -104,23 +104,32 @@ final class SceneProperties {
   final SceneDebugProperties debug;
 }
 
-/// When frames are slow, `spring.flutter.scene.slow.*`: for the condition
-/// `slow` of `spring.flutter.scene.when`.
+/// When the scenes are slow, `spring.flutter.scene.slow.*`: for the
+/// condition `slow` of `spring.flutter.scene.when`. It is decided by the
+/// scenes' own frames while the first ones load, their placeholders
+/// showing, so they show in the mode they keep; it never switches a scene
+/// off in front of the user.
 final class SceneSlowProperties {
   /// Settings with these values.
   const SceneSlowProperties({
     this.frameTime = const Duration(milliseconds: 16),
     this.after = const Duration(seconds: 3),
+    this.probe = 24,
   });
 
-  /// The time of a frame of the app (its build and its drawing, the middle
-  /// one of each batch Flutter reports) past which it is slow, while
-  /// scenes move.
+  /// The time of a frame: a beat of the scenes (what drawing every moving
+  /// scene once cost the page's thread, the middle one of those measured)
+  /// taking more than half of it is slow.
   final Duration frameTime;
 
-  /// How long frames are slow, on end, before the condition holds; it
-  /// then holds for the rest of the run.
+  /// How long beats are slow, on end, after the scenes showed, before the
+  /// condition holds; it holds at the next moment no scene moves, and then
+  /// for the rest of the run.
   final Duration after;
+
+  /// How many frames of the first scenes are measured before they show,
+  /// after the first few, on which the engine builds its programs.
+  final int probe;
 }
 
 /// How scenes draw, `spring.flutter.scene.render`.

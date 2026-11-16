@@ -1,8 +1,7 @@
 // The conditions under which scenes draw less: the mode of each in
-// spring.flutter.scene.when, the least one winning; a touch screen; frames
-// slow for long enough while scenes move, which then holds for the run.
-import 'dart:ui' show FrameTiming;
-
+// spring.flutter.scene.when, the least one winning; a touch screen; scenes
+// too slow here, decided by their own frames before they show and never by
+// switching them off in front of the user.
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart';
@@ -29,21 +28,11 @@ final class _Condition extends ChangeNotifier implements SceneCondition {
   }
 
   @override
+  bool get settled => true;
+
+  @override
   String get state => _holds ? 'holds' : 'does not hold';
 }
-
-FrameTiming _frame(int start, int cpu) => FrameTiming(
-  vsyncStart: start,
-  buildStart: start,
-  buildFinish: start + cpu ~/ 2,
-  rasterStart: start + cpu ~/ 2,
-  rasterFinish: start + cpu,
-  rasterFinishWallTime: start + cpu,
-);
-
-List<FrameTiming> _second(int from, int cpu) => [
-  for (var i = 0; i < 30; i++) _frame(from + i * 33333, cpu),
-];
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -113,50 +102,103 @@ void main() {
   });
 
   group('slow', () {
-    test('frames slow for long enough while scenes move: holds', () {
-      final frames = SceneFrames()..join(#view, 30, () => false);
-      final slow = SlowFramesSceneCondition(
-        frames: frames,
-        frameTime: const Duration(milliseconds: 16),
-        after: const Duration(seconds: 2),
-      );
+    var now = Duration.zero;
+    SlowFramesSceneCondition slow(SceneFrames frames) =>
+        SlowFramesSceneCondition(frames: frames, clock: () => now);
+
+    // [count] beats of the scenes of [ms] each, a 60th of a second apart.
+    void beats(SlowFramesSceneCondition condition, int count, double ms) {
+      for (var i = 0; i < count; i++) {
+        now += const Duration(microseconds: 16667);
+        condition.drawn(Duration(microseconds: (ms * 1000).round()));
+      }
+    }
+
+    setUp(() => now = Duration.zero);
+
+    test('not named in when: follows nothing, waits for nothing', () {
+      final condition = slow(SceneFrames());
+      expect(condition.settled, isTrue);
+      expect(condition.holds, isFalse);
+      expect(condition.state, 'not followed');
+    });
+
+    test('decided before the scenes show, the first frames left out', () {
+      final condition = slow(SceneFrames())..start();
       var notified = 0;
-      slow.addListener(() => notified++);
-      slow.timings(_second(0, 25000));
-      expect(slow.holds, isFalse);
-      expect(slow.middle, const Duration(milliseconds: 25));
-      slow.timings(_second(1000000, 25000));
-      slow.timings(_second(2000000, 25000));
-      expect(slow.holds, isTrue);
-      expect(notified, 1);
-      // For the rest of the run.
-      slow.timings(_second(3000000, 2000));
-      expect(slow.holds, isTrue);
+      condition.addListener(() => notified++);
+      expect(condition.settled, isFalse, reason: 'the scenes wait for it');
+      // The engine builds its programs on the first frames: slow, left out.
+      beats(condition, condition.warmUp, 40);
+      expect(condition.settled, isFalse);
+      beats(condition, condition.probe - 1, 3);
+      expect(condition.settled, isFalse);
+      expect(condition.state, contains('${condition.probe - 1} of '));
+      beats(condition, 1, 3);
+      expect(condition.settled, isTrue);
+      expect(condition.holds, isFalse);
+      expect(condition.middle, const Duration(milliseconds: 3));
+      expect(notified, 1, reason: 'the scenes show');
+    });
+
+    test('scenes too slow here: it holds before they show', () {
+      final condition = slow(SceneFrames())..start();
+      beats(condition, condition.warmUp + condition.probe, 11);
+      expect(condition.settled, isTrue);
+      expect(condition.holds, isTrue);
+      expect(condition.state, startsWith('slow: 11.0 ms a beat'));
+    });
+
+    test('a probe slow to come ends after three seconds with what it has', () {
+      final condition = slow(SceneFrames())..start();
+      beats(condition, condition.warmUp, 3);
+      for (var i = 0; i < 4; i++) {
+        now += const Duration(seconds: 1);
+        condition.drawn(const Duration(milliseconds: 20));
+      }
+      expect(condition.settled, isTrue);
+      expect(condition.holds, isTrue);
+    });
+
+    test('after they show, slow beats only mark it; it holds when no scene '
+        'moves', () {
+      final frames = SceneFrames()..join(#scene, 60, () => true);
+      final condition = slow(frames)..start();
+      beats(condition, condition.warmUp + condition.probe, 3);
+      expect(condition.holds, isFalse);
+      // Slow for longer than `after` while the scene is on the screen.
+      beats(condition, 60 * 4, 12);
+      expect(condition.holds, isFalse, reason: 'never in front of the user');
+      expect(condition.state, contains('holds when no scene moves'));
+      frames.leave(#scene);
+      expect(condition.holds, isTrue);
       frames.dispose();
     });
 
-    test('a fast batch starts the count again', () {
-      final frames = SceneFrames()..join(#view, 30, () => false);
-      final slow = SlowFramesSceneCondition(
-        frames: frames,
-        after: const Duration(seconds: 2),
-      );
-      slow
-        ..timings(_second(0, 25000))
-        ..timings(_second(1000000, 4000))
-        ..timings(_second(2000000, 25000));
-      expect(slow.holds, isFalse);
+    test('a slow moment after they show is forgotten by a quick one', () {
+      final frames = SceneFrames()..join(#scene, 60, () => true);
+      final condition = slow(frames)..start();
+      beats(condition, condition.warmUp + condition.probe, 3);
+      beats(condition, 60 * 2, 12);
+      beats(condition, 60, 2);
+      beats(condition, 60 * 2, 12);
+      frames.leave(#scene);
+      expect(condition.holds, isFalse);
       frames.dispose();
     });
 
-    test('nothing moves: nothing is measured', () {
-      final slow = SlowFramesSceneCondition(
-        frames: SceneFrames(),
-        after: Duration.zero,
+    test('the scenes that move wait while it finds out, if when names it', () {
+      final condition = slow(SceneFrames())..start();
+      expect(
+        availability({'slow': SceneRenderMode.still}, [condition]).deciding,
+        isTrue,
       );
-      slow.timings(_second(0, 50000));
-      expect(slow.holds, isFalse);
-      expect(slow.middle, isNull);
+      expect(availability(null, [condition]).deciding, isFalse);
+      beats(condition, condition.warmUp + condition.probe, 3);
+      expect(
+        availability({'slow': SceneRenderMode.still}, [condition]).deciding,
+        isFalse,
+      );
     });
   });
 
@@ -172,6 +214,7 @@ void main() {
           'spring.flutter.scene.when.slow=off',
           'spring.flutter.scene.slow.frame-time=20ms',
           'spring.flutter.scene.slow.after=5s',
+          'spring.flutter.scene.slow.probe=30',
         ])
         .run((context) {
           expect(context.startupFailure, isNull);
@@ -187,6 +230,8 @@ void main() {
           final slow = context.getBean<SlowFramesSceneCondition>();
           expect(slow.frameTime, const Duration(milliseconds: 20));
           expect(slow.after, const Duration(seconds: 5));
+          expect(slow.probe, 30);
+          expect(slow.settled, isFalse, reason: 'when names it: measuring');
           expect(
             [
               for (final condition

@@ -24,9 +24,10 @@ generator; see the changelogs' `Unreleased`):
   (`OutsideFrames`: `3D 60 fps · 0.9 ms`).
 - [ ] WebKit's alpha, `when` / `stillOf`, the materials' precision, the
   Telegram swipe (earlier in the cycle).
-- [ ] `when: slow` decided while the placeholder shows, by the scenes' own
-  frames, never switching off what the user sees (today it does: redo or
-  drop before the release).
+- [x] `when: slow` decided while the placeholder shows, by the scenes' own
+  beats (the first frames left out, `slow.probe` measured), never
+  switching off what the user sees (later slowness holds when no scene
+  moves).
 - [ ] The alpha probe's two lost WebGL contexts quiet in the console.
 - [ ] Tests: `engine` (placement, clip, scroll, host change), `layer`,
   `PageUnderlay`, `OutsideFrames`, the screen's rate.

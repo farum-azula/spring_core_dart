@@ -176,6 +176,36 @@ A value for one platform goes into its profile file, as everywhere:
 `render: still` in `application-android.yml`, or in the profile a debug
 run uses, where a frame costs several times a release's.
 
+## Drawing less where it costs too much
+
+`spring.flutter.scene.when` gives every scene a mode while a condition
+holds: `still` (one frame that stands) or `off` (the placeholders).
+
+```yaml
+spring:
+  flutter:
+    scene:
+      when:
+        touch: still     # a touch screen
+        slow: still      # the scenes cost this device too much
+      slow:
+        frame-time: 16ms # a beat of the scenes over half of it is slow
+        probe: 24        # frames measured before the scenes show
+        after: 3s        # slow beats, on end, after they showed
+```
+
+`slow` is decided by the scenes' own frames, not the page's: while the
+first scenes load, their placeholders showing, they draw frames nobody
+sees; the first few are left out (the engine builds its programs on
+them) and the next `probe` measured, what drawing every moving scene
+once cost the page's thread. When the middle one takes more than half of
+`frame-time` the scenes show in the mode of `when.slow` from their first
+frame. After they show a scene is never switched off in front of the
+user: beats slow for `after` only mark it, and it holds at the next
+moment no scene moves. An app's own condition is a `SceneCondition`
+bean; one that is still finding out (`settled: false`) keeps the moving
+scenes behind their placeholders.
+
 ## The canvas in a browser
 
 `spring.flutter.scene.canvas` says where a frame of a scene goes in a

@@ -17,5 +17,8 @@ final class TouchSceneCondition extends ChangeNotifier
   final bool holds;
 
   @override
+  bool get settled => true;
+
+  @override
   String get state => holds ? 'a touch screen' : 'a mouse or none';
 }

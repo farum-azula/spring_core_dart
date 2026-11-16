@@ -19,6 +19,8 @@ final class SceneFrames {
   final Map<Object, ({double rate, bool Function() beat})> _views = {};
   void Function()? _stop;
   final OutsideFrames _frames = OutsideFrames.of('3D');
+  final List<void Function(Duration cost)> _drawn = [];
+  final List<void Function()> _rested = [];
   double _rate = 0;
 
   /// The frames a second the views move at now, 0 when nothing moves.
@@ -49,6 +51,23 @@ final class SceneFrames {
     }
   }
 
+  /// [listener] is told of each beat that drew a frame Flutter does not
+  /// draw, with what the beat cost the page's thread (the scenes' own
+  /// work, nothing else of the page's).
+  void addDrawnListener(void Function(Duration cost) listener) =>
+      _drawn.add(listener);
+
+  /// [listener] is told no more.
+  void removeDrawnListener(void Function(Duration cost) listener) =>
+      _drawn.remove(listener);
+
+  /// [listener] is told when no view moves any more (the user left the
+  /// scenes, or they stand).
+  void addRestListener(void Function() listener) => _rested.add(listener);
+
+  /// [listener] is told no more.
+  void removeRestListener(void Function() listener) => _rested.remove(listener);
+
   /// Stops the beat.
   void dispose() {
     _views.clear();
@@ -67,6 +86,11 @@ final class SceneFrames {
     }
     _rate = rate;
     _stop?.call();
+    if (rate <= 0) {
+      for (final listener in [..._rested]) {
+        listener();
+      }
+    }
     _stop = rate <= 0
         ? null
         : startSceneTicks(
@@ -92,7 +116,13 @@ final class SceneFrames {
     if (drew) {
       // After the canvas the views drew on is drawn anew (a task of its
       // own, queued as they drew).
-      scheduleMicrotask(() => _frames.frame(watch.elapsed));
+      scheduleMicrotask(() {
+        final cost = watch.elapsed;
+        _frames.frame(cost);
+        for (final listener in [..._drawn]) {
+          listener(cost);
+        }
+      });
     }
   }
 }

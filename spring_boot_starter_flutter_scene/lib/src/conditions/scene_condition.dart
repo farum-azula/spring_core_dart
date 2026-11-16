@@ -24,6 +24,13 @@ abstract interface class SceneCondition implements Listenable {
   /// Whether it holds now.
   bool get holds;
 
+  /// Whether it knows: `false` while it is still finding out (`slow`
+  /// measures the first scenes' frames while their placeholders show).
+  /// A scene that moves waits for every condition of
+  /// `spring.flutter.scene.when` to know before it shows, so it shows in
+  /// the mode it keeps, and is never switched off in front of the user.
+  bool get settled;
+
   /// What it sees now, in words, for the scenes' debug tab.
   String get state;
 }

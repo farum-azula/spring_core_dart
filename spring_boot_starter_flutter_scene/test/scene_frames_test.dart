@@ -70,4 +70,31 @@ void main() {
     expect(source.count, 2);
     frames.dispose();
   });
+
+  testWidgets('it tells what a beat that drew cost, and when nothing moves', (
+    tester,
+  ) async {
+    final frames = SceneFrames();
+    final costs = <Duration>[];
+    var rested = 0;
+    void drawn(Duration cost) => costs.add(cost);
+    void rest() => rested++;
+    frames
+      ..addDrawnListener(drawn)
+      ..addRestListener(rest)
+      ..join(#scene, 30, () => true);
+    await tester.pump(const Duration(microseconds: 33334));
+    await tester.pump(const Duration(microseconds: 33334));
+    expect(costs, hasLength(2));
+    frames.leave(#scene);
+    expect(rested, 1);
+    frames
+      ..removeDrawnListener(drawn)
+      ..removeRestListener(rest)
+      ..join(#scene, 30, () => true);
+    await tester.pump(const Duration(microseconds: 33334));
+    expect(costs, hasLength(2));
+    frames.dispose();
+    expect(rested, 1);
+  });
 }

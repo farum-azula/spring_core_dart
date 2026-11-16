@@ -230,7 +230,11 @@ class _SpringSceneViewState extends State<SpringSceneView> {
   double _rate = 0;
   SceneCanvasTarget? _target;
   bool _canvasFailed = false;
-  bool _revealed = false;
+  // The engine's view has loaded its scene; it shows once no condition of
+  // `when` is still finding out ([_deciding]), and draws frames nobody
+  // sees meanwhile.
+  bool _loaded = false;
+  bool _deciding = false;
   bool _presenting = false;
   Size _size = Size.zero;
   double _ratio = 1;
@@ -352,6 +356,8 @@ class _SpringSceneViewState extends State<SpringSceneView> {
     if (!layered) {
       _leaveCanvas();
     }
+    // A scene that stands shows at once; one that moves waits for `when`.
+    _deciding = paused == null && availability.deciding;
     _move(paused == null ? frameRate : 0);
     final view = widget._declarative
         ? SceneView.declarative(
@@ -365,7 +371,7 @@ class _SpringSceneViewState extends State<SpringSceneView> {
             clock: _clock.clock,
             pixelRatio: pixelRatio,
             loading: widget.loading ?? _loads,
-            loadingBuilder: layered ? _layerLoading : _loading,
+            loadingBuilder: _layerLoading,
             warmUp: widget.warmUp,
             children: [_SceneProbe(_found), ...widget.children],
           )
@@ -377,7 +383,7 @@ class _SpringSceneViewState extends State<SpringSceneView> {
             clock: _clock.clock,
             pixelRatio: pixelRatio,
             loading: widget.loading ?? _loads,
-            loadingBuilder: layered ? _layerLoading : _loading,
+            loadingBuilder: _layerLoading,
             warmUp: widget.warmUp,
             children: widget.children,
           );
@@ -394,7 +400,38 @@ class _SpringSceneViewState extends State<SpringSceneView> {
       repaint: _repaint,
       child: layered
           ? _layered(canvas, view, camera, ownCamera, pixelRatio)
-          : RepaintBoundary(child: view),
+          : _paged(view, camera, ownCamera, pixelRatio),
+    );
+  }
+
+  bool get _revealed => _loaded && !_deciding;
+
+  // Flutter draws the scene into the page: the engine's view, offstage
+  // until it shows, the placeholder over it meanwhile.
+  Widget _paged(
+    Widget view,
+    Camera? camera,
+    SceneCameraBuilder? cameraBuilder,
+    double? pixelRatio,
+  ) {
+    _camera = camera;
+    _cameraBuilder = cameraBuilder;
+    _ratio = pixelRatio ?? View.of(context).devicePixelRatio;
+    final revealed = _revealed;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _size = constraints.biggest;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            Offstage(
+              offstage: !revealed,
+              child: RepaintBoundary(child: view),
+            ),
+            if (!revealed) ?widget.placeholder,
+          ],
+        );
+      },
     );
   }
 
@@ -467,11 +504,11 @@ class _SpringSceneViewState extends State<SpringSceneView> {
   Widget _layerLoading(BuildContext context, double progress) =>
       _LayerLoading(shown: _shown);
 
-  // The engine's view shows its scene (false: it loads again).
-  void _shown(bool revealed) {
+  // The engine's view has its scene (false: it loads again).
+  void _shown(bool loaded) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _revealed != revealed) {
-        setState(() => _revealed = revealed);
+      if (mounted && _loaded != loaded) {
+        setState(() => _loaded = loaded);
       }
     });
   }
@@ -584,6 +621,10 @@ class _SpringSceneViewState extends State<SpringSceneView> {
     _elapsed.value = elapsed;
     _state?.scene?.update(delta);
     _tick(elapsed, delta);
+    if (!_revealed) {
+      // While `when` is finding out, a frame nobody sees, measured.
+      return _loaded && _deciding && _probe();
+    }
     if (_target != null) {
       return _present();
     }
@@ -591,8 +632,43 @@ class _SpringSceneViewState extends State<SpringSceneView> {
     return false;
   }
 
-  Widget _loading(BuildContext context, double progress) =>
-      widget.placeholder ?? const SizedBox.shrink();
+  // The engine draws the scene into a picture nobody paints, as it draws
+  // one it shows: what a frame of it costs.
+  bool _probe() {
+    final scene = _state?.scene;
+    if (!mounted || scene == null || _size.isEmpty || !_size.isFinite) {
+      return false;
+    }
+    final camera =
+        _camera ??
+        _cameraBuilder?.call(_elapsed.value) ??
+        scene.camera ??
+        _defaultCamera;
+    final recorder = PictureRecorder();
+    try {
+      scene.render(
+        camera,
+        Canvas(recorder),
+        viewport: Offset.zero & _size,
+        pixelRatio: _ratio,
+      );
+      return true;
+    } on Object catch (error, stack) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stack,
+          library: 'spring_boot_starter_flutter_scene',
+          context: ErrorDescription(
+            'while measuring a frame of the scene "${widget.name}"',
+          ),
+        ),
+      );
+      return false;
+    } finally {
+      recorder.endRecording().dispose();
+    }
+  }
 
   /// A rebuild gives the engine's view a new widget, which it paints.
   void _repaint() {
@@ -673,7 +749,7 @@ class _SpringSceneViewState extends State<SpringSceneView> {
 
 final Camera _defaultCamera = PerspectiveCamera();
 
-/// Stands in the engine's view while it loads: tells the layered view
+/// Stands in the engine's view while it loads: tells the view
 /// when its scene shows.
 class _LayerLoading extends StatefulWidget {
   const _LayerLoading({required this.shown});

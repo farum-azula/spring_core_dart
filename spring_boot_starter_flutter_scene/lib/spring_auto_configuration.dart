@@ -177,6 +177,7 @@ final BeanModule springBootStarterFlutterSceneAutoConfiguration = BeanModule(
           frames: r.dependency<SceneFrames>(),
           frameTime: properties.slow.frameTime,
           after: properties.slow.after,
+          probe: properties.slow.probe,
         );
         if (properties.when?.containsKey(condition.name) ?? false) {
           condition.start();
