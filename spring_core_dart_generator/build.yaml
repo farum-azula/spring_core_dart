@@ -58,8 +58,10 @@ builders:
     auto_apply: dependents
     build_to: source
   # Writes the page loader of the active theme's splash into web/index.html,
-  # between <!-- spring:loader:start --> and <!-- spring:loader:end -->. No
-  # declared outputs: web/index.html is the app's own file.
+  # between <!-- spring:loader:start --> and <!-- spring:loader:end -->, and
+  # spring.web.resources.cache.cachecontrol.* into web/_headers, between
+  # # spring:cache:start and # spring:cache:end. No declared outputs: web/ is
+  # the app's own folder.
   spring_flutter_page_loader:
     import: "package:spring_core_dart_generator/builder.dart"
     builder_factories: ["springFlutterPageLoaderBuilder"]

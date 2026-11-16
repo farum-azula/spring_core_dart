@@ -52,6 +52,13 @@ final class _Files implements WebPageFiles {
     String path,
     String content,
   ) async => files[path] = content;
+
+  @override
+  Future<void> delete(
+    BuildStep buildStep,
+    String package,
+    String path,
+  ) async => files.remove(path);
 }
 
 Future<({String page, List<String> logs})> _build(

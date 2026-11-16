@@ -13,6 +13,7 @@ import 'package:spring_core_dart_generator/src/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/spring_key_files.dart';
 import 'package:spring_core_dart_generator/src/theme_references.dart';
 import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
+import 'package:spring_core_dart_generator/src/web_cache_headers.dart';
 import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart'
     show readPlatformEnvironment;
 import 'package:spring_core_dart_generator/src/web_loader_download.dart';
@@ -22,8 +23,9 @@ import 'package:spring_core_dart_generator/src/web_wasm_allow_list.dart';
 import 'package:yaml/yaml.dart';
 
 /// Reads and writes the files of the app's own directory (not `lib/`)
-/// for [WebPageLoaderBuilder]: `web/index.html` and the `web:` files of
-/// loaders. The disk by default; tests pass files held in memory.
+/// for [WebPageLoaderBuilder]: `web/index.html`, `web/_headers` and the
+/// `web:` files of loaders. The disk by default; tests pass files held in
+/// memory.
 abstract interface class WebPageFiles {
   /// The text of [path] below the directory of [package], or `null`.
   Future<String?> read(BuildStep buildStep, String package, String path);
@@ -35,6 +37,9 @@ abstract interface class WebPageFiles {
     String path,
     String content,
   );
+
+  /// Deletes [path] below the directory of [package], when it is there.
+  Future<void> delete(BuildStep buildStep, String package, String path);
 }
 
 final class _DiskPageFiles implements WebPageFiles {
@@ -67,6 +72,14 @@ final class _DiskPageFiles implements WebPageFiles {
       return;
     }
     await file.writeAsString(content);
+  }
+
+  @override
+  Future<void> delete(BuildStep buildStep, String package, String path) async {
+    final file = PackageDirectories.current.file(AssetId(package, path));
+    if (file != null && file.existsSync()) {
+      await file.delete();
+    }
   }
 }
 
@@ -105,6 +118,11 @@ Future<String?> _fromDependency(BuildStep buildStep, String path) async {
 /// `spring.flutter.web.page.wasm-allow-list` goes into the same block
 /// ([WasmAllowList]): the splash's script passes it to Flutter's loader;
 /// without a splash, the block has only a script that does.
+///
+/// `spring.web.resources.cache.cachecontrol.*` goes into a block of
+/// `web/_headers`, the host's headers file ([WebCacheHeaders]), created
+/// when missing and removed when no key is set; a value it cannot read
+/// fails the build and leaves the file as it is.
 ///
 /// It runs for a package that depends on `spring_boot_starter_flutter`,
 /// reads `lib/resources/` as the keys builder does, and never fails a
@@ -257,6 +275,7 @@ final class WebPageLoaderBuilder implements Builder {
             translate: app.translate,
           );
     await _manifest(buildStep, package, app, colors);
+    await _cacheHeaders(buildStep, package, texts);
     // Theme errors are the typed keys' to report.
     diagnostics.warnings.forEach(log.warning);
     problems.forEach(log.warning);
@@ -334,6 +353,53 @@ final class WebPageLoaderBuilder implements Builder {
         translate: true,
       );
     }
+  }
+
+  // web/_headers from spring.web.resources.cache.cachecontrol.* as the app
+  // reads them in a browser.
+  Future<void> _cacheHeaders(
+    BuildStep buildStep,
+    String package,
+    Map<String, String> texts,
+  ) async {
+    var unread = false;
+    final String? cacheControl;
+    try {
+      cacheControl = WebCacheHeaders.cacheControl(
+        readPlatformEnvironment(texts, profiles: const ['web']),
+        problem: (message) {
+          unread = true;
+          log.severe('The cache headers: $message');
+        },
+      );
+    } on Exception {
+      return; // the config's own reading reports it
+    }
+    if (unread) {
+      return;
+    }
+    const path = WebCacheHeaders.path;
+    final headers = await _files.read(buildStep, package, path);
+    final updated = WebCacheHeaders.apply(headers, cacheControl);
+    if (updated == (headers ?? '')) {
+      return;
+    }
+    if (updated.isEmpty) {
+      await _files.delete(buildStep, package, path);
+      log.info(
+        'Removed $path: it had only the cache headers, and no '
+        '${WebCacheHeaders.prefix}.* is set.',
+      );
+      return;
+    }
+    await _files.write(buildStep, package, path, updated);
+    log.info(
+      cacheControl == null
+          ? 'Removed the cache headers from $path: no '
+                '${WebCacheHeaders.prefix}.* is set.'
+          : 'Wrote the cache headers of ${WebCacheHeaders.prefix}.* into '
+                '$path.',
+    );
   }
 
   Future<void> _manifest(
