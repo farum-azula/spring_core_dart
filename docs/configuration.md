@@ -1788,12 +1788,33 @@ keeps its entries only 30 seconds.
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `spring.cache.type` | `generic` / `simple` / `none` | `generic` with `Cache` beans, else `simple` | `simple` keeps entries in memory; `generic` uses the application's `Cache` beans; `none` caches nothing, so the methods always run (`NoOpCacheManager`) |
+| `spring.cache.type` | `generic` / `simple` / `disk` / `none` | `generic` with `Cache` beans, else `simple` | `simple` keeps entries in memory; `generic` uses the application's `Cache` beans; `disk` keeps them on disk, so they survive a restart (`DiskCacheManager`, below; not Spring Boot's); `none` caches nothing, so the methods always run (`NoOpCacheManager`) |
 | `spring.cache.cache-names` | list | — (caches are created on demand) | A fixed set of caches; an annotation that names another cache then fails |
 | `spring.cache.simple.time-to-live` | duration, `0` or more | none | An entry expires this long after it was written, measured on a monotonic clock as Caffeine's ticker (setting the system clock moves no expiry). `0` keeps nothing; a negative value fails the start (an `ArgumentError` naming the property), as Caffeine's `expireAfterWrite` refuses one |
 | `spring.cache.simple.max-size` | int, `0` or more | none | The most entries per cache; when full, the least recently used entry goes. `0` keeps nothing; a negative value fails the start (an `ArgumentError` naming the property) |
 | `spring.cache.simple.caches.<name>.time-to-live` | duration, `0` or more | the global one | The same, for one cache; a negative value fails the start too |
 | `spring.cache.simple.caches.<name>.max-size` | int, `0` or more | the global one | The same, for one cache; a negative value fails the start too |
+| `spring.cache.disk.time-to-live` | duration, `0` or more | none | `type: disk`: an entry expires this long after it was written, by the wall clock (it outlives a restart) |
+| `spring.cache.disk.caches.<name>.time-to-live` | duration | the global one | The same, for one cache |
+| `spring.cache.disk.max-size` | data size (`50MB`) | none | The most bytes each cache keeps; past it the oldest written go. Only the cache's own folder counts: the resources a Flutter app downloads have a limit of their own, `spring.flutter.resources.cache.max-size` |
+| `spring.cache.disk.directory` | folder | `.spring/cache` | Where the entries are where no `CacheStore` bean gives a place (a server; a Flutter app keeps them in its files' `cache` place) |
+| `spring.cache.disk.version` | text | none (every entry is read) | The version entries are written by; one of another version is not read, so results made from what a new version changed are made again |
+| `spring.cache.resource-version` | `true` / `false` | `false` | Whether a key made of a resource that knows the version of its content (a file the Flutter starter keeps) is its address and that version, so a result made from a file that changed at the same address is made again. Off by default: the version is a digest of the content. Not Spring Boot's |
+
+`type: disk` keeps each entry in one file, `spring/caches/<cache>/<hash
+of the key>.json`, with the key it was written under, when it expires,
+its version and the value as JSON through the application's
+`ObjectMapper`: `String`, numbers, `bool`, `null`, an object the mapper
+reads (`@Introspected()` or a JSON serializer), a `List`, `Set` or
+`Map<String, …>` of one of those, and a `Resource` with an address (kept as
+the address: a file the resources' cache keeps is one copy for both). Another
+value is not kept (the method runs again; the cache logs it once), nor is
+an empty collection, whose element type is unknown. Its caches answer later
+(`AsyncCache`, Spring's `Cache.retrieve`): a method that does not return a
+`Future` on one is a start-up error naming it. `CompositeCacheManager`
+(Spring's) asks several managers for a cache name; `LayeredCacheManager`
+(not Spring's) puts a fast cache in front of slower ones, a hit in a slower
+one copied forward, a put and an evict going to every layer.
 
 A cache name with dots goes in brackets, as in any Spring Boot map:
 `spring.cache.simple.caches[books.byIsbn].max-size=2` (YAML key
@@ -2117,6 +2138,12 @@ spring:
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `spring.flutter.frame-meter.enabled` | `true` / `false` | `false` | Shows the frame meter over the app (`FrameMeter`, put there by `SpringApp`) |
+| `spring.flutter.resources.cache.enabled` | `true` / `false` | `true` | Whether an `http:` or `https:` resource of the `ResourceLoader` (a `Resource` of `@Value`, `ResourceView`, `ResourceImage`) is downloaded once and kept in the files' `cache` place (`spring/resources/<sha256 of the address>/`, `data` and `meta.json`) |
+| `spring.flutter.resources.cache.max-age` | duration | `7d` | How long a kept resource is used as it is; past it, it is still used and asked again in the background with `If-None-Match` / `If-Modified-Since` (an unchanged one costs no download) |
+| `spring.flutter.resources.cache.max-entry-size` | data size | `50MB` | The largest resource kept; a larger one is read from the network every time |
+| `spring.flutter.resources.cache.max-size` | data size (`200MB`) | none (the system's) | The most bytes the kept resources take together; past it the least recently used go first. Only their folder counts (`spring/resources/`): the `@Cacheable` caches on disk (`spring.cache.type: disk`, `spring/caches/`) keep to limits of their own |
+| `spring.flutter.resources.cache.locations[n].pattern` / `.max-age` / `.enabled` | address pattern (`**` any path, `*` one segment), duration, `true` / `false` | none | Rules by address, the first that matches wins: an age of their own, or `enabled: false` not to keep them |
+| `spring.flutter.resources.view.fade` | duration | `200ms` | How long a `ResourceView` fades its resource in over its placeholder; none when the system asks for less motion |
 | `spring.flutter.frame-meter.position` | `top-left` / `top-right` / `bottom-left` / `bottom-right` | `top-right` | The corner of the screen it shows in, inside the safe area |
 | `spring.flutter.frame-meter.target-rate` | number | `60` | The frames a second the screen is meant to show: a frame within `1 / target-rate` is good, up to twice that a warning, more a drop |
 

@@ -11,41 +11,41 @@ What Dota Passport's phones measured and the framework mended
 (`spring_boot_starter_flutter_scene`, `spring_boot_starter_flutter`, the
 generator; see the changelogs' `Unreleased`):
 
-- [ ] `spring.flutter.scene.canvas: page | layer | engine`: the engine's
+- [x] `spring.flutter.scene.canvas: page | layer | engine`: the engine's
   own canvas, every scene drawn on it, nothing handed over or copied;
   behind the page when the first scene fills the screen (`PageUnderlay`
   steps the theme's background aside), else a platform view.
-- [ ] One beat for every scene (`SceneFrames`), on the browser's frames
+- [x] One beat for every scene (`SceneFrames`), on the browser's frames
   (`requestAnimationFrame`), a timer elsewhere; `max-frame-rate: 0`, the
   screen's rate.
-- [ ] `spring.flutter.scene.light-clustering`; flutter_scene's timeline
+- [x] `spring.flutter.scene.light-clustering`; flutter_scene's timeline
   marks off in a web release build.
-- [ ] The frame meter's line for frames drawn without Flutter
+- [x] The frame meter's line for frames drawn without Flutter
   (`OutsideFrames`: `3D 60 fps · 0.9 ms`).
-- [ ] WebKit's alpha, `when` / `stillOf`, the materials' precision, the
+- [x] WebKit's alpha, `when` / `stillOf`, the materials' precision, the
   Telegram swipe (earlier in the cycle).
 - [x] `when: slow` decided while the placeholder shows, by the scenes' own
   beats (the first frames left out, `slow.probe` measured), never
   switching off what the user sees (later slowness holds when no scene
   moves).
 - [ ] The alpha probe's two lost WebGL contexts quiet in the console.
-- [ ] Tests: `engine` (placement, clip, scroll, host change), `layer`,
+- [x] Tests: `engine` (placement, clip, scroll, host change), `layer`,
   `PageUnderlay`, `OutsideFrames`, the screen's rate.
 - [ ] README, changelogs, the site's docs (farum-azula.org).
 
-## The release right after it: caches and runtime properties
+## The release right after it: caches (built) and runtime properties
 
 - [ ] **Properties that change at runtime**
   ([runtime_properties.md](runtime_properties.md)): the debug window and
   an app's settings screen change them, kept across starts by the
   platform's store (`FileTemplate`: a file on iOS, Android and desktops,
   IndexedDB on the web).
-- [ ] **The asynchronous cache first**
+- [x] **The asynchronous cache first**
   ([spring_boot_starter_cache.md](spring_boot_starter_cache.md#an-asynchronous-cache-planned-the-owner-november-2026)):
   `Cache` and `CacheManager` answering `FutureOr`, as Spring's
   `Cache.retrieve`. The stores below answer later (IndexedDB, a file read
   without blocking, Redis), and today's `Cache` is synchronous.
-- [ ] **A cache that outlives a restart**: a `CacheManager` whose entries
+- [x] **A cache that outlives a restart**: a `CacheManager` whose entries
   are kept in a store, so `@Cacheable` results (API answers, work done)
   survive a restart on every platform. The cache starter is pure Dart: it
   gets the store as an interface (`CacheStore`); the Flutter starter gives
@@ -53,14 +53,14 @@ generator; see the changelogs' `Unreleased`):
   server one on a directory. Entries keep their time-to-live; values go
   through the application's `ObjectMapper`, so a cached type needs
   `@Introspected()` or a serializer, as `FileArea.write` does.
-- [ ] **`CompositeCacheManager`**, Spring's: one name looked up in several
+- [x] **`CompositeCacheManager`**, Spring's: one name looked up in several
   managers, the first that has the cache wins.
-- [ ] **A layered cache** (not Spring's; the docs say so): a fast cache in
+- [x] **A layered cache** (not Spring's; the docs say so): a fast cache in
   front of a slower one, a hit in the slower copied into the faster, a put
   and an evict going to both. For example the local store in front of a
   shared one. Redis itself stays postponed (the owner, November 2026); the
   layering is written against `Cache`, so a Redis cache drops in later.
-- [ ] **Resources from the network kept on disk, and one widget for any
+- [x] **Resources from the network kept on disk, and one widget for any
   resource** (the owner, 16 November 2026: not an image widget, a
   resource; a video tomorrow goes the same way). Spring's `Resource`,
   `ResourceLoader` and `ProtocolResolver` are there already
@@ -111,12 +111,13 @@ generator; see the changelogs' `Unreleased`):
     #image.version"`). Results made from the app's own resources
     (`asset:`, `resources:`) kept on disk go with a new version of the
     app.
-  - One store under both caches: the place's limit in
-    `spring.flutter.files.cache.max-size` (every writer keeps to it),
-    `spring.cache.type: files` with its block `spring.cache.files.*` for
-    `@Cacheable` (as `type: simple` has `spring.cache.simple.*`; `files`
-    is the app's files, IndexedDB on the web), and the resources' share
-    and age in `spring.flutter.resources.cache.*`; on disk
+  - One place, two caches apart (the owner, 16 November 2026: data and
+    files are not one cache to remember): `spring.cache.type: disk` with
+    its block `spring.cache.disk.*` for `@Cacheable` (as `type: simple`
+    has `spring.cache.simple.*`; IndexedDB on the web), its limit per
+    cache; the resources' own limit and age in
+    `spring.flutter.resources.cache.*` (`max-size` over their folder
+    only); neither counts the other's files; on disk
     `spring/caches/<name>/<sha256 of the key>.json` and
     `spring/resources/<sha256 of the location>/`. A `@Cacheable` method
     that reads a file through the `ResourceLoader` stacks on the
@@ -125,7 +126,7 @@ generator; see the changelogs' `Unreleased`):
   - On iOS, Android and the desktops this is what keeps the app's images
     from the network across starts (avatars): `Image.network` keeps them
     in memory only and downloads them again after every start.
-- [ ] **The web build's cache headers from the configuration**: the
+- [ ] **The web build's cache headers from the configuration** (being built): the
   generator writes the host's headers (`_headers` for Cloudflare Pages
   and Netlify, later the others) from Spring Boot's keys
   `spring.web.resources.cache.cachecontrol.*`: `no-cache` for what has no
