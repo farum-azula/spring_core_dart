@@ -65,13 +65,17 @@ void rateLimitStoreContract(
 
   test('the bucket is filled again by the clock of the database', () async {
     final store = await newStore();
-    const fast = RateLimit(20, Duration(seconds: 1), burst: 2);
+    // A token every half second: three writes on a runner's slow disk stay
+    // well inside one (at 50 ms a token came back before the refusal).
+    const fast = RateLimit(2, Duration(seconds: 1), burst: 2);
     expect((await store.tryAcquire('k', fast)).allowed, isTrue);
     expect((await store.tryAcquire('k', fast)).allowed, isTrue);
     final refused = await store.tryAcquire('k', fast);
     expect(refused.allowed, isFalse);
-    expect(refused.retryAfter.inMilliseconds, inInclusiveRange(1, 50));
-    await Future<void>.delayed(const Duration(milliseconds: 300));
+    expect(refused.retryAfter.inMilliseconds, inInclusiveRange(1, 500));
+    // More than three tokens' time: without the burst two would be left
+    // after the next one.
+    await Future<void>.delayed(const Duration(milliseconds: 1600));
     // Never more than the burst, however long the pause.
     expect((await store.tryAcquire('k', fast)).remaining, 1);
     expect((await store.tryAcquire('k', fast)).allowed, isTrue);
