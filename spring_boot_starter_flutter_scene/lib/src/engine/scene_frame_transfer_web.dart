@@ -64,8 +64,6 @@ extension type _Gl._(JSObject _) implements JSObject {
     int type,
     JSUint8Array pixels,
   );
-
-  external JSObject? getExtension(String name);
 }
 
 String? _transfer;
@@ -212,6 +210,10 @@ bool _close(List<int> pixel, [List<int> expected = _expected]) {
   return true;
 }
 
+// The probe's two contexts are let go, not lost (`WEBGL_lose_context`):
+// each loss was a "context lost" line in the console of the page, and the
+// collector frees them anyway; with the page's own and the engine's
+// they are far below the browser's limit of active contexts (16).
 List<int>? _probe({required bool premultiplied}) {
   final source = _Canvas(1, 1);
   final sourceGl = source.getContext('webgl2', _attributes(premultiplied));
@@ -227,12 +229,6 @@ List<int>? _probe({required bool premultiplied}) {
     return _upload(read, source.transferToImageBitmap());
   } on Object {
     return null;
-  } finally {
-    for (final context in [gl, read]) {
-      context
-          .getExtension('WEBGL_lose_context')
-          ?.callMethod('loseContext'.toJS);
-    }
   }
 }
 

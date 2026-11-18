@@ -1,3 +1,7 @@
+## Unreleased
+
+- The check of how the browser passes a frame of WebGL, made before the engine starts, no longer leaves two "context lost" lines in the page's console: its two contexts of one pixel are let go for the collector instead of being lost on purpose.
+
 ## 0.8.3
 
 - Scenes in Safari and on every browser of an iPhone draw as in Chrome: a half-transparent glow came out there as one block of solid colour, or with a halo. `flutter_scene` hands each frame to Flutter by `transferToImageBitmap`, which Flutter takes as premultiplied; WebKit divides a frame of WebGL by its alpha. Before the engine starts, the starter passes one pixel that way and, where it comes back divided, has CanvasKit take the engine's frames as unpremultiplied (or, without CanvasKit, asks for the engine's canvas without premultiplied alpha); a browser that passes a frame neither way fails the start, so its scenes are their placeholders and not empty. The debug tab says which (**Frames**).
