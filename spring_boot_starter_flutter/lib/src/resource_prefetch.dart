@@ -104,12 +104,22 @@ final class ResourcePrefetch extends SplashTask
     }
   }
 
+  // The app shown starts the wait of `stage: app`; the context closing
+  // ends it. ContextClosedEvent comes first in a close, before any bean is
+  // destroyed, so the wait never outlives the context whatever the order
+  // of the beans' destruction (a bean whose destruction waits for the
+  // network, a Realtime connection, held the [stop] of the bean back).
   @override
   bool supportsEvent(Object event) =>
-      event is SplashStageEvent && event.stage == SplashStage.app;
+      (event is SplashStageEvent && event.stage == SplashStage.app) ||
+      event is ContextClosedEvent;
 
   @override
   void onApplicationEvent(Object event) {
+    if (event is ContextClosedEvent) {
+      stop();
+      return;
+    }
     if (!duringSplash && _loading == null) {
       _timer ??= Timer(delay, () => unawaited(load()));
     }

@@ -79,6 +79,27 @@ void main() {
     expect(bundle.reads, 1);
   });
 
+  testWidgets('the context closing ends the wait before it starts', (
+    tester,
+  ) async {
+    final bundle = _Bundle();
+    final prefetch = ResourcePrefetch(
+      locations: const ['content/**'],
+      delay: const Duration(seconds: 1),
+      bundle: bundle,
+      web: true,
+    );
+    prefetch.onApplicationEvent(
+      SplashStageEvent(Object(), stage: SplashStage.app, at: Duration.zero),
+    );
+    final closed = ContextClosedEvent(AnnotationConfigApplicationContext([]));
+    expect(prefetch.supportsEvent(closed), isTrue);
+    prefetch.onApplicationEvent(closed);
+    await tester.pump(const Duration(seconds: 2));
+    expect(bundle.reads, 0);
+    expect(prefetch.loaded, isNull);
+  });
+
   test('off the web, or without locations, nothing is read', () async {
     for (final prefetch in [
       ResourcePrefetch(locations: const ['x'], bundle: _Bundle(), web: false),

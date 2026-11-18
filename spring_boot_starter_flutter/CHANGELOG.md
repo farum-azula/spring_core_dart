@@ -1,3 +1,7 @@
+## Unreleased
+
+- `spring.resources.prefetch` with `stage: app`: the wait before the download ends when the context starts to close (`ContextClosedEvent`, which comes before any bean is destroyed), not only when its bean is destroyed. A bean whose destruction waits for the network (a Realtime connection of the Supabase starter) could hold the wait back, and a widget test that closed the app found the timer still pending.
+
 ## 0.8.3
 
 - Editors know Spring Boot's `spring.web.resources.cache.cachecontrol.*` in a Flutter app without `spring_boot_starter_web` (`FlutterWebCacheControlProperties`, read by the generator at build time for the web build's `web/_headers`, nothing at run time): the keys were unknown to the language server there.
