@@ -121,13 +121,16 @@ final BeanModule springBootStarterSupabaseAutoConfiguration = BeanModule(
 /// application sets itself under
 /// `spring.security.oauth2.resourceserver.jwt.*` wins.
 ///
-/// Not in a browser build: only a server checks tokens.
+/// Only on a server (`ModulePlatform.server`): only a server checks
+/// bearer tokens (`spring_boot_starter_security` reads these properties),
+/// so neither a browser build nor a Flutter app on a phone or a desktop
+/// has it.
 @AutoConfigurationModule(
   before: [
     'springBootStarterSecurityAutoConfiguration',
     'springBootStarterSecurityOAuth2ClientAutoConfiguration',
   ],
-  platform: ModulePlatform.native,
+  platform: ModulePlatform.server,
 )
 final BeanModule springBootStarterSupabaseServerAutoConfiguration = BeanModule(
   'springBootStarterSupabaseServerAutoConfiguration',
@@ -152,6 +155,21 @@ final BeanModule springBootStarterSupabaseServerAutoConfiguration = BeanModule(
       _legacyResourceServer,
     ),
   },
+);
+
+/// The admin API of Supabase Auth (`supabaseAuthAdminAutoConfiguration`):
+/// `supabaseAuthAdmin`, which manages users as the service role.
+///
+/// Only on a server (`ModulePlatform.server`): it is the code that uses
+/// the service-role key, which passes row-level security and must never
+/// ship in an app. A Flutter app (on a phone, a desktop or the web) and a
+/// browser build compile the module away with everything only it
+/// reaches; an edge function, compiled to JavaScript with
+/// `-DSPRING_ALL_PLATFORMS=true`, keeps it.
+@AutoConfigurationModule(platform: ModulePlatform.server)
+final BeanModule springBootStarterSupabaseAdminAutoConfiguration = BeanModule(
+  'springBootStarterSupabaseAdminAutoConfiguration',
+  supabaseAuthAdminAutoConfiguration,
 );
 
 // The security starter's properties, which this package sets defaults of

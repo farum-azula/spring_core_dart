@@ -1,6 +1,20 @@
 # Properties that change at runtime (the release after the speed release)
 
-The owner, 16 November 2026: the release right after the speed release (the scenes' speed first; [release_optimizations.md](release_optimizations.md)). Not started.
+The owner, 16 November 2026: the release right after the speed release (the scenes' speed first; [release_optimizations.md](release_optimizations.md)). Not started; the speed and the caches went out together in 0.8.3, so this is the next release, after the generator's split by starter ([generator_by_starter.md](generator_by_starter.md)).
+
+**No code unless the build asks for it** (the owner, 17 November 2026):
+changing the context while the app runs may be unsafe, so a flag read at
+build time decides whether any of it is generated, as
+`spring.flutter.scene.debug.enabled` decides the scenes' tab. Off, the
+application has no `RuntimePropertySource`, no rebinding, no store and no
+editing in the debug panel: not switched off at run time, not there to
+switch on. The key to settle: Spring Cloud's `spring.cloud.refresh.enabled`
+(its own default is `true`); ours not set means debug and profile builds
+only (the debug window), a release build needs `true` (an app's settings
+screen), `false` means none in any build. With it, which keys may change
+(a list of prefixes, `spring.flutter.scene.*` for Dota Passport's
+graphics), every other key refused even when the code is there; Spring
+Cloud's `never-refreshable` is the opposite list.
 
 ## Why
 
@@ -79,7 +93,10 @@ Spring it is Spring Cloud's.
    `/actuator/refresh`, behind security, as Spring Cloud's.
 8. **Tests:** a change, its event and the rebound bean; a refused value
    (the old one stays); each store's round trip; a key applied at the next
-   start; a `const` default list never written into; a secret refused.
+   start; a `const` default list never written into; a secret refused; a
+   key outside the allowed prefixes refused; with the flag off, none of
+   the refresh code in the generated module (the generated code compared,
+   as the debug panel's absence is).
 
 The first user: Dota Passport's graphics settings (the 3D's frame rate,
 still, off) and the scenes' debug tab.

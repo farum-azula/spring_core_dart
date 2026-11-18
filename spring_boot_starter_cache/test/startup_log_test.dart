@@ -17,6 +17,9 @@ void main() {
     await const ApplicationContextRunner()
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springBootStarterCacheAutoConfiguration)
+        .withAutoConfiguration(
+          springBootStarterCacheStartupChecksAutoConfiguration,
+        )
         .withUserConfiguration(
           BeanModule('app', [
             BeanDefinition<Books>(
@@ -33,6 +36,7 @@ void main() {
             isEmpty,
           );
           // The validator still checks, and the cache still works.
+          expect(context, hasSingleBean<CacheOperationValidator>());
           final books = context.getBean<Books>()
             ..find('1')
             ..find('1');

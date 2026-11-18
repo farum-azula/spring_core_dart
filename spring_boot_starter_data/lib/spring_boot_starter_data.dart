@@ -49,7 +49,8 @@ export 'src/data_source_auto_configuration.dart'
         createInitializingDataSource,
         dataSourcesByName,
         jdbcLogSettingsOf,
-        jdbcQueryTimeout;
+        jdbcQueryTimeout,
+        jdbcSlowQueryLogSettingsOf;
 export 'src/exceptions.dart';
 export 'src/jdbc/collection_columns.dart';
 export 'src/jdbc/data_source.dart';
@@ -133,4 +134,5 @@ export 'src/transaction/transaction_exceptions.dart';
 export 'src/transaction/transaction_interceptor.dart';
 export 'src/transaction/transaction_synchronization_manager.dart';
 export 'src/transaction/transaction_template.dart' show TransactionTemplate;
+export 'src/transaction/transaction_validator.dart';
 export 'src/web/web_paging.dart';

@@ -6529,8 +6529,17 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
   autoConfigurations: [
     _i13.springBootAutoConfiguration,
     _i14.springBootStarterCacheAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i14.springBootStarterCacheStartupChecksAutoConfiguration,
     _i15.springBootStarterLoggingAutoConfiguration,
   ],
+  autoConfigurationMetadata: {
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i14.springBootStarterCacheStartupChecksAutoConfiguration:
+          const _i3.AutoConfigurationModule(
+            after: [r'springBootStarterCacheAutoConfiguration'],
+          ),
+  },
   dartDefines: {
     if (const bool.hasEnvironment('BOOKS_PAGESIZE'))
       'BOOKS_PAGESIZE': const String.fromEnvironment('BOOKS_PAGESIZE'),
@@ -6975,7 +6984,7 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'f6968147',
+  fingerprint: '27ccd050',
 );
 
 /// Starts the application: config files, environment, context, runners

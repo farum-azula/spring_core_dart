@@ -122,12 +122,15 @@ void main() {
     test('leaves out the auto-configuration of other starters', () {
       expect(data.properties, {
         'spring.autoconfigure.exclude':
-            'springBootStarterCacheAutoConfiguration',
+            'springBootStarterCacheAutoConfiguration,'
+            'springBootStarterCacheStartupChecksAutoConfiguration',
       });
       expect(DataTestSetup.autoConfigurationNames, [
         'springBootAutoConfiguration',
         'springBootStarterLoggingAutoConfiguration',
         'springBootStarterDataAutoConfiguration',
+        'springBootStarterDataStartupChecksAutoConfiguration',
+        'springBootStarterDataSqlLoggingAutoConfiguration',
       ]);
     });
 
@@ -154,6 +157,10 @@ void main() {
         'transactionTemplate',
         'jdbcClient',
         'repositoryFactory',
+        // The modules of a debug build, added with the starter's.
+        'transactionValidator',
+        'dataFailureAnalyzer',
+        'jdbcLogSettings',
       ]) {
         expect(app.context.containsBean(name), isTrue, reason: name);
       }

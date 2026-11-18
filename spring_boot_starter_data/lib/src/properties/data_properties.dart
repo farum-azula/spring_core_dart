@@ -65,14 +65,19 @@ final class DataJdbcProperties {
   final SchemaMode schema;
 
   /// Whether the statements are logged at info, so they show with the
-  /// default level (Spring Boot's `spring.jpa.show-sql`).
+  /// default level (Spring Boot's `spring.jpa.show-sql`). Also read by the
+  /// generator: `true` without a profile keeps the statement logging (this
+  /// switch, `format-sql`, `show-parameters`) in every build, `false` in
+  /// none; not set, in debug and profile builds only.
   final bool showSql;
 
-  /// Whether the SQL in the log is on several lines.
+  /// Whether the SQL in the log is on several lines. Only where `show-sql`
+  /// keeps the statement logging in the build.
   final bool formatSql;
 
   /// Whether the bound values are logged at info too, instead of trace;
-  /// those of secret-looking names stay masked.
+  /// those of secret-looking names stay masked. Only where `show-sql`
+  /// keeps the statement logging in the build.
   final bool showParameters;
 
   /// A slower statement is logged at warn. Default: none.

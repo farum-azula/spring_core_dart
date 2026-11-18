@@ -345,8 +345,17 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
   autoConfigurations: [
     _i10.springBootAutoConfiguration,
     _i11.springBootStarterCacheAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i11.springBootStarterCacheStartupChecksAutoConfiguration,
     _i12.springBootStarterLoggingAutoConfiguration,
   ],
+  autoConfigurationMetadata: {
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i11.springBootStarterCacheStartupChecksAutoConfiguration:
+          const _i1.AutoConfigurationModule(
+            after: [r'springBootStarterCacheAutoConfiguration'],
+          ),
+  },
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
       'DEBUG': const String.fromEnvironment('DEBUG'),
@@ -787,7 +796,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '5ec66bc2',
+  fingerprint: '8ac9ebbf',
 );
 
 /// Starts the application: config files, environment, context, runners

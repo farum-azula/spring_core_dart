@@ -30,11 +30,22 @@ void main() {
   });
 
   // The application over two SQLite files in [temp] and a scratch name.
+  // With the statement logging, as in a debug build that does not set
+  // spring.data.jdbc.show-sql; [sqlLogging] false: as in a release build.
   ApplicationContextRunner runner([
     List<String> extra = const [],
+    bool sqlLogging = true,
   ]) => const ApplicationContextRunner()
       .withUserConfiguration($application)
       .withAutoConfiguration(springBootStarterDataAutoConfiguration)
+      .withAutoConfiguration(
+        sqlLogging
+            ? springBootStarterDataSqlLoggingAutoConfiguration
+            : BeanModule('noSqlLogging', const []),
+        const AutoConfigurationModule(
+          before: ['springBootStarterDataAutoConfiguration'],
+        ),
+      )
       .withPropertyValues([
         'spring.datasource.url=sqlite:file:${temp.path}/app.db',
         'spring.datasources.stats.url=sqlite:file:${temp.path}/stats.db',
@@ -45,7 +56,8 @@ void main() {
   Future<void> started(
     FutureOr<void> Function(AssertableApplicationContext context) body, {
     List<String> properties = const [],
-  }) => runner(properties).runAsync<void>((context) async {
+    bool sqlLogging = true,
+  }) => runner(properties, sqlLogging).runAsync<void>((context) async {
     if (context.startupFailure case final failure?) {
       throw StateError('The application did not start: $failure');
     }
@@ -615,6 +627,79 @@ void main() {
           'spring.data.jdbc.slow-query-threshold=250ms',
         ],
       );
+    });
+
+    test('the switches register before the main module, whose slow-query '
+        'settings step back', () {
+      return started((context) {
+        expect(context, hasBeanNamed('jdbcLogSettings'));
+        expect(context, isNot(hasBeanNamed('jdbcSlowQueryLogSettings')));
+        expect(context, hasSingleBean<JdbcLogSettings>());
+      });
+    });
+
+    test('without the statement logging (a release build): the slow-query '
+        'threshold alone, the switches not read', () {
+      return started(
+        (context) {
+          expect(context, hasBeanNamed('jdbcSlowQueryLogSettings'));
+          expect(context, isNot(hasBeanNamed('jdbcLogSettings')));
+          final settings = context.getBean<JdbcLogSettings>();
+          expect(settings.showSql, isFalse);
+          expect(settings.formatSql, isFalse);
+          expect(settings.showParameters, isFalse);
+          expect(
+            settings.slowQueryThreshold,
+            const Duration(milliseconds: 250),
+          );
+          expect(
+            context.getBean<RepositoryFactory>().jdbcLogSettings,
+            same(settings),
+          );
+          expect(context.getBean<JdbcTemplate>().logSettings, same(settings));
+        },
+        sqlLogging: false,
+        properties: [
+          // Not a boolean: nothing reads it without the module.
+          'spring.data.jdbc.show-sql=maybe',
+          'spring.data.jdbc.format-sql=true',
+          'spring.data.jdbc.slow-query-threshold=250ms',
+        ],
+      );
+    });
+
+    test('without the statement logging a slow statement is still logged at '
+        'warn', () async {
+      final records = <SpringLogRecord>[];
+      final stop = SpringLog.listen(records.add);
+      try {
+        await started(
+          (context) async {
+            await context.getBean<BookRepository>().save(
+              Book(title: 'Dune', year: 1965),
+            );
+          },
+          sqlLogging: false,
+          properties: [
+            'spring.data.jdbc.show-sql=true',
+            'spring.data.jdbc.slow-query-threshold=0ms',
+          ],
+        );
+      } finally {
+        stop();
+      }
+      final sql = records.where(
+        (r) => r.loggerName == 'spring.jdbc.core.JdbcTemplate',
+      );
+      expect(
+        sql.any(
+          (r) =>
+              r.level == SpringLogLevel.warning &&
+              r.message.contains('slow statement'),
+        ),
+        isTrue,
+      );
+      expect(sql.where((r) => r.level == SpringLogLevel.info), isEmpty);
     });
 
     test('show-sql logs the statements at info, never the password', () async {

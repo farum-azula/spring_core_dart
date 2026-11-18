@@ -162,7 +162,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_cache/src/cache_auto_configuration.dart",
-      "line": 377,
+      "line": 369,
       "injects": [],
       "members": [
         {
@@ -201,7 +201,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_cache/src/cache_auto_configuration.dart",
-      "line": 356,
+      "line": 359,
       "injects": [],
       "members": [
         {
@@ -277,7 +277,7 @@
         "@ConditionalOnMissingBean.named('cacheResolver')"
       ],
       "source": "package:spring_boot_starter_cache/src/cache_auto_configuration.dart",
-      "line": 333,
+      "line": 336,
       "injects": [],
       "members": [
         {
@@ -308,9 +308,11 @@
       "primary": false,
       "qualifiers": [],
       "profiles": [],
-      "conditions": [],
+      "conditions": [
+        "@ConditionalOnBean(CacheInterceptor)"
+      ],
       "source": "package:spring_boot_starter_cache/src/cache_auto_configuration.dart",
-      "line": 366,
+      "line": 393,
       "injects": [],
       "members": [
         {

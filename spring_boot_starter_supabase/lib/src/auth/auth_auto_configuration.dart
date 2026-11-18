@@ -23,9 +23,10 @@ const _enabled = ConditionalOnProperty(
 ///   and the `ApplicationEventPublisher` of the application when there
 ///   are any, restores the session of the last run at startup
 ///   (`AsyncStartup`) and stops its timer when the application stops
-///   (`DisposableBean`);
-/// - `supabaseAuthAdmin`, a [SupabaseAuthAdmin]: the admin API, as the
-///   service role.
+///   (`DisposableBean`).
+///
+/// The admin API is a module of its own, kept to servers
+/// ([supabaseAuthAdminAutoConfiguration]).
 ///
 /// Each steps back for a bean of its type declared by the application.
 final supabaseAuthAutoConfiguration = <BeanDefinition<Object>>[
@@ -63,6 +64,20 @@ final supabaseAuthAutoConfiguration = <BeanDefinition<Object>>[
       errors: r.dependency<SupabaseAuthErrors>(),
     ),
   ),
+];
+
+/// The admin API of Supabase Auth, unless `spring.supabase.auth.enabled`
+/// is false and unless the application declares its own:
+///
+/// - `supabaseAuthAdmin`, a [SupabaseAuthAdmin]: creates, reads, changes
+///   and deletes users as the service role.
+///
+/// Only on a server (`ModulePlatform.server`): it needs the service-role
+/// key, which must never ship in an app, so a Flutter app and a browser
+/// build have none of its code. It keeps the source of
+/// `SupabaseAutoConfiguration`, so excluding that by name leaves it out
+/// too.
+final supabaseAuthAdminAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<SupabaseAuthAdmin>(
     name: 'supabaseAuthAdmin',
     factoryMethodName: 'supabaseAuthAdmin',

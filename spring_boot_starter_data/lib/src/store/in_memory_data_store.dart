@@ -193,6 +193,29 @@ final class InMemoryDataStore
 
   static const _log = SpringLog('spring.data.memory.InMemoryDataStore');
 
+  var _started = false;
+
+  /// Says once, at INFO, that repositories keep their data in this store:
+  /// `memory - Starting... (in memory: the data lives until the application
+  /// stops)`. Called when the first repository is given the store, as a
+  /// pool of a database says it starts at its first connection, so an
+  /// application that meant to use a database and runs without one (no
+  /// `spring.datasource.url`) shows it at start.
+  ///
+  /// Spring (Java): `EmbeddedDatabaseFactory` logs `Starting embedded
+  /// database: url='jdbc:h2:mem:...'` when Spring Boot makes one in place
+  /// of a configured `DataSource`.
+  void start() {
+    if (_started) {
+      return;
+    }
+    _started = true;
+    _log.info(
+      '$name - Starting... (in memory: the data lives until the application '
+      'stops)',
+    );
+  }
+
   final _tables = <String, _Table>{};
   final _entities = <String, PersistentEntity<Object>>{};
   List<_Node>? _nodeList;

@@ -30,10 +30,10 @@ const _cloudflare = ConditionalOnProperty(
 /// - `webServerFactory` ([FetchWebServerFactory]) with `server.*` and the
 ///   `WebServerFactoryCustomizer` beans, unless the application declares
 ///   a `WebServerFactory`; the web starter's `dart:io` factory then backs
-///   off;
-/// - `edgeWarnings` ([EdgeWarnings]) and its contributors
-///   (`rateLimitStoreEdgeWarning`, `timerWorkEdgeWarning`,
-///   `instanceStateEdgeWarning`), unless `spring.edge.warnings` is `false`.
+///   off.
+///
+/// The warning list of a function is a startup check, in a module of its
+/// own ([edgeStartupChecks]).
 ///
 /// Only in a Cloudflare Worker:
 ///
@@ -144,6 +144,23 @@ final edgeAutoConfiguration = <BeanDefinition<Object>>[
       r.dependency<Environment>().getProperty('spring.supabase.anon-key') ?? '',
     ),
   ),
+];
+
+/// The startup checks of the edge starter, in the build by
+/// `spring.main.startup-checks.enabled` (by default in debug and profile
+/// builds only, so a release build ships none of their code), and only in
+/// a function (`spring.edge.runtime` is set):
+///
+/// - `edgeWarnings` ([EdgeWarnings]), the list of what works differently
+///   in a function, logged once at start, unless `spring.edge.warnings` is
+///   `false`;
+/// - its contributors `rateLimitStoreEdgeWarning`, `timerWorkEdgeWarning`
+///   and `instanceStateEdgeWarning` ([EdgeWarningContributor]).
+///
+/// No other bean depends on them (one that reads the list takes it as
+/// optional). They keep the source of `EdgeAutoConfiguration`, so
+/// excluding that by name leaves them out too.
+final edgeStartupChecks = <BeanDefinition<Object>>[
   for (final (name, create)
       in <(String, EdgeWarningContributor Function(DependencyResolver))>[
         ('rateLimitStoreEdgeWarning', (_) => const RateLimitStoreEdgeWarning()),

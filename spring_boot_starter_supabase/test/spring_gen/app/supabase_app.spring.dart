@@ -2033,7 +2033,13 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
   autoConfigurations: [
     _i22.springBootAutoConfiguration,
     _i23.springBootStarterCacheAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i23.springBootStarterCacheStartupChecksAutoConfiguration,
     _i24.springBootStarterDataAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i24.springBootStarterDataSqlLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i24.springBootStarterDataStartupChecksAutoConfiguration,
     _i25.springBootStarterFeignAutoConfiguration,
     _i26.springBootStarterLoggingAutoConfiguration,
     _i27.springBootStarterOauth2ClientAutoConfiguration,
@@ -2056,6 +2062,21 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     _i31.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i23.springBootStarterCacheStartupChecksAutoConfiguration:
+          const _i1.AutoConfigurationModule(
+            after: [r'springBootStarterCacheAutoConfiguration'],
+          ),
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i24.springBootStarterDataSqlLoggingAutoConfiguration:
+          const _i1.AutoConfigurationModule(
+            before: [r'springBootStarterDataAutoConfiguration'],
+          ),
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i24.springBootStarterDataStartupChecksAutoConfiguration:
+          const _i1.AutoConfigurationModule(
+            after: [r'springBootStarterDataAutoConfiguration'],
+          ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i28.springBootStarterSecurityAutoConfiguration:
@@ -2372,7 +2393,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '56c85bd8',
+  fingerprint: '2052b326',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -501,6 +501,26 @@ void main() {
       );
     });
 
+    test('the list is a startup check: without its module (a release '
+        'build) the function starts with no list', () async {
+      final release = application(
+        properties: {
+          'spring.autoconfigure.exclude':
+              'springBootStarterEdgeStartupChecksAutoConfiguration',
+        },
+      );
+      addTearDown(release.close);
+      expect((await call('GET', '/hello', on: release)).status, 200);
+      final context = release.context!;
+      expect(context.getBeanProvider<EdgeWarnings>().getIfAvailable(), isNull);
+      expect(
+        context.getBeanProvider<EdgeWarningContributor>().orderedList(),
+        isEmpty,
+      );
+      // The controller that reads the list takes it as optional.
+      expect((await call('GET', '/warnings', on: release)).status, 200);
+    });
+
     test('the runtime bean names the platform', () async {
       await call('GET', '/hello');
       final runtime = function.context!.getBean<EdgeRuntime>();

@@ -2,8 +2,8 @@
 /// application that depends on `spring_boot_starter_cache`.
 ///
 /// Applications do not import it: the generated `*.spring.dart` file does
-/// (the module below is marked `@AutoConfigurationModule()`). A test that
-/// builds a context by hand imports it to name the module.
+/// (the modules below are marked `@AutoConfigurationModule()`). A test that
+/// builds a context by hand imports it to name the modules.
 library;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -24,3 +24,24 @@ final BeanModule springBootStarterCacheAutoConfiguration = BeanModule(
   [...cacheAutoConfiguration],
   imports: [cacheConfigBeans],
 );
+
+/// The startup check of the cache starter (`cacheStartupChecks`): the
+/// `cacheOperationValidator`, which checks the cache annotations of every
+/// proxied bean when it is created, so a wrong one stops the start.
+///
+/// In the build by `spring.main.startup-checks.enabled`: `true` in every
+/// build, `false` in none, not set in debug and profile builds only, so a
+/// release build ships none of its code (a wrong annotation then fails at
+/// the member's first call).
+///
+/// Registered after the main module: without its `cacheInterceptor` (the
+/// main module excluded by name) the validator steps back.
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild('spring.main.startup-checks.enabled'),
+  after: ['springBootStarterCacheAutoConfiguration'],
+)
+final BeanModule springBootStarterCacheStartupChecksAutoConfiguration =
+    BeanModule(
+      'springBootStarterCacheStartupChecksAutoConfiguration',
+      cacheStartupChecks,
+    );

@@ -197,6 +197,9 @@ final class RepositoryFactory {
     }
     final store =
         _storeOf(typeName, annotations, problems) ?? stores['memory']!;
+    if (store case final InMemoryDataStore memory) {
+      memory.start();
+    }
     final manager = switch (store) {
       final TransactionalDataStore transactional =>
         transactional.transactionManager,

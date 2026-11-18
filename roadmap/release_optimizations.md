@@ -5,7 +5,12 @@ measured (built; its tests and docs to finish), each part its own commit;
 the caches and the properties that change at runtime come in the release
 right after it. A checklist; the plans are in the files linked.
 
-## Built, not released (to document and test)
+**Released:** the speed and the caches went out together in **0.8.3**
+(16 November 2026); what is left is the properties that change at runtime,
+the next release ([runtime_properties.md](runtime_properties.md)), after
+the generator's split by starter ([generator_by_starter.md](generator_by_starter.md)).
+
+## Speed (released in 0.8.3)
 
 What Dota Passport's phones measured and the framework mended
 (`spring_boot_starter_flutter_scene`, `spring_boot_starter_flutter`, the
@@ -28,12 +33,13 @@ generator; see the changelogs' `Unreleased`):
   beats (the first frames left out, `slow.probe` measured), never
   switching off what the user sees (later slowness holds when no scene
   moves).
-- [ ] The alpha probe's two lost WebGL contexts quiet in the console.
+- [x] The alpha probe's two lost WebGL contexts quiet in the console
+  (after 0.8.3: its contexts are let go for the collector, not lost).
 - [x] Tests: `engine` (placement, clip, scroll, host change), `layer`,
   `PageUnderlay`, `OutsideFrames`, the screen's rate.
 - [x] README, changelogs, the site's docs (farum-azula.org).
 
-## The release right after it: caches (built) and runtime properties
+## Caches (released in 0.8.3) and runtime properties (the next release)
 
 - [ ] **Properties that change at runtime**
   ([runtime_properties.md](runtime_properties.md)): the debug window and
@@ -132,7 +138,11 @@ generator; see the changelogs' `Unreleased`):
   from Spring Boot's keys `spring.web.resources.cache.cachecontrol.*`:
   `no-cache` for what has no hash in its name (`index.html`,
   `main.dart.js`, `main.dart.wasm`, the manifests, the shaders, the icon
-  fonts), the keys' value for the app's images and fonts. Not built:
+  fonts, the app's resources read at run time under
+  `/assets/lib/resources/`), the keys' value for the app's images and
+  fonts. On a domain of its own the zone's Browser Cache TTL must respect
+  the headers, or Cloudflare keeps the scripts, images and fonts 4 hours
+  (found on both sites after 0.8.3; the docs say it). Not built:
   `immutable` for hashed files. Dota Passport wrote its
   own by hand (`web/_headers`, November 2026): every path was `no-cache`,
   so each open downloaded all 65 images of a match again.

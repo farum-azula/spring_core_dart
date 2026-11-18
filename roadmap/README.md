@@ -39,9 +39,19 @@ one module per starter** ([generator_by_starter.md](generator_by_starter.md)):
 a folder and one interface per starter in the generator, a part runs only
 when the application depends on its starter, tests per part; no change of
 the generated code. Before any new starter adds to the generator.
+In the same release (the owner, 17 November 2026: "the generator must
+work perfectly", the Rust starter, [flutter_spring_rust.md](flutter_spring_rust.md),
+will lean on all of it): a part switched off by a build key as a module
+is (`AutoConfigurationBuild`), and the starters' main modules searched for
+what only development needs, split off behind a build key where it pays
+(measured). From now on every feature says whether its code can be left
+out of the build: its key, its default, what goes with it.
 
 **The next releases (the owner, 16 November 2026): speed, then caches**
-([release_optimizations.md](release_optimizations.md)): first the scenes'
+([release_optimizations.md](release_optimizations.md); both released in
+**0.8.3**, 16 November 2026, so runtime properties are next, after the
+generator's split, and generated only when the build asks for them, the
+owner, 17 November 2026): first the scenes'
 and the web's speed measured on phones (the engine's canvas behind the
 page, the beat on the screen's frames, the frame meter's 3D line; built,
 its tests and docs to finish); in the release right after it, properties

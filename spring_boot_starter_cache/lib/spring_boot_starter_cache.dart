@@ -43,6 +43,7 @@ export 'src/cache_auto_configuration.dart' show cacheManagerFromProperties;
 export 'src/cache_error_handler.dart';
 export 'src/cache_interceptor.dart';
 export 'src/cache_operation.dart';
+export 'src/cache_operation_validator.dart';
 export 'src/cache_resolver.dart';
 export 'src/caching_configurer.dart';
 export 'src/composite_cache_manager.dart';

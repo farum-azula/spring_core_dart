@@ -1767,9 +1767,30 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
   autoConfigurations: [
     _i17.springBootAutoConfiguration,
     _i18.springBootStarterCacheAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i18.springBootStarterCacheStartupChecksAutoConfiguration,
     _i19.springBootStarterDataAutoConfiguration,
+    _i19.springBootStarterDataSqlLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i19.springBootStarterDataStartupChecksAutoConfiguration,
     _i20.springBootStarterLoggingAutoConfiguration,
   ],
+  autoConfigurationMetadata: {
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i18.springBootStarterCacheStartupChecksAutoConfiguration:
+          const _i1.AutoConfigurationModule(
+            after: [r'springBootStarterCacheAutoConfiguration'],
+          ),
+    _i19.springBootStarterDataSqlLoggingAutoConfiguration:
+        const _i1.AutoConfigurationModule(
+          before: [r'springBootStarterDataAutoConfiguration'],
+        ),
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i19.springBootStarterDataStartupChecksAutoConfiguration:
+          const _i1.AutoConfigurationModule(
+            after: [r'springBootStarterDataAutoConfiguration'],
+          ),
+  },
   dartDefines: {
     if (const bool.hasEnvironment('DEBUG'))
       'DEBUG': const String.fromEnvironment('DEBUG'),
@@ -1832,7 +1853,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '90684a24',
+  fingerprint: '83db3502',
 );
 
 /// Starts the application: config files, environment, context, runners

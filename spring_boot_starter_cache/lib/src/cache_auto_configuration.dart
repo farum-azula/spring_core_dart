@@ -1,6 +1,7 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_cache/src/cache.dart';
 import 'package:spring_boot_starter_cache/src/cache_interceptor.dart';
+import 'package:spring_boot_starter_cache/src/cache_operation_validator.dart';
 import 'package:spring_boot_starter_cache/src/config/cache_properties.dart';
 import 'package:spring_boot_starter_cache/src/directory_cache_store.dart';
 import 'package:spring_boot_starter_cache/src/disk_cache.dart';
@@ -324,11 +325,13 @@ Map<String, CacheSpec> _perCacheSpecs(
 ///   application declares no [CacheManager] and no bean named
 ///   `cacheResolver` (as in Spring Boot), with the `Cache` and
 ///   [CacheManagerCustomizer] beans;
-/// - `cacheInterceptor`, the [CacheInterceptor] that does the caching;
-/// - `cacheOperationValidator`, the [CacheOperationValidator] that checks
-///   the annotations of proxied beans at startup;
+/// - `cacheInterceptor`, the [CacheInterceptor] that does the caching; it
+///   checks the annotations of a member at its first call;
 /// - `cacheAdvisor`, which applies the interceptor to the members that
 ///   have cache annotations.
+///
+/// The check of every annotation at startup is one of the startup checks
+/// ([cacheStartupChecks]).
 final cacheAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<CacheManager>(
     name: 'cacheManager',
@@ -363,17 +366,6 @@ final cacheAutoConfiguration = <BeanDefinition<Object>>[
       resourceVersion: r.dependency<CacheProperties>().resourceVersion,
     ),
   ),
-  BeanDefinition<CacheOperationValidator>(
-    name: 'cacheOperationValidator',
-    types: const [CacheOperationValidator, BeanPostProcessor, BeanFactoryAware],
-    source: _source,
-    create: (r) {
-      final factory = r.dependency<BeanFactory>();
-      return CacheOperationValidator.lazy(
-        () => factory.getBean<CacheInterceptor>(),
-      );
-    },
-  ),
   BeanDefinition<DefaultPointcutAdvisor>(
     name: 'cacheAdvisor',
     types: const [DefaultPointcutAdvisor, PointcutAdvisor, Advisor, Ordered],
@@ -382,5 +374,36 @@ final cacheAutoConfiguration = <BeanDefinition<Object>>[
       const CacheAnnotationPointcut(),
       r.dependency<CacheInterceptor>(),
     ),
+  ),
+];
+
+/// The startup checks of the starter, in the build by
+/// `spring.main.startup-checks.enabled` (by default in debug and profile
+/// builds only, so a release build ships none of their code):
+///
+/// - `cacheOperationValidator`, the [CacheOperationValidator] that checks
+///   the cache annotations of every proxied bean when it is created, so a
+///   wrong annotation stops the start; without it the [CacheInterceptor]
+///   finds the mistake at the member's first call.
+///
+/// Only with a [CacheInterceptor] (the main module's, unless that is
+/// excluded). No other bean depends on it. It keeps the source of
+/// `CacheAutoConfiguration`, so excluding that by name leaves it out too.
+final cacheStartupChecks = <BeanDefinition<Object>>[
+  BeanDefinition<CacheOperationValidator>(
+    name: 'cacheOperationValidator',
+    types: const [CacheOperationValidator, BeanPostProcessor, BeanFactoryAware],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.cacheOperationValidator', [
+        ConditionalOnBean(CacheInterceptor),
+      ]),
+    ],
+    create: (r) {
+      final factory = r.dependency<BeanFactory>();
+      return CacheOperationValidator.lazy(
+        () => factory.getBean<CacheInterceptor>(),
+      );
+    },
   ),
 ];

@@ -54,11 +54,14 @@ final class DataTestSetup {
   final List<BeanModule> _autoConfigurations;
 
   /// The names of the auto-configuration modules a slice keeps: the core
-  /// one, logging and the data starter's own.
+  /// one, logging and the data starter's own (with its startup checks and
+  /// its statement logging, when the build has them).
   static List<String> get autoConfigurationNames => [
     springBootAutoConfiguration.name,
     springBootStarterLoggingAutoConfiguration.name,
     springBootStarterDataAutoConfiguration.name,
+    springBootStarterDataStartupChecksAutoConfiguration.name,
+    springBootStarterDataSqlLoggingAutoConfiguration.name,
   ];
 
   /// The properties of the slice: `spring.autoconfigure.exclude` names the
@@ -83,10 +86,11 @@ final class DataTestSetup {
   /// test starts.
   ///
   /// It also adds the data starter's auto-configuration when the
-  /// application lacks it. The generator puts the auto-configuration of
-  /// every dependency into an application, so an application that lists the
-  /// starter has it; the application of the starter's own tests (which is
-  /// not a dependency of itself) does not.
+  /// application lacks it, with the modules a debug build has (the startup
+  /// checks, the statement logging). The generator puts the
+  /// auto-configuration of every dependency into an application, so an
+  /// application that lists the starter has it; the application of the
+  /// starter's own tests (which is not a dependency of itself) does not.
   ApplicationContextInitializer get initializer =>
       ApplicationContextInitializer.of((context) {
         if (replaceDatabase) {
@@ -100,7 +104,10 @@ final class DataTestSetup {
           (module) =>
               module.name == springBootStarterDataAutoConfiguration.name,
         )) {
-          context.register(springBootStarterDataAutoConfiguration);
+          context
+            ..register(springBootStarterDataSqlLoggingAutoConfiguration)
+            ..register(springBootStarterDataAutoConfiguration)
+            ..register(springBootStarterDataStartupChecksAutoConfiguration);
         }
         context.addBeanFactoryPostProcessor(
           DataTestSlice(_modules, include: include),

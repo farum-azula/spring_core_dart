@@ -36,9 +36,11 @@ BeanModule _catalog(List<MethodSignature> signatures) => BeanModule('app', [
 ]);
 
 void main() {
-  final runner = const ApplicationContextRunner().withAutoConfiguration(
-    springBootStarterCacheAutoConfiguration,
-  );
+  final runner = const ApplicationContextRunner()
+      .withAutoConfiguration(springBootStarterCacheAutoConfiguration)
+      .withAutoConfiguration(
+        springBootStarterCacheStartupChecksAutoConfiguration,
+      );
 
   Matcher failsWith(String text) => isA<AssertableApplicationContext>()
       .having((c) => c.hasFailed, 'hasFailed', isTrue)
@@ -125,6 +127,54 @@ void main() {
         .run((context) {
           expect(context, isNot(hasFailed()));
           expect(AopUtils.isAopProxy(context.getBean<Books>()), isTrue);
+        });
+  });
+
+  test('the validator is the startup checks module; without it (a release '
+      'build) the cache works as it did', () {
+    runner.run((context) {
+      expect(context, hasBeanNamed('cacheOperationValidator'));
+    });
+    const ApplicationContextRunner()
+        .withAutoConfiguration(springBootStarterCacheAutoConfiguration)
+        .withUserConfiguration(
+          BeanModule('app', [
+            BeanDefinition<Books>(
+              name: 'books',
+              create: (_) => Books(),
+              aopProxy: booksProxyFactory,
+            ),
+            BeanDefinition<KeyGenerator>(
+              name: 'upperKeys',
+              create: (_) => const UpperKeys(),
+            ),
+          ]),
+        )
+        .run((context) {
+          expect(context, isNot(hasFailed()));
+          expect(context, doesNotHaveBean<CacheOperationValidator>());
+          final books = context.getBean<Books>()
+            ..find('1')
+            ..find('1');
+          expect(books.count('find'), 1);
+        });
+  });
+
+  test('without the main module (excluded by name) the validator steps '
+      'back', () {
+    const ApplicationContextRunner()
+        .withAutoConfiguration(
+          springBootStarterCacheStartupChecksAutoConfiguration,
+        )
+        .withUserConfiguration(
+          BeanModule('app', [
+            BeanDefinition<Books>(name: 'books', create: (_) => Books()),
+          ]),
+        )
+        .run((context) {
+          expect(context, isNot(hasFailed()));
+          expect(context, doesNotHaveBean<CacheInterceptor>());
+          expect(context, doesNotHaveBean<CacheOperationValidator>());
         });
   });
 

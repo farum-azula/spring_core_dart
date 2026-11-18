@@ -1,7 +1,6 @@
 import 'package:spring_boot_actuator/spring_boot_actuator.dart'
     show ConditionalOnEnabledHealthIndicator, HealthContributor;
 import 'package:spring_boot_dart/spring_boot_dart.dart';
-import 'package:spring_boot_starter_data/src/data_failure_analyzer.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source_health_indicator.dart';
 import 'package:spring_boot_starter_data/src/jdbc/data_source_properties.dart';
@@ -55,24 +54,56 @@ Duration? jdbcQueryTimeout(Environment environment) {
 /// [JdbcLogSettings]; everything off by default. A value that is not a
 /// boolean or a duration stops the start.
 JdbcLogSettings jdbcLogSettingsOf(Environment environment) {
-  final jdbc = bindSettings<DataJdbcProperties>(
-    environment,
-    'spring.data.jdbc',
-    fallback: const DataJdbcProperties(),
-    onInvalid: (failure) {
-      // The schema mode is checked where the schema is set up.
-      if (failure.type == 'SchemaMode') {
-        return;
-      }
-      throw ArgumentError.value(
-        failure.value,
-        failure.property,
-        failure.type == 'Duration'
-            ? 'must be a duration such as 500ms or 2s'
-            : 'must be ${failure.expected}',
-      );
-    },
+  final jdbc = _jdbcLogProperties(environment, (_) => true);
+  return JdbcLogSettings(
+    showSql: jdbc.showSql,
+    showParameters: jdbc.showParameters,
+    formatSql: jdbc.formatSql,
+    slowQueryThreshold: _slowQueryThreshold(jdbc),
   );
+}
+
+/// `spring.data.jdbc.slow-query-threshold` (a duration) alone as
+/// [JdbcLogSettings], the statements at their usual levels: the settings
+/// of a build without the statement logging
+/// (`springBootStarterDataSqlLoggingAutoConfiguration`), which does not
+/// read `show-sql`, `format-sql` or `show-parameters`. A value that is not
+/// a duration, or is negative, stops the start.
+JdbcLogSettings jdbcSlowQueryLogSettingsOf(Environment environment) =>
+    JdbcLogSettings(
+      slowQueryThreshold: _slowQueryThreshold(
+        _jdbcLogProperties(
+          environment,
+          (property) => property == 'spring.data.jdbc.slow-query-threshold',
+        ),
+      ),
+    );
+
+// `spring.data.jdbc.*`, a value of the properties [reads] says that cannot
+// be converted stopping the start.
+DataJdbcProperties _jdbcLogProperties(
+  Environment environment,
+  bool Function(String property) reads,
+) => bindSettings<DataJdbcProperties>(
+  environment,
+  'spring.data.jdbc',
+  fallback: const DataJdbcProperties(),
+  onInvalid: (failure) {
+    // The schema mode is checked where the schema is set up.
+    if (failure.type == 'SchemaMode' || !reads(failure.property)) {
+      return;
+    }
+    throw ArgumentError.value(
+      failure.value,
+      failure.property,
+      failure.type == 'Duration'
+          ? 'must be a duration such as 500ms or 2s'
+          : 'must be ${failure.expected}',
+    );
+  },
+);
+
+Duration? _slowQueryThreshold(DataJdbcProperties jdbc) {
   final threshold = jdbc.slowQueryThreshold;
   if (threshold != null && threshold.isNegative) {
     throw ArgumentError.value(
@@ -81,12 +112,7 @@ JdbcLogSettings jdbcLogSettingsOf(Environment environment) {
       'must not be negative',
     );
   }
-  return JdbcLogSettings(
-    showSql: jdbc.showSql,
-    showParameters: jdbc.showParameters,
-    formatSql: jdbc.formatSql,
-    slowQueryThreshold: threshold,
-  );
+  return threshold;
 }
 
 /// Makes the data source the properties under [prefix] describe, with its
@@ -344,11 +370,12 @@ JdbcTemplate _jdbcTemplate(DependencyResolver r, DataSource dataSource) =>
 /// The bean definitions that connect the application to SQL databases from
 /// its properties, so that it only sets properties and lists a driver:
 ///
-/// - `dataFailureAnalyzer` — explains startup failures of the database
-///   (see `DataFailureAnalyzer`);
-/// - `jdbcLogSettings` — `spring.data.jdbc.show-sql`, `format-sql`,
-///   `show-parameters`, `slow-query-threshold`; the templates and the
-///   repositories log as it says;
+/// - `jdbcSlowQueryLogSettings` — `spring.data.jdbc.slow-query-threshold`
+///   ([jdbcSlowQueryLogSettingsOf]), unless a [JdbcLogSettings] bean is
+///   there already: the `jdbcLogSettings` of the statement logging
+///   ([sqlLoggingAutoConfiguration]) when it is in the build, or the
+///   application's own; the templates and the repositories log as it
+///   says;
 /// - `dataSource` — the primary data source, when
 ///   `spring.datasource.url` is set and the application declares no
 ///   `DataSource` of its own: a pool of `spring.datasource.pool.*` over the
@@ -387,22 +414,16 @@ JdbcTemplate _jdbcTemplate(DependencyResolver r, DataSource dataSource) =>
 /// `spring.sql.migration.*`) and
 /// `DataSourceHealthContributorAutoConfiguration`.
 final dataSourceAutoConfiguration = <BeanDefinition<Object>>[
-  BeanDefinition<DataFailureAnalyzer>(
-    name: 'dataFailureAnalyzer',
-    types: const [DataFailureAnalyzer, FailureAnalyzer],
-    source: _source,
-    create: (_) => const DataFailureAnalyzer(),
-  ),
   BeanDefinition<JdbcLogSettings>(
-    name: 'jdbcLogSettings',
-    factoryMethodName: 'jdbcLogSettings',
+    name: 'jdbcSlowQueryLogSettings',
+    factoryMethodName: 'jdbcSlowQueryLogSettings',
     source: _source,
     conditions: const [
-      ConditionGroup('$_source.jdbcLogSettings', [
+      ConditionGroup('$_source.jdbcSlowQueryLogSettings', [
         ConditionalOnMissingBean(JdbcLogSettings),
       ]),
     ],
-    create: (r) => jdbcLogSettingsOf(r.dependency<Environment>()),
+    create: (r) => jdbcSlowQueryLogSettingsOf(r.dependency<Environment>()),
   ),
   BeanDefinition<InitializingDataSource>(
     name: 'dataSource',
@@ -569,6 +590,34 @@ final dataSourceAutoConfiguration = <BeanDefinition<Object>>[
     create: (r) => dataSourceHealthContributor(
       r.dependency<ListableBeanFactory>().getBeansOfType<DataSource>(),
     ),
+  ),
+];
+
+/// The statement logging of the SQL templates and repositories, in the
+/// build by `spring.data.jdbc.show-sql` (`true` in the configuration
+/// without a profile: every build; `false`: none; not set: debug and
+/// profile builds, where a profile's `show-sql: true` turns it on):
+///
+/// - `jdbcLogSettings` — `spring.data.jdbc.show-sql`, `format-sql`,
+///   `show-parameters` and `slow-query-threshold` ([jdbcLogSettingsOf]),
+///   unless the application declares a [JdbcLogSettings] bean. Its module
+///   comes before the starter's, whose `jdbcSlowQueryLogSettings` then
+///   steps back.
+///
+/// Without it the slow statements are still logged at warn
+/// (`jdbcSlowQueryLogSettings`), and the statements at debug and their
+/// values at trace, as the loggers' levels say.
+final sqlLoggingAutoConfiguration = <BeanDefinition<Object>>[
+  BeanDefinition<JdbcLogSettings>(
+    name: 'jdbcLogSettings',
+    factoryMethodName: 'jdbcLogSettings',
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.jdbcLogSettings', [
+        ConditionalOnMissingBean(JdbcLogSettings),
+      ]),
+    ],
+    create: (r) => jdbcLogSettingsOf(r.dependency<Environment>()),
   ),
 ];
 

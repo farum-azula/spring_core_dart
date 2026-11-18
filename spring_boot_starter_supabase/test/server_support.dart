@@ -352,8 +352,12 @@ ApplicationContextRunner serverRunner(
             'springBootStarterSecurityAutoConfiguration',
             'springBootStarterSecurityOAuth2ClientAutoConfiguration',
           ],
-          platform: ModulePlatform.native,
+          platform: ModulePlatform.server,
         ),
+      )
+      .withAutoConfiguration(
+        springBootStarterSupabaseAdminAutoConfiguration,
+        const AutoConfigurationModule(platform: ModulePlatform.server),
       )
       .withPropertyValues([
         'spring.test.web-environment=random-port',

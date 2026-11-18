@@ -134,7 +134,7 @@ spring:
 | `spring.supabase.db.rls` | `off`, `user` | `off` | As whom SQL runs: the user of `db.url` (`off`), or the current user, with the role `authenticated` (or `anon`) and the token's claims (`user`) |
 | `spring.supabase.db.schema` | string | the API's (`public`) | The schema the REST API reads and writes (`Accept-Profile` / `Content-Profile`) |
 | `spring.supabase.db.max-rows` | int | `1000` | The most rows the REST API returns in one answer (the project's "Max rows"); an answer that long is read on in further calls |
-| `spring.supabase.auth.enabled` | bool | `true` | Whether the starter plugs Supabase Auth into Spring Security: the server's defaults, and the `supabaseAuth` and `supabaseAuthAdmin` beans |
+| `spring.supabase.auth.enabled` | bool | `true` | Whether the starter plugs Supabase Auth into Spring Security: the server's defaults, and the `supabaseAuth` and `supabaseAuthAdmin` (on a server only) beans |
 | `spring.supabase.auth.redirect-urls` | list | empty | The addresses a login through a provider, a magic link or a password reset may come back to; the first is the default. Any other `redirectTo` is refused before a request is made |
 | `spring.supabase.auth.issuer` | string | `<url>/auth/v1` | The issuer of the project's tokens (their `iss`) |
 | `spring.supabase.auth.jwt-secret` | string | none | The legacy JWT secret of a project that still signs with HS256. Server only: with it tokens can be forged for any user |
@@ -409,7 +409,8 @@ constraints. The starter only makes sure the database knows who calls.
 
 ## Security on a server
 
-On a server (`ModulePlatform.native`; not in a browser build) the starter
+On a server (`ModulePlatform.server`: the Dart VM or an AOT executable;
+neither a browser build nor a Flutter app has it) the starter
 sets the properties of Spring Security's resource server, so
 `spring_boot_starter_security` accepts the tokens of the project's Auth
 as bearer tokens. It applies when `spring.supabase.url` is set and
@@ -657,9 +658,14 @@ throws a `StateError` that names `authorizationUrl` and `completeSignIn`.
 
 **The admin API.** `SupabaseAuthAdmin` (the bean `supabaseAuthAdmin`)
 creates, reads, changes and deletes users as the service role
-(`createUser`, `user`, `users`, `updateUser`, `deleteUser`). It belongs
-on a server; without `service-role-key` a call fails before any request.
-Roles are written there: `appMetadata: {'roles': ['editor']}`.
+(`createUser`, `user`, `users`, `updateUser`, `deleteUser`). It is only
+on a server: its module, `springBootStarterSupabaseAdminAutoConfiguration`,
+is `ModulePlatform.server`, so a Flutter app (on a phone, a desktop or the
+web) and a browser build have none of its code, and an app cannot be
+made to call it. An edge function, compiled with
+`-DSPRING_ALL_PLATFORMS=true`, has it. Without `service-role-key` a call
+fails before any request. Roles are written there:
+`appMetadata: {'roles': ['editor']}`.
 
 Not there: anonymous sign-in, multi-factor authentication, linking
 identities, SSO (SAML), inviting users and generating links through the

@@ -310,6 +310,15 @@ platform: a pool of isolates warns about the same beans. A bean of the
 contributor's type adds its own lines. `spring.edge.warnings: false`
 turns the list off.
 
+The list is a startup check: `edgeWarnings` and the three contributors
+are in a module of their own
+(`springBootStarterEdgeStartupChecksAutoConfiguration`), which the
+generator puts into the build by `spring.main.startup-checks.enabled`:
+`true` in every build, `false` in none (no code, so no list), not set in
+debug and profile builds only. `dart compile js` and `wasm` do not define
+`dart.vm.product`, so a function keeps the list unless the key is
+`false`; `spring.edge.warnings` turns it off where it is in the build.
+
 ### The rate limiter
 
 `spring.web.rate-limit.*` and `@RateLimiter` work as on a server, but an
@@ -334,7 +343,8 @@ tries again. It costs one call to the store per cold start;
 | Property | Default | |
 |---|---|---|
 | `spring.edge.runtime` | — | The platform, set by the entry file; read it, do not write it |
-| `spring.edge.warnings` | `true` | The warning list at start |
+| `spring.edge.warnings` | `true` | The warning list at start, where the build has it (`spring.main.startup-checks.enabled`) |
+| `spring.main.startup-checks.enabled` | debug and profile builds | Read by the generator: `true` keeps the warning list in every build, `false` in none |
 | `spring.edge.supabase.anon-key-as-anonymous` | `true` | The anon key as a bearer token is a request without a token |
 | `spring.edge.cloudflare.rate-limit.database` | — | The binding of the D1 database the rate limiter counts in |
 | `spring.edge.cloudflare.rate-limit.table` | `rate_limit` | The table of its buckets, created when it is missing |

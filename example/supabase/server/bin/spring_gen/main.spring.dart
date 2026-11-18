@@ -363,7 +363,13 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
   autoConfigurations: [
     _i9.springBootAutoConfiguration,
     _i10.springBootStarterCacheAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i10.springBootStarterCacheStartupChecksAutoConfiguration,
     _i11.springBootStarterDataAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i11.springBootStarterDataSqlLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i11.springBootStarterDataStartupChecksAutoConfiguration,
     _i12.springBootStarterFeignAutoConfiguration,
     _i13.springBootStarterLoggingAutoConfiguration,
     _i14.springBootStarterOauth2ClientAutoConfiguration,
@@ -373,9 +379,14 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i15.springBootStarterSecurityOAuth2ClientAutoConfiguration,
+    if (((const bool.fromEnvironment('dart.library.io') &&
+            !const bool.fromEnvironment('dart.library.ui')) ||
+        const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
+      _i16.springBootStarterSupabaseAdminAutoConfiguration,
     _i16.springBootStarterSupabaseAutoConfiguration,
     _i16.springBootStarterSupabaseDataAutoConfiguration,
-    if ((const bool.fromEnvironment('dart.library.io') ||
+    if (((const bool.fromEnvironment('dart.library.io') &&
+            !const bool.fromEnvironment('dart.library.ui')) ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i16.springBootStarterSupabaseServerAutoConfiguration,
     if ((const bool.fromEnvironment('dart.library.io') ||
@@ -391,6 +402,21 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
     _i19.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i10.springBootStarterCacheStartupChecksAutoConfiguration:
+          const _i8.AutoConfigurationModule(
+            after: [r'springBootStarterCacheAutoConfiguration'],
+          ),
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i11.springBootStarterDataSqlLoggingAutoConfiguration:
+          const _i8.AutoConfigurationModule(
+            before: [r'springBootStarterDataAutoConfiguration'],
+          ),
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i11.springBootStarterDataStartupChecksAutoConfiguration:
+          const _i8.AutoConfigurationModule(
+            after: [r'springBootStarterDataAutoConfiguration'],
+          ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i15.springBootStarterSecurityAutoConfiguration:
@@ -416,7 +442,8 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
         const _i8.AutoConfigurationModule(
           before: [r'springBootStarterDataAutoConfiguration'],
         ),
-    if ((const bool.fromEnvironment('dart.library.io') ||
+    if (((const bool.fromEnvironment('dart.library.io') &&
+            !const bool.fromEnvironment('dart.library.ui')) ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i16.springBootStarterSupabaseServerAutoConfiguration:
           const _i8.AutoConfigurationModule(
@@ -575,7 +602,7 @@ _i8.SpringApplication get springApplication => _i8.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '835624e4',
+  fingerprint: 'c1efa754',
 );
 
 /// Starts the application: config files, environment, context, runners

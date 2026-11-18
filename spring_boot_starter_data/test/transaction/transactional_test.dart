@@ -37,6 +37,9 @@ void main() {
     await const ApplicationContextRunner()
         .withUserConfiguration($application)
         .withAutoConfiguration(springBootStarterDataAutoConfiguration)
+        .withAutoConfiguration(
+          springBootStarterDataStartupChecksAutoConfiguration,
+        )
         .runAsync((context) async {
           expect(context.startupFailure, isNull);
           expect(context.getBean<Shop>(), isA<Advised>());
@@ -48,6 +51,20 @@ void main() {
           expect(context, hasSingleBean<TransactionTemplate>());
           final advisor = context.getBean<DefaultPointcutAdvisor>();
           expect(advisor.order, Ordered.lowestPrecedence);
+        });
+  });
+
+  test('without the startup checks (a release build), no validator; the '
+      'transactions work as they did', () async {
+    await const ApplicationContextRunner()
+        .withUserConfiguration($application)
+        .withAutoConfiguration(springBootStarterDataAutoConfiguration)
+        .runAsync((context) async {
+          expect(context.startupFailure, isNull);
+          expect(context, doesNotHaveBean<TransactionValidator>());
+          expect(context, doesNotHaveBean<DataFailureAnalyzer>());
+          expect(context, hasSingleBean<TransactionInterceptor>());
+          expect(context.getBean<Shop>(), isA<Advised>());
         });
   });
 

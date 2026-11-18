@@ -112,7 +112,10 @@ OAuth2 client and security starters, `spring_boot_actuator`) compile to
 it too: a browser build has none of their modules
 (`AutoConfigurationModule(platform: ModulePlatform.native)`), but an
 application that shares its code between a server and a Flutter web app
-lists them, and its generated file imports their libraries.
+lists them, and its generated file imports their libraries. The same
+holds for a module of `ModulePlatform.server` (the Supabase starter's
+admin API and resource server defaults), which no Flutter app has, on any
+platform.
 
 - No `dart:html`, `dart:js`, `dart:js_util`, `dart:indexed_db`,
   `dart:svg`, `dart:web_audio`, `dart:web_gl` and no `package:js`: the

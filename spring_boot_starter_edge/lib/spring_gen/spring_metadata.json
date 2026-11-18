@@ -194,7 +194,7 @@
         "@ConditionalOnProperty('spring.edge.warnings', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_edge/src/edge_auto_configuration.dart",
-      "line": 171,
+      "line": 188,
       "injects": [],
       "members": [
         {

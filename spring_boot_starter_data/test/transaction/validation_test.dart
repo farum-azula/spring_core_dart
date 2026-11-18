@@ -79,9 +79,11 @@ final class _Call implements MethodInvocation {
 }
 
 void main() {
-  final runner = const ApplicationContextRunner().withAutoConfiguration(
-    springBootStarterDataAutoConfiguration,
-  );
+  final runner = const ApplicationContextRunner()
+      .withAutoConfiguration(springBootStarterDataAutoConfiguration)
+      .withAutoConfiguration(
+        springBootStarterDataStartupChecksAutoConfiguration,
+      );
 
   Matcher failsWith(Iterable<String> texts) =>
       isA<AssertableApplicationContext>()
@@ -110,6 +112,41 @@ void main() {
                 '@Transactional Orders.sync returns int, not a Future',
               ]),
             );
+          });
+    });
+
+    test('without the startup checks module (a release build) the start '
+        'goes on', () {
+      const ApplicationContextRunner()
+          .withAutoConfiguration(springBootStarterDataAutoConfiguration)
+          .withUserConfiguration(
+            _orders([
+              _sig('sync', const [Transactional()], returnType: 'int'),
+            ]),
+          )
+          .withUserConfiguration(
+            BeanModule('m', [_manager('transactionManager')]),
+          )
+          .run((context) {
+            expect(context.hasFailed, isFalse);
+            expect(context, doesNotHaveBean<TransactionValidator>());
+          });
+    });
+
+    test('without the main module (excluded by name) the validator steps '
+        'back', () {
+      const ApplicationContextRunner()
+          .withAutoConfiguration(
+            springBootStarterDataStartupChecksAutoConfiguration,
+          )
+          .withUserConfiguration(
+            _orders([
+              _sig('sync', const [Transactional()], returnType: 'int'),
+            ]),
+          )
+          .run((context) {
+            expect(context.hasFailed, isFalse);
+            expect(context, doesNotHaveBean<TransactionValidator>());
           });
     });
 

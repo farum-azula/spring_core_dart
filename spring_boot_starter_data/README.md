@@ -462,6 +462,16 @@ sides of each):
 
 ## SQL databases
 
+**Which store, in the log at start.** A data source's pool says it when it
+starts, at its first connection (at start with `schema: validate`, the
+default): `sqlite - Starting... (sqlite:file:library.db, max-size 4)`, then
+`sqlite - Start completed.` Repositories without a data source keep their
+data in memory, and the first of them says so once, at info:
+`memory - Starting... (in memory: the data lives until the application
+stops)` (logger `spring.data.memory.InMemoryDataStore`). An application
+meant to run on a database that shows this line has no
+`spring.datasource.url`.
+
 The starter has no driver inside: list the one you want in `pubspec.yaml`
 (`sqlite3`, `postgres`), run the code generator, and set properties. The generator
 writes a `JdbcDriver` bean for each driver package it finds; the URL's
@@ -498,8 +508,23 @@ application declares a bean of its type):
 | `transactionManager` | a `DataSourceTransactionManager` of it (the in-memory one serves only an application with no data source) |
 | `jdbcTemplate`, `namedParameterJdbcTemplate`, `jdbcClient` | over the primary data source |
 | `<name>DataSource`, `<name>TransactionManager`, `<name>JdbcTemplate`, `<name>NamedParameterJdbcTemplate`, `<name>JdbcClient` | for each `spring.datasources.<name>.url`, qualified `<name>` (fallbacks, so injection by type still finds the primary) |
-| `jdbcLogSettings` | the `spring.data.jdbc.*` log switches |
-| `dataFailureAnalyzer` | explains a URL no driver handles, a failed migration, a schema that does not fit |
+| `jdbcLogSettings` | the `spring.data.jdbc.*` log switches; in the build by `spring.data.jdbc.show-sql` (below) |
+| `jdbcSlowQueryLogSettings` | `spring.data.jdbc.slow-query-threshold` alone, in a build without `jdbcLogSettings` |
+| `dataFailureAnalyzer` | explains a URL no driver handles, a failed migration, a schema that does not fit; a startup check (below) |
+
+**What a release build leaves out.** Two modules of the starter are in the
+build by a key the generator reads in `application.yml` or
+`application.properties` without a profile: `true` keeps the module in
+every build, `false` in none, not set in debug and profile builds only
+(a release build ships none of its code).
+
+| Module | Key | What |
+|---|---|---|
+| `springBootStarterDataStartupChecksAutoConfiguration` | `spring.main.startup-checks.enabled` | `transactionValidator` (a `@Transactional` method that is not async, or names a manager that does not exist, stops the start; without it, its first call fails) and `dataFailureAnalyzer` |
+| `springBootStarterDataSqlLoggingAutoConfiguration` | `spring.data.jdbc.show-sql` | `jdbcLogSettings`: what `show-sql`, `format-sql` and `show-parameters` do. Without it the slow statements are still logged at warn (`jdbcSlowQueryLogSettings`), the statements at debug and their values at trace |
+
+So `show-sql: true` in `application-dev.yml` turns the statements on in a
+debug run, and does nothing in a release build: the build warns about it.
 
 Repositories without `@UseStore` use `jdbc` when a primary data source
 exists, `memory` otherwise.
@@ -534,8 +559,9 @@ startup, but does not hold back early queries.
 | `spring.datasources.<name>.*` | | the same keys for a named database, also `sql.init.*`, `sql.migration.*`, `data.jdbc.schema` |
 | `spring.sql.init.*`, `spring.sql.migration.*`, `spring.data.jdbc.schema` | see [the configuration reference](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#20-reference-sql-databases) | scripts, migrations, `none` / `validate` (default) / `create` / `create-drop` |
 | `spring.jdbc.template.query-timeout` | none | bounds each statement of the `JdbcTemplate` beans |
-| `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and values) at info; the values of a name that looks secret, and the values bound without a name, are masked (see "What the logs hold") |
-| `spring.data.jdbc.slow-query-threshold` | none | a slower statement is logged at warn |
+| `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and values) at info; the values of a name that looks secret, and the values bound without a name, are masked (see "What the logs hold"). The generator reads `show-sql` too: `true` without a profile keeps the three in every build, `false` in none, not set in debug and profile builds only |
+| `spring.data.jdbc.slow-query-threshold` | none | a slower statement is logged at warn, in every build |
+| `spring.main.startup-checks.enabled` | debug and profile builds | read by the generator: `true` keeps `transactionValidator` and `dataFailureAnalyzer` in every build, `false` in none |
 | `spring.data.memory.lock-timeout` | `10s` | the in-memory store's wait for a row lock |
 | `spring.data.store` | `jdbc` with a primary data source, else `memory` | the store of the repositories without `@UseStore` and `@UseDataSource`: `memory`, `jdbc` or the name of another store; the build reads it too (see "Stores") |
 

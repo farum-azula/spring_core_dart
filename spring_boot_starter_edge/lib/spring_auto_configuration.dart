@@ -1,10 +1,12 @@
 /// The beans the edge starter adds to an application: the fetch server of
-/// a function, the runtime and the list of what works differently.
+/// a function, the runtime and, in debug and profile builds unless the
+/// configuration says otherwise, the list of what works differently.
 ///
 /// The generator finds this library in every dependency that has one and
-/// registers its module, so listing the starter in `pubspec.yaml` is
+/// registers its modules, so listing the starter in `pubspec.yaml` is
 /// enough. Applications do not import it; a test that builds a context by
-/// hand may name [springBootStarterEdgeAutoConfiguration].
+/// hand may name [springBootStarterEdgeAutoConfiguration] and
+/// [springBootStarterEdgeStartupChecksAutoConfiguration].
 library;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -52,3 +54,23 @@ final BeanModule springBootStarterEdgeAutoConfiguration = BeanModule(
     ),
   },
 );
+
+/// The startup checks of the edge starter (`edgeStartupChecks`): in a
+/// function, the warning list of what works differently there
+/// (`edgeWarnings` and its `EdgeWarningContributor` beans), logged once at
+/// start; `spring.edge.warnings: false` turns it off where the module is
+/// in the build.
+///
+/// In the build by `spring.main.startup-checks.enabled`: `true` in every
+/// build, `false` in none, not set in debug and profile builds only. A
+/// function compiled by `dart compile js` or `wasm` is not a release build
+/// in that sense (it does not define `dart.vm.product`), so it keeps the
+/// list unless the key is `false`.
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild('spring.main.startup-checks.enabled'),
+)
+final BeanModule springBootStarterEdgeStartupChecksAutoConfiguration =
+    BeanModule(
+      'springBootStarterEdgeStartupChecksAutoConfiguration',
+      edgeStartupChecks,
+    );

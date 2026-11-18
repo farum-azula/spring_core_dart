@@ -1,3 +1,7 @@
+## Unreleased
+
+- **The startup check leaves the release build:** `cacheOperationValidator`, which checks the cache annotations of every proxied bean when it is created, is in a module of its own, `springBootStarterCacheStartupChecksAutoConfiguration`, in the build by `spring.main.startup-checks.enabled`: not set, in debug and profile builds only, so a release build ships none of its code (a wrong annotation then fails at the member's first call, where the interceptor checks it); `true` in `application.yml` or `application.properties` keeps it in every build, `false` in none. `CacheOperationValidator` is in a file of its own, still exported by the library.
+
 ## 0.8.3
 
 - `spring.cache.type: disk`: caches whose entries are kept on disk and survive a restart (`DiskCacheManager`): the app's `cache` place in Flutter (the Flutter starter's `CacheStore`), a folder elsewhere (`spring.cache.disk.directory`, `DirectoryCacheStore`). One file an entry, `spring/caches/<cache>/<hash of the key>.json`, with its key, its expiry by the wall clock (`spring.cache.disk.time-to-live`, per cache `caches.<name>.time-to-live`), its version (`spring.cache.disk.version`: an entry of another one is not read) and the value as JSON through the application's `ObjectMapper` (`String`, numbers, `bool`, `null`, an object the mapper reads, a `List`, `Set` or `Map<String, …>` of those, a `Resource` with an address, kept as its address); another value is not kept, and logged once. `spring.cache.disk.max-size` keeps each cache under a number of bytes, the oldest written going first.

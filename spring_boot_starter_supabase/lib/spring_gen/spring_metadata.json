@@ -794,7 +794,7 @@
         "@ConditionalOnMissingBean(SupabaseAuth)"
       ],
       "source": "package:spring_boot_starter_supabase/src/auth/auth_auto_configuration.dart",
-      "line": 47,
+      "line": 48,
       "injects": [],
       "members": [
         {
@@ -1015,7 +1015,7 @@
         "@ConditionalOnMissingBean(SupabaseAuthAdmin)"
       ],
       "source": "package:spring_boot_starter_supabase/src/auth/auth_auto_configuration.dart",
-      "line": 66,
+      "line": 81,
       "injects": [],
       "members": [
         {
@@ -1101,7 +1101,7 @@
         "@ConditionalOnMissingBean(SupabaseAuthErrors)"
       ],
       "source": "package:spring_boot_starter_supabase/src/auth/auth_auto_configuration.dart",
-      "line": 32,
+      "line": 33,
       "injects": [],
       "members": [
         {

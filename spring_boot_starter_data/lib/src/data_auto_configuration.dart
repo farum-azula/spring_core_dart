@@ -181,14 +181,14 @@ Duration memoryLockTimeout(Environment environment) {
 ///   mapping context, the converter, every [DataStore] bean and the
 ///   auditing handler, and fails the startup with the reasons when a
 ///   repository is wrong (its store, its entity, a `@Query`);
-/// - `transactionInterceptor`, `transactionValidator` and
-///   `transactionAdvisor` — `@Transactional` on bean methods: the
-///   interceptor runs them in transactions, the validator fails the
-///   startup for a method that is not async or a transaction manager that
-///   does not exist, and the advisor applies the interceptor to the
-///   annotated methods. The advisor has the lowest precedence, so it is the
-///   innermost: advice with a higher precedence (a future `@Retryable`)
-///   wraps the transaction, and each retry gets a fresh one;
+/// - `transactionInterceptor` and `transactionAdvisor` — `@Transactional`
+///   on bean methods: the interceptor runs them in transactions, and the
+///   advisor applies the interceptor to the annotated methods. The advisor
+///   has the lowest precedence, so it is the innermost: advice with a
+///   higher precedence (a future `@Retryable`) wraps the transaction, and
+///   each retry gets a fresh one. The check of those methods at startup
+///   (`transactionValidator`) is one of the startup checks
+///   (`dataStartupChecks`);
 /// - `transactionTemplate` — a `TransactionTemplate` of the application's
 ///   only (or primary, or non-fallback) `PlatformTransactionManager`, when
 ///   there is one.
@@ -347,12 +347,6 @@ final dataAutoConfiguration = <BeanDefinition<Object>>[
       beanFactory: r.dependency<BeanFactory>(),
       introspector: r.dependency<BeanIntrospector>(),
     ),
-  ),
-  BeanDefinition<TransactionValidator>(
-    name: 'transactionValidator',
-    types: const [TransactionValidator, BeanPostProcessor, BeanFactoryAware],
-    source: _source,
-    create: (_) => TransactionValidator(),
   ),
   BeanDefinition<DefaultPointcutAdvisor>(
     name: 'transactionAdvisor',

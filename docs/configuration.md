@@ -1463,6 +1463,7 @@ debug=false
 | `spring.main.register-shutdown-hook` | bool | `false` (Spring Boot: `true`) | Closes the context on SIGINT or SIGTERM, so `@PreDestroy` methods run (VM only). Off by default because listening for signals keeps a Dart program alive |
 | `spring.main.allow-bean-definition-overriding` | bool | `false` | A second bean with the same name replaces the first instead of failing the start |
 | `spring.main.cloud-platform` | platform name or `none` | detected | Forces the [cloud platform](#documents-for-some-profiles-or-platforms) |
+| `spring.main.startup-checks.enabled` | `true` / `false` | not set | Read by the generator when it writes the application, in `application.yml` or `application.properties` without a profile: whether the starters' startup checks are in the build (the data starter's `transactionValidator` and `dataFailureAnalyzer`, the cache starter's `cacheOperationValidator`, the edge starter's warning list). `true`: in every build. `false`: in none, no code at all. Not set: in debug and profile builds only, so a release build compiles them away and a mistake they would have found fails at the first call instead of the start |
 | `spring.autoconfigure.exclude` | list | — | Auto-configurations not to apply, by class or module name |
 | `debug` | any | — | Any value but `false` (for example `--debug`) logs the condition evaluation report: which auto-configured beans were created, and why the others were not |
 | `trace` | any | — | Any value but `false` (`--trace`) turns the framework's loggers (`spring_core_dart`, `spring_boot_dart`, `spring.web.server`) to `trace`; `debug` sets them to `debug`. Levels in `logging.level.*` win |
@@ -4337,6 +4338,8 @@ spring.flutter.scene.canvas=engine
 spring.flutter.scene.preload=eager
 spring.flutter.scene.models.hero.source=asset:assets/models/hero.glb
 spring.flutter.scene.models.hero.preload=lazy
+spring.flutter.scene.materials.glass.source=assets/materials/glass.fmat
+spring.flutter.scene.materials.glass.preload=eager
 spring.flutter.scene.app.enabled=true
 spring.flutter.scene.app.placement=background
 spring.flutter.scene.app.camera.position=0,1.5,-4
@@ -4364,6 +4367,8 @@ spring.flutter.scene.app.camera.fov=45
 | `spring.flutter.scene.engine-log` | `true` / `false` | `true` | Whether the engine's own messages (it writes them with `debugPrint`) are records of the application's log, under the logger `flutter_scene` (`logging.level.flutter_scene`) |
 | `spring.flutter.scene.models.<name>.source` | asset or address | none (required) | The model's `.glb` file: an asset (`asset:assets/models/hero.glb`) or an `https` address (`http` with `spring.remote.allow-insecure`; in a browser its server must allow the page's origin). Not a file of `lib/resources/`, which is embedded into the code |
 | `spring.flutter.scene.models.<name>.preload` | `eager` / `lazy` | as `spring.flutter.scene.preload` | When the model is loaded: with the splash, or when a scene first shows it |
+| `spring.flutter.scene.materials.<name>.source` | path | none (required) | The material's `.fmat` file by its path from the app's root (`assets/materials/glass.fmat`, no `asset:`). The app's build hook (`buildSceneAssets`) compiles it and fails when a material named here is not there; at run time the compiled material is loaded, not this file. `SpringSceneMesh(material: 'glass')` and `SceneMaterials` take it by its name |
+| `spring.flutter.scene.materials.<name>.preload` | `eager` / `lazy` | as `spring.flutter.scene.preload` | When its programs are loaded: with the splash, or when a scene first shows it (the first frame of that scene waits for it) |
 | `spring.flutter.scene.app.enabled` | `true` / `false` | `false` | Whether the app has one scene of its own (the `applicationScene` bean), made with the splash |
 | `spring.flutter.scene.app.placement` | `background` / `none` | `background` | Where it shows: under every screen, or only in the app's `SpringSceneView` widgets |
 | `spring.flutter.scene.app.camera.position` | three numbers | `0, 0, -5` | Where the camera of the application's scene is |
@@ -4674,6 +4679,18 @@ the block is removed (the file too when nothing else is in it); a value
 that cannot be read fails the build and leaves the file as it is.
 `spring.web.resources.cache.period` and `use-last-modified` are the
 server's alone.
+
+On a domain of its own the site is behind the zone's cache settings,
+which come after the file: with Caching → Configuration → Browser Cache
+TTL set to a time (4 hours, the default of older zones), Cloudflare puts
+that time in place of `no-cache` on the files it counts as static
+(scripts, images, fonts). `flutter_bootstrap.js`, `main.dart.js` (the
+build every browser but Chromium's runs, Flutter's default: Safari,
+Firefox and every browser on iOS) and the icon fonts are then kept up to
+that long after a deploy, and a phone shows the build before it. Set
+Browser Cache TTL to *Respect Existing Headers* (or a Cache Rule's
+browser TTL to the origin's), so the file decides;
+`curl -sI https://<site>/main.dart.js` then says `cache-control: no-cache`.
 
 ---
 
@@ -5353,8 +5370,8 @@ spring.data.jdbc.slow-query-threshold=500ms
 | `spring.sql.migration.connect-retries`, `connect-retries-interval`, `lock-timeout` | `0`, `10s`, `1m` | wait for the database, and for another instance migrating it |
 | `spring.data.jdbc.schema` | `validate` | `none`, `validate` (tables and columns of the entities must exist and fit), `create`, `create-drop` (from the entities; not with migrations or scripts) |
 | `spring.jdbc.template.query-timeout` | none | bounds each statement of the `JdbcTemplate` beans |
-| `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and masked values) at info: the value of a name that looks secret (a column or parameter name that contains `password`, `token`, `secret`, `credential`, `apikey` or `privatekey`, or has the word `key`: `sslpassword`, `apiToken`, `clientSecret`; not `keyword`) is `******`, and so is a value bound without a name (a plain list to a `JdbcTemplate`); the values also show at trace, with the same masks |
-| `spring.data.jdbc.slow-query-threshold` | none | a slower statement is logged at warn |
+| `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and masked values) at info: the value of a name that looks secret (a column or parameter name that contains `password`, `token`, `secret`, `credential`, `apikey` or `privatekey`, or has the word `key`: `sslpassword`, `apiToken`, `clientSecret`; not `keyword`) is `******`, and so is a value bound without a name (a plain list to a `JdbcTemplate`); the values also show at trace, with the same masks. The generator reads `show-sql` too, without a profile: `true` keeps the three switches in every build, `false` in none, not set in debug and profile builds only (where a profile's `show-sql: true` turns them on; the build warns that a release build has no code for it) |
+| `spring.data.jdbc.slow-query-threshold` | none | a slower statement is logged at warn, in every build |
 | `spring.data.jdbc.rate-limit.table` | `rate_limit` | the table of the rate limiter's SQL store (`spring.web.rate-limit.store: jdbc`, the default with a primary data source): a name, or `schema.name` |
 | `spring.data.jdbc.rate-limit.create-table` | only when `spring.data.jdbc.schema` is `create` or `create-drop` | whether the store creates that table when it is not there; else it comes from a migration (the SQL is in the package: `sql/rate_limit/postgresql.sql`, `sql/rate_limit/sqlite.sql`) |
 | `spring.data.memory.lock-timeout` | `10s` | the in-memory store's wait for a row lock |
@@ -5588,7 +5605,7 @@ spring.supabase.cache.shared=catalog
 | `spring.supabase.db.rls` | `off`, `user` | `off` | As whom SQL runs: the user of `db.url`, or (`user`) the current user, with the role `authenticated` or `anon` and the token's claims in every transaction and statement. `user` through the transaction pooler (port 6543) fails the start |
 | `spring.supabase.db.schema` | string | the API's (`public`) | The schema the REST API reads and writes |
 | `spring.supabase.db.max-rows` | int | `1000` | The most rows the REST API returns in one answer (the project's "Max rows"); an answer that long is read on in further calls |
-| `spring.supabase.auth.enabled` | bool | `true` | Whether Supabase Auth is plugged into Spring Security: the resource server's defaults on a server, the `supabaseAuth` and `supabaseAuthAdmin` beans |
+| `spring.supabase.auth.enabled` | bool | `true` | Whether Supabase Auth is plugged into Spring Security: the resource server's defaults on a server, the `supabaseAuth` bean, and on a server (`ModulePlatform.server`: never in a Flutter app or a browser build) the `supabaseAuthAdmin` bean |
 | `spring.supabase.auth.redirect-urls` | list | empty | Where a login through a provider, a magic link or a password reset may come back to; the first is the default, any other address is refused |
 | `spring.supabase.auth.issuer` | string | `<url>/auth/v1` | The issuer of the project's tokens |
 | `spring.supabase.auth.jwt-secret` | string | none | The legacy JWT secret of a project that signs with HS256; it becomes the default of `…resourceserver.jwt.secret-key`. Server only: in a Flutter app it is warned about at startup |

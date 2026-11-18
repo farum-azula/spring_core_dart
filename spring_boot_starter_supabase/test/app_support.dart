@@ -38,6 +38,11 @@ ApplicationContextRunner supabaseRunner(BeanModule application) =>
               'springSecurityCoreAutoConfiguration',
             ],
           ),
+        )
+        // A test runs on the Dart VM: a server, which has the admin API.
+        .withAutoConfiguration(
+          springBootStarterSupabaseAdminAutoConfiguration,
+          const AutoConfigurationModule(platform: ModulePlatform.server),
         );
 
 /// The test application with the starter's auto-configurations.
