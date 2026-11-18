@@ -1,3 +1,7 @@
+## 0.8.4
+
+- No changes of its own; released with the family version 0.8.4.
+
 ## 0.8.3
 
 - `CacheStore`, where a cache keeps what it may lose: bytes by a path, read and written asynchronously, kept across restarts when the store can (a folder, the browser's IndexedDB); `InMemoryCacheStore` for tests. The cache starter keeps `@Cacheable` results of `spring.cache.type: disk` in one, the Flutter starter the resources it downloads; an app with both shares the place, each in a folder of its own with a limit of its own.

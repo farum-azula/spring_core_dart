@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.4
 
 - Repositories that keep their data in memory say so at start: the first repository given the in-memory store logs `memory - Starting... (in memory: the data lives until the application stops)` once, at info, as a database's pool logs its own start. An application meant to run on a database and started without `spring.datasource.url` used to run in memory without a word.
 - **The startup checks leave the release build:** `transactionValidator` (a `@Transactional` method that is not async, or names a transaction manager that does not exist, stops the start) and `dataFailureAnalyzer` are in a module of their own, `springBootStarterDataStartupChecksAutoConfiguration`, in the build by `spring.main.startup-checks.enabled`: not set, in debug and profile builds only, so a release build ships none of their code (a wrong `@Transactional` method then fails at its first call, a database that fails the start is reported as it was thrown); `true` in `application.yml` or `application.properties` keeps them in every build, `false` in none. `TransactionValidator` is in a file of its own, still exported by the library.

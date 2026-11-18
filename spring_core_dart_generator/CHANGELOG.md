@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.4
 
 - The generator is split by starter: its code is in a folder per starter (`core/`, `data/`, `flutter/`, `navigation/`, `signals/`, `web/`, `websocket/`, `scheduling/`, `security/`, `cache/`, `json_schemas/`, `actuator/`, `search/`, `test/`), and each starter's share of a module's generation is a `StarterGeneration` part, listed once, which runs only when the application reaches its starter's package. The core names no starter; a new starter adds a folder and one registration. The generated code of every example and package is byte for byte what it was, and a clean `build_runner build` takes the same time.
 - A part can be left out by a build key, as an auto-configuration module can (`StarterBuild(property, whenMissing:)`, the same reading as `AutoConfigurationBuild`): `false` and nothing of it is generated; not set with `notInRelease`, what it writes is under `!dart.vm.product`, so a release build compiles it away. One key can thus leave out a starter's module and everything its generator writes for it.

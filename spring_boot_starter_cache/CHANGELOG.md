@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.4
 
 - **The startup check leaves the release build:** `cacheOperationValidator`, which checks the cache annotations of every proxied bean when it is created, is in a module of its own, `springBootStarterCacheStartupChecksAutoConfiguration`, in the build by `spring.main.startup-checks.enabled`: not set, in debug and profile builds only, so a release build ships none of its code (a wrong annotation then fails at the member's first call, where the interceptor checks it); `true` in `application.yml` or `application.properties` keeps it in every build, `false` in none. `CacheOperationValidator` is in a file of its own, still exported by the library.
 

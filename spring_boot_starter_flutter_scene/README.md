@@ -50,7 +50,7 @@ browser, Impeller elsewhere).
 
 ```yaml
 dependencies:
-  spring_boot_starter_flutter_scene: ^0.8.3
+  spring_boot_starter_flutter_scene: ^0.8.4
   # The engine's own scene widgets and geometry (SceneNode, SceneMesh,
   # materials), when the app's code names them.
   flutter_scene: ^0.24.3

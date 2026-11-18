@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.4
 
 - `ModulePlatform.server`: a module only on a server, the Dart VM or an AOT executable (`dart.library.io` without Flutter's `dart.library.ui`): a Flutter app on a phone or a desktop and a browser build compile it away with everything only it reaches. For code that must not ship in an app, which anyone can read (an API that needs a secret key, as the Supabase starter's admin API with the service-role key). `-DSPRING_ALL_PLATFORMS=true` keeps it, as it keeps the others.
 - `spring.main.startup-checks.enabled` (`MainProperties.startupChecks`), a build key the generator reads: the starters' startup checks (the data starter's `transactionValidator` and `dataFailureAnalyzer`, the cache starter's `cacheOperationValidator`, the edge starter's warning list) are in debug and profile builds only by default; `true` in `application.yml` or `application.properties` keeps them in every build, `false` in none.

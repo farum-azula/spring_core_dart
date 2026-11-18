@@ -1,4 +1,4 @@
-## Unreleased
+## 0.8.4
 
 - **The admin API only on a server:** `supabaseAuthAdmin` (`SupabaseAuthAdmin`, which manages users with the service-role key) is in a module of its own, `springBootStarterSupabaseAdminAutoConfiguration`, of `ModulePlatform.server`: a Flutter app (on a phone, a desktop or the web) and a browser build compile it away with everything only it reaches. The Dart VM and an AOT executable keep it, and so does an edge function (compiled with `-DSPRING_ALL_PLATFORMS=true`). A Flutter app that called it needs a server of its own for that.
 - **The resource server's defaults only on a server:** `springBootStarterSupabaseServerAutoConfiguration` (the defaults of `spring.security.oauth2.resourceserver.jwt.*`) is `ModulePlatform.server` instead of `native`: a Flutter app on a phone or a desktop no longer has it, as it checks no bearer token.
