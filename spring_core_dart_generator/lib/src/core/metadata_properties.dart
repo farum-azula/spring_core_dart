@@ -3,7 +3,7 @@ import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/metadata_locations.dart';
+import 'package:spring_core_dart_generator/src/core/metadata_locations.dart';
 
 // `@ConfigurationProperties` from spring_core_dart (matched by URL, so the
 // generator does not depend on that package).

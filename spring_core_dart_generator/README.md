@@ -88,7 +88,14 @@ automatically to every package that depends on it.
   compiles it away). The proxies written for library beans follow the
   modules they come from. A property the build cannot read (`${FLAG}`
   without a default, a file that does not parse) fails the build naming
-  the module; one set only in a profile's file is warned about.
+  the module; one set only in a profile's file is warned about. A
+  starter's part of the generator can take a key the same way
+  (`StarterGeneration.build`, a `StarterBuild('<property>')`), so one key
+  leaves out the starter's module and all its part writes: `false` runs
+  none of the part, and under `whenMissing: notInRelease` its bean
+  definitions, module statements, introspection lists and resources sit
+  under the same `dart.vm.product` constant (its classes and top-level
+  declarations cannot, and a release build drops them unused).
 
 Into that file it writes:
 
@@ -817,33 +824,57 @@ Dev dependencies: `build_test`, `test`, `coverage`, `package_config`, and
 
 ## Structure
 
+The generator is a core plus one part per starter. The core
+(`lib/src/core/`) scans beans, writes their definitions, proxies and
+introspections, and checks them; it names no starter. What a starter adds
+to a module's generation is its part, a `StarterGeneration` in
+`lib/src/<starter>/` (`data/`, `flutter/`, `navigation/`, `signals/`,
+`web/`, `websocket/`, `scheduling/`, `security/`, `cache/`, `actuator/`,
+`json_schemas/`; `search/` and `test/` hold their builders' code).
+
 ```
 lib/
-  builder.dart                  build_runner entry points and options
+  builder.dart              build_runner entry points and options
   src/
-    spring_builder.dart         finds @ComponentScan / @SpringBootApplication, scans, writes output
-    bean_scanner.dart           analyzer elements → models, validation
-    bean_model.dart             intermediate models
-    bean_type_inference.dart    the type a @Bean method really returns
-    module_emitter.dart         models → Dart source
-    configuration_scanning.dart full-mode @Configuration classes
-    configuration_emitter.dart  their generated subclasses
-    lookup_scanning.dart        @Lookup methods
-    lookup_emitter.dart         their generated subclasses
-    aop_analysis.dart           pointcut checks and proxy pruning
-    constraint_checker.dart     validation constraints against their types
-    json_annotation_checker.dart  @JsonValue and @JsonProperty checks
-    log_scanning.dart           @Log
-    flutter_scanning.dart       spring_boot_starter_flutter
-    asset_check.dart            @Value('asset:...') against pubspec.yaml
-    dart_define_keys.dart       --dart-define keys
-    test_builder.dart           @SpringBootTest, @DataTest → test/spring_gen/*.test.spring.dart
-    web_dev_config_builder.dart spring.flutter.web.dev-server.* → web_dev_config.yaml
-    web_page_loader.dart        the page loader block of web/index.html; web_page_loader_builder.dart writes it
-    web_wasm_allow_list.dart    spring.flutter.web.page.wasm-allow-list for the page's script
+    starters.dart           the parts, listed once, in the order they run
+    core/                   scanning, models, emitting, AOP, metadata,
+                            the build-time reading of the configuration
+    <starter>/              one folder per starter: its part and its code
 build.yaml
-test/                           generated output and every rejected declaration
+test/<part>/                generated output and every rejected declaration
 ```
+
+- **A part runs only when the application reaches its starter's
+  package** (`StarterGeneration.package`, among the packages the
+  application lists or gets through them): an application without
+  `spring_boot_starter_flutter` runs none of the Flutter code, one
+  without `spring_boot_starter_data` none of the data code.
+- **The parts are listed once**, in `lib/src/starters.dart`, in the order
+  the builders ask them (the order of what they write and of the errors
+  they report): the data starter's metadata, Flutter, navigation, the
+  change notifier (Flutter), signals, web, WebSocket, scheduling,
+  security, cache, the actuator's, the JSON Schemas' and the data
+  starter's module part.
+- **What a part does:** the Flutter, navigation and data parts write
+  code of their own (widget bindings, the `ScreenRoutes` bean,
+  repositories and entity introspections, the drivers' glue); the web,
+  WebSocket, scheduling, security, cache and signals parts write nothing
+  and say what their annotations do with the values of a bean's methods
+  (which classes the build describes, for what) or fail the build for
+  what cannot work; the actuator's adds `build-info.properties` to an
+  application's resources; the JSON Schemas' adds the classes' file.
+- **A part can be left out by a build key**, as an auto-configuration
+  module can: `StarterBuild('<property>', whenMissing:)` has the same
+  reading as `AutoConfigurationBuild` (`application.yml` /
+  `application.properties` without a profile; `true`, `false`, not set;
+  `BuildInclusion.notInRelease` by default). No built-in part takes a key
+  yet.
+- **The generated code did not change** with this organisation: every
+  example and package gives the same bytes as before, and a clean
+  `build_runner build` takes the same time.
+- There is no public registration for parts of packages outside this
+  repository yet: `starters.dart` is the list the builder factories pass
+  to the builders.
 
 ## Status
 

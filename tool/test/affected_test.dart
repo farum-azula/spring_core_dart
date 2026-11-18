@@ -89,6 +89,70 @@ targets:
       expect(result['half'], {'gen'});
     });
 
+    group('the tests of the parts', () {
+      const gen = 'spring_core_dart_generator';
+      final packages = ['core', gen];
+
+      setUp(() {
+        write('$gen/pubspec.yaml', 'name: gen\ndependencies:\n  core: any\n');
+        for (final part in ['core', 'data', 'flutter']) {
+          write('$gen/lib/src/$part/a.dart', '');
+          write('$gen/test/$part/a_test.dart', '');
+        }
+        // A part without tests of its own.
+        write('$gen/lib/src/web/a.dart', '');
+        write('$gen/test/support/helpers.dart', '');
+        write('$gen/test/fixtures/table.json', '');
+      });
+
+      List<String> paths(List<String> changed) {
+        final deps = dependencies(packages);
+        return partTestPaths(
+          changed,
+          packages,
+          affectedPackages(changed, packages, deps),
+          deps,
+          root: root.path,
+        );
+      }
+
+      test('a change of parts runs their tests', () {
+        expect(paths(['$gen/lib/src/data/x.dart']), ['$gen/test/data']);
+        expect(
+          paths([
+            '$gen/test/flutter/a_test.dart',
+            '$gen/lib/src/data/y/x.dart',
+            '$gen/README.md',
+          ]),
+          ['$gen/test/data', '$gen/test/flutter'],
+        );
+        // The core's tests are a part's tests.
+        expect(paths(['$gen/test/core/a_test.dart']), ['$gen/test/core']);
+      });
+
+      test('the core, the rest of the package, a dependency: all tests', () {
+        for (final path in [
+          '$gen/lib/src/core/x.dart',
+          '$gen/lib/builder.dart',
+          '$gen/lib/src/starters.dart',
+          '$gen/build.yaml',
+          '$gen/pubspec.yaml',
+          '$gen/test/support/helpers.dart',
+          '$gen/test/fixtures/table.json',
+          // No test/web/: the part is checked by the others' tests.
+          '$gen/lib/src/web/x.dart',
+          'core/lib/x.dart',
+          'tool/x.dart',
+        ]) {
+          expect(paths(['$gen/lib/src/data/x.dart', path]), isEmpty);
+        }
+      });
+
+      test('a package without parted tests runs them all', () {
+        expect(paths(['core/lib/src/data/x.dart']), isEmpty);
+      });
+    });
+
     test('dependents are affected through the chain', () {
       final packages = ['core', 'boot'];
       expect(
@@ -199,6 +263,35 @@ targets:
         // starter.
         'spring_boot_starter_actuator',
       });
+    });
+
+    test('every part of the generator has tests of its own', () {
+      final generator = p.join(root, 'spring_core_dart_generator');
+      final parts = [
+        for (final entity in Directory(
+          p.join(generator, 'lib', 'src'),
+        ).listSync())
+          if (entity is Directory) p.basename(entity.path),
+      ];
+      expect(parts, contains('data'));
+      for (final part in parts) {
+        expect(
+          Directory(p.join(generator, 'test', part)).existsSync(),
+          isTrue,
+          reason: 'spring_core_dart_generator/test/$part',
+        );
+        final path = 'spring_core_dart_generator/lib/src/$part/x.dart';
+        expect(
+          partTestPaths(
+            [path],
+            packages,
+            affected(path),
+            dependencies,
+            root: root,
+          ),
+          part == 'core' ? isEmpty : ['spring_core_dart_generator/test/$part'],
+        );
+      }
     });
 
     test('the ZAP rules reach the server guide they scan', () {

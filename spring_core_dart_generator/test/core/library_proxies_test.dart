@@ -13,7 +13,8 @@ import 'dart:isolate';
 import 'package:build/build.dart' show AssetId;
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:test/test.dart';
 
 const _main = r'''
@@ -83,7 +84,7 @@ Future<(Map<String, String>, String)> _build({
   }
   final workspace = await loadPackageConfigUri((await Isolate.packageConfig)!);
   final result = await testBuilder(
-    SpringBuilder(),
+    SpringBuilder(generations: starterGenerations),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -305,7 +306,7 @@ class SettingsAudit {
         );
         await readerWriter.testing.loadIsolateSources();
         final result = await testBuilder(
-          SpringBuilder(deferProxies: defer),
+          SpringBuilder(generations: starterGenerations, deferProxies: defer),
           {
             'pkg|lib/src/settings.dart': r'''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -424,7 +425,7 @@ class Guards {
       );
       await readerWriter.testing.loadIsolateSources();
       final result = await testBuilder(
-        SpringBuilder(),
+        SpringBuilder(generations: starterGenerations),
         {
           // Imports the modules, as a starter's does: the build of one
           // does not read the module being built.
@@ -610,6 +611,14 @@ class TaskAudit {
       return output;
     }
 
+    // The other starters of the workspace have modules of their own under
+    // `dart.vm.product` (their checks at start); only this starter's module
+    // and its proxy are looked at.
+    final releaseGuarded = RegExp(
+      r"dart\.vm\.product'\)[^,\]]*?"
+      r"(_i\d+\.starterDebugAutoConfiguration|r'package:starter/task\.dart#Task')",
+    );
+
     test('a platform: the proxy registered only on it', () async {
       final code = (await output(
         module: 'platform: ModulePlatform.native,',
@@ -623,7 +632,7 @@ class TaskAudit {
           "r'package:starter/task.dart#Task':",
         ),
       );
-      expect(code, isNot(contains('dart.vm.product')));
+      expect(code, isNot(contains(releaseGuarded)));
     });
 
     test('a platform and a build property not set: both', () async {
@@ -692,7 +701,7 @@ final BeanModule starterWebAutoConfiguration = BeanModule(
         config: 'starter.debug.enabled=true',
       )).replaceAll(RegExp(r'\s'), '');
       expect(code, contains("aopProxies:{r'package:starter/task.dart#Task':"));
-      expect(code, isNot(contains('dart.vm.product')));
+      expect(code, isNot(contains(releaseGuarded)));
     });
 
     test('false, the bean also in a module always built: kept', () async {

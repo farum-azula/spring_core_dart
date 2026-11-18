@@ -30,6 +30,21 @@ class MainProperties {
   /// Closes the context on SIGINT or SIGTERM, so `@PreDestroy` methods run
   /// (VM only). Off by default, unlike in Spring Boot.
   bool registerShutdownHook = false;
+
+  /// The checks of the starters that fail the start for a mistake.
+  MainStartupChecksProperties startupChecks = MainStartupChecksProperties();
+}
+
+/// `spring.main.startup-checks.*`.
+class MainStartupChecksProperties {
+  /// Whether the starters' startup checks are in the build (the
+  /// `@Transactional` and cache annotations checked when the beans are
+  /// created, the explanations of a database that fails the start, the
+  /// edge starter's warning list): `true` in every build, `false` in none.
+  /// Default: in debug and profile builds, so a release build ships none
+  /// of their code and its mistakes fail at the first call. Read by the
+  /// generator.
+  bool? enabled;
 }
 
 /// The auto-configuration switches: `spring.autoconfigure.*`.

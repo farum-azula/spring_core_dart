@@ -8,7 +8,7 @@ import 'dart:convert';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:spring_core_dart/core.dart';
-import 'package:spring_core_dart_generator/src/deep_links_builder.dart';
+import 'package:spring_core_dart_generator/src/navigation/deep_links_builder.dart';
 import 'package:test/test.dart';
 
 const _plist = '''

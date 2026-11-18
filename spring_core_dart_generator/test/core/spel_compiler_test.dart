@@ -19,10 +19,10 @@ import 'package:code_builder/code_builder.dart'
 import 'package:dart_style/dart_style.dart';
 import 'package:spring_core_dart/spring_core_dart.dart'
     show SpelExpressionParser;
-import 'package:spring_core_dart_generator/src/spel_compiler.dart';
+import 'package:spring_core_dart_generator/src/core/spel_compiler.dart';
 import 'package:test/test.dart';
 
-import 'support/spel_fixture.dart' as fixture;
+import '../support/spel_fixture.dart' as fixture;
 
 // Every variable of the fixture, and the scopes the expressions compile in.
 const _variables = [

@@ -1,6 +1,6 @@
 // The rules of the Pageable and Sort controller parameters, without the web
 // starter (the glue only hands the query parameters over). The glue itself
-// runs in spring_core_dart_generator/test/web_glue_runtime_test.dart.
+// runs in spring_core_dart_generator/test/data/web_glue_runtime_test.dart.
 import 'dart:convert';
 
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';

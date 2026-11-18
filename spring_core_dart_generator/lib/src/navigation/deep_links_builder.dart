@@ -4,9 +4,9 @@ import 'dart:io' as io;
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:spring_core_dart/core.dart';
-import 'package:spring_core_dart_generator/src/package_directory.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart';
+import 'package:spring_core_dart_generator/src/core/build_environment.dart';
+import 'package:spring_core_dart_generator/src/core/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
 
 /// Writes the deep links of an app (`spring.flutter.navigation.deep-links.*`
 /// of `spring_boot_starter_flutter_navigation`) into its platform files,
@@ -87,7 +87,7 @@ final class DeepLinksBuilder implements Builder {
               binary: binary,
             ),
           );
-        } on WebDevConfigException catch (e) {
+        } on BuildConfigException catch (e) {
           log.severe('$e\nThe deep links of ${platform.name} are not written.');
           continue;
         }
@@ -266,7 +266,7 @@ final class DeepLinkSettings {
   });
 
   /// The settings in [environment]; `null` when deep links are off or
-  /// neither a scheme nor a domain is set. Throws [WebDevConfigException]
+  /// neither a scheme nor a domain is set. Throws [BuildConfigException]
   /// for a scheme or domain that is not one.
   static DeepLinkSettings? of(PropertyResolver environment) {
     String? string(String name) {
@@ -303,13 +303,13 @@ final class DeepLinkSettings {
     }
     if (scheme != null &&
         !RegExp(r'^[a-zA-Z][a-zA-Z0-9+.\-]*$').hasMatch(scheme)) {
-      throw WebDevConfigException(
+      throw BuildConfigException(
         '${DeepLinksBuilder.prefix}.scheme "$scheme" is no URL scheme '
         '(letters, digits, +, - and ., a letter first).',
       );
     }
     if (scheme == 'http' || scheme == 'https') {
-      throw WebDevConfigException(
+      throw BuildConfigException(
         '${DeepLinksBuilder.prefix}.scheme cannot be $scheme: put the site in '
         '${DeepLinksBuilder.prefix}.domains instead.',
       );
@@ -318,7 +318,7 @@ final class DeepLinkSettings {
       if (!RegExp(
         r'^(\*\.)?[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)+$',
       ).hasMatch(domain)) {
-        throw WebDevConfigException(
+        throw BuildConfigException(
           '${DeepLinksBuilder.prefix}.domains: "$domain" is no host name (no '
           'scheme, no path: books.example.com).',
         );

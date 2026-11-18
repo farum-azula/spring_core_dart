@@ -1,7 +1,7 @@
 // Which files of `lib/resources/` tell the build the schema, and in which
 // order: the migrations (the versions by number, then the repeatable ones)
 // and the init scripts, at the default places or where the settings say.
-import 'package:spring_core_dart_generator/src/schema_sources.dart';
+import 'package:spring_core_dart_generator/src/data/schema_sources.dart';
 import 'package:test/test.dart';
 
 SchemaSources _find(Map<String, String> resources) =>

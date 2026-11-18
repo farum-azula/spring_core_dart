@@ -7,9 +7,30 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/bean_model.dart';
-import 'package:spring_core_dart_generator/src/typed_theme_keys.dart'
+import 'package:spring_core_dart_generator/src/core/bean_model.dart';
+import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart'
     show LoaderKinds;
+
+/// What the part of `spring_boot_starter_flutter` found in a module: the
+/// `@BuildContextAccess` getters, the Spring widgets and the
+/// `@ThemeLoaderKind` classes. It lives in the module
+/// ([ModuleModel.starterModel]), so the core knows none of these types.
+final class FlutterModuleModel {
+  /// The Flutter model of [module], made the first time it is asked for.
+  static FlutterModuleModel of(ModuleModel module) =>
+      module.starterModel(FlutterModuleModel.new);
+
+  /// The `BuildContext` getters to generate for `@BuildContextAccess`
+  /// beans.
+  final buildContextAccess = <BuildContextAccessModel>[];
+
+  /// The `SpringStatelessWidget` and `SpringState` classes, in scan order.
+  final springWidgets = <SpringWidgetModel>[];
+
+  /// The `@ThemeLoaderKind` classes, which the module registers into
+  /// `ThemeLoaderKinds`.
+  final loaderKinds = <ThemeLoaderKindModel>[];
+}
 
 /// Recognises `@BuildContextAccess` of `spring_boot_starter_flutter`, which
 /// asks for a `BuildContext` getter for a bean. Matched by URL, so the
@@ -153,14 +174,14 @@ class SpringWidgetModel {
   ];
 }
 
-/// Adds a [SpringWidgetModel] for [element] to `module.springWidgets` when
-/// it extends `SpringStatelessWidget<R>` or `SpringState<W, R>`.
+/// Adds a [SpringWidgetModel] for [element] to `flutter.springWidgets`
+/// when it extends `SpringStatelessWidget<R>` or `SpringState<W, R>`.
 ///
 /// An abstract class whose `R` is still a type parameter (a base class for
 /// widgets) is skipped. Throws `InvalidGenerationSource` when `R` is not a
 /// non-nullable record, or when a field of it is not a class or interface
 /// type (`dynamic`, `Object`, `Function`, a record, `Null`).
-void scanSpringWidget(ClassElement element, ModuleModel module) {
+void scanSpringWidget(ClassElement element, FlutterModuleModel flutter) {
   final supertype = element.allSupertypes
       .where(
         (type) =>
@@ -216,7 +237,7 @@ void scanSpringWidget(ClassElement element, ModuleModel module) {
     );
   }
 
-  module.springWidgets.add(
+  flutter.springWidgets.add(
     SpringWidgetModel(
       element,
       '${element.library.uri}#$name',
@@ -227,9 +248,9 @@ void scanSpringWidget(ClassElement element, ModuleModel module) {
   );
 }
 
-/// Adds a [BuildContextAccessModel] to `module.buildContextAccess` for each
-/// bean of `module.beans` marked `@BuildContextAccess`, on its class or on
-/// its `@Bean` method.
+/// Adds a [BuildContextAccessModel] to `flutter.buildContextAccess` for
+/// each bean of `module.beans` marked `@BuildContextAccess`, on its class
+/// or on its `@Bean` method.
 ///
 /// Each invalid getter is reported through [collectErrors], so the build
 /// lists them together: a name that is not a public identifier, a reserved
@@ -239,6 +260,7 @@ void scanSpringWidget(ClassElement element, ModuleModel module) {
 /// bean of this module.
 void scanBuildContextAccess(
   ModuleModel module,
+  FlutterModuleModel flutter,
   void Function(void Function() action) collectErrors,
 ) {
   final byGetter = <String, BeanModel>{};
@@ -294,7 +316,7 @@ void scanBuildContextAccess(
         );
       }
       byGetter[getter] = bean;
-      module.buildContextAccess.add(
+      flutter.buildContextAccess.add(
         BuildContextAccessModel(getter, bean, _getterType(bean)),
       );
     });
@@ -528,13 +550,13 @@ class ThemeLoaderKindModel {
   final bool typedProps;
 }
 
-/// Adds a [ThemeLoaderKindModel] for [element] to `module.loaderKinds` when
-/// it is marked `@ThemeLoaderKind`. Throws `InvalidGenerationSource` for a
+/// Adds a [ThemeLoaderKindModel] for [element] to `flutter.loaderKinds`
+/// when it is marked `@ThemeLoaderKind`. Throws `InvalidGenerationSource` for a
 /// class that is abstract, extends neither `ThemeLoaderPainter` nor
 /// `ThemeLoaderWidget`, has no constructor without arguments, takes a
 /// props type that is neither the generated class nor `LoaderValues`,
 /// or a kind name used twice.
-void scanThemeLoaderKind(ClassElement element, ModuleModel module) {
+void scanThemeLoaderKind(ClassElement element, FlutterModuleModel flutter) {
   final annotation = themeLoaderKindChecker.firstAnnotationOf(element);
   if (annotation == null) {
     return;
@@ -604,7 +626,7 @@ void scanThemeLoaderKind(ClassElement element, ModuleModel module) {
     );
   }
   final typed = unresolved || shown == expected;
-  if (module.loaderKinds.any(
+  if (flutter.loaderKinds.any(
     (k) => k.name.toLowerCase() == name.toLowerCase(),
   )) {
     throw InvalidGenerationSource(
@@ -613,7 +635,7 @@ void scanThemeLoaderKind(ClassElement element, ModuleModel module) {
       element: element,
     );
   }
-  module.loaderKinds.add(
+  flutter.loaderKinds.add(
     ThemeLoaderKindModel(
       element,
       name,

@@ -1,10 +1,10 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/part_tree.dart';
-import 'package:spring_core_dart_generator/src/part_tree_reader.dart';
+import 'package:spring_core_dart_generator/src/data/part_tree.dart';
+import 'package:spring_core_dart_generator/src/data/part_tree_reader.dart';
 
-export 'package:spring_core_dart_generator/src/part_tree_reader.dart'
+export 'package:spring_core_dart_generator/src/data/part_tree_reader.dart'
     show QueryProblem;
 
 // The types of spring_boot_starter_data a query method may take or return,

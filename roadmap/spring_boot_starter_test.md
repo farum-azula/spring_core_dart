@@ -64,7 +64,7 @@ void main() => runSpringTests();
   app.getBean();`). Finds the `@SpringBootApplication` entry point of the
   package, or the one named by `application:`. Build errors with the
   file, line and column (docs/testing.md section 16).
-- **Tests**: `spring_core_dart_generator/test/spring_test_builder_test.dart`
+- **Tests**: `spring_core_dart_generator/test/test/spring_test_builder_test.dart`
   (the generated code for every annotation, every build error),
   `spring_boot_starter_test/test/test_class_support_test.dart` (the
   runtime), and running classes in `example/server_guide/test/`
@@ -178,7 +178,7 @@ class BookRepositoryTest {
   Keycloak smoke test; without a daemon the tar archives, the endpoint, the
   configuration, the wait strategies against a fake container and the
   modules' properties; the builder's output and errors
-  (`spring_core_dart_generator/test/spring_test_builder_test.dart`); and in
+  (`spring_core_dart_generator/test/test/spring_test_builder_test.dart`); and in
   the data starter a `@DataTest` and a `@SpringBootTest` class on containers.
 
 Left:

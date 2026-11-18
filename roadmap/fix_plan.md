@@ -93,7 +93,7 @@ Asked for by the owner (November 2026), after the signals starter: its
 class that is no bean, an enum, an `@Aspect`, a post-processor and a
 `@ConfigurationProperties` class, and nobody had tried them there. They
 fail the build now (the generator's
-`test/spring_boot_starter_flutter_signals_test.dart`). The next full
+`test/signals/spring_boot_starter_flutter_signals_test.dart`). The next full
 review does the same for every other annotation of the framework.
 
 For each annotation: put it on each of the places below, build and start.

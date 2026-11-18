@@ -21,8 +21,8 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart'
     show Expression, literalNum, literalString, refer;
-import 'package:spring_core_dart_generator/src/bean_model.dart';
-import 'package:spring_core_dart_generator/src/spel_compiler.dart';
+import 'package:spring_core_dart_generator/src/core/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/spel_compiler.dart';
 
 /// Compiles [text], an expression of the `@Query` method [member] of a
 /// repository in [repository].

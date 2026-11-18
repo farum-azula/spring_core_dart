@@ -1,4 +1,4 @@
-part of 'bean_scanner.dart';
+part of 'data_scanner.dart';
 
 // The `@Query` methods of a data repository, checked by the build. What
 // the starter used to check when the application started is checked here,
@@ -36,35 +36,7 @@ const _jdbcDriver =
 const _jdbcRow = TypeChecker.fromUrl('$_jdbcDriver#JdbcRow');
 const _jdbcResult = TypeChecker.fromUrl('$_jdbcDriver#JdbcResult');
 
-/// The texts of one `@Query` method, kept to be checked once the whole
-/// application is scanned.
-final class _QueryText {
-  _QueryText(this.where, this.texts, this.names, this.model);
-
-  // `Repository.method`.
-  final String where;
-
-  // The SQL and the count query, as `(label, text)`.
-  final List<(String, String)> texts;
-
-  // The parameters bound by name.
-  final List<String> names;
-
-  // The descriptor, which learns the expressions and the entities.
-  final QueryMethodModel model;
-}
-
-/// A repository whose `@Query` texts wait for the end of the scan.
-final class _RepositoryCheck {
-  _RepositoryCheck(this.element, this.name, this.problems, this.queries);
-
-  final ClassElement element;
-  final String name;
-  final List<String> problems;
-  final List<_QueryText> queries;
-}
-
-extension _QueryScanning on BeanScanner {
+extension _QueryScanning on DataScanner {
   /// What the starter is told of the `@Query` method [member], or `null`
   /// when it has a problem (added to [problems]); its text is added to
   /// [queries].
@@ -79,7 +51,7 @@ extension _QueryScanning on BeanScanner {
     required bool isStream,
     required InterfaceElement entity,
     required List<String> problems,
-    required List<_QueryText> queries,
+    required List<QueryText> queries,
   }) {
     final before = problems.length;
     void problem(String reason) => problems.add('$where: $reason');
@@ -234,7 +206,7 @@ extension _QueryScanning on BeanScanner {
       sort: sort,
     );
     queries.add(
-      _QueryText(
+      QueryText(
         where,
         [('', sql), if (count != null) (' (countQuery)', count)],
         names,
@@ -329,23 +301,24 @@ extension _QueryScanning on BeanScanner {
 
   /// Checks the texts of the `@Query` methods of every repository scanned,
   /// now that all entities and beans are known: the parameters, the
-  /// placeholders, the names of tables and columns. Every problem joins the
-  /// ones of its repository in one error, and the descriptors learn their
-  /// expressions and entities.
-  void _checkQueries() {
-    if (_repositoryChecks.isEmpty) {
+  /// placeholders, the names of tables and columns, against the schema the
+  /// migrations and init scripts among the module's [resources] say. Every
+  /// problem joins the ones of its repository in one error, and the
+  /// descriptors learn their expressions and entities.
+  void _checkQueries(Map<String, String> resources) {
+    if (data.repositoryChecks.isEmpty) {
       return;
     }
-    final schema = _dataSchema();
+    final schema = _dataSchema(resources);
     final checker = QueryTextChecker(schema);
     // The `@Table` classes only: a DTO of the same name is no entity.
     final classes = {
-      for (final entity in module.entities)
+      for (final entity in data.entities)
         if (_table.hasAnnotationOf(entity.element))
           entity.element.name!: entity.type,
     };
     final beans = _expressionBeans();
-    for (final check in _repositoryChecks) {
+    for (final check in data.repositoryChecks) {
       for (final query in check.queries) {
         final entities = <String, InterfaceType>{};
         final expressions = <QueryExpressionModel>[];
@@ -384,8 +357,8 @@ extension _QueryScanning on BeanScanner {
         // build compiled needs none.
         if (expressions.any((expression) => !expression.compiled)) {
           for (final parameter in query.model.member.parameters) {
-            collectErrors(
-              () => _introspectUsed(
+            scan.collectErrors(
+              () => scan.introspectUsed(
                 parameter.type,
                 check.element,
                 need: IntrospectionNeed.spel,
@@ -400,8 +373,8 @@ extension _QueryScanning on BeanScanner {
             }
             for (final name in _beanNamesIn(expression.text)) {
               if (beans[name] case final type?) {
-                collectErrors(
-                  () => _introspectUsed(
+                scan.collectErrors(
+                  () => scan.introspectUsed(
                     type,
                     check.element,
                     need: IntrospectionNeed.spel,
@@ -413,7 +386,7 @@ extension _QueryScanning on BeanScanner {
         }
       }
       if (check.problems.isNotEmpty) {
-        collectErrors(
+        scan.collectErrors(
           () => _failRepository(check.name, check.problems, check.element),
         );
       }
@@ -470,8 +443,8 @@ extension _QueryScanning on BeanScanner {
   // it leaves to the interpreter stays interpreted.
   QueryExpressionModel _compileExpression(
     String text,
-    _RepositoryCheck check,
-    _QueryText query,
+    RepositoryCheck check,
+    QueryText query,
     String where,
     Map<String, InterfaceType> beans,
   ) {
@@ -498,15 +471,15 @@ extension _QueryScanning on BeanScanner {
   }
 
   // The tables and columns the application's entities, migrations and
-  // init scripts say.
-  DataSchema _dataSchema() {
-    final sources = SchemaSources.find(sqlResources);
+  // init scripts (among [resources]) say.
+  DataSchema _dataSchema(Map<String, String> resources) {
+    final sources = SchemaSources.find(resources);
     // Migrations of several databases: any one of them may be the schema.
     return DataSchema.fromScripts(sources.variants)
       ..reliable = sources.reliable
       ..addEntities(
         [
-          for (final entity in module.entities)
+          for (final entity in data.entities)
             if (_table.hasAnnotationOf(entity.element))
               _entityDescription(entity),
         ],
@@ -515,59 +488,60 @@ extension _QueryScanning on BeanScanner {
         ),
       );
   }
+}
 
-  EntityDescription _entityDescription(EntityModel entity) {
-    final table = ConstantReader(_table.firstAnnotationOf(entity.element));
-    DartObject? annotation(EntityPropertyModel property, TypeChecker checker) {
-      for (final a in property.annotations) {
-        if (a.type != null && checker.isAssignableFromType(a.type!)) {
-          return a;
-        }
+// What the schema knows of [entity]: its table, and how each property is
+// stored (a column, a mapped collection, nothing).
+EntityDescription _entityDescription(EntityModel entity) {
+  final table = ConstantReader(_table.firstAnnotationOf(entity.element));
+  DartObject? annotation(EntityPropertyModel property, TypeChecker checker) {
+    for (final a in property.annotations) {
+      if (a.type != null && checker.isAssignableFromType(a.type!)) {
+        return a;
       }
-      return null;
     }
-
-    String? string(DartObject? object, String field) {
-      final value = object == null ? null : ConstantReader(object).peek(field);
-      return value != null && value.isString ? value.stringValue : null;
-    }
-
-    return EntityDescription(
-      entity.element.name!,
-      entity.element.library.uri.toString(),
-      [
-        for (final property in entity.properties)
-          if (annotation(property, _transient) != null)
-            EntityProperty(property.name, EntityPropertyKind.transient)
-          else if (annotation(property, _mappedCollection)
-              case final collection?)
-            EntityProperty(
-              property.name,
-              EntityPropertyKind.collection,
-              idColumn: string(collection, 'idColumn'),
-              keyColumn: string(collection, 'keyColumn'),
-              child: _childClass(property.type),
-            )
-          else
-            EntityProperty(
-              property.name,
-              EntityPropertyKind.column,
-              column: string(annotation(property, _column), 'value'),
-            ),
-      ],
-      table: table.peek('value')?.isString == true
-          ? table.peek('value')!.stringValue
-          : null,
-    );
+    return null;
   }
 
-  // The class a `@MappedCollection` holds: `C` of `List<C>`, `Set<C>`,
-  // `Map<K, C>`, or the type itself.
-  String? _childClass(DartType type) {
-    if (type is! InterfaceType) {
-      return null;
-    }
-    final inner = type.typeArguments.isEmpty ? type : type.typeArguments.last;
-    return inner is InterfaceType ? inner.element.name : null;
+  String? string(DartObject? object, String field) {
+    final value = object == null ? null : ConstantReader(object).peek(field);
+    return value != null && value.isString ? value.stringValue : null;
   }
+
+  return EntityDescription(
+    entity.element.name!,
+    entity.element.library.uri.toString(),
+    [
+      for (final property in entity.properties)
+        if (annotation(property, _transient) != null)
+          EntityProperty(property.name, EntityPropertyKind.transient)
+        else if (annotation(property, _mappedCollection) case final collection?)
+          EntityProperty(
+            property.name,
+            EntityPropertyKind.collection,
+            idColumn: string(collection, 'idColumn'),
+            keyColumn: string(collection, 'keyColumn'),
+            child: _childClassName(property.type),
+          )
+        else
+          EntityProperty(
+            property.name,
+            EntityPropertyKind.column,
+            column: string(annotation(property, _column), 'value'),
+          ),
+    ],
+    table: table.peek('value')?.isString == true
+        ? table.peek('value')!.stringValue
+        : null,
+  );
+}
+
+// The class a `@MappedCollection` holds: `C` of `List<C>`, `Set<C>`,
+// `Map<K, C>`, or the type itself.
+String? _childClassName(DartType type) {
+  if (type is! InterfaceType) {
+    return null;
+  }
+  final inner = type.typeArguments.isEmpty ? type : type.typeArguments.last;
+  return inner is InterfaceType ? inner.element.name : null;
 }

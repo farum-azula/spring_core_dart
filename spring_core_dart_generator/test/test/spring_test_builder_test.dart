@@ -5,7 +5,7 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/test_builder.dart';
+import 'package:spring_core_dart_generator/src/test/test_builder.dart';
 import 'package:test/test.dart';
 
 const _app = '''

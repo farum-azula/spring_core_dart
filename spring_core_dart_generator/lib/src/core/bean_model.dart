@@ -9,11 +9,7 @@ import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
-import 'package:spring_core_dart_generator/src/data_stores.dart';
-import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
-import 'package:spring_core_dart_generator/src/log_scanning.dart';
-import 'package:spring_core_dart_generator/src/navigation_scanning.dart';
-import 'package:spring_core_dart_generator/src/part_tree.dart';
+import 'package:spring_core_dart_generator/src/core/log_scanning.dart';
 
 /// What an injection point asks for: one bean, all beans of a type in some
 /// collection, a provider, a property value or a named resource.
@@ -269,9 +265,10 @@ class Argument {
 ///
 /// It is one of: a constructor call ([ConstructorCreation]), a `@Bean`
 /// method call ([BeanMethodCreation]), a generated interface
-/// implementation ([InterfaceProxyCreation]), a generated data repository
-/// ([RepositoryCreation]), or constructor binding of a
-/// `@ConfigurationProperties` class ([ConfigurationPropertiesCreation]).
+/// implementation ([InterfaceProxyCreation]), constructor binding of a
+/// `@ConfigurationProperties` class ([ConfigurationPropertiesCreation]),
+/// or one a starter's part makes and writes itself ([StarterCreation]: a
+/// generated data repository).
 ///
 /// ```dart
 /// // Output for a component and for a @Bean method:
@@ -401,12 +398,12 @@ class InterfaceProxyCreation extends Creation {
   List<Argument> get arguments => const [];
 }
 
-/// A bean that is the generated implementation of a data repository of
-/// `spring_boot_starter_data`: `_$XImpl.$create(r)`.
-///
-/// Like [InterfaceProxyCreation], with no handler: the class extends the
-/// starter's `SimpleRepository` for the CRUD methods and writes the rest
-/// (derived queries, `@Query`) itself.
+/// A bean that a starter's part (a `StarterGeneration`) adds to the module
+/// and makes itself: the part's model of the bean is in a subclass of
+/// its own, and the part writes the body of its `create` closure
+/// (`StarterGeneration.beanCreation`), usually the factory of a class it
+/// generates (`StarterGeneration.classes`). The data starter's
+/// repositories are made so.
 ///
 /// ```dart
 /// // Input:
@@ -415,13 +412,15 @@ class InterfaceProxyCreation extends Creation {
 /// // Output:
 /// create: (r) => _$BookRepositoryImpl.$create(r),
 /// ```
-class RepositoryCreation extends Creation {
-  /// Creates the repository of [model].
-  RepositoryCreation(this.model);
+///
+/// Spring (Java): a bean definition with an instance supplier that a
+/// module's `BeanRegistrationAotProcessor` contributes, as Spring Data's
+/// for its repositories.
+abstract class StarterCreation extends Creation {
+  /// A creation of a part's bean.
+  StarterCreation();
 
-  /// The repository and the methods the generated class writes.
-  final RepositoryModel model;
-
+  /// None: the part's creation resolves what it needs itself.
   @override
   List<Argument> get arguments => const [];
 }
@@ -1792,6 +1791,30 @@ class ProxyModel {
   /// `@DeclareParents` introductions the proxy class implements, in the
   /// order of their runtime index.
   final introductions = <IntroductionModel>[];
+
+  /// The classes the proxy class mixes in, from the starters' parts
+  /// (`StarterGeneration.proxyMixins`): `ChangeNotifier` for a
+  /// `@ChangeNotifierComponent`. A proxy with any is never pruned nor
+  /// deferred: the bean the container hands out must carry them.
+  final mixins = <ProxyMixin>[];
+}
+
+/// A class a starter's part mixes into the proxy class of a bean, named by
+/// the library the generated code imports it from.
+///
+/// ```dart
+/// // ProxyMixin('ChangeNotifier', 'package:flutter/foundation.dart'):
+/// class _$BasketProxy with ChangeNotifier, AdvisedWrapper implements Basket
+/// ```
+final class ProxyMixin {
+  /// The mixin [name] of the library [url].
+  const ProxyMixin(this.name, this.url);
+
+  /// The mixin's name.
+  final String name;
+
+  /// The public library the generated code imports it from.
+  final String url;
 }
 
 /// A bean of a library package whose module left its proxy class to the
@@ -2615,124 +2638,6 @@ class IntrospectionModel {
   final bool instantiable;
 }
 
-/// A property of an [EntityModel], written as an `EntityProperty`.
-class EntityPropertyModel {
-  /// Creates an entity property.
-  EntityPropertyModel({
-    required this.name,
-    required this.type,
-    required this.annotations,
-    required this.parameter,
-    required this.writable,
-    this.defaultValue,
-  });
-
-  /// The field name.
-  final String name;
-
-  /// The declared type, with nullability and type arguments.
-  final DartType type;
-
-  /// The user annotations of the field and its getter.
-  final List<DartObject> annotations;
-
-  /// Whether the unnamed constructor has a parameter of the same name.
-  final bool parameter;
-
-  /// Whether the field has a setter.
-  final bool writable;
-
-  /// The constant the property defaults to: the initializer of the field,
-  /// else the default of the constructor parameter; `null` when there is
-  /// none or the generated code cannot write it (see
-  /// [IntrospectedProperty.initialValue] for the shapes).
-  final ({Object? value})? defaultValue;
-}
-
-/// An argument of the constructor call of an [EntityModel]: the value of
-/// the property at [property], by position or by [name].
-class EntityArgument {
-  /// Creates an argument for the property at index [property].
-  const EntityArgument(this.property, {this.name});
-
-  /// The index into [EntityModel.properties].
-  final int property;
-
-  /// The parameter name when the parameter is named; `null` when it is
-  /// positional.
-  final String? name;
-}
-
-/// A class the data layer stores or reads (`@Table`, or the DTO of a
-/// `@Query`): the properties and constructor call that let the starter
-/// read, create and set it without reflection, written as an
-/// `EntityIntrospection`. Unlike an [IntrospectionModel], it holds no
-/// methods, no JSON hooks and no constructor metadata.
-///
-/// ```dart
-/// // Input:
-/// @Table('authors')
-/// class Author {
-///   Author({this.id, required this.name});
-///   @Id() int? id;
-///   String name;
-/// }
-/// // Output (EntityIntrospections.introspections):
-/// EntityIntrospection<Author>(
-///   r'Author',
-///   const [
-///     EntityProperty(r'id', ClassType<int>(nullable: true),
-///         annotations: [Id()], parameter: true, writable: true),
-///     EntityProperty(r'name', ClassType<String>(),
-///         parameter: true, writable: true),
-///   ],
-///   annotations: const [Table(r'authors')],
-///   read: (e) => [e.id, e.name],
-///   create: (v) => Author(id: v[0] as int?, name: v[1] as String),
-///   write: (e, i, v) => switch (i) {
-///     0 => e.id = v as int?,
-///     1 => e.name = v as String,
-///     _ => null,
-///   },
-/// ),
-/// ```
-///
-/// Spring (Java):
-///
-/// ```java
-/// // Hibernate builds the metamodel (EntityType) of an @Entity class when
-/// // the session factory starts, reading its fields by reflection:
-/// metamodel.entity(Author.class).getAttributes();
-/// ```
-class EntityModel {
-  /// Creates an entity model.
-  EntityModel({
-    required this.element,
-    required this.type,
-    required this.properties,
-    required this.arguments,
-    required this.annotations,
-  });
-
-  /// The class element, for error messages and imports.
-  final ClassElement element;
-
-  /// The class.
-  final InterfaceType type;
-
-  /// The public instance fields, the class's own first, then the mixins'
-  /// and the superclasses'.
-  final List<EntityPropertyModel> properties;
-
-  /// What the unnamed constructor is called with, in parameter order:
-  /// the parameters that name a property (an optional one that names none
-  /// is left out).
-  final List<EntityArgument> arguments;
-
-  /// The user annotations of the class (`@Table`).
-  final List<DartObject> annotations;
-}
-
 /// How a [TypeFilterModel] tests a class; the build-time form of Spring's
 /// `FilterType`.
 enum TypeFilterKind {
@@ -2840,8 +2745,8 @@ class ComponentScanModel {
 }
 
 /// Everything the scan of one output file found: beans, introspections,
-/// entities, configurables, property sources, registrars, imports, Flutter
-/// bindings and loggers.
+/// entities, configurables, property sources, registrars, imports,
+/// loggers and the models of the starters' parts.
 ///
 /// The `BeanScanner` fills it library by library; the
 /// emitter writes it as one `BeanModule` getter plus the generated
@@ -2875,10 +2780,6 @@ class ModuleModel {
   /// The `@Introspected` classes, explicit and automatic.
   final introspections = <IntrospectionModel>[];
 
-  /// The classes the data layer stores or reads: `@Table` classes and the
-  /// DTOs of `@Query` methods.
-  final entities = <EntityModel>[];
-
   /// The `@Configurable` classes.
   final configurables = <ConfigurableModel>[];
 
@@ -2910,27 +2811,26 @@ class ModuleModel {
   /// `@args(...)` pointcuts: which classes carry an annotation.
   final classes = <ClassElement>[];
 
-  /// The `BuildContext` getters to generate for `@BuildContextAccess`
-  /// beans (`spring_boot_starter_flutter`).
-  final buildContextAccess = <BuildContextAccessModel>[];
-
-  /// The `SpringStatelessWidget` and `SpringState` classes
-  /// (`spring_boot_starter_flutter`), in scan order.
-  final springWidgets = <SpringWidgetModel>[];
-
-  /// The `@ThemeLoaderKind` classes (`spring_boot_starter_flutter`), which
-  /// the module registers into `ThemeLoaderKinds`.
-  final loaderKinds = <ThemeLoaderKindModel>[];
-
   /// The `@Log` classes, each of which gets a logger getter.
   final loggers = <LogModel>[];
 
-  /// The `@ScreenRoute` widgets (`spring_boot_starter_flutter_navigation`),
-  /// in scan order: the module's `ScreenRoutes` bean and their constants.
-  final screens = <ScreenRouteModel>[];
+  // The models of the starters' parts, by their type.
+  final _starterModels = <Type, Object>{};
 
-  /// The `@RouteShell` widgets (`spring_boot_starter_flutter_navigation`).
-  final shells = <RouteShellModel>[];
+  /// The model of type [T] that a starter's part (a `StarterGeneration`)
+  /// keeps in this module, such as the Flutter widgets or the navigation's
+  /// screens, made by [create] the first time it is asked for. Each part
+  /// has a type of its own, so the core knows none of them.
+  ///
+  /// ```dart
+  /// final class ClockModuleModel {
+  ///   final ticks = <ClassElement>[];
+  /// }
+  ///
+  /// module.starterModel(ClockModuleModel.new).ticks.add(element);
+  /// ```
+  T starterModel<T extends Object>(T Function() create) =>
+      _starterModels.putIfAbsent(T, create) as T;
 
   final _proxyNames = <String>{};
 
@@ -3305,343 +3205,4 @@ class InterfaceMethodModel {
   /// The user annotations of the method (`@GetMapping('/books/{isbn}')`),
   /// which the handler reads.
   final List<DartObject> annotations;
-}
-
-/// A data repository of `spring_boot_starter_data` (an interface extending
-/// `DataRepository`), and the class the generator writes for it.
-///
-/// The class extends the starter's `SimpleRepository` for the CRUD methods
-/// and implements the others itself, each a one-line call of
-/// `RepositoryOperations`: a derived query as the `PartTree` the build made
-/// from the method name, `@Query` as a description of the method. A
-/// mistake in a method name is an error of the build.
-///
-/// ```dart
-/// // Input:
-/// abstract interface class BookRepository
-///     implements ListCrudRepository<Book, int> {
-///   Future<List<Book>> findByTitleAndYear(String title, int year);
-/// }
-/// // Output:
-/// class _$BookRepositoryImpl extends SimpleRepository<Book, int>
-///     implements BookRepository {
-///   _$BookRepositoryImpl(super.operations);
-///   static _$BookRepositoryImpl $create(DependencyResolver r) =>
-///       _$BookRepositoryImpl(r
-///           .dependency<RepositoryFactory>()
-///           .operations<Book, int>(r'BookRepository'));
-///   static const _findByTitleAndYear = PartTree(r'findByTitleAndYear', [
-///     OrPart([Part(r'title'), Part(r'year')]),
-///   ]);
-///   @override
-///   Future<List<Book>> findByTitleAndYear(String title, int year) =>
-///       operations.list(_findByTitleAndYear, [title, year]);
-/// }
-/// ```
-///
-/// Spring (Java):
-///
-/// ```java
-/// // RepositoryFactorySupport creates a proxy over SimpleJdbcRepository
-/// // when the application starts, with a PartTreeJdbcQuery for each
-/// // derived method, and checks the method names then.
-/// ```
-class RepositoryModel {
-  /// Creates the model.
-  RepositoryModel({
-    required this.className,
-    required this.type,
-    required this.entityType,
-    required this.idType,
-    required this.annotations,
-    required this.methods,
-    this.requirements = const [],
-  });
-
-  /// The name of the generated class, e.g. `_$BookRepositoryImpl`.
-  final String className;
-
-  /// The repository interface.
-  final InterfaceType type;
-
-  /// The aggregate the repository stores (`T` of `DataRepository<T, ID>`).
-  final InterfaceType entityType;
-
-  /// The type of the aggregate's id (`ID`).
-  final InterfaceType idType;
-
-  /// The user annotations on the interface (`@Repository('books')`,
-  /// `@UseStore('jdbc')`), which the starter reads to pick the store.
-  final List<DartObject> annotations;
-
-  /// The methods the class writes: those `SimpleRepository` does not
-  /// implement, in declaration order.
-  final List<RepositoryMethodModel> methods;
-
-  /// What the methods (and the interface) need of the store, in
-  /// declaration order: `@Lock`, `@Query`, `@Procedure`, a stream of changes,
-  /// `@Transactional`. Written as `StoreRequirement`s, which the starter
-  /// checks against the store when the repository is created.
-  final List<StoreNeed> requirements;
-}
-
-/// A method of a [RepositoryModel] that the generated class writes.
-sealed class RepositoryMethodModel {
-  /// Creates the model.
-  RepositoryMethodModel(this.member);
-
-  /// The signature to repeat, with its parameter names and defaults.
-  final ProxyMember member;
-}
-
-/// A CRUD method the interface redeclares with `@Lock` (`findById`): the
-/// override passes the lock to the starter's own implementation.
-///
-/// ```dart
-/// // Input:
-/// @Lock(LockMode.pessimisticWrite)
-/// Future<Book?> findById(int id);
-/// // Output:
-/// @override
-/// Future<Book?> findById(int id) => operations.findById(id,
-///     lock: const Lock(LockMode.pessimisticWrite));
-/// ```
-class LockedMethodModel extends RepositoryMethodModel {
-  /// Creates the model.
-  LockedMethodModel(super.member, this.lock);
-
-  /// The `@Lock` annotation.
-  final DartObject lock;
-}
-
-/// What a `@Modifying` method returns: the number of rows changed
-/// (`Future<int>`), whether any changed (`Future<bool>`) or nothing
-/// (`Future<void>`); each is the value of `QueryChange` in the starter.
-enum ModifyingResult {
-  /// `Future<int>`: the rows changed.
-  rows,
-
-  /// `Future<bool>`: whether any row changed.
-  any,
-
-  /// `Future<void>`.
-  nothing,
-}
-
-/// One `:#{...}` expression of a `@Query`: the text, and whether the build
-/// compiles it to Dart (else the starter interprets the text, which needs
-/// the classes of the arguments described for SpEL).
-///
-/// ```dart
-/// // `:#{#book.title}` on `sameTitle(Book book)` is compiled:
-/// // (arguments, context) => (arguments[0] as Book).title
-/// ```
-class QueryExpressionModel {
-  /// An expression of [text], [compiled] or not.
-  const QueryExpressionModel(this.text, {required this.compiled});
-
-  /// The expression, without `:#{` and `}`.
-  final String text;
-
-  /// Whether the build writes the expression as Dart.
-  final bool compiled;
-}
-
-/// A method with `@Query`: the build checks it, and tells the starter what
-/// is left to do at run time with a `QueryMethod`, a constant that holds
-/// the annotation, the parameters and the shape of the result.
-///
-/// ```dart
-/// // Input:
-/// @Query('select title, year from books where year = :year')
-/// Future<List<BookCard>> cards(int year);
-/// // Output:
-/// static const _cards = QueryMethod(
-///   r'cards',
-///   Query(r'select title, year from books where year = :year'),
-///   parameters: [r'year'],
-///   element: ClassType<BookCard>(),
-/// );
-/// @override
-/// Future<List<BookCard>> cards(int year) =>
-///     operations.query<List<BookCard>>(_cards, [year]);
-/// ```
-class QueryMethodModel extends RepositoryMethodModel {
-  /// Creates the model of a method annotated with [query].
-  QueryMethodModel(
-    super.member, {
-    required this.query,
-    required this.shape,
-    this.element,
-    this.change,
-    this.pageable,
-    this.sort,
-  });
-
-  /// The `@Query` annotation.
-  final DartObject query;
-
-  /// How the result is shaped; `single` for a change.
-  final ResultShape shape;
-
-  /// The type of what one row becomes (the element of a `List`, the type
-  /// itself for a single result); `null` for a `@Modifying` method.
-  final DartType? element;
-
-  /// What a `@Modifying` method returns; `null` for a method that reads.
-  final ModifyingResult? change;
-
-  /// The index of the `Pageable` parameter, if any.
-  final int? pageable;
-
-  /// The index of the `Sort` parameter, if any.
-  final int? sort;
-
-  /// The `:#{...}` expressions of the texts (the SQL, then the count
-  /// query), in text order, once the build has read them.
-  List<QueryExpressionModel> expressions = const [];
-
-  /// The beans of the application by name, for the compiled expressions
-  /// that read one (`@clock`).
-  Map<String, InterfaceType> beans = const {};
-
-  /// The entities `{Entity}` placeholders name, by class name, once the
-  /// build has read the texts.
-  Map<String, InterfaceType> entities = const {};
-
-  /// Whether the method returns a `Stream` (`queryStream`) instead of a
-  /// `Future` (`query`).
-  bool get isStream => shape == ResultShape.stream;
-}
-
-/// A method with `@Procedure`: a call of a database function. The build checks
-/// the method and tells the starter what is left to do with an
-/// `ProcedureMethod`, a constant that holds the annotation, the parameters (the
-/// function's arguments, by name) and the shape of the result.
-///
-/// ```dart
-/// // Input:
-/// @Procedure('accounts_over')
-/// Future<List<Account>> over(int balance);
-/// // Output:
-/// static const _over = ProcedureMethod(
-///   r'over',
-///   Procedure(r'accounts_over'),
-///   parameters: [r'balance'],
-///   element: ClassType<Account>(),
-/// );
-/// @override
-/// Future<List<Account>> over(int balance) =>
-///     operations.procedure<List<Account>>(_over, [balance]);
-/// ```
-class ProcedureMethodModel extends RepositoryMethodModel {
-  /// Creates the model of a method annotated with [procedure].
-  ProcedureMethodModel(
-    super.member, {
-    required this.procedure,
-    required this.shape,
-    this.element,
-  });
-
-  /// The `@Procedure` annotation.
-  final DartObject procedure;
-
-  /// How the result is shaped; `single` for a method that returns nothing.
-  final ResultShape shape;
-
-  /// The type of what one row becomes (the element of a `List`, the type
-  /// itself for a single result); `null` for a method that returns
-  /// nothing.
-  final DartType? element;
-
-  /// Whether the method returns a `Stream` (`procedureStream`) instead of a
-  /// `Future` (`procedure`).
-  bool get isStream => shape == ResultShape.stream;
-}
-
-/// What a derived query asks of `RepositoryOperations`; each is the method
-/// of that name.
-enum DerivedOperation {
-  /// All results as a `List`.
-  list,
-
-  /// All results as a `Set`.
-  set,
-
-  /// At most one result (`Future<T?>`).
-  one,
-
-  /// Exactly one result (`Future<T>`).
-  single,
-
-  /// The results as a `Stream`.
-  stream,
-
-  /// A window of the results and their total.
-  page,
-
-  /// A window of the results.
-  slice,
-
-  /// The number of results (`countBy`).
-  countBy,
-
-  /// Whether there is a result (`existsBy`).
-  existsBy,
-
-  /// Deletes the results, returning their number (`deleteBy`).
-  deleteBy,
-
-  /// Deletes the results, returning them (`deleteByReturning`).
-  deleteByReturning,
-
-  /// The results as a `Stream<List<T>>`, emitted again after every change
-  /// that concerns them (`watch…By`).
-  watch,
-
-  /// The changes of the rows the predicate matches, as a
-  /// `Stream<RowChange<T>>` (`changes…By`).
-  changes,
-}
-
-/// A derived query: a method whose name the build read as a `PartTree`.
-///
-/// ```dart
-/// // Input: Future<Page<Book>> findByYearAfter(int year, Pageable page);
-/// // Output:
-/// static const _findByYearAfter = PartTree(r'findByYearAfter',
-///     [OrPart([Part(r'year', PartType.greaterThan)])]);
-/// @override
-/// Future<Page<Book>> findByYearAfter(int year, Pageable page) =>
-///     operations.page(_findByYearAfter, [year], page);
-/// ```
-class DerivedMethodModel extends RepositoryMethodModel {
-  /// Creates the model.
-  DerivedMethodModel(
-    super.member, {
-    required this.tree,
-    required this.operation,
-    required this.arguments,
-    this.sort,
-    this.pageable,
-    this.lock,
-  });
-
-  /// The method's name read as a query.
-  final PartTreeModel tree;
-
-  /// The operation that runs it.
-  final DerivedOperation operation;
-
-  /// The parameters the predicate consumes, in order.
-  final List<String> arguments;
-
-  /// The name of the `Sort` parameter, if any.
-  final String? sort;
-
-  /// The name of the `Pageable` parameter, if any.
-  final String? pageable;
-
-  /// The `@Lock` annotation, if any.
-  final DartObject? lock;
 }

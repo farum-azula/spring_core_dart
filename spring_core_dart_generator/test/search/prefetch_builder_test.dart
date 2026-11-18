@@ -4,8 +4,8 @@
 import 'dart:convert';
 
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/prefetch_builder.dart';
-import 'package:spring_core_dart_generator/src/search_index_builder.dart';
+import 'package:spring_core_dart_generator/src/search/prefetch_builder.dart';
+import 'package:spring_core_dart_generator/src/search/search_index_builder.dart';
 import 'package:test/test.dart';
 
 final class _Memory implements SearchIndexOutput {

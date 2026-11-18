@@ -3,7 +3,8 @@
 // in pubspec.yaml, with the line to add, instead of the app failing when it
 // reads the asset.
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:test/test.dart';
 
 const _scan = r'''
@@ -36,6 +37,13 @@ const _pathEntryPubspec =
     'name: pkg\nflutter:\n  assets:\n    - path: assets/images/\n'
     '      flavors: [prod]\n';
 
+// [pubspec] with spring_boot_starter_flutter among the dependencies: the
+// starter of `asset:`, whose part of the build checks the assets.
+String _flutterApp(String pubspec) => pubspec.replaceFirst(
+  'name: pkg\n',
+  'name: pkg\ndependencies:\n  spring_boot_starter_flutter: any\n',
+);
+
 Future<TestBuilderResult> _build(
   Map<String, String> files, {
   String app = _assets,
@@ -46,11 +54,12 @@ Future<TestBuilderResult> _build(
   );
   await readerWriter.testing.loadIsolateSources();
   return await testBuilder(
-    SpringBuilder(),
+    SpringBuilder(generations: starterGenerations),
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/app.dart': app,
-      for (final MapEntry(:key, :value) in files.entries) 'pkg|$key': value,
+      for (final MapEntry(:key, :value) in files.entries)
+        'pkg|$key': key == 'pubspec.yaml' ? _flutterApp(value) : value,
     },
     rootPackage: 'pkg',
     readerWriter: readerWriter,

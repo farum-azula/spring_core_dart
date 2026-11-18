@@ -2,7 +2,7 @@
 // values replaced, and a page with the SEO build's head keeping the title
 // and description the SEO build wrote for it; the blocks of the builders
 // keep their places, whichever builder runs again.
-import 'package:spring_core_dart_generator/src/web_page_head.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_page_head.dart';
 import 'package:test/test.dart';
 
 const _template = '''

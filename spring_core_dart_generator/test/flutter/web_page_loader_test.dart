@@ -12,13 +12,13 @@ import 'dart:io';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:crypto/crypto.dart';
-import 'package:spring_core_dart_generator/src/spring_key_files.dart';
-import 'package:spring_core_dart_generator/src/theme_references.dart';
-import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
-import 'package:spring_core_dart_generator/src/web_loader_download.dart';
-import 'package:spring_core_dart_generator/src/web_page_head.dart';
-import 'package:spring_core_dart_generator/src/web_page_loader.dart';
-import 'package:spring_core_dart_generator/src/web_page_loader_builder.dart';
+import 'package:spring_core_dart_generator/src/flutter/spring_key_files.dart';
+import 'package:spring_core_dart_generator/src/flutter/theme_references.dart';
+import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_loader_download.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_page_head.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_page_loader.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_page_loader_builder.dart';
 import 'package:test/test.dart';
 
 const _page = '''

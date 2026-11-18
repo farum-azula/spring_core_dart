@@ -12,8 +12,9 @@ import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:test/test.dart';
 
 const _scan = r'''
@@ -104,7 +105,7 @@ Future<TestBuilderResult> _build(
     ]);
   }
   return await testBuilder(
-    SpringBuilder(proxyMode: ProxyMode.none),
+    SpringBuilder(generations: starterGenerations, proxyMode: ProxyMode.none),
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/model.dart': '$_header$entities$repositories',

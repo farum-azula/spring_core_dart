@@ -8,18 +8,17 @@ import 'package:spring_core_dart/core.dart'
         RemoteAddress,
         RemoteAddressPolicy,
         RemoteAddresses;
-import 'package:spring_core_dart_generator/src/package_directory.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/spring_key_files.dart';
-import 'package:spring_core_dart_generator/src/theme_references.dart';
-import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
-import 'package:spring_core_dart_generator/src/web_cache_headers.dart';
-import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart'
-    show readPlatformEnvironment;
-import 'package:spring_core_dart_generator/src/web_loader_download.dart';
-import 'package:spring_core_dart_generator/src/web_page_head.dart';
-import 'package:spring_core_dart_generator/src/web_page_loader.dart';
-import 'package:spring_core_dart_generator/src/web_wasm_allow_list.dart';
+import 'package:spring_core_dart_generator/src/core/build_environment.dart';
+import 'package:spring_core_dart_generator/src/core/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/flutter/spring_key_files.dart';
+import 'package:spring_core_dart_generator/src/flutter/theme_references.dart';
+import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_cache_headers.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_loader_download.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_page_head.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_page_loader.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_wasm_allow_list.dart';
 import 'package:yaml/yaml.dart';
 
 /// Reads and writes the files of the app's own directory (not `lib/`)

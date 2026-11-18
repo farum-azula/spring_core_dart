@@ -8,7 +8,7 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_dev_config_builder.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 

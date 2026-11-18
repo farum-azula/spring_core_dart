@@ -5,7 +5,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:spring_core_dart_generator/src/json_schema_classes.dart';
+import 'package:spring_core_dart_generator/src/json_schemas/json_schema_classes.dart';
 import 'package:test/test.dart';
 
 const _order = r'''

@@ -22,6 +22,10 @@ jobs:
   # Which packages the change affects (tool/affected.dart): those with
   # changed files and their dependents; the tests below run only for them.
   # Shared files (tool/, root pubspec, CI) affect everything, docs nothing.
+  # Of the generator, whose tests are split along its parts (test/<part>/
+  # for lib/src/<part>/), only the parts a change touched (test_paths);
+  # a change of its core, of the rest of it or of a package it depends on
+  # runs all of them.
   changes:
     runs-on: ubuntu-26.04
     outputs:
@@ -47,6 +51,7 @@ jobs:
       seo_site: ${{ steps.affected.outputs.seo_site }}
       supabase_example: ${{ steps.affected.outputs.supabase_example }}
       family: ${{ steps.affected.outputs.family }}
+      test_paths: ${{ steps.affected.outputs.test_paths }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -268,9 +273,10 @@ jobs:
 
   # The affected workspace packages (all of them after a change to a shared
   # file), from each package directory and from the workspace root (IDEs
-  # run tests from there), without the integration tests. tool/test_all.dart
-  # deals the runs (both passes, the generator's shards) to four parts of
-  # about the same weight, one per machine.
+  # run tests from there), without the integration tests; of the generator,
+  # the tests of the parts the change touched. tool/test_all.dart deals the
+  # runs (both passes, the generator's shards) to four parts of about the
+  # same weight, one per machine.
   test:
     name: Tests (part ${{ matrix.part }}/4)
     needs: changes
@@ -293,8 +299,9 @@ jobs:
       - name: Tests of the affected packages
         env:
           PACKAGES: ${{ needs.changes.outputs.packages }}
+          TEST_PATHS: ${{ needs.changes.outputs.test_paths }}
           PART: ${{ matrix.part }}
-        run: dart run tool/test_all.dart --only "$PACKAGES" --exclude-tags "integration || differential || docker || postgres" --job "$PART/4"
+        run: dart run tool/test_all.dart --only "$PACKAGES" --test-paths "$TEST_PATHS" --exclude-tags "integration || differential || docker || postgres" --job "$PART/4"
 
   # The tests tagged `integration` (@Tags(['integration'])): real HTTP and
   # WebSocket servers on sockets, started processes, the fetch transport on
@@ -321,7 +328,8 @@ jobs:
       - name: Integration tests of the affected packages
         env:
           PACKAGES: ${{ needs.changes.outputs.packages }}
-        run: dart run tool/test_all.dart --only "$PACKAGES" --tags integration
+          TEST_PATHS: ${{ needs.changes.outputs.test_paths }}
+        run: dart run tool/test_all.dart --only "$PACKAGES" --test-paths "$TEST_PATHS" --tags integration
 
   # The data starter's tests that need a PostgreSQL server (tagged
   # `postgres`: the driver, the schema and migrations, the locks, and the
@@ -390,8 +398,9 @@ jobs:
       - name: Tests tagged docker of the affected packages
         env:
           PACKAGES: ${{ needs.changes.outputs.packages }}
+          TEST_PATHS: ${{ needs.changes.outputs.test_paths }}
           CONTAINERS_REQUIRED: 'true'
-        run: dart run tool/test_all.dart --only "$PACKAGES" --tags docker
+        run: dart run tool/test_all.dart --only "$PACKAGES" --test-paths "$TEST_PATHS" --tags docker
 
   # The data starter's transactions against Spring itself
   # (spring_boot_starter_data.md, step 4): the propagation x isolation matrix

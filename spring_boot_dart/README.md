@@ -362,6 +362,15 @@ eager: `LazyInitializationExcludeFilter.forBeanTypes([CacheWarmer])`.
 a bean definition replace another of the same name; it is off by
 default, so a duplicate name stops the start.
 
+**Startup checks.** Some starters check the application when it starts
+and stop it with an explanation (the data starter's `@Transactional`
+methods and failure analyzer, the cache starter's annotations, the edge
+starter's warning list). The generator reads
+`spring.main.startup-checks.enabled` when it writes the application:
+`true` keeps those checks in every build, `false` in none, not set in
+debug and profile builds only, so a release build ships none of their
+code and a mistake fails at the first call instead of the start.
+
 **Measuring the start.** `SpringApplication(applicationStartup:
 BufferingApplicationStartup())` records the steps of the start
 (`spring.boot.application.starting`, `environment-prepared`, `context`)
@@ -712,8 +721,25 @@ Good to know:
   compiles it away; or `always`, `never`). The generator reads
   `application.yml` and `application.properties` without a profile; a
   value it cannot read stops the build, and one set only in a profile's
-  file is warned about. Such a module takes no `order`, `before` or
-  `after`.
+  file is warned about, saying what it means for a release build. Such a
+  module keeps its `order`, `before` and `after`, under the same
+  condition.
+- **A module only where its code works.**
+  `@AutoConfigurationModule(platform: ModulePlatform.native)` lists the
+  module under a constant the compiler knows, so another platform's build
+  compiles it away with everything only it reaches:
+  - `ModulePlatform.native`: where `dart:io` exists (the Dart VM, an AOT
+    executable, a Flutter app on a phone or a desktop), not a browser;
+  - `ModulePlatform.web`: a browser (JavaScript or WebAssembly);
+  - `ModulePlatform.server`: the Dart VM or an AOT executable, never a
+    Flutter app (`dart.library.ui`) and never a browser. For code that
+    must not ship in an app, which anyone can read: an API that needs a
+    secret key (the Supabase starter's admin API, with the service-role
+    key, is such a module).
+
+  A program that runs a module on another platform on purpose (server
+  code compiled to JavaScript for an edge function) is compiled with
+  `-DSPRING_ALL_PLATFORMS=true`, which keeps every module.
 - Keep the starter's third-party constraints wide (`dio: '>=5.0.0 <7.0.0'`)
   so applications can resolve them together with other starters.
 

@@ -1,4 +1,4 @@
-part of 'bean_scanner.dart';
+part of 'data_scanner.dart';
 
 // What the editors need of the data layer, for `spring_metadata.json`: the
 // entities (`@Table` classes) with their tables, columns and relations, and
@@ -17,8 +17,18 @@ const _referenceAnnotation = TypeChecker.fromUrl(
   '$_dataAnnotations#Reference',
 );
 
-/// The data layer's part of `spring_metadata.json`.
-extension DataMetadata on BeanScanner {
+/// The data layer's part of `spring_metadata.json`, read from the module
+/// its scan filled.
+final class DataMetadata {
+  /// The metadata of [module].
+  DataMetadata(this.module) : data = DataModuleModel.of(module);
+
+  /// The scanned module.
+  final ModuleModel module;
+
+  /// What the data part found in it.
+  final DataModuleModel data;
+
   /// The `entities` of the metadata: the `@Table` classes scanned so far.
   ///
   /// `table` and every `column` are the names the entity spells out or the
@@ -29,7 +39,7 @@ extension DataMetadata on BeanScanner {
       (bean) => _namingStrategy.isAssignableFromType(bean.type),
     );
     return [
-      for (final entity in module.entities)
+      for (final entity in data.entities)
         if (_table.hasAnnotationOf(entity.element))
           _entityEntry(entity, customNaming),
     ];

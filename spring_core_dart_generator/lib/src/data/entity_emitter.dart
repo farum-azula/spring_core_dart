@@ -1,4 +1,4 @@
-part of 'module_emitter.dart';
+part of 'data_emitter.dart';
 
 // The `EntityIntrospection`s of spring_boot_starter_data (see
 // `EntityModel`), registered as one bean per module: the data layer reads
@@ -11,42 +11,46 @@ const _dataUrl =
 // A reference to a public type of the starter, e.g. `EntityProperty`.
 Reference _data(String name) => refer(name, _dataUrl);
 
-extension _EntityEmitter on ModuleEmitter {
+extension _EntityEmitter on DataEmitter {
   /// The bean holding the entities of the module [moduleName]: one
   /// `EntityIntrospections` with an `EntityIntrospection` for each. The
   /// name carries the module's, so the modules of one application, each
   /// with entities, register one each.
   Expression entityIntrospectionsBean(String moduleName) {
     final holder = _data('EntityIntrospections');
-    return _spring('BeanDefinition').newInstance(
-      [],
-      {
-        'name': _str('entityIntrospections#$moduleName'),
-        'source': _str('package:spring_boot_starter_data#EntityIntrospections'),
-        'types': literalConstList([holder]),
-        'create': _closure(
-          ['r'],
-          holder.newInstance([
-            literalList([
-              for (final entity in _module.entities)
-                _entityIntrospection(entity),
-            ]),
-          ]).code,
-          lambda: true,
-        ),
-      },
-      [holder],
-    );
+    return emission
+        .spring('BeanDefinition')
+        .newInstance(
+          [],
+          {
+            'name': emission.string('entityIntrospections#$moduleName'),
+            'source': emission.string(
+              'package:spring_boot_starter_data#EntityIntrospections',
+            ),
+            'types': literalConstList([holder]),
+            'create': emission.closure(
+              ['r'],
+              holder.newInstance([
+                literalList([
+                  for (final entity in data.entities)
+                    _entityIntrospection(entity),
+                ]),
+              ]).code,
+              lambda: true,
+            ),
+          },
+          [holder],
+        );
   }
 
   // One `EntityIntrospection<T>`: the properties as constants, and the
   // closures that read one, call the constructor with them and set one.
   Expression _entityIntrospection(EntityModel model) {
     final element = model.element;
-    final beanType = _type(model.type, element);
+    final beanType = emission.type(model.type, element);
     final infos = [
       for (final property in model.properties)
-        _typeInfo(property.type, element),
+        emission.typeInfo(property.type, element),
     ];
     // A type info that is not constant (an enum with `@JsonValue`) makes
     // the list and its properties plain code.
@@ -56,18 +60,18 @@ extension _EntityEmitter on ModuleEmitter {
         (isConst
             ? _data('EntityProperty').constInstance
             : _data('EntityProperty').newInstance)(
-          [_str(property.name), infos[index].$1],
+          [emission.string(property.name), infos[index].$1],
           {
             if (property.annotations.isNotEmpty)
               'annotations': literalConstList([
                 for (final annotation in property.annotations)
-                  _constant(annotation, element),
+                  emission.constant(annotation, element),
               ]),
             if (property.parameter) 'parameter': literalTrue,
             if (property.writable) 'writable': literalTrue,
             if (property.defaultValue case final initial?) ...{
               'hasDefaultValue': literalTrue,
-              'defaultValue': _initialValue(
+              'defaultValue': emission.initialValue(
                 initial.value,
                 element,
                 property.type,
@@ -82,17 +86,21 @@ extension _EntityEmitter on ModuleEmitter {
     ];
     return _data('EntityIntrospection').newInstance(
       [
-        _str(element.name!),
+        emission.string(element.name!),
         (isConst ? literalConstList : literalList)(properties),
       ],
       {
         if (model.annotations.isNotEmpty)
           'annotations': literalConstList([
             for (final annotation in model.annotations)
-              _constant(annotation, element),
+              emission.constant(annotation, element),
           ]),
-        'get': _closure(['e', 'i'], _entityGet(model).code, lambda: true),
-        'create': _closure(
+        'get': emission.closure(
+          ['e', 'i'],
+          _entityGet(model).code,
+          lambda: true,
+        ),
+        'create': emission.closure(
           ['v'],
           beanType
               .newInstance(
@@ -109,7 +117,7 @@ extension _EntityEmitter on ModuleEmitter {
           lambda: true,
         ),
         if (writable.isNotEmpty)
-          'write': _closure(
+          'write': emission.closure(
             ['e', 'i', 'v'],
             _entitySwitch([
               for (final (index, property) in writable)
@@ -118,7 +126,10 @@ extension _EntityEmitter on ModuleEmitter {
                   refer('e')
                       .property(property.name)
                       .assign(
-                        _cast(refer('v'), _anyType(property.type, element)),
+                        _cast(
+                          refer('v'),
+                          emission.anyType(property.type, element),
+                        ),
                       ),
                 ),
             ]).code,
@@ -153,7 +164,7 @@ extension _EntityEmitter on ModuleEmitter {
         .firstWhere((parameter) => parameter.name == name);
     return _cast(
       refer('v').index(literalNum(argument.property)),
-      _anyType(parameter.type, model.element),
+      emission.anyType(parameter.type, model.element),
     );
   }
 

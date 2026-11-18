@@ -5,8 +5,9 @@ import 'dart:convert';
 const springMetadataVersion = 1;
 
 /// Puts the parts of a package's `spring_metadata.json` together: the
-/// scanned properties, hints, beans and profiles and, for the Flutter
-/// starter, the theme. Everything comes from the code. The result is
+/// scanned properties, hints, beans and profiles, and the entries of the
+/// starters' parts (the entities and repositories, the loader kinds, the
+/// routes, the theme). Everything comes from the code. The result is
 /// sorted and has a fixed key order, so the file only changes when the code
 /// does (CI diffs it).
 ///
@@ -41,48 +42,22 @@ abstract final class SpringMetadata {
     'members',
   ];
 
-  static const _loaderKindKeys = ['name', 'class', 'source', 'line', 'props'];
-
-  static const _entityKeys = [
-    'class',
-    'table',
-    'source',
-    'line',
-    'id',
-    'properties',
-  ];
-
-  static const _repositoryKeys = [
-    'name',
-    'entity',
-    'id',
-    'source',
-    'line',
-    'methods',
-  ];
-
   /// The metadata of [package] as a JSON-ready map.
   ///
-  /// [loaderKinds] are the `{name, class, source, line, props}` of the
-  /// `@ThemeLoaderKind` classes, left out when empty. [theme] is the
-  /// `{types, properties}` of the
-  /// theme, left out when `null`.
+  /// [starters] are the entries of the starters' parts
+  /// (`StarterGeneration.metadata`), written after the core's in their
+  /// order, each already sorted by its part.
   static Map<String, Object?> assemble({
     required String package,
     required List<Map<String, Object?>> properties,
     required List<Map<String, Object?>> hints,
     required List<Map<String, Object?>> beans,
     required Iterable<String> profiles,
-    List<Map<String, Object?>> entities = const [],
-    List<Map<String, Object?>> repositories = const [],
-    List<Map<String, Object?>> loaderKinds = const [],
-    List<Map<String, Object?>> routes = const [],
-    List<Map<String, Object?>> shells = const [],
-    Map<String, Object?>? theme,
+    Map<String, Object?> starters = const {},
   }) {
     // The first entry of a name wins (a class beats a read key).
-    final sortedProperties = _byName(_firstByName(properties), 'name');
-    final sortedHints = _byName(
+    final sortedProperties = byName(_firstByName(properties), 'name');
+    final sortedHints = byName(
       [for (final hint in _firstByName(hints)) _normalizeHint(hint)],
       'name',
     );
@@ -91,46 +66,18 @@ abstract final class SpringMetadata {
       'package': package,
       'properties': [
         for (final property in sortedProperties)
-          _ordered(property, _propertyKeys, nullable: true),
+          ordered(property, _propertyKeys, nullable: true),
       ],
       'hints': [
         for (final hint in sortedHints)
-          _ordered(hint, _hintKeys, nullable: false),
+          ordered(hint, _hintKeys, nullable: false),
       ],
       'beans': [
         for (final bean in _sortBeans(beans))
-          _ordered(bean, _beanKeys, nullable: true),
+          ordered(bean, _beanKeys, nullable: true),
       ],
       'profiles': profiles.toSet().toList()..sort(),
-      // Only for a package with a data layer, so other files stay as they are.
-      if (entities.isNotEmpty)
-        'entities': [
-          for (final entity in _byName(entities, 'class'))
-            _ordered(entity, _entityKeys, nullable: true),
-        ],
-      if (repositories.isNotEmpty)
-        'repositories': [
-          for (final repository in _byName(repositories, 'name'))
-            _ordered(repository, _repositoryKeys, nullable: true),
-        ],
-      // `@ThemeLoaderKind` classes of the package.
-      if (loaderKinds.isNotEmpty)
-        'loaderKinds': [
-          for (final kind in _byName(loaderKinds, 'name'))
-            _ordered(kind, _loaderKindKeys, nullable: true),
-        ],
-      // The screens and shells of spring_boot_starter_flutter_navigation:
-      // the editor completes paths with them, the site's build makes its
-      // pages of them.
-      if (routes.isNotEmpty)
-        'routes': [
-          for (final route
-              in routes.toList()
-                ..sort((a, b) => '${a['path']}'.compareTo('${b['path']}')))
-            route,
-        ],
-      if (shells.isNotEmpty) 'shells': _byName(shells, 'class'),
-      'theme': ?theme,
+      ...starters,
     };
   }
 
@@ -148,7 +95,9 @@ abstract final class SpringMetadata {
     return byName.values.toList();
   }
 
-  static List<Map<String, Object?>> _byName(
+  /// [entries] sorted by their value of [key], for a list whose order
+  /// must not depend on the scan's.
+  static List<Map<String, Object?>> byName(
     List<Map<String, Object?>> entries,
     String key,
   ) => entries.toList()..sort((a, b) => '${a[key]}'.compareTo('${b[key]}'));
@@ -190,9 +139,10 @@ abstract final class SpringMetadata {
     };
   }
 
-  // The known keys in a fixed order; a `null` stays when [nullable] (the
-  // format lists `default`, `deprecated`... as `null`), else it is left out.
-  static Map<String, Object?> _ordered(
+  /// [entry] with the known [keys] first, in their order, then the others
+  /// sorted; a `null` stays when [nullable] (the format lists `default`,
+  /// `deprecated`... as `null`), else it is left out.
+  static Map<String, Object?> ordered(
     Map<String, Object?> entry,
     List<String> keys, {
     required bool nullable,

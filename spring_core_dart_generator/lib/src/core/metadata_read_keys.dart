@@ -1,7 +1,7 @@
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
-import 'package:spring_core_dart_generator/src/metadata_locations.dart';
+import 'package:spring_core_dart_generator/src/core/metadata_locations.dart';
 
 /// Reads the property keys that annotations name outside of
 /// `@ConfigurationProperties`: the `${key}` / `${key:default}` placeholders

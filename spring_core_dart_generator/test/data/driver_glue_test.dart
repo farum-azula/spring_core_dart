@@ -12,10 +12,11 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:test/test.dart';
 
-import 'support/real_sources.dart';
+import '../support/real_sources.dart';
 
 const _template =
     'spring_boot_starter_data|'
@@ -247,7 +248,7 @@ Future<String> _build(
     readerWriter.testing.delete(AssetId.parse(_template));
   }
   final result = await testBuilder(
-    SpringBuilder(),
+    SpringBuilder(generations: starterGenerations),
     own,
     rootPackage: 'pkg',
     readerWriter: readerWriter,

@@ -192,8 +192,10 @@ class AutoConfiguration extends Configuration {
 ///
 /// [platform] keeps the module to where its code works: a module of
 /// [ModulePlatform.native] (a web server, isolates) is compiled away in a
-/// browser build with everything only it reaches, and one of
-/// [ModulePlatform.web] in every other build.
+/// browser build with everything only it reaches, one of
+/// [ModulePlatform.web] in every other build, and one of
+/// [ModulePlatform.server] (what must never ship in an app, as an API that
+/// needs a secret key) in a browser build and in a Flutter app.
 ///
 /// Spring (Java): the `META-INF/spring/...AutoConfiguration.imports` file
 /// of a starter, plus `@AutoConfigureOrder` and
@@ -269,8 +271,8 @@ class AutoConfigurationModule {
 /// The platforms an [AutoConfigurationModule] can be kept to.
 ///
 /// The generated application lists such a module under a constant the
-/// compiler knows (`dart.library.io`, `dart.library.js_interop`), so the
-/// other platform's build has none of its code.
+/// compiler knows (`dart.library.io`, `dart.library.js_interop`,
+/// `dart.library.ui`), so the other platform's build has none of its code.
 enum ModulePlatform {
   /// Where `dart:io` exists: the Dart VM, an AOT executable, a Flutter app
   /// on a phone or a desktop. Not a browser.
@@ -278,6 +280,17 @@ enum ModulePlatform {
 
   /// A browser, compiled to JavaScript or WebAssembly.
   web,
+
+  /// A server: the Dart VM or an AOT executable (`dart compile exe`), where
+  /// `dart:io` exists and Flutter's `dart:ui` does not. Never a Flutter app
+  /// on a phone or a desktop, never a browser.
+  ///
+  /// For code that must not ship in an app at all, since anyone can read
+  /// what an app carries: an API that needs a secret key, as the admin API
+  /// of Supabase Auth with the project's service-role key. A Flutter app
+  /// compiles such a module away with everything only it reaches, so its
+  /// binary holds no line of that code.
+  server,
 }
 
 /// When the generator puts an [AutoConfigurationModule] into the

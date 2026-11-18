@@ -1,4 +1,4 @@
-import 'package:spring_core_dart_generator/src/material_color_values.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color_values.dart';
 
 /// How the text of a theme value is read, the same as the starter's
 /// `ThemeValues` (its test fixture `theme_value_kinds.yaml` is the truth,

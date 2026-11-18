@@ -2,8 +2,8 @@ import 'package:analyzer/dart/ast/ast.dart' hide Argument;
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
-import 'package:spring_core_dart_generator/src/bean_model.dart';
-import 'package:spring_core_dart_generator/src/metadata_locations.dart';
+import 'package:spring_core_dart_generator/src/core/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/metadata_locations.dart';
 
 /// The beans of `spring_metadata.json`: what the scan registers
 /// ([fromModel]) and the `BeanDefinition`s a package writes by hand, as

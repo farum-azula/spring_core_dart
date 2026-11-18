@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:spring_core_dart_generator/src/theme_palette.dart';
+import 'package:spring_core_dart_generator/src/flutter/theme_palette.dart';
 import 'package:test/test.dart';
 
 // The fixture is the table Flutter's ColorScheme.fromSeed makes (written by

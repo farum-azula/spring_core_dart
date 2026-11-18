@@ -10,10 +10,10 @@ import 'package:build/build.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
-import 'package:spring_core_dart_generator/src/bean_model.dart'
+import 'package:spring_core_dart_generator/src/core/bean_model.dart'
     show exposedBeanTypes, publicSdkLibrary;
-import 'package:spring_core_dart_generator/src/generated_path.dart';
-import 'package:spring_core_dart_generator/src/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/generated_path.dart';
+import 'package:spring_core_dart_generator/src/core/package_directory.dart';
 
 /// The builder that turns the `@SpringBootTest` and `@DataTest` classes of
 /// a test file into `package:test` tests.

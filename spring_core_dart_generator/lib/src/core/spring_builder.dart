@@ -20,24 +20,15 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/asset_check.dart';
-import 'package:spring_core_dart_generator/src/bean_model.dart';
-import 'package:spring_core_dart_generator/src/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/dart_define_keys.dart';
-import 'package:spring_core_dart_generator/src/data_stores.dart';
-import 'package:spring_core_dart_generator/src/driver_glue.dart';
-import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
-import 'package:spring_core_dart_generator/src/generated_path.dart';
-import 'package:spring_core_dart_generator/src/json_schema_classes.dart';
-import 'package:spring_core_dart_generator/src/module_emitter.dart';
-import 'package:spring_core_dart_generator/src/package_directory.dart';
-import 'package:spring_core_dart_generator/src/spring_key_files.dart';
-import 'package:spring_core_dart_generator/src/theme_references.dart'
-    show canonicalName;
-import 'package:spring_core_dart_generator/src/typed_theme_keys.dart'
-    show KeysDiagnostics, LoaderKinds;
-import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart'
-    show readPlatformEnvironment;
+import 'package:spring_core_dart_generator/src/core/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/build_environment.dart';
+import 'package:spring_core_dart_generator/src/core/build_inclusion.dart';
+import 'package:spring_core_dart_generator/src/core/dart_define_keys.dart';
+import 'package:spring_core_dart_generator/src/core/generated_path.dart';
+import 'package:spring_core_dart_generator/src/core/module_emitter.dart';
+import 'package:spring_core_dart_generator/src/core/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/starter_generation.dart';
 import 'package:yaml/yaml.dart';
 
 // Suffix of generated files; also used to skip them as scan inputs.
@@ -162,12 +153,19 @@ class SpringBuilder implements Builder {
     this.pruneProxies = true,
     this.deferProxies = false,
     this.dartDefinesExclude = const [],
+    this.generations = const [],
     Future<String?> Function(AssetId output)? readExistingOutput,
     PackageDirectories? packageDirectories,
   }) : _packageDirectories = packageDirectories ?? PackageDirectories.current,
        _readExistingOutput =
            readExistingOutput ??
            (packageDirectories ?? PackageDirectories.current).read;
+
+  /// The starters' parts of the module build (the builder factory passes
+  /// the built-in ones, `starterGenerations`). A build starts those whose
+  /// starter the package reaches ([reachablePackages]), every one when its
+  /// dependencies cannot be read.
+  final List<StarterGeneration> generations;
 
   /// Which beans get a generated AOP proxy class (build option
   /// `aop_proxies`: `all`, `interfaces` or `none`).
@@ -359,8 +357,11 @@ class SpringBuilder implements Builder {
     );
 
     final resources = await SpringBuilder.resources(buildStep);
-    final keyParts = await _keyParts(buildStep);
-    final json = await _jsonSchemaPart(buildStep);
+    final (built: started, :conditions) = await _startedGenerations(
+      buildStep,
+      BuildKeys(() => _texts(resources)),
+    );
+    final starterParts = await _moduleParts(buildStep, started);
     final scanner = BeanScanner(
       module,
       proxyMode: proxyMode,
@@ -368,23 +369,18 @@ class SpringBuilder implements Builder {
         componentScanChecker.firstAnnotationOf(scan)!,
         scan,
       ),
-      sqlResources: _texts(resources),
-      dataStores: await DataStoreBuild.read(
-        buildStep,
-        reachablePackages: () => _reachablePackages(buildStep),
-        configuration: _texts(resources),
-      ),
+      generations: started,
+    );
+    final build = await _prepareModule(
+      buildStep,
+      scanner,
+      output,
+      resources,
+      started,
     );
     await _scanLibraries(buildStep, scanner, assets);
     scanner.collectErrors(() => _checkUniqueNames(module.beans));
-    scanBuildContextAccess(module, scanner.collectErrors);
-    await checkAssetValues(
-      buildStep,
-      module,
-      scanner.collectErrors,
-      packageDirectories: _packageDirectories,
-    );
-    await _checkLoaderKinds(buildStep, module, scanner.collectErrors);
+    await _checkModule(build, started);
     scanner.throwErrors();
 
     // In a library package any module may import this one, so its beans
@@ -394,19 +390,8 @@ class SpringBuilder implements Builder {
     // nothing outside imports it: it is pruned knowing the advice of the
     // package's other libraries and of the auto-configurations, as the
     // @SpringBootApplication output.
-    final dependencies = await _dependencies(buildStep);
+    final dependencies = build.dependencies;
     final application = await _isApplication(buildStep);
-    // The data starter may be one the package only reaches (through the
-    // Supabase starter): the glue imports it all the same. Not in the
-    // `lib/` of a published package, whose imports pub.dev checks against
-    // its `dependencies`.
-    final glue = await driverGlueFor(
-      buildStep,
-      dependencies,
-      reachable: application || !output.path.startsWith('lib/')
-          ? await _reachablePackages(buildStep)
-          : null,
-    );
     final prune = pruneProxies && application;
     // A starter's `lib/` modules (a package with an auto-configuration
     // library), and those of a library that says a starter imports them
@@ -425,6 +410,8 @@ class SpringBuilder implements Builder {
       dependencies: dependencies,
       deferProxies: defer,
       pruneProxies: prune,
+      generations: started,
+      generationConditions: conditions,
       // Pruning, and deferring, know the advice of the package's other
       // modules and of the auto-configurations.
       foreignAdvice: prune || defer
@@ -440,129 +427,79 @@ class SpringBuilder implements Builder {
       variableName: '\$$variableName',
       scannedDirectory: directory,
       module: module,
-      extra: [for (final output in glue) output.code],
-      extraDefinitions: [for (final output in glue) output.definition],
-      resources: {
-        ...await embedded(buildStep, resources),
-        ...json.resources,
-      },
-      parts: [...keyParts, ...json.parts],
-      partImports: [
-        if (keyParts.isNotEmpty) ...SpringKeyFiles.imports,
-        ...json.imports,
-      ],
-      extraIntrospections: json.introspections,
+      resources: await embedded(buildStep, resources),
+      starterParts: starterParts,
     );
   }
 
-  /// Checks that the props class of every `@ThemeLoaderKind` of [module]
-  /// that takes one (`DoorsLoaderProps`) is a class the module can name:
-  /// the keys builder writes it into `theme.spring.keys.dart`, a part of
-  /// the output of [SpringKeyFiles.parentLibrary] only, for the kinds
-  /// [SpringKeyFiles.loaderKinds] finds in the source text. A kind in
-  /// another module (a nested `@ComponentScan`, a `bin/` application), or
-  /// one the text does not show (a name that is no string literal), is a
-  /// build error instead of generated code that does not compile.
-  static Future<void> _checkLoaderKinds(
+  /// The parts of [generations] whose starter the package of [buildStep]'s
+  /// input reaches ([reachablePackages]), all of them when its
+  /// dependencies cannot be read, less those their build keys leave out
+  /// ([StarterGeneration.build], read from [keys]); with the condition the
+  /// code of each one only in debug and profile builds is under.
+  Future<
+    ({List<StarterGeneration> built, Map<StarterGeneration, String> conditions})
+  >
+  _startedGenerations(BuildStep buildStep, BuildKeys keys) async =>
+      builtGenerations(
+        startedGenerations(generations, await reachablePackages(buildStep)),
+        keys,
+      );
+
+  /// The generated files of the [started] parts that are `part of` the
+  /// output of [buildStep]'s input, with what comes with them (imports,
+  /// introspections, resources), by part in the parts' order; a part
+  /// without any is left out.
+  static Future<Map<StarterGeneration, ModuleParts>> _moduleParts(
     BuildStep buildStep,
-    ModuleModel module,
-    void Function(void Function() action) collectErrors,
+    List<StarterGeneration> started,
+  ) async => {
+    for (final generation in started)
+      if (await generation.moduleParts(buildStep) case final parts
+          when !identical(parts, ModuleParts.none))
+        generation: parts,
+  };
+
+  /// What the [started] parts get of the module [scanner] fills for
+  /// [output], with the module's [resources]; each prepares it
+  /// ([StarterGeneration.prepareModule]) before the scan.
+  Future<ModuleBuild> _prepareModule(
+    BuildStep buildStep,
+    BeanScanner scanner,
+    AssetId output,
+    Map<String, ({String? text, String? base64})> resources,
+    List<StarterGeneration> started,
   ) async {
-    final typed = [
-      for (final kind in module.loaderKinds)
-        if (kind.typedProps) kind,
-    ];
-    if (typed.isEmpty) {
-      return;
-    }
-    final input = buildStep.inputId;
-    final choice = SpringKeyFiles.parentLibrary(
-      await SpringKeyFiles.scanLibraries(buildStep),
+    final build = ModuleBuild(
+      scanner,
+      buildStep: buildStep,
+      packageDirectories: _packageDirectories,
+      resources: _texts(resources),
+      dependencies: await _dependencies(buildStep),
+      // A starter the package only reaches (the data starter, through the
+      // Supabase starter) is imported all the same. Not in the `lib/` of a
+      // published package, whose imports pub.dev checks against its
+      // `dependencies`.
+      importablePackages:
+          await _isApplication(buildStep) || !output.path.startsWith('lib/')
+          ? await reachablePackages(buildStep)
+          : null,
     );
-    final known = (await SpringKeyFiles.loaderKinds(buildStep)).own;
-    for (final kind in typed) {
-      final props = LoaderKinds.propsClass(kind.name);
-      final what =
-          "@ThemeLoaderKind('${kind.name}') on ${kind.element.name ?? '?'}";
-      collectErrors(() {
-        if (choice.parent != input) {
-          final where = switch (choice.parent) {
-            final parent? =>
-              'a part of the generated library of ${parent.path}, which '
-                  'the module of ${input.path} cannot use: move the class '
-                  'into the module of ${parent.path}',
-            null =>
-              'a part of the generated library of the '
-                  "package's @SpringBootApplication in lib/ (else of its "
-                  'outermost @ComponentScan there), and there is none '
-                  '(${choice.error ?? 'no library of lib/ has either'}): '
-                  'declare one over the class',
-          };
-          throw InvalidGenerationSource(
-            '$what: its props class $props is written into '
-            '${SpringKeyFiles.themeFile}, $where, or take LoaderValues.',
-            element: kind.element,
-          );
-        }
-        if (!known.containsKey(canonicalName(kind.name))) {
-          throw InvalidGenerationSource(
-            '$what: its props class $props is written from the annotation '
-            'as the source has it, before anything is resolved, and no '
-            'class there has this kind: write the name as a string literal '
-            "(@ThemeLoaderKind('${kind.name}')), or take LoaderValues.",
-            element: kind.element,
-          );
-        }
-      });
+    for (final generation in started) {
+      await generation.prepareModule(build);
     }
+    return build;
   }
 
-  /// The generated key files (`theme.spring.keys.dart`,
-  /// `messages.spring.keys.dart`) that are `part of` the output of the
-  /// input: when the package uses the
-  /// Flutter starter, the input is the parent library
-  /// ([SpringKeyFiles.parentLibrary]), and
-  /// the keys builder writes them (it decides with the same
-  /// [SpringKeyFiles.generate]).
-  Future<List<String>> _keyParts(BuildStep buildStep) async {
-    if (!await SpringKeyFiles.usesFlutterStarter(buildStep)) {
-      return const [];
+  /// The checks of the [started] parts of the module of [build], whose
+  /// problems join the scan's.
+  static Future<void> _checkModule(
+    ModuleBuild build,
+    List<StarterGeneration> started,
+  ) async {
+    for (final generation in started) {
+      await generation.checkModule(build);
     }
-    final scans = await SpringKeyFiles.scanLibraries(buildStep);
-    // The same choice as the keys builder. That builder may be disabled,
-    // and a part cannot be probed with canRead: the keys builder writes to
-    // source in its own phase, so the file is not readable from this one.
-    // The parts are therefore decided by the shared computation.
-    if (SpringKeyFiles.parentLibrary(scans).parent != buildStep.inputId) {
-      return const [];
-    }
-    // Read as the keys builder reads them, whatever the entry point.
-    final resources = await SpringBuilder.resources(buildStep, warn: false);
-    final parts = SpringKeyFiles.generate(
-      await SpringKeyFiles.withImports(buildStep, _texts(resources)),
-      KeysDiagnostics(),
-      loaderKinds: await SpringKeyFiles.loaderKinds(buildStep),
-    );
-    final parent = SpringKeyFiles.parentOf(buildStep.inputId);
-    return [
-      if (parts.theme != null)
-        SpringKeyFiles.partPath(parent, SpringKeyFiles.themeFile),
-      if (parts.messages != null)
-        SpringKeyFiles.partPath(parent, SpringKeyFiles.messagesFile),
-    ];
-  }
-
-  /// The classes of `spring.json.schemas` (`json_schemas.spring.classes.dart`)
-  /// when the input is the library their part belongs to: the part, the
-  /// import it needs, its list of introspections, and the downloaded
-  /// schemas as resources of the app (`JsonSchemaLocations.resourceOf`).
-  /// The classes builder writes the part from the same computation.
-  Future<JsonSchemaPart> _jsonSchemaPart(BuildStep buildStep) async {
-    final part = await JsonSchemaPart.of(buildStep);
-    if (part == null || part.parent != buildStep.inputId) {
-      return JsonSchemaPart.none;
-    }
-    return part;
   }
 
   /// The files of [resources] to embed: all of them but those of
@@ -791,48 +728,6 @@ class SpringBuilder implements Builder {
       ..body = springApplication.code,
   ).closure;
 
-  // `build-info.properties` (Spring Boot's `META-INF/build-info.properties`)
-  // for an application with the actuator, which its `info` endpoint shows:
-  // the name and version of `pubspec.yaml`. Only for an application
-  // (`publish_to: none`): the example of a published package would change
-  // with every release of the family. No build time, so the generated code
-  // stays the same from one build to the next; an app that wants it writes
-  // the file itself (`lib/resources/build-info.properties`).
-  static Future<String?> _buildInfo(BuildStep buildStep) async {
-    final id = AssetId(buildStep.inputId.package, 'pubspec.yaml');
-    if (!await buildStep.canRead(id)) {
-      return null;
-    }
-    final Object? pubspec;
-    try {
-      pubspec = loadYaml(await buildStep.readAsString(id));
-    } on YamlException {
-      return null;
-    }
-    if (pubspec is! YamlMap || '${pubspec['publish_to']}' != 'none') {
-      return null;
-    }
-    final dependencies = pubspec['dependencies'];
-    final actuator =
-        dependencies is YamlMap &&
-        dependencies.keys.any(
-          (name) =>
-              name == 'spring_boot_actuator' ||
-              name == 'spring_boot_starter_actuator',
-        );
-    if (!actuator) {
-      return null;
-    }
-    final name = '${pubspec['name'] ?? ''}';
-    final version = pubspec['version'];
-    return [
-      'build.artifact=$name',
-      'build.name=$name',
-      if (version != null) 'build.version=$version',
-      '',
-    ].join('\n');
-  }
-
   // `@SpringBootApplication` on `main`: like Spring Boot's component scan
   // from the application class, the whole package is scanned — `lib/` and
   // the directory of `main` (e.g. `bin/`) — and the output also declares
@@ -875,30 +770,33 @@ class SpringBuilder implements Builder {
       buildStep,
       entryDirectory: directory,
     );
-    if (await _buildInfo(buildStep) case final info?
-        when !resources.containsKey('build-info.properties')) {
-      resources['build-info.properties'] = (text: info, base64: null);
+    final keys = BuildKeys(() => _texts(resources));
+    final (built: started, :conditions) = await _startedGenerations(
+      buildStep,
+      keys,
+    );
+    // The parts' files, after the application's own (which win).
+    for (final generation in started) {
+      final files = await generation.applicationResources(buildStep);
+      for (final MapEntry(key: path, value: text) in files.entries) {
+        resources.putIfAbsent(path, () => (text: text, base64: null));
+      }
     }
     final scanner = BeanScanner(
       module,
       proxyMode: proxyMode,
-      sqlResources: _texts(resources),
-      dataStores: await DataStoreBuild.read(
-        buildStep,
-        reachablePackages: () => _reachablePackages(buildStep),
-        configuration: _texts(resources),
-      ),
+      generations: started,
+    );
+    final build = await _prepareModule(
+      buildStep,
+      scanner,
+      output,
+      resources,
+      started,
     );
     await _scanLibraries(buildStep, scanner, assets);
     scanner.collectErrors(() => _checkUniqueNames(module.beans));
-    scanBuildContextAccess(module, scanner.collectErrors);
-    await checkAssetValues(
-      buildStep,
-      module,
-      scanner.collectErrors,
-      packageDirectories: _packageDirectories,
-    );
-    await _checkLoaderKinds(buildStep, module, scanner.collectErrors);
+    await _checkModule(build, started);
     scanner.throwErrors();
 
     final (
@@ -907,8 +805,8 @@ class SpringBuilder implements Builder {
       excluded: excludedModules,
     ) = await _autoConfigurations(
       buildStep,
+      keys: keys,
       includeOwn: example,
-      configuration: _texts(resources),
     );
     // The beans of the auto-configurations' modules whose proxy class is
     // left to the application.
@@ -934,19 +832,13 @@ class SpringBuilder implements Builder {
       }
     }
     final springApplication = refer('springApplication');
-    final dependencies = await _dependencies(buildStep);
-    final glue = await driverGlueFor(
-      buildStep,
-      dependencies,
-      reachable:
-          await _isApplication(buildStep) || !output.path.startsWith('lib/')
-          ? await _reachablePackages(buildStep)
-          : null,
-    );
+    final dependencies = build.dependencies;
     final emitter = ModuleEmitter(
       output,
       dependencies: dependencies,
       pruneProxies: pruneProxies,
+      generations: started,
+      generationConditions: conditions,
       foreignAdvice: pruneProxies
           ? await _foreignAdvice(
               buildStep,
@@ -967,26 +859,15 @@ class SpringBuilder implements Builder {
       await _dartDefineKeys(buildStep, [...assets, ...nested], resources),
       dartDefinesExclude,
     );
-    final keyParts = await _keyParts(buildStep);
-    final json = await _jsonSchemaPart(buildStep);
+    final starterParts = await _moduleParts(buildStep, started);
     final source = emitter.emit(
       moduleName: 'application',
       variableName: r'$application',
       scannedDirectory: roots.map((r) => '$r/').join(' and '),
       module: module,
-      resources: {
-        ...await embedded(buildStep, resources),
-        ...json.resources,
-      },
-      parts: [...keyParts, ...json.parts],
-      partImports: [
-        if (keyParts.isNotEmpty) ...SpringKeyFiles.imports,
-        ...json.imports,
-      ],
-      extraIntrospections: json.introspections,
-      extraDefinitions: [for (final output in glue) output.definition],
+      resources: await embedded(buildStep, resources),
+      starterParts: starterParts,
       extra: [
-        for (final output in glue) output.code,
         Method(
           (m) => m
             ..docs.add(
@@ -1244,7 +1125,7 @@ class SpringBuilder implements Builder {
     }
     final root = buildStep.inputId.package;
     final config = await buildStep.packageConfig;
-    final reachable = await _reachablePackages(buildStep);
+    final reachable = await reachablePackages(buildStep);
     for (final package in config.packages) {
       final id = AssetId(package.name, autoConfigurationLibrary);
       if ((package.name == root && !includeOwn) ||
@@ -1352,8 +1233,8 @@ class SpringBuilder implements Builder {
   // With [includeOwn] (an example), the package's own too.
   //
   // A module with `build: AutoConfigurationBuild(property)` is decided by
-  // that property of the application's [configuration]: in, out (no code
-  // at all), or in under `!dart.vm.product`, which a release build
+  // that property of the application's configuration ([keys]): in, out (no
+  // code at all), or in under `!dart.vm.product`, which a release build
   // compiles away with everything only the module reaches. A module with
   // a `platform` is in under that platform's constant the same way.
   // [proxies]: the build of the beans (by source) with a deferred proxy
@@ -1368,25 +1249,16 @@ class SpringBuilder implements Builder {
   >
   _autoConfigurations(
     BuildStep buildStep, {
+    required BuildKeys keys,
     bool includeOwn = false,
-    Map<String, String> configuration = const {},
   }) async {
     final root = buildStep.inputId.package;
     final found = <(Expression?, String, String, String, List<String>)>[];
     // Each module with the conditions it is in the build under: `null`
     // when it is left out, none when it is always in.
     final decided = <(TopLevelVariableElement, List<String>?)>[];
-    String? Function(String key)? lookup;
-    String? property(String key) {
-      lookup ??= readPlatformEnvironment(
-        configuration,
-        profiles: const [],
-      ).getProperty;
-      return lookup!(key)?.trim().toLowerCase();
-    }
-
     final config = await buildStep.packageConfig;
-    final reachable = await _reachablePackages(buildStep);
+    final reachable = await reachablePackages(buildStep);
     for (final package in config.packages) {
       if (package.name == root && !includeOwn) {
         continue;
@@ -1413,17 +1285,15 @@ class SpringBuilder implements Builder {
           );
           final choice = _buildChoice(
             ConstantReader(annotation).peek('build'),
-            property,
+            keys,
             '${package.name}.${variable.name}',
-            profiled: (key) => _profileSetting(configuration, key),
           );
-          if (choice == _BuildChoice.never) {
+          if (choice == BuildInclusion.never) {
             decided.add((variable, null));
             continue;
           }
           final conditions = [
-            if (choice == _BuildChoice.notInRelease)
-              "!const bool.fromEnvironment('dart.vm.product')",
+            if (choice == BuildInclusion.notInRelease) notInReleaseCondition,
             ?_platformCondition(ConstantReader(annotation).peek('platform')),
           ];
           decided.add((variable, conditions));
@@ -1468,25 +1338,29 @@ class SpringBuilder implements Builder {
     );
   }
 
-  // `AutoConfigurationModule.platform` as the constant the compilers know:
+  // `AutoConfigurationModule.platform` as the constants the compilers know:
   // true where the module works, so the other platform's build drops the
-  // module and all only it reaches.
+  // module and all only it reaches. A server is native without Flutter
+  // (`dart.library.ui`), so a Flutter app on a phone or a desktop drops it
+  // too.
   static String? _platformCondition(ConstantReader? platform) {
     if (platform == null || platform.isNull) {
       return null;
     }
-    final library = switch (platform.objectValue.variable?.name) {
-      'native' => 'dart.library.io',
-      'web' => 'dart.library.js_interop',
+    const io = "const bool.fromEnvironment('dart.library.io')";
+    final condition = switch (platform.objectValue.variable?.name) {
+      'native' => io,
+      'web' => "const bool.fromEnvironment('dart.library.js_interop')",
+      'server' => "($io && !const bool.fromEnvironment('dart.library.ui'))",
       _ => null,
     };
-    if (library == null) {
+    if (condition == null) {
       return null;
     }
     // A program that runs such a module on the other platform on purpose
     // (server code checked as minified JavaScript under Node) is compiled
     // with `-DSPRING_ALL_PLATFORMS=true`.
-    return "(const bool.fromEnvironment('$library') || "
+    return '($condition || '
         "const bool.fromEnvironment('$allPlatformsDefine'))";
   }
 
@@ -1528,102 +1402,29 @@ class SpringBuilder implements Builder {
     return result;
   }
 
-  // The profile's configuration file (`application-web.yml`) that sets
-  // [key], which the build does not read; `null` when none does.
-  static String? _profileSetting(Map<String, String> files, String key) {
-    final parts = key.split('.');
-    bool sets(Object? node, List<String> rest) {
-      if (rest.isEmpty) {
-        return node != null;
-      }
-      if (node is! Map) {
-        return false;
-      }
-      for (var i = 1; i <= rest.length; i++) {
-        final name = rest.take(i).join('.');
-        if (node.containsKey(name) && sets(node[name], rest.sublist(i))) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    for (final MapEntry(key: path, value: text) in files.entries) {
-      final name = p.basename(path);
-      if (!RegExp(r'^application-[^.]+\.(ya?ml|properties)$').hasMatch(name)) {
-        continue;
-      }
-      try {
-        final set = name.endsWith('.properties')
-            ? LineSplitter.split(text).any(
-                (line) => RegExp(
-                  '^\\s*${RegExp.escape(key)}\\s*[=:]',
-                ).hasMatch(line),
-              )
-            : loadYamlDocuments(text).any((doc) => sets(doc.contents, parts));
-        if (set) {
-          return name;
-        }
-      } on Object {
-        continue; // the configuration's own reading reports a broken file
-      }
-    }
-    return null;
-  }
-
-  // `AutoConfigurationModule.build` against the application's property.
-  static _BuildChoice _buildChoice(
+  // `AutoConfigurationModule.build` against the application's
+  // configuration ([keys]); a module without one is always built.
+  static BuildInclusion _buildChoice(
     ConstantReader? build,
-    String? Function(String key) property,
-    String module, {
-    String? Function(String key)? profiled,
-  }) {
+    BuildKeys keys,
+    String module,
+  ) {
     if (build == null || build.isNull) {
-      return _BuildChoice.always;
+      return BuildInclusion.always;
     }
-    final key = build.read('property').stringValue;
-    final String? value;
-    try {
-      value = property(key);
-    } on Object catch (error) {
-      throw InvalidGenerationSourceError(
-        '$module: the build reads $key to decide whether the module is '
-        'built, and could not: $error',
-        todo:
-            'Give $key a value the build can read in application.yml or '
-            'application.properties, or a placeholder with a default '
-            r'(${FLAG:true}): '
-            'environment variables and --dart-define values do not exist '
-            'at build time.',
-      );
-    }
-    switch (value) {
-      case 'true':
-        return _BuildChoice.always;
-      case 'false':
-        return _BuildChoice.never;
-      case null || '':
-        if (profiled?.call(key) case final file?) {
-          log.warning(
-            '$module: $key is set only in $file, which the build does not '
-            'read: it decides by application.yml or application.properties '
-            'without a profile. The module is built as when it is not set.',
-          );
-        }
-        final missing = build.read('whenMissing').objectValue;
-        final name = missing.variable?.name ?? 'notInRelease';
-        return switch (name) {
-          'always' => _BuildChoice.always,
-          'never' => _BuildChoice.never,
-          _ => _BuildChoice.notInRelease,
-        };
-      default:
-        log.warning(
-          "$module: $key is '$value', not true or false; the module is "
-          'built as when it is not set.',
-        );
-        return _buildChoice(build, (_) => null, module);
-    }
+    return keys.decide(
+      build.read('property').stringValue,
+      whenMissing: switch (build
+          .read('whenMissing')
+          .objectValue
+          .variable
+          ?.name) {
+        'always' => BuildInclusion.always,
+        'never' => BuildInclusion.never,
+        _ => BuildInclusion.notInRelease,
+      },
+      subject: module,
+    );
   }
 
   // The beans whose module left their proxy class to the application
@@ -1641,7 +1442,7 @@ class SpringBuilder implements Builder {
     final root = buildStep.inputId.package;
     final resolver = buildStep.resolver;
     final config = await buildStep.packageConfig;
-    final reachable = await _reachablePackages(buildStep);
+    final reachable = await reachablePackages(buildStep);
     bool searched(LibraryElement library) {
       final uri = library.uri;
       if (uri.scheme != 'package') {
@@ -1936,7 +1737,7 @@ class SpringBuilder implements Builder {
   /// not make a package a dependency, and an app must not get the
   /// auto-configurations of its siblings. Returns `null` (no filtering)
   /// when a pubspec cannot be read.
-  static Future<Set<String>?> _reachablePackages(BuildStep buildStep) async {
+  static Future<Set<String>?> reachablePackages(BuildStep buildStep) async {
     final direct = await _dependencies(buildStep);
     if (direct == null) {
       return null;
@@ -2414,6 +2215,7 @@ class SpringPropertiesBuilder extends SpringBuilder {
     super.pruneProxies,
     super.deferProxies,
     super.dartDefinesExclude,
+    super.generations,
   });
 
   @override
@@ -2427,8 +2229,6 @@ class SpringPropertiesBuilder extends SpringBuilder {
 /// `AutoConfigurationModule(platform:)` whatever the platform:
 /// `dart compile js -DSPRING_ALL_PLATFORMS=true`.
 const allPlatformsDefine = 'SPRING_ALL_PLATFORMS';
-
-enum _BuildChoice { always, notInRelease, never }
 
 // How the proxy of a bean only conditional modules define is built: under
 // [condition], or not at all (`null`).

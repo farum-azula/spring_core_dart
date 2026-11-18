@@ -6,10 +6,10 @@ import 'package:glob/glob.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:path/path.dart' as p;
 import 'package:spring_core_dart/core.dart';
-import 'package:spring_core_dart_generator/src/package_directory.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart';
-import 'package:spring_core_dart_generator/src/web_page_head.dart';
+import 'package:spring_core_dart_generator/src/core/build_environment.dart';
+import 'package:spring_core_dart_generator/src/core/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_page_head.dart';
 import 'package:yaml/yaml.dart';
 
 /// Writes the pages search engines, link previews and models read for a
@@ -94,7 +94,7 @@ final class SeoBuilder implements Builder {
                   : value,
           };
         }
-      } on WebDevConfigException catch (e) {
+      } on BuildConfigException catch (e) {
         log.severe('$e\nThe pages of $prefix are not written.');
         return;
       }
@@ -276,7 +276,7 @@ final class SeoSettings {
   });
 
   /// The settings in [environment]; `null` unless `enabled` is `true`.
-  /// Throws [WebDevConfigException] without a site URL.
+  /// Throws [BuildConfigException] without a site URL.
   static SeoSettings? of(PropertyResolver environment) {
     String? string(String name) {
       final value = environment
@@ -328,7 +328,7 @@ final class SeoSettings {
     }
     for (final language in languages) {
       if (!RegExp(r'^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$').hasMatch(language)) {
-        throw WebDevConfigException(
+        throw BuildConfigException(
           'spring.flutter.navigation.languages: "$language" is no language '
           'tag (en, ja, pt-BR).',
         );
@@ -336,7 +336,7 @@ final class SeoSettings {
     }
     final files = string('page-files')?.toLowerCase();
     if (files != null && files != 'directory' && files != 'html') {
-      throw WebDevConfigException(
+      throw BuildConfigException(
         '${SeoBuilder.prefix}.page-files: "$files" is directory '
         '(<path>/index.html) or html (<path>.html).',
       );
@@ -344,7 +344,7 @@ final class SeoSettings {
     final site = string('site-url');
     final uri = site == null ? null : Uri.tryParse(site);
     if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
-      throw WebDevConfigException(
+      throw BuildConfigException(
         "${SeoBuilder.prefix}.site-url must be the site's address "
         '(https://spring-dart.dev) when ${SeoBuilder.prefix}.enabled is true.',
       );

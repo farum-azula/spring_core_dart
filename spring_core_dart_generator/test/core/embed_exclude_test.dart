@@ -2,7 +2,8 @@
 // module's resources, the configuration never; a file left out that is no
 // Flutter asset is reported with the lines for pubspec.yaml.
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:test/test.dart';
 
 const _main = '''
@@ -21,7 +22,7 @@ Future<(String, List<String>)> _module(String pubspec) async {
   await readerWriter.testing.loadIsolateSources();
   final logs = <String>[];
   final result = await testBuilder(
-    SpringBuilder(),
+    SpringBuilder(generations: starterGenerations),
     {
       'pkg|pubspec.yaml': pubspec,
       'pkg|lib/main.dart': _main,

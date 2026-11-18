@@ -10,24 +10,15 @@ import 'package:code_builder/code_builder.dart' hide FunctionType, RecordType;
 import 'package:dart_style/dart_style.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/aop_analysis.dart';
-import 'package:spring_core_dart_generator/src/bean_model.dart';
-import 'package:spring_core_dart_generator/src/dart_names.dart';
-import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
-import 'package:spring_core_dart_generator/src/json_annotation_checker.dart';
-import 'package:spring_core_dart_generator/src/log_scanning.dart';
-import 'package:spring_core_dart_generator/src/navigation_scanning.dart';
-import 'package:spring_core_dart_generator/src/part_tree.dart';
-import 'package:spring_core_dart_generator/src/query_expressions.dart';
-import 'package:spring_core_dart_generator/src/spel_compiler.dart';
-import 'package:spring_core_dart_generator/src/typed_theme_keys.dart'
-    show LoaderKinds;
+import 'package:spring_core_dart_generator/src/core/aop_analysis.dart';
+import 'package:spring_core_dart_generator/src/core/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/build_inclusion.dart';
+import 'package:spring_core_dart_generator/src/core/json_annotation_checker.dart';
+import 'package:spring_core_dart_generator/src/core/log_scanning.dart';
+import 'package:spring_core_dart_generator/src/core/starter_generation.dart';
 
 part 'configuration_emitter.dart';
-part 'navigation_emitter.dart';
-part 'entity_emitter.dart';
 part 'lookup_emitter.dart';
-part 'repository_emitter.dart';
 
 // Runtime types are always imported from the public library, never from
 // `src/`.
@@ -67,16 +58,24 @@ String _docText(String value) => value.replaceAllMapped(
 ///
 /// - the generated classes: an AOP proxy per proxied bean, lazy-resolution
 ///   proxies, implementations of `@InterfaceProxy` interfaces and the
-///   classes of data repositories, subclasses of full-mode `@Configuration`
-///   classes and of classes with `@Lookup` methods;
+///   classes of the starters' parts (data repositories), subclasses of
+///   full-mode `@Configuration` classes and of classes with `@Lookup`
+///   methods;
 /// - a getter `BeanModule get $<name>` with a `BeanDefinition` per bean
 ///   and the module's property sources, embedded resources, imports,
 ///   registrars, introspections and configurers. It is a getter, not a
 ///   variable, so a hot reload that replaces its body yields the beans of
 ///   the new code;
 /// - any extra declarations of the caller (the `springApplication` and
-///   `runApplication` functions of a `@SpringBootApplication`), the
-///   `BuildContext` extension and the `@Log` extensions.
+///   `runApplication` functions of a `@SpringBootApplication`), those of
+///   the starters' parts (the `BuildContext` extension, the screens'
+///   constants) and the `@Log` extensions.
+///
+/// The starters' parts ([generations]) add their classes, their bean
+/// definitions after the beans' (and the creation of the beans they make),
+/// their statements to the module getter and their declarations after it,
+/// through a [ModuleEmission]; the code of a part in debug and profile
+/// builds only sits under the condition [generationConditions] gives it.
 ///
 /// Code is built with `code_builder`, so imports get prefixes such as
 /// `_i1.` (omitted in the examples below), and formatted with
@@ -140,7 +139,24 @@ class ModuleEmitter {
     this.pruneProxies = true,
     this.foreignAdvice,
     this.deferProxies = false,
+    this.generations = const [],
+    this.generationConditions = const {},
   });
+
+  /// The starters' parts of the build, asked in turn for their classes,
+  /// bean definitions, the creation of their beans, module statements and
+  /// declarations.
+  final List<StarterGeneration> generations;
+
+  /// The condition the code of a part of [generations] is under, by part
+  /// ([notInReleaseCondition] for one its build key leaves to debug and
+  /// profile builds, `StarterGeneration.build`); a part without one is in
+  /// every build. Its bean definitions (those it writes, and those of the
+  /// beans it makes), its module statements, its lists of introspections
+  /// and its resources are written under it; its classes, declarations and
+  /// part files cannot be (a declaration is no statement), and a release
+  /// build drops them as nothing else uses them.
+  final Map<StarterGeneration, String> generationConditions;
 
   /// Whether the module (a `lib/` module of a library package) leaves to
   /// the application the proxy classes only its aspects can match
@@ -163,6 +179,10 @@ class ModuleEmitter {
   // The module being emitted.
   late ModuleModel _module;
 
+  // What the starters' parts get of this emitter, for the module being
+  // emitted.
+  late ModuleEmission _emission;
+
   /// The library being generated. Imports of files of the same package
   /// outside `lib/` (an `asset:` URI) are written relative to it.
   final AssetId output;
@@ -182,8 +202,12 @@ class ModuleEmitter {
   /// [moduleName] is the `BeanModule` name (the `@ComponentScan` variable,
   /// or `application`), [variableName] the generated getter (`$` +
   /// [moduleName]), and [scannedDirectory] only appears in the getter's doc
-  /// comment. [extra] declarations are appended after the getter, and
-  /// [resources] are embedded as `resources:` files.
+  /// comment. [extra] declarations are appended after the getter (and
+  /// the parts' leading declarations), and [resources] are embedded as
+  /// `resources:` files. [starterParts] are the generated files of each
+  /// part that are `part of` the library ([StarterGeneration.moduleParts]),
+  /// with their imports, their lists of introspections and their
+  /// resources, in the parts' order.
   ///
   /// Throws `InvalidGenerationSource` when a type, constant or function
   /// cannot be referenced from [output] (a private constant, or a file of
@@ -214,13 +238,11 @@ class ModuleEmitter {
     required String scannedDirectory,
     required ModuleModel module,
     List<Spec> extra = const [],
-    List<Expression> extraDefinitions = const [],
     Map<String, ({String? text, String? base64})> resources = const {},
-    List<String> parts = const [],
-    List<String> partImports = const [],
-    List<String> extraIntrospections = const [],
+    Map<StarterGeneration, ModuleParts> starterParts = const {},
   }) {
     _module = module;
+    _starterCreators.clear();
     _usesTypeOf = false;
     _knownAdvisors = null;
     _annotationTypes.clear();
@@ -231,6 +253,7 @@ class ModuleEmitter {
       foreign: foreignAdvice,
       defer: deferProxies,
     );
+    final emission = _emission = ModuleEmission._(this, moduleName);
     // Classes and definitions first: the types in their annotations go
     // into the module's typeTests.
     final classes = <Spec>[
@@ -246,9 +269,7 @@ class ModuleEmitter {
       for (final bean in module.beans)
         if (bean.creation case InterfaceProxyCreation(:final model))
           _interfaceImplClass(model),
-      for (final bean in module.beans)
-        if (bean.creation case RepositoryCreation(:final model))
-          repositoryClass(model),
+      for (final generation in generations) ...generation.classes(emission),
       for (final bean in module.beans)
         if (bean.creation case ConstructorCreation(
           configuration: final model?,
@@ -266,13 +287,24 @@ class ModuleEmitter {
         absentMarkerClass(),
     ];
     final definitions = literalList([
-      for (final bean in module.beans) _definition(bean),
-      if (module.springWidgets.isNotEmpty) _springWidgetBindings(moduleName),
-      if (module.screens.isNotEmpty || module.shells.isNotEmpty)
-        screenRoutesDefinition(moduleName),
-      if (module.entities.isNotEmpty) entityIntrospectionsBean(moduleName),
-      ...extraDefinitions,
+      for (final bean in module.beans) _guardedBean(bean, _definition(bean)),
+      for (final generation in generations)
+        for (final definition in generation.beanDefinitions(emission))
+          _guarded(generation, definition),
     ]);
+    final parts = [
+      for (final part in starterParts.values) ...part.parts,
+    ];
+    final partImports = [
+      for (final part in starterParts.values) ...part.imports,
+    ];
+    final resourceEntries = _resourceEntries(resources, starterParts);
+    // The lists of a part (the classes of spring.json.schemas).
+    final starterIntrospections = [
+      for (final MapEntry(key: generation, value: part) in starterParts.entries)
+        for (final list in part.introspections)
+          _guarded(generation, refer('...$list')),
+    ];
     final arguments = <String, Expression>{
       if (module.imports.isNotEmpty)
         'imports': literalList([
@@ -282,16 +314,8 @@ class ModuleEmitter {
               _importUrl(variable.library.uri, variable, name: variable.name),
             ),
         ]),
-      if (resources.isNotEmpty)
-        'resources': literalConstMap({
-          for (final MapEntry(key: path, value: (:text, :base64))
-              in resources.entries)
-            _str(path): text != null
-                ? _spring('EmbeddedResource')
-                      .constInstanceNamed('text', [_str(text)])
-                : _spring('EmbeddedResource')
-                      .constInstanceNamed('base64', [_str(base64!)]),
-        }),
+      if (resourceEntries.isNotEmpty)
+        'resources': literalConstMap(resourceEntries),
       if (module.propertySources.isNotEmpty)
         'propertySources': literalList([
           for (final source in module.propertySources) _propertySource(source),
@@ -313,12 +337,11 @@ class ModuleEmitter {
         ]),
       if (module.foreignProxies.any((f) => f.proxy.unavailableReason == null))
         'aopProxies': _foreignProxies(module.foreignProxies),
-      if (module.introspections.isNotEmpty || extraIntrospections.isNotEmpty)
+      if (module.introspections.isNotEmpty || starterIntrospections.isNotEmpty)
         'introspections': literalList([
           for (final introspection in module.introspections)
             _introspection(introspection),
-          // The lists of a part (the classes of spring.json.schemas).
-          for (final list in extraIntrospections) refer('...$list'),
+          ...starterIntrospections,
         ]),
       if (module.configurables.isNotEmpty)
         'configurers': literalMap({
@@ -363,9 +386,21 @@ class ModuleEmitter {
       _str(moduleName),
       definitions,
     ], arguments);
-    final buildContextAccess = module.buildContextAccess.isEmpty
-        ? null
-        : _contextAccessExtension();
+    final statements = [
+      for (final generation in generations)
+        ..._guardedStatements(
+          generation,
+          generation.moduleStatements(emission).toList(),
+        ),
+    ];
+    final leading = [
+      for (final generation in generations)
+        ...generation.leadingDeclarations(emission),
+    ];
+    final declarations = [
+      for (final generation in generations)
+        ...generation.declarations(emission),
+    ];
     final library = Library(
       (b) => b
         // The generated files that are `part of` this one (the typed keys),
@@ -409,24 +444,18 @@ class ModuleEmitter {
               ..type = MethodType.getter
               ..returns = _spring('BeanModule')
               ..name = variableName
-              ..lambda = module.loaderKinds.isEmpty
-              ..body = module.loaderKinds.isEmpty
+              ..lambda = statements.isEmpty
+              ..body = statements.isEmpty
                   ? moduleExpression.code
                   : Block.of([
-                      // The kinds are known before the themes are read.
-                      ..._loaderKindRegistrations(module).map(
-                        (e) => e.statement,
-                      ),
+                      ...statements,
                       moduleExpression.returned.statement,
                     ]),
           ),
         )
+        ..body.addAll(leading)
         ..body.addAll(extra)
-        ..body.addAll([?buildContextAccess])
-        ..body.addAll([
-          for (final screen in module.screens)
-            if (!screen.notFound) routeExtension(screen),
-        ])
+        ..body.addAll(declarations)
         ..body.addAll([
           for (final (log, name) in _logExtensionNames(module.loggers))
             _logExtension(log, name),
@@ -454,6 +483,69 @@ class ModuleEmitter {
         '${library.accept(emitter)}';
     return DartFormatter(languageVersion: DartFormatter.latestLanguageVersion)
         .format(source);
+  }
+
+  // The part that wrote the creation of each bean a part makes
+  // (`StarterCreation`), so its definition goes under the part's condition.
+  final Map<BeanModel, StarterGeneration> _starterCreators = {};
+
+  // [element], an element of a list the part [generation] adds to, under
+  // the part's condition: `if (!const bool.fromEnvironment(...)) element`.
+  Expression _guarded(StarterGeneration generation, Expression element) =>
+      switch (generationConditions[generation]) {
+        final condition? => CodeExpression(
+          Block.of([Code('if ($condition) '), element.code]),
+        ),
+        null => element,
+      };
+
+  // The definition of [bean], under the condition of the part that makes
+  // it, if one does.
+  Expression _guardedBean(BeanModel bean, Expression definition) =>
+      switch (_starterCreators[bean]) {
+        final generation? => _guarded(generation, definition),
+        null => definition,
+      };
+
+  // The module statements of the part [generation], in one `if` block
+  // under its condition.
+  List<Code> _guardedStatements(
+    StarterGeneration generation,
+    List<Code> statements,
+  ) => switch (generationConditions[generation]) {
+    final condition? when statements.isNotEmpty => [
+      Block.of([Code('if ($condition) {'), ...statements, const Code('}')]),
+    ],
+    _ => statements,
+  };
+
+  // The entries of `resources:`: the module's [resources], then those of
+  // the [starterParts] (one of a part's replaces a module's file of the
+  // same path); those of a part under a condition come last, each under
+  // it.
+  Map<Expression, Expression> _resourceEntries(
+    Map<String, ({String? text, String? base64})> resources,
+    Map<StarterGeneration, ModuleParts> starterParts,
+  ) {
+    Expression resource(({String? text, String? base64}) value) =>
+        value.text != null
+        ? _spring('EmbeddedResource')
+              .constInstanceNamed('text', [_str(value.text!)])
+        : _spring('EmbeddedResource')
+              .constInstanceNamed('base64', [_str(value.base64!)]);
+    final always = {
+      ...resources,
+      for (final MapEntry(key: generation, value: part) in starterParts.entries)
+        if (!generationConditions.containsKey(generation)) ...part.resources,
+    };
+    return {
+      for (final MapEntry(key: path, :value) in always.entries)
+        _str(path): resource(value),
+      for (final MapEntry(key: generation, value: part) in starterParts.entries)
+        if (generationConditions.containsKey(generation))
+          for (final MapEntry(key: path, :value) in part.resources.entries)
+            _guarded(generation, _str(path)): resource(value),
+    };
   }
 
   // One `BeanDefinition<T>(...)`. Optional arguments are only written when
@@ -2010,13 +2102,12 @@ class ModuleEmitter {
     _ => null,
   };
 
-  // `ChangeNotifier` for the proxy of a `@ChangeNotifierComponent` class
-  // that is no ChangeNotifier itself (spring_boot_starter_flutter): the
-  // bean the container hands out is the Listenable widgets subscribe to.
-  static List<Reference> _proxyMixins(ProxyModel proxy) =>
-      mixesChangeNotifierIn(proxy.classAnnotations, proxy.targetType)
-      ? [refer('ChangeNotifier', 'package:flutter/foundation.dart')]
-      : const [];
+  // The classes the starters' parts mix into the proxy (`ChangeNotifier`
+  // for a `@ChangeNotifierComponent`): the bean the container hands out
+  // carries them.
+  static List<Reference> _proxyMixins(ProxyModel proxy) => [
+    for (final mixin in proxy.mixins) refer(mixin.name, mixin.url),
+  ];
 
   // The proxy class: holds the target and the invoker, implements
   // `Advised`, forwards `toString` without advice and overrides every
@@ -3114,8 +3205,18 @@ class ModuleEmitter {
               );
       case InterfaceProxyCreation(:final model):
         return refer(model.className).property(r'$create').call([refer('r')]);
-      case RepositoryCreation(:final model):
-        return refer(model.className).property(r'$create').call([refer('r')]);
+      // A bean a starter's part makes: the part writes how.
+      case StarterCreation():
+        for (final generation in generations) {
+          if (generation.beanCreation(bean, _emission) case final created?) {
+            _starterCreators[bean] = generation;
+            return created;
+          }
+        }
+        throw StateError(
+          'No starter part of the build makes the bean ${bean.name} '
+          '(${creation.runtimeType}).',
+        );
       case ConfigurationPropertiesCreation():
         return refer(
               'ConstructorBound',
@@ -3734,12 +3835,6 @@ class ModuleEmitter {
     );
   }
 
-  // spring_boot_starter_flutter: the runtime library its generated code refers
-  // to.
-  static const _flutterSpringUrl =
-      'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
-  static const _flutterWidgetsUrl = 'package:flutter/widgets.dart';
-
   // The extension name of each `@Log` class: `$CheckoutLog`. Classes of
   // different libraries may share a simple name; the later ones (in scan
   // order) get a number, `$CheckoutLog2`, so the extensions do not clash.
@@ -3786,156 +3881,96 @@ class ModuleEmitter {
         ),
     );
   }
+}
 
-  // `extension SpringBeans on BuildContext { Basket get basket => ...; }`
-  // for the `@BuildContextAccess` beans.
-  Extension _contextAccessExtension() => Extension(
-    (e) => e
-      ..docs.add(
-        '/// Getters for the `@BuildContextAccess` beans, for widgets below '
-        '`SpringApplicationWidget`.',
-      )
-      ..name = 'SpringBeans'
-      ..on = refer('BuildContext', _flutterWidgetsUrl)
-      ..methods.addAll([
-        for (final access in _module.buildContextAccess)
-          Method(
-            (m) => m
-              ..docs.add("/// The bean '${_docText(access.bean.name)}'.")
-              ..type = MethodType.getter
-              ..returns = _anyType(access.type, access.bean.element)
-              ..name = access.getter
-              ..lambda = true
-              ..body = refer('SpringScope', _flutterSpringUrl)
-                  .property('beanOf')
-                  .call(
-                    [refer('this')],
-                    {'qualifier': _str(access.bean.name)},
-                    [_anyType(access.type, access.bean.element)],
-                  )
-                  .code,
-          ),
-      ]),
-  );
+/// What the emission hooks of a `StarterGeneration` get: the module being
+/// written, and the emitter's ways of naming types and values from the
+/// generated library, so a part writes its code as the core writes its own
+/// (imports through public libraries, raw strings, `Type` values of
+/// function and record types).
+///
+/// ```dart
+/// // A part's bean definition:
+/// emission.spring('BeanDefinition').newInstance([], {
+///   'name': emission.string('screenRoutes#${emission.moduleName}'),
+///   'create': emission.closure(['r'], routes.code, lambda: true),
+/// }, [refer('ScreenRoutes', navigationUrl)]);
+/// ```
+final class ModuleEmission {
+  ModuleEmission._(this._emitter, this.moduleName);
 
-  // `ThemeLoaderKinds.register<P>('doors', painter: DoorsLoader(), ...)` for
-  // each `@ThemeLoaderKind` class of the module.
-  List<Expression> _loaderKindRegistrations(ModuleModel module) {
-    final kinds = refer('ThemeLoaderKinds', _flutterSpringUrl);
-    return [
-      for (final kind in module.loaderKinds)
-        () {
-          final props = LoaderKinds.propsClass(kind.name);
-          final instance = _type(
-            kind.element.thisType,
-            kind.element,
-          ).newInstance([]);
-          return kinds.property('register').call(
-            [_str(kind.name)],
-            {
-              if (kind.painter) 'painter': instance else 'widget': instance,
-              if (kind.typedProps) ...{
-                'props': refer('$props._'),
-                'keys': refer('$props.keys'),
-              },
-            },
-            [
-              if (kind.typedProps)
-                refer(props)
-              else
-                refer('LoaderValues', _flutterSpringUrl),
-            ],
-          );
-        }(),
-    ];
-  }
+  final ModuleEmitter _emitter;
 
-  // The `SpringWidgetBindings` bean of the module: how the bean record of
-  // each `SpringStatelessWidget<R>` is filled (one binding per distinct R, the
-  // first widget in scan order names it). Not an autowire candidate:
-  // `SpringStatelessWidget` finds it with `getBeansOfType`.
-  Expression _springWidgetBindings(String moduleName) {
-    final bindings = refer('SpringWidgetBindings', _flutterSpringUrl);
-    final binding = refer('SpringWidgetBinding', _flutterSpringUrl);
-    final distinct = <SpringWidgetModel>[];
-    for (final widget in _module.springWidgets) {
-      if (!distinct.any((other) => other.beans == widget.beans)) {
-        distinct.add(widget);
-      }
-    }
-    Expression field(SpringWidgetField field, Element element) => field.optional
-        ? refer('f')
-              .property('findBean')
-              .call([], {}, [_type(field.type, element)])
-        : binding
-              .property('bean')
-              .call(
-                [refer('f'), if (field.name case final name?) _str(name)],
-                {},
-                [_type(field.type, element)],
-              );
-    // `BeanDefinition<SpringWidgetBindings>`: its type is the only one.
-    return _spring('BeanDefinition').newInstance(
-      [],
-      {
-        'name': _str('flutterSpringWidgetBindings#$moduleName'),
-        'source': _str('$_flutterSpringUrl#SpringWidgetBindings'),
-        'autowireCandidate': literalFalse,
-        'create': _closure(
-          ['r'],
-          bindings.call([
-            literalList([
-              for (final widget in distinct)
-                binding.call([], {
-                  'widget': _str(widget.source),
-                  'beans': _typeValue(widget.beans, widget.widget),
-                  'types': literalConstList([
-                    for (final type in widget.requiredTypes)
-                      _type(type, widget.widget),
-                  ]),
-                  'resolve': _closure(
-                    ['f'],
-                    literalRecord(
-                      [
-                        for (final f in widget.positional)
-                          field(f, widget.widget),
-                      ],
-                      {
-                        for (final f in widget.named)
-                          f.name!: field(f, widget.widget),
-                      },
-                    ).code,
-                    lambda: true,
-                  ),
-                  // The beans of a filled record, for the widgets to
-                  // subscribe to the Listenable ones.
-                  'values': Method(
-                    (m) => m
-                      ..requiredParameters.add(Parameter((p) => p..name = 'r'))
-                      ..body = Block.of([
-                        declareFinal('v')
-                            .assign(
-                              refer('r')
-                                  .asA(_anyType(widget.beans, widget.widget)),
-                            )
-                            .statement,
-                        literalList([
-                          for (var i = 0; i < widget.positional.length; i++)
-                            refer('v').property('\$${i + 1}'),
-                          for (final f in widget.named)
-                            refer('v').property(f.name!),
-                        ]).returned.statement,
-                      ]),
-                  ).closure,
-                }),
-            ]),
-          ]).code,
-          lambda: true,
-        ),
-      },
-      [bindings],
-    );
-  }
+  /// The `BeanModule` name: the `@ComponentScan` variable, or
+  /// `application`.
+  final String moduleName;
+
+  /// The module being written.
+  ModuleModel get module => _emitter._module;
+
+  /// A reference to [type], declared or used by [element], imported from
+  /// the public library that declares or exports it.
+  ///
+  /// Throws `InvalidGenerationSource` when the library cannot be imported
+  /// from the output (a file of another package outside `lib/`).
+  TypeReference type(DartType type, Element element) =>
+      _emitter._type(type, element);
+
+  /// A reference to any [type] (a function or record type too) as a type
+  /// argument or a declared type.
+  Reference anyType(DartType type, Element element) =>
+      _emitter._anyType(type, element);
+
+  /// [type] as a `Type` value: a class's name, a function or record type's
+  /// public alias, else `_$typeOf<T>()` (the module then declares it).
+  Expression typeValue(DartType type, Element element) =>
+      _emitter._typeValue(type, element);
+
+  /// A reference to the public runtime type [name] of `spring_core_dart`
+  /// (`BeanDefinition`).
+  Reference spring(String name) => _spring(name);
+
+  /// A raw string literal of [value], so `$` and backslashes are written as
+  /// they are.
+  Expression string(String value) => _str(value);
+
+  /// [value] (a user string: a bean name) for a generated `///` comment,
+  /// on one line.
+  String docText(String value) => _docText(value);
+
+  /// An untyped closure of [parameters] with [body] (an expression when
+  /// [lambda], else a block); the parameter types are inferred from the
+  /// runtime API's function types.
+  Expression closure(
+    List<String> parameters,
+    Code body, {
+    bool lambda = false,
+  }) => _emitter._closure(parameters, body, lambda: lambda);
+
+  /// Code that re-creates the constant [value] of [element] (an
+  /// annotation, a default value): literals, collections, records, types,
+  /// enum values, functions and `const` constructor calls. A type an
+  /// annotation names joins the module's `typeTests`.
+  Expression constant(DartObject value, Element element) =>
+      _emitter._constant(value, element);
+
+  /// The `TypeInfo` of [type], declared or used by [element]
+  /// (`ClassType<T>`, `ListType<E>(...)`, `EnumType<E>(E.values)`...), and
+  /// whether that expression is constant (an enum with `@JsonValue` needs
+  /// a closure).
+  (Expression, bool) typeInfo(DartType type, Element element) =>
+      _emitter._typeInfo(type, element);
+
+  /// The initial value of a field (the `value` of an `InitialValue`) as
+  /// code: a literal, a referenced constant, or a `const` collection of
+  /// those, with the type arguments of the field's declared [type].
+  Expression initialValue(Object? value, Element element, [DartType? type]) =>
+      _emitter._initialValue(value, element, type);
+
+  /// The parameter [parameter] of a generated member that repeats a
+  /// signature (a [ProxyMember]'s), with its type and default value.
+  Parameter parameter(ProxyParameter parameter, Element element) =>
+      _emitter._proxyParameter(parameter, element);
 }
 
 // The container API through `spring_boot_dart`, which re-exports it, when

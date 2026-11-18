@@ -6,10 +6,10 @@ import 'package:build/build.dart' hide Resource;
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:spring_core_dart/core.dart';
-import 'package:spring_core_dart_generator/src/generated_path.dart';
-import 'package:spring_core_dart_generator/src/theme_references.dart';
-import 'package:spring_core_dart_generator/src/typed_message_keys.dart';
-import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
+import 'package:spring_core_dart_generator/src/core/generated_path.dart';
+import 'package:spring_core_dart_generator/src/flutter/theme_references.dart';
+import 'package:spring_core_dart_generator/src/flutter/typed_message_keys.dart';
+import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart';
 import 'package:yaml/yaml.dart';
 
 /// The Dart code of the key files a package gets, without header and

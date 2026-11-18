@@ -1,6 +1,6 @@
 // spring.flutter.web.page.translate: false keeps browsers and Google from
 // offering a translation of a page whose text Flutter draws on a canvas.
-import 'package:spring_core_dart_generator/src/web_page_head.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_page_head.dart';
 import 'package:test/test.dart';
 
 const _page = '''

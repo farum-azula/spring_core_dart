@@ -1,3 +1,7 @@
+// The build the introspection-need tests share (test/core/, and the parts
+// whose annotations decide a need: test/web/, test/websocket/,
+// test/scheduling/, test/security/, test/cache/).
+//
 // A class is described for what the application does with it, as far as
 // the build can see (`IntrospectionNeed`): getters for what is written out,
 // constructor and setters for what is read in, methods where an expression
@@ -9,12 +13,11 @@ import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/bean_scanner.dart'
-    show mayCallMapper;
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:test/test.dart';
 
-import 'support/real_sources.dart';
+import 'real_sources.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -170,7 +173,10 @@ import 'package:spring_web_dart/src/annotations.dart';
 import 'package:spring_web_dart/src/controller_annotations.dart';
 ''';
 
-const _models = r'''
+/// The application whose classes the tests look at: controllers, WebSocket
+/// handlers, a client interface, expressions of the cache and security
+/// annotations, direct calls of the `ObjectMapper`, explicit introspection.
+const needsModels = r'''
 // --- web ---
 
 class Page<T> {
@@ -503,7 +509,10 @@ class Limits {
 }
 ''';
 
-Future<(String, List<String>)> _generate(String models) async {
+/// Builds [models] with the starters' annotations (as far as the generator
+/// looks at them); returns the output without whitespace and the analyzer
+/// errors of the generated library.
+Future<(String, List<String>)> generateNeeds(String models) async {
   final isolateConfig = await loadPackageConfigUri(
     (await Isolate.packageConfig)!,
   );
@@ -529,7 +538,7 @@ Future<(String, List<String>)> _generate(String models) async {
   );
   final own = await loadRealSources(readerWriter, sources);
   final result = await testBuilder(
-    SpringBuilder(),
+    SpringBuilder(generations: starterGenerations),
     own,
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -566,7 +575,7 @@ String _normalize(String code) => code
     .replaceAllMapped(RegExp(r',([)\]}])'), (m) => m[1]!);
 
 /// The `BeanIntrospection<name>(...)` of the output, `null` without one.
-String? _introspection(String output, String name) {
+String? introspectionOf(String output, String name) {
   final start = output.indexOf('BeanIntrospection<$name>(');
   if (start < 0) {
     return null;
@@ -585,9 +594,9 @@ String? _introspection(String output, String name) {
 
 /// What a description of the class holds, in a few words: its getters,
 /// setters, `instantiate`, `constructor`, methods, and `parts`.
-String _shape(String output, String name) {
+String shapeOf(String output, String name) {
   final block =
-      _introspection(output, name) ??
+      introspectionOf(output, name) ??
       (throw StateError('$name is not introspected'));
   List<String> names(String pattern) => [
     for (final match in RegExp(pattern).allMatches(block)) match[1]!,
@@ -621,233 +630,4 @@ String _shape(String output, String name) {
     if (parts != null)
       'parts ${parts.replaceAll('IntrospectionPart.', '')}'.trim(),
   ].join('; ');
-}
-
-void main() {
-  late final String output;
-  late final List<String> errors;
-
-  setUpAll(() async {
-    (output, errors) = await _generate(_models);
-  });
-
-  String shape(String name) => _shape(output, name);
-
-  test('the generated code compiles', () {
-    expect(errors, isEmpty);
-  });
-
-  group('a controller', () {
-    test('writes out what it returns, and a test reads it back', () {
-      // `mapper.readValue<BookView>(res.body)` in test/, which is not
-      // scanned: the getters and the constructor and setters.
-      expect(
-        shape('BookView'),
-        'get title,author; set title,author; instantiate; constructor; '
-        'parts read,write',
-      );
-    });
-
-    test('a class its answer is made of is written out too', () {
-      expect(shape('Author'), contains('get name'));
-      expect(shape('Page<dynamic>'), contains('get items,total'));
-      expect(shape('Page<dynamic>'), isNot(contains('methods')));
-      expect(shape('PageItem'), 'get title; constructor; parts read,write');
-    });
-
-    test('an exception handler answer is written out and read back', () {
-      expect(shape('Problem'), 'get message; constructor; parts read,write');
-    });
-
-    test('reads in a body: constructor and setters only', () {
-      expect(
-        shape('NewBook'),
-        'set title,author; instantiate; constructor; parts write',
-      );
-    });
-
-    test('a validated body also gets the getters of its constraints', () {
-      expect(
-        shape('CheckedBook'),
-        'get title; set title,note; instantiate; constructor; parts write',
-      );
-    });
-
-    test('a class reached by several routes gets the union', () {
-      // Written out (BookView, Page) and read in (NewBook): both.
-      expect(
-        shape('Author'),
-        'get name; set name; instantiate; constructor; parts read,write',
-      );
-      // An expression's argument that is also a body.
-      expect(
-        shape('Order'),
-        'get owner; set owner; instantiate; constructor; '
-        'methods cancel',
-      );
-    });
-
-    test('a class that is read and written gets both, no methods', () {
-      expect(
-        shape('Echo'),
-        'get text; set text; instantiate; constructor; parts read,write',
-      );
-    });
-
-    test('a scheduled method describes nothing', () {
-      expect(_introspection(output, 'Tick'), isNull);
-    });
-
-    test('a class that compares with a new instance also has one', () {
-      expect(
-        shape('Counter'),
-        'get count; set count; instantiate; constructor; parts read,write',
-      );
-    });
-
-    test('a JSON annotation keeps the method it marks', () {
-      expect(
-        shape('Tag'),
-        'get label; constructor; methods asText; parts read,write',
-      );
-      expect(shape('Bag'), contains('methods put'));
-      expect(shape('Bag'), isNot(contains('other')));
-    });
-
-    test('the subtypes of a base take its need, a view class none', () {
-      expect(shape('Animal'), contains('parts read,write'));
-      expect(shape('Dog'), 'get name; constructor; parts read,write');
-      expect(shape('Public'), 'parts');
-    });
-  });
-
-  group('messages', () {
-    test('an endpoint reads in the message and writes out the reply', () {
-      expect(
-        shape('ChatMessage'),
-        'set text; instantiate; constructor; parts write',
-      );
-      expect(shape('ChatReply'), 'get text; parts read');
-    });
-
-    test('the other handlers describe nothing', () {
-      expect(_introspection(output, 'Untouched'), isNull);
-    });
-  });
-
-  group('a client interface', () {
-    test('reads in the answer', () {
-      expect(
-        shape('CatalogItem'),
-        'set name,owner; instantiate; constructor; parts write',
-      );
-    });
-
-    test('writes out the arguments', () {
-      expect(shape('CatalogRequest'), 'get filter; parts read');
-    });
-  });
-
-  group('expressions', () {
-    test('the expressions of @Caching are read too', () {
-      expect(shape('NestedKey'), contains('methods'));
-    });
-
-    test('the bean itself is described when an expression names target', () {
-      expect(shape('Orders'), contains('get prefix'));
-      expect(shape('Orders'), contains('methods cancel'));
-    });
-
-    test('an argument they name is read and its methods called', () {
-      expect(shape('Order'), contains('get owner'));
-      expect(shape('Order'), contains('methods cancel'));
-      expect(shape('SearchQuery'), contains('methods'));
-      expect(shape('SearchQuery'), isNot(contains('instantiate')));
-      expect(shape('SearchQuery'), isNot(contains('set ')));
-    });
-
-    test('so is a result they look at', () {
-      expect(shape('Invoice'), contains('methods'));
-      expect(shape('Stored'), contains('methods'));
-    });
-
-    test('a result no expression looks at is not described', () {
-      expect(_introspection(output, 'Hit'), isNull);
-    });
-
-    test('an expression that reads no value describes nothing', () {
-      // `hasRole('ADMIN')` and `@Secured` name no argument.
-      expect(_introspection(output, 'Untouched'), isNull);
-    });
-  });
-
-  group('direct calls of the ObjectMapper', () {
-    test('a type argument is read in, a value written out', () {
-      expect(
-        shape('Loaded'),
-        'set x; instantiate; constructor; parts write',
-      );
-      expect(shape('Saved'), 'get y; parts read');
-    });
-
-    test('convertValue writes out its value and reads in its type', () {
-      expect(shape('Source'), 'get z; parts read');
-      expect(
-        shape('Copy'),
-        'set w; instantiate; constructor; parts write',
-      );
-    });
-
-    test('so do the WebSocket methods that write a value as JSON', () {
-      expect(shape('Pushed'), 'get p; parts read');
-      expect(shape('Broadcast'), 'get b; parts read');
-    });
-
-    test('a value of type Object names no class', () {
-      expect(_introspection(output, 'Unseen'), isNull);
-    });
-
-    test('broadcast and sendJson count only where the starter is imported', () {
-      // `StreamController.broadcast` is everywhere: such a library is not
-      // resolved, as one that names no mapper method.
-      const source =
-          'final stream = controller.stream.asBroadcastStream();\n'
-          'final events = StreamController<int>.broadcast();\n'
-          'void send(Object o) => session.sendJson(o);';
-      expect(mayCallMapper(source, webSocket: false), isFalse);
-      expect(mayCallMapper(source, webSocket: true), isTrue);
-      expect(
-        mayCallMapper('mapper.readValue<Book>(text);', webSocket: false),
-        isTrue,
-      );
-      expect(mayCallMapper('final a = 1;', webSocket: true), isFalse);
-    });
-  });
-
-  group('explicit', () {
-    test('@Introspected describes everything, and so what it is made of', () {
-      expect(shape('Everything'), contains('methods work'));
-      expect(shape('Everything'), contains('instantiate'));
-      expect(shape('Everything'), isNot(contains('parts')));
-      expect(shape('Inner'), contains('methods touch'));
-      expect(shape('Inner'), isNot(contains('parts')));
-    });
-
-    test('a class listed in @Introspected(classes:) is described entirely', () {
-      expect(shape('Listed'), contains('methods act'));
-      expect(shape('Listed'), isNot(contains('parts')));
-    });
-
-    test('@ConfigurationProperties binds: setters and getters, no methods', () {
-      expect(
-        shape('AppProperties'),
-        'get name,limits; set name,limits; instantiate; constructor; '
-        'parts read,write',
-      );
-      expect(
-        shape('Limits'),
-        'get max; set max; instantiate; constructor; parts read,write',
-      );
-    });
-  });
 }

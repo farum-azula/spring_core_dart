@@ -1,8 +1,8 @@
 import 'package:build/build.dart' hide Resource;
 import 'package:dart_style/dart_style.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/spring_key_files.dart';
-import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/flutter/spring_key_files.dart';
+import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart';
 
 /// Writes the typed keys of a Flutter app's configuration, so a renamed key
 /// is a compile error instead of a run-time failure:

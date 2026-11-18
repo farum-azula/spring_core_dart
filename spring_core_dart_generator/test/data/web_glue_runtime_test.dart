@@ -12,7 +12,8 @@ import 'dart:isolate';
 
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:test/test.dart';
 
 const _pubspec = '''
@@ -388,7 +389,7 @@ Future<Map<String, Object?>> _run() async {
   );
   await readerWriter.testing.loadIsolateSources();
   final result = await testBuilder(
-    SpringBuilder(),
+    SpringBuilder(generations: starterGenerations),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
     readerWriter: readerWriter,

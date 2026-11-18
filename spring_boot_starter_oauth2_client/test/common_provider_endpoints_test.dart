@@ -4,7 +4,7 @@
 // already has the generator as a dev dependency) keeps the copy equal to
 // CommonOAuth2Provider.
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
-import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_dev_config_builder.dart';
 import 'package:test/test.dart';
 
 void main() {

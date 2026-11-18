@@ -3,7 +3,8 @@
 // (`@Transactional`, `@Cacheable`, `@Validated`), gets proxy classes for the
 // beans carrying those annotations and for nothing else.
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:test/test.dart';
 
 const _main = '''
@@ -113,7 +114,7 @@ Future<String> _build(String beans) async {
   );
   await readerWriter.testing.loadIsolateSources();
   final result = await testBuilder(
-    SpringBuilder(),
+    SpringBuilder(generations: starterGenerations),
     {'pkg|bin/main.dart': _main, 'pkg|lib/src/beans.dart': beans},
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -164,7 +165,7 @@ Future<String> _app() async {
   );
   await readerWriter.testing.loadIsolateSources();
   final result = await testBuilder(
-    SpringBuilder(),
+    SpringBuilder(generations: starterGenerations),
     {'pkg|bin/main.dart': _main, 'pkg|lib/src/beans.dart': _beans},
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -520,7 +521,7 @@ class Orders {
       );
       await readerWriter.testing.loadIsolateSources();
       final result = await testBuilder(
-        SpringBuilder(),
+        SpringBuilder(generations: starterGenerations),
         {
           if (application)
             'pkg|pubspec.yaml':
@@ -558,7 +559,7 @@ class Orders {
       );
       await readerWriter.testing.loadIsolateSources();
       final result = await testBuilder(
-        SpringBuilder(),
+        SpringBuilder(generations: starterGenerations),
         {
           'pkg|bin/main.dart': _main,
           'pkg|lib/src/beans.dart': beans,

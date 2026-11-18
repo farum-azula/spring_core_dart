@@ -1,6 +1,6 @@
-import 'package:spring_core_dart_generator/src/dart_names.dart';
-import 'package:spring_core_dart_generator/src/did_you_mean.dart';
-import 'package:spring_core_dart_generator/src/theme_references.dart';
+import 'package:spring_core_dart_generator/src/core/dart_names.dart';
+import 'package:spring_core_dart_generator/src/core/did_you_mean.dart';
+import 'package:spring_core_dart_generator/src/flutter/theme_references.dart';
 
 /// The keys of a `loaders.<name>` that every kind has (canonical): they are
 /// read by the starter, not part of a kind's props.

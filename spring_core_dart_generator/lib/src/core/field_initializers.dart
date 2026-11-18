@@ -39,9 +39,11 @@ extension _FieldInitializers on BeanScanner {
       '${field.library.uri}#${field.enclosingElement.name}.${field.name}';
 
   /// Resolves and stores the initializers of the fields of the
-  /// `@Introspected` and `@Table` classes of [library], of the DTOs of its
-  /// data repositories' `@Query` methods, and of the classes introspected
-  /// along with them, so that [scanLibrary] can read their initial values.
+  /// `@Introspected` classes of [library], of the classes the starters'
+  /// parts read initial values of (`StarterGeneration.initialValueClasses`:
+  /// the data starter's entities and the DTOs of its `@Query` methods), and
+  /// of the classes introspected along with them, so that [scanLibrary] can
+  /// read their initial values.
   ///
   /// The classes reached are the ones [BeanScanner._scanIntrospected] may
   /// describe: those in `@Introspected(classes: [...])`, the supertypes and
@@ -55,16 +57,11 @@ extension _FieldInitializers on BeanScanner {
   ) async {
     final pending = <ClassElement>[];
     for (final element in library.classes) {
-      if (_introspected.hasAnnotationOf(element) ||
-          _table.hasAnnotationOf(element)) {
+      if (_introspected.hasAnnotationOf(element)) {
         pending.add(element);
       }
-      // The DTOs of a data repository's `@Query` methods.
-      if (element.isAbstract &&
-          _dataRepository.isAssignableFrom(element) &&
-          !_dataRepository.isExactly(element) &&
-          element.typeParameters.isEmpty) {
-        pending.addAll(projectionsOf(element));
+      for (final generation in generations) {
+        pending.addAll(generation.initialValueClasses(element, _starterScan));
       }
       for (final method in element.methods) {
         final returned = method.returnType.element;

@@ -6,7 +6,24 @@ import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/bean_model.dart';
+
+/// What the part of `spring_boot_starter_flutter_navigation` found in a
+/// module: its screens and shells. It lives in the module
+/// ([ModuleModel.starterModel]), so the core knows none of these types.
+final class NavigationModuleModel {
+  /// The navigation model of [module], made the first time it is asked
+  /// for.
+  static NavigationModuleModel of(ModuleModel module) =>
+      module.starterModel(NavigationModuleModel.new);
+
+  /// The `@ScreenRoute` widgets, in scan order: the module's
+  /// `ScreenRoutes` bean and their constants.
+  final screens = <ScreenRouteModel>[];
+
+  /// The `@RouteShell` widgets.
+  final shells = <RouteShellModel>[];
+}
 
 /// Recognises `@ScreenRoute` of `spring_boot_starter_flutter_navigation`.
 const screenRouteChecker = TypeChecker.fromUrl(
@@ -218,16 +235,16 @@ String routeName(String className) => className
     )
     .toLowerCase();
 
-/// Adds a [ScreenRouteModel] to `module.screens` for an [element] with
-/// `@ScreenRoute`, and a [RouteShellModel] to `module.shells` for one with
-/// `@RouteShell`.
+/// Adds a [ScreenRouteModel] to `navigation.screens` for an [element]
+/// with `@ScreenRoute`, and a [RouteShellModel] to `navigation.shells` for
+/// one with `@RouteShell`.
 ///
 /// Throws `InvalidGenerationSource` when the class is no widget, when a
 /// screen has no constructor without required parameters (the router
 /// makes it), when a shell's constructor does not take its `ShellState`
 /// alone, when a path is malformed, or when a parameter is declared twice
 /// or named like a path variable.
-void scanNavigation(ClassElement element, ModuleModel module) {
+void scanNavigation(ClassElement element, NavigationModuleModel navigation) {
   final screen = screenRouteChecker.firstAnnotationOf(element);
   final shell = routeShellChecker.firstAnnotationOf(element);
   if (screen == null && shell == null) {
@@ -249,10 +266,10 @@ void scanNavigation(ClassElement element, ModuleModel module) {
     );
   }
   if (shell != null) {
-    module.shells.add(_shell(element, ConstantReader(shell)));
+    navigation.shells.add(_shell(element, ConstantReader(shell)));
     return;
   }
-  module.screens.add(_screen(element, ConstantReader(screen)));
+  navigation.screens.add(_screen(element, ConstantReader(screen)));
 }
 
 RouteShellModel _shell(ClassElement element, ConstantReader annotation) {

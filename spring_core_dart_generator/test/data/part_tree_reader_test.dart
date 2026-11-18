@@ -1,8 +1,8 @@
 // The grammar of derived query names without the analyzer: what the language
 // server uses to read `findByTitleAndYearGreaterThan`. The build runs the
 // same code through PartTreeParser (data_query_test.dart).
-import 'package:spring_core_dart_generator/src/part_tree.dart';
-import 'package:spring_core_dart_generator/src/part_tree_reader.dart';
+import 'package:spring_core_dart_generator/src/data/part_tree.dart';
+import 'package:spring_core_dart_generator/src/data/part_tree_reader.dart';
 import 'package:test/test.dart';
 
 final class _Property implements PartTreeProperty {

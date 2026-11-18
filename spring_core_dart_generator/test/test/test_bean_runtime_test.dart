@@ -12,8 +12,9 @@ import 'dart:isolate';
 import 'package:build/build.dart' show AssetId;
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/test_builder.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/test/test_builder.dart';
 import 'package:test/test.dart';
 
 const _app = r'''
@@ -445,7 +446,7 @@ Future<String> _runGenerated(
   );
   await readerWriter.testing.loadIsolateSources();
   final result = await testBuilders(
-    [SpringBuilder(), SpringTestBuilder()],
+    [SpringBuilder(generations: starterGenerations), SpringTestBuilder()],
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
     },

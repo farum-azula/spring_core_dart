@@ -1,10 +1,10 @@
 // Typed keys of the configuration: context.theme and context.messages
 // (lib/spring_gen/theme.spring.keys.dart, lib/spring_gen/messages.spring.keys.dart).
 
-import 'package:spring_core_dart_generator/src/dart_names.dart';
-import 'package:spring_core_dart_generator/src/spring_key_files.dart';
-import 'package:spring_core_dart_generator/src/typed_message_keys.dart';
-import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
+import 'package:spring_core_dart_generator/src/core/dart_names.dart';
+import 'package:spring_core_dart_generator/src/flutter/spring_key_files.dart';
+import 'package:spring_core_dart_generator/src/flutter/typed_message_keys.dart';
+import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart';
 import 'package:test/test.dart';
 
 ({String? code, KeysDiagnostics diagnostics}) _generate(

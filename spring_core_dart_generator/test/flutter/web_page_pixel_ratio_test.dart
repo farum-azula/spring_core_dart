@@ -1,7 +1,7 @@
 // spring.flutter.web.page.max-pixel-ratio writes the block that caps the
 // pixel ratio Flutter draws at, before the engine starts; none removes it;
 // writing it twice gives one block.
-import 'package:spring_core_dart_generator/src/web_page_head.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_page_head.dart';
 import 'package:test/test.dart';
 
 const _page =

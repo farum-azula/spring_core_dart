@@ -73,7 +73,7 @@ import 'package:spring_core_dart/expression.dart' as spel;
 // The syntax tree is the runtime's internal; the build reads it.
 // ignore: implementation_imports
 import 'package:spring_core_dart/src/expression/ast.dart' as ast;
-import 'package:spring_core_dart_generator/src/did_you_mean.dart';
+import 'package:spring_core_dart_generator/src/core/did_you_mean.dart';
 
 /// A value an expression reads: [type] is what the build knows of it and
 /// [read] the code that reads it in the generated code.

@@ -4,11 +4,11 @@
 // ignore_for_file: lines_longer_than_80_chars
 import 'dart:io';
 
-import 'package:spring_core_dart_generator/src/material_color_values.dart';
-import 'package:spring_core_dart_generator/src/spring_key_files.dart';
-import 'package:spring_core_dart_generator/src/theme_references.dart';
-import 'package:spring_core_dart_generator/src/theme_value_syntax.dart';
-import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color_values.dart';
+import 'package:spring_core_dart_generator/src/flutter/spring_key_files.dart';
+import 'package:spring_core_dart_generator/src/flutter/theme_references.dart';
+import 'package:spring_core_dart_generator/src/flutter/theme_value_syntax.dart';
+import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 

@@ -12,9 +12,9 @@ part of 'bean_scanner.dart';
 // ```
 //
 // So do the methods of the starters that write a value out as JSON through
-// the mapper (the WebSocket session's `sendJson(value)` and the registry's
-// `broadcast(pattern, value)`), matched by URL, in the libraries that import
-// the starter.
+// the mapper (the WebSocket session's `sendJson(value)`), which their parts
+// list (`StarterGeneration.jsonWriters`), in the libraries that import the
+// starter.
 //
 // Only the classes of the package the call is in are described (a class of
 // another package is listed in `@Introspected(classes: [...])`), and only
@@ -24,41 +24,63 @@ part of 'bean_scanner.dart';
 
 final TypeChecker _objectMapper = _spring('ObjectMapper');
 
-// Methods of the starters that write their argument out as JSON: the URL of
-// the library that declares the method, its name, and the index of the
-// argument.
-const _jsonWriters = <(String, String), int>{
-  (
-    'package:spring_boot_starter_websocket/src/server/web_socket_handler.dart',
-    'sendJson',
-  ): 0,
-  (
-    'package:spring_boot_starter_websocket/src/server/web_socket_handler.dart',
-    'broadcast',
-  ): 1,
-};
-
 // The calls of the mapper, as words: a library without one is not resolved.
 final RegExp _mapperCall = RegExp(
   r'\b(readValue|treeToValue|convertValue|readList|readMap|writeValueAsString'
   r'|valueToTree)\b',
 );
 
-// The calls of the WebSocket starter that write a value out. Common names
-// (`StreamController.broadcast`), so they only count in a library that
-// imports the starter.
-final RegExp _webSocketCall = RegExp(r'\b(sendJson|broadcast)\b');
+// The words of the starters' writers, by their names joined.
+final Map<String, RegExp> _writerCalls = {};
 
-const _webSocketStarter = 'package:spring_boot_starter_websocket/';
+/// A method of a starter that writes one of its arguments out as JSON
+/// through the `ObjectMapper`, as `ObjectMapper.writeValueAsString` does:
+/// the build describes the classes of the package the argument's static
+/// type names, for writing out. A clock starter's `feed.publish(tick)`:
+///
+/// ```dart
+/// const JsonWriter('package:clock_starter/src/feed.dart', 'publish', 0)
+/// ```
+final class JsonWriter {
+  /// The method [method] of the library [library] writing its argument at
+  /// [argument].
+  const JsonWriter(this.library, this.method, this.argument);
+
+  /// The URL of the library that declares the method. A call counts only
+  /// in a library that imports its package (directly or through a library
+  /// that exports it), since the names are common
+  /// (`StreamController.broadcast`).
+  final String library;
+
+  /// The method's name.
+  final String method;
+
+  /// The index of the positional argument it writes out.
+  final int argument;
+
+  /// The package of [library] as a URL prefix (`package:name/`).
+  String get packagePrefix =>
+      'package:${Uri.parse(library).pathSegments.first}/';
+}
 
 /// Whether [source], the text of a library, may call the `ObjectMapper` or
-/// a method of a starter that writes through it: only then is the library
-/// resolved. [webSocket] says the library imports the WebSocket starter,
-/// without which `sendJson` and `broadcast` are other methods
-/// (`StreamController.broadcast`).
-bool mayCallMapper(String source, {required bool webSocket}) =>
-    _mapperCall.hasMatch(source) ||
-    (webSocket && _webSocketCall.hasMatch(source));
+/// one of the starters' [writers] (their method names, those of the
+/// starters the library imports): only then is the library resolved.
+/// Without the starter imported, `sendJson` and `broadcast` are other
+/// methods (`StreamController.broadcast`).
+bool mayCallMapper(String source, {Iterable<String> writers = const []}) {
+  if (_mapperCall.hasMatch(source)) {
+    return true;
+  }
+  final names = writers.toSet();
+  if (names.isEmpty) {
+    return false;
+  }
+  final key = names.join('|');
+  return (_writerCalls[key] ??= RegExp(
+    '\\b(${names.map(RegExp.escape).join('|')})\\b',
+  )).hasMatch(source);
+}
 
 /// A class a call of the `ObjectMapper` writes out or reads in.
 typedef MapperUse = ({DartType type, IntrospectionNeed need});
@@ -69,36 +91,51 @@ extension _MapperCalls on BeanScanner {
   /// package for what the calls do with them.
   ///
   /// Call it before [scanLibrary], like [BeanScanner.resolveBeanMethods].
-  /// A library that does not mention a method of the mapper (nor, when it
-  /// imports the WebSocket starter, one of its writers) is not resolved.
+  /// A library that does not mention a method of the mapper (nor one of
+  /// the writers of the starters it imports) is not resolved.
   Future<void> resolveMapperCallDeclarations(
     LibraryElement library,
     Future<AstNode?> Function(Fragment fragment) astNodeFor,
   ) async {
     final uses = <MapperUse>[];
-    final webSocket = _importsWebSocketStarter(library);
+    final writers = _importedWriters(library);
     for (
       LibraryFragment? fragment = library.firstFragment;
       fragment != null;
       fragment = fragment.nextFragment
     ) {
-      if (!mayCallMapper(fragment.source.contents.data, webSocket: webSocket)) {
+      if (!mayCallMapper(fragment.source.contents.data, writers: writers)) {
         continue;
       }
-      await astNodeFor(fragment)
-          .then((node) => node?.accept(_MapperCallVisitor(uses)));
+      await astNodeFor(fragment).then(
+        (node) => node?.accept(_MapperCallVisitor(uses, _jsonWriters)),
+      );
     }
     if (uses.isNotEmpty) {
       _mapperUses[library] = uses;
     }
   }
 
-  // Whether [library] imports the WebSocket starter, directly or through a
-  // library that exports it.
-  bool _importsWebSocketStarter(LibraryElement library) {
+  // The names of the starters' writers whose package [library] imports.
+  List<String> _importedWriters(LibraryElement library) {
+    final imported = <String, bool>{};
+    return [
+      for (final generation in generations)
+        for (final writer in generation.jsonWriters)
+          if (imported[writer.packagePrefix] ??= _imports(
+            library,
+            writer.packagePrefix,
+          ))
+            writer.method,
+    ];
+  }
+
+  // Whether [library] imports a library of the package of [prefix]
+  // (`package:name/`), directly or through a library that exports it.
+  bool _imports(LibraryElement library, String prefix) {
     final seen = <LibraryElement>{};
     bool reaches(LibraryElement other) =>
-        other.uri.toString().startsWith(_webSocketStarter) ||
+        other.uri.toString().startsWith(prefix) ||
         (seen.add(other) && other.exportedLibraries.any(reaches));
     return [
       for (final fragment in library.fragments) ...fragment.importedLibraries,
@@ -118,9 +155,13 @@ extension _MapperCalls on BeanScanner {
 // The types a call of the mapper names: what it reads in (the type
 // argument) and what it writes out (the static type of the value).
 final class _MapperCallVisitor extends RecursiveAstVisitor<void> {
-  _MapperCallVisitor(this.uses);
+  _MapperCallVisitor(this.uses, this.writers);
 
   final List<MapperUse> uses;
+
+  // The index of the argument each starter's writer writes out, by the URL
+  // of its library and its name.
+  final Map<(String, String), int> writers;
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
@@ -137,7 +178,7 @@ final class _MapperCallVisitor extends RecursiveAstVisitor<void> {
     // A method of a starter that writes its argument out.
     if (node.methodName.element case final ExecutableElement method) {
       final index =
-          _jsonWriters[(
+          writers[(
             '${method.library.uri}',
             node.methodName.name,
           )];

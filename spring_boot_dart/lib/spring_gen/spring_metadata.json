@@ -9,7 +9,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 84,
+      "line": 99,
       "class": "DebugProperties"
     },
     {
@@ -19,7 +19,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 46,
+      "line": 61,
       "class": "ApplicationProperties"
     },
     {
@@ -29,7 +29,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 50,
+      "line": 65,
       "class": "ApplicationProperties"
     },
     {
@@ -39,7 +39,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 39,
+      "line": 54,
       "class": "AutoconfigureProperties"
     },
     {
@@ -49,7 +49,7 @@
       "default": "resources:banner.txt",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 59,
+      "line": 74,
       "class": "BannerProperties"
     },
     {
@@ -59,7 +59,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 67,
+      "line": 82,
       "class": "DevtoolsRestartProperties"
     },
     {
@@ -69,7 +69,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 336,
+      "line": 351,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -79,7 +79,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 340,
+      "line": 355,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -89,7 +89,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 344,
+      "line": 359,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -99,7 +99,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 348,
+      "line": 363,
       "class": "JsonDatetimeProperties"
     },
     {
@@ -109,7 +109,7 @@
       "default": "always",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 232,
+      "line": 247,
       "class": "JsonProperties"
     },
     {
@@ -119,7 +119,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 287,
+      "line": 302,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -129,7 +129,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 290,
+      "line": 305,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -139,7 +139,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 293,
+      "line": 308,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -149,7 +149,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 296,
+      "line": 311,
       "class": "JsonDeserializationProperties"
     },
     {
@@ -159,7 +159,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 319,
+      "line": 334,
       "class": "JsonMapperProperties"
     },
     {
@@ -169,7 +169,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 322,
+      "line": 337,
       "class": "JsonMapperProperties"
     },
     {
@@ -179,7 +179,7 @@
       "default": "LOWER_CAMEL_CASE",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 229,
+      "line": 244,
       "class": "JsonProperties"
     },
     {
@@ -189,7 +189,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 281,
+      "line": 296,
       "class": "JsonSchemasRegistryProperties"
     },
     {
@@ -199,7 +199,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 265,
+      "line": 280,
       "class": "JsonSchemaProperties"
     },
     {
@@ -209,7 +209,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 274,
+      "line": 289,
       "class": "JsonSchemaProperties"
     },
     {
@@ -219,7 +219,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 271,
+      "line": 286,
       "class": "JsonSchemaProperties"
     },
     {
@@ -229,7 +229,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 268,
+      "line": 283,
       "class": "JsonSchemaProperties"
     },
     {
@@ -239,7 +239,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 302,
+      "line": 317,
       "class": "JsonSerializationProperties"
     },
     {
@@ -249,7 +249,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 305,
+      "line": 320,
       "class": "JsonSerializationProperties"
     },
     {
@@ -259,7 +259,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 310,
+      "line": 325,
       "class": "JsonSerializationProperties"
     },
     {
@@ -269,7 +269,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 313,
+      "line": 328,
       "class": "JsonSerializationProperties"
     },
     {
@@ -279,7 +279,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 236,
+      "line": 251,
       "class": "JsonProperties"
     },
     {
@@ -289,7 +289,7 @@
       "default": "30s",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 75,
+      "line": 90,
       "class": "LifecycleProperties"
     },
     {
@@ -343,13 +343,23 @@
       "class": "MainProperties"
     },
     {
+      "name": "spring.main.startup-checks.enabled",
+      "type": "bool?",
+      "description": "Whether the starters' startup checks are in the build (the `@Transactional` and cache annotations checked when the beans are created, the explanations of a database that fails the start, the edge starter's warning list): `true` in every build, `false` in none. Default: in debug and profile builds, so a release build ships none of their code and its mistakes fail at the first call. Read by the generator.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
+      "line": 47,
+      "class": "MainStartupChecksProperties"
+    },
+    {
       "name": "spring.messages.always-use-message-format",
       "type": "bool",
       "description": "Formats messages without arguments too, so `''` becomes `'`.",
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 189,
+      "line": 204,
       "class": "MessagesProperties"
     },
     {
@@ -361,7 +371,7 @@
       ],
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 193,
+      "line": 208,
       "class": "MessagesProperties"
     },
     {
@@ -371,7 +381,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 198,
+      "line": 213,
       "class": "MessagesProperties"
     },
     {
@@ -381,7 +391,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 201,
+      "line": 216,
       "class": "MessagesProperties"
     },
     {
@@ -391,7 +401,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 204,
+      "line": 219,
       "class": "MessagesProperties"
     },
     {
@@ -401,7 +411,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 207,
+      "line": 222,
       "class": "MessagesProperties"
     },
     {
@@ -411,7 +421,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 210,
+      "line": 225,
       "class": "MessagesProperties"
     },
     {
@@ -421,7 +431,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 213,
+      "line": 228,
       "class": "MessagesProperties"
     },
     {
@@ -431,7 +441,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 152,
+      "line": 167,
       "class": "ObservationsAnnotationsProperties"
     },
     {
@@ -441,7 +451,7 @@
       "default": [],
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 136,
+      "line": 151,
       "class": "ResourcesEmbedProperties"
     },
     {
@@ -451,7 +461,7 @@
       "default": "1s",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 115,
+      "line": 130,
       "class": "ResourcesPrefetchProperties"
     },
     {
@@ -461,7 +471,7 @@
       "default": [],
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 108,
+      "line": 123,
       "class": "ResourcesPrefetchProperties"
     },
     {
@@ -471,7 +481,7 @@
       "default": "app",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 111,
+      "line": 126,
       "class": "ResourcesPrefetchProperties"
     },
     {
@@ -481,7 +491,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 177,
+      "line": 192,
       "class": "TaskExecutionIsolatesProperties"
     },
     {
@@ -491,7 +501,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 163,
+      "line": 178,
       "class": "TaskExecutionIsolatesProperties"
     },
     {
@@ -501,7 +511,7 @@
       "default": "60s",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 170,
+      "line": 185,
       "class": "TaskExecutionIsolatesProperties"
     },
     {
@@ -511,7 +521,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 167,
+      "line": 182,
       "class": "TaskExecutionIsolatesProperties"
     },
     {
@@ -521,7 +531,7 @@
       "default": "task-",
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 182,
+      "line": 197,
       "class": "TaskExecutionIsolatesProperties"
     },
     {
@@ -531,7 +541,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 174,
+      "line": 189,
       "class": "TaskExecutionIsolatesProperties"
     },
     {
@@ -731,7 +741,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 88,
+      "line": 103,
       "class": "DebugProperties"
     }
   ],
@@ -946,7 +956,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 44,
+      "line": 59,
       "injects": [],
       "members": [
         {
@@ -973,7 +983,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 37,
+      "line": 52,
       "injects": [],
       "members": [
         {
@@ -995,7 +1005,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 55,
+      "line": 70,
       "injects": [],
       "members": [
         {
@@ -1017,7 +1027,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 80,
+      "line": 95,
       "injects": [],
       "members": [
         {
@@ -1164,7 +1174,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 64,
+      "line": 79,
       "injects": [],
       "members": [
         {
@@ -1716,7 +1726,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 218,
+      "line": 233,
       "injects": [],
       "members": [
         {
@@ -1890,7 +1900,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 72,
+      "line": 87,
       "injects": [],
       "members": [
         {
@@ -1939,6 +1949,11 @@
           "name": "registerShutdownHook",
           "kind": "field",
           "type": "bool"
+        },
+        {
+          "name": "startupChecks",
+          "kind": "field",
+          "type": "MainStartupChecksProperties"
         }
       ]
     },
@@ -2150,7 +2165,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 187,
+      "line": 202,
       "injects": [],
       "members": [
         {
@@ -2330,7 +2345,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 141,
+      "line": 156,
       "injects": [],
       "members": [
         {
@@ -2572,7 +2587,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 93,
+      "line": 108,
       "injects": [],
       "members": [
         {
@@ -2599,7 +2614,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_dart/src/properties/boot_properties.dart",
-      "line": 160,
+      "line": 175,
       "injects": [],
       "members": [
         {

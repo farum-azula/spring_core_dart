@@ -1,4 +1,4 @@
-part of 'bean_scanner.dart';
+part of 'data_scanner.dart';
 
 // What a data repository asks of its store beyond the CRUD and the derived
 // finds, and the build's check that the store can do it:
@@ -30,7 +30,7 @@ const _rowChange = TypeChecker.fromUrl(
   'package:spring_boot_starter_data/src/store/row_change.dart#RowChange',
 );
 
-extension _RepositoryStoreScanning on BeanScanner {
+extension _RepositoryStoreScanning on DataScanner {
   /// The `@Procedure` methods of [repository] and of its supertypes, each with
   /// its annotation; a method overridden further down is read once.
   Iterable<(MethodElement, DartObject)> _procedureMethods(
@@ -318,7 +318,7 @@ extension _RepositoryStoreScanning on BeanScanner {
       return;
     }
     for (final need in needs) {
-      final problem = dataStores.problem(name, need, store);
+      final problem = data.stores.problem(name, need, store);
       if (problem != null && !problems.contains(problem)) {
         problems.add(problem);
       }
@@ -328,11 +328,11 @@ extension _RepositoryStoreScanning on BeanScanner {
   /// The described store of the repository [element], or null when the
   /// build cannot tell or does not know it.
   DescribedStore? _storeOf(ClassElement element) {
-    if (dataStores.stores.isEmpty) {
+    if (data.stores.stores.isEmpty) {
       return null;
     }
     final useStore = _useStore.firstAnnotationOf(element);
-    return dataStores.storeOf(
+    return data.stores.storeOf(
       useStore: useStore == null
           ? null
           : ConstantReader(useStore).peek('value')?.stringValue,
@@ -427,7 +427,7 @@ extension _RepositoryStoreScanning on BeanScanner {
   /// and the annotation names no transaction manager. A repository is
   /// checked with its own store, not here.
   void _checkTransactionalBeans() {
-    if (dataStores.stores.isEmpty) {
+    if (data.stores.stores.isEmpty) {
       return;
     }
     for (final bean in module.beans) {
@@ -435,8 +435,8 @@ extension _RepositoryStoreScanning on BeanScanner {
       if (bean.creation is RepositoryCreation) {
         continue;
       }
-      if (dataStores.transactionalProblem(element) case final problem?) {
-        collectErrors(
+      if (data.stores.transactionalProblem(element) case final problem?) {
+        scan.collectErrors(
           () => throw InvalidGenerationSource(
             problem,
             element: element,

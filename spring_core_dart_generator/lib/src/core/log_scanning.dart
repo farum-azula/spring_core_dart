@@ -2,7 +2,7 @@
 // the class, like Lombok's `@Slf4j`.
 import 'package:analyzer/dart/element/element.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/bean_model.dart';
 
 /// Recognises the `@Log` annotation of `spring_core_dart` (matched by name
 /// and package).

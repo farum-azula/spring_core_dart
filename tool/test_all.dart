@@ -11,6 +11,10 @@
 //   dart run tool/test_all.dart --root     # only from the workspace root
 //   dart run tool/test_all.dart --only a,b # only these packages (CI passes
 //                                          # those tool/affected.dart lists)
+//   dart run tool/test_all.dart --test-paths a/test/x,b/test/y
+//                                          # only these test folders of their
+//                                          # packages (CI passes the parts of
+//                                          # the generator a change touched)
 //   dart run tool/test_all.dart --exclude-tags integration  # unit tests
 //   dart run tool/test_all.dart --tags integration          # only those
 //   dart run tool/test_all.dart --job 2/4  # the 2nd of 4 equal parts (CI
@@ -56,6 +60,9 @@ usage: dart run tool/test_all.dart [options]
   --packages            only from the package directories
   --root                only from the workspace root
   --only a,b            only these packages (directories, comma-separated)
+  --test-paths a/t,b/u  only these test folders or files of their packages
+                        (comma-separated, from the root); the others run
+                        their whole test/
   --tags <selector>     only tests with these tags (e.g. integration)
   --exclude-tags <sel>  no tests with these tags (e.g. integration)
   --job <i>/<n>         only part i of n parts of about the same weight
@@ -79,12 +86,18 @@ Future<void> main(List<String> args) async {
   }
   // A package with a pipeline of its own is tested there, not here.
   packages.removeWhere(ownPipeline.contains);
-  // With `--tags <tag>`: only the files that mention the tag.
+  // The package's test folders (`--test-paths`, else test/); with
+  // `--tags <tag>` only their files that mention the tag.
+  final testPaths = _testPathsByPackage(options.testPaths, packages);
   final files = <String, List<String>>{
     for (final package in packages)
       package: options.tagFiles == null
-          ? const ['test']
-          : _filesMentioning(package, options.tagFiles!),
+          ? testPaths[package] ?? const ['test']
+          : _filesMentioning(
+              package,
+              options.tagFiles!,
+              testPaths[package] ?? const ['test'],
+            ),
   };
   packages.retainWhere((package) => files[package]!.isNotEmpty);
   if (packages.isEmpty) {
@@ -264,15 +277,38 @@ List<String> _testFiles(String package, List<String> paths) {
   return files;
 }
 
-/// The test files of [package] (relative to it) that mention [tag] in
-/// quotes (`@Tags(['integration'])`, `tags: 'integration'`).
-List<String> _filesMentioning(String package, String tag) {
+/// The test files under [paths] of [package] (relative to it) that mention
+/// [tag] in quotes (`@Tags(['integration'])`, `tags: 'integration'`).
+List<String> _filesMentioning(String package, String tag, List<String> paths) {
   final mention = RegExp('[\'"]${RegExp.escape(tag)}[\'"]');
   return [
-    for (final path in _testFiles(package, const ['test']))
+    for (final path in _testFiles(package, paths))
       if (mention.hasMatch(File(path).readAsStringSync()))
         path.substring(package.length + 1).replaceAll(r'\', '/'),
   ]..sort();
+}
+
+/// [paths] (`<package>/<path>`, from the root) by the innermost of
+/// [packages] holding them, relative to it; paths of other packages are
+/// left out (not affected, or not tested here).
+Map<String, List<String>> _testPathsByPackage(
+  List<String> paths,
+  List<String> packages,
+) {
+  final byPackage = <String, List<String>>{};
+  for (final path in paths) {
+    String? owner;
+    for (final package in packages) {
+      if (path.startsWith('$package/') &&
+          (owner == null || package.length > owner.length)) {
+        owner = package;
+      }
+    }
+    if (owner != null) {
+      (byPackage[owner] ??= []).add(path.substring(owner.length + 1));
+    }
+  }
+  return byPackage;
 }
 
 /// The command line of test_all.
@@ -281,6 +317,7 @@ final class _Options {
     required this.packageRun,
     required this.rootRun,
     required this.only,
+    required this.testPaths,
     required this.tags,
     required this.excludeTags,
     required this.job,
@@ -302,7 +339,13 @@ final class _Options {
     }
 
     const flags = {'--packages', '--root', '--list'};
-    const valued = {'--only', '--tags', '--exclude-tags', '--job'};
+    const valued = {
+      '--only',
+      '--test-paths',
+      '--tags',
+      '--exclude-tags',
+      '--job',
+    };
     for (var i = 0; i < args.length; i++) {
       final arg = args[i];
       if (flags.contains(arg)) continue;
@@ -315,6 +358,7 @@ final class _Options {
     }
 
     final only = value('--only');
+    final testPaths = value('--test-paths');
     final job = value('--job');
     var (index, total) = (0, 1);
     if (job != null) {
@@ -335,6 +379,10 @@ final class _Options {
               for (final name in only.split(','))
                 if (name.trim().isNotEmpty) name.trim(),
             },
+      testPaths: [
+        for (final path in (testPaths ?? '').split(','))
+          if (path.trim().isNotEmpty) path.trim(),
+      ],
       tags: value('--tags'),
       excludeTags: value('--exclude-tags'),
       job: index,
@@ -345,6 +393,10 @@ final class _Options {
   final bool packageRun;
   final bool rootRun;
   final Set<String>? only;
+
+  /// Test folders or files (`<package>/<path>`) that replace the whole
+  /// test/ of their packages (`--test-paths`).
+  final List<String> testPaths;
   final String? tags;
   final String? excludeTags;
 

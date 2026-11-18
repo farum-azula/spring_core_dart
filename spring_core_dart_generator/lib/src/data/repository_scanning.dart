@@ -1,4 +1,4 @@
-part of 'bean_scanner.dart';
+part of 'data_scanner.dart';
 
 // The data repositories of spring_boot_starter_data: an interface extending
 // `DataRepository` becomes a class extending the starter's `SimpleRepository`
@@ -43,30 +43,37 @@ const _simpleRepositoryInterfaces = [
   'ListPagingAndSortingRepository',
 ];
 
-extension _RepositoryScanning on BeanScanner {
+extension _RepositoryScanning on DataScanner {
   /// Adds the bean of [element], an interface extending `DataRepository`,
   /// with its generated class. Fails the build, listing every problem, when
   /// a method is neither a CRUD method, a `@Query` nor a valid derived
   /// query.
   void scanRepository(ClassElement element) {
-    final name = _requireName(element);
+    final name = scan.requireName(element);
     final source = '${element.library.uri}#$name';
     if (!module.markScanned(source)) {
       return;
     }
     if (element.isPrivate) {
-      BeanScanner._fail('Interface $name must be public.', element);
+      DataScanner._fail('Interface $name must be public.', element);
     }
     final type = element.thisType;
     final problems = <String>[];
-    final data = type.allSupertypes.firstWhere(_dataRepository.isExactlyType);
+    final dataRepository = type.allSupertypes.firstWhere(
+      _dataRepository.isExactlyType,
+    );
     final entityType = _repositoryType(
-      data.typeArguments[0],
+      dataRepository.typeArguments[0],
       'entity',
       name,
       problems,
     );
-    final idType = _repositoryType(data.typeArguments[1], 'id', name, problems);
+    final idType = _repositoryType(
+      dataRepository.typeArguments[1],
+      'id',
+      name,
+      problems,
+    );
     final entityClass = entityType?.element;
     if (entityType != null && entityClass is! ClassElement) {
       problems.add(
@@ -80,13 +87,13 @@ extension _RepositoryScanning on BeanScanner {
         problems.isNotEmpty) {
       _failRepository(name, problems, element);
     }
-    final simple = _simpleRepository(data, entityType, idType);
+    final simple = _simpleRepository(dataRepository, entityType, idType);
     // Only a repository with derived queries reads the entity's properties.
     late final queryEntity = _queryEntity(entityClass);
     final hierarchy = [type, ...type.allSupertypes];
     final declared = _declaredMethodNames(element, type, problems);
     final methods = <RepositoryMethodModel>[];
-    final queries = <_QueryText>[];
+    final queries = <QueryText>[];
     // What the interface and its methods need of the store.
     final needs = <StoreNeed>[
       if (DataStoreBuild.isTransactional(element))
@@ -120,7 +127,7 @@ extension _RepositoryScanning on BeanScanner {
       }
       final ProxyMember? member;
       try {
-        member = _proxyMethod(
+        member = scan.proxyMember(
           method,
           hierarchy,
           method.enclosingElement?.name ?? name,
@@ -160,7 +167,9 @@ extension _RepositoryScanning on BeanScanner {
     if (queries.isNotEmpty) {
       // The texts of the @Query methods are checked with the whole
       // application: their problems join these in one error.
-      _repositoryChecks.add(_RepositoryCheck(element, name, problems, queries));
+      data.repositoryChecks.add(
+        RepositoryCheck(element, name, problems, queries),
+      );
       if (problems.isNotEmpty) {
         return;
       }
@@ -172,7 +181,7 @@ extension _RepositoryScanning on BeanScanner {
       type: type,
       entityType: entityType,
       idType: idType,
-      annotations: _userAnnotations(element),
+      annotations: scan.userAnnotations(element),
       methods: methods,
       // The interface's own `@Transactional` is among its annotations,
       // which the starter reads.
@@ -181,30 +190,9 @@ extension _RepositoryScanning on BeanScanner {
           if (need.method != null) need,
       ],
     );
-    final explicitName = ConstantReader(
-      _component.firstAnnotationOf(element),
-    ).peek('name')?.stringValue;
-    module.beans.add(
-      BeanModel(
-        element: element,
-        source: source,
-        name: explicitName ?? BeanScanner._decapitalize(name),
-        type: type,
-        exposedTypes: _exposedTypes(type),
-        creation: RepositoryCreation(model),
-        primary: _primary.hasAnnotationOf(element),
-        qualifiers: _qualifiersOf(element),
-        annotations: _beanAnnotations(element),
-        conditions: [
-          if (_conditions(element) case final own when own.isNotEmpty)
-            GroupConditionModel(source, own),
-        ],
-        // Advice (e.g. @Transactional on repository methods) wraps it.
-        proxy: proxyMode == ProxyMode.none
-            ? null
-            : _proxyModel(type, '_\$${name}Proxy', implementSelf: true),
-      ),
-    );
+    // A bean as any other: advice (e.g. @Transactional on repository
+    // methods) wraps it.
+    scan.addGeneratedBean(element, RepositoryCreation(model));
   }
 
   // `T` or `ID` of `DataRepository<T, ID>` as a type the generated class
@@ -224,7 +212,7 @@ extension _RepositoryScanning on BeanScanner {
       );
       return null;
     }
-    if (BeanScanner._privateType(type) case final private?) {
+    if (scan.privateType(type) case final private?) {
       problems.add(
         'the $what type ${private.element.name} is private, which the '
         'generated class cannot name: make it public',
@@ -235,7 +223,7 @@ extension _RepositoryScanning on BeanScanner {
   }
 
   Never _failRepository(String name, List<String> problems, Element element) =>
-      BeanScanner._fail(
+      DataScanner._fail(
         'Invalid repository $name:\n'
         '${problems.map((p) => '  - $p').join('\n')}',
         element,
@@ -312,7 +300,7 @@ extension _RepositoryScanning on BeanScanner {
     required QueryEntity Function() entity,
     required InterfaceElement entityElement,
     required List<String> problems,
-    required List<_QueryText> queries,
+    required List<QueryText> queries,
   }) {
     // The annotations are read from the declarations themselves, not from
     // `member.annotations`, which leaves out one whose values the
@@ -554,7 +542,7 @@ extension _RepositoryScanning on BeanScanner {
     DartObject annotation,
     List<String> problems,
   ) {
-    if (_isRecreatable(annotation)) {
+    if (scan.isRecreatable(annotation)) {
       return false;
     }
     final type = annotation.type;
@@ -564,7 +552,7 @@ extension _RepositoryScanning on BeanScanner {
         for (final field in type.element.fields)
           if (!field.isStatic && field.name != null)
             if (annotation.getField(field.name!) case final value?
-                when !_isRecreatable(value))
+                when !scan.isRecreatable(value))
               field.name!,
     ];
     for (final field in fields.isEmpty ? const ['value'] : fields) {
@@ -615,7 +603,7 @@ extension _RepositoryScanning on BeanScanner {
         checker.hasAnnotationOf(field) ||
         (field.getter != null && checker.hasAnnotationOf(field.getter!));
     final properties = <StoredProperty>[];
-    for (final field in _describedFields(_describedClasses(entity))) {
+    for (final field in scan.describedFields(entity)) {
       final fieldName = field.name!;
       if (marked(_transient, field) ||
           (field.setter == null && !parameters.contains(fieldName))) {

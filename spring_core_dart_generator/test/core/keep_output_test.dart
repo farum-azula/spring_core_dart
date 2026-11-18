@@ -8,8 +8,9 @@ library;
 // not make the generated file flicker in and out on every keystroke.
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:test/test.dart';
 
 const _scan = r'''
@@ -34,6 +35,7 @@ final _output = AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart');
 
 SpringBuilder _builder({Future<String?> Function(AssetId)? read}) =>
     SpringBuilder(
+      generations: starterGenerations,
       proxyMode: ProxyMode.none,
       readExistingOutput: read ?? (_) async => null,
     );

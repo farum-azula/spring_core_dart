@@ -1,4 +1,4 @@
-# The generator, one module per starter (planned, as soon as possible)
+# The generator, one module per starter (in progress, November 2026)
 
 The owner, November 2026: to be done as soon as possible, before any new
 starter (Supabase first) adds to the generator.
@@ -79,3 +79,81 @@ Its code is not organised that way:
   edit of the core.
 - The generated code of the repository did not change.
 - The generator's CI time per change is that of the parts it touched.
+
+## Progress (17 November 2026, uncommitted)
+
+- Done: every file of `lib/src/` in the folder of its starter or of the
+  core (`core/`, `data/`, `flutter/`, `navigation/`, `signals/`,
+  `search/`, `json_schemas/`, `test/`); the interface,
+  `StarterGeneration` (`core/starter_generation.dart`): scan hooks per
+  class and mixin, a check after the scan, the module's parts, emission
+  slots at the places the code was written before, the metadata, a model
+  of its own in the module, the switch by dependency; the built-in parts
+  listed once in `lib/src/starters.dart`; Flutter, navigation and signals
+  moved into parts; the build-time reading of the configuration moved
+  from the web dev config into `core/build_environment.dart`; data moved
+  into two parts (`DataMetadataGeneration` first, `DataGeneration` last,
+  so the metadata and the beans keep their order), with the interface's
+  hooks it needed (`prepareModule`, `describeClass`, `claimClass`,
+  `initialValueClasses`, `classes`, `beanCreation` with an open
+  `StarterCreation`, `leadingDeclarations`). The core imports nothing of
+  `flutter/`, `navigation/`, `signals/`, `data/`. Generated code byte for
+  byte the same in all 40 directories CI checks; the generator's 2,022
+  tests pass.
+- Then: the web, WebSocket, scheduling, security, cache, JSON Schemas
+  and actuator rules moved into parts of their own (`methodNeeds`,
+  `expressionUse`, `checkProxy`, `jsonWriters`, `applicationResources`);
+  the core names no other starter's URL and imports no starter folder. A
+  part has a build key as a module has (`StarterBuild(property,
+  whenMissing:)`, `core/build_inclusion.dart`, shared with the modules'):
+  `false` runs nothing, `notInRelease` puts what can be guarded under
+  `!dart.vm.product` (definitions, statements, introspections,
+  resources; classes and declarations are dropped by the compiler when
+  nothing uses them). The tests are split by part (`test/<part>/`,
+  `test/support/`; 2,031 tests, the same names), and CI runs the tests of
+  the parts a change touched (`tool/affected.dart` `test_paths`; a change
+  of the core or of the shared files runs all).
+- Measured: a clean `build_runner build` takes the same time (server
+  guide 17 → 18 s, data starter 23 → 25 s, Flutter guide 20 → 21 s; the
+  generator's own phase 1 s, 8 s, 1 s before and after: the time is the
+  build script's compilation). The tests per part: core ~53 min, Flutter
+  11, data 9, signals 8, navigation 3.5, the others 1-2 or less; a change
+  of one part costs its folder instead of ~96 minutes.
+- Left: the coverage run of the `quality` job still runs the whole
+  generator suite on every push (a decision about the coverage gate).
+
+## The main modules: what only development needs
+
+The owner, 17 November 2026: in this release too. Of about 38 modules, 19
+are decided at build time already (the debug panel and its sections, the
+scenes' and signals' tabs, QPS, `@Observed`, the server modules on the
+web); the other 19 are the starters' main modules. Searched for beans
+only development needs (schema creation, request logging, checks at
+start), each a candidate with the code it would take out, split off
+behind a build key only where it pays.
+
+Done (17-18 November 2026, uncommitted):
+- the checks at start (`transactionValidator`, `dataFailureAnalyzer`,
+  `cacheOperationValidator`, `edgeWarnings`; about 650 lines) in modules
+  of their own under `spring.main.startup-checks.enabled` (not set: debug
+  and profile builds); `methodSecurityValidator` stays in every build, a
+  safety net of security;
+- the SQL statement logging (`show-sql`, `show-parameters`, `format-sql`)
+  under `spring.data.jdbc.show-sql`; the slow-query log stays in the main
+  module (`jdbcSlowQueryLogSettings`), production monitoring;
+- `ModulePlatform.server` (native without Flutter, `!dart.library.ui`):
+  Supabase's admin API (the service-role key) and its server module are
+  in no app.
+
+Not done, on purpose (the owner, 17 November 2026):
+- the schema step of the data starter (`create`, `validate`; about 1,350
+  lines): `validate` is the default and SQLite on a phone creates its
+  tables in production, so it could only leave a build whose
+  configuration says `schema: none`, which needs a build condition by a
+  property's value read from every profile's file; later;
+- the in-memory store: the build cannot know an app will have a database
+  (its address often comes at start); at most an opt-out key, later.
+
+Found on the way: `dart compile js` / `wasm` define no `dart.vm.product`,
+so a deployed edge function keeps the `notInRelease` modules unless their
+key is `false` (Flutter's release builds and AOT drop them).

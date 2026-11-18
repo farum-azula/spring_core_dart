@@ -1,4 +1,4 @@
-part of 'module_emitter.dart';
+part of 'data_emitter.dart';
 
 // The class of a data repository (see `RepositoryModel`): it extends the
 // starter's `SimpleRepository` and writes one method for each of the
@@ -50,13 +50,13 @@ part of 'module_emitter.dart';
 // }
 // ```
 
-extension _RepositoryEmitter on ModuleEmitter {
+extension _RepositoryEmitter on DataEmitter {
   /// The class of [model].
   Class repositoryClass(RepositoryModel model) {
     final element = model.type.element;
-    final interfaceType = _type(model.type, element);
-    final entity = _type(model.entityType, element);
-    final id = _type(model.idType, element);
+    final interfaceType = emission.type(model.type, element);
+    final entity = emission.type(model.entityType, element);
+    final id = emission.type(model.idType, element);
     final self = refer(model.className);
     final queries = [
       for (final method in model.methods)
@@ -74,12 +74,12 @@ extension _RepositoryEmitter on ModuleEmitter {
         .call([], {}, [_data('RepositoryFactory')])
         .property('operations')
         .call(
-          [_str(element.name!)],
+          [emission.string(element.name!)],
           {
             if (model.annotations.isNotEmpty)
               'annotations': literalConstList([
                 for (final annotation in model.annotations)
-                  _constant(annotation, element),
+                  emission.constant(annotation, element),
               ]),
             if (queries.isNotEmpty)
               'queries': literalList([
@@ -93,7 +93,7 @@ extension _RepositoryEmitter on ModuleEmitter {
               'requirements': literalConstList([
                 for (final need in model.requirements)
                   _data('StoreRequirement').constInstance([
-                    _str(need.method!),
+                    emission.string(need.method!),
                     _data('DataStoreCapability').property(need.capability.name),
                   ]),
               ]),
@@ -152,7 +152,7 @@ extension _RepositoryEmitter on ModuleEmitter {
                 Parameter(
                   (p) => p
                     ..name = 'r'
-                    ..type = _spring('DependencyResolver'),
+                    ..type = emission.spring('DependencyResolver'),
                 ),
               )
               ..lambda = true
@@ -168,7 +168,7 @@ extension _RepositoryEmitter on ModuleEmitter {
                       .property('findById')
                       .call(
                         [refer(method.member.parameters.first.name)],
-                        {'lock': _constant(lock, element)},
+                        {'lock': emission.constant(lock, element)},
                       ),
                 QueryMethodModel(:final isStream) => _resultCall(
                   isStream ? 'queryStream' : 'query',
@@ -204,7 +204,7 @@ extension _RepositoryEmitter on ModuleEmitter {
     final member = method.member;
     final info = method.element == null
         ? null
-        : _typeInfo(method.element!, element);
+        : emission.typeInfo(method.element!, element);
     final expressions = _queryExpressions(method, element);
     return Field(
       (f) => f
@@ -216,12 +216,15 @@ extension _RepositoryEmitter on ModuleEmitter {
         ..name = _staticName(method)
         ..assignment = _data('QueryMethod')
             .newInstance(
-              [_str(member.name), _constant(method.query, element)],
+              [
+                emission.string(member.name),
+                emission.constant(method.query, element),
+              ],
               {
                 if (member.parameters.isNotEmpty)
                   'parameters': literalConstList([
                     for (final parameter in member.parameters)
-                      _str(parameter.name),
+                      emission.string(parameter.name),
                   ]),
                 if (method.pageable case final index?)
                   'pageable': literalNum(index),
@@ -235,7 +238,7 @@ extension _RepositoryEmitter on ModuleEmitter {
                   'entities': literalConstMap({
                     for (final MapEntry(:key, :value)
                         in method.entities.entries)
-                      _str(key): _type(value, element),
+                      emission.string(key): emission.type(value, element),
                   }),
                 if (expressions.isNotEmpty)
                   'expressions': expressions.any((e) => e != literalNull)
@@ -253,7 +256,7 @@ extension _RepositoryEmitter on ModuleEmitter {
     final member = method.member;
     final info = method.element == null
         ? null
-        : _typeInfo(method.element!, element);
+        : emission.typeInfo(method.element!, element);
     return Field(
       (f) => f
         ..static = true
@@ -263,12 +266,15 @@ extension _RepositoryEmitter on ModuleEmitter {
         ..name = _staticName(method)
         ..assignment = _data('ProcedureMethod')
             .newInstance(
-              [_str(member.name), _constant(method.procedure, element)],
+              [
+                emission.string(member.name),
+                emission.constant(method.procedure, element),
+              ],
               {
                 if (member.parameters.isNotEmpty)
                   'parameters': literalConstList([
                     for (final parameter in member.parameters)
-                      _str(parameter.name),
+                      emission.string(parameter.name),
                   ]),
                 if (method.element != null && method.shape != ResultShape.list)
                   'shape': _data('QueryShape').property(method.shape.name),
@@ -293,7 +299,7 @@ extension _RepositoryEmitter on ModuleEmitter {
           repository: element.library!,
           member: method.member,
           beans: method.beans,
-          cast: (value, type) => value.asA(_anyType(type, element)),
+          cast: (value, type) => value.asA(emission.anyType(type, element)),
         )) {
           SpelCompiled(:final code) => Method(
             (m) => m
@@ -339,7 +345,7 @@ extension _RepositoryEmitter on ModuleEmitter {
             ]),
           ],
           {},
-          [_anyType(valueType, element)],
+          [emission.anyType(valueType, element)],
         );
   }
 
@@ -366,7 +372,8 @@ extension _RepositoryEmitter on ModuleEmitter {
             if (!paged)
               if (method.pageable case final pageable?)
                 'pageable': refer(pageable),
-            if (method.lock case final lock?) 'lock': _constant(lock, element),
+            if (method.lock case final lock?)
+              'lock': emission.constant(lock, element),
           },
         );
   }
@@ -386,16 +393,16 @@ extension _RepositoryEmitter on ModuleEmitter {
       (m) => m
         ..annotations.add(refer('override'))
         ..name = member.name
-        ..returns = _anyType(member.returnType, element)
+        ..returns = emission.anyType(member.returnType, element)
         ..requiredParameters.addAll([
           for (final parameter in member.parameters)
             if (!parameter.isNamed && parameter.isRequired)
-              _proxyParameter(parameter, element),
+              emission.parameter(parameter, element),
         ])
         ..optionalParameters.addAll([
           for (final parameter in member.parameters)
             if (parameter.isNamed || !parameter.isRequired)
-              _proxyParameter(parameter, element),
+              emission.parameter(parameter, element),
         ])
         ..lambda = true
         ..body = body.code,
@@ -406,14 +413,14 @@ extension _RepositoryEmitter on ModuleEmitter {
   // find, no order, a simple property).
   Expression _partTree(PartTreeModel tree) => _data('PartTree').newInstance(
     [
-      _str(tree.methodName),
+      emission.string(tree.methodName),
       literalList([
         for (final or in tree.predicate)
           _data('OrPart').newInstance([
             literalList([
               for (final part in or.parts)
                 _data('Part').newInstance([
-                  _str(part.property),
+                  emission.string(part.property),
                   // `ignoreCase` is the third positional parameter.
                   if (part.kind != PartKind.simpleProperty || part.ignoreCase)
                     _data('PartType').property(part.kind.name),
@@ -439,7 +446,7 @@ extension _RepositoryEmitter on ModuleEmitter {
             for (final order in tree.sort)
               _data('SortOrder').newInstanceNamed(
                 order.descending ? 'desc' : 'asc',
-                [_str(order.property)],
+                [emission.string(order.property)],
               ),
           ]),
         ]),

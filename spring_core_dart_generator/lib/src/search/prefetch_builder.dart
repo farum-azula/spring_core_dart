@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:glob/glob.dart';
-import 'package:spring_core_dart_generator/src/search_index_builder.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart';
+import 'package:spring_core_dart_generator/src/core/build_environment.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/search/search_index_builder.dart';
 
 /// Writes the files of `spring.resources.prefetch.locations` (globs below
 /// `lib/resources/`) into one file, `lib/resources/spring_gen/prefetch/

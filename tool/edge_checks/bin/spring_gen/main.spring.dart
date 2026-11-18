@@ -712,7 +712,11 @@ _i15.SpringApplication get springApplication => _i15.SpringApplication(
   autoConfigurations: [
     _i16.springBootAutoConfiguration,
     _i17.springBootStarterCacheAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i17.springBootStarterCacheStartupChecksAutoConfiguration,
     _i18.springBootStarterEdgeAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i18.springBootStarterEdgeStartupChecksAutoConfiguration,
     _i19.springBootStarterFeignAutoConfiguration,
     _i20.springBootStarterLoggingAutoConfiguration,
     _i21.springBootStarterOauth2ClientAutoConfiguration,
@@ -732,6 +736,11 @@ _i15.SpringApplication get springApplication => _i15.SpringApplication(
     _i25.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i17.springBootStarterCacheStartupChecksAutoConfiguration:
+          const _i15.AutoConfigurationModule(
+            after: [r'springBootStarterCacheAutoConfiguration'],
+          ),
     _i18.springBootStarterEdgeAutoConfiguration:
         const _i15.AutoConfigurationModule(
           before: [
@@ -809,7 +818,7 @@ _i15.SpringApplication get springApplication => _i15.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: '3d60d8ae',
+  fingerprint: '634156c2',
 );
 
 /// Starts the application: config files, environment, context, runners

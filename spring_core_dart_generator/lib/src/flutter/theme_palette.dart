@@ -1,19 +1,19 @@
-import 'package:spring_core_dart_generator/src/material_color/dynamiccolor/dynamic_color.dart';
-import 'package:spring_core_dart_generator/src/material_color/dynamiccolor/dynamic_scheme.dart';
-import 'package:spring_core_dart_generator/src/material_color/dynamiccolor/material_dynamic_colors.dart';
-import 'package:spring_core_dart_generator/src/material_color/hct/hct.dart';
-import 'package:spring_core_dart_generator/src/material_color/scheme/scheme_content.dart';
-import 'package:spring_core_dart_generator/src/material_color/scheme/scheme_expressive.dart';
-import 'package:spring_core_dart_generator/src/material_color/scheme/scheme_fidelity.dart';
-import 'package:spring_core_dart_generator/src/material_color/scheme/scheme_fruit_salad.dart';
-import 'package:spring_core_dart_generator/src/material_color/scheme/scheme_monochrome.dart';
-import 'package:spring_core_dart_generator/src/material_color/scheme/scheme_neutral.dart';
-import 'package:spring_core_dart_generator/src/material_color/scheme/scheme_rainbow.dart';
-import 'package:spring_core_dart_generator/src/material_color/scheme/scheme_tonal_spot.dart';
-import 'package:spring_core_dart_generator/src/material_color/scheme/scheme_vibrant.dart';
-import 'package:spring_core_dart_generator/src/material_color_values.dart';
-import 'package:spring_core_dart_generator/src/theme_references.dart';
-import 'package:spring_core_dart_generator/src/theme_value_syntax.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color/dynamiccolor/dynamic_color.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color/dynamiccolor/dynamic_scheme.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color/dynamiccolor/material_dynamic_colors.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color/hct/hct.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color/scheme/scheme_content.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color/scheme/scheme_expressive.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color/scheme/scheme_fidelity.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color/scheme/scheme_fruit_salad.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color/scheme/scheme_monochrome.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color/scheme/scheme_neutral.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color/scheme/scheme_rainbow.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color/scheme/scheme_tonal_spot.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color/scheme/scheme_vibrant.dart';
+import 'package:spring_core_dart_generator/src/flutter/material_color_values.dart';
+import 'package:spring_core_dart_generator/src/flutter/theme_references.dart';
+import 'package:spring_core_dart_generator/src/flutter/theme_value_syntax.dart';
 
 /// Reads the values of one theme as the runtime does, but at build time:
 /// colors (plain, `$` references, color objects, Material roles computed

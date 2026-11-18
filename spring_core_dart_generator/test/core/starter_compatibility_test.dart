@@ -4,7 +4,8 @@ import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart' show springBootVersion;
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:test/test.dart';
 
 const _app = '''
@@ -50,7 +51,7 @@ Future<TestBuilderResult> _build(
   );
   await readerWriter.testing.loadIsolateSources();
   return await testBuilder(
-    SpringBuilder(),
+    SpringBuilder(generations: starterGenerations),
     {
       'pkg|bin/main.dart': app,
       'pkg|lib/resources/$configFile': ?config,
@@ -84,7 +85,7 @@ void main() {
     test('true: the module, always', () async {
       final code = await output(config: 'neon.debug.enabled=true');
       expect(code, matches(RegExp(r'[\[,]_i\d+\.neonCacheAutoConfiguration,')));
-      expect(code, isNot(contains('dart.vm.product')));
+      expect(code, isNot(matches(_notInRelease)));
     });
 
     test('false: no module, no code', () async {
@@ -131,8 +132,32 @@ void main() {
           ),
           reason: '$file: $config',
         );
-        expect(_compact(result), contains("dart.vm.product'))_i"));
+        expect(_compact(result), matches(_notInRelease));
       }
+    });
+
+    test('set only in a profile: the warning says a release has no code for '
+        'it', () async {
+      final logs = <String>[];
+      await _build(
+        '^$springBootVersion',
+        arguments: build,
+        config: 'neon.debug.enabled=true\n',
+        configFile: 'application-dev.properties',
+        logs: logs,
+      );
+      expect(
+        logs,
+        contains(
+          endsWith(
+            'The module is built as when it is not set: in debug and profile '
+            'builds only, so in a release build what '
+            'application-dev.properties sets has no code to act on. Set '
+            'neon.debug.enabled: true without a profile to keep the module '
+            'in every build.',
+          ),
+        ),
+      );
     });
 
     test('a value the build cannot read fails, naming the module', () async {
@@ -160,6 +185,23 @@ void main() {
         logs: logs,
       );
       expect(logs.where((log) => log.contains('set only in')), isEmpty);
+    });
+
+    test('not set: its before stays, under the same condition', () async {
+      final code = await output(
+        arguments: "$build, before: ['otherAutoConfiguration']",
+      );
+      expect(
+        code,
+        matches(
+          RegExp(
+            r'autoConfigurationMetadata:\{if\(!constbool\.fromEnvironment\('
+            r"'dart\.vm\.product'\)\)_i\d+\.neonCacheAutoConfiguration:"
+            r"const_i\d+\.AutoConfigurationModule\(before:\[r?'"
+            r"otherAutoConfiguration'\],?\)",
+          ),
+        ),
+      );
     });
 
     test('not set, whenMissing: never', () async {
@@ -195,7 +237,7 @@ void main() {
           ),
         ),
       );
-      expect(code, isNot(contains('dart.vm.product')));
+      expect(code, isNot(matches(_notInRelease)));
     });
 
     test('web: under dart.library.js_interop', () async {
@@ -210,6 +252,55 @@ void main() {
           ),
         ),
       );
+    });
+
+    test('server: under dart.library.io without dart.library.ui', () async {
+      final code = await output(', platform: ModulePlatform.server');
+      expect(
+        code,
+        matches(
+          RegExp(
+            r"if\(\(\(constbool\.fromEnvironment\('dart\.library\.io'\)&&"
+            r"!constbool\.fromEnvironment\('dart\.library\.ui'\)\)\|\|"
+            r"constbool\.fromEnvironment\('SPRING_ALL_PLATFORMS'\)\)\)"
+            r'_i\d+\.neonCacheAutoConfiguration',
+          ),
+        ),
+      );
+      expect(code, isNot(matches(_notInRelease)));
+    });
+
+    test('server with a build property not set: both conditions', () async {
+      final code = await output(
+        ", build: AutoConfigurationBuild('neon.debug.enabled'), "
+        'platform: ModulePlatform.server',
+      );
+      expect(
+        code,
+        contains(
+          "if(!constbool.fromEnvironment('dart.vm.product')&&"
+          "((constbool.fromEnvironment('dart.library.io')&&"
+          "!constbool.fromEnvironment('dart.library.ui'))||"
+          "constbool.fromEnvironment('SPRING_ALL_PLATFORMS')))",
+        ),
+      );
+    });
+
+    test('server with a build property true: only the platform', () async {
+      final code = await output(
+        ", build: AutoConfigurationBuild('neon.debug.enabled'), "
+        'platform: ModulePlatform.server',
+        config: 'neon.debug.enabled=true',
+      );
+      expect(
+        code,
+        contains(
+          "if(((constbool.fromEnvironment('dart.library.io')&&"
+          "!constbool.fromEnvironment('dart.library.ui'))||"
+          "constbool.fromEnvironment('SPRING_ALL_PLATFORMS')))",
+        ),
+      );
+      expect(code, isNot(matches(_notInRelease)));
     });
 
     test('with a build property not set: both conditions', () async {
@@ -422,6 +513,14 @@ void main(List<String> args) => runApplication(args);
 }
 
 // The generated source without whitespace.
+// The fake starter's module under the condition of debug and profile
+// builds (alone or with a platform's). Only the module's own entry counts:
+// the starters of the workspace, which the build of the test sees too, may
+// have modules under it.
+final _notInRelease = RegExp(
+  r"dart\.vm\.product'\)[^,]*_i\d+\.neonCacheAutoConfiguration",
+);
+
 String _compact(TestBuilderResult result) => result.readerWriter.testing
     .readString(result.outputs.single)
     .replaceAll(RegExp(r'\s+'), '');

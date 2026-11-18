@@ -5,10 +5,10 @@
 /// the build agree.
 library;
 
-export 'package:spring_core_dart_generator/src/data_schema.dart'
-    show DataSchema;
-export 'package:spring_core_dart_generator/src/did_you_mean.dart'
+export 'package:spring_core_dart_generator/src/core/did_you_mean.dart'
     show closestName;
-export 'package:spring_core_dart_generator/src/part_tree.dart';
-export 'package:spring_core_dart_generator/src/part_tree_reader.dart';
-export 'package:spring_core_dart_generator/src/sql_lexer.dart';
+export 'package:spring_core_dart_generator/src/data/data_schema.dart'
+    show DataSchema;
+export 'package:spring_core_dart_generator/src/data/part_tree.dart';
+export 'package:spring_core_dart_generator/src/data/part_tree_reader.dart';
+export 'package:spring_core_dart_generator/src/data/sql_lexer.dart';

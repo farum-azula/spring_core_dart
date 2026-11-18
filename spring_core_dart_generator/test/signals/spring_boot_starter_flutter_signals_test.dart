@@ -10,7 +10,8 @@ import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:test/test.dart';
 
 const _scan = r'''
@@ -76,7 +77,7 @@ Future<TestBuilderResult> _build(String beans) async {
   );
   await readerWriter.testing.loadIsolateSources();
   return await testBuilder(
-    SpringBuilder(),
+    SpringBuilder(generations: starterGenerations),
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/app.dart': '$_header$beans',

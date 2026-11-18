@@ -7,9 +7,7 @@ import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart/aop.dart';
-import 'package:spring_core_dart_generator/src/bean_model.dart';
-import 'package:spring_core_dart_generator/src/flutter_scanning.dart'
-    show mixesChangeNotifierIn;
+import 'package:spring_core_dart_generator/src/core/bean_model.dart';
 
 /// Checks the AOP declarations of the scanned [module] and adjusts its
 /// proxies before the module is emitted.
@@ -51,8 +49,9 @@ import 'package:spring_core_dart_generator/src/flutter_scanning.dart'
 /// `@Validated`: the pointcut, or the advisor, declares them in a
 /// `static const annotationTypes` list; when one declares none, any
 /// annotation from outside `package:spring_core_dart` and the SDK keeps
-/// it), when it has an introduction, when its proxy class mixes
-/// `ChangeNotifier` in (a `@ChangeNotifierComponent` that is not one), and
+/// it), when it has an introduction, when its proxy class mixes a class
+/// in ([ProxyModel.mixins]: `ChangeNotifier` for a
+/// `@ChangeNotifierComponent` that is not one), and
 /// when a pointcut might match it. A subclass proxy (the bean is created
 /// as the generated subclass) is pruned like a wrapper: the bean is then
 /// created as its own class. Annotations of the SDK (`@override`), of
@@ -262,7 +261,7 @@ void analyzeAop(
     final proxy = bean.proxy;
     if (proxy == null ||
         proxy.unavailableReason != null ||
-        mixesChangeNotifierIn(proxy.classAnnotations, proxy.targetType) ||
+        proxy.mixins.isNotEmpty ||
         proxy.targetClass ||
         proxy.introductions.isNotEmpty ||
         bean.aspect != null ||
@@ -320,7 +319,7 @@ void _defer(
         proxy.subclass != null ||
         proxy.introductions.isNotEmpty ||
         bean.aspect != null ||
-        mixesChangeNotifierIn(proxy.classAnnotations, proxy.targetType)) {
+        proxy.mixins.isNotEmpty) {
       continue;
     }
     final annotations = [

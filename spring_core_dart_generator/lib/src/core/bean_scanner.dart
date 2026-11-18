@@ -33,37 +33,20 @@ import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart' show log;
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/bean_model.dart';
-import 'package:spring_core_dart_generator/src/constraint_checker.dart';
-import 'package:spring_core_dart_generator/src/data_schema.dart';
-import 'package:spring_core_dart_generator/src/data_stores.dart';
-import 'package:spring_core_dart_generator/src/flutter_scanning.dart';
-import 'package:spring_core_dart_generator/src/json_annotation_checker.dart';
-import 'package:spring_core_dart_generator/src/log_scanning.dart';
-import 'package:spring_core_dart_generator/src/metadata_locations.dart'
-    show lineOf, sourceOf;
-import 'package:spring_core_dart_generator/src/navigation_scanning.dart';
-import 'package:spring_core_dart_generator/src/part_tree.dart';
-import 'package:spring_core_dart_generator/src/part_tree_parser.dart';
-import 'package:spring_core_dart_generator/src/part_tree_reader.dart';
-import 'package:spring_core_dart_generator/src/query_expressions.dart';
-import 'package:spring_core_dart_generator/src/query_text_checker.dart';
-import 'package:spring_core_dart_generator/src/schema_sources.dart';
-import 'package:spring_core_dart_generator/src/signals_scanning.dart';
-import 'package:spring_core_dart_generator/src/spel_compiler.dart';
+import 'package:spring_core_dart_generator/src/core/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/constraint_checker.dart';
+import 'package:spring_core_dart_generator/src/core/json_annotation_checker.dart';
+import 'package:spring_core_dart_generator/src/core/log_scanning.dart';
+import 'package:spring_core_dart_generator/src/core/starter_generation.dart';
 
 part 'advisor_pointcuts.dart';
 part 'bean_type_inference.dart';
 part 'configuration_scanning.dart';
-part 'data_metadata.dart';
-part 'entity_scanning.dart';
 part 'field_initializers.dart';
 part 'introspection_needs.dart';
 part 'lookup_scanning.dart';
 part 'mapper_calls.dart';
-part 'query_scanning.dart';
-part 'repository_scanning.dart';
-part 'repository_store_scanning.dart';
+part 'module_scan.dart';
 
 // Annotations are matched by name in `package:spring_core_dart` (the
 // generator depends on the runtime only for its pointcut parser, see
@@ -129,12 +112,6 @@ final TypeChecker _provider = _spring('Provider');
 final TypeChecker _resource = _spring('Resource');
 final TypeChecker _introspected = _spring('Introspected');
 
-// spring_boot_starter_data's marker of repositories, matched by URL so the
-// generator does not depend on the starter.
-const TypeChecker _dataRepository = TypeChecker.fromUrl(
-  'package:spring_boot_starter_data/src/repository/repository.dart'
-  '#DataRepository',
-);
 final TypeChecker _aspectAnnotation = _spring('Aspect');
 final TypeChecker _constraint = _spring('Constraint');
 final TypeChecker _valid = _spring('Valid');
@@ -150,13 +127,6 @@ final TypeChecker _declareParents = _spring('DeclareParents');
 final TypeChecker _advisor = _spring('Advisor');
 final TypeChecker _joinPoint = _spring('JoinPoint');
 final TypeChecker _proceedingJoinPoint = _spring('ProceedingJoinPoint');
-
-// spring_boot_starter_cache annotations, matched by URL (no dependency).
-const _cacheAnnotations =
-    'package:spring_boot_starter_cache/src/annotations.dart';
-const _cacheable = TypeChecker.fromUrl('$_cacheAnnotations#Cacheable');
-const _cachePut = TypeChecker.fromUrl('$_cacheAnnotations#CachePut');
-const _caching = TypeChecker.fromUrl('$_cacheAnnotations#Caching');
 
 /// The members every generated AOP proxy declares (from `Advised`, and the
 /// invoker of `AdvisedWrapper` / `AdvisedSubclass`). A proxied class must
@@ -440,8 +410,9 @@ TypeFilterModel _typeFilter(
 /// fills a [ModuleModel] with one [BeanModel] per component class and
 /// `@Bean` method (with its injection points, conditions, lifecycle
 /// methods, listeners and proxy), plus `@Configurable`, `@Introspected`,
-/// `@PropertySource`, `@Log` and Flutter widget metadata. The builder
-/// creates one scanner per output file.
+/// `@PropertySource` and `@Log` metadata; the starters' parts
+/// ([generations]) read their own annotations along. The builder creates
+/// one scanner per output file.
 ///
 /// It also validates every declaration, because a mistake the scanner lets
 /// through would show up as generated code that does not compile. A
@@ -518,12 +489,20 @@ class BeanScanner {
     this.module, {
     this.proxyMode = ProxyMode.all,
     this.scan = const ComponentScanModel(),
-    this.sqlResources = const {},
-    this.dataStores = DataStoreBuild.none,
+    this.generations = const [],
   });
 
   /// The model being filled; the emitter writes it once the scan is done.
   final ModuleModel module;
+
+  /// The starters' parts of the build, asked in turn about every class and
+  /// mixin [scanLibrary] reads, about the classes whose initial values they
+  /// read, and about the mixins of every proxy.
+  final List<StarterGeneration> generations;
+
+  // What the parts' scan hooks get: the module, this scanner's errors, and
+  // its readings of a class.
+  late final _starterScan = ModuleScan(this);
 
   /// Which beans get a [ProxyModel] (build option `aop_proxies`).
   final ProxyMode proxyMode;
@@ -532,30 +511,22 @@ class BeanScanner {
   /// decide which classes become beans and whether they start lazily.
   final ComponentScanModel scan;
 
-  /// The text of the files below `lib/resources/` by path, of which the
-  /// migrations and init scripts tell the schema the `@Query` texts of
-  /// data repositories are checked against.
-  final Map<String, String> sqlResources;
-
-  /// The stores of spring_boot_starter_data the build knows, and the
-  /// application's default store: what a repository (or a
-  /// `@Transactional` bean) uses and its store cannot do is a build error.
-  final DataStoreBuild dataStores;
-
   // Classes introspected so far (explicitly or automatically), with their
   // model in `module.introspections`: each request for a class adds to its
   // `need` (see [_scanIntrospected]).
   final _introspections = <ClassElement, IntrospectionModel>{};
 
-  // Classes described as entities so far (`@Table` and `@Query` DTOs).
-  final _entityClasses = <ClassElement>{};
-
   // The classes the calls of the `ObjectMapper` in each library name, found
   // by [resolveMapperCalls] (mapper_calls.dart).
   final _mapperUses = <LibraryElement, List<MapperUse>>{};
 
-  // Repositories whose `@Query` texts wait for the end of the scan.
-  final _repositoryChecks = <_RepositoryCheck>[];
+  // The index of the argument each starter's writer writes out as JSON
+  // (`StarterGeneration.jsonWriters`), by its library's URL and its name.
+  late final Map<(String, String), int> _jsonWriters = {
+    for (final generation in generations)
+      for (final writer in generation.jsonWriters)
+        (writer.library, writer.method): writer.argument,
+  };
 
   // Resolved `@Bean` method declarations by `library#Class.method`, for
   // the bean type inferred from the method body (bean_type_inference.dart).
@@ -613,8 +584,8 @@ class BeanScanner {
   ) => resolveMapperCallDeclarations(library, astNodeFor);
 
   /// Adds to [module] everything [library] declares: beans, configurables,
-  /// introspected classes, interface proxies, Flutter widgets and `@Log`
-  /// classes.
+  /// introspected classes, interface proxies and `@Log` classes, and what
+  /// the starters' parts ([generations]) read of its classes and mixins.
   ///
   /// A class annotated with `@Component` (or a stereotype such as
   /// `@Service`, `@Repository`, `@Configuration`, `@Named`) that the
@@ -660,25 +631,21 @@ class BeanScanner {
         if (_introspected.hasAnnotationOf(element)) {
           _scanIntrospected(element, _declaredNeed(element));
         }
-        // spring_boot_starter_data: the data layer reads and writes it.
-        if (_table.hasAnnotationOf(element)) {
-          scanEntity(element);
+        // What the starters' parts read of the class before the core
+        // decides which bean it is (the data starter's entities).
+        for (final generation in generations) {
+          generation.describeClass(element, _starterScan);
         }
         if (_interfaceProxyPrimary(element) case final primary?) {
           _scanInterfaceProxy(element, primary: primary);
           return;
         }
-        // spring_boot_starter_data: an interface extending DataRepository
-        // is a repository, annotated or not (Spring Data's way); a generic
-        // one is a base of others, never a bean (@NoRepositoryBean).
-        if (element.isAbstract &&
-            _dataRepository.isAssignableFrom(element) &&
-            !_dataRepository.isExactly(element)) {
-          if (element.typeParameters.isEmpty) {
-            scanRepository(element);
-            scanQueries(element);
+        // A class whose bean a starter's part makes itself (the data
+        // starter's repositories).
+        for (final generation in generations) {
+          if (generation.claimClass(element, _starterScan)) {
+            return;
           }
-          return;
         }
         final annotation = _component.firstAnnotationOf(element);
         // Like Spring's scan (isCandidateComponent), an abstract class is
@@ -691,18 +658,17 @@ class BeanScanner {
           scanClass(element, annotation: annotation);
         }
       });
-      // spring_boot_starter_flutter: widgets whose bean records the module
-      // fills.
-      collectErrors(() => scanSpringWidget(element, module));
-      collectErrors(() => scanThemeLoaderKind(element, module));
-      // spring_boot_starter_flutter_navigation: screens and shells.
-      collectErrors(() => scanNavigation(element, module));
-      collectErrors(() => checkChangeNotifierComponent(element));
-      collectErrors(() => checkSignals(element));
+      // The starters' annotations: Flutter's widgets, the navigation's
+      // screens, the signals.
+      for (final generation in generations) {
+        generation.scanClass(element, _starterScan);
+      }
       collectErrors(() => scanLog(element, module));
     }
     for (final mixin in library.mixins) {
-      collectErrors(() => checkSignals(mixin));
+      for (final generation in generations) {
+        generation.scanMixin(mixin, _starterScan);
+      }
     }
     _rejectUnsupportedTargets(library);
     _rejectTargetClassOutsideBeans(library);
@@ -795,9 +761,9 @@ class BeanScanner {
   /// [errors] instead of stopping the build. Other exceptions pass
   /// through.
   ///
-  /// The builder also wraps its own checks in it (unique bean names,
-  /// `@BuildContextAccess`, assets), so they are reported together with
-  /// the scan's errors.
+  /// The builder also wraps its own checks in it (unique bean names, the
+  /// starters' parts' checks of the module), so they are reported together
+  /// with the scan's errors.
   void collectErrors(void Function() action) {
     try {
       action();
@@ -810,12 +776,10 @@ class BeanScanner {
   /// itself when there is one, a [BuildErrors] listing them when there are
   /// several. Does nothing without errors.
   ///
-  /// It first checks what needs the whole application, the texts of the
-  /// `@Query` methods of data repositories (their entities, tables and
-  /// columns), whose problems join those of their repository.
+  /// It first checks what needs the whole application: the classes that
+  /// declare a member for advice that follows the bean's own calls and
+  /// are no bean (see [_checkTargetClassDeclarers]).
   void throwErrors() {
-    collectErrors(_checkQueries);
-    _checkTransactionalBeans();
     _checkTargetClassDeclarers();
     switch (errors) {
       case []:
@@ -2520,6 +2484,11 @@ class BeanScanner {
       mode: mode,
       constructor: constructor,
     );
+    if (model != null) {
+      for (final generation in generations) {
+        model.mixins.addAll(generation.proxyMixins(model));
+      }
+    }
     // The expressions on its methods (cache keys, security conditions)
     // read the classes of their arguments and results.
     _introspectSpelTypes(model);
@@ -2584,7 +2553,7 @@ class BeanScanner {
       }
       subclass!.targetClass = true;
       _checkTargetClassMembers(targetType, subclass);
-      return _withImplementations(_rejectCachedStreams(subclass));
+      return _withImplementations(_checkedProxy(subclass));
     }
     if (constructor != null &&
         implementSelf &&
@@ -2599,7 +2568,7 @@ class BeanScanner {
         'class (it has private members, or is final, base or sealed).',
       );
       if (subclass?.subclass != null) {
-        return _withImplementations(_rejectCachedStreams(subclass));
+        return _withImplementations(_checkedProxy(subclass));
       }
     }
     final model = _buildProxyModel(
@@ -2610,17 +2579,17 @@ class BeanScanner {
     );
     final failure = _proxyFailure;
     if (model != null || failure == null) {
-      return _withImplementations(_rejectCachedStreams(model));
+      return _withImplementations(_checkedProxy(model));
     }
     if (constructor != null && (mode ?? proxyMode) == ProxyMode.all) {
       return _withImplementations(
-        _rejectCachedStreams(
+        _checkedProxy(
           _subclassProxyModel(targetType, className, constructor, failure),
         ),
       );
     }
     return _withImplementations(
-      _rejectCachedStreams(_signatureOnlyModel(targetType, className, failure)),
+      _checkedProxy(_signatureOnlyModel(targetType, className, failure)),
     );
   }
 
@@ -3121,44 +3090,15 @@ class BeanScanner {
 
   String? _proxyFailure;
 
-  // `@Cacheable` / `@CachePut` of spring_boot_starter_cache (matched by
-  // URL, so the generator does not depend on it) on a member returning a
-  // Stream: a stream can be listened to once, so the cached one would fail
-  // every later caller.
-  ProxyModel? _rejectCachedStreams(ProxyModel? model) {
+  // [model], once each part has checked it
+  // ([StarterGeneration.checkProxy]): what a part's annotations cannot do on
+  // its members fails the build.
+  ProxyModel? _checkedProxy(ProxyModel? model) {
     if (model == null) {
       return null;
     }
-    for (final member in model.members) {
-      if (member.kind != ProxyMemberKind.method ||
-          !member.returnType.isDartAsyncStream) {
-        continue;
-      }
-      for (final annotation in member.mergedAnnotations) {
-        final type = annotation.type;
-        if (type is! InterfaceType) {
-          continue;
-        }
-        final caches =
-            _cacheable.isExactlyType(type) ||
-            _cachePut.isExactlyType(type) ||
-            (_caching.isExactlyType(type) &&
-                ['cacheable', 'put'].any(
-                  (field) =>
-                      annotation.getField(field)?.toListValue()?.isNotEmpty ??
-                      false,
-                ));
-        if (caches) {
-          final target = model.targetType;
-          _fail(
-            '@${type.element.name} on ${target.element.name}.${member.name} '
-            'cannot cache a Stream: a stream can be listened to only once. '
-            'Return a Future<List<T>> instead.',
-            target.lookUpMethod(member.name, target.element.library) ??
-                target.element,
-          );
-        }
-      }
+    for (final generation in generations) {
+      generation.checkProxy(model);
     }
     return model;
   }
@@ -5292,6 +5232,38 @@ class BeanScanner {
             GroupConditionModel(source, own),
         ],
         // Advice (e.g. @Cacheable on interface methods) wraps the client.
+        proxy: proxyMode == ProxyMode.none
+            ? null
+            : _proxyModel(type, '_\$${name}Proxy', implementSelf: true),
+      ),
+    );
+  }
+
+  // The bean of [element], whose implementation a starter's part
+  // generates (see `ModuleScan.addGeneratedBean`).
+  void _addGeneratedBean(ClassElement element, StarterCreation creation) {
+    final name = _requireName(element);
+    final source = '${element.library.uri}#$name';
+    final type = element.thisType;
+    final explicitName = ConstantReader(
+      _component.firstAnnotationOf(element),
+    ).peek('name')?.stringValue;
+    module.beans.add(
+      BeanModel(
+        element: element,
+        source: source,
+        name: explicitName ?? _decapitalize(name),
+        type: type,
+        exposedTypes: _exposedTypes(type),
+        creation: creation,
+        primary: _primary.hasAnnotationOf(element),
+        qualifiers: _qualifiersOf(element),
+        annotations: _beanAnnotations(element),
+        conditions: [
+          if (_conditions(element) case final own when own.isNotEmpty)
+            GroupConditionModel(source, own),
+        ],
+        // Advice (e.g. @Transactional on its methods) wraps it.
         proxy: proxyMode == ProxyMode.none
             ? null
             : _proxyModel(type, '_\$${name}Proxy', implementSelf: true),

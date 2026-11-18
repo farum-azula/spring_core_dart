@@ -1,5 +1,5 @@
-import 'package:spring_core_dart_generator/src/did_you_mean.dart';
-import 'package:spring_core_dart_generator/src/part_tree.dart';
+import 'package:spring_core_dart_generator/src/core/did_you_mean.dart';
+import 'package:spring_core_dart_generator/src/data/part_tree.dart';
 
 /// A repository method that is no valid query: its name is not one, or it
 /// does not fit the entity, its parameters or its return type.

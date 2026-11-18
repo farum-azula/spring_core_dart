@@ -65,18 +65,19 @@
 library;
 
 import 'package:build/build.dart';
-import 'package:spring_core_dart_generator/src/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/deep_links_builder.dart';
-import 'package:spring_core_dart_generator/src/flutter_keys_builder.dart';
-import 'package:spring_core_dart_generator/src/json_schema_classes.dart';
-import 'package:spring_core_dart_generator/src/prefetch_builder.dart';
-import 'package:spring_core_dart_generator/src/search_index_builder.dart';
-import 'package:spring_core_dart_generator/src/seo_builder.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/spring_metadata_builder.dart';
-import 'package:spring_core_dart_generator/src/test_builder.dart';
-import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart';
-import 'package:spring_core_dart_generator/src/web_page_loader_builder.dart';
+import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/spring_metadata_builder.dart';
+import 'package:spring_core_dart_generator/src/flutter/flutter_keys_builder.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_dev_config_builder.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_page_loader_builder.dart';
+import 'package:spring_core_dart_generator/src/json_schemas/json_schema_classes.dart';
+import 'package:spring_core_dart_generator/src/navigation/deep_links_builder.dart';
+import 'package:spring_core_dart_generator/src/navigation/seo_builder.dart';
+import 'package:spring_core_dart_generator/src/search/prefetch_builder.dart';
+import 'package:spring_core_dart_generator/src/search/search_index_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/test/test_builder.dart';
 
 /// Creates the main builder ([SpringBuilder]), which writes the
 /// `*.spring.dart` files; `build.yaml` names it in `builder_factories`.
@@ -142,6 +143,7 @@ Builder springCoreDartBuilder(BuilderOptions options) {
     throw ArgumentError.value(defer, 'aop_defer', 'Expected true or false');
   }
   return SpringBuilder(
+    generations: starterGenerations,
     pruneProxies: prune,
     deferProxies: defer,
     dartDefinesExclude: _dartDefinesExclude(
@@ -229,6 +231,7 @@ Builder springPropertiesBuilder(BuilderOptions options) {
     pruneProxies: builder.pruneProxies,
     deferProxies: builder.deferProxies,
     dartDefinesExclude: builder.dartDefinesExclude,
+    generations: builder.generations,
   );
 }
 
@@ -356,7 +359,7 @@ Builder springJsonSchemasBuilder(BuilderOptions options) =>
 /// }
 /// ```
 Builder springMetadataBuilder(BuilderOptions options) =>
-    SpringMetadataBuilder();
+    SpringMetadataBuilder(generations: starterGenerations);
 
 /// Creates the builder of the search index ([SearchIndexBuilder]),
 /// registered in `build.yaml` as `spring_search_index`: a file per language

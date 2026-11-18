@@ -7,8 +7,9 @@ import 'dart:convert';
 
 import 'package:build_test/build_test.dart';
 import 'package:crypto/crypto.dart';
-import 'package:spring_core_dart_generator/src/json_schema_classes.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/json_schemas/json_schema_classes.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:test/test.dart';
 
 const _main = '''
@@ -106,7 +107,7 @@ void main() {
     );
     await readerWriter.testing.loadIsolateSources();
     final result = await testBuilder(
-      SpringBuilder(),
+      SpringBuilder(generations: starterGenerations),
       _sources(remote),
       rootPackage: 'pkg',
       readerWriter: readerWriter,

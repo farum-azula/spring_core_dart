@@ -2,7 +2,8 @@
 // the advisor's module is left out and the bean marked @Observed gets no
 // proxy class; with it, the bean gets one and the module is in the app.
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:test/test.dart';
 
 const _main = '''
@@ -31,7 +32,7 @@ Future<String> _module(String config) async {
   );
   await readerWriter.testing.loadIsolateSources();
   final result = await testBuilder(
-    SpringBuilder(),
+    SpringBuilder(generations: starterGenerations),
     {
       'pkg|lib/main.dart': _main,
       'pkg|lib/resources/application.yml': config,

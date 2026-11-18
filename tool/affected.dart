@@ -42,6 +42,10 @@
 //   flutter          any Flutter package
 //   family           a published Dart package of the family (the
 //                    applications of tool/check_app_dependencies.dart)
+//   test_paths       the test folders to run instead of a package's whole
+//                    test/ (comma-separated `<package>/test/<part>`, for
+//                    tool/test_all.dart --test-paths): the parts of the
+//                    generator a change touched (see partedTests)
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
@@ -95,6 +99,15 @@ const _testedBy = {
   '.zap/': 'example/server_guide',
 };
 
+/// Packages whose tests are split along the parts of their `lib/src/`
+/// (package → the part the others build on): `test/<part>/` holds the
+/// tests of `lib/src/<part>/`. A change of such a package that touches
+/// parts only (`lib/src/<part>/`, `test/<part>/`) runs the tests of those
+/// parts; one of the core part's code, of any other file of the package
+/// (`lib/*.dart`, `build.yaml`, `pubspec.yaml`, `test/support/`, ...), of a
+/// package it depends on or of a shared file runs all of them.
+const partedTests = {'spring_core_dart_generator': 'core'};
+
 /// Changed paths that affect no package.
 bool _ignored(String path) =>
     path.endsWith('.md') ||
@@ -109,9 +122,13 @@ Future<void> main(List<String> args) async {
       : null;
   final packages = [...workspacePackages(), ...flutterPackages];
   final changed = base == null ? null : _changedFiles(base);
-  final affected = changed == null
-      ? packages.toSet()
-      : affectedPackages(changed, packages, localDependencies(packages));
+  var affected = packages.toSet();
+  var testPaths = const <String>[];
+  if (changed != null) {
+    final dependencies = localDependencies(packages);
+    affected = affectedPackages(changed, packages, dependencies);
+    testPaths = partTestPaths(changed, packages, affected, dependencies);
+  }
   final ordered = [
     for (final package in packages)
       if (affected.contains(package)) package,
@@ -128,6 +145,9 @@ Future<void> main(List<String> args) async {
           ? 'No package affected.'
           : 'Affected: ${ordered.join(', ')}',
     );
+  if (testPaths.isNotEmpty) {
+    stdout.writeln('Only the tests of the parts: ${testPaths.join(', ')}');
+  }
 
   if (args.contains('--github-output')) {
     final output = Platform.environment['GITHUB_OUTPUT'];
@@ -200,6 +220,7 @@ Future<void> main(List<String> args) async {
         'supabase_example=$supabaseExample',
         'flutter=$anyFlutter',
         'family=${familyAffected(affected)}',
+        'test_paths=${testPaths.join(',')}',
         '',
       ].join('\n'),
       mode: FileMode.append,
@@ -223,33 +244,18 @@ Set<String> affectedPackages(
 ) {
   final direct = <String>{};
   for (final path in changed) {
-    if (_everything.any(
-      (prefix) =>
-          prefix.endsWith('/') ? path.startsWith(prefix) : path == prefix,
-    )) {
+    if (_shared(path)) {
       return packages.toSet();
     }
     // The theme snippets are checked by the starter's tests.
-    if (_testedBy.entries
-            .where((e) => path.startsWith(e.key))
-            .map((e) => e.value)
-            .firstOrNull
-        case final package?) {
+    if (_checkedBy(path) case final package?) {
       direct.add(package);
       continue;
     }
     if (_ignored(path)) {
       continue;
     }
-    // The innermost package holding the file (example/x before example/).
-    String? owner;
-    for (final package in packages) {
-      if (path.startsWith('$package/') &&
-          (owner == null || package.length > owner.length)) {
-        owner = package;
-      }
-    }
-    if (owner != null) {
+    if (_owner(path, packages) case final owner?) {
       direct.add(owner);
     }
   }
@@ -266,6 +272,76 @@ Set<String> affectedPackages(
     }
   }
   return affected;
+}
+
+/// The test folders (`<package>/test/<part>`, sorted) of the [partedTests]
+/// packages in [affected] that [changed] reaches through their parts only;
+/// such a package missing here (as every other package) runs its whole
+/// `test/`. A part is a folder of `lib/src/` that has a folder of the same
+/// name under `test/` (paths relative to [root]); a change of a part
+/// without tests of its own runs all of them.
+List<String> partTestPaths(
+  List<String> changed,
+  List<String> packages,
+  Set<String> affected,
+  Map<String, Set<String>> dependencies, {
+  String root = '.',
+}) {
+  if (changed.any(_shared)) {
+    return const [];
+  }
+  final paths = <String>[];
+  for (final MapEntry(key: package, value: core) in partedTests.entries) {
+    // Reached through a dependency or a file its tests check: all of them.
+    if (!affected.contains(package) ||
+        (dependencies[package] ?? const {}).any(affected.contains) ||
+        changed.any((path) => _checkedBy(path) == package)) {
+      continue;
+    }
+    final parts = <String>{};
+    for (final path in changed) {
+      if (_ignored(path) || _owner(path, packages) != package) {
+        continue;
+      }
+      final part = switch (p.split(path.substring(package.length + 1))) {
+        ['lib', 'src', final part, _, ...] when part != core => part,
+        ['test', final part, _, ...] => part,
+        _ => null,
+      };
+      bool exists(String folder) =>
+          Directory(p.join(root, package, folder, part)).existsSync();
+      if (part == null || !exists('lib/src') || !exists('test')) {
+        parts.clear();
+        break;
+      }
+      parts.add(part);
+    }
+    paths.addAll([for (final part in parts) '$package/test/$part']);
+  }
+  return paths..sort();
+}
+
+/// Whether [path] is a shared file: every package is affected.
+bool _shared(String path) => _everything.any(
+  (prefix) => prefix.endsWith('/') ? path.startsWith(prefix) : path == prefix,
+);
+
+/// The package whose tests check [path], a file outside it ([_testedBy]).
+String? _checkedBy(String path) => _testedBy.entries
+    .where((e) => path.startsWith(e.key))
+    .map((e) => e.value)
+    .firstOrNull;
+
+/// The innermost of [packages] holding [path] (example/x before example/).
+String? _owner(String path, List<String> packages) {
+  String? owner;
+  for (final package in packages) {
+    if (path.startsWith('$package/') &&
+        (owner == null || package.length > owner.length)) {
+      owner = package;
+    }
+  }
+  return owner;
 }
 
 /// Files changed between [base] and HEAD (from their merge base, as a pull

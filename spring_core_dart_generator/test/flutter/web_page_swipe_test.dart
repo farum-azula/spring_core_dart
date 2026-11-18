@@ -1,7 +1,7 @@
 // spring.flutter.web.page.swipe-to-close: false writes the block that
 // keeps the page open on a swipe down; true (the default) removes it;
 // writing it twice gives one block.
-import 'package:spring_core_dart_generator/src/web_page_head.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_page_head.dart';
 import 'package:test/test.dart';
 
 const _page =

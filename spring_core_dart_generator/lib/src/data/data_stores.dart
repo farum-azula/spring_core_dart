@@ -121,8 +121,9 @@ final class DescribedStore {
 }
 
 /// The stores the build knows and the application's default store, read
-/// once for a build step; `BeanScanner` asks it while it scans the
-/// repositories and the `@Transactional` beans.
+/// once for a build step (`DataGeneration.prepareModule`); the data part
+/// asks it while it scans the repositories and checks the `@Transactional`
+/// beans.
 ///
 /// The store of a repository is its `@UseStore`; else the SQL store with
 /// a `@UseDataSource`; else `spring.data.store` of the configuration the

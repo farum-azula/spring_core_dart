@@ -1,6 +1,6 @@
 import 'package:spring_core_dart/core.dart';
-import 'package:spring_core_dart_generator/src/dart_names.dart';
-import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
+import 'package:spring_core_dart_generator/src/core/dart_names.dart';
+import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart';
 
 /// Writes the typed accessors of the message files: `context.messages`
 /// with a class per key prefix, a getter for a message without arguments

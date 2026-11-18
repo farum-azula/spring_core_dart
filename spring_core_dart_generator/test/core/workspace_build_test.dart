@@ -14,10 +14,11 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/package_directory.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/test_builder.dart';
+import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/test/test_builder.dart';
 import 'package:test/test.dart';
 
 const _scan = r'''
@@ -119,6 +120,7 @@ void main() {
   group('the output kept while the sources have errors', () {
     // The build runs in app's directory and builds pkg.
     SpringBuilder builder() => SpringBuilder(
+      generations: starterGenerations,
       proxyMode: ProxyMode.none,
       packageDirectories: PackageDirectories(workingDirectory: _package('app')),
     );
@@ -177,10 +179,14 @@ class AppAssets {
   final Resource logo;
 }
 ''';
-    const pubspec = 'name: pkg\nflutter:\n  assets:\n    - images/\n';
+    // spring_boot_starter_flutter's `asset:`, whose part checks the assets.
+    const pubspec =
+        'name: pkg\ndependencies:\n  spring_boot_starter_flutter: any\n'
+        'flutter:\n  assets:\n    - images/\n';
 
     Future<TestBuilderResult> build() async => (await _build(
       SpringBuilder(
+        generations: starterGenerations,
         packageDirectories: PackageDirectories(workingDirectory: _workspace),
       ),
       {

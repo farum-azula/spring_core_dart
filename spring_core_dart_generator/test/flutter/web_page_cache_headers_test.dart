@@ -9,8 +9,8 @@ import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:spring_core_dart/core.dart'
     show MapPropertySource, StandardEnvironment;
-import 'package:spring_core_dart_generator/src/web_cache_headers.dart';
-import 'package:spring_core_dart_generator/src/web_page_loader_builder.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_cache_headers.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_page_loader_builder.dart';
 import 'package:test/test.dart';
 
 // The Cache-Control value of [keys] (below the prefix) and the problems.

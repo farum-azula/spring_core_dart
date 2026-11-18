@@ -1,4 +1,4 @@
-import 'package:spring_core_dart_generator/src/sql_lexer.dart';
+import 'package:spring_core_dart_generator/src/data/sql_lexer.dart';
 
 /// A table or view the build knows: its name and its columns.
 ///

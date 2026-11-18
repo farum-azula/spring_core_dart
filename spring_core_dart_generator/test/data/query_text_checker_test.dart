@@ -2,10 +2,10 @@
 // parameters, and the tables and columns that are misspelled. These are
 // plain unit tests of the text checks (no build); the same checks inside a
 // build are in data_query_test.dart.
-import 'package:spring_core_dart_generator/src/data_schema.dart';
-import 'package:spring_core_dart_generator/src/did_you_mean.dart';
-import 'package:spring_core_dart_generator/src/query_text_checker.dart';
-import 'package:spring_core_dart_generator/src/sql_lexer.dart';
+import 'package:spring_core_dart_generator/src/core/did_you_mean.dart';
+import 'package:spring_core_dart_generator/src/data/data_schema.dart';
+import 'package:spring_core_dart_generator/src/data/query_text_checker.dart';
+import 'package:spring_core_dart_generator/src/data/sql_lexer.dart';
 import 'package:test/test.dart';
 
 const _entities = [

@@ -2,8 +2,9 @@ part of 'bean_scanner.dart';
 
 // What the application does with the classes of its methods, as far as the
 // build can see: the generator describes a class only for those uses (see
-// `IntrospectionNeed`). The starters' annotations are matched by URL, so the
-// generator does not depend on them.
+// `IntrospectionNeed`). What a starter's annotation implies is the
+// starter's part's to say (`StarterGeneration.methodNeeds` and
+// `expressionUse`), so the core knows no starter.
 //
 // ```dart
 // @GetMapping('/books')
@@ -13,47 +14,9 @@ part of 'bean_scanner.dart';
 // // (constructor and setters).
 // ```
 //
-// A method with an annotation of a user's `@BeanMethodAnnotation()` is
-// something the build knows nothing of: its types are described entirely.
-
-const _webAnnotations = 'package:spring_web_dart/src/annotations.dart';
-const _mapping = TypeChecker.fromUrl('$_webAnnotations#Mapping');
-const _requestBody = TypeChecker.fromUrl('$_webAnnotations#RequestBody');
-const _requestPart = TypeChecker.fromUrl('$_webAnnotations#RequestPart');
-const _exceptionHandler = TypeChecker.fromUrl(
-  'package:spring_web_dart/src/controller_annotations.dart#ExceptionHandler',
-);
-
-const _webSocketAnnotations =
-    'package:spring_boot_starter_websocket/src/server/web_socket_endpoint.dart';
-// The server's message handler: the message is read in, the reply written.
-const _onMessage = TypeChecker.fromUrl(
-  'package:spring_boot_starter_websocket/src/web_socket_client.dart#OnMessage',
-);
-// Handlers that get the connection, the status or the error: none of their
-// types is read from or written to JSON.
-final List<TypeChecker> _webSocketEvents = [
-  for (final name in const ['OnOpen', 'OnClose', 'OnError'])
-    TypeChecker.fromUrl('$_webSocketAnnotations#$name'),
-];
-
-const _scheduled = TypeChecker.fromUrl(
-  'package:spring_boot_starter_scheduling/src/scheduled.dart#Scheduled',
-);
-
-const _securityAnnotations =
-    'package:spring_security_core/src/method/annotations.dart';
-const _preAuthorize = TypeChecker.fromUrl('$_securityAnnotations#PreAuthorize');
-const _postAuthorize = TypeChecker.fromUrl(
-  '$_securityAnnotations#PostAuthorize',
-);
-const _preFilter = TypeChecker.fromUrl('$_securityAnnotations#PreFilter');
-const _postFilter = TypeChecker.fromUrl('$_securityAnnotations#PostFilter');
-const _secured = TypeChecker.fromUrl('$_securityAnnotations#Secured');
-
-const _cacheEvict = TypeChecker.fromUrl('$_cacheAnnotations#CacheEvict');
-
-final TypeChecker _validated = _spring('Validated');
+// A method with an annotation of a user's `@BeanMethodAnnotation()` that no
+// part knows is something the build knows nothing of: its types are
+// described entirely.
 
 /// What the types of one annotated method need: the return type (a
 /// `Future`'s value, the elements of a `Stream`, ...) and each parameter,
@@ -69,80 +32,45 @@ typedef SpelUse = ({bool arguments, bool result, bool target});
 
 extension _IntrospectionNeeds on BeanScanner {
   // What each annotation of the method [method] (the `@BeanMethodAnnotation`
-  // ones, [marked]) does with its parameters and its result; the union over
-  // the annotations.
+  // ones, [marked]) does with its parameters and its result, as the first
+  // part that knows the annotation says; the union over the annotations.
   AnnotatedMethodNeeds _annotatedMethodNeeds(
     MethodElement method,
     List<InterfaceType> marked,
   ) {
-    final parameters = method.formalParameters;
     var result = IntrospectionNeed.none;
-    final need = List.filled(parameters.length, IntrospectionNeed.none);
-    void all() {
-      result |= IntrospectionNeed.all;
-      for (var i = 0; i < need.length; i++) {
-        need[i] |= IntrospectionNeed.all;
-      }
-    }
-
+    final need = List.filled(
+      method.formalParameters.length,
+      IntrospectionNeed.none,
+    );
     for (final type in marked) {
-      if (_mapping.isAssignableFromType(type) ||
-          _exceptionHandler.isExactlyType(type)) {
-        // The answer is written out, and a test reads it back
-        // (`mapper.readValue<BookDto>(res.body)`, and test/ is not
-        // scanned): both. A body or a part is read in (and checked, with
-        // `@Valid()`).
-        result |= IntrospectionNeed.read | IntrospectionNeed.write;
-        for (final (i, parameter) in parameters.indexed) {
-          if (_requestBody.hasAnnotationOf(parameter) ||
-              _requestPart.hasAnnotationOf(parameter)) {
-            need[i] |= IntrospectionNeed.write;
-            if (_valid.hasAnnotationOf(parameter) ||
-                _validated.hasAnnotationOf(parameter)) {
-              need[i] |= IntrospectionNeed.validate;
-            }
-          }
+      AnnotatedMethodNeeds? known;
+      for (final generation in generations) {
+        known = generation.methodNeeds(type, method, _starterScan);
+        if (known != null) {
+          break;
         }
-      } else if (_onMessage.isExactlyType(type)) {
-        // A message handler of an endpoint: the message (a parameter that
-        // is no path variable or session; of other packages' types nothing
-        // is described) is read in, the reply written out.
-        result |= IntrospectionNeed.read;
-        for (var i = 0; i < need.length; i++) {
-          need[i] |= IntrospectionNeed.write;
-        }
-      } else if (_webSocketEvents.any((c) => c.isExactlyType(type)) ||
-          _scheduled.isExactlyType(type) ||
-          _secured.isExactlyType(type)) {
-        // Nothing of their types is read or written by the framework.
-        continue;
-      } else if (_preAuthorize.isExactlyType(type) ||
-          _postAuthorize.isExactlyType(type) ||
-          _preFilter.isExactlyType(type) ||
-          _postFilter.isExactlyType(type)) {
-        final spel = _spelUse([
-          for (final annotation in method.metadata.annotations)
-            ?annotation.computeConstantValue(),
-        ]);
-        if (spel.arguments) {
-          for (var i = 0; i < need.length; i++) {
-            need[i] |= IntrospectionNeed.spel;
-          }
-        }
-        if (spel.result) {
-          result |= IntrospectionNeed.spel;
-        }
-      } else {
+      }
+      if (known == null) {
         // An annotation the build does not know: whatever its framework
         // does with the values, it can.
-        all();
+        result |= IntrospectionNeed.all;
+        for (var i = 0; i < need.length; i++) {
+          need[i] |= IntrospectionNeed.all;
+        }
+        continue;
+      }
+      result |= known.result;
+      for (final (i, parameter) in known.parameters.take(need.length).indexed) {
+        need[i] |= parameter;
       }
     }
     return (result: result, parameters: need);
   }
 
   // The expressions in [annotations] (of one method): cache keys and
-  // conditions, security expressions. Which values they may reach:
+  // conditions, security expressions. Which values they may reach, as the
+  // first part that knows each annotation says:
   //
   // - `#name`, `#p0`, `#a0`, `args`: the arguments;
   // - `#result` (cache), `returnObject` and `filterObject` (security): the
@@ -152,59 +80,20 @@ extension _IntrospectionNeeds on BeanScanner {
     var arguments = false;
     var result = false;
     var target = false;
-
-    String? textOf(DartObject annotation, String field) {
-      final text = annotation.getField(field)?.toStringValue();
-      return text == null || text.isEmpty ? null : text;
-    }
-
-    bool mentions(String text, String word) =>
-        RegExp('\\b$word\\b').hasMatch(text);
-
-    void visit(DartObject annotation) {
-      final type = annotation.type;
-      if (type == null) {
-        return;
+    for (final annotation in annotations) {
+      if (annotation.type == null) {
+        continue;
       }
-      if (_cacheable.isExactlyType(type) ||
-          _cachePut.isExactlyType(type) ||
-          _cacheEvict.isExactlyType(type)) {
-        for (final field in const ['key', 'condition', 'unless']) {
-          final text = textOf(annotation, field);
-          if (text == null) {
-            continue;
-          }
-          arguments |= text.contains('#') || mentions(text, 'args');
-          result |= text.contains('#result');
-          target |= mentions(text, 'target');
+      for (final generation in generations) {
+        if (generation.expressionUse(annotation, _starterScan)
+            case final use?) {
+          arguments |= use.arguments;
+          result |= use.result;
+          target |= use.target;
+          break;
         }
-      } else if (_caching.isExactlyType(type)) {
-        for (final field in const ['cacheable', 'put', 'evict']) {
-          annotation.getField(field)?.toListValue()?.forEach(visit);
-        }
-      } else if (_preAuthorize.isExactlyType(type) ||
-          _postAuthorize.isExactlyType(type) ||
-          _preFilter.isExactlyType(type) ||
-          _postFilter.isExactlyType(type)) {
-        final text = textOf(annotation, 'value');
-        if (text == null) {
-          return;
-        }
-        final before =
-            _preAuthorize.isExactlyType(type) || _preFilter.isExactlyType(type);
-        arguments |=
-            text.contains('#') ||
-            (_preFilter.isExactlyType(type) && mentions(text, 'filterObject'));
-        result |=
-            !before &&
-            (_postAuthorize.isExactlyType(type)
-                ? mentions(text, 'returnObject')
-                : mentions(text, 'filterObject'));
-        target |= mentions(text, 'target');
       }
     }
-
-    annotations.forEach(visit);
     return (arguments: arguments, result: result, target: target);
   }
 

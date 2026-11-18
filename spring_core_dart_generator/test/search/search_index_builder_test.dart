@@ -6,8 +6,9 @@
 // builder never embeds them. (What the files hold, and that the search reads
 // them: spring_search_dart's tests.)
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/search_index_builder.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/search/search_index_builder.dart';
+import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:test/test.dart';
 
 const _main = '''
@@ -164,7 +165,7 @@ void main() {
     );
     await readerWriter.testing.loadIsolateSources();
     final result = await testBuilder(
-      SpringBuilder(),
+      SpringBuilder(generations: starterGenerations),
       {..._sources(), 'pkg|$_en': '{"format": 1}'},
       rootPackage: 'pkg',
       readerWriter: readerWriter,

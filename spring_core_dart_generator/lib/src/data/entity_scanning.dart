@@ -1,4 +1,4 @@
-part of 'bean_scanner.dart';
+part of 'data_scanner.dart';
 
 // The classes of spring_boot_starter_data's data layer: the entities
 // (`@Table`) and the DTOs its `@Query` methods return. Each gets an
@@ -39,7 +39,7 @@ const _slice = TypeChecker.fromUrl(
   'package:spring_boot_starter_data/src/repository/page.dart#Slice',
 );
 
-extension _EntityScanning on BeanScanner {
+extension _EntityScanning on DataScanner {
   /// The `@Query` methods of [repository] and of its supertypes, each with
   /// its annotation; a method overridden further down is read once.
   Iterable<(MethodElement, DartObject)> _queryMethods(
@@ -151,31 +151,31 @@ extension _EntityScanning on BeanScanner {
   /// value. A getter written out (`bool get isNew => id == null`) computes
   /// its value and is no property, unless a parameter takes its name.
   void scanEntity(ClassElement element, {String? returnedBy}) {
-    if (!_entityClasses.add(element)) {
+    if (!data.entityClasses.add(element)) {
       return;
     }
-    final name = _requireName(element);
+    final name = scan.requireName(element);
     final what = returnedBy == null
         ? '@Table class $name'
         : 'Class $name (read by the @Query method $returnedBy)';
     // Names a DTO's origin in front of the problems of its members.
     final context = returnedBy == null ? '' : '$what: ';
     if (element.isPrivate) {
-      BeanScanner._fail(
+      DataScanner._fail(
         '$what must be public: the generated code cannot name it. '
         'Make it public.',
         element,
       );
     }
     if (element.isAbstract) {
-      BeanScanner._fail(
+      DataScanner._fail(
         '$what is abstract: rows cannot be turned into an instance of it. '
         'Make it a concrete class.',
         element,
       );
     }
     if (element.typeParameters.isNotEmpty) {
-      BeanScanner._fail(
+      DataScanner._fail(
         '$what is generic, which is not supported: remove its type '
         'parameters.',
         element,
@@ -183,7 +183,7 @@ extension _EntityScanning on BeanScanner {
     }
     final constructor = element.unnamedConstructor;
     if (constructor == null || constructor.isPrivate) {
-      BeanScanner._fail(
+      DataScanner._fail(
         '$what has no public unnamed constructor, which the data layer '
         'calls to create an instance. Add one, such as '
         '$name({this.id, required this.title}).',
@@ -196,7 +196,7 @@ extension _EntityScanning on BeanScanner {
         ?parameter.name: parameter,
     };
     final properties = <EntityPropertyModel>[];
-    for (final field in _describedFields(_describedClasses(element))) {
+    for (final field in scan.describedFields(element)) {
       final fieldName = field.name!;
       final parameter = parameters[fieldName];
       final writable = field.setter != null;
@@ -205,13 +205,13 @@ extension _EntityScanning on BeanScanner {
         continue;
       }
       final annotations = [
-        ..._userAnnotations(field),
-        if (field.getter case final getter?) ..._userAnnotations(getter),
+        ...scan.userAnnotations(field),
+        if (field.getter case final getter?) ...scan.userAnnotations(getter),
       ];
       if (!writable &&
           parameter == null &&
           !annotations.any((a) => _transient.isAssignableFromType(a.type!))) {
-        BeanScanner._fail(
+        DataScanner._fail(
           '$context$name.$fieldName is final and no parameter of the '
           'constructor takes it, so nothing could set it when reading a '
           'row. Make it a constructor parameter (this.$fieldName), make it '
@@ -221,20 +221,20 @@ extension _EntityScanning on BeanScanner {
       }
       if (annotations.any((a) => _dataJson.isExactlyType(a.type!))) {
         // The mapper writes the value into the column and reads it back.
-        _introspectUsed(
+        scan.introspectUsed(
           _fieldType(element, field),
           element,
           need: IntrospectionNeed.read | IntrospectionNeed.write,
         );
       }
-      final initial = initialValueOf(field);
+      final initial = scan.initialValueOf(field);
       DartObject? parameterDefault;
       if (parameter != null && parameter.hasDefaultValue) {
         parameterDefault = parameter.computeConstantValue();
         if (initial == null &&
             parameterDefault != null &&
-            !_isRecreatable(parameterDefault)) {
-          BeanScanner._fail(
+            !scan.isRecreatable(parameterDefault)) {
+          DataScanner._fail(
             '$context$name.$fieldName: the default of the constructor '
             'parameter $fieldName cannot be written by the build, so a row '
             'without a value for it would not get that default. Make the '
@@ -264,11 +264,11 @@ extension _EntityScanning on BeanScanner {
     // later positional one could then not be passed.
     String? skipped;
     for (final parameter in constructor.formalParameters) {
-      final parameterName = _requireName(parameter);
+      final parameterName = scan.requireName(parameter);
       final index = indexes[parameterName];
       if (index == null) {
         if (parameter.isRequired) {
-          BeanScanner._fail(
+          DataScanner._fail(
             '$context$name($parameterName): the constructor parameter '
             '$parameterName names no field, so no column could give it a '
             'value. Name a field $parameterName (this.$parameterName), or '
@@ -282,7 +282,7 @@ extension _EntityScanning on BeanScanner {
         continue;
       }
       if (parameter.isPositional && skipped != null) {
-        BeanScanner._fail(
+        DataScanner._fail(
           '$context$name($parameterName): the optional positional parameter '
           '$skipped names no field, but $parameterName, after it, does: '
           'the data layer cannot leave $skipped out. Make them named '
@@ -298,7 +298,7 @@ extension _EntityScanning on BeanScanner {
         propertyType,
         parameter.type,
       )) {
-        BeanScanner._fail(
+        DataScanner._fail(
           '$context$name($parameterName): the constructor parameter has '
           'the type ${parameter.type.getDisplayString()}, but the field '
           '$parameterName has the type ${propertyType.getDisplayString()}, '
@@ -312,13 +312,13 @@ extension _EntityScanning on BeanScanner {
         EntityArgument(index, name: parameter.isNamed ? parameterName : null),
       );
     }
-    module.entities.add(
+    data.entities.add(
       EntityModel(
         element: element,
         type: type,
         properties: properties,
         arguments: arguments,
-        annotations: _userAnnotations(element),
+        annotations: scan.userAnnotations(element),
       ),
     );
   }

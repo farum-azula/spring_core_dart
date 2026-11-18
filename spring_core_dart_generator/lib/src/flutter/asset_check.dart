@@ -4,8 +4,8 @@
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/bean_model.dart';
-import 'package:spring_core_dart_generator/src/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/package_directory.dart';
 import 'package:yaml/yaml.dart';
 
 /// Checks that every Flutter asset injected with a literal

@@ -5,10 +5,10 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:spring_core_dart/core.dart' show RemoteAddresses;
-import 'package:spring_core_dart_generator/src/theme_palette.dart';
-import 'package:spring_core_dart_generator/src/theme_references.dart';
-import 'package:spring_core_dart_generator/src/typed_theme_keys.dart';
-import 'package:spring_core_dart_generator/src/web_page_head.dart';
+import 'package:spring_core_dart_generator/src/flutter/theme_palette.dart';
+import 'package:spring_core_dart_generator/src/flutter/theme_references.dart';
+import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_page_head.dart';
 
 /// The page loader: what the browser shows from the first byte of the page
 /// until the Flutter splash paints, made from the `splash` of the active

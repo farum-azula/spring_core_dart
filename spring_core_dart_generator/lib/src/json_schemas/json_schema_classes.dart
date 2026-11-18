@@ -5,12 +5,11 @@ import 'package:build/build.dart' hide Resource;
 import 'package:dart_style/dart_style.dart';
 import 'package:spring_core_dart/core.dart';
 import 'package:spring_core_dart/json.dart' show JsonSchemaLocations;
-import 'package:spring_core_dart_generator/src/package_directory.dart';
-import 'package:spring_core_dart_generator/src/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/spring_key_files.dart';
-import 'package:spring_core_dart_generator/src/web_dev_config_builder.dart'
-    show readPlatformEnvironment;
-import 'package:spring_core_dart_generator/src/web_loader_download.dart';
+import 'package:spring_core_dart_generator/src/core/build_environment.dart';
+import 'package:spring_core_dart_generator/src/core/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/flutter/spring_key_files.dart';
+import 'package:spring_core_dart_generator/src/flutter/web_loader_download.dart';
 
 /// One schema of `spring.json.schemas`: where it is, its pin, and how its
 /// classes are named.

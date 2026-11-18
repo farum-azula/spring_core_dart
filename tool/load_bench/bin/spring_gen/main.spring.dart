@@ -490,6 +490,10 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
   autoConfigurations: [
     _i10.springBootAutoConfiguration,
     _i11.springBootStarterDataAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i11.springBootStarterDataSqlLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i11.springBootStarterDataStartupChecksAutoConfiguration,
     _i12.springBootStarterFeignAutoConfiguration,
     _i13.springBootStarterLoggingAutoConfiguration,
     _i14.springBootStarterOauth2ClientAutoConfiguration,
@@ -508,6 +512,16 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
     _i17.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i11.springBootStarterDataSqlLoggingAutoConfiguration:
+          const _i9.AutoConfigurationModule(
+            before: [r'springBootStarterDataAutoConfiguration'],
+          ),
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      _i11.springBootStarterDataStartupChecksAutoConfiguration:
+          const _i9.AutoConfigurationModule(
+            after: [r'springBootStarterDataAutoConfiguration'],
+          ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i15.springBootStarterSecurityAutoConfiguration:
@@ -735,7 +749,7 @@ _i9.SpringApplication get springApplication => _i9.SpringApplication(
     if (const bool.hasEnvironment('trace'))
       'trace': const String.fromEnvironment('trace'),
   },
-  fingerprint: 'f39bd08d',
+  fingerprint: 'a3531c66',
 );
 
 /// Starts the application: config files, environment, context, runners

@@ -1,8 +1,11 @@
-part of 'module_emitter.dart';
-
 // spring_boot_starter_flutter_navigation: the module's `ScreenRoutes` bean,
 // made of its `@ScreenRoute` and `@RouteShell` widgets, and the constants
 // of each screen (`extension BookPageRoute on BookPage`).
+import 'package:code_builder/code_builder.dart';
+import 'package:source_gen/source_gen.dart';
+import 'package:spring_core_dart_generator/src/core/dart_names.dart';
+import 'package:spring_core_dart_generator/src/core/module_emitter.dart';
+import 'package:spring_core_dart_generator/src/navigation/navigation_scanning.dart';
 
 const _navigationUrl =
     'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart';
@@ -12,7 +15,18 @@ Reference _nav(String name) => refer(name, _navigationUrl);
 // Names the constants of a route extension already use.
 const _reservedRouteNames = {'pattern', 'routeName', 'to', 'extra'};
 
-extension _NavigationEmitter on ModuleEmitter {
+/// Writes the navigation code of one module ([navigation]) through the
+/// emitter's [emission].
+final class NavigationEmitter {
+  /// The navigation code of [navigation], written through [emission].
+  NavigationEmitter(this.emission, this.navigation);
+
+  /// The emitter's ways of naming types and values.
+  final ModuleEmission emission;
+
+  /// What the navigation part found in the module.
+  final NavigationModuleModel navigation;
+
   /// The `ScreenRoutes` bean of the module's screens and shells, written
   /// with the same builder an app uses in Dart configuration:
   ///
@@ -27,40 +41,40 @@ extension _NavigationEmitter on ModuleEmitter {
   ///
   /// Throws `InvalidGenerationSource` for a path two screens of the module
   /// declare, or two not-found screens.
-  Expression screenRoutesDefinition(String moduleName) {
+  Expression screenRoutesDefinition() {
     _checkScreens();
-    var routes = _nav(
-      'ScreenRoutes',
-    ).property('route').call([], {'source': _str(moduleName)});
-    for (final shell in _module.shells) {
-      final type = _type(shell.element.thisType, shell.element);
+    var routes = _nav('ScreenRoutes')
+        .property('route')
+        .call([], {'source': emission.string(emission.moduleName)});
+    for (final shell in navigation.shells) {
+      final type = emission.type(shell.element.thisType, shell.element);
       Expression branches = refer('t');
       for (final branch in shell.branches) {
         branches = branches.property('branch').call([
-          _str(branch),
-          _closure(['b'], refer('b').code, lambda: true),
+          emission.string(branch),
+          emission.closure(['b'], refer('b').code, lambda: true),
         ]);
       }
       routes = routes
           .property('shell')
           .call(
             [
-              _closure(
+              emission.closure(
                 ['s'],
                 type.newInstance([refer('s')]).code,
                 lambda: true,
               ),
-              _closure(['t'], branches.code, lambda: true),
+              emission.closure(['t'], branches.code, lambda: true),
             ],
-            {'key': type, 'source': _str(shell.source)},
+            {'key': type, 'source': emission.string(shell.source)},
           );
     }
-    for (final screen in _module.screens) {
-      final type = _type(screen.element.thisType, screen.element);
+    for (final screen in navigation.screens) {
+      final type = emission.type(screen.element.thisType, screen.element);
       final widget = screen.constConstructor
           ? type.constInstance([])
           : type.newInstance([]);
-      final builder = _closure(['r'], widget.code, lambda: true);
+      final builder = emission.closure(['r'], widget.code, lambda: true);
       if (screen.notFound) {
         routes = routes.property('notFound').call([builder]);
         continue;
@@ -68,48 +82,57 @@ extension _NavigationEmitter on ModuleEmitter {
       routes = routes
           .property('screen')
           .call(
-            [_str(screen.path), builder],
+            [emission.string(screen.path), builder],
             {
-              'name': _str(screen.name),
-              if (screen.title case final title?) 'title': _str(title),
+              'name': emission.string(screen.name),
+              if (screen.title case final title?)
+                'title': emission.string(title),
               if (screen.params.isNotEmpty)
                 'params': literalMap({
                   for (final param in screen.params)
-                    _str(param.name): _typeValue(param.type, screen.element),
+                    emission.string(param.name): emission.typeValue(
+                      param.type,
+                      screen.element,
+                    ),
                 }),
               if (screen.extra case final extra?)
-                'extra': _typeValue(extra, screen.element),
+                'extra': emission.typeValue(extra, screen.element),
               if (screen.shell case final shell?)
-                'shell': _type(shell.thisType, shell),
-              if (screen.branch case final branch?) 'branch': _str(branch),
+                'shell': emission.type(shell.thisType, shell),
+              if (screen.branch case final branch?)
+                'branch': emission.string(branch),
               if (screen.transition case final transition?)
                 'transition': _nav('PageTransition').property(transition),
-              if (screen.content case final content?) 'content': _str(content),
+              if (screen.content case final content?)
+                'content': emission.string(content),
               if (!screen.link) 'link': literalFalse,
               if (screen.preAuthorize case final expression?)
                 'attributes': literalConstMap({
-                  _nav('RouteAttributes').property('preAuthorize'): _str(
+                  _nav('RouteAttributes')
+                      .property('preAuthorize'): emission.string(
                     expression,
                   ),
                 }),
-              'source': _str(screen.source),
+              'source': emission.string(screen.source),
             },
           );
     }
     // `BeanDefinition<ScreenRoutes>`: its type is the only one.
-    return _spring('BeanDefinition').newInstance(
-      [],
-      {
-        'name': _str('screenRoutes#$moduleName'),
-        'source': _str('$_navigationUrl#ScreenRoutes'),
-        'create': _closure(
-          ['r'],
-          routes.property('build').call([]).code,
-          lambda: true,
-        ),
-      },
-      [_nav('ScreenRoutes')],
-    );
+    return emission
+        .spring('BeanDefinition')
+        .newInstance(
+          [],
+          {
+            'name': emission.string('screenRoutes#${emission.moduleName}'),
+            'source': emission.string('$_navigationUrl#ScreenRoutes'),
+            'create': emission.closure(
+              ['r'],
+              routes.property('build').call([]).code,
+              lambda: true,
+            ),
+          },
+          [_nav('ScreenRoutes')],
+        );
   }
 
   /// The constants of [screen]: `extension BookPageRoute on BookPage` with
@@ -154,14 +177,23 @@ extension _NavigationEmitter on ModuleEmitter {
           '/// The route of [$className]: its path, name, values and `to`.',
         )
         ..name = '${className}Route'
-        ..on = _type(element.thisType, element)
+        ..on = emission.type(element.thisType, element)
         ..fields.addAll([
-          constant('pattern', _str(screen.path), '/// The path pattern.'),
-          constant('routeName', _str(screen.name), "/// The route's name."),
+          constant(
+            'pattern',
+            emission.string(screen.path),
+            '/// The path pattern.',
+          ),
+          constant(
+            'routeName',
+            emission.string(screen.name),
+            "/// The route's name.",
+          ),
           for (final MapEntry(key: variable, value: name) in variables.entries)
             constant(
               name,
-              _nav('RouteVar').constInstance([_str(variable)], {}, [string]),
+              _nav('RouteVar')
+                  .constInstance([emission.string(variable)], {}, [string]),
               '/// The path variable `$variable`.',
             ),
           for (final MapEntry(key: param, value: name) in params.entries)
@@ -170,10 +202,10 @@ extension _NavigationEmitter on ModuleEmitter {
               _nav(
                 'RouteParam',
               ).constInstance(
-                [_str(param.name)],
+                [emission.string(param.name)],
                 {},
                 [
-                  _type(param.type, element),
+                  emission.type(param.type, element),
                 ],
               ),
               '/// The query parameter `${param.name}`.',
@@ -181,7 +213,8 @@ extension _NavigationEmitter on ModuleEmitter {
           if (extra != null)
             constant(
               'extra',
-              _nav('RouteExtra').constInstance([], {}, [_type(extra, element)]),
+              _nav('RouteExtra')
+                  .constInstance([], {}, [emission.type(extra, element)]),
               '/// The extra object, not in the address.',
             ),
         ])
@@ -208,14 +241,14 @@ extension _NavigationEmitter on ModuleEmitter {
                     (p) => p
                       ..name = name
                       ..named = true
-                      ..type = _nullable(_type(param.type, element)),
+                      ..type = _nullable(emission.type(param.type, element)),
                   ),
                 if (extra != null)
                   Parameter(
                     (p) => p
                       ..name = 'extra'
                       ..named = true
-                      ..type = _nullable(_type(extra, element)),
+                      ..type = _nullable(emission.type(extra, element)),
                   ),
               ])
               ..lambda = true
@@ -228,13 +261,13 @@ extension _NavigationEmitter on ModuleEmitter {
                         'pathVariables': literalMap({
                           for (final MapEntry(key: variable, value: name)
                               in variables.entries)
-                            _str(variable): refer(name),
+                            emission.string(variable): refer(name),
                         }),
                       if (params.isNotEmpty)
                         'params': literalMap({
                           for (final MapEntry(key: param, value: name)
                               in params.entries)
-                            _str(param.name): refer(name),
+                            emission.string(param.name): refer(name),
                         }),
                       if (extra != null) 'extra': refer('extra'),
                     },
@@ -248,7 +281,7 @@ extension _NavigationEmitter on ModuleEmitter {
   void _checkScreens() {
     final byPath = <String, ScreenRouteModel>{};
     ScreenRouteModel? notFound;
-    for (final screen in _module.screens) {
+    for (final screen in navigation.screens) {
       if (screen.notFound) {
         if (notFound != null) {
           throw InvalidGenerationSource(
