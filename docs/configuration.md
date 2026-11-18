@@ -4319,6 +4319,10 @@ spring:
         hero:
           source: asset:assets/models/hero.glb
           preload: lazy
+      materials:
+        glass:
+          source: assets/materials/glass.fmat
+          preload: eager
       app:
         enabled: true
         placement: background

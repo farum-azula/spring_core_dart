@@ -14,7 +14,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   # Cupertino's widgets, which the pages use themselves (Flutter 3.50 has
   # them in this package, not in the SDK).
-  cupertino_ui: ^1.1.6
+  cupertino_ui: ^1.1.7
   # Cupertino for the app (spring.flutter.app.type: cupertino): the
   # CupertinoApp, CupertinoThemeData from `cupertino.*`, the iOS page
   # route with its swipe back.

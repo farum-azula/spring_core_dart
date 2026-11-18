@@ -121,6 +121,15 @@ Its code is not organised that way:
   of one part costs its folder instead of ~96 minutes.
 - Left: the coverage run of the `quality` job still runs the whole
   generator suite on every push (a decision about the coverage gate).
+- Deferred (the owner, 18 November 2026): a CI job per starter's tests
+  and per generator part, so each shows its own progress (a matrix from
+  the `changes` job, only the affected ones; the core's ~53 minutes in 2-3
+  jobs by file); costs a setup per job (SDK, `pub get`, the generator's
+  build) and the shards' shared generator build.
+- Found by measuring (18 November 2026): `spring.main.startup-checks.enabled`
+  is bound at run time (`MainProperties`), +3 KB of wasm in every app
+  (`flutter_guide`: 5,062,110 → 5,065,210 bytes) for a key only the build
+  reads; declare it for the editors only, without a binding.
 
 ## The main modules: what only development needs
 
