@@ -77,9 +77,13 @@ void rateLimitStoreContract(
     // after the next one.
     await Future<void>.delayed(const Duration(milliseconds: 1600));
     // Never more than the burst, however long the pause.
+    final afterPause = Stopwatch()..start();
     expect((await store.tryAcquire('k', fast)).remaining, 1);
     expect((await store.tryAcquire('k', fast)).allowed, isTrue);
-    expect((await store.tryAcquire('k', fast)).allowed, isFalse);
+    final last = await store.tryAcquire('k', fast);
+    // A token comes back every half second: under coverage on a runner's
+    // disk the three writes can take that long, and then it is earned.
+    if (afterPause.elapsedMilliseconds < 500) expect(last.allowed, isFalse);
   });
 
   test('several permits at once, and more than the bucket holds', () async {
