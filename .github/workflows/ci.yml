@@ -202,12 +202,13 @@ jobs:
       - name: pub.dev accepts the Dart packages (publish --dry-run)
         run: dart run tool/publish.dart --dry-run --dart
 
-      - name: Zed extension dart_spring builds
+      - name: Zed extension dart_spring builds, its tests and snippets pass
         working-directory: extensions/zed/dart_spring
         run: |
-          jq empty snippets/dart.json
+          python3 tests/check_snippets.py
           rustup target add wasm32-wasip2
           cargo build --release --target wasm32-wasip2
+          cargo test
 
       - name: Language server compiles to a native executable
         run: dart compile exe extensions/language_server/bin/dart_spring_lsp.dart -o /tmp/dart_spring_lsp

@@ -1,7 +1,8 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:dart_spring_language_server/src/dart_index.dart';
 import 'package:dart_spring_language_server/src/metadata.dart';
-import 'package:dart_spring_language_server/src/workspace.dart';
+import 'package:dart_spring_language_server/src/project_model.dart';
+import 'package:dart_spring_language_server/src/symbols/source_range.dart';
 import 'package:spring_core_dart_generator/query_syntax.dart';
 
 /// A stored property of an [EntityView]: where it is declared, its column,
@@ -137,25 +138,25 @@ final class EntityView implements PartTreeEntity {
 /// dependencies. Where they disagree the source wins and nothing from the
 /// metadata that the source lost is kept.
 final class DataModel {
-  /// A model over [workspace].
-  DataModel(this.workspace);
+  /// A model over the classes and metadata of [model].
+  DataModel(this.model);
 
-  /// The workspace whose classes and metadata are used.
-  final SpringWorkspace workspace;
+  /// What the workspace knows: its classes and metadata are used.
+  final ProjectModel model;
 
   /// The class of a `@Table` entity called [name], seen from the file
   /// [path]: the one in that file first, then one in the same package,
   /// then any. A workspace holds many classes of the same name (tests and
   /// examples of other packages each have their `Book`).
   ClassInfo? _sourceClass(String name, String path) {
-    final root = workspace.metadataFor(path).packageRoot;
+    final root = model.metadataFor(path).packageRoot;
     int rank(ClassInfo info) => info.path == path
         ? 0
         : root != null && info.path.startsWith('$root/')
         ? 1
         : 2;
     final candidates = [
-      for (final info in workspace.classesNamed(name))
+      for (final info in model.classes.classesNamed(name))
         if (info.annotationNames.contains('Table')) info,
     ]..sort((a, b) => rank(a) - rank(b));
     return candidates.firstOrNull;
@@ -163,12 +164,12 @@ final class DataModel {
 
   /// Whether a class called [name] is declared in the workspace (with or
   /// without `@Table`).
-  bool classExists(String name) => workspace.classesNamed(name).isNotEmpty;
+  bool classExists(String name) => model.classes.classesNamed(name).isNotEmpty;
 
   /// The names of every entity visible from the file [path].
   List<String> entityNames(String path) => {
-    for (final entity in workspace.metadataFor(path).entities) entity.className,
-    for (final info in workspace.allClasses)
+    for (final entity in model.metadataFor(path).entities) entity.className,
+    for (final info in model.classes.allClasses)
       if (info.annotationNames.contains('Table')) info.name,
   }.toList()..sort();
 
@@ -177,7 +178,7 @@ final class DataModel {
   EntityView? entity(String name, String path) {
     final source = _sourceClass(name, path);
     MetaEntity? meta;
-    for (final candidate in workspace.metadataFor(path).entities) {
+    for (final candidate in model.metadataFor(path).entities) {
       if (candidate.className == name) {
         meta = candidate;
         break;
@@ -352,7 +353,7 @@ final class DataModel {
           type.name.lexeme,
       };
       for (final parent in parents) {
-        final classes = workspace.classesNamed(parent);
+        final classes = model.classes.classesNamed(parent);
         if (classes.isNotEmpty) {
           collect(classes.first);
         } else if (parent != 'Object') {
@@ -401,7 +402,7 @@ final class DataModel {
   /// workspace.
   String? entityOf(ClassDeclaration declaration, String path) {
     final name = declaration.namePart.typeName.lexeme;
-    for (final repository in workspace.metadataFor(path).repositories) {
+    for (final repository in model.metadataFor(path).repositories) {
       if (repository.name == name) {
         return repository.entity;
       }
@@ -426,7 +427,7 @@ final class DataModel {
       if (!seen.add(type.name.lexeme)) {
         continue;
       }
-      for (final parent in workspace.classesNamed(type.name.lexeme)) {
+      for (final parent in model.classes.classesNamed(type.name.lexeme)) {
         if (_entityOfTypes(parent.declaration, seen) case final found?) {
           return found;
         }
@@ -439,9 +440,9 @@ final class DataModel {
   /// line the metadata names.
   List<SourceRange> locate(EntityView entity, String from) {
     if (entity.path != null && entity.offset != null) {
-      if (workspace.file(entity.path!) case final file?) {
+      if (model.files.dartFile(entity.path!) case final file?) {
         return [
-          workspace.rangeOf(
+          model.locations.rangeOf(
             file,
             entity.offset!,
             entity.offset! + entity.name.length,
@@ -455,9 +456,9 @@ final class DataModel {
   /// Where the field of [property] is, as [locate].
   List<SourceRange> locateProperty(PropertyView property, String from) {
     if (property.path != null && property.offset != null) {
-      if (workspace.file(property.path!) case final file?) {
+      if (model.files.dartFile(property.path!) case final file?) {
         return [
-          workspace.rangeOf(
+          model.locations.rangeOf(
             file,
             property.offset!,
             property.offset! + property.name.length,
@@ -469,7 +470,7 @@ final class DataModel {
   }
 
   List<SourceRange> _metaRange(String? source, int? line, String from) {
-    final path = workspace.metadataFor(from).resolve(source);
+    final path = model.metadataFor(from).resolve(source);
     if (path == null || line == null) {
       return const [];
     }

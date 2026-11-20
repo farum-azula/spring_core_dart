@@ -59,6 +59,16 @@ final class TemplatePart {
   String inner(String text) =>
       text.substring(innerStart, keyEnd ?? innerEnd).trim();
 
+  /// A placeholder's default, taken from [text] (`8080` of
+  /// `${server.port:8080}`); `null` without one, and for an expression.
+  String? fallback(String text) => switch (keyEnd) {
+    final keyEnd? when keyEnd < innerEnd => text.substring(
+      keyEnd + 1,
+      innerEnd,
+    ),
+    _ => null,
+  };
+
   @override
   String toString() => '$kind($start..$end)';
 }

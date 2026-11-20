@@ -340,7 +340,7 @@ class AuditAspect {
         final token = tokens.firstWhere(
           (t) => t.line == row && t.column == column,
         );
-        return semanticTokenTypes[token.type];
+        return token.type.legendName;
       }
 
       expect(typeAt('within(OrderService)'), 'keyword');
@@ -406,7 +406,7 @@ class Books {
       final variable = tokens.firstWhere(
         (t) => t.line == keyLine && t.column == keyColumn,
       );
-      expect(semanticTokenTypes[variable.type], 'variable');
+      expect(variable.type.legendName, 'variable');
       expect(variable.length, '#isbn'.length);
 
       final problems = workspace.problems(path);
@@ -455,7 +455,7 @@ class Books {
           _shop
                   .split('\n')[token.line]
                   .substring(token.column, token.column + token.length):
-              semanticTokenTypes[token.type],
+              token.type.legendName,
       };
       expect(types['shop.name'], 'property');
       expect(types['appConfig'], 'property');

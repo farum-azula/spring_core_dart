@@ -7,7 +7,7 @@ import 'package:dart_spring_language_server/src/metadata.dart';
 /// The annotations that make a class a bean, by name.
 ///
 /// Annotation classes of the workspace that extend one of them count too
-/// (`SpringWorkspace.stereotypes`). The web and WebSocket ones are listed
+/// (`ClassIndex.stereotypes`). The web and WebSocket ones are listed
 /// by name because the classes they extend live in a dependency, which is
 /// not indexed.
 const baseStereotypes = {
@@ -163,8 +163,8 @@ enum BeanKind {
 /// A bean declared in the workspace's sources, as far as the syntax shows
 /// it: its name, type, qualifiers and where it is declared.
 ///
-/// Go to definition leads to [offset] of [path]; a hover lists the
-/// [summary] of each candidate.
+/// Go to definition leads to its declaration in [path] ([positionIn]); a
+/// hover lists the [summary] of each candidate.
 final class BeanInfo {
   /// A bean; the index fills [providedTypes] afterwards.
   BeanInfo({
@@ -172,8 +172,8 @@ final class BeanInfo {
     required this.typeName,
     required this.kind,
     required this.path,
-    required this.offset,
-    required this.length,
+    this.declaringClass,
+    this.method,
     this.aliases = const {},
     this.qualifiers = const {},
     this.primary = false,
@@ -201,11 +201,39 @@ final class BeanInfo {
   /// The file that declares the bean.
   final String path;
 
-  /// The offset of the class or method name.
-  final int offset;
+  /// The class whose name declares the bean in [path]: the component's
+  /// class, the class of a `@Bean` method, the class of the type of a bean
+  /// of the metadata; `null` when the workspace has none to go to.
+  final String? declaringClass;
 
-  /// The length of that name.
-  final int length;
+  /// The name of the `@Bean` method that declares the bean.
+  final String? method;
+
+  /// Where the name of the declaration is in [file] (the current parse of
+  /// [path]): its offset and length, or `null` when it is not there.
+  ///
+  /// Looked up in the current parse, not kept from the one the bean was
+  /// found in: typing above the declaration moves it, and the bean index
+  /// is not built again for that.
+  ({int offset, int length})? positionIn(DartFile file) {
+    final owner = file.classes
+        .where((info) => info.name == declaringClass)
+        .firstOrNull;
+    if (owner == null) {
+      return null;
+    }
+    if (method == null) {
+      return (offset: owner.nameOffset, length: owner.name.length);
+    }
+    for (final member in owner.declaration.body.members) {
+      if (member is MethodDeclaration &&
+          member.name.lexeme == method &&
+          member.metadata.any((a) => annotationName(a) == 'Bean')) {
+        return (offset: member.name.offset, length: member.name.length);
+      }
+    }
+    return null;
+  }
 
   /// The other names given by `@Bean(aliases: [...])`.
   final Set<String> aliases;
@@ -228,7 +256,7 @@ final class BeanInfo {
   final String? contextGetter;
 
   /// For a bean from the metadata: the zero-based line of its declaration
-  /// ([offset] is not known).
+  /// (the offset is not known).
   final int? line;
 
   /// The members SpEL can reach, from the metadata (empty for a bean found

@@ -25,3 +25,10 @@ commit = "579b62f5ad8d96c2bb331f07d1408c92767531d9"
 [language_servers.dart-spring]
 name = "dart_spring"
 languages = ["Dart", "YAML", "Properties"]
+
+# Asks a dart_spring_lsp found on the PATH for its version (src/path_server.rs): it is started
+# only when it is this extension's version, so a stale local build does not win over the release.
+[[capabilities]]
+kind = "process:exec"
+command = "dart_spring_lsp"
+args = ["--version"]

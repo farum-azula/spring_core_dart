@@ -435,5 +435,161 @@
       "  }",
       "}"
     ]
+  },
+  "Scheduled method": {
+    "prefix": "spscheduled",
+    "description": "@Scheduled method, its interval from the configuration (spring_boot_starter_scheduling)",
+    "body": [
+      "@Scheduled(fixedDelayString: r'\\${${1:app.task.interval}:${2:30s}}')",
+      "void ${3:run}() {",
+      "  $0",
+      "}"
+    ]
+  },
+  "Scheduled method (cron)": {
+    "prefix": "spcron",
+    "description": "@Scheduled method on a cron expression from the configuration",
+    "body": [
+      "@Scheduled(cron: r'\\${${1:app.task.cron}:${2:0 0 6 * * *}}')",
+      "void ${3:report}() {",
+      "  $0",
+      "}"
+    ]
+  },
+  "Cacheable method": {
+    "prefix": "spcacheable",
+    "description": "@Cacheable method: its result cached by its arguments (spring_boot_starter_cache)",
+    "body": [
+      "@Cacheable('${1:books}', key: '#${2:id}')",
+      "Future<${3:Book}> ${4:find}(${5:String} ${2:id}) async {",
+      "  $0",
+      "}"
+    ]
+  },
+  "Cache evict method": {
+    "prefix": "spcacheevict",
+    "description": "@CacheEvict method: drops a cached entry",
+    "body": [
+      "@CacheEvict('${1:books}', key: '#${2:id}')",
+      "void ${3:changed}(${4:String} ${2:id}) {$0}"
+    ]
+  },
+  "Transactional method": {
+    "prefix": "sptransactional",
+    "description": "@Transactional method of a bean (spring_boot_starter_data)",
+    "body": [
+      "@Transactional()",
+      "Future<${1:void}> ${2:save}(${3}) async {",
+      "  $0",
+      "}"
+    ]
+  },
+  "Entity": {
+    "prefix": "spentity",
+    "description": "@Table entity with an @Id (spring_boot_starter_data)",
+    "body": [
+      "@Table('${1:books}')",
+      "class ${2:Book} {",
+      "  ${2:Book}({this.id, required this.${3:title}});",
+      "",
+      "  @Id()",
+      "  int? id;",
+      "",
+      "  String ${3:title};$0",
+      "}"
+    ]
+  },
+  "Data repository": {
+    "prefix": "spdatarepo",
+    "description": "A data repository interface: the data starter generates its implementation",
+    "body": [
+      "abstract interface class ${1:Books} implements ListCrudRepository<${2:Book}, ${3:int}> {",
+      "  $0",
+      "}"
+    ]
+  },
+  "PreAuthorize method": {
+    "prefix": "sppreauthorize",
+    "description": "@PreAuthorize method: a SpEL check before the call (spring_security_core)",
+    "body": [
+      "@PreAuthorize(\"hasRole('${1:ADMIN}')\")",
+      "${2:void} ${3:name}(${4}) {",
+      "  $0",
+      "}"
+    ]
+  },
+  "Secured method": {
+    "prefix": "spsecured",
+    "description": "@Secured method: callable with one of the roles",
+    "body": [
+      "@Secured(['ROLE_${1:ADMIN}'])",
+      "${2:void} ${3:name}(${4}) {",
+      "  $0",
+      "}"
+    ]
+  },
+  "REST controller": {
+    "prefix": "sprest",
+    "description": "@RestController with a GET endpoint (spring_boot_starter_web)",
+    "body": [
+      "@RestController()",
+      "@RequestMapping('/api/${1:books}')",
+      "class ${2:Books}Controller {",
+      "  ${2:Books}Controller(this._${3:service});",
+      "",
+      "  final ${4:BookService} _${3:service};",
+      "",
+      "  @GetMapping('/{${5:id}}')",
+      "  Future<${6:Book}> ${7:find}(@PathVariable() String ${5:id}) => _${3:service}.${7:find}(${5:id});$0",
+      "}"
+    ]
+  },
+  "GET endpoint": {
+    "prefix": "spget",
+    "description": "@GetMapping method with a query parameter",
+    "body": [
+      "@GetMapping('${1:/}')",
+      "${2:List<Book>} ${3:list}(@RequestParam('${4:q}') String? ${4:q}) {",
+      "  $0",
+      "}"
+    ]
+  },
+  "POST endpoint": {
+    "prefix": "sppostmapping",
+    "description": "@PostMapping method with a JSON body",
+    "body": [
+      "@PostMapping('${1:/}')",
+      "Future<${2:Book}> ${3:create}(@RequestBody() ${4:Book} ${5:body}) async {",
+      "  $0",
+      "}"
+    ]
+  },
+  "Feign client": {
+    "prefix": "spfeign",
+    "description": "@FeignClient interface: an HTTP client generated from its methods (spring_boot_starter_feign)",
+    "body": [
+      "@FeignClient('${1:offers}', url: r'\\${${2:app.offers.url}}')",
+      "abstract interface class ${3:Offers} {",
+      "  @GetMapping('/${4:offers}/{${5:id}}')",
+      "  Future<${6:Offer}> ${7:find}(@PathVariable() String ${5:id});$0",
+      "}"
+    ]
+  },
+  "WebSocket endpoint": {
+    "prefix": "spwebsocket",
+    "description": "@WebSocketEndpoint with open and message handlers (spring_boot_starter_websocket)",
+    "body": [
+      "@WebSocketEndpoint('${1:/ws/chat}')",
+      "class ${2:Chat}Endpoint {",
+      "  @OnOpen()",
+      "  void open(ServerWebSocketSession session) {}",
+      "",
+      "  /// What this returns is sent back to the sender, as JSON.",
+      "  @OnMessage()",
+      "  ${3:ChatMessage}? message(ServerWebSocketSession session, ${3:ChatMessage} message) {",
+      "    $0",
+      "  }",
+      "}"
+    ]
   }
 }

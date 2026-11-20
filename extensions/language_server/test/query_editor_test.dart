@@ -1,7 +1,6 @@
 // The SQL of `@Query` methods of a repository: colours, navigation, hovers,
 // completion and checks, with the entities of the source and of the
 // metadata.
-import 'package:dart_spring_language_server/src/config_editor.dart';
 import 'package:dart_spring_language_server/src/workspace.dart';
 import 'package:test/test.dart';
 
@@ -57,7 +56,7 @@ void main() {
         if (token.line == position.lineNumber - 1 &&
             token.column <= position.columnNumber - 1 &&
             position.columnNumber - 1 < token.column + token.length) {
-          return semanticTokenTypes[token.type];
+          return token.type.legendName;
         }
       }
       return null;
@@ -93,7 +92,7 @@ void main() {
       addTearDown(other.dispose);
       final types = {
         for (final token in other.workspace.semanticTokens(otherPath))
-          semanticTokenTypes[token.type],
+          token.type.legendName,
       };
       expect(types, containsAll(['number', 'string']));
     });
@@ -112,7 +111,7 @@ void main() {
       final firstLine = dataShopSource.split('\n').length;
       final comments = [
         for (final t in other.workspace.semanticTokens(otherPath))
-          if (semanticTokenTypes[t.type] == 'comment' && t.line > firstLine) t,
+          if (t.type.legendName == 'comment' && t.line > firstLine) t,
       ];
       // one token for each line of the comment
       expect(comments, hasLength(2));

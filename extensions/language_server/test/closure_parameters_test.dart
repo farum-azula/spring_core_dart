@@ -28,7 +28,7 @@ void main() {
         lines[t.line].substring(t.column, t.column + t.length);
     return [
       for (final token in workspace.semanticTokens(path))
-        if (semanticTokenTypes[token.type] == 'closureParameter')
+        if (token.type.legendName == 'closureParameter')
           '${token.line}:${token.column} ${text(token)}',
     ];
   }

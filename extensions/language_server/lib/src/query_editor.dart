@@ -1,8 +1,12 @@
-import 'package:dart_spring_language_server/src/config_editor.dart';
+import 'package:dart_spring_language_server/src/completion.dart';
 import 'package:dart_spring_language_server/src/dart_index.dart';
 import 'package:dart_spring_language_server/src/data_model.dart';
+import 'package:dart_spring_language_server/src/diagnostics/problem.dart';
+import 'package:dart_spring_language_server/src/project_model.dart';
 import 'package:dart_spring_language_server/src/repository_scan.dart';
-import 'package:dart_spring_language_server/src/workspace.dart';
+import 'package:dart_spring_language_server/src/symbols/source_range.dart';
+import 'package:dart_spring_language_server/src/tokens/semantic_tokens.dart';
+import 'package:dart_spring_language_server/src/tokens/spel_tokens.dart';
 // The SpEL tokenizer is not exported: the checks read its tokens.
 // ignore: implementation_imports
 import 'package:spring_core_dart/src/expression/tokenizer.dart';
@@ -94,13 +98,13 @@ final class _Parsed {
 /// A text with an escape (`\n`) or an interpolation is not read: its offsets
 /// would not map back to the file.
 final class QueryEditor {
-  /// An editor over [workspace].
-  QueryEditor(this.workspace);
+  /// An editor over [model].
+  QueryEditor(this.model);
 
-  /// The workspace.
-  final SpringWorkspace workspace;
+  /// What the workspace knows.
+  final ProjectModel model;
 
-  DataModel get _data => workspace.data;
+  DataModel get _data => model.data;
 
   final _cache = Expando<Map<QueryString, _Parsed>>('parsed queries');
 
@@ -140,9 +144,9 @@ final class QueryEditor {
   /// Calls [add] with the file span and the semantic token type of each
   /// piece of every `@Query` text of [file]. A span may cover several
   /// lines.
-  void tokens(DartFile file, void Function(int, int, String) add) {
+  void tokens(DartFile file, AddToken add) {
     // A token must not span lines: a multi-line string or comment is cut.
-    void addCut(int start, int end, String type) {
+    void addCut(int start, int end, TokenType type) {
       var from = start;
       for (var i = start; i < end; i++) {
         if (file.text.codeUnitAt(i) == 10) {
@@ -161,14 +165,14 @@ final class QueryEditor {
       for (final method in repository.queries) {
         for (final text in method.texts) {
           final parsed = _parsed(file, text);
-          void put(int start, int end, String type) {
+          void put(int start, int end, TokenType type, [int modifiers = 0]) {
             for (final (a, b) in text.pieces(start, end)) {
               addCut(a, b, type);
             }
           }
 
           for (final (start, end, _) in parsed.comments) {
-            put(start, end, 'comment');
+            put(start, end, TokenType.comment);
           }
           _colour(parsed, put);
         }
@@ -176,7 +180,7 @@ final class QueryEditor {
     }
   }
 
-  void _colour(_Parsed parsed, void Function(int, int, String) put) {
+  void _colour(_Parsed parsed, AddToken put) {
     final tokens = parsed.tokens;
     for (var i = 0; i < tokens.length; i++) {
       final token = tokens[i];
@@ -187,19 +191,19 @@ final class QueryEditor {
         case SqlTokenKind.word || SqlTokenKind.quoted:
           if (token.kind == SqlTokenKind.word &&
               _keywords.contains(token.lower)) {
-            put(token.start, token.end, 'keyword');
+            put(token.start, token.end, TokenType.keyword);
           } else if (next != null &&
               next.isSymbol('(') &&
               next.start == token.end) {
-            put(token.start, token.end, 'method');
+            put(token.start, token.end, TokenType.method);
           } else if (previous != null && previous.isSymbol('.')) {
-            put(token.start, token.end, 'property');
+            put(token.start, token.end, TokenType.property);
           } else if (next != null && next.isSymbol('.')) {
-            put(token.start, token.end, 'variable');
+            put(token.start, token.end, TokenType.variable);
           } else if (previous != null &&
               previous.kind == SqlTokenKind.word &&
               _tableWords.contains(previous.lower)) {
-            put(token.start, token.end, 'class');
+            put(token.start, token.end, TokenType.classType);
           } else if (previous != null &&
               (previous.kind == SqlTokenKind.entity ||
                   previous.isWord('as') ||
@@ -208,42 +212,50 @@ final class QueryEditor {
                       tokens[i - 2].kind == SqlTokenKind.word &&
                       _tableWords.contains(tokens[i - 2].lower)))) {
             // `from {Book} b`, `from books b`, `select x as y`: an alias.
-            put(token.start, token.end, 'variable');
+            put(token.start, token.end, TokenType.variable);
           } else {
-            put(token.start, token.end, 'property');
+            put(token.start, token.end, TokenType.property);
           }
         case SqlTokenKind.string:
-          put(token.start, token.end, 'string');
+          put(token.start, token.end, TokenType.string);
         case SqlTokenKind.number:
-          put(token.start, token.end, 'number');
+          put(token.start, token.end, TokenType.number);
         case SqlTokenKind.parameter:
-          put(token.start, token.end, 'variable');
+          put(token.start, token.end, TokenType.variable);
         case SqlTokenKind.entity:
-          put(token.start, token.start + 1, 'operator');
-          put(token.start + 1, token.start + 1 + token.value.length, 'class');
+          put(token.start, token.start + 1, TokenType.operator);
+          put(
+            token.start + 1,
+            token.start + 1 + token.value.length,
+            TokenType.classType,
+          );
           if (token.member != null) {
             final memberStart = token.start + 2 + token.value.length;
-            put(memberStart, memberStart + token.member!.length, 'property');
+            put(
+              memberStart,
+              memberStart + token.member!.length,
+              TokenType.property,
+            );
           }
-          put(token.end - 1, token.end, 'operator');
+          put(token.end - 1, token.end, TokenType.operator);
         case SqlTokenKind.property:
-          put(token.start, token.start + 2, 'operator');
-          put(token.start + 2, token.end - 1, 'property');
-          put(token.end - 1, token.end, 'operator');
+          put(token.start, token.start + 2, TokenType.operator);
+          put(token.start + 2, token.end - 1, TokenType.property);
+          put(token.end - 1, token.end, TokenType.operator);
         case SqlTokenKind.expression || SqlTokenKind.elExpression:
           final open = text.indexOf('{') + 1;
-          put(token.start, token.start + open, 'keyword');
-          workspace.spelTokens(
+          put(token.start, token.start + open, TokenType.keyword);
+          spelTokens(
             text.substring(open, text.length - 1),
             token.start + open,
             put,
           );
-          put(token.end - 1, token.end, 'keyword');
+          put(token.end - 1, token.end, TokenType.keyword);
         case SqlTokenKind.question:
-          put(token.start, token.end, 'operator');
+          put(token.start, token.end, TokenType.operator);
         case SqlTokenKind.symbol:
           if ('=<>!+-*/%|&'.contains(text) || text == '::') {
-            put(token.start, token.end, 'operator');
+            put(token.start, token.end, TokenType.operator);
           }
         case SqlTokenKind.unclosed || SqlTokenKind.badParameter:
           break;
@@ -286,7 +298,7 @@ final class QueryEditor {
         if (span != null) {
           problems.add(
             Problem(
-              workspace.rangeOf(file, span.$1, span.$2),
+              model.locations.rangeOf(file, span.$1, span.$2),
               message,
               error: error,
             ),
@@ -357,7 +369,7 @@ final class QueryEditor {
       }
       problems.add(
         Problem(
-          workspace.rangeOf(
+          model.locations.rangeOf(
             file,
             parameter.offset,
             parameter.offset + parameter.name.length,
@@ -435,7 +447,7 @@ final class QueryEditor {
     if (expression.contains(r'${')) {
       return; // placeholders are resolved first
     }
-    final issues = workspace.spelIssues(path, expression);
+    final issues = model.spel.issuesIn(path, expression);
     for (final issue in issues) {
       if (expression.substring(issue.start, issue.end) == '@environment' &&
           issue.message.startsWith("Unknown bean 'environment'")) {
@@ -500,7 +512,7 @@ final class QueryEditor {
     if (entity == null) {
       final names = _data.entityNames(path);
       final guess = closestName(name, names);
-      final complete = workspace.metadataFor(path).complete;
+      final complete = model.metadataFor(path).complete;
       final stale = complete
           ? ''
           : ' (run build_runner to refresh the Spring metadata)';
@@ -604,11 +616,14 @@ final class QueryEditor {
             return _parameterRanges(file, method, name);
           }
         }
-        return workspace.spelDefinition(path, expression, inner);
+        return [
+          for (final bean in model.spel.definition(expression, inner))
+            if (bean.path.isNotEmpty) model.locations.beanRange(bean),
+        ];
       case SqlTokenKind.property:
         final key = token.value;
         return [
-          for (final entry in workspace.property(key, from: file))
+          for (final entry in model.properties.property(key, from: path))
             SourceRange(
               entry.path,
               entry.line,
@@ -638,7 +653,7 @@ final class QueryEditor {
   ) => [
     for (final parameter in method.parameters)
       if (parameter.name == name)
-        workspace.rangeOf(
+        model.locations.rangeOf(
           file,
           parameter.offset,
           parameter.offset + parameter.name.length,
@@ -684,9 +699,9 @@ final class QueryEditor {
             return _parameterText(method, name);
           }
         }
-        return workspace.spelHover(path, expression, inner);
+        return model.spel.hover(expression, inner);
       case SqlTokenKind.property:
-        final entries = workspace.property(token.value, from: file);
+        final entries = model.properties.property(token.value, from: path);
         if (entries.isEmpty) {
           return '**`${token.value}`**: not defined in any properties file';
         }
@@ -887,7 +902,7 @@ final class QueryEditor {
     }
     CompletionResult result(int typedLength, List<Completion> items) =>
         CompletionResult(
-          workspace.rangeOf(file, offset - typedLength, offset),
+          model.locations.rangeOf(file, offset - typedLength, offset),
           items,
         );
 
@@ -909,7 +924,7 @@ final class QueryEditor {
             Completion(name, kind: 6, detail: 'query variable'),
         ]);
       }
-      final spel = workspace.spelComplete(path, inner);
+      final spel = model.spel.complete(inner);
       if (spel == null) {
         return null;
       }

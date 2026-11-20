@@ -692,6 +692,10 @@ final class MetadataStore {
   final _views = <String, (int, MetadataView)>{};
   var _version = 1;
 
+  /// Changes whenever a metadata file or a package config changed, so
+  /// what is built from the metadata can be built again.
+  int get version => _version;
+
   /// Stats the files again; throttled by the caller.
   void refresh() {
     var changed = false;

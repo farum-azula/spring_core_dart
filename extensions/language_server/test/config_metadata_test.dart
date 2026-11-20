@@ -5,7 +5,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dart_spring_language_server/src/config_editor.dart';
+import 'package:dart_spring_language_server/src/completion.dart';
 import 'package:test/test.dart';
 
 import 'support/editor_fixture.dart';

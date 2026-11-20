@@ -1,141 +1,5 @@
-import 'dart:io';
-
+import 'package:dart_spring_language_server/src/properties/property_entry.dart';
 import 'package:yaml/yaml.dart';
-
-/// One key of a config file, or a property a test sets for its own
-/// context, with its value and the position of its key: what go to
-/// definition jumps to and what a hover lists.
-final class PropertyEntry {
-  /// An entry for [key] whose key sits at [line], [keyStart]..[keyEnd] of
-  /// [path].
-  const PropertyEntry({
-    required this.path,
-    required this.key,
-    required this.value,
-    required this.line,
-    required this.keyStart,
-    required this.keyEnd,
-    this.environment = false,
-    this.provider,
-  });
-
-  /// For a property a `@ServiceConnection` container provides: which one,
-  /// as `PostgresContainer postgres`. Hovers show it instead of a value.
-  final String? provider;
-
-  /// Whether [key] is an environment variable (`SHOP_MAX_BASKET_SIZE`, from
-  /// a test's `@TestEnvironment`), matched the way Spring maps property
-  /// names to variables.
-  final bool environment;
-
-  /// The file that defines the entry.
-  final String path;
-
-  /// The key as written in a properties file, or flattened from YAML
-  /// (`shop.servers[0].host`).
-  final String key;
-
-  /// The value as text, trimmed, with the continuation lines of a properties
-  /// file joined. For a property of a test, the source of the value
-  /// expression.
-  final String value;
-
-  /// The zero-based line of the key.
-  final int line;
-
-  /// The zero-based column where the key starts, in UTF-16 units.
-  final int keyStart;
-
-  /// The column just after the key.
-  final int keyEnd;
-
-  /// The file's name without directory and extension: `application-prod`
-  /// for `.../application-prod.properties` (or `.yml`, `.yaml`). Hovers show
-  /// it, and `application` files sort first.
-  String get fileName {
-    final name = path.split(Platform.pathSeparator).last;
-    for (final extension in ['.properties', '.yml', '.yaml']) {
-      if (name.endsWith(extension)) {
-        return name.substring(0, name.length - extension.length);
-      }
-    }
-    return name;
-  }
-}
-
-/// Reads [content] as a Java `.properties` file and returns its entries,
-/// each with the position of its key. Never throws.
-///
-/// It follows the format's rules: `#` and `!` comment lines, `=`, `:` or
-/// white space between key and value, backslash escapes in keys, and a
-/// trailing backslash that continues the value on the next line.
-List<PropertyEntry> parseProperties(String path, String content) {
-  final entries = <PropertyEntry>[];
-  final lines = content.split('\n');
-  var i = 0;
-  while (i < lines.length) {
-    final lineNumber = i;
-    final line = lines[i].replaceAll('\r', '');
-    i++;
-    final trimmed = line.trimLeft();
-    if (trimmed.isEmpty || trimmed.startsWith('#') || trimmed.startsWith('!')) {
-      continue;
-    }
-    final indent = line.length - trimmed.length;
-    // Logical line: a trailing unescaped backslash continues it.
-    var logical = trimmed;
-    while (_continues(logical) && i < lines.length) {
-      logical =
-          logical.substring(0, logical.length - 1) +
-          lines[i].replaceAll('\r', '').trimLeft();
-      i++;
-    }
-    var k = 0;
-    final key = StringBuffer();
-    while (k < logical.length) {
-      final c = logical[k];
-      if (c == r'\' && k + 1 < logical.length) {
-        key.write(logical[k + 1]);
-        k += 2;
-        continue;
-      }
-      if (c == '=' || c == ':' || c == ' ' || c == '\t') {
-        break;
-      }
-      key.write(c);
-      k++;
-    }
-    final keyEndInLine = indent + k;
-    while (k < logical.length && (logical[k] == ' ' || logical[k] == '\t')) {
-      k++;
-    }
-    if (k < logical.length && (logical[k] == '=' || logical[k] == ':')) {
-      k++;
-    }
-    final value = logical.substring(k).trim();
-    if (key.isNotEmpty) {
-      entries.add(
-        PropertyEntry(
-          path: path,
-          key: key.toString(),
-          value: value,
-          line: lineNumber,
-          keyStart: indent,
-          keyEnd: keyEndInLine,
-        ),
-      );
-    }
-  }
-  return entries;
-}
-
-bool _continues(String line) {
-  var slashes = 0;
-  for (var i = line.length - 1; i >= 0 && line[i] == r'\'; i--) {
-    slashes++;
-  }
-  return slashes.isOdd;
-}
 
 /// Reads a YAML config file ([content], one or more `---` documents) into
 /// flat entries, exactly as the framework's `YamlPropertySourceLoader`
@@ -150,10 +14,11 @@ bool _continues(String line) {
 /// keys.
 List<PropertyEntry> parseYamlProperties(String path, String content) {
   final entries = <PropertyEntry>[];
+  var document = <PropertyEntry>[];
 
   void add(String key, YamlNode at, String value) {
     final span = at.span;
-    entries.add(
+    document.add(
       PropertyEntry(
         path: path,
         key: key,
@@ -209,9 +74,32 @@ List<PropertyEntry> parseYamlProperties(String path, String content) {
     } on YamlException {
       continue;
     }
+    document = [];
     walk(root, '', root);
+    final profile = _activationProfile(document);
+    entries.addAll(
+      profile == null
+          ? document
+          : [for (final entry in document) entry.withProfile(profile)],
+    );
   }
   return entries;
+}
+
+/// The profile expression a YAML document is read under: the value of its
+/// `spring.config.activate.on-profile` (or the older `spring.profiles`).
+String? _activationProfile(List<PropertyEntry> document) {
+  for (final key in const [
+    'spring.config.activate.on-profile',
+    'spring.profiles',
+  ]) {
+    for (final entry in document) {
+      if (entry.key == key && entry.value.trim().isNotEmpty) {
+        return entry.value.trim();
+      }
+    }
+  }
+  return null;
 }
 
 // The documents of a YAML stream with the line each starts on (split at

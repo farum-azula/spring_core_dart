@@ -26,7 +26,11 @@ void main() {
         lines[token.line].substring(token.column, token.column + token.length);
     return [
       for (final token in workspace.semanticTokens(path))
-        '${tokenText(token)}: ${semanticTokenTypes[token.type]}',
+        [
+          '${tokenText(token)}: ${token.type.legendName}',
+          for (final modifier in TokenModifier.values)
+            if (token.has(modifier)) modifier.name,
+        ].join(' '),
     ];
   }
 
@@ -44,6 +48,8 @@ app:
     expect(tokens(path, text), [
       r'${: operator',
       'PORT: property',
+      ':: operator',
+      '8080: string defaultValue',
       '}: operator',
       r'${: operator',
       'app.name: property',
@@ -67,6 +73,8 @@ greeting=Hello, ${user.name:you}
     expect(tokens(path, text), [
       r'${: operator',
       'user.name: property',
+      ':: operator',
+      'you: string defaultValue',
       '}: operator',
     ]);
   });

@@ -1,7 +1,8 @@
 // Beans from the metadata (a dependency's auto-configuration among them):
 // SpEL #{@bean.member} completion, hovers, definition and errors, in Dart
 // annotations and in config values; injection points; @Profile.
-import 'package:dart_spring_language_server/src/config_editor.dart';
+import 'package:dart_spring_language_server/src/completion.dart';
+import 'package:dart_spring_language_server/src/diagnostics/bean_ambiguity.dart';
 import 'package:dart_spring_language_server/src/workspace.dart';
 import 'package:test/test.dart';
 

@@ -1,7 +1,7 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:dart_spring_language_server/src/dart_index.dart';
-import 'package:dart_spring_language_server/src/properties_index.dart';
+import 'package:dart_spring_language_server/src/properties/property_entry.dart';
 
 /// The properties a test file sets for its own context, as entries at the
 /// place they are written.
@@ -26,7 +26,7 @@ import 'package:dart_spring_language_server/src/properties_index.dart';
 /// `integration_test/` directory give an empty list. The result is cached
 /// for each parsed file.
 List<PropertyEntry> testProperties(DartFile file) {
-  if (!_isTest(file.path)) {
+  if (!isTestFile(file.path)) {
     return const [];
   }
   return _cache[file] ??= _collect(file);
@@ -34,7 +34,9 @@ List<PropertyEntry> testProperties(DartFile file) {
 
 final _cache = Expando<List<PropertyEntry>>('testProperties');
 
-bool _isTest(String path) {
+/// Whether [path] is a test: a file below a `test/` or
+/// `integration_test/` directory.
+bool isTestFile(String path) {
   final normalized = path.replaceAll(r'\', '/');
   return normalized.contains('/test/') ||
       normalized.contains('/integration_test/');
@@ -293,54 +295,37 @@ final class _ProviderIdFinder extends RecursiveAstVisitor<void> {
 /// A mistake in how a test uses containers, at `start` to `end`.
 typedef ContainerProblem = ({int start, int end, String message});
 
-/// The container mistakes of a test file, as the generator reports them at
-/// build time and `@ServiceConnection` does at run time:
+/// The container mistakes of the field declaration [node] of a test, as
+/// the generator reports them at build time and `@ServiceConnection` does
+/// at run time:
 ///
 /// - a `@Container` field that is not `static`;
 /// - `@ServiceConnection` on a `GenericContainer`, which cannot say how to
 ///   connect to it (`PostgresContainer` and `KeycloakContainer` can).
-///
-/// Other files give an empty list.
-List<ContainerProblem> containerProblems(DartFile file) {
-  if (!_isTest(file.path)) {
+List<ContainerProblem> containerProblemsOf(FieldDeclaration node) {
+  final info = _container(node);
+  if (info == null) {
     return const [];
   }
-  final problems = <ContainerProblem>[];
-  file.unit.accept(_ContainerChecker(problems));
-  return problems;
-}
-
-final class _ContainerChecker extends RecursiveAstVisitor<void> {
-  _ContainerChecker(this.problems);
-
-  final List<ContainerProblem> problems;
-
-  @override
-  void visitFieldDeclaration(FieldDeclaration node) {
-    final info = _container(node);
-    if (info != null) {
-      final name = node.fields.variables.first.name;
-      if (info.container && !node.isStatic) {
-        problems.add((
-          start: name.offset,
-          end: name.end,
-          message:
-              "@Container field '${name.lexeme}' must be static: the "
-              'containers start before the test class is created',
-        ));
-      }
-      if (info.connection && info.type == 'GenericContainer') {
-        problems.add((
-          start: name.offset,
-          end: name.end,
-          message:
-              "@ServiceConnection on '${name.lexeme}': GenericContainer "
-              'cannot say how to connect to it. Use PostgresContainer or '
-              'KeycloakContainer, or a container that implements '
-              'ServiceConnectionProperties',
-        ));
-      }
-    }
-    super.visitFieldDeclaration(node);
-  }
+  final name = node.fields.variables.first.name;
+  return [
+    if (info.container && !node.isStatic)
+      (
+        start: name.offset,
+        end: name.end,
+        message:
+            "@Container field '${name.lexeme}' must be static: the "
+            'containers start before the test class is created',
+      ),
+    if (info.connection && info.type == 'GenericContainer')
+      (
+        start: name.offset,
+        end: name.end,
+        message:
+            "@ServiceConnection on '${name.lexeme}': GenericContainer "
+            'cannot say how to connect to it. Use PostgresContainer or '
+            'KeycloakContainer, or a container that implements '
+            'ServiceConnectionProperties',
+      ),
+  ];
 }

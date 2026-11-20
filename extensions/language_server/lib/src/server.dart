@@ -1,31 +1,30 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
+import 'package:dart_spring_language_server/src/features/code_actions.dart';
+import 'package:dart_spring_language_server/src/features/completions.dart';
+import 'package:dart_spring_language_server/src/features/definitions.dart';
+import 'package:dart_spring_language_server/src/features/diagnostics.dart';
+import 'package:dart_spring_language_server/src/features/document_sync.dart';
+import 'package:dart_spring_language_server/src/features/hovers.dart';
+import 'package:dart_spring_language_server/src/features/inlay_hints.dart';
+import 'package:dart_spring_language_server/src/features/key_references.dart';
+import 'package:dart_spring_language_server/src/features/key_renames.dart';
+import 'package:dart_spring_language_server/src/features/semantic_tokens.dart';
+import 'package:dart_spring_language_server/src/features/session.dart';
+import 'package:dart_spring_language_server/src/features/settings.dart';
+import 'package:dart_spring_language_server/src/protocol/language_server.dart';
+import 'package:dart_spring_language_server/src/protocol/message_channel.dart';
 import 'package:dart_spring_language_server/src/workspace.dart';
 
 /// The `dart_spring` language server: answers an editor's questions about
-/// a Spring project over the Language Server Protocol, as JSON-RPC
-/// messages framed by `Content-Length` headers.
+/// a Spring project over the Language Server Protocol.
 ///
 /// The editor runs it next to the Dart analysis server, which still
-/// handles Dart itself; this server adds what needs Spring knowledge. Go
-/// to definition leads from an injection point to its beans and from a
-/// `${key}` to the property. Hover shows the candidate beans and the
-/// values of a property. Semantic tokens colour placeholders, SpEL,
-/// pointcuts and the parameters of closures. Diagnostics report invalid
-/// SpEL, unknown keys and the like. Completion and hovers in config files
-/// and annotation strings come from the Spring metadata of the package and
-/// its dependencies. [SpringWorkspace] does the work; this
-/// class decodes the messages, tracks the open documents and encodes the
-/// answers.
-///
-/// Documents are synchronised as full text on every change. Diagnostics
-/// are published for the open documents only, 300 ms after the last
-/// change or save. Semantic tokens are offered for whole documents, with
-/// no modifiers. An unknown request gets "method not found"; a handler
-/// that throws answers with an internal error and logs the stack trace
-/// to stderr.
+/// handles Dart itself; this server adds what needs Spring knowledge. Each
+/// capability is a [ServerFeature] of its own (lib/src/features/), listed
+/// once in [features]: a new capability is a new feature and one entry
+/// there. [SpringWorkspace] holds what the server knows of the project.
 ///
 /// ```dart
 /// // bin/dart_spring_lsp.dart: the editor starts the process and talks to
@@ -34,372 +33,45 @@ import 'package:dart_spring_language_server/src/workspace.dart';
 /// exit(code);
 /// ```
 final class SpringLanguageServer {
-  /// A server that reads the editor's messages from the first argument (a
-  /// byte stream such as stdin) and writes its answers and notifications to
-  /// the second (such as stdout). Nothing happens until [serve].
-  SpringLanguageServer(this._input, this._output);
+  /// A server that reads the editor's messages from [input] (a byte stream
+  /// such as stdin) and writes its answers and notifications to [output]
+  /// (such as stdout). Nothing happens until [serve].
+  SpringLanguageServer(Stream<List<int>> input, IOSink output)
+    : _server = LanguageServer(
+        'dart_spring_lsp',
+        MessageChannel(input, output),
+        features,
+      );
 
-  final Stream<List<int>> _input;
-  final IOSink _output;
-  SpringWorkspace? _workspace;
-  final _open = <String>{};
-  var _shutdown = false;
-  Timer? _diagnostics;
-  final _done = Completer<int>();
+  final LanguageServer _server;
 
   /// Handles messages until the input ends or the editor sends `exit`, and
   /// completes with the exit code the protocol asks for: 0 when a
   /// `shutdown` request came first, 1 otherwise.
-  Future<int> serve() {
-    final buffer = <int>[];
-    _input.listen(
-      (chunk) {
-        buffer.addAll(chunk);
-        while (true) {
-          final message = _takeMessage(buffer);
-          if (message == null) {
-            break;
-          }
-          _handle(message);
-        }
-      },
-      onDone: () {
-        if (!_done.isCompleted) {
-          _done.complete(_shutdown ? 0 : 1);
-        }
-      },
+  Future<int> serve() => _server.serve();
+
+  /// The features of a session over the folders the editor opened.
+  static List<ServerFeature> features(
+    Map<String, Object?> initializeParams,
+    Editor editor,
+  ) {
+    final session = SpringSession(
+      SpringWorkspace(SpringSession.workspaceRoots(initializeParams)),
+      editor,
+      initializeParams,
     );
-    return _done.future;
-  }
-
-  // `Content-Length: n\r\n\r\n<n bytes of JSON>`.
-  static Map<String, Object?>? _takeMessage(List<int> buffer) {
-    const separator = [13, 10, 13, 10];
-    var headerEnd = -1;
-    for (var i = 0; i + 3 < buffer.length; i++) {
-      if (buffer[i] == separator[0] &&
-          buffer[i + 1] == separator[1] &&
-          buffer[i + 2] == separator[2] &&
-          buffer[i + 3] == separator[3]) {
-        headerEnd = i;
-        break;
-      }
-    }
-    if (headerEnd < 0) {
-      return null;
-    }
-    final headers = ascii.decode(buffer.sublist(0, headerEnd));
-    final match = RegExp(
-      r'Content-Length:\s*(\d+)',
-      caseSensitive: false,
-    ).firstMatch(headers);
-    if (match == null) {
-      buffer.removeRange(0, headerEnd + 4);
-      return null;
-    }
-    final length = int.parse(match.group(1)!);
-    final start = headerEnd + 4;
-    if (buffer.length < start + length) {
-      return null;
-    }
-    final body = utf8.decode(buffer.sublist(start, start + length));
-    buffer.removeRange(0, start + length);
-    return jsonDecode(body) as Map<String, Object?>;
-  }
-
-  void _send(Map<String, Object?> message) {
-    final body = utf8.encode(jsonEncode({'jsonrpc': '2.0', ...message}));
-    _output
-      ..add(ascii.encode('Content-Length: ${body.length}\r\n\r\n'))
-      ..add(body);
-  }
-
-  void _respond(Object? id, Object? result) =>
-      _send({'id': id, 'result': result});
-
-  void _error(Object? id, int code, String message) => _send({
-    'id': id,
-    'error': {'code': code, 'message': message},
-  });
-
-  void _handle(Map<String, Object?> message) {
-    final method = message['method'] as String?;
-    final id = message['id'];
-    final params = (message['params'] as Map?)?.cast<String, Object?>() ?? {};
-    try {
-      switch (method) {
-        case 'initialize':
-          _respond(id, _initialize(params));
-        case 'initialized':
-          _workspace?.refresh(force: true);
-        case 'shutdown':
-          _shutdown = true;
-          _respond(id, null);
-        case 'exit':
-          _diagnostics?.cancel();
-          if (!_done.isCompleted) {
-            _done.complete(_shutdown ? 0 : 1);
-          }
-        case 'textDocument/didOpen':
-          final document = params['textDocument']! as Map;
-          final path = _path(document['uri']! as String);
-          _open.add(path);
-          _workspace?.setOverlay(path, document['text']! as String);
-          _scheduleDiagnostics();
-        case 'textDocument/didChange':
-          final path = _path(
-            (params['textDocument']! as Map)['uri']! as String,
-          );
-          final changes = params['contentChanges']! as List;
-          if (changes.isNotEmpty) {
-            _workspace?.setOverlay(
-              path,
-              (changes.last as Map)['text']! as String,
-            );
-          }
-          _scheduleDiagnostics();
-        case 'textDocument/didClose':
-          final path = _path(
-            (params['textDocument']! as Map)['uri']! as String,
-          );
-          _open.remove(path);
-          _workspace?.setOverlay(path, null);
-          _send({
-            'method': 'textDocument/publishDiagnostics',
-            'params': {
-              'uri': Uri.file(path).toString(),
-              'diagnostics': <Object?>[],
-            },
-          });
-        case 'textDocument/didSave' || 'workspace/didChangeWatchedFiles':
-          _workspace?.refresh(force: true);
-          _scheduleDiagnostics();
-        case 'textDocument/definition':
-          _respond(id, _definition(params));
-        case 'textDocument/hover':
-          _respond(id, _hover(params));
-        case 'textDocument/completion':
-          _respond(id, _completion(params));
-        case 'textDocument/semanticTokens/full':
-          _respond(id, _semanticTokens(params));
-        default:
-          if (id != null) {
-            _error(id, -32601, 'Method not found: $method');
-          }
-      }
-    } on Object catch (error, stackTrace) {
-      stderr.writeln('dart_spring_lsp: $method failed: $error\n$stackTrace');
-      if (id != null) {
-        _error(id, -32603, '$error');
-      }
-    }
-  }
-
-  Map<String, Object?> _initialize(Map<String, Object?> params) {
-    final roots = <String>[
-      for (final folder in (params['workspaceFolders'] as List?) ?? const [])
-        _path((folder as Map)['uri']! as String),
+    return [
+      DocumentSync(session),
+      Definitions(session),
+      Hovers(session),
+      Completions(session),
+      SemanticTokens(session),
+      Diagnostics(session),
+      CodeActions(session),
+      KeyReferences(session),
+      KeyRenames(session),
+      InlayHints(session),
+      Settings(session),
     ];
-    if (roots.isEmpty) {
-      final rootUri = params['rootUri'] as String?;
-      final rootPath = params['rootPath'] as String?;
-      if (rootUri != null) {
-        roots.add(_path(rootUri));
-      } else if (rootPath != null) {
-        roots.add(rootPath);
-      }
-    }
-    _workspace = SpringWorkspace(roots);
-    return {
-      'capabilities': {
-        'positionEncoding': 'utf-16',
-        'textDocumentSync': {
-          'openClose': true,
-          'change': 1, // full text
-          'save': {'includeText': false},
-        },
-        'definitionProvider': true,
-        'hoverProvider': true,
-        'completionProvider': {
-          'triggerCharacters': ['.', r'$', '{', '@', '#', '-', ':'],
-          'resolveProvider': false,
-        },
-        'semanticTokensProvider': {
-          'legend': {
-            'tokenTypes': semanticTokenTypes,
-            'tokenModifiers': <String>[],
-          },
-          'full': true,
-        },
-      },
-      'serverInfo': {'name': 'dart_spring_lsp'},
-    };
   }
-
-  static String _path(String uri) => Uri.parse(uri).toFilePath();
-
-  (String, int)? _position(Map<String, Object?> params) {
-    final workspace = _workspace;
-    if (workspace == null) {
-      return null;
-    }
-    workspace.refresh();
-    final path = _path((params['textDocument']! as Map)['uri']! as String);
-    final position = params['position']! as Map;
-    final text = workspace.textOf(path);
-    if (text == null) {
-      return null;
-    }
-    final line = position['line']! as int;
-    final character = position['character']! as int;
-    var start = 0;
-    for (var row = 0; row < line; row++) {
-      final next = text.indexOf('\n', start);
-      if (next < 0) {
-        return null;
-      }
-      start = next + 1;
-    }
-    return (path, (start + character).clamp(0, text.length));
-  }
-
-  Object? _completion(Map<String, Object?> params) {
-    final at = _position(params);
-    if (at == null) {
-      return null;
-    }
-    final result = _workspace!.completion(at.$1, at.$2);
-    if (result == null) {
-      return null;
-    }
-    final range = _range(result.replace);
-    return {
-      'isIncomplete': false,
-      'items': [
-        for (final item in result.items)
-          {
-            'label': item.label,
-            'kind': item.kind,
-            'detail': ?item.detail,
-            if (item.documentation != null)
-              'documentation': {
-                'kind': 'markdown',
-                'value': item.documentation,
-              },
-            'sortText': ?item.sortText,
-            'filterText': item.label,
-            'textEdit': {
-              'range': range,
-              'newText': item.insertText ?? item.label,
-            },
-          },
-      ],
-    };
-  }
-
-  Object? _definition(Map<String, Object?> params) {
-    final at = _position(params);
-    if (at == null) {
-      return null;
-    }
-    final ranges = _workspace!.definition(at.$1, at.$2);
-    if (ranges.isEmpty) {
-      return null;
-    }
-    return [for (final range in ranges) _location(range)];
-  }
-
-  Object? _hover(Map<String, Object?> params) {
-    final at = _position(params);
-    if (at == null) {
-      return null;
-    }
-    final text = _workspace!.hover(at.$1, at.$2);
-    if (text == null) {
-      return null;
-    }
-    return {
-      'contents': {'kind': 'markdown', 'value': text},
-    };
-  }
-
-  Object? _semanticTokens(Map<String, Object?> params) {
-    final workspace = _workspace;
-    if (workspace == null) {
-      return {'data': <int>[]};
-    }
-    final path = _path((params['textDocument']! as Map)['uri']! as String);
-    final data = <int>[];
-    var line = 0;
-    var column = 0;
-    for (final token in workspace.semanticTokens(path)) {
-      final deltaLine = token.line - line;
-      final deltaColumn = deltaLine == 0 ? token.column - column : token.column;
-      data.addAll([deltaLine, deltaColumn, token.length, token.type, 0]);
-      line = token.line;
-      column = token.column;
-    }
-    return {'data': data};
-  }
-
-  void _scheduleDiagnostics() {
-    _diagnostics?.cancel();
-    _diagnostics = Timer(
-      const Duration(milliseconds: 300),
-      _publishDiagnostics,
-    );
-  }
-
-  void _publishDiagnostics() {
-    final workspace = _workspace;
-    if (workspace == null) {
-      return;
-    }
-    workspace.refresh();
-    for (final path in _open) {
-      final List<Problem> problems;
-      try {
-        problems = [
-          ...workspace.problems(path),
-          ...workspace.metadataNotes(path),
-        ];
-      } on Object catch (error, stackTrace) {
-        // One broken file must not stop the others' diagnostics.
-        stderr.writeln(
-          'dart_spring_lsp: diagnostics of $path: $error\n$stackTrace',
-        );
-        continue;
-      }
-      _send({
-        'method': 'textDocument/publishDiagnostics',
-        'params': {
-          'uri': Uri.file(path).toString(),
-          'diagnostics': [
-            for (final problem in problems)
-              {
-                'range': _range(problem.range),
-                'severity': problem.error ? 1 : (problem.info ? 3 : 2),
-                'source': 'dart_spring',
-                'message': problem.message,
-              },
-          ],
-        },
-      });
-    }
-  }
-
-  // An empty range at the start of the target: the editor moves the cursor
-  // there without selecting the name or key.
-  static Map<String, Object?> _location(SourceRange range) {
-    final start = {'line': range.startLine, 'character': range.startColumn};
-    return {
-      'uri': Uri.file(range.path).toString(),
-      'range': {'start': start, 'end': start},
-    };
-  }
-
-  static Map<String, Object?> _range(SourceRange range) => {
-    'start': {'line': range.startLine, 'character': range.startColumn},
-    'end': {'line': range.endLine, 'character': range.endColumn},
-  };
 }

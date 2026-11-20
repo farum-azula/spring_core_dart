@@ -49,6 +49,51 @@ Navigation puts the cursor at the target without selecting it.
 candidate beans of an injection point, the file a `resources:` location
 resolves to, and the expression of a named pointcut.
 
+**Values in the code** (inlay hints): after `${shop.name}` in an
+annotation string, after the key of `getProperty('shop.name')` and of
+`@ConditionalOnProperty('cache', prefix: 'shop')`, and after each field of
+a `@ConfigurationProperties` class, the value the property has for the active profiles, as the
+framework resolves it: a profile's file (`application-dev.yaml`) or
+document (`spring.config.activate.on-profile: dev`) over `application.yaml`,
+a later active profile over an earlier one, a test's own properties over
+both, placeholders in the value resolved (`http://${host}:${port:80}` →
+`http://farum.org:80`). A placeholder that no file sets shows its default
+(`= 8080 (default)`), as does a `getProperty` key with its `defaultValue:`
+and a field with its initializer. Cmd-click on the value goes to the entry it comes
+from; its tooltip names the file and profile. Only keys of the package's
+own config files count, so an example app's keys are not shown in your
+code.
+
+The active profiles are, in this order: the `activeProfiles` setting, a
+test's `@ActiveProfiles(...)`, the `spring.profiles.active` of the
+package's config, else the framework's `default`:
+
+```json
+{
+  "inlay_hints": { "enabled": true },
+  "lsp": { "dart-spring": { "settings": { "activeProfiles": ["dev"] } } }
+}
+```
+
+Changing the setting shows the values again at once.
+
+**Find references and rename of a property key** (`Shift-F12`, `F2`): at a
+key of a config file, a `${key}` in a value or in code, or the key of
+`getProperty` or `@ConditionalOnProperty`, every place of the package that
+names it: the entries of its config files (a nested YAML key too), the
+`${key}` of their values, and what its Dart files read. A rename edits them
+all; a nested YAML key or a name under a `prefix:` gets the new key's last
+part, so the new key keeps that prefix. It is refused, with the reason,
+where it would leave code reading the old key: a field of a
+`@ConfigurationProperties` class binds it (rename the field), or a place
+writes it in another form (`maxBasketSize` for `max-basket-size`).
+
+**Quick fixes** (`Cmd-.`): a `${key}` that nothing defines gets "Add
+'key' to application.yaml" (the package's main config file, `key: ` at its
+end) and "Give the placeholder a default"; a misspelt profile, config key,
+config value, loader or bean (`#{@clok.now()}`) gets "Change to 'clock'",
+the name the warning suggests.
+
 **Checks**, while you type:
 
 - invalid SpEL (`#{1 +}`): an error at the position the parser reports;
@@ -177,8 +222,10 @@ unknown, and the theme components are accepted as written.
 (tree-sitter-properties, as Zed's Java extension uses it): keys, values,
 `#` / `!` comments, escapes and `\` line continuations, Spring's
 `${key}` / `${key:default}` placeholders (environment variables like
-`${PORT:8080}` in another color), list indexes (`servers[0].host`); `cmd-/`
-comments lines out.
+`${PORT:8080}` in another color, the default as `string.default`, nested
+ones like `${a:${b}}` too), a value that is one SpEL expression
+(`#{@clock.now()}`, as `string.special`), list indexes
+(`servers[0].host`); `cmd-/` comments lines out.
 
 **Snippets**: type the prefix in a Dart file and press Tab.
 
@@ -199,6 +246,22 @@ comments lines out.
 | `spprops`, `spcondprop`, `sprunner` | `@ConfigurationProperties`, `@ConditionalOnProperty`, `CommandLineRunner` |
 | `splog`, `splogger` | `@Log` (a generated `log` getter), a `SpringLog` constant |
 | `sptest` | a test file with `springBootTest` and a `BeanOverride` |
+
+Starters:
+
+| Prefix | Inserts |
+|---|---|
+| `sprest`, `spget`, `sppostmapping` | a `@RestController`, a `@GetMapping` / `@PostMapping` method (web) |
+| `spfeign` | a `@FeignClient` interface (feign) |
+| `spentity`, `spdatarepo`, `sptransactional` | a `@Table` entity, a `ListCrudRepository` interface, a `@Transactional` method (data) |
+| `sppreauthorize`, `spsecured` | a `@PreAuthorize` / `@Secured` method (security) |
+| `spscheduled`, `spcron` | a `@Scheduled` method, its interval or cron from the configuration (scheduling) |
+| `spcacheable`, `spcacheevict` | a `@Cacheable` / `@CacheEvict` method (cache) |
+| `spwebsocket` | a `@WebSocketEndpoint` with `@OnOpen` and `@OnMessage` (websocket) |
+
+`python3 tests/check_snippets.py` checks the snippets: unique prefixes, bodies Zed can parse (a
+literal `$` written `\\$`), the same defaults for every occurrence of a tab stop, the YAML and
+properties snippets in step, and each Dart one parsing where it is meant to be typed.
 
 Flutter (`spring_boot_starter_flutter`):
 
@@ -346,19 +409,25 @@ The language server is downloaded automatically the first time a Dart
 file is opened. The extension takes the native binary of its own version
 from the GitHub release `v<version>` (macOS Apple Silicon, Linux x64 and
 arm64, Windows x64), or from the latest release when that one has no
-binaries, and keeps it in its own folder; Zed shows the download in the
+binaries yet, and keeps it in its own folder; Zed shows the download in the
 status bar. Navigation, hover and checks work without step 2.
 
 The server is looked up in this order, so a local build wins during
 development:
 
 1. `lsp.dart-spring.binary.path` in Zed settings (with
-   `binary.arguments` if needed);
-2. `dart_spring_lsp` on the PATH — build it from this repository with
-   `dart run tool/install_language_server.dart` (into `~/.pub-cache/bin`;
-   also the way to go on platforms without a prebuilt binary, such as Intel
-   Macs);
+   `binary.arguments` if needed), whatever its version;
+2. `dart_spring_lsp` on the PATH, when `dart_spring_lsp --version` prints
+   the extension's version (a stale build is passed over) — build it from
+   this repository with `dart run tool/install_language_server.dart` (into
+   `~/.pub-cache/bin`; also the way to go on platforms without a prebuilt
+   binary, such as Intel Macs);
 3. the downloaded binary.
+
+What was passed over on the way (a build on the PATH of another version,
+an older release taken because the own one has no binaries yet, an old
+version's folder that could not be deleted) shows as the server's status
+in Zed's status bar; a click on it shows the message.
 
 ```json
 {

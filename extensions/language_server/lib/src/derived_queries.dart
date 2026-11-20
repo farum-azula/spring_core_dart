@@ -1,8 +1,10 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:dart_spring_language_server/src/dart_index.dart';
 import 'package:dart_spring_language_server/src/data_model.dart';
+import 'package:dart_spring_language_server/src/diagnostics/problem.dart';
+import 'package:dart_spring_language_server/src/project_model.dart';
 import 'package:dart_spring_language_server/src/repository_scan.dart';
-import 'package:dart_spring_language_server/src/workspace.dart';
+import 'package:dart_spring_language_server/src/symbols/source_range.dart';
 import 'package:spring_core_dart_generator/query_syntax.dart';
 
 /// A derived query method of a repository, read against its entity.
@@ -27,13 +29,13 @@ final class _Derived {
 /// property is an error with "did you mean", a hover tells the SQL the name
 /// stands for, and the property part of the name goes to the entity's field.
 final class DerivedQueryEditor {
-  /// An editor over [workspace].
-  DerivedQueryEditor(this.workspace);
+  /// An editor over [model].
+  DerivedQueryEditor(this.model);
 
-  /// The workspace.
-  final SpringWorkspace workspace;
+  /// What the workspace knows.
+  final ProjectModel model;
 
-  DataModel get _data => workspace.data;
+  DataModel get _data => model.data;
 
   static final _by = RegExp(
     '^(find|read|get|query|search|stream|count|exists|delete|remove)'
@@ -109,7 +111,7 @@ final class DerivedQueryEditor {
       void report(int from, int to, String message, {bool error = true}) =>
           problems.add(
             Problem(
-              workspace.rangeOf(file, from, to),
+              model.locations.rangeOf(file, from, to),
               message,
               error: error,
             ),

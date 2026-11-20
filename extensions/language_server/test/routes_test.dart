@@ -6,7 +6,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dart_spring_language_server/src/config_editor.dart';
 import 'package:dart_spring_language_server/src/metadata.dart';
 import 'package:dart_spring_language_server/src/workspace.dart';
 import 'package:test/test.dart';

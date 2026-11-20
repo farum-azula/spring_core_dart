@@ -3,7 +3,7 @@
 // config: their keys answer context.message('...') and getMessage('...').
 import 'dart:io';
 
-import 'package:dart_spring_language_server/src/properties_index.dart';
+import 'package:dart_spring_language_server/src/config/yaml_entries.dart';
 import 'package:dart_spring_language_server/src/workspace.dart';
 import 'package:test/test.dart';
 

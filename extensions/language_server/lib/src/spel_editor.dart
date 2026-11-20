@@ -1,7 +1,38 @@
-import 'package:dart_spring_language_server/src/config_editor.dart';
+import 'package:dart_spring_language_server/src/completion.dart';
 import 'package:dart_spring_language_server/src/dart_index.dart';
+import 'package:dart_spring_language_server/src/did_you_mean.dart';
 import 'package:dart_spring_language_server/src/metadata.dart';
-import 'package:dart_spring_language_server/src/workspace.dart';
+import 'package:dart_spring_language_server/src/project_model.dart';
+import 'package:spring_core_dart/expression.dart';
+
+/// A problem found while reading SpEL: offsets inside the expression.
+final class SpelIssue {
+  /// A problem from [start] to [end] of the expression, an error unless
+  /// [error] is false; [guess] is what the span was probably meant to be.
+  const SpelIssue(
+    this.start,
+    this.end,
+    this.message, {
+    this.error = true,
+    this.guess,
+  });
+
+  /// The offset where the problem starts.
+  final int start;
+
+  /// The offset just after the problem.
+  final int end;
+
+  /// What is wrong.
+  final String message;
+
+  /// Whether it is an error rather than a warning.
+  final bool error;
+
+  /// The name the span was probably meant to be (a bean's `@name`, a
+  /// member's); `null` when none is near.
+  final String? guess;
+}
 
 /// What every Dart object has: not reported as unknown members.
 const _objectMembers = {'toString', 'hashCode', 'runtimeType', 'noSuchMethod'};
@@ -27,11 +58,11 @@ final class _Chain {
 /// metadata does not list yet has no members, so nothing is said about
 /// them.
 final class SpelEditor {
-  /// An editor over the beans of [workspace].
-  SpelEditor(this.workspace);
+  /// An editor over the beans of [model].
+  SpelEditor(this.model);
 
-  /// The workspace whose beans are used.
-  final SpringWorkspace workspace;
+  /// What the workspace knows: its beans are used.
+  final ProjectModel model;
 
   // Spans of string literals, where an `@` is plain text.
   static List<(int, int)> _strings(String expression) {
@@ -104,7 +135,7 @@ final class SpelEditor {
   // The members of the bean named [name]: from the metadata; `null` when no
   // bean of that name lists any.
   List<MetaMember>? _membersOfBean(String name) {
-    for (final bean in workspace.beansNamed(name)) {
+    for (final bean in model.beans.beansNamed(name)) {
       if (bean.members.isNotEmpty) {
         return bean.members;
       }
@@ -115,7 +146,7 @@ final class SpelEditor {
   // The members of the beans of [type], when one lists them.
   List<MetaMember>? _membersOfType(String type) {
     final base = _baseType(type);
-    for (final bean in workspace.beans) {
+    for (final bean in model.beans.beans) {
       if (bean.members.isNotEmpty && bean.providedTypes.contains(base)) {
         return bean.members;
       }
@@ -134,19 +165,40 @@ final class SpelEditor {
     return members;
   }
 
+  /// The problems of [expression] (offsets inside it), read in [path]:
+  /// invalid SpEL, then unknown beans and members, errors when the
+  /// metadata of [path]'s package and its dependencies is complete.
+  List<SpelIssue> issuesIn(String path, String expression) {
+    try {
+      SpelExpressionParser().parseExpression(expression);
+    } on SpelParseException catch (error) {
+      final at = error.position < 0 ? 0 : error.position;
+      return [
+        SpelIssue(
+          at.clamp(0, expression.length),
+          (at + 1).clamp(0, expression.length),
+          'SpEL: ${error.message}',
+        ),
+      ];
+    } on Object {
+      return const []; // tokenizer errors: the parser reports them
+    }
+    return issues(expression, complete: model.metadataFor(path).complete);
+  }
+
   /// The unknown beans and members of [expression] (offsets inside it).
   /// With [complete] false (a dependency has no metadata yet) they are
   /// warnings, since the missing metadata may hold them.
   List<SpelIssue> issues(String expression, {required bool complete}) {
     final result = <SpelIssue>[];
     final names = {
-      for (final bean in workspace.beans) ...[bean.name, ...bean.aliases],
+      for (final bean in model.beans.beans) ...[bean.name, ...bean.aliases],
     };
     if (names.isEmpty) {
       return result;
     }
     for (final chain in _chains(expression)) {
-      if (workspace.beansNamed(chain.bean).isEmpty) {
+      if (model.beans.beansNamed(chain.bean).isEmpty) {
         final guess = didYouMean(chain.bean, names.toList());
         result.add(
           SpelIssue(
@@ -155,6 +207,7 @@ final class SpelEditor {
             "Unknown bean '${chain.bean}'"
             "${guess == null ? '' : ". Did you mean '@$guess'?"}",
             error: complete,
+            guess: guess == null ? null : '@$guess',
           ),
         );
         continue;
@@ -178,6 +231,7 @@ final class SpelEditor {
             end,
             "Unknown member '$name' of $owner"
             "${guess == null ? '' : ". Did you mean '$guess'?"}",
+            guess: guess,
           ),
         );
         break;
@@ -194,7 +248,7 @@ final class SpelEditor {
         if (!beanPart) {
           return null;
         }
-        final beans = workspace.beansNamed(chain.bean);
+        final beans = model.beans.beansNamed(chain.bean);
         if (beans.isEmpty) {
           return '**@${chain.bean}**: no such bean';
         }
@@ -224,7 +278,7 @@ final class SpelEditor {
     for (final chain in _chains(expression)) {
       final end = chain.members.isEmpty ? chain.end : chain.members.last.$3;
       if (at >= chain.start && at <= end) {
-        return workspace.beansNamed(chain.bean);
+        return model.beans.beansNamed(chain.bean);
       }
     }
     return const [];
@@ -243,7 +297,7 @@ final class SpelEditor {
       return (
         prefix.length - typed.length,
         [
-          for (final b in workspace.beans)
+          for (final b in model.beans.beans)
             Completion(
               b.name,
               kind: 6,
