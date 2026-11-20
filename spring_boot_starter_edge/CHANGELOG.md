@@ -1,3 +1,7 @@
+## 0.9.0
+
+- No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.9.0.
+
 ## 0.8.4
 
 - **The warning list is a startup check:** `edgeWarnings` and its contributors (`rateLimitStoreEdgeWarning`, `timerWorkEdgeWarning`, `instanceStateEdgeWarning`) are in a module of their own, `springBootStarterEdgeStartupChecksAutoConfiguration`, in the build by `spring.main.startup-checks.enabled`: not set, in debug and profile builds only, so a release build (`dart compile exe`, a Flutter release) ships none of their code; `true` in `application.yml` or `application.properties` keeps them in every build, `false` in none. A function compiled by `dart compile js` or `wasm` does not define `dart.vm.product`, so it keeps the list unless the key is `false`. `spring.edge.warnings: false` still turns the list off where the module is in.

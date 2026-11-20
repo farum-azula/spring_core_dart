@@ -76,11 +76,11 @@ annotations are turned into plain Dart code at build time by
 
 ```yaml
 dependencies:
-  spring_core_dart: ^0.8.4
+  spring_core_dart: ^0.9.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.8.4
+  spring_core_dart_generator: ^0.9.0
 ```
 
 One file tells the generator where to look for beans: everything in its

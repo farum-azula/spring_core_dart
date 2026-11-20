@@ -1,4 +1,4 @@
-## Unreleased
+## 0.9.0
 
 - Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.
 - `spring.main.startup-checks.enabled` is declared for the editors only: `MainStartupChecksProperties` (abstract, outside the scanned `properties/` folder) describes it in `spring_metadata.json`, and no module binds it, as only the generator reads it (`MainProperties.startupChecks` is gone). Every app loses its run-time binding: `example/flutter_guide`'s wasm 5,065,477 → 5,064,212 bytes (−1,265).

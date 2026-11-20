@@ -15,11 +15,11 @@ book API on port 8080. It shows:
 
 ```yaml
 dependencies:
-  spring_boot_starter_security: ^0.8.4
+  spring_boot_starter_security: ^0.9.0
 
 dev_dependencies:
   build_runner: ^2.17.0
-  spring_core_dart_generator: ^0.8.4
+  spring_core_dart_generator: ^0.9.0
 ```
 
 ## Run it

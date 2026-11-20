@@ -1,3 +1,7 @@
+## 0.9.0
+
+- No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.9.0.
+
 ## 0.8.4
 
 - The check of how the browser passes a frame of WebGL, made before the engine starts, no longer leaves two "context lost" lines in the page's console: its two contexts of one pixel are let go for the collector instead of being lost on purpose.

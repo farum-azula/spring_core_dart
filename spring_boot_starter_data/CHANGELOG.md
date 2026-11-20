@@ -1,4 +1,4 @@
-## Unreleased
+## 0.9.0
 
 - Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.
 - The statement logging masks values by `SecretNames` of spring_core_dart, the rule `@ToString` uses too (moved there unchanged from `LogValues`): the same names as before.

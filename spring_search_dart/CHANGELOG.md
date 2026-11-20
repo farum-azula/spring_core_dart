@@ -1,3 +1,7 @@
+## 0.9.0
+
+- No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.9.0.
+
 ## 0.8.4
 
 - No changes of its own; released with the family version 0.8.4.
