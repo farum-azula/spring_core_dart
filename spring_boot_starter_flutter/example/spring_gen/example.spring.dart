@@ -10,13 +10,13 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:flutter/foundation.dart' as _i2;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i6;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i3;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i7;
+    as _i4;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    as _i5;
-import 'package:spring_boot_starter_flutter/src/notify_listeners.dart' as _i4;
+    as _i6;
+import 'package:spring_boot_starter_flutter/src/notify_listeners.dart' as _i5;
 import 'package:spring_boot_starter_flutter_cupertino/spring_auto_configuration.dart'
     as _i8;
 import 'package:spring_boot_starter_flutter_cupertino/src/cupertino_theme_design.dart'
@@ -37,7 +37,7 @@ part 'example.spring.proxies.dart';
 const _$target0 = _i3.AopTarget(
   r'Counter',
   types: [r'Counter'],
-  annotations: [_i4.ChangeNotifierComponent()],
+  annotations: [_i5.ChangeNotifierComponent()],
   annotationTypes: [r'ChangeNotifierComponent'],
 );
 
@@ -50,7 +50,7 @@ _i3.BeanModule get $application => _i3.BeanModule(r'application', [
     name: r'counter',
     source: r'asset:spring_boot_starter_flutter/example/example.dart#Counter',
     create: (r) => _$CounterProxy(),
-    annotations: const [_i4.ChangeNotifierComponent()],
+    annotations: const [_i5.ChangeNotifierComponent()],
     aopProxy: _i3.AopProxyFactory.subclass(
       signatures: const [
         _i3.MethodSignature.of(r'increment', _$target0, returnType: r'void'),
@@ -65,16 +65,16 @@ _i3.BeanModule get $application => _i3.BeanModule(r'application', [
           bean is _$CounterProxy ? (bean..aopInvoker = invoker) : null,
     ),
   ),
-  _i3.BeanDefinition<_i5.SpringWidgetBindings>(
+  _i3.BeanDefinition<_i6.SpringWidgetBindings>(
     name: r'flutterSpringWidgetBindings#application',
     source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
     autowireCandidate: false,
-    create: (r) => _i5.SpringWidgetBindings([
-      _i5.SpringWidgetBinding(
+    create: (r) => _i6.SpringWidgetBindings([
+      _i6.SpringWidgetBinding(
         widget: r'asset:spring_boot_starter_flutter/example/example.dart#CounterPage',
         beans: _$typeOf<(_i1.Counter,)>(),
         types: const [_i1.Counter],
-        resolve: (f) => (_i5.SpringWidgetBinding.bean<_i1.Counter>(f),),
+        resolve: (f) => (_i6.SpringWidgetBinding.bean<_i1.Counter>(f),),
         values: (r) {
           final v = (r as (_i1.Counter,));
           return [v.$1];
@@ -89,21 +89,13 @@ _i3.BeanModule get $application => _i3.BeanModule(r'application', [
 _i3.SpringApplication get springApplication => _i3.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i6.springBootAutoConfiguration,
-    _i7.springBootStarterFlutterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugIsolatesAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugMotionAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugTimelineAutoConfiguration,
+    _i7.springBootAutoConfiguration,
+    _i4.springBootStarterFlutterAutoConfiguration,
     _i8.springBootStarterFlutterCupertinoAutoConfiguration,
     _i9.springBootStarterFlutterMaterialAutoConfiguration,
     _i10.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
     _i8.springBootStarterFlutterCupertinoAutoConfiguration:

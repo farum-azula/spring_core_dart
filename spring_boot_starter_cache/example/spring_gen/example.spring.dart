@@ -11,13 +11,13 @@
 
 import 'dart:async' as _i3;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i8;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
-import 'package:spring_boot_dart/src/runners.dart' as _i6;
+import 'package:spring_boot_dart/src/runners.dart' as _i7;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i8;
-import 'package:spring_boot_starter_cache/src/annotations.dart' as _i5;
-import 'package:spring_boot_starter_cache/src/cache.dart' as _i4;
+    as _i4;
+import 'package:spring_boot_starter_cache/src/annotations.dart' as _i6;
+import 'package:spring_boot_starter_cache/src/cache.dart' as _i5;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i9;
 
@@ -43,18 +43,18 @@ class _$CacheSetupConfiguration extends _i2.CacheSetup {
   _i2.KeyValueStore _$store(_i1.DependencyResolver r) => super.store();
 
   @override
-  _i4.CacheManager cacheManager(_i2.KeyValueStore store) {
+  _i5.CacheManager cacheManager(_i2.KeyValueStore store) {
     final _$args = <Object?>[store];
     this._$arguments[r'cacheManager'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'cacheManager')
-          as _i4.CacheManager);
+          as _i5.CacheManager);
     } finally {
       this._$arguments.remove(r'cacheManager');
     }
   }
 
-  _i4.CacheManager _$cacheManager(_i1.DependencyResolver r) {
+  _i5.CacheManager _$cacheManager(_i1.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'cacheManager');
     if (_$args != null) {
       return super.cacheManager((_$args[0] as _i2.KeyValueStore));
@@ -73,7 +73,7 @@ const _$target1 = _i1.AopTarget(
   types: [r'Books'],
   annotations: [
     _i1.Service(),
-    _i5.CacheConfig(cacheNames: [r'books']),
+    _i6.CacheConfig(cacheNames: [r'books']),
   ],
   annotationTypes: [r'Service', r'CacheConfig'],
 );
@@ -94,7 +94,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
     create: (r) => _i2.Books(r.dependency<_i2.CatalogApi>(name: r'api')),
     annotations: const [
       _i1.Service(),
-      _i5.CacheConfig(cacheNames: [r'books']),
+      _i6.CacheConfig(cacheNames: [r'books']),
     ],
     aopProxy: _i1.AopProxyFactory(
       signatures: const [
@@ -104,7 +104,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
           returnType: r'Future',
           parameterTypes: [r'String'],
           parameterNames: [r'isbn'],
-          annotations: [_i5.Cacheable.of()],
+          annotations: [_i6.Cacheable.of()],
           annotationTypes: [r'Cacheable'],
         ),
         _i1.MethodSignature.of(
@@ -113,7 +113,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
           returnType: r'Future',
           parameterTypes: [r'String'],
           parameterNames: [r'isbn'],
-          annotations: [_i5.Cacheable(r'prices', sync: true)],
+          annotations: [_i6.Cacheable(r'prices', sync: true)],
           annotationTypes: [r'Cacheable'],
         ),
         _i1.MethodSignature.of(
@@ -122,7 +122,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
           returnType: r'Future',
           parameterTypes: [r'String'],
           parameterNames: [r'isbn'],
-          annotations: [_i5.CacheEvict.of(key: r'#isbn')],
+          annotations: [_i6.CacheEvict.of(key: r'#isbn')],
           annotationTypes: [r'CacheEvict'],
         ),
         _i1.MethodSignature.of(
@@ -130,7 +130,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
           _$target1,
           returnType: r'void',
           annotations: [
-            _i5.CacheEvict.of(allEntries: true, beforeInvocation: true),
+            _i6.CacheEvict.of(allEntries: true, beforeInvocation: true),
           ],
           annotationTypes: [r'CacheEvict'],
         ),
@@ -160,12 +160,12 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
     annotations: const [_i1.Bean()],
     aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
-  _i1.BeanDefinition<_i4.SimpleCacheManager>(
+  _i1.BeanDefinition<_i5.SimpleCacheManager>(
     name: r'cacheManager',
     source: r'asset:spring_boot_starter_cache/example/example.dart#CacheSetup.cacheManager',
     types: const [
-      _i4.SimpleCacheManager,
-      _i4.CacheManager,
+      _i5.SimpleCacheManager,
+      _i5.CacheManager,
       _i1.IsolateLocalState,
     ],
     factoryBeanName: r'cacheSetup',
@@ -178,14 +178,14 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
         ((r.dependency<_i2.CacheSetup>(
               qualifier: r'cacheSetup',
             ) as _$CacheSetupConfiguration)._$cacheManager(r)
-            as _i4.SimpleCacheManager),
+            as _i5.SimpleCacheManager),
     annotations: const [_i1.Bean()],
     aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
   _i1.BeanDefinition<_i2.CacheTour>(
     name: r'cacheTour',
     source: r'asset:spring_boot_starter_cache/example/example.dart#CacheTour',
-    types: const [_i2.CacheTour, _i6.CommandLineRunner],
+    types: const [_i2.CacheTour, _i7.CommandLineRunner],
     dependencies: const [
       _i1.Dependency(_i2.Books, name: r'books'),
       _i1.Dependency(_i2.CatalogApi, name: r'api'),
@@ -209,18 +209,16 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i7.springBootAutoConfiguration,
-    _i8.springBootStarterCacheAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterCacheStartupChecksAutoConfiguration,
+    _i8.springBootAutoConfiguration,
+    _i4.springBootStarterCacheAutoConfiguration,
     _i9.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterCacheStartupChecksAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            after: [r'springBootStarterCacheAutoConfiguration'],
-          ),
+    ...!const bool.fromEnvironment('dart.vm.product')
+        ? _$debugAutoConfigurationMetadata
+        : const {},
   },
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

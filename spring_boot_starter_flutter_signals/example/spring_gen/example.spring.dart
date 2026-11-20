@@ -11,16 +11,16 @@
 
 import 'dart:async' as _i3;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i6;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i8;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i7;
-import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    as _i5;
-import 'package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart'
-    as _i8;
-import 'package:spring_boot_starter_flutter_signals/src/annotations.dart'
     as _i4;
+import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
+    as _i7;
+import 'package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart'
+    as _i5;
+import 'package:spring_boot_starter_flutter_signals/src/annotations.dart'
+    as _i6;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i9;
 
@@ -77,7 +77,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
         r'save',
         isVoid: true,
         invoke: _$invoke1,
-        annotations: [_i4.Effect()],
+        annotations: [_i6.Effect()],
       ),
     ],
     annotations: const [_i2.Component()],
@@ -87,7 +87,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           r'save',
           _$target2,
           returnType: r'void',
-          annotations: [_i4.Effect()],
+          annotations: [_i6.Effect()],
           annotationTypes: [r'Effect'],
         ),
         _i2.MethodSignature.of(
@@ -117,7 +117,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           kind: _i2.MemberKind.getter,
           returnType: r'List',
           returnTypeArguments: [_i2.TypeCapture<_i1.Book>()],
-          annotations: [_i4.Signal()],
+          annotations: [_i6.Signal()],
           annotationTypes: [r'Signal'],
         ),
         _i2.MethodSignature.of(
@@ -125,7 +125,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           _$target2,
           kind: _i2.MemberKind.getter,
           returnType: r'String',
-          annotations: [_i4.Signal()],
+          annotations: [_i6.Signal()],
           annotationTypes: [r'Signal'],
         ),
         _i2.MethodSignature.of(
@@ -133,7 +133,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           _$target2,
           kind: _i2.MemberKind.getter,
           returnType: r'double',
-          annotations: [_i4.Computed()],
+          annotations: [_i6.Computed()],
           annotationTypes: [r'Computed'],
         ),
         _i2.MethodSignature.of(
@@ -141,7 +141,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           _$target2,
           kind: _i2.MemberKind.setter,
           returnType: r'List',
-          annotations: [_i4.Signal()],
+          annotations: [_i6.Signal()],
           annotationTypes: [r'Signal'],
         ),
         _i2.MethodSignature.of(
@@ -149,7 +149,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           _$target2,
           kind: _i2.MemberKind.setter,
           returnType: r'String',
-          annotations: [_i4.Signal()],
+          annotations: [_i6.Signal()],
           annotationTypes: [r'Signal'],
         ),
       ],
@@ -185,7 +185,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           _$target3,
           kind: _i2.MemberKind.getter,
           returnType: r'String',
-          annotations: [_i4.Signal()],
+          annotations: [_i6.Signal()],
           annotationTypes: [r'Signal'],
         ),
         _i2.MethodSignature.of(
@@ -194,7 +194,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           kind: _i2.MemberKind.getter,
           returnType: r'Future',
           returnTypeArguments: [_i2.TypeCapture<List<_i1.Book>>()],
-          annotations: [_i4.Computed()],
+          annotations: [_i6.Computed()],
           annotationTypes: [r'Computed'],
         ),
         _i2.MethodSignature.of(
@@ -203,7 +203,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           kind: _i2.MemberKind.getter,
           returnType: r'Stream',
           returnTypeArguments: [_i2.TypeCapture<double>()],
-          annotations: [_i4.Computed()],
+          annotations: [_i6.Computed()],
           annotationTypes: [r'Computed'],
         ),
         _i2.MethodSignature.of(
@@ -211,7 +211,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           _$target3,
           kind: _i2.MemberKind.setter,
           returnType: r'String',
-          annotations: [_i4.Signal()],
+          annotations: [_i6.Signal()],
           annotationTypes: [r'Signal'],
         ),
       ],
@@ -220,16 +220,16 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
           bean is _$CatalogProxy ? (bean..aopInvoker = invoker) : null,
     ),
   ),
-  _i2.BeanDefinition<_i5.SpringWidgetBindings>(
+  _i2.BeanDefinition<_i7.SpringWidgetBindings>(
     name: r'flutterSpringWidgetBindings#application',
     source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
     autowireCandidate: false,
-    create: (r) => _i5.SpringWidgetBindings([
-      _i5.SpringWidgetBinding(
+    create: (r) => _i7.SpringWidgetBindings([
+      _i7.SpringWidgetBinding(
         widget: r'asset:spring_boot_starter_flutter_signals/example/example.dart#CouponLabel',
         beans: _$typeOf<(_i1.Basket,)>(),
         types: const [_i1.Basket],
-        resolve: (f) => (_i5.SpringWidgetBinding.bean<_i1.Basket>(f),),
+        resolve: (f) => (_i7.SpringWidgetBinding.bean<_i1.Basket>(f),),
         values: (r) {
           final v = (r as (_i1.Basket,));
           return [v.$1];
@@ -244,22 +244,12 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
 _i2.SpringApplication get springApplication => _i2.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i6.springBootAutoConfiguration,
-    _i7.springBootStarterFlutterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugIsolatesAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugMotionAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugTimelineAutoConfiguration,
-    _i8.springBootStarterFlutterSignalsAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterFlutterSignalsDebugAutoConfiguration,
+    _i8.springBootAutoConfiguration,
+    _i4.springBootStarterFlutterAutoConfiguration,
+    _i5.springBootStarterFlutterSignalsAutoConfiguration,
     _i9.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

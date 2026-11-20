@@ -10,29 +10,29 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'dart:async' as _i3;
-import 'dart:io' as _i16;
+import 'dart:io' as _i18;
 
-import 'package:postgres/postgres.dart' as _i15;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i17;
+import 'package:postgres/postgres.dart' as _i17;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i19;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
-import 'package:spring_boot_dart/src/conditions.dart' as _i8;
-import 'package:spring_boot_dart/src/runners.dart' as _i12;
+import 'package:spring_boot_dart/src/conditions.dart' as _i10;
+import 'package:spring_boot_dart/src/runners.dart' as _i14;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i18;
-import 'package:spring_boot_starter_data/spring_auto_configuration.dart'
-    as _i19;
-import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i4;
-import 'package:spring_boot_starter_data/src/annotations.dart' as _i5;
-import 'package:spring_boot_starter_data/src/jdbc/jdbc_client.dart' as _i13;
-import 'package:spring_boot_starter_data/src/mapping/auditing.dart' as _i10;
-import 'package:spring_boot_starter_data/src/repository/page.dart' as _i7;
-import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i9;
-import 'package:spring_boot_starter_data/src/repository/sort.dart' as _i6;
-import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart'
+    as _i4;
+import 'package:spring_boot_starter_data/spring_auto_configuration.dart' as _i5;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i6;
+import 'package:spring_boot_starter_data/src/annotations.dart' as _i7;
+import 'package:spring_boot_starter_data/src/jdbc/jdbc_client.dart' as _i15;
+import 'package:spring_boot_starter_data/src/mapping/auditing.dart' as _i12;
+import 'package:spring_boot_starter_data/src/repository/page.dart' as _i9;
+import 'package:spring_boot_starter_data/src/repository/repository.dart'
     as _i11;
+import 'package:spring_boot_starter_data/src/repository/sort.dart' as _i8;
+import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart'
+    as _i13;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i20;
-import 'package:sqlite3/sqlite3.dart' as _i14;
+import 'package:sqlite3/sqlite3.dart' as _i16;
 
 import '../example.dart' as _i2;
 
@@ -41,227 +41,227 @@ part 'example.spring.env.dart';
 part 'example.spring.proxies.dart';
 
 /// Implements `BookRepository`: `SimpleRepository` has the CRUD methods.
-class _$BookRepositoryImpl extends _i4.SimpleRepository<_i2.Book, int>
+class _$BookRepositoryImpl extends _i6.SimpleRepository<_i2.Book, int>
     implements _i2.BookRepository {
   _$BookRepositoryImpl(super.operations);
 
-  static const _findByTitle = _i4.PartTree(r'findByTitle', [
-    _i4.OrPart([_i4.Part(r'title')]),
+  static const _findByTitle = _i6.PartTree(r'findByTitle', [
+    _i6.OrPart([_i6.Part(r'title')]),
   ]);
 
-  static const _findByTitleIgnoreCase = _i4.PartTree(r'findByTitleIgnoreCase', [
-    _i4.OrPart([_i4.Part(r'title', _i4.PartType.simpleProperty, true)]),
+  static const _findByTitleIgnoreCase = _i6.PartTree(r'findByTitleIgnoreCase', [
+    _i6.OrPart([_i6.Part(r'title', _i6.PartType.simpleProperty, true)]),
   ]);
 
-  static const _findOneByTitle = _i4.PartTree(r'findOneByTitle', [
-    _i4.OrPart([_i4.Part(r'title')]),
+  static const _findOneByTitle = _i6.PartTree(r'findOneByTitle', [
+    _i6.OrPart([_i6.Part(r'title')]),
   ]);
 
-  static const _getByTitle = _i4.PartTree(r'getByTitle', [
-    _i4.OrPart([_i4.Part(r'title')]),
+  static const _getByTitle = _i6.PartTree(r'getByTitle', [
+    _i6.OrPart([_i6.Part(r'title')]),
   ]);
 
-  static const _findByTitleAndYear = _i4.PartTree(r'findByTitleAndYear', [
-    _i4.OrPart([_i4.Part(r'title'), _i4.Part(r'year')]),
+  static const _findByTitleAndYear = _i6.PartTree(r'findByTitleAndYear', [
+    _i6.OrPart([_i6.Part(r'title'), _i6.Part(r'year')]),
   ]);
 
-  static const _findByTitleOrYear = _i4.PartTree(r'findByTitleOrYear', [
-    _i4.OrPart([_i4.Part(r'title')]),
-    _i4.OrPart([_i4.Part(r'year')]),
+  static const _findByTitleOrYear = _i6.PartTree(r'findByTitleOrYear', [
+    _i6.OrPart([_i6.Part(r'title')]),
+    _i6.OrPart([_i6.Part(r'year')]),
   ]);
 
-  static const _findByYearNot = _i4.PartTree(r'findByYearNot', [
-    _i4.OrPart([_i4.Part(r'year', _i4.PartType.negatingSimpleProperty)]),
+  static const _findByYearNot = _i6.PartTree(r'findByYearNot', [
+    _i6.OrPart([_i6.Part(r'year', _i6.PartType.negatingSimpleProperty)]),
   ]);
 
-  static const _findByYearBetween = _i4.PartTree(r'findByYearBetween', [
-    _i4.OrPart([_i4.Part(r'year', _i4.PartType.between)]),
+  static const _findByYearBetween = _i6.PartTree(r'findByYearBetween', [
+    _i6.OrPart([_i6.Part(r'year', _i6.PartType.between)]),
   ]);
 
-  static const _findByYearGreaterThan = _i4.PartTree(r'findByYearGreaterThan', [
-    _i4.OrPart([_i4.Part(r'year', _i4.PartType.greaterThan)]),
+  static const _findByYearGreaterThan = _i6.PartTree(r'findByYearGreaterThan', [
+    _i6.OrPart([_i6.Part(r'year', _i6.PartType.greaterThan)]),
   ]);
 
-  static const _findByYearGreaterThanEqual = _i4.PartTree(
+  static const _findByYearGreaterThanEqual = _i6.PartTree(
     r'findByYearGreaterThanEqual',
     [
-      _i4.OrPart([_i4.Part(r'year', _i4.PartType.greaterThanEqual)]),
+      _i6.OrPart([_i6.Part(r'year', _i6.PartType.greaterThanEqual)]),
     ],
   );
 
-  static const _findByYearLessThan = _i4.PartTree(r'findByYearLessThan', [
-    _i4.OrPart([_i4.Part(r'year', _i4.PartType.lessThan)]),
+  static const _findByYearLessThan = _i6.PartTree(r'findByYearLessThan', [
+    _i6.OrPart([_i6.Part(r'year', _i6.PartType.lessThan)]),
   ]);
 
-  static const _findByYearLessThanEqual = _i4.PartTree(
+  static const _findByYearLessThanEqual = _i6.PartTree(
     r'findByYearLessThanEqual',
     [
-      _i4.OrPart([_i4.Part(r'year', _i4.PartType.lessThanEqual)]),
+      _i6.OrPart([_i6.Part(r'year', _i6.PartType.lessThanEqual)]),
     ],
   );
 
-  static const _findByYearIn = _i4.PartTree(r'findByYearIn', [
-    _i4.OrPart([_i4.Part(r'year', _i4.PartType.in_)]),
+  static const _findByYearIn = _i6.PartTree(r'findByYearIn', [
+    _i6.OrPart([_i6.Part(r'year', _i6.PartType.in_)]),
   ]);
 
-  static const _findByYearNotIn = _i4.PartTree(r'findByYearNotIn', [
-    _i4.OrPart([_i4.Part(r'year', _i4.PartType.notIn)]),
+  static const _findByYearNotIn = _i6.PartTree(r'findByYearNotIn', [
+    _i6.OrPart([_i6.Part(r'year', _i6.PartType.notIn)]),
   ]);
 
-  static const _findByTitleStartingWith = _i4.PartTree(
+  static const _findByTitleStartingWith = _i6.PartTree(
     r'findByTitleStartingWith',
     [
-      _i4.OrPart([_i4.Part(r'title', _i4.PartType.startingWith)]),
+      _i6.OrPart([_i6.Part(r'title', _i6.PartType.startingWith)]),
     ],
   );
 
-  static const _findByTitleEndingWith = _i4.PartTree(r'findByTitleEndingWith', [
-    _i4.OrPart([_i4.Part(r'title', _i4.PartType.endingWith)]),
+  static const _findByTitleEndingWith = _i6.PartTree(r'findByTitleEndingWith', [
+    _i6.OrPart([_i6.Part(r'title', _i6.PartType.endingWith)]),
   ]);
 
-  static const _findByTitleContaining = _i4.PartTree(r'findByTitleContaining', [
-    _i4.OrPart([_i4.Part(r'title', _i4.PartType.containing)]),
+  static const _findByTitleContaining = _i6.PartTree(r'findByTitleContaining', [
+    _i6.OrPart([_i6.Part(r'title', _i6.PartType.containing)]),
   ]);
 
-  static const _findByTitleNotContaining = _i4.PartTree(
+  static const _findByTitleNotContaining = _i6.PartTree(
     r'findByTitleNotContaining',
     [
-      _i4.OrPart([_i4.Part(r'title', _i4.PartType.notContaining)]),
+      _i6.OrPart([_i6.Part(r'title', _i6.PartType.notContaining)]),
     ],
   );
 
-  static const _findByTitleLike = _i4.PartTree(r'findByTitleLike', [
-    _i4.OrPart([_i4.Part(r'title', _i4.PartType.like)]),
+  static const _findByTitleLike = _i6.PartTree(r'findByTitleLike', [
+    _i6.OrPart([_i6.Part(r'title', _i6.PartType.like)]),
   ]);
 
-  static const _findByTitleNotLike = _i4.PartTree(r'findByTitleNotLike', [
-    _i4.OrPart([_i4.Part(r'title', _i4.PartType.notLike)]),
+  static const _findByTitleNotLike = _i6.PartTree(r'findByTitleNotLike', [
+    _i6.OrPart([_i6.Part(r'title', _i6.PartType.notLike)]),
   ]);
 
-  static const _findByTitleContainingIgnoreCase = _i4.PartTree(
+  static const _findByTitleContainingIgnoreCase = _i6.PartTree(
     r'findByTitleContainingIgnoreCase',
     [
-      _i4.OrPart([_i4.Part(r'title', _i4.PartType.containing, true)]),
+      _i6.OrPart([_i6.Part(r'title', _i6.PartType.containing, true)]),
     ],
   );
 
-  static const _findBySubtitleIsNull = _i4.PartTree(r'findBySubtitleIsNull', [
-    _i4.OrPart([_i4.Part(r'subtitle', _i4.PartType.isNull)]),
+  static const _findBySubtitleIsNull = _i6.PartTree(r'findBySubtitleIsNull', [
+    _i6.OrPart([_i6.Part(r'subtitle', _i6.PartType.isNull)]),
   ]);
 
-  static const _findBySubtitleIsNotNull = _i4.PartTree(
+  static const _findBySubtitleIsNotNull = _i6.PartTree(
     r'findBySubtitleIsNotNull',
     [
-      _i4.OrPart([_i4.Part(r'subtitle', _i4.PartType.isNotNull)]),
+      _i6.OrPart([_i6.Part(r'subtitle', _i6.PartType.isNotNull)]),
     ],
   );
 
-  static const _findByInStockTrue = _i4.PartTree(r'findByInStockTrue', [
-    _i4.OrPart([_i4.Part(r'inStock', _i4.PartType.isTrue)]),
+  static const _findByInStockTrue = _i6.PartTree(r'findByInStockTrue', [
+    _i6.OrPart([_i6.Part(r'inStock', _i6.PartType.isTrue)]),
   ]);
 
-  static const _findByInStockFalse = _i4.PartTree(r'findByInStockFalse', [
-    _i4.OrPart([_i4.Part(r'inStock', _i4.PartType.isFalse)]),
+  static const _findByInStockFalse = _i6.PartTree(r'findByInStockFalse', [
+    _i6.OrPart([_i6.Part(r'inStock', _i6.PartType.isFalse)]),
   ]);
 
-  static const _findByAuthor = _i4.PartTree(r'findByAuthor', [
-    _i4.OrPart([_i4.Part(r'author')]),
+  static const _findByAuthor = _i6.PartTree(r'findByAuthor', [
+    _i6.OrPart([_i6.Part(r'author')]),
   ]);
 
-  static const _findByInStockOrderByYearDescTitleAsc = _i4.PartTree(
+  static const _findByInStockOrderByYearDescTitleAsc = _i6.PartTree(
     r'findByInStockOrderByYearDescTitleAsc',
     [
-      _i4.OrPart([_i4.Part(r'inStock')]),
+      _i6.OrPart([_i6.Part(r'inStock')]),
     ],
-    sort: _i4.Sort([_i4.SortOrder.desc(r'year'), _i4.SortOrder.asc(r'title')]),
+    sort: _i6.Sort([_i6.SortOrder.desc(r'year'), _i6.SortOrder.asc(r'title')]),
   );
 
-  static const _findByYear = _i4.PartTree(r'findByYear', [
-    _i4.OrPart([_i4.Part(r'year')]),
+  static const _findByYear = _i6.PartTree(r'findByYear', [
+    _i6.OrPart([_i6.Part(r'year')]),
   ]);
 
-  static const _findByYearLessThanOrderByYear = _i4.PartTree(
+  static const _findByYearLessThanOrderByYear = _i6.PartTree(
     r'findByYearLessThanOrderByYear',
     [
-      _i4.OrPart([_i4.Part(r'year', _i4.PartType.lessThan)]),
+      _i6.OrPart([_i6.Part(r'year', _i6.PartType.lessThan)]),
     ],
-    sort: _i4.Sort([_i4.SortOrder.asc(r'year')]),
+    sort: _i6.Sort([_i6.SortOrder.asc(r'year')]),
   );
 
-  static const _findDistinctByInStock = _i4.PartTree(r'findDistinctByInStock', [
-    _i4.OrPart([_i4.Part(r'inStock')]),
-  ], subject: _i4.Subject(_i4.SubjectKind.find, distinct: true));
+  static const _findDistinctByInStock = _i6.PartTree(r'findDistinctByInStock', [
+    _i6.OrPart([_i6.Part(r'inStock')]),
+  ], subject: _i6.Subject(_i6.SubjectKind.find, distinct: true));
 
-  static const _streamByInStock = _i4.PartTree(r'streamByInStock', [
-    _i4.OrPart([_i4.Part(r'inStock')]),
+  static const _streamByInStock = _i6.PartTree(r'streamByInStock', [
+    _i6.OrPart([_i6.Part(r'inStock')]),
   ]);
 
-  static const _findByInStock = _i4.PartTree(r'findByInStock', [
-    _i4.OrPart([_i4.Part(r'inStock')]),
+  static const _findByInStock = _i6.PartTree(r'findByInStock', [
+    _i6.OrPart([_i6.Part(r'inStock')]),
   ]);
 
-  static const _findByYearAfter = _i4.PartTree(r'findByYearAfter', [
-    _i4.OrPart([_i4.Part(r'year', _i4.PartType.greaterThan)]),
+  static const _findByYearAfter = _i6.PartTree(r'findByYearAfter', [
+    _i6.OrPart([_i6.Part(r'year', _i6.PartType.greaterThan)]),
   ]);
 
-  static const _findByInStockIsTrue = _i4.PartTree(r'findByInStockIsTrue', [
-    _i4.OrPart([_i4.Part(r'inStock', _i4.PartType.isTrue)]),
+  static const _findByInStockIsTrue = _i6.PartTree(r'findByInStockIsTrue', [
+    _i6.OrPart([_i6.Part(r'inStock', _i6.PartType.isTrue)]),
   ]);
 
-  static const _findByInStockEquals = _i4.PartTree(r'findByInStockEquals', [
-    _i4.OrPart([_i4.Part(r'inStock')]),
+  static const _findByInStockEquals = _i6.PartTree(r'findByInStockEquals', [
+    _i6.OrPart([_i6.Part(r'inStock')]),
   ]);
 
-  static const _findOneByYearAndTitle = _i4.PartTree(r'findOneByYearAndTitle', [
-    _i4.OrPart([_i4.Part(r'year'), _i4.Part(r'title')]),
+  static const _findOneByYearAndTitle = _i6.PartTree(r'findOneByYearAndTitle', [
+    _i6.OrPart([_i6.Part(r'year'), _i6.Part(r'title')]),
   ]);
 
-  static const _findFirstByOrderByYearAsc = _i4.PartTree(
+  static const _findFirstByOrderByYearAsc = _i6.PartTree(
     r'findFirstByOrderByYearAsc',
     [],
-    subject: _i4.Subject(_i4.SubjectKind.find, maxResults: 1),
-    sort: _i4.Sort([_i4.SortOrder.asc(r'year')]),
+    subject: _i6.Subject(_i6.SubjectKind.find, maxResults: 1),
+    sort: _i6.Sort([_i6.SortOrder.asc(r'year')]),
   );
 
-  static const _findTop2ByOrderByYearDesc = _i4.PartTree(
+  static const _findTop2ByOrderByYearDesc = _i6.PartTree(
     r'findTop2ByOrderByYearDesc',
     [],
-    subject: _i4.Subject(_i4.SubjectKind.find, maxResults: 2),
-    sort: _i4.Sort([_i4.SortOrder.desc(r'year')]),
+    subject: _i6.Subject(_i6.SubjectKind.find, maxResults: 2),
+    sort: _i6.Sort([_i6.SortOrder.desc(r'year')]),
   );
 
-  static const _findTop3ByInStock = _i4.PartTree(r'findTop3ByInStock', [
-    _i4.OrPart([_i4.Part(r'inStock')]),
-  ], subject: _i4.Subject(_i4.SubjectKind.find, maxResults: 3));
+  static const _findTop3ByInStock = _i6.PartTree(r'findTop3ByInStock', [
+    _i6.OrPart([_i6.Part(r'inStock')]),
+  ], subject: _i6.Subject(_i6.SubjectKind.find, maxResults: 3));
 
-  static const _countByInStock = _i4.PartTree(r'countByInStock', [
-    _i4.OrPart([_i4.Part(r'inStock')]),
-  ], subject: _i4.Subject(_i4.SubjectKind.count));
+  static const _countByInStock = _i6.PartTree(r'countByInStock', [
+    _i6.OrPart([_i6.Part(r'inStock')]),
+  ], subject: _i6.Subject(_i6.SubjectKind.count));
 
-  static const _existsByTitle = _i4.PartTree(r'existsByTitle', [
-    _i4.OrPart([_i4.Part(r'title')]),
-  ], subject: _i4.Subject(_i4.SubjectKind.exists));
+  static const _existsByTitle = _i6.PartTree(r'existsByTitle', [
+    _i6.OrPart([_i6.Part(r'title')]),
+  ], subject: _i6.Subject(_i6.SubjectKind.exists));
 
-  static const _deleteByYearLessThan = _i4.PartTree(r'deleteByYearLessThan', [
-    _i4.OrPart([_i4.Part(r'year', _i4.PartType.lessThan)]),
-  ], subject: _i4.Subject(_i4.SubjectKind.delete));
+  static const _deleteByYearLessThan = _i6.PartTree(r'deleteByYearLessThan', [
+    _i6.OrPart([_i6.Part(r'year', _i6.PartType.lessThan)]),
+  ], subject: _i6.Subject(_i6.SubjectKind.delete));
 
-  static const _removeByTitle = _i4.PartTree(r'removeByTitle', [
-    _i4.OrPart([_i4.Part(r'title')]),
-  ], subject: _i4.Subject(_i4.SubjectKind.delete));
+  static const _removeByTitle = _i6.PartTree(r'removeByTitle', [
+    _i6.OrPart([_i6.Part(r'title')]),
+  ], subject: _i6.Subject(_i6.SubjectKind.delete));
 
-  static const _deleteByInStock = _i4.PartTree(r'deleteByInStock', [
-    _i4.OrPart([_i4.Part(r'inStock')]),
-  ], subject: _i4.Subject(_i4.SubjectKind.delete));
+  static const _deleteByInStock = _i6.PartTree(r'deleteByInStock', [
+    _i6.OrPart([_i6.Part(r'inStock')]),
+  ], subject: _i6.Subject(_i6.SubjectKind.delete));
 
   static _$BookRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$BookRepositoryImpl(
-        r.dependency<_i4.RepositoryFactory>().operations<_i2.Book, int>(
+        r.dependency<_i6.RepositoryFactory>().operations<_i2.Book, int>(
           r'BookRepository',
           requirements: const [
-            _i4.StoreRequirement(
+            _i6.StoreRequirement(
               r'findOneByYearAndTitle',
-              _i4.DataStoreCapability.locks,
+              _i6.DataStoreCapability.locks,
             ),
           ],
         ),
@@ -369,7 +369,7 @@ class _$BookRepositoryImpl extends _i4.SimpleRepository<_i2.Book, int>
 
   @override
   _i3.Future<List<_i2.Book>> findByAuthor(
-    _i5.AggregateReference<_i2.Author, int> author,
+    _i7.AggregateReference<_i2.Author, int> author,
   ) => this.operations.list(_findByAuthor, [author]);
 
   @override
@@ -394,23 +394,23 @@ class _$BookRepositoryImpl extends _i4.SimpleRepository<_i2.Book, int>
       this.operations.stream(_streamByInStock, [inStock]);
 
   @override
-  _i3.Future<List<_i2.Book>> findByInStock(bool inStock, _i6.Sort sort) =>
+  _i3.Future<List<_i2.Book>> findByInStock(bool inStock, _i8.Sort sort) =>
       this.operations.list(_findByInStock, [inStock], sort: sort);
 
   @override
-  _i3.Future<_i7.Page<_i2.Book>> findByYearAfter(
+  _i3.Future<_i9.Page<_i2.Book>> findByYearAfter(
     int year,
-    _i7.Pageable pageable,
+    _i9.Pageable pageable,
   ) => this.operations.page(_findByYearAfter, [year], pageable);
 
   @override
-  _i3.Future<_i7.Slice<_i2.Book>> findByInStockIsTrue(_i7.Pageable pageable) =>
+  _i3.Future<_i9.Slice<_i2.Book>> findByInStockIsTrue(_i9.Pageable pageable) =>
       this.operations.slice(_findByInStockIsTrue, const [], pageable);
 
   @override
   _i3.Future<List<_i2.Book>> findByInStockEquals(
     bool inStock,
-    _i7.Pageable pageable,
+    _i9.Pageable pageable,
   ) =>
       this.operations.list(_findByInStockEquals, [inStock], pageable: pageable);
 
@@ -419,7 +419,7 @@ class _$BookRepositoryImpl extends _i4.SimpleRepository<_i2.Book, int>
       this.operations.one(_findOneByYearAndTitle, [
         year,
         title,
-      ], lock: const _i5.Lock(_i5.LockMode.pessimisticWrite));
+      ], lock: const _i7.Lock(_i7.LockMode.pessimisticWrite));
 
   @override
   _i3.Future<_i2.Book?> findFirstByOrderByYearAsc() =>
@@ -430,9 +430,9 @@ class _$BookRepositoryImpl extends _i4.SimpleRepository<_i2.Book, int>
       this.operations.list(_findTop2ByOrderByYearDesc, const []);
 
   @override
-  _i3.Future<_i7.Page<_i2.Book>> findTop3ByInStock(
+  _i3.Future<_i9.Page<_i2.Book>> findTop3ByInStock(
     bool inStock,
-    _i7.Pageable pageable,
+    _i9.Pageable pageable,
   ) => this.operations.page(_findTop3ByInStock, [inStock], pageable);
 
   @override
@@ -457,20 +457,20 @@ class _$BookRepositoryImpl extends _i4.SimpleRepository<_i2.Book, int>
 }
 
 /// Implements `AuthorRepository`: `SimpleRepository` has the CRUD methods.
-class _$AuthorRepositoryImpl extends _i4.SimpleRepository<_i2.Author, int>
+class _$AuthorRepositoryImpl extends _i6.SimpleRepository<_i2.Author, int>
     implements _i2.AuthorRepository {
   _$AuthorRepositoryImpl(super.operations);
 
-  static const _findByNameStartingWith = _i4.PartTree(
+  static const _findByNameStartingWith = _i6.PartTree(
     r'findByNameStartingWith',
     [
-      _i4.OrPart([_i4.Part(r'name', _i4.PartType.startingWith)]),
+      _i6.OrPart([_i6.Part(r'name', _i6.PartType.startingWith)]),
     ],
   );
 
   static _$AuthorRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$AuthorRepositoryImpl(
-        r.dependency<_i4.RepositoryFactory>().operations<_i2.Author, int>(
+        r.dependency<_i6.RepositoryFactory>().operations<_i2.Author, int>(
           r'AuthorRepository',
         ),
       );
@@ -481,34 +481,34 @@ class _$AuthorRepositoryImpl extends _i4.SimpleRepository<_i2.Author, int>
 }
 
 /// Implements `ReviewRepository`: `SimpleRepository` has the CRUD methods.
-class _$ReviewRepositoryImpl extends _i4.SimpleRepository<_i2.Review, int>
+class _$ReviewRepositoryImpl extends _i6.SimpleRepository<_i2.Review, int>
     implements _i2.ReviewRepository {
   _$ReviewRepositoryImpl(super.operations);
 
   static _$ReviewRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$ReviewRepositoryImpl(
-        r.dependency<_i4.RepositoryFactory>().operations<_i2.Review, int>(
+        r.dependency<_i6.RepositoryFactory>().operations<_i2.Review, int>(
           r'ReviewRepository',
           annotations: const [
-            _i5.UseStore(r'memory'),
-            _i5.UseDataSource(r'catalog'),
+            _i7.UseStore(r'memory'),
+            _i7.UseDataSource(r'catalog'),
           ],
         ),
       );
 }
 
 /// Implements `BookmarkRepository`: `SimpleRepository` has the CRUD methods.
-class _$BookmarkRepositoryImpl extends _i4.SimpleRepository<_i2.Bookmark, int>
+class _$BookmarkRepositoryImpl extends _i6.SimpleRepository<_i2.Bookmark, int>
     implements _i2.BookmarkRepository {
   _$BookmarkRepositoryImpl(super.operations);
 
-  static const _findByBookId = _i4.PartTree(r'findByBookId', [
-    _i4.OrPart([_i4.Part(r'bookId')]),
+  static const _findByBookId = _i6.PartTree(r'findByBookId', [
+    _i6.OrPart([_i6.Part(r'bookId')]),
   ]);
 
   static _$BookmarkRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$BookmarkRepositoryImpl(
-        r.dependency<_i4.RepositoryFactory>().operations<_i2.Bookmark, int>(
+        r.dependency<_i6.RepositoryFactory>().operations<_i2.Bookmark, int>(
           r'BookmarkRepository',
         ),
       );
@@ -519,17 +519,17 @@ class _$BookmarkRepositoryImpl extends _i4.SimpleRepository<_i2.Bookmark, int>
 }
 
 /// Implements `AccountRepository`: `SimpleRepository` has the CRUD methods.
-class _$AccountRepositoryImpl extends _i4.SimpleRepository<_i2.Account, String>
+class _$AccountRepositoryImpl extends _i6.SimpleRepository<_i2.Account, String>
     implements _i2.AccountRepository {
   _$AccountRepositoryImpl(super.operations);
 
-  static const _findByOwner = _i4.PartTree(r'findByOwner', [
-    _i4.OrPart([_i4.Part(r'owner')]),
+  static const _findByOwner = _i6.PartTree(r'findByOwner', [
+    _i6.OrPart([_i6.Part(r'owner')]),
   ]);
 
   static _$AccountRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$AccountRepositoryImpl(
-        r.dependency<_i4.RepositoryFactory>().operations<_i2.Account, String>(
+        r.dependency<_i6.RepositoryFactory>().operations<_i2.Account, String>(
           r'AccountRepository',
         ),
       );
@@ -540,13 +540,13 @@ class _$AccountRepositoryImpl extends _i4.SimpleRepository<_i2.Account, String>
 }
 
 /// Implements `TicketRepository`: `SimpleRepository` has the CRUD methods.
-class _$TicketRepositoryImpl extends _i4.SimpleRepository<_i2.Ticket, int>
+class _$TicketRepositoryImpl extends _i6.SimpleRepository<_i2.Ticket, int>
     implements _i2.TicketRepository {
   _$TicketRepositoryImpl(super.operations);
 
   static _$TicketRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$TicketRepositoryImpl(
-        r.dependency<_i4.RepositoryFactory>().operations<_i2.Ticket, int>(
+        r.dependency<_i6.RepositoryFactory>().operations<_i2.Ticket, int>(
           r'TicketRepository',
         ),
       );
@@ -555,18 +555,18 @@ class _$TicketRepositoryImpl extends _i4.SimpleRepository<_i2.Ticket, int>
 /// Implements `PurchaseOrderRepository`: `SimpleRepository` has the CRUD
 /// methods.
 class _$PurchaseOrderRepositoryImpl
-    extends _i4.SimpleRepository<_i2.PurchaseOrder, int>
+    extends _i6.SimpleRepository<_i2.PurchaseOrder, int>
     implements _i2.PurchaseOrderRepository {
   _$PurchaseOrderRepositoryImpl(super.operations);
 
-  static const _findByCustomer = _i4.PartTree(r'findByCustomer', [
-    _i4.OrPart([_i4.Part(r'customer')]),
+  static const _findByCustomer = _i6.PartTree(r'findByCustomer', [
+    _i6.OrPart([_i6.Part(r'customer')]),
   ]);
 
   static _$PurchaseOrderRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$PurchaseOrderRepositoryImpl(
         r
-            .dependency<_i4.RepositoryFactory>()
+            .dependency<_i6.RepositoryFactory>()
             .operations<_i2.PurchaseOrder, int>(r'PurchaseOrderRepository'),
       );
 
@@ -576,13 +576,13 @@ class _$PurchaseOrderRepositoryImpl
 }
 
 /// Implements `BookReportRepository`: `SimpleRepository` has the CRUD methods.
-class _$BookReportRepositoryImpl extends _i4.SimpleRepository<_i2.Book, int>
+class _$BookReportRepositoryImpl extends _i6.SimpleRepository<_i2.Book, int>
     implements _i2.BookReportRepository {
   _$BookReportRepositoryImpl(super.operations);
 
-  static const _cardsSince = _i4.QueryMethod(
+  static const _cardsSince = _i6.QueryMethod(
     r'cardsSince',
-    _i5.Query(
+    _i7.Query(
       r'select b.title, a.name as author_name, b.year from {Book} b join {Author} a on a.{Author.id} = b.{Book.author} where b.year >= :year order by b.year, b.title',
     ),
     parameters: [r'year'],
@@ -593,12 +593,12 @@ class _$BookReportRepositoryImpl extends _i4.SimpleRepository<_i2.Book, int>
   static _$BookReportRepositoryImpl $create(
     _i1.DependencyResolver r,
   ) => _$BookReportRepositoryImpl(
-    r.dependency<_i4.RepositoryFactory>().operations<_i2.Book, int>(
+    r.dependency<_i6.RepositoryFactory>().operations<_i2.Book, int>(
       r'BookReportRepository',
-      annotations: const [_i8.ConditionalOnProperty(r'spring.datasource.url')],
+      annotations: const [_i10.ConditionalOnProperty(r'spring.datasource.url')],
       queries: [_cardsSince],
       requirements: const [
-        _i4.StoreRequirement(r'cardsSince', _i4.DataStoreCapability.queries),
+        _i6.StoreRequirement(r'cardsSince', _i6.DataStoreCapability.queries),
       ],
     ),
   );
@@ -631,16 +631,16 @@ _i1.BeanModule get $application => _i1.BeanModule(
           r'asset:spring_boot_starter_data/example/example.dart#BookRepository',
       types: const [
         _i2.BookRepository,
-        _i9.ListCrudRepository<_i2.Book, int>,
-        _i9.CrudRepository<_i2.Book, int>,
-        _i9.DataRepository<_i2.Book, int>,
-        _i9.ListPagingAndSortingRepository<_i2.Book, int>,
-        _i9.PagingAndSortingRepository<_i2.Book, int>,
-        _i9.ListCrudRepository<dynamic, dynamic>,
-        _i9.CrudRepository<dynamic, dynamic>,
-        _i9.DataRepository<dynamic, dynamic>,
-        _i9.ListPagingAndSortingRepository<dynamic, dynamic>,
-        _i9.PagingAndSortingRepository<dynamic, dynamic>,
+        _i11.ListCrudRepository<_i2.Book, int>,
+        _i11.CrudRepository<_i2.Book, int>,
+        _i11.DataRepository<_i2.Book, int>,
+        _i11.ListPagingAndSortingRepository<_i2.Book, int>,
+        _i11.PagingAndSortingRepository<_i2.Book, int>,
+        _i11.ListCrudRepository<dynamic, dynamic>,
+        _i11.CrudRepository<dynamic, dynamic>,
+        _i11.DataRepository<dynamic, dynamic>,
+        _i11.ListPagingAndSortingRepository<dynamic, dynamic>,
+        _i11.PagingAndSortingRepository<dynamic, dynamic>,
       ],
       create: (r) => _$BookRepositoryImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
@@ -652,12 +652,12 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'asset:spring_boot_starter_data/example/example.dart#AuthorRepository',
       types: const [
         _i2.AuthorRepository,
-        _i9.ListCrudRepository<_i2.Author, int>,
-        _i9.CrudRepository<_i2.Author, int>,
-        _i9.DataRepository<_i2.Author, int>,
-        _i9.ListCrudRepository<dynamic, dynamic>,
-        _i9.CrudRepository<dynamic, dynamic>,
-        _i9.DataRepository<dynamic, dynamic>,
+        _i11.ListCrudRepository<_i2.Author, int>,
+        _i11.CrudRepository<_i2.Author, int>,
+        _i11.DataRepository<_i2.Author, int>,
+        _i11.ListCrudRepository<dynamic, dynamic>,
+        _i11.CrudRepository<dynamic, dynamic>,
+        _i11.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$AuthorRepositoryImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
@@ -669,17 +669,17 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'asset:spring_boot_starter_data/example/example.dart#ReviewRepository',
       types: const [
         _i2.ReviewRepository,
-        _i9.ListCrudRepository<_i2.Review, int>,
-        _i9.CrudRepository<_i2.Review, int>,
-        _i9.DataRepository<_i2.Review, int>,
-        _i9.ListCrudRepository<dynamic, dynamic>,
-        _i9.CrudRepository<dynamic, dynamic>,
-        _i9.DataRepository<dynamic, dynamic>,
+        _i11.ListCrudRepository<_i2.Review, int>,
+        _i11.CrudRepository<_i2.Review, int>,
+        _i11.DataRepository<_i2.Review, int>,
+        _i11.ListCrudRepository<dynamic, dynamic>,
+        _i11.CrudRepository<dynamic, dynamic>,
+        _i11.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$ReviewRepositoryImpl.$create(r),
       annotations: const [
-        _i5.UseStore(r'memory'),
-        _i5.UseDataSource(r'catalog'),
+        _i7.UseStore(r'memory'),
+        _i7.UseDataSource(r'catalog'),
       ],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
@@ -690,12 +690,12 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'asset:spring_boot_starter_data/example/example.dart#BookmarkRepository',
       types: const [
         _i2.BookmarkRepository,
-        _i9.ListCrudRepository<_i2.Bookmark, int>,
-        _i9.CrudRepository<_i2.Bookmark, int>,
-        _i9.DataRepository<_i2.Bookmark, int>,
-        _i9.ListCrudRepository<dynamic, dynamic>,
-        _i9.CrudRepository<dynamic, dynamic>,
-        _i9.DataRepository<dynamic, dynamic>,
+        _i11.ListCrudRepository<_i2.Bookmark, int>,
+        _i11.CrudRepository<_i2.Bookmark, int>,
+        _i11.DataRepository<_i2.Bookmark, int>,
+        _i11.ListCrudRepository<dynamic, dynamic>,
+        _i11.CrudRepository<dynamic, dynamic>,
+        _i11.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$BookmarkRepositoryImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
@@ -707,10 +707,10 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'asset:spring_boot_starter_data/example/example.dart#AccountRepository',
       types: const [
         _i2.AccountRepository,
-        _i9.CrudRepository<_i2.Account, String>,
-        _i9.DataRepository<_i2.Account, String>,
-        _i9.CrudRepository<dynamic, dynamic>,
-        _i9.DataRepository<dynamic, dynamic>,
+        _i11.CrudRepository<_i2.Account, String>,
+        _i11.DataRepository<_i2.Account, String>,
+        _i11.CrudRepository<dynamic, dynamic>,
+        _i11.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$AccountRepositoryImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
@@ -722,12 +722,12 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'asset:spring_boot_starter_data/example/example.dart#TicketRepository',
       types: const [
         _i2.TicketRepository,
-        _i9.ListCrudRepository<_i2.Ticket, int>,
-        _i9.CrudRepository<_i2.Ticket, int>,
-        _i9.DataRepository<_i2.Ticket, int>,
-        _i9.ListCrudRepository<dynamic, dynamic>,
-        _i9.CrudRepository<dynamic, dynamic>,
-        _i9.DataRepository<dynamic, dynamic>,
+        _i11.ListCrudRepository<_i2.Ticket, int>,
+        _i11.CrudRepository<_i2.Ticket, int>,
+        _i11.DataRepository<_i2.Ticket, int>,
+        _i11.ListCrudRepository<dynamic, dynamic>,
+        _i11.CrudRepository<dynamic, dynamic>,
+        _i11.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$TicketRepositoryImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
@@ -739,12 +739,12 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'asset:spring_boot_starter_data/example/example.dart#PurchaseOrderRepository',
       types: const [
         _i2.PurchaseOrderRepository,
-        _i9.ListCrudRepository<_i2.PurchaseOrder, int>,
-        _i9.CrudRepository<_i2.PurchaseOrder, int>,
-        _i9.DataRepository<_i2.PurchaseOrder, int>,
-        _i9.ListCrudRepository<dynamic, dynamic>,
-        _i9.CrudRepository<dynamic, dynamic>,
-        _i9.DataRepository<dynamic, dynamic>,
+        _i11.ListCrudRepository<_i2.PurchaseOrder, int>,
+        _i11.CrudRepository<_i2.PurchaseOrder, int>,
+        _i11.DataRepository<_i2.PurchaseOrder, int>,
+        _i11.ListCrudRepository<dynamic, dynamic>,
+        _i11.CrudRepository<dynamic, dynamic>,
+        _i11.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$PurchaseOrderRepositoryImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
@@ -756,17 +756,17 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'asset:spring_boot_starter_data/example/example.dart#BookReportRepository',
       types: const [
         _i2.BookReportRepository,
-        _i9.DataRepository<_i2.Book, int>,
-        _i9.DataRepository<dynamic, dynamic>,
+        _i11.DataRepository<_i2.Book, int>,
+        _i11.DataRepository<dynamic, dynamic>,
       ],
       conditions: [
         _i1.ConditionGroup(
           r'asset:spring_boot_starter_data/example/example.dart#BookReportRepository',
-          [const _i8.ConditionalOnProperty(r'spring.datasource.url')],
+          [const _i10.ConditionalOnProperty(r'spring.datasource.url')],
         ),
       ],
       create: (r) => _$BookReportRepositoryImpl.$create(r),
-      annotations: const [_i8.ConditionalOnProperty(r'spring.datasource.url')],
+      annotations: const [_i10.ConditionalOnProperty(r'spring.datasource.url')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
@@ -776,7 +776,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source:
           r'asset:spring_boot_starter_data/example/example.dart#AuditingSetup',
       create: (r) => _i2.AuditingSetup(),
-      annotations: const [_i1.Configuration(), _i10.EnableDataAuditing()],
+      annotations: const [_i1.Configuration(), _i12.EnableDataAuditing()],
     ),
     _i1.BeanDefinition<_i2.CurrentUser>(
       name: r'currentUser',
@@ -784,8 +784,8 @@ _i1.BeanModule get $application => _i1.BeanModule(
           r'asset:spring_boot_starter_data/example/example.dart#CurrentUser',
       types: const [
         _i2.CurrentUser,
-        _i10.AuditorAware<String>,
-        _i10.AuditorAware<dynamic>,
+        _i12.AuditorAware<String>,
+        _i12.AuditorAware<dynamic>,
       ],
       create: (r) => _i2.CurrentUser(),
       annotations: const [_i1.Component()],
@@ -817,7 +817,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String', r'int', r'String'],
             parameterNames: [r'title', r'year', r'author'],
-            annotations: [_i11.Transactional()],
+            annotations: [_i13.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
@@ -826,7 +826,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'int'],
             parameterNames: [r'bookId'],
-            annotations: [_i11.Transactional()],
+            annotations: [_i13.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
@@ -835,7 +835,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'int', r'String', r'String'],
             parameterNames: [r'year', r'title', r'newTitle'],
-            annotations: [_i11.Transactional()],
+            annotations: [_i13.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
@@ -844,7 +844,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'int'],
             parameterNames: [r'start'],
-            annotations: [_i11.Transactional(readOnly: true)],
+            annotations: [_i13.Transactional(readOnly: true)],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
@@ -853,7 +853,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String', r'Map'],
             parameterNames: [r'customer', r'quantities'],
-            annotations: [_i11.Transactional()],
+            annotations: [_i13.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
         ],
@@ -866,7 +866,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
       name: r'libraryTour',
       source:
           r'asset:spring_boot_starter_data/example/example.dart#LibraryTour',
-      types: const [_i2.LibraryTour, _i12.CommandLineRunner],
+      types: const [_i2.LibraryTour, _i14.CommandLineRunner],
       order: 1,
       dependencies: const [_i1.Dependency(_i2.Library, name: r'library')],
       create: (r) =>
@@ -883,62 +883,62 @@ _i1.BeanModule get $application => _i1.BeanModule(
     _i1.BeanDefinition<_i2.ReportTour>(
       name: r'reportTour',
       source: r'asset:spring_boot_starter_data/example/example.dart#ReportTour',
-      types: const [_i2.ReportTour, _i12.CommandLineRunner],
+      types: const [_i2.ReportTour, _i14.CommandLineRunner],
       order: 2,
       conditions: [
         _i1.ConditionGroup(
           r'asset:spring_boot_starter_data/example/example.dart#ReportTour',
-          [const _i8.ConditionalOnProperty(r'spring.datasource.url')],
+          [const _i10.ConditionalOnProperty(r'spring.datasource.url')],
         ),
       ],
       dependencies: const [
         _i1.Dependency(_i2.BookReportRepository, name: r'reports'),
-        _i1.Dependency(_i13.JdbcClient, name: r'jdbc'),
+        _i1.Dependency(_i15.JdbcClient, name: r'jdbc'),
       ],
       create: (r) => _i2.ReportTour(
         r.dependency<_i2.BookReportRepository>(name: r'reports'),
-        r.dependency<_i13.JdbcClient>(name: r'jdbc'),
+        r.dependency<_i15.JdbcClient>(name: r'jdbc'),
       ),
       annotations: const [
         _i1.Component(),
         _i1.Log(topic: r'example'),
         _i1.Order(2),
-        _i8.ConditionalOnProperty(r'spring.datasource.url'),
+        _i10.ConditionalOnProperty(r'spring.datasource.url'),
       ],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i4.EntityIntrospections>(
+    _i1.BeanDefinition<_i6.EntityIntrospections>(
       name: r'entityIntrospections#application',
       source: r'package:spring_boot_starter_data#EntityIntrospections',
-      types: const [_i4.EntityIntrospections],
-      create: (r) => _i4.EntityIntrospections([
-        _i4.EntityIntrospection<_i2.Author>(
+      types: const [_i6.EntityIntrospections],
+      create: (r) => _i6.EntityIntrospections([
+        _i6.EntityIntrospection<_i2.Author>(
           r'Author',
           const [
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i5.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'isni',
               _i1.ClassType<String>(nullable: true),
-              annotations: [_i5.Unique()],
+              annotations: [_i7.Unique()],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i5.Table(r'authors')],
+          annotations: const [_i7.Table(r'authors')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.name,
@@ -956,35 +956,35 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i2.Book>(
+        _i6.EntityIntrospection<_i2.Book>(
           r'Book',
           const [
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i5.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'title',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'year',
               _i1.ClassType<int>(),
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'subtitle',
               _i1.ClassType<String>(nullable: true),
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'inStock',
               _i1.ClassType<bool>(),
               parameter: true,
@@ -992,52 +992,52 @@ _i1.BeanModule get $application => _i1.BeanModule(
               hasDefaultValue: true,
               defaultValue: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'author',
-              _i1.GenericType<_i5.AggregateReference<_i2.Author, int>>([
+              _i1.GenericType<_i7.AggregateReference<_i2.Author, int>>([
                 _i1.ClassType<_i2.Author>(),
                 _i1.ClassType<int>(),
               ], nullable: true),
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'version',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i5.Version()],
+              annotations: [_i7.Version()],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'createdAt',
               _i1.ClassType<DateTime>(nullable: true),
-              annotations: [_i5.CreatedDate()],
+              annotations: [_i7.CreatedDate()],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'modifiedAt',
               _i1.ClassType<DateTime>(nullable: true),
-              annotations: [_i5.LastModifiedDate()],
+              annotations: [_i7.LastModifiedDate()],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'createdBy',
               _i1.ClassType<String>(nullable: true),
-              annotations: [_i5.CreatedBy()],
+              annotations: [_i7.CreatedBy()],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'modifiedBy',
               _i1.ClassType<String>(nullable: true),
-              annotations: [_i5.LastModifiedBy()],
+              annotations: [_i7.LastModifiedBy()],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i5.Table(r'books')],
+          annotations: const [_i7.Table(r'books')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.title,
@@ -1057,7 +1057,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             id: v[0] as int?,
             subtitle: v[3] as String?,
             inStock: v[4] as bool,
-            author: v[5] as _i5.AggregateReference<_i2.Author, int>?,
+            author: v[5] as _i7.AggregateReference<_i2.Author, int>?,
             version: v[6] as int?,
             createdAt: v[7] as DateTime?,
             modifiedAt: v[8] as DateTime?,
@@ -1070,7 +1070,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             2 => e.year = v as int,
             3 => e.subtitle = v as String?,
             4 => e.inStock = v as bool,
-            5 => e.author = v as _i5.AggregateReference<_i2.Author, int>?,
+            5 => e.author = v as _i7.AggregateReference<_i2.Author, int>?,
             6 => e.version = v as int?,
             7 => e.createdAt = v as DateTime?,
             8 => e.modifiedAt = v as DateTime?,
@@ -1079,27 +1079,27 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i2.Bookmark>(
+        _i6.EntityIntrospection<_i2.Bookmark>(
           r'Bookmark',
           const [
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i5.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'bookId',
               _i1.ClassType<int>(),
               annotations: [
-                _i5.Reference(_i2.Book),
-                _i5.OnDelete(_i5.OnDeleteAction.cascade),
+                _i7.Reference(_i2.Book),
+                _i7.OnDelete(_i7.OnDeleteAction.cascade),
               ],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'page',
               _i1.ClassType<int>(),
               parameter: true,
@@ -1107,8 +1107,8 @@ _i1.BeanModule get $application => _i1.BeanModule(
             ),
           ],
           annotations: const [
-            _i5.Table(r'bookmarks'),
-            _i5.UniqueConstraint([r'bookId', r'page']),
+            _i7.Table(r'bookmarks'),
+            _i7.UniqueConstraint([r'bookId', r'page']),
           ],
           get: (e, i) => switch (i) {
             0 => e.id,
@@ -1127,45 +1127,45 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i2.PurchaseOrder>(
+        _i6.EntityIntrospection<_i2.PurchaseOrder>(
           r'PurchaseOrder',
           const [
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i5.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'customer',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'lines',
               _i1.ListType<_i2.OrderLine>(_i1.ClassType<_i2.OrderLine>()),
-              annotations: [_i5.MappedCollection()],
+              annotations: [_i7.MappedCollection()],
               parameter: true,
               writable: true,
               hasDefaultValue: true,
               defaultValue: <_i2.OrderLine>[],
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'notes',
               _i1.MapType<String, _i2.OrderNote>(
                 _i1.ClassType<String>(),
                 _i1.ClassType<_i2.OrderNote>(),
               ),
-              annotations: [_i5.MappedCollection()],
+              annotations: [_i7.MappedCollection()],
               parameter: true,
               writable: true,
               hasDefaultValue: true,
               defaultValue: <String, _i2.OrderNote>{},
             ),
           ],
-          annotations: const [_i5.Table(r'orders')],
+          annotations: const [_i7.Table(r'orders')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.customer,
@@ -1186,23 +1186,23 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i2.OrderLine>(
+        _i6.EntityIntrospection<_i2.OrderLine>(
           r'OrderLine',
           const [
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'sku',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'quantity',
               _i1.ClassType<int>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i5.Table(r'order_lines')],
+          annotations: const [_i7.Table(r'order_lines')],
           get: (e, i) => switch (i) {
             0 => e.sku,
             _ => e.quantity,
@@ -1215,17 +1215,17 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i2.OrderNote>(
+        _i6.EntityIntrospection<_i2.OrderNote>(
           r'OrderNote',
           const [
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'text',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i5.Table(r'order_notes')],
+          annotations: const [_i7.Table(r'order_notes')],
           get: (e, i) => e.text,
           create: (v) => _i2.OrderNote(text: v[0] as String),
           write: (e, i, v) => switch (i) {
@@ -1233,30 +1233,30 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i2.Account>(
+        _i6.EntityIntrospection<_i2.Account>(
           r'Account',
           const [
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'iban',
               _i1.ClassType<String>(),
-              annotations: [_i5.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'owner',
               _i1.ClassType<String>(),
               parameter: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'version',
               _i1.ClassType<int>(),
-              annotations: [_i5.Version()],
+              annotations: [_i7.Version()],
               parameter: true,
               hasDefaultValue: true,
               defaultValue: 0,
             ),
           ],
-          annotations: const [_i5.Table(r'accounts')],
+          annotations: const [_i7.Table(r'accounts')],
           get: (e, i) => switch (i) {
             0 => e.iban,
             1 => e.owner,
@@ -1268,24 +1268,24 @@ _i1.BeanModule get $application => _i1.BeanModule(
             version: v[2] as int,
           ),
         ),
-        _i4.EntityIntrospection<_i2.Review>(
+        _i6.EntityIntrospection<_i2.Review>(
           r'Review',
           const [
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i5.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'text',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i5.Table(r'reviews')],
+          annotations: const [_i7.Table(r'reviews')],
           get: (e, i) => switch (i) {
             0 => e.id,
             _ => e.text,
@@ -1297,31 +1297,31 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i2.Ticket>(
+        _i6.EntityIntrospection<_i2.Ticket>(
           r'Ticket',
           const [
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i5.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'subject',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'stamp',
               _i1.ClassType<DateTime>(nullable: true),
-              annotations: [_i5.Version()],
+              annotations: [_i7.Version()],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i5.Table(r'tickets')],
+          annotations: const [_i7.Table(r'tickets')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.subject,
@@ -1339,20 +1339,20 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i2.BookCard>(
+        _i6.EntityIntrospection<_i2.BookCard>(
           r'BookCard',
           const [
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'title',
               _i1.ClassType<String>(),
               parameter: true,
             ),
-            _i4.EntityProperty(
+            _i6.EntityProperty(
               r'authorName',
               _i1.ClassType<String>(),
               parameter: true,
             ),
-            _i4.EntityProperty(r'year', _i1.ClassType<int>(), parameter: true),
+            _i6.EntityProperty(r'year', _i1.ClassType<int>(), parameter: true),
           ],
           get: (e, i) => switch (i) {
             0 => e.title,
@@ -1367,18 +1367,18 @@ _i1.BeanModule get $application => _i1.BeanModule(
         ),
       ]),
     ),
-    _i1.BeanDefinition<_i4.JdbcDriver>(
+    _i1.BeanDefinition<_i6.JdbcDriver>(
       name: r'sqlite3JdbcDriver',
       source: r'package:spring_boot_starter_data#sqlite3',
-      types: const [_i4.JdbcDriver],
-      conditions: [_i4.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
+      types: const [_i6.JdbcDriver],
+      conditions: [_i6.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
       create: (r) => _$sqlite3JdbcDriver(),
     ),
-    _i1.BeanDefinition<_i4.JdbcDriver>(
+    _i1.BeanDefinition<_i6.JdbcDriver>(
       name: r'postgresJdbcDriver',
       source: r'package:spring_boot_starter_data#postgres',
-      types: const [_i4.JdbcDriver],
-      conditions: [_i4.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
+      types: const [_i6.JdbcDriver],
+      conditions: [_i6.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
       create: (r) => _$postgresJdbcDriver(),
     ),
   ],
@@ -1409,29 +1409,29 @@ _i1.BeanModule get $application => _i1.BeanModule(
   typeDepths: {_i2.Book: 1},
 );
 
-final class _$Sqlite3Binding implements _i4.SqliteBinding {
+final class _$Sqlite3Binding implements _i6.SqliteBinding {
   const _$Sqlite3Binding();
 
   @override
-  _i4.SqliteDatabase open(
+  _i6.SqliteDatabase open(
     String filename, {
-    _i4.SqliteOpenMode mode = _i4.SqliteOpenMode.readWriteCreate,
+    _i6.SqliteOpenMode mode = _i6.SqliteOpenMode.readWriteCreate,
     bool uri = false,
   }) => _$sqlite3Guard(
     () => _$Sqlite3Database(
-      _i14.sqlite3.open(
+      _i16.sqlite3.open(
         filename,
-        mode: _i14.OpenMode.values.byName(mode.name),
+        mode: _i16.OpenMode.values.byName(mode.name),
         uri: uri,
       ),
     ),
   );
 }
 
-final class _$Sqlite3Database implements _i4.SqliteDatabase {
+final class _$Sqlite3Database implements _i6.SqliteDatabase {
   _$Sqlite3Database(this._database);
 
-  final _i14.Database _database;
+  final _i16.Database _database;
 
   @override
   void execute(String sql, [List<Object?> parameters = const []]) =>
@@ -1447,7 +1447,7 @@ final class _$Sqlite3Database implements _i4.SqliteDatabase {
   });
 
   @override
-  _i4.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
+  _i6.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
       _$sqlite3Guard(() {
         final statement = _database.prepare(sql);
         try {
@@ -1467,7 +1467,7 @@ final class _$Sqlite3Database implements _i4.SqliteDatabase {
     () => _database.createFunction(
       functionName: name,
       function: function,
-      argumentCount: _i14.AllowedArgumentCount(argumentCount),
+      argumentCount: _i16.AllowedArgumentCount(argumentCount),
       deterministic: true,
     ),
   );
@@ -1485,11 +1485,11 @@ final class _$Sqlite3Database implements _i4.SqliteDatabase {
   void close() => _$sqlite3Guard(_database.close);
 }
 
-final class _$Sqlite3Cursor implements _i4.SqliteCursor {
+final class _$Sqlite3Cursor implements _i6.SqliteCursor {
   _$Sqlite3Cursor(this._statement, this._cursor);
 
-  final _i14.PreparedStatement _statement;
-  final _i14.IteratingCursor _cursor;
+  final _i16.PreparedStatement _statement;
+  final _i16.IteratingCursor _cursor;
 
   @override
   List<String> get columns => _cursor.columnNames;
@@ -1513,8 +1513,8 @@ final class _$Sqlite3Cursor implements _i4.SqliteCursor {
 T _$sqlite3Guard<T>(T Function() action) {
   try {
     return action();
-  } on _i14.SqliteException catch (e) {
-    throw _i4.SqlError(
+  } on _i16.SqliteException catch (e) {
+    throw _i6.SqlError(
       e.message,
       vendorCode: e.resultCode,
       extendedCode: e.extendedResultCode,
@@ -1522,34 +1522,34 @@ T _$sqlite3Guard<T>(T Function() action) {
   }
 }
 
-_i4.JdbcDriver _$sqlite3JdbcDriver() =>
-    _i4.SqliteJdbcDriver(const _$Sqlite3Binding());
+_i6.JdbcDriver _$sqlite3JdbcDriver() =>
+    _i6.SqliteJdbcDriver(const _$Sqlite3Binding());
 
-final class _$PostgresBinding implements _i4.PostgresBinding {
+final class _$PostgresBinding implements _i6.PostgresBinding {
   const _$PostgresBinding();
 
   @override
-  Future<_i4.PostgresSession> open(_i4.PostgresEndpoint endpoint) =>
+  Future<_i6.PostgresSession> open(_i6.PostgresEndpoint endpoint) =>
       _$postgresGuard(() async {
         final roots = endpoint.rootCertificate;
         return _$PostgresSession(
-          await _i15.Connection.open(
-            _i15.Endpoint(
+          await _i17.Connection.open(
+            _i17.Endpoint(
               host: endpoint.host,
               port: endpoint.port,
               database: endpoint.database,
               username: endpoint.username,
               password: endpoint.password,
             ),
-            settings: _i15.ConnectionSettings(
+            settings: _i17.ConnectionSettings(
               sslMode: switch (endpoint.sslMode) {
-                _i4.PostgresSslMode.disable => _i15.SslMode.disable,
-                _i4.PostgresSslMode.require => _i15.SslMode.require,
-                _i4.PostgresSslMode.verifyFull => _i15.SslMode.verifyFull,
+                _i6.PostgresSslMode.disable => _i17.SslMode.disable,
+                _i6.PostgresSslMode.require => _i17.SslMode.require,
+                _i6.PostgresSslMode.verifyFull => _i17.SslMode.verifyFull,
               },
               securityContext: roots == null
                   ? null
-                  : (_i16.SecurityContext(withTrustedRoots: false)
+                  : (_i18.SecurityContext(withTrustedRoots: false)
                       ..setTrustedCertificates(roots)),
               connectTimeout: endpoint.connectTimeout,
               applicationName: endpoint.applicationName,
@@ -1559,16 +1559,16 @@ final class _$PostgresBinding implements _i4.PostgresBinding {
       });
 }
 
-final class _$PostgresSession implements _i4.PostgresSession {
+final class _$PostgresSession implements _i6.PostgresSession {
   _$PostgresSession(this._connection);
 
-  final _i15.Connection _connection;
+  final _i17.Connection _connection;
 
   @override
   bool get isOpen => _connection.isOpen;
 
   @override
-  Future<_i4.PostgresResult> execute(
+  Future<_i6.PostgresResult> execute(
     String sql, {
     List<Object?> parameters = const [],
     bool simple = false,
@@ -1579,17 +1579,17 @@ final class _$PostgresSession implements _i4.PostgresSession {
       parameters: parameters.isEmpty
           ? null
           : [for (final value in parameters) _$postgresParameter(value)],
-      queryMode: simple ? _i15.QueryMode.simple : null,
+      queryMode: simple ? _i17.QueryMode.simple : null,
       timeout: timeout,
     );
     final columns = _$postgresColumns(result.schema);
-    return _i4.PostgresResult(columns, [
+    return _i6.PostgresResult(columns, [
       for (final row in result) _$postgresValues(row),
     ], result.affectedRows);
   });
 
   @override
-  Stream<_i4.PostgresRow> stream(
+  Stream<_i6.PostgresRow> stream(
     String sql, {
     List<Object?> parameters = const [],
     Duration? timeout,
@@ -1601,7 +1601,7 @@ final class _$PostgresSession implements _i4.PostgresSession {
         for (final value in parameters) _$postgresParameter(value),
       ])) {
         columns ??= _$postgresColumns(row.schema);
-        yield _i4.PostgresRow(columns, _$postgresValues(row));
+        yield _i6.PostgresRow(columns, _$postgresValues(row));
       }
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(_$postgresError(error), stackTrace);
@@ -1621,18 +1621,18 @@ final class _$PostgresSession implements _i4.PostgresSession {
 // The package writes a double that is not finite (`Infinity`, `NaN`) as a
 // quoted text the server refuses, unless it knows the type.
 Object? _$postgresParameter(Object? value) => value is double && !value.isFinite
-    ? _i15.TypedValue(_i15.Type.double, value)
+    ? _i17.TypedValue(_i17.Type.double, value)
     : value;
 
-List<String> _$postgresColumns(_i15.ResultSchema schema) => [
+List<String> _$postgresColumns(_i17.ResultSchema schema) => [
   for (final column in schema.columns) column.columnName ?? '',
 ];
 
 // A value of a type the package does not decode (an enum, `citext`...) as
 // its text or bytes.
-List<Object?> _$postgresValues(_i15.ResultRow row) => [
+List<Object?> _$postgresValues(_i17.ResultRow row) => [
   for (final value in row)
-    value is _i15.UndecodedBytes
+    value is _i17.UndecodedBytes
         ? (value.isBinary ? value.bytes : value.asString)
         : value,
 ];
@@ -1641,31 +1641,31 @@ List<Object?> _$postgresValues(_i15.ResultRow row) => [
 // driver understands: the message, the SQL state, the constraint's name;
 // never the DETAIL line (it holds values) and never the exception itself.
 Object _$postgresError(Object error) {
-  if (error is _i15.ServerException) {
-    return _i4.SqlError(
+  if (error is _i17.ServerException) {
+    return _i6.SqlError(
       error.message,
       sqlState: error.code,
       constraint: error.constraintName,
       connectionLost:
-          error.severity == _i15.Severity.fatal ||
-          error.severity == _i15.Severity.panic,
+          error.severity == _i17.Severity.fatal ||
+          error.severity == _i17.Severity.panic,
     );
   }
-  if (error is _i15.PgException) {
+  if (error is _i17.PgException) {
     // The package names the value it cannot send.
     final inference = error.message.startsWith('Could not infer');
-    return _i4.SqlError(
+    return _i6.SqlError(
       inference
           ? 'A parameter value has a type the driver cannot send'
           : error.message,
       connectionLost: !inference,
     );
   }
-  if (error is _i16.SocketException || error is _i16.TlsException) {
-    return _i4.SqlError('$error', connectionLost: true);
+  if (error is _i18.SocketException || error is _i18.TlsException) {
+    return _i6.SqlError('$error', connectionLost: true);
   }
   if (error is _i3.TimeoutException) {
-    return _i4.SqlError(
+    return _i6.SqlError(
       error.message ?? 'The connection timed out',
       connectionLost: true,
     );
@@ -1681,39 +1681,30 @@ Future<T> _$postgresGuard<T>(Future<T> Function() action) async {
   }
 }
 
-_i4.JdbcDriver _$postgresJdbcDriver() =>
-    _i4.PostgresJdbcDriver(const _$PostgresBinding());
+_i6.JdbcDriver _$postgresJdbcDriver() =>
+    _i6.PostgresJdbcDriver(const _$PostgresBinding());
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i17.springBootAutoConfiguration,
-    _i18.springBootStarterCacheAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i18.springBootStarterCacheStartupChecksAutoConfiguration,
-    _i19.springBootStarterDataAutoConfiguration,
-    _i19.springBootStarterDataSqlLoggingAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i19.springBootStarterDataStartupChecksAutoConfiguration,
+    _i19.springBootAutoConfiguration,
+    _i4.springBootStarterCacheAutoConfiguration,
+    _i5.springBootStarterDataAutoConfiguration,
+    _i5.springBootStarterDataSqlLoggingAutoConfiguration,
     _i20.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i18.springBootStarterCacheStartupChecksAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            after: [r'springBootStarterCacheAutoConfiguration'],
-          ),
-    _i19.springBootStarterDataSqlLoggingAutoConfiguration:
+    _i5.springBootStarterDataSqlLoggingAutoConfiguration:
         const _i1.AutoConfigurationModule(
           before: [r'springBootStarterDataAutoConfiguration'],
         ),
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i19.springBootStarterDataStartupChecksAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            after: [r'springBootStarterDataAutoConfiguration'],
-          ),
+    ...!const bool.fromEnvironment('dart.vm.product')
+        ? _$debugAutoConfigurationMetadata
+        : const {},
   },
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

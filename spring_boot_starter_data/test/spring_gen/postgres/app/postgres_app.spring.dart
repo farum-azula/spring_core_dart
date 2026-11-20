@@ -9,22 +9,22 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i8;
-import 'dart:io' as _i7;
+import 'dart:async' as _i9;
+import 'dart:io' as _i8;
 
-import 'package:postgres/postgres.dart' as _i6;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
+import 'package:postgres/postgres.dart' as _i7;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i10;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i10;
-import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i3;
+    as _i2;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i4;
 import 'package:spring_boot_starter_data/src/properties/properties_beans.dart'
-    as _i4;
+    as _i5;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i11;
-import 'package:sqlite3/sqlite3.dart' as _i5;
+import 'package:sqlite3/sqlite3.dart' as _i6;
 
-import '../../../postgres/app/postgres_app.dart' as _i2;
+import '../../../postgres/app/postgres_app.dart' as _i3;
 
 part 'postgres_app.spring.debug.dart';
 part 'postgres_app.spring.env.dart';
@@ -40,56 +40,56 @@ const _$knownAdvisors0 = {
 _i1.BeanModule get $application => _i1.BeanModule(
   r'application',
   [
-    _i1.BeanDefinition<_i2.Marker>(
+    _i1.BeanDefinition<_i3.Marker>(
       name: r'marker',
       source: r'asset:spring_boot_starter_data/test/postgres/app/postgres_app.dart#Marker',
-      create: (r) => _i2.Marker(),
+      create: (r) => _i3.Marker(),
       annotations: const [_i1.Component()],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.JdbcDriver>(
+    _i1.BeanDefinition<_i4.JdbcDriver>(
       name: r'sqlite3JdbcDriver',
       source: r'package:spring_boot_starter_data#sqlite3',
-      types: const [_i3.JdbcDriver],
-      conditions: [_i3.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
+      types: const [_i4.JdbcDriver],
+      conditions: [_i4.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
       create: (r) => _$sqlite3JdbcDriver(),
     ),
-    _i1.BeanDefinition<_i3.JdbcDriver>(
+    _i1.BeanDefinition<_i4.JdbcDriver>(
       name: r'postgresJdbcDriver',
       source: r'package:spring_boot_starter_data#postgres',
-      types: const [_i3.JdbcDriver],
-      conditions: [_i3.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
+      types: const [_i4.JdbcDriver],
+      conditions: [_i4.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
       create: (r) => _$postgresJdbcDriver(),
     ),
   ],
-  imports: [_i4.dataConfigBeans],
+  imports: [_i5.dataConfigBeans],
 );
 
-final class _$Sqlite3Binding implements _i3.SqliteBinding {
+final class _$Sqlite3Binding implements _i4.SqliteBinding {
   const _$Sqlite3Binding();
 
   @override
-  _i3.SqliteDatabase open(
+  _i4.SqliteDatabase open(
     String filename, {
-    _i3.SqliteOpenMode mode = _i3.SqliteOpenMode.readWriteCreate,
+    _i4.SqliteOpenMode mode = _i4.SqliteOpenMode.readWriteCreate,
     bool uri = false,
   }) => _$sqlite3Guard(
     () => _$Sqlite3Database(
-      _i5.sqlite3.open(
+      _i6.sqlite3.open(
         filename,
-        mode: _i5.OpenMode.values.byName(mode.name),
+        mode: _i6.OpenMode.values.byName(mode.name),
         uri: uri,
       ),
     ),
   );
 }
 
-final class _$Sqlite3Database implements _i3.SqliteDatabase {
+final class _$Sqlite3Database implements _i4.SqliteDatabase {
   _$Sqlite3Database(this._database);
 
-  final _i5.Database _database;
+  final _i6.Database _database;
 
   @override
   void execute(String sql, [List<Object?> parameters = const []]) =>
@@ -105,7 +105,7 @@ final class _$Sqlite3Database implements _i3.SqliteDatabase {
   });
 
   @override
-  _i3.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
+  _i4.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
       _$sqlite3Guard(() {
         final statement = _database.prepare(sql);
         try {
@@ -125,7 +125,7 @@ final class _$Sqlite3Database implements _i3.SqliteDatabase {
     () => _database.createFunction(
       functionName: name,
       function: function,
-      argumentCount: _i5.AllowedArgumentCount(argumentCount),
+      argumentCount: _i6.AllowedArgumentCount(argumentCount),
       deterministic: true,
     ),
   );
@@ -143,11 +143,11 @@ final class _$Sqlite3Database implements _i3.SqliteDatabase {
   void close() => _$sqlite3Guard(_database.close);
 }
 
-final class _$Sqlite3Cursor implements _i3.SqliteCursor {
+final class _$Sqlite3Cursor implements _i4.SqliteCursor {
   _$Sqlite3Cursor(this._statement, this._cursor);
 
-  final _i5.PreparedStatement _statement;
-  final _i5.IteratingCursor _cursor;
+  final _i6.PreparedStatement _statement;
+  final _i6.IteratingCursor _cursor;
 
   @override
   List<String> get columns => _cursor.columnNames;
@@ -171,8 +171,8 @@ final class _$Sqlite3Cursor implements _i3.SqliteCursor {
 T _$sqlite3Guard<T>(T Function() action) {
   try {
     return action();
-  } on _i5.SqliteException catch (e) {
-    throw _i3.SqlError(
+  } on _i6.SqliteException catch (e) {
+    throw _i4.SqlError(
       e.message,
       vendorCode: e.resultCode,
       extendedCode: e.extendedResultCode,
@@ -180,34 +180,34 @@ T _$sqlite3Guard<T>(T Function() action) {
   }
 }
 
-_i3.JdbcDriver _$sqlite3JdbcDriver() =>
-    _i3.SqliteJdbcDriver(const _$Sqlite3Binding());
+_i4.JdbcDriver _$sqlite3JdbcDriver() =>
+    _i4.SqliteJdbcDriver(const _$Sqlite3Binding());
 
-final class _$PostgresBinding implements _i3.PostgresBinding {
+final class _$PostgresBinding implements _i4.PostgresBinding {
   const _$PostgresBinding();
 
   @override
-  Future<_i3.PostgresSession> open(_i3.PostgresEndpoint endpoint) =>
+  Future<_i4.PostgresSession> open(_i4.PostgresEndpoint endpoint) =>
       _$postgresGuard(() async {
         final roots = endpoint.rootCertificate;
         return _$PostgresSession(
-          await _i6.Connection.open(
-            _i6.Endpoint(
+          await _i7.Connection.open(
+            _i7.Endpoint(
               host: endpoint.host,
               port: endpoint.port,
               database: endpoint.database,
               username: endpoint.username,
               password: endpoint.password,
             ),
-            settings: _i6.ConnectionSettings(
+            settings: _i7.ConnectionSettings(
               sslMode: switch (endpoint.sslMode) {
-                _i3.PostgresSslMode.disable => _i6.SslMode.disable,
-                _i3.PostgresSslMode.require => _i6.SslMode.require,
-                _i3.PostgresSslMode.verifyFull => _i6.SslMode.verifyFull,
+                _i4.PostgresSslMode.disable => _i7.SslMode.disable,
+                _i4.PostgresSslMode.require => _i7.SslMode.require,
+                _i4.PostgresSslMode.verifyFull => _i7.SslMode.verifyFull,
               },
               securityContext: roots == null
                   ? null
-                  : (_i7.SecurityContext(withTrustedRoots: false)
+                  : (_i8.SecurityContext(withTrustedRoots: false)
                       ..setTrustedCertificates(roots)),
               connectTimeout: endpoint.connectTimeout,
               applicationName: endpoint.applicationName,
@@ -217,16 +217,16 @@ final class _$PostgresBinding implements _i3.PostgresBinding {
       });
 }
 
-final class _$PostgresSession implements _i3.PostgresSession {
+final class _$PostgresSession implements _i4.PostgresSession {
   _$PostgresSession(this._connection);
 
-  final _i6.Connection _connection;
+  final _i7.Connection _connection;
 
   @override
   bool get isOpen => _connection.isOpen;
 
   @override
-  Future<_i3.PostgresResult> execute(
+  Future<_i4.PostgresResult> execute(
     String sql, {
     List<Object?> parameters = const [],
     bool simple = false,
@@ -237,17 +237,17 @@ final class _$PostgresSession implements _i3.PostgresSession {
       parameters: parameters.isEmpty
           ? null
           : [for (final value in parameters) _$postgresParameter(value)],
-      queryMode: simple ? _i6.QueryMode.simple : null,
+      queryMode: simple ? _i7.QueryMode.simple : null,
       timeout: timeout,
     );
     final columns = _$postgresColumns(result.schema);
-    return _i3.PostgresResult(columns, [
+    return _i4.PostgresResult(columns, [
       for (final row in result) _$postgresValues(row),
     ], result.affectedRows);
   });
 
   @override
-  Stream<_i3.PostgresRow> stream(
+  Stream<_i4.PostgresRow> stream(
     String sql, {
     List<Object?> parameters = const [],
     Duration? timeout,
@@ -259,7 +259,7 @@ final class _$PostgresSession implements _i3.PostgresSession {
         for (final value in parameters) _$postgresParameter(value),
       ])) {
         columns ??= _$postgresColumns(row.schema);
-        yield _i3.PostgresRow(columns, _$postgresValues(row));
+        yield _i4.PostgresRow(columns, _$postgresValues(row));
       }
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(_$postgresError(error), stackTrace);
@@ -279,18 +279,18 @@ final class _$PostgresSession implements _i3.PostgresSession {
 // The package writes a double that is not finite (`Infinity`, `NaN`) as a
 // quoted text the server refuses, unless it knows the type.
 Object? _$postgresParameter(Object? value) => value is double && !value.isFinite
-    ? _i6.TypedValue(_i6.Type.double, value)
+    ? _i7.TypedValue(_i7.Type.double, value)
     : value;
 
-List<String> _$postgresColumns(_i6.ResultSchema schema) => [
+List<String> _$postgresColumns(_i7.ResultSchema schema) => [
   for (final column in schema.columns) column.columnName ?? '',
 ];
 
 // A value of a type the package does not decode (an enum, `citext`...) as
 // its text or bytes.
-List<Object?> _$postgresValues(_i6.ResultRow row) => [
+List<Object?> _$postgresValues(_i7.ResultRow row) => [
   for (final value in row)
-    value is _i6.UndecodedBytes
+    value is _i7.UndecodedBytes
         ? (value.isBinary ? value.bytes : value.asString)
         : value,
 ];
@@ -299,31 +299,31 @@ List<Object?> _$postgresValues(_i6.ResultRow row) => [
 // driver understands: the message, the SQL state, the constraint's name;
 // never the DETAIL line (it holds values) and never the exception itself.
 Object _$postgresError(Object error) {
-  if (error is _i6.ServerException) {
-    return _i3.SqlError(
+  if (error is _i7.ServerException) {
+    return _i4.SqlError(
       error.message,
       sqlState: error.code,
       constraint: error.constraintName,
       connectionLost:
-          error.severity == _i6.Severity.fatal ||
-          error.severity == _i6.Severity.panic,
+          error.severity == _i7.Severity.fatal ||
+          error.severity == _i7.Severity.panic,
     );
   }
-  if (error is _i6.PgException) {
+  if (error is _i7.PgException) {
     // The package names the value it cannot send.
     final inference = error.message.startsWith('Could not infer');
-    return _i3.SqlError(
+    return _i4.SqlError(
       inference
           ? 'A parameter value has a type the driver cannot send'
           : error.message,
       connectionLost: !inference,
     );
   }
-  if (error is _i7.SocketException || error is _i7.TlsException) {
-    return _i3.SqlError('$error', connectionLost: true);
+  if (error is _i8.SocketException || error is _i8.TlsException) {
+    return _i4.SqlError('$error', connectionLost: true);
   }
-  if (error is _i8.TimeoutException) {
-    return _i3.SqlError(
+  if (error is _i9.TimeoutException) {
+    return _i4.SqlError(
       error.message ?? 'The connection timed out',
       connectionLost: true,
     );
@@ -339,26 +339,24 @@ Future<T> _$postgresGuard<T>(Future<T> Function() action) async {
   }
 }
 
-_i3.JdbcDriver _$postgresJdbcDriver() =>
-    _i3.PostgresJdbcDriver(const _$PostgresBinding());
+_i4.JdbcDriver _$postgresJdbcDriver() =>
+    _i4.PostgresJdbcDriver(const _$PostgresBinding());
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i9.springBootAutoConfiguration,
-    _i10.springBootStarterCacheAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i10.springBootStarterCacheStartupChecksAutoConfiguration,
+    _i10.springBootAutoConfiguration,
+    _i2.springBootStarterCacheAutoConfiguration,
     _i11.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i10.springBootStarterCacheStartupChecksAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            after: [r'springBootStarterCacheAutoConfiguration'],
-          ),
+    ...!const bool.fromEnvironment('dart.vm.product')
+        ? _$debugAutoConfigurationMetadata
+        : const {},
   },
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

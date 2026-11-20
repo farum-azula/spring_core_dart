@@ -9,12 +9,11 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i11;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i12;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
-import 'package:spring_boot_starter_edge/spring_auto_configuration.dart'
-    as _i12;
-import 'package:spring_boot_starter_edge/src/edge_runtime.dart' as _i6;
-import 'package:spring_boot_starter_edge/src/edge_scheduled.dart' as _i9;
+import 'package:spring_boot_starter_edge/spring_auto_configuration.dart' as _i2;
+import 'package:spring_boot_starter_edge/src/edge_runtime.dart' as _i7;
+import 'package:spring_boot_starter_edge/src/edge_scheduled.dart' as _i10;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
     as _i13;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
@@ -24,24 +23,24 @@ import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart
 import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
     as _i16;
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart'
-    as _i5;
+    as _i6;
 import 'package:spring_boot_starter_security/src/config/http_security.dart'
-    as _i4;
-import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i3;
+    as _i5;
+import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i4;
 import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i17;
 import 'package:spring_security_core/spring_auto_configuration.dart' as _i18;
-import 'package:spring_web_dart/src/annotations.dart' as _i7;
-import 'package:spring_web_dart/src/controller_annotations.dart' as _i8;
+import 'package:spring_web_dart/src/annotations.dart' as _i8;
+import 'package:spring_web_dart/src/controller_annotations.dart' as _i9;
 
-import '../books.dart' as _i2;
-import 'main.spring.introspection.dart' as _i10;
+import '../books.dart' as _i3;
+import 'main.spring.introspection.dart' as _i11;
 
 part 'main.spring.debug.dart';
 part 'main.spring.env.dart';
 
 /// `SecurityConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$SecurityConfigConfiguration extends _i2.SecurityConfig {
+class _$SecurityConfigConfiguration extends _i3.SecurityConfig {
   _$SecurityConfigConfiguration(this._$beanFactory);
 
   final _i1.BeanFactory _$beanFactory;
@@ -49,23 +48,23 @@ class _$SecurityConfigConfiguration extends _i2.SecurityConfig {
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i3.SecurityFilterChain api(_i4.HttpSecurity http) {
+  _i4.SecurityFilterChain api(_i5.HttpSecurity http) {
     final _$args = <Object?>[http];
     this._$arguments[r'api'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'api')
-          as _i3.SecurityFilterChain);
+          as _i4.SecurityFilterChain);
     } finally {
       this._$arguments.remove(r'api');
     }
   }
 
-  _i3.SecurityFilterChain _$api(_i1.DependencyResolver r) {
+  _i4.SecurityFilterChain _$api(_i1.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'api');
     if (_$args != null) {
-      return super.api((_$args[0] as _i4.HttpSecurity));
+      return super.api((_$args[0] as _i5.HttpSecurity));
     }
-    return super.api(r.dependency<_i4.HttpSecurity>(name: r'http'));
+    return super.api(r.dependency<_i5.HttpSecurity>(name: r'http'));
   }
 }
 
@@ -79,78 +78,78 @@ const _$knownAdvisors0 = {
   r'package:spring_boot_starter_web',
   r'package:spring_security_core',
 };
-Object? _$invoke1(_i2.BooksController bean, List<Object?> arguments) =>
+Object? _$invoke1(_i3.BooksController bean, List<Object?> arguments) =>
     bean.list();
-Object? _$invoke2(_i2.BooksController bean, List<Object?> arguments) => bean
-    .suggest((arguments[0] as _i2.Book), (arguments[1] as _i5.Authentication));
+Object? _$invoke2(_i3.BooksController bean, List<Object?> arguments) => bean
+    .suggest((arguments[0] as _i3.Book), (arguments[1] as _i6.Authentication));
 
 /// Beans found by `@ComponentScan` in `example/`.
 _i1.BeanModule get $application => _i1.BeanModule(
   r'application',
   [
-    _i1.BeanDefinition<_i2.Catalog>(
+    _i1.BeanDefinition<_i3.Catalog>(
       name: r'catalog',
       source: r'asset:spring_boot_starter_edge/example/books.dart#Catalog',
-      create: (r) => _i2.Catalog(),
+      create: (r) => _i3.Catalog(),
       annotations: const [_i1.Service()],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i2.BooksController>(
+    _i1.BeanDefinition<_i3.BooksController>(
       name: r'booksController',
       source:
           r'asset:spring_boot_starter_edge/example/books.dart#BooksController',
       dependencies: const [
-        _i1.Dependency(_i2.Catalog, name: r'catalog'),
-        _i1.Dependency(_i6.EdgeRuntime, name: r'runtime'),
+        _i1.Dependency(_i3.Catalog, name: r'catalog'),
+        _i1.Dependency(_i7.EdgeRuntime, name: r'runtime'),
       ],
-      create: (r) => _i2.BooksController(
-        r.dependency<_i2.Catalog>(name: r'catalog'),
-        r.dependency<_i6.EdgeRuntime>(name: r'runtime'),
+      create: (r) => _i3.BooksController(
+        r.dependency<_i3.Catalog>(name: r'catalog'),
+        r.dependency<_i7.EdgeRuntime>(name: r'runtime'),
       ),
       annotatedMethods: [
-        const _i1.IntrospectedMethod<_i2.BooksController>(
+        const _i1.IntrospectedMethod<_i3.BooksController>(
           r'list',
-          returnTypeInfo: _i1.ListType<_i2.Book>(_i1.ClassType<_i2.Book>()),
+          returnTypeInfo: _i1.ListType<_i3.Book>(_i1.ClassType<_i3.Book>()),
           isFuture: true,
           invoke: _$invoke1,
-          annotations: [_i7.GetMapping()],
+          annotations: [_i8.GetMapping()],
         ),
-        const _i1.IntrospectedMethod<_i2.BooksController>(
+        const _i1.IntrospectedMethod<_i3.BooksController>(
           r'suggest',
-          parameterTypes: [_i2.Book, _i5.Authentication],
+          parameterTypes: [_i3.Book, _i6.Authentication],
           parameters: [
             _i1.IntrospectedParameter(
               r'book',
-              type: _i1.ClassType<_i2.Book>(),
+              type: _i1.ClassType<_i3.Book>(),
               isRequired: true,
-              annotations: [_i7.RequestBody(), _i1.Valid()],
+              annotations: [_i8.RequestBody(), _i1.Valid()],
             ),
             _i1.IntrospectedParameter(
               r'caller',
-              type: _i1.ClassType<_i5.Authentication>(),
+              type: _i1.ClassType<_i6.Authentication>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: _i1.ClassType<_i2.Book>(),
+          returnTypeInfo: _i1.ClassType<_i3.Book>(),
           invoke: _$invoke2,
-          annotations: [_i7.PostMapping(), _i8.ResponseStatus(202)],
+          annotations: [_i8.PostMapping(), _i9.ResponseStatus(202)],
         ),
       ],
-      annotations: const [_i8.RestController(), _i7.RequestMapping(r'/books')],
+      annotations: const [_i9.RestController(), _i8.RequestMapping(r'/books')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i2.NightlyReport>(
+    _i1.BeanDefinition<_i3.NightlyReport>(
       name: r'nightlyReport',
       source:
           r'asset:spring_boot_starter_edge/example/books.dart#NightlyReport',
-      types: const [_i2.NightlyReport, _i9.EdgeScheduledHandler],
-      dependencies: const [_i1.Dependency(_i2.Catalog, name: r'catalog')],
+      types: const [_i3.NightlyReport, _i10.EdgeScheduledHandler],
+      dependencies: const [_i1.Dependency(_i3.Catalog, name: r'catalog')],
       create: (r) =>
-          _i2.NightlyReport(r.dependency<_i2.Catalog>(name: r'catalog')),
+          _i3.NightlyReport(r.dependency<_i3.Catalog>(name: r'catalog')),
       annotations: const [
         _i1.Component(),
         _i1.Log(topic: r'example'),
@@ -159,23 +158,23 @@ _i1.BeanModule get $application => _i1.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i2.SecurityConfig>(
+    _i1.BeanDefinition<_i3.SecurityConfig>(
       name: r'securityConfig',
       source:
           r'asset:spring_boot_starter_edge/example/books.dart#SecurityConfig',
       create: (r) => _$SecurityConfigConfiguration(r),
       annotations: const [_i1.Configuration()],
     ),
-    _i1.BeanDefinition<_i3.SecurityFilterChain>(
+    _i1.BeanDefinition<_i4.SecurityFilterChain>(
       name: r'api',
       source: r'asset:spring_boot_starter_edge/example/books.dart#SecurityConfig.api',
       factoryBeanName: r'securityConfig',
       factoryMethodName: r'api',
       dependencies: const [
-        _i1.Dependency(_i2.SecurityConfig, qualifier: r'securityConfig'),
-        _i1.Dependency(_i4.HttpSecurity, name: r'http'),
+        _i1.Dependency(_i3.SecurityConfig, qualifier: r'securityConfig'),
+        _i1.Dependency(_i5.HttpSecurity, name: r'http'),
       ],
-      create: (r) => (r.dependency<_i2.SecurityConfig>(
+      create: (r) => (r.dependency<_i3.SecurityConfig>(
         qualifier: r'securityConfig',
       ) as _$SecurityConfigConfiguration)._$api(r),
       annotations: const [_i1.Bean()],
@@ -184,7 +183,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
       ),
     ),
   ],
-  introspections: [..._i10.$applicationIntrospections],
+  introspections: [..._i11.$applicationIntrospections],
 );
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
@@ -192,10 +191,8 @@ _i1.BeanModule get $application => _i1.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i11.springBootAutoConfiguration,
-    _i12.springBootStarterEdgeAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i12.springBootStarterEdgeStartupChecksAutoConfiguration,
+    _i12.springBootAutoConfiguration,
+    _i2.springBootStarterEdgeAutoConfiguration,
     _i13.springBootStarterFeignAutoConfiguration,
     _i14.springBootStarterLoggingAutoConfiguration,
     _i15.springBootStarterOauth2ClientAutoConfiguration,
@@ -212,9 +209,11 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i17.springBootStarterWebRateLimitAutoConfiguration,
     _i18.springSecurityCoreAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    _i12.springBootStarterEdgeAutoConfiguration:
+    _i2.springBootStarterEdgeAutoConfiguration:
         const _i1.AutoConfigurationModule(
           before: [
             r'springBootStarterWebAutoConfiguration',
@@ -264,6 +263,6 @@ Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// `@Log` of [NightlyReport]: the logger 'example'.
-extension $NightlyReportLog on _i2.NightlyReport {
+extension $NightlyReportLog on _i3.NightlyReport {
   _i1.SpringLog get log => const _i1.SpringLog(r'example');
 }

@@ -911,6 +911,16 @@ class SpringBuilder implements Builder {
           : null,
     );
     final (exclude, excludeName) = _exclusions(emitter, boots.single);
+    // The auto-configurations a release build leaves out go into the debug
+    // part, which the library spreads in only outside release builds.
+    final debugModules = [
+      for (final module in autoConfigurations)
+        if (module.conditions.contains(notInReleaseCondition)) module,
+    ];
+    final releasedModules = [
+      for (final module in autoConfigurations)
+        if (!module.conditions.contains(notInReleaseCondition)) module,
+    ];
     final defines = DartDefineKeys.without(
       // The nested @ComponentScan modules are the application's too: a
       // placeholder of theirs is read as much as one of the scan's own.
@@ -946,12 +956,21 @@ class SpringBuilder implements Builder {
                   {
                     if (autoConfigurations.isNotEmpty)
                       'autoConfigurations': literalList([
-                        for (final (module, _) in autoConfigurations) module,
+                        for (final module in releasedModules) module.entry(),
+                        if (debugModules.isNotEmpty)
+                          _inDebug(_debugAutoConfigurations),
                       ]),
-                    if (autoConfigurations.any((entry) => entry.$2 != null))
+                    if (autoConfigurations.any((m) => m.ordering != null))
                       'autoConfigurationMetadata': literalMap({
-                        for (final (module, metadata) in autoConfigurations)
-                          module: ?metadata,
+                        for (final module in releasedModules)
+                          module.entry(): ?module.ordering,
+                        if (debugModules.any((m) => m.ordering != null))
+                          literalSpread(): const CodeExpression(
+                            Code(
+                              '$notInReleaseCondition '
+                              '? $_debugAutoConfigurationMetadata : const {}',
+                            ),
+                          ),
                       }),
                     if (exclude.isNotEmpty) 'exclude': literalList(exclude),
                     if (excludeName.isNotEmpty)
@@ -1025,7 +1044,10 @@ class SpringBuilder implements Builder {
       ],
       partDeclarations: {
         // What only a hot reload uses.
-        debugExtension: _debugDeclarations(springApplication),
+        debugExtension: [
+          ..._debugAutoConfigurationDeclarations(debugModules),
+          ..._debugDeclarations(springApplication),
+        ],
         // The values of the `--dart-define`s, a constant the compiler
         // computes.
         environmentExtension: [
@@ -1054,6 +1076,77 @@ class SpringBuilder implements Builder {
     );
     return _withFingerprint(sources);
   }
+
+  // The getters of the debug part with the auto-configurations a release
+  // build leaves out ([debugModules], each under its other conditions) and
+  // their orderings; none without such modules.
+  static List<Spec> _debugAutoConfigurationDeclarations(
+    List<_AutoConfiguration> debugModules,
+  ) {
+    if (debugModules.isEmpty) {
+      return const [];
+    }
+    final ordered = [
+      for (final module in debugModules)
+        if (module.ordering != null) module,
+    ];
+    return [
+      Method(
+        (m) => m
+          ..docs.add(
+            '/// The auto-configurations only debug and profile builds have '
+            '(their build key\n/// leaves them out of a release build), '
+            'which `springApplication` adds\n/// to its own outside '
+            'release builds.',
+          )
+          ..type = MethodType.getter
+          ..returns = TypeReference(
+            (t) => t
+              ..symbol = 'List'
+              ..types.add(refer('BeanModule', _bootUrl)),
+          )
+          ..name = _debugAutoConfigurations
+          ..lambda = true
+          ..body = literalList([
+            for (final module in debugModules)
+              module.entry(except: notInReleaseCondition),
+          ]).code,
+      ),
+      if (ordered.isNotEmpty)
+        Method(
+          (m) => m
+            ..docs.add(
+              '/// The orderings of [$_debugAutoConfigurations] '
+              '(`AutoConfigurationModule`).',
+            )
+            ..type = MethodType.getter
+            ..returns = TypeReference(
+              (t) => t
+                ..symbol = 'Map'
+                ..types.addAll([
+                  refer('BeanModule', _bootUrl),
+                  refer('AutoConfigurationModule', _bootUrl),
+                ]),
+            )
+            ..name = _debugAutoConfigurationMetadata
+            ..lambda = true
+            ..body = literalMap({
+              for (final module in ordered)
+                module.entry(except: notInReleaseCondition): module.ordering,
+            }).code,
+        ),
+    ];
+  }
+
+  // [getter] of the debug part spread into a list outside release builds.
+  static Expression _inDebug(String getter) =>
+      CodeExpression(Code('if ($notInReleaseCondition) ...$getter'));
+
+  // The getters of the debug part with the auto-configurations a release
+  // build leaves out, and their orderings.
+  static const _debugAutoConfigurations = r'_$debugAutoConfigurations';
+  static const _debugAutoConfigurationMetadata =
+      r'_$debugAutoConfigurationMetadata';
 
   // What only a hot reload uses, in the part `.spring.debug.dart`: the
   // fingerprint of the generated code and the reload functions of
@@ -1126,7 +1219,8 @@ class SpringBuilder implements Builder {
 
   // [sources] with the hash of the generated code (the library and its
   // files: a description changed is new code too, and so is a key the
-  // application may now read from a `--dart-define`) in place of the
+  // application may now read from a `--dart-define` or a debug
+  // auto-configuration) in place of the
   // placeholder of the debug part; same length, so the formatting is
   // unchanged.
   static ModuleSources _withFingerprint(ModuleSources sources) {
@@ -1137,6 +1231,8 @@ class SpringBuilder implements Builder {
       ?sources.properties,
       ?sources.proxies,
       ?sources.parts[environmentExtension],
+      // With the placeholder still in it: the debug auto-configurations.
+      ?sources.parts[debugExtension],
     ].join();
     return ModuleSources(
       sources.module,
@@ -1369,7 +1465,7 @@ class SpringBuilder implements Builder {
   // walked only when a module is decided so.
   static Future<
     ({
-      List<(Expression, Expression?)> modules,
+      List<_AutoConfiguration> modules,
       Map<String, _ProxyBuild> proxies,
       Set<String> excluded,
     })
@@ -1438,22 +1534,9 @@ class SpringBuilder implements Builder {
       final byPackage = a.$2.compareTo(b.$2);
       return byPackage != 0 ? byPackage : a.$3.compareTo(b.$3);
     });
-    // A module under a condition is a collection `if` in the list, and in
-    // the map of the orderings too (`if (...) module: ordering`).
     final modules = [
       for (final (ordering, _, name, url, conditions) in found)
-        (
-          conditions.isEmpty
-              ? refer(name, url)
-              : CodeExpression(
-                  Code.scope(
-                    (allocate) =>
-                        'if (${conditions.join(' && ')}) '
-                        '${allocate(refer(name, url))}',
-                  ),
-                ),
-          ordering,
-        ),
+        _AutoConfiguration(refer(name, url), conditions, ordering),
     ];
     return (
       modules: modules,
@@ -2434,5 +2517,33 @@ class _ModuleReferences extends _DeferredProxies {
         element!.enclosingElement is LibraryElement) {
       reads.add(element);
     }
+  }
+}
+
+// An auto-configuration module the build includes: [module], under
+// [conditions] (the constants a build or a platform keeps it under; none
+// when it is in every build), with its [ordering] (its
+// `AutoConfigurationModule`, `null` without one).
+final class _AutoConfiguration {
+  _AutoConfiguration(this.module, this.conditions, this.ordering);
+
+  final Reference module;
+  final List<String> conditions;
+  final Expression? ordering;
+
+  // The module as an element of a list or a key of a map: a collection `if`
+  // under its conditions, but [except].
+  Expression entry({String? except}) {
+    final kept = [
+      for (final condition in conditions)
+        if (condition != except) condition,
+    ];
+    return kept.isEmpty
+        ? module
+        : CodeExpression(
+            Code.scope(
+              (allocate) => 'if (${kept.join(' && ')}) ${allocate(module)}',
+            ),
+          );
   }
 }

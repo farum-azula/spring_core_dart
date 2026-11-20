@@ -9,24 +9,24 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i6;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i7;
+    as _i2;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    as _i4;
-import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart'
     as _i5;
+import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart'
+    as _i6;
 import 'package:spring_boot_starter_flutter_material/spring_auto_configuration.dart'
     as _i8;
 import 'package:spring_boot_starter_flutter_material/src/material_theme_design.dart'
     as _i10;
 import 'package:spring_boot_starter_flutter_material/src/theme_customizer.dart'
-    as _i3;
+    as _i4;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i9;
 
-import '../example.dart' as _i2;
+import '../example.dart' as _i3;
 
 part 'example.spring.debug.dart';
 part 'example.spring.env.dart';
@@ -45,29 +45,29 @@ Type _$typeOf<T>() => T;
 _i1.BeanModule get $application => _i1.BeanModule(
   r'application',
   [
-    _i1.BeanDefinition<_i2.BrandTheme>(
+    _i1.BeanDefinition<_i3.BrandTheme>(
       name: r'brandTheme',
       source: r'asset:spring_boot_starter_flutter_material/example/example.dart#BrandTheme',
-      types: const [_i2.BrandTheme, _i3.ThemeCustomizer],
-      create: (r) => _i2.BrandTheme(),
+      types: const [_i3.BrandTheme, _i4.ThemeCustomizer],
+      create: (r) => _i3.BrandTheme(),
       annotations: const [_i1.Component()],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i4.SpringWidgetBindings>(
+    _i1.BeanDefinition<_i5.SpringWidgetBindings>(
       name: r'flutterSpringWidgetBindings#application',
       source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
       autowireCandidate: false,
-      create: (r) => _i4.SpringWidgetBindings([
-        _i4.SpringWidgetBinding(
+      create: (r) => _i5.SpringWidgetBindings([
+        _i5.SpringWidgetBinding(
           widget: r'asset:spring_boot_starter_flutter_material/example/example.dart#ThemePage',
-          beans: _$typeOf<(_i5.ThemeSelection,)>(),
-          types: const [_i5.ThemeSelection],
+          beans: _$typeOf<(_i6.ThemeSelection,)>(),
+          types: const [_i6.ThemeSelection],
           resolve: (f) =>
-              (_i4.SpringWidgetBinding.bean<_i5.ThemeSelection>(f),),
+              (_i5.SpringWidgetBinding.bean<_i6.ThemeSelection>(f),),
           values: (r) {
-            final v = (r as (_i5.ThemeSelection,));
+            final v = (r as (_i6.ThemeSelection,));
             return [v.$1];
           },
         ),
@@ -86,20 +86,12 @@ _i1.BeanModule get $application => _i1.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i6.springBootAutoConfiguration,
-    _i7.springBootStarterFlutterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugIsolatesAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugMotionAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugTimelineAutoConfiguration,
+    _i7.springBootAutoConfiguration,
+    _i2.springBootStarterFlutterAutoConfiguration,
     _i8.springBootStarterFlutterMaterialAutoConfiguration,
     _i9.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
     _i8.springBootStarterFlutterMaterialAutoConfiguration:

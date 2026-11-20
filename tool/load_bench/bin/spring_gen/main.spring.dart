@@ -9,16 +9,15 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i9;
-import 'dart:io' as _i8;
+import 'dart:async' as _i10;
+import 'dart:io' as _i9;
 
-import 'package:load_bench/src/app.dart' as _i5;
-import 'package:postgres/postgres.dart' as _i7;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i10;
+import 'package:load_bench/src/app.dart' as _i6;
+import 'package:postgres/postgres.dart' as _i8;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i11;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
-import 'package:spring_boot_starter_data/spring_auto_configuration.dart'
-    as _i11;
-import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i3;
+import 'package:spring_boot_starter_data/spring_auto_configuration.dart' as _i2;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i4;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
     as _i12;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
@@ -28,91 +27,91 @@ import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart
 import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
     as _i15;
 import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i16;
-import 'package:spring_boot_starter_web/spring_boot_starter_web.dart' as _i4;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart' as _i5;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
 import 'package:spring_security_core/spring_auto_configuration.dart' as _i17;
-import 'package:sqlite3/sqlite3.dart' as _i6;
+import 'package:sqlite3/sqlite3.dart' as _i7;
 
 part 'main.spring.debug.dart';
 part 'main.spring.env.dart';
 
 /// Beans found by `@ComponentScan` in `lib/ and bin/`.
-_i2.BeanModule get $application => _i2.BeanModule(
+_i3.BeanModule get $application => _i3.BeanModule(
   r'application',
   [
-    _i2.BeanDefinition<_i3.JdbcDriver>(
+    _i3.BeanDefinition<_i4.JdbcDriver>(
       name: r'sqlite3JdbcDriver',
       source: r'package:spring_boot_starter_data#sqlite3',
-      types: const [_i3.JdbcDriver],
-      conditions: [_i3.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
+      types: const [_i4.JdbcDriver],
+      conditions: [_i4.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
       create: (r) => _$sqlite3JdbcDriver(),
     ),
-    _i2.BeanDefinition<_i3.JdbcDriver>(
+    _i3.BeanDefinition<_i4.JdbcDriver>(
       name: r'postgresJdbcDriver',
       source: r'package:spring_boot_starter_data#postgres',
-      types: const [_i3.JdbcDriver],
-      conditions: [_i3.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
+      types: const [_i4.JdbcDriver],
+      conditions: [_i4.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
       create: (r) => _$postgresJdbcDriver(),
     ),
-    _i2.BeanDefinition<_i4.HandlerExceptionResolver>(
+    _i3.BeanDefinition<_i5.HandlerExceptionResolver>(
       name: r'dataAccessExceptionResolver',
       source: r'package:spring_boot_starter_data#spring_boot_starter_web',
-      types: const [_i4.HandlerExceptionResolver],
+      types: const [_i5.HandlerExceptionResolver],
       conditions: [
-        _i3.ConditionalOnMissingBean.named(r'dataAccessExceptionResolver'),
+        _i4.ConditionalOnMissingBean.named(r'dataAccessExceptionResolver'),
       ],
       create: (r) => _$dataAccessExceptionResolver(),
     ),
-    _i2.BeanDefinition<_i4.WebMvcConfigurer>(
+    _i3.BeanDefinition<_i5.WebMvcConfigurer>(
       name: r'pagingArgumentResolvers',
       source: r'package:spring_boot_starter_data#spring_boot_starter_web',
-      types: const [_i4.WebMvcConfigurer],
+      types: const [_i5.WebMvcConfigurer],
       conditions: [
-        _i3.ConditionalOnMissingBean.named(r'pagingArgumentResolvers'),
+        _i4.ConditionalOnMissingBean.named(r'pagingArgumentResolvers'),
       ],
-      create: (r) => _$pagingArgumentResolvers(r.dependency<_i2.Environment>()),
+      create: (r) => _$pagingArgumentResolvers(r.dependency<_i3.Environment>()),
     ),
   ],
-  imports: [_i5.appBeans],
+  imports: [_i6.appBeans],
   resources: const {
-    r'application.properties': _i2.EmbeddedResource.text(
+    r'application.properties': _i3.EmbeddedResource.text(
       '# The load bench server: what every run shares. tool/load.dart passes the\n# port, the directories and anything given with --server-arg on the\n# command line (--server.port=18080, --bench.directory=...).\n\nspring.application.name=load-bench\n# Close the context on Ctrl+C / SIGTERM: the tool stops the server so.\nspring.main.register-shutdown-hook=true\nspring.main.banner-mode=off\n\n# --- The web server ---------------------------------------------------------\nserver.port=18080\nserver.address=127.0.0.1\n# Graceful, the default: an isolate that leaves the pool finishes its\n# requests first, which the scaling scenarios measure.\nserver.shutdown=graceful\nspring.lifecycle.timeout-per-shutdown-phase=5s\n# Uploads: the raw ones read the body as a stream with bench.upload.max-size\n# as their limit; the multipart ones use the two keys below.\nspring.web.multipart.max-file-size=2GB\nspring.web.multipart.max-request-size=2GB\n# lib/resources/static/hello.txt is GET /static/hello.txt.\nspring.mvc.static-path-pattern=/static/**\n\n# --- Security: a bearer token on /secure/** ----------------------------------\n# The server signs a token with this secret at startup (GET /bench/info\n# hands it to the load tool) and checks it on every request. A secret of\n# the bench only: it protects nothing.\nbench.security.jwt-secret=load-bench-secret-of-at-least-32-bytes\nbench.security.token-lifetime=24h\n\n# --- The database (spring_boot_starter_data on SQLite) -----------------------\n# A file, so every connection (and every server isolate) sees the same\n# rows; db/migration/V1__items.sql creates and fills the table.\nspring.datasource.url=sqlite:file:\${bench.directory}/load_bench.db\nspring.datasource.pool.max-size=4\n# The schema of each database: db/migration/sqlite or db/migration/postgresql.\n# PostgreSQL instead of the SQLite file, for example in Docker:\n#   --spring.datasource.url=postgresql://postgres:bench@localhost:55432/bench\nspring.sql.migration.locations=resources:db/migration/{vendor}\n\n# --- The bench (BenchProperties) ----------------------------------------------\n# Where the files to download are generated and the uploads are written.\n# Relative to where the server runs; created at startup.\nbench.directory=build/load_bench\nbench.files.small-size=4KB\nbench.files.medium-size=10MB\nbench.files.huge-size=512MB\nbench.upload.max-size=2GB\nbench.json.items=50\n\n# Warnings only: a log line per request would be measured too.\nlogging.level.root=warn\n',
     ),
-    r'db/migration/postgresql/V1__items.sql': _i2.EmbeddedResource.text(
+    r'db/migration/postgresql/V1__items.sql': _i3.EmbeddedResource.text(
       "-- The table of the database scenarios on PostgreSQL, with 1000 rows to\n-- read (GET /db/items/{id}); POST /db/items adds rows after them.\ncreate table items (\n  id integer generated by default as identity (start with 1001) primary key,\n  name text not null,\n  price double precision not null,\n  quantity integer not null\n);\n\ninsert into items (id, name, price, quantity)\nselect n, 'item ' || n, n * 1.5, n % 100 from generate_series(1, 1000) as n;\n",
     ),
-    r'db/migration/sqlite/V1__items.sql': _i2.EmbeddedResource.text(
+    r'db/migration/sqlite/V1__items.sql': _i3.EmbeddedResource.text(
       "-- The table of the database scenarios, with 1000 rows to read\n-- (GET /db/items/{id}); POST /db/items adds rows after them.\ncreate table items (\n  id integer primary key,\n  name text not null,\n  price real not null,\n  quantity integer not null\n);\n\nwith recursive numbers (n) as (\n  select 1\n  union all\n  select n + 1 from numbers where n < 1000\n)\ninsert into items (id, name, price, quantity)\nselect n, 'item ' || n, n * 1.5, n % 100 from numbers;\n",
     ),
-    r'static/hello.txt': _i2.EmbeddedResource.text(
+    r'static/hello.txt': _i3.EmbeddedResource.text(
       "Hello from the static resource handler of spring_boot_starter_web.\n\nThis file is embedded in the executable by the generator (lib/resources/)\nand served as GET /static/hello.txt, with an ETag. The load tests ask for\nit again and again to measure the handler: the lookup of the file, the\nchecks of the path and the headers of the answer.\n\nIt is a few hundred bytes on purpose, like a small style sheet or an icon:\nthe cost measured is the handler's, not the copy of the bytes.\n",
     ),
   },
 );
 
-final class _$Sqlite3Binding implements _i3.SqliteBinding {
+final class _$Sqlite3Binding implements _i4.SqliteBinding {
   const _$Sqlite3Binding();
 
   @override
-  _i3.SqliteDatabase open(
+  _i4.SqliteDatabase open(
     String filename, {
-    _i3.SqliteOpenMode mode = _i3.SqliteOpenMode.readWriteCreate,
+    _i4.SqliteOpenMode mode = _i4.SqliteOpenMode.readWriteCreate,
     bool uri = false,
   }) => _$sqlite3Guard(
     () => _$Sqlite3Database(
-      _i6.sqlite3.open(
+      _i7.sqlite3.open(
         filename,
-        mode: _i6.OpenMode.values.byName(mode.name),
+        mode: _i7.OpenMode.values.byName(mode.name),
         uri: uri,
       ),
     ),
   );
 }
 
-final class _$Sqlite3Database implements _i3.SqliteDatabase {
+final class _$Sqlite3Database implements _i4.SqliteDatabase {
   _$Sqlite3Database(this._database);
 
-  final _i6.Database _database;
+  final _i7.Database _database;
 
   @override
   void execute(String sql, [List<Object?> parameters = const []]) =>
@@ -128,7 +127,7 @@ final class _$Sqlite3Database implements _i3.SqliteDatabase {
   });
 
   @override
-  _i3.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
+  _i4.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
       _$sqlite3Guard(() {
         final statement = _database.prepare(sql);
         try {
@@ -148,7 +147,7 @@ final class _$Sqlite3Database implements _i3.SqliteDatabase {
     () => _database.createFunction(
       functionName: name,
       function: function,
-      argumentCount: _i6.AllowedArgumentCount(argumentCount),
+      argumentCount: _i7.AllowedArgumentCount(argumentCount),
       deterministic: true,
     ),
   );
@@ -166,11 +165,11 @@ final class _$Sqlite3Database implements _i3.SqliteDatabase {
   void close() => _$sqlite3Guard(_database.close);
 }
 
-final class _$Sqlite3Cursor implements _i3.SqliteCursor {
+final class _$Sqlite3Cursor implements _i4.SqliteCursor {
   _$Sqlite3Cursor(this._statement, this._cursor);
 
-  final _i6.PreparedStatement _statement;
-  final _i6.IteratingCursor _cursor;
+  final _i7.PreparedStatement _statement;
+  final _i7.IteratingCursor _cursor;
 
   @override
   List<String> get columns => _cursor.columnNames;
@@ -194,8 +193,8 @@ final class _$Sqlite3Cursor implements _i3.SqliteCursor {
 T _$sqlite3Guard<T>(T Function() action) {
   try {
     return action();
-  } on _i6.SqliteException catch (e) {
-    throw _i3.SqlError(
+  } on _i7.SqliteException catch (e) {
+    throw _i4.SqlError(
       e.message,
       vendorCode: e.resultCode,
       extendedCode: e.extendedResultCode,
@@ -203,34 +202,34 @@ T _$sqlite3Guard<T>(T Function() action) {
   }
 }
 
-_i3.JdbcDriver _$sqlite3JdbcDriver() =>
-    _i3.SqliteJdbcDriver(const _$Sqlite3Binding());
+_i4.JdbcDriver _$sqlite3JdbcDriver() =>
+    _i4.SqliteJdbcDriver(const _$Sqlite3Binding());
 
-final class _$PostgresBinding implements _i3.PostgresBinding {
+final class _$PostgresBinding implements _i4.PostgresBinding {
   const _$PostgresBinding();
 
   @override
-  Future<_i3.PostgresSession> open(_i3.PostgresEndpoint endpoint) =>
+  Future<_i4.PostgresSession> open(_i4.PostgresEndpoint endpoint) =>
       _$postgresGuard(() async {
         final roots = endpoint.rootCertificate;
         return _$PostgresSession(
-          await _i7.Connection.open(
-            _i7.Endpoint(
+          await _i8.Connection.open(
+            _i8.Endpoint(
               host: endpoint.host,
               port: endpoint.port,
               database: endpoint.database,
               username: endpoint.username,
               password: endpoint.password,
             ),
-            settings: _i7.ConnectionSettings(
+            settings: _i8.ConnectionSettings(
               sslMode: switch (endpoint.sslMode) {
-                _i3.PostgresSslMode.disable => _i7.SslMode.disable,
-                _i3.PostgresSslMode.require => _i7.SslMode.require,
-                _i3.PostgresSslMode.verifyFull => _i7.SslMode.verifyFull,
+                _i4.PostgresSslMode.disable => _i8.SslMode.disable,
+                _i4.PostgresSslMode.require => _i8.SslMode.require,
+                _i4.PostgresSslMode.verifyFull => _i8.SslMode.verifyFull,
               },
               securityContext: roots == null
                   ? null
-                  : (_i8.SecurityContext(withTrustedRoots: false)
+                  : (_i9.SecurityContext(withTrustedRoots: false)
                       ..setTrustedCertificates(roots)),
               connectTimeout: endpoint.connectTimeout,
               applicationName: endpoint.applicationName,
@@ -240,16 +239,16 @@ final class _$PostgresBinding implements _i3.PostgresBinding {
       });
 }
 
-final class _$PostgresSession implements _i3.PostgresSession {
+final class _$PostgresSession implements _i4.PostgresSession {
   _$PostgresSession(this._connection);
 
-  final _i7.Connection _connection;
+  final _i8.Connection _connection;
 
   @override
   bool get isOpen => _connection.isOpen;
 
   @override
-  Future<_i3.PostgresResult> execute(
+  Future<_i4.PostgresResult> execute(
     String sql, {
     List<Object?> parameters = const [],
     bool simple = false,
@@ -260,17 +259,17 @@ final class _$PostgresSession implements _i3.PostgresSession {
       parameters: parameters.isEmpty
           ? null
           : [for (final value in parameters) _$postgresParameter(value)],
-      queryMode: simple ? _i7.QueryMode.simple : null,
+      queryMode: simple ? _i8.QueryMode.simple : null,
       timeout: timeout,
     );
     final columns = _$postgresColumns(result.schema);
-    return _i3.PostgresResult(columns, [
+    return _i4.PostgresResult(columns, [
       for (final row in result) _$postgresValues(row),
     ], result.affectedRows);
   });
 
   @override
-  Stream<_i3.PostgresRow> stream(
+  Stream<_i4.PostgresRow> stream(
     String sql, {
     List<Object?> parameters = const [],
     Duration? timeout,
@@ -282,7 +281,7 @@ final class _$PostgresSession implements _i3.PostgresSession {
         for (final value in parameters) _$postgresParameter(value),
       ])) {
         columns ??= _$postgresColumns(row.schema);
-        yield _i3.PostgresRow(columns, _$postgresValues(row));
+        yield _i4.PostgresRow(columns, _$postgresValues(row));
       }
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(_$postgresError(error), stackTrace);
@@ -302,18 +301,18 @@ final class _$PostgresSession implements _i3.PostgresSession {
 // The package writes a double that is not finite (`Infinity`, `NaN`) as a
 // quoted text the server refuses, unless it knows the type.
 Object? _$postgresParameter(Object? value) => value is double && !value.isFinite
-    ? _i7.TypedValue(_i7.Type.double, value)
+    ? _i8.TypedValue(_i8.Type.double, value)
     : value;
 
-List<String> _$postgresColumns(_i7.ResultSchema schema) => [
+List<String> _$postgresColumns(_i8.ResultSchema schema) => [
   for (final column in schema.columns) column.columnName ?? '',
 ];
 
 // A value of a type the package does not decode (an enum, `citext`...) as
 // its text or bytes.
-List<Object?> _$postgresValues(_i7.ResultRow row) => [
+List<Object?> _$postgresValues(_i8.ResultRow row) => [
   for (final value in row)
-    value is _i7.UndecodedBytes
+    value is _i8.UndecodedBytes
         ? (value.isBinary ? value.bytes : value.asString)
         : value,
 ];
@@ -322,31 +321,31 @@ List<Object?> _$postgresValues(_i7.ResultRow row) => [
 // driver understands: the message, the SQL state, the constraint's name;
 // never the DETAIL line (it holds values) and never the exception itself.
 Object _$postgresError(Object error) {
-  if (error is _i7.ServerException) {
-    return _i3.SqlError(
+  if (error is _i8.ServerException) {
+    return _i4.SqlError(
       error.message,
       sqlState: error.code,
       constraint: error.constraintName,
       connectionLost:
-          error.severity == _i7.Severity.fatal ||
-          error.severity == _i7.Severity.panic,
+          error.severity == _i8.Severity.fatal ||
+          error.severity == _i8.Severity.panic,
     );
   }
-  if (error is _i7.PgException) {
+  if (error is _i8.PgException) {
     // The package names the value it cannot send.
     final inference = error.message.startsWith('Could not infer');
-    return _i3.SqlError(
+    return _i4.SqlError(
       inference
           ? 'A parameter value has a type the driver cannot send'
           : error.message,
       connectionLost: !inference,
     );
   }
-  if (error is _i8.SocketException || error is _i8.TlsException) {
-    return _i3.SqlError('$error', connectionLost: true);
+  if (error is _i9.SocketException || error is _i9.TlsException) {
+    return _i4.SqlError('$error', connectionLost: true);
   }
-  if (error is _i9.TimeoutException) {
-    return _i3.SqlError(
+  if (error is _i10.TimeoutException) {
+    return _i4.SqlError(
       error.message ?? 'The connection timed out',
       connectionLost: true,
     );
@@ -362,51 +361,51 @@ Future<T> _$postgresGuard<T>(Future<T> Function() action) async {
   }
 }
 
-_i3.JdbcDriver _$postgresJdbcDriver() =>
-    _i3.PostgresJdbcDriver(const _$PostgresBinding());
+_i4.JdbcDriver _$postgresJdbcDriver() =>
+    _i4.PostgresJdbcDriver(const _$PostgresBinding());
 
 final class _$DataAccessExceptionResolver
-    implements _i4.HandlerExceptionResolver {
+    implements _i5.HandlerExceptionResolver {
   const _$DataAccessExceptionResolver();
 
   @override
-  _i4.ErrorResponse? resolveException(
-    _i4.ServerHttpRequest request,
+  _i5.ErrorResponse? resolveException(
+    _i5.ServerHttpRequest request,
     Object error, {
-    _i4.HandlerMethod? handler,
+    _i5.HandlerMethod? handler,
   }) => switch (error) {
-    _i3.OptimisticLockingFailureException() => _i4.ResponseStatusException(
-      _i4.HttpStatus.conflict,
+    _i4.OptimisticLockingFailureException() => _i5.ResponseStatusException(
+      _i5.HttpStatus.conflict,
       'The resource was changed by someone else',
       error,
     ),
-    _i3.DuplicateKeyException() => _i4.ResponseStatusException(
-      _i4.HttpStatus.conflict,
+    _i4.DuplicateKeyException() => _i5.ResponseStatusException(
+      _i5.HttpStatus.conflict,
       'The resource already exists',
       error,
     ),
-    _i3.PermissionDeniedDataAccessException() => _i4.ResponseStatusException(
-      _i4.HttpStatus.forbidden,
+    _i4.PermissionDeniedDataAccessException() => _i5.ResponseStatusException(
+      _i5.HttpStatus.forbidden,
       'Access denied',
       error,
     ),
-    _i3.EmptyResultDataAccessException() => _i4.ResponseStatusException(
-      _i4.HttpStatus.notFound,
+    _i4.EmptyResultDataAccessException() => _i5.ResponseStatusException(
+      _i5.HttpStatus.notFound,
       'Not found',
       error,
     ),
-    _i3.PropertyReferenceException() => _i4.ResponseStatusException(
-      _i4.HttpStatus.badRequest,
+    _i4.PropertyReferenceException() => _i5.ResponseStatusException(
+      _i5.HttpStatus.badRequest,
       'Invalid sort property',
       error,
     ),
-    _i3.InvalidPagingRequestException() => _i4.ResponseStatusException(
-      _i4.HttpStatus.badRequest,
+    _i4.InvalidPagingRequestException() => _i5.ResponseStatusException(
+      _i5.HttpStatus.badRequest,
       'Invalid page or sort request',
       error,
     ),
-    _i3.InvalidDataArgumentException() => _i4.ResponseStatusException(
-      _i4.HttpStatus.badRequest,
+    _i4.InvalidDataArgumentException() => _i5.ResponseStatusException(
+      _i5.HttpStatus.badRequest,
       'Invalid request value',
       error,
     ),
@@ -414,24 +413,24 @@ final class _$DataAccessExceptionResolver
   };
 }
 
-_i4.HandlerExceptionResolver _$dataAccessExceptionResolver() =>
+_i5.HandlerExceptionResolver _$dataAccessExceptionResolver() =>
     const _$DataAccessExceptionResolver();
 
 final class _$PagingArgumentResolver
-    implements _i4.HandlerMethodArgumentResolver {
+    implements _i5.HandlerMethodArgumentResolver {
   const _$PagingArgumentResolver(this._paging);
 
-  final _i3.WebPaging _paging;
+  final _i4.WebPaging _paging;
 
   @override
-  bool supportsParameter(_i4.MethodParameter parameter) {
+  bool supportsParameter(_i5.MethodParameter parameter) {
     final type = parameter.type.type;
-    if (type == _i3.Pageable) {
+    if (type == _i4.Pageable) {
       // Spring: two Pageable parameters need a @Qualifier each, or they
       // would read the same query parameters.
       final unqualified = parameter.handler.parameters.where(
         (other) =>
-            other.type.type == _i3.Pageable && !other.has<_i3.Qualifier>(),
+            other.type.type == _i4.Pageable && !other.has<_i4.Qualifier>(),
       );
       if (unqualified.length > 1) {
         throw StateError(
@@ -442,23 +441,23 @@ final class _$PagingArgumentResolver
       }
       return true;
     }
-    return type == _i3.Sort;
+    return type == _i4.Sort;
   }
 
   @override
   Object? resolveArgument(
-    _i4.MethodParameter parameter,
-    _i4.ServerHttpRequest request,
-    _i4.ServerHttpResponse response,
+    _i5.MethodParameter parameter,
+    _i5.ServerHttpRequest request,
+    _i5.ServerHttpResponse response,
   ) {
-    final qualifier = parameter.annotation<_i3.Qualifier>()?.value;
+    final qualifier = parameter.annotation<_i4.Qualifier>()?.value;
     final defaults = parameter.annotations
-        .whereType<_i3.SortDefault>()
+        .whereType<_i4.SortDefault>()
         .toList();
-    return parameter.type.type == _i3.Pageable
+    return parameter.type.type == _i4.Pageable
         ? _paging.pageable(
             request.queryParameters,
-            pageableDefault: parameter.annotation<_i3.PageableDefault>(),
+            pageableDefault: parameter.annotation<_i4.PageableDefault>(),
             sortDefaults: defaults,
             qualifier: qualifier,
           )
@@ -470,21 +469,21 @@ final class _$PagingArgumentResolver
   }
 }
 
-final class _$PagingWebMvcConfigurer with _i4.WebMvcConfigurer {
+final class _$PagingWebMvcConfigurer with _i5.WebMvcConfigurer {
   const _$PagingWebMvcConfigurer(this._resolver);
 
   final _$PagingArgumentResolver _resolver;
 
   @override
   void addArgumentResolvers(
-    List<_i4.HandlerMethodArgumentResolver> resolvers,
+    List<_i5.HandlerMethodArgumentResolver> resolvers,
   ) => resolvers.add(_resolver);
 }
 
-_i4.WebMvcConfigurer _$pagingArgumentResolvers(_i2.Environment environment) =>
+_i5.WebMvcConfigurer _$pagingArgumentResolvers(_i3.Environment environment) =>
     _$PagingWebMvcConfigurer(
       _$PagingArgumentResolver(
-        _i3.WebPaging(_i3.WebPagingProperties.of(environment)),
+        _i4.WebPaging(_i4.WebPagingProperties.of(environment)),
       ),
     );
 
@@ -493,12 +492,8 @@ _i4.WebMvcConfigurer _$pagingArgumentResolvers(_i2.Environment environment) =>
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i10.springBootAutoConfiguration,
-    _i11.springBootStarterDataAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i11.springBootStarterDataSqlLoggingAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i11.springBootStarterDataStartupChecksAutoConfiguration,
+    _i11.springBootAutoConfiguration,
+    _i2.springBootStarterDataAutoConfiguration,
     _i12.springBootStarterFeignAutoConfiguration,
     _i13.springBootStarterLoggingAutoConfiguration,
     _i14.springBootStarterOauth2ClientAutoConfiguration,
@@ -515,18 +510,10 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i16.springBootStarterWebRateLimitAutoConfiguration,
     _i17.springSecurityCoreAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i11.springBootStarterDataSqlLoggingAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            before: [r'springBootStarterDataAutoConfiguration'],
-          ),
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i11.springBootStarterDataStartupChecksAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            after: [r'springBootStarterDataAutoConfiguration'],
-          ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i15.springBootStarterSecurityAutoConfiguration:
@@ -548,6 +535,9 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
               r'springBootStarterSupabaseAutoConfiguration',
             ],
           ),
+    ...!const bool.fromEnvironment('dart.vm.product')
+        ? _$debugAutoConfigurationMetadata
+        : const {},
   },
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

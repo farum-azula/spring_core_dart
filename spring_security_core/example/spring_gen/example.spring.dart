@@ -11,22 +11,22 @@
 
 import 'dart:async' as _i3;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i10;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
-import 'package:spring_boot_dart/src/runners.dart' as _i6;
+import 'package:spring_boot_dart/src/runners.dart' as _i7;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i10;
+    as _i4;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i11;
 import 'package:spring_security_core/spring_auto_configuration.dart' as _i12;
 import 'package:spring_security_core/src/authentication/authentication_manager.dart'
-    as _i7;
-import 'package:spring_security_core/src/method/annotations.dart' as _i5;
+    as _i8;
+import 'package:spring_security_core/src/method/annotations.dart' as _i6;
 import 'package:spring_security_core/src/userdetails/user_details_service.dart'
-    as _i4;
+    as _i5;
 
 import '../example.dart' as _i1;
-import 'example.spring.introspection.dart' as _i8;
+import 'example.spring.introspection.dart' as _i9;
 
 part 'example.spring.debug.dart';
 part 'example.spring.env.dart';
@@ -40,10 +40,10 @@ class _$UserSetupConfiguration extends _i1.UserSetup {
   final _i2.BeanFactory _$beanFactory;
 
   @override
-  _i4.UserDetailsService users() =>
-      (this._$beanFactory.getBeanByName(r'users') as _i4.UserDetailsService);
+  _i5.UserDetailsService users() =>
+      (this._$beanFactory.getBeanByName(r'users') as _i5.UserDetailsService);
 
-  _i4.UserDetailsService _$users(_i2.DependencyResolver r) => super.users();
+  _i5.UserDetailsService _$users(_i2.DependencyResolver r) => super.users();
 }
 
 Object? _$invoke0(_i1.OrderService bean, List<Object?> arguments) =>
@@ -87,7 +87,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           isFuture: true,
           invoke: _$invoke0,
           annotations: [
-            _i5.PreAuthorize(
+            _i6.PreAuthorize(
               "hasRole('ADMIN') or #order.owner == authentication.name",
             ),
           ],
@@ -106,7 +106,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           isFuture: true,
           invoke: _$invoke1,
           annotations: [
-            _i5.PostAuthorize(r'returnObject.owner == authentication.name'),
+            _i6.PostAuthorize(r'returnObject.owner == authentication.name'),
           ],
         ),
         const _i2.IntrospectedMethod<_i1.OrderService>(
@@ -115,7 +115,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           isFuture: true,
           invoke: _$invoke2,
           annotations: [
-            _i5.PostFilter(
+            _i6.PostFilter(
               "hasRole('ADMIN') or filterObject.owner == authentication.name",
             ),
           ],
@@ -131,7 +131,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'Order'],
             parameterNames: [r'order'],
             annotations: [
-              _i5.PreAuthorize(
+              _i6.PreAuthorize(
                 "hasRole('ADMIN') or #order.owner == authentication.name",
               ),
             ],
@@ -144,7 +144,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'id'],
             annotations: [
-              _i5.PostAuthorize(r'returnObject.owner == authentication.name'),
+              _i6.PostAuthorize(r'returnObject.owner == authentication.name'),
             ],
             annotationTypes: [r'PostAuthorize'],
           ),
@@ -153,7 +153,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target3,
             returnType: r'Future',
             annotations: [
-              _i5.PostFilter(
+              _i6.PostFilter(
                 "hasRole('ADMIN') or filterObject.owner == authentication.name",
               ),
             ],
@@ -170,15 +170,15 @@ _i2.BeanModule get $application => _i2.BeanModule(
       create: (r) => _$UserSetupConfiguration(r),
       annotations: const [_i2.Configuration()],
     ),
-    _i2.BeanDefinition<_i4.InMemoryUserDetailsManager>(
+    _i2.BeanDefinition<_i5.InMemoryUserDetailsManager>(
       name: r'users',
       source:
           r'asset:spring_security_core/example/example.dart#UserSetup.users',
       types: const [
-        _i4.InMemoryUserDetailsManager,
-        _i4.UserDetailsManager,
-        _i4.UserDetailsService,
-        _i4.UserDetailsPasswordService,
+        _i5.InMemoryUserDetailsManager,
+        _i5.UserDetailsManager,
+        _i5.UserDetailsService,
+        _i5.UserDetailsPasswordService,
       ],
       factoryBeanName: r'userSetup',
       factoryMethodName: r'users',
@@ -189,7 +189,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           ((r.dependency<_i1.UserSetup>(
                 qualifier: r'userSetup',
               ) as _$UserSetupConfiguration)._$users(r)
-              as _i4.InMemoryUserDetailsManager),
+              as _i5.InMemoryUserDetailsManager),
       annotations: const [_i2.Bean()],
       aopProxy: const _i2.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors4,
@@ -198,13 +198,13 @@ _i2.BeanModule get $application => _i2.BeanModule(
     _i2.BeanDefinition<_i1.SecurityTour>(
       name: r'securityTour',
       source: r'asset:spring_security_core/example/example.dart#SecurityTour',
-      types: const [_i1.SecurityTour, _i6.CommandLineRunner],
+      types: const [_i1.SecurityTour, _i7.CommandLineRunner],
       dependencies: const [
-        _i2.Dependency(_i7.AuthenticationManager, name: r'manager'),
+        _i2.Dependency(_i8.AuthenticationManager, name: r'manager'),
         _i2.Dependency(_i1.OrderService, name: r'orders'),
       ],
       create: (r) => _i1.SecurityTour(
-        r.dependency<_i7.AuthenticationManager>(name: r'manager'),
+        r.dependency<_i8.AuthenticationManager>(name: r'manager'),
         r.dependency<_i1.OrderService>(name: r'orders'),
       ),
       annotations: const [
@@ -216,7 +216,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
       ),
     ),
   ],
-  introspections: [..._i8.$applicationIntrospections],
+  introspections: [..._i9.$applicationIntrospections],
 );
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
@@ -224,19 +224,17 @@ _i2.BeanModule get $application => _i2.BeanModule(
 _i2.SpringApplication get springApplication => _i2.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i9.springBootAutoConfiguration,
-    _i10.springBootStarterCacheAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i10.springBootStarterCacheStartupChecksAutoConfiguration,
+    _i10.springBootAutoConfiguration,
+    _i4.springBootStarterCacheAutoConfiguration,
     _i11.springBootStarterLoggingAutoConfiguration,
     _i12.springSecurityCoreAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i10.springBootStarterCacheStartupChecksAutoConfiguration:
-          const _i2.AutoConfigurationModule(
-            after: [r'springBootStarterCacheAutoConfiguration'],
-          ),
+    ...!const bool.fromEnvironment('dart.vm.product')
+        ? _$debugAutoConfigurationMetadata
+        : const {},
   },
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

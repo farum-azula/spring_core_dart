@@ -95,16 +95,16 @@ void main() {
       expect(code, isNot(contains('neonCacheAutoConfiguration')));
     });
 
-    test('not set: only outside a release', () async {
+    test('not set: only outside a release, from the debug part', () async {
       final code = await output();
+      expect(code, matches(_notInRelease));
       expect(
         code,
-        matches(
-          RegExp(
-            r"if\(!constbool\.fromEnvironment\('dart\.vm\.product'\)\)"
-            r'_i\d+\.neonCacheAutoConfiguration',
-          ),
+        contains(
+          "if(!constbool.fromEnvironment('dart.vm.product'))"
+          r'..._$debugAutoConfigurations',
         ),
+        reason: 'the library spreads the debug part in, under one condition',
       );
     });
 
@@ -197,11 +197,18 @@ void main() {
         code,
         matches(
           RegExp(
-            r'autoConfigurationMetadata:\{if\(!constbool\.fromEnvironment\('
-            r"'dart\.vm\.product'\)\)_i\d+\.neonCacheAutoConfiguration:"
+            r'_\$debugAutoConfigurationMetadata=>\{'
+            r'_i\d+\.neonCacheAutoConfiguration:'
             r"const_i\d+\.AutoConfigurationModule\(before:\[r?'"
             r"otherAutoConfiguration'\],?\)",
           ),
+        ),
+      );
+      expect(
+        code,
+        contains(
+          "...!constbool.fromEnvironment('dart.vm.product')"
+          r'?_$debugAutoConfigurationMetadata:const{}',
         ),
       );
     });
@@ -277,14 +284,16 @@ void main() {
         ", build: AutoConfigurationBuild('neon.debug.enabled'), "
         'platform: ModulePlatform.server',
       );
+      expect(code, matches(_notInRelease));
       expect(
         code,
         contains(
-          "if(!constbool.fromEnvironment('dart.vm.product')&&"
-          "((constbool.fromEnvironment('dart.library.io')&&"
+          "if(((constbool.fromEnvironment('dart.library.io')&&"
           "!constbool.fromEnvironment('dart.library.ui'))||"
-          "constbool.fromEnvironment('SPRING_ALL_PLATFORMS')))",
+          "constbool.fromEnvironment('SPRING_ALL_PLATFORMS')))"
+          '_i',
         ),
+        reason: 'in the debug part, under the platform condition',
       );
     });
 
@@ -310,13 +319,14 @@ void main() {
         ", build: AutoConfigurationBuild('neon.debug.enabled'), "
         'platform: ModulePlatform.native',
       );
+      expect(code, matches(_notInRelease));
       expect(
         code,
         contains(
-          "if(!constbool.fromEnvironment('dart.vm.product')&&"
-          "(constbool.fromEnvironment('dart.library.io')||"
-          "constbool.fromEnvironment('SPRING_ALL_PLATFORMS')))",
+          "if((constbool.fromEnvironment('dart.library.io')||"
+          "constbool.fromEnvironment('SPRING_ALL_PLATFORMS')))_i",
         ),
+        reason: 'in the debug part, under the platform condition',
       );
     });
 
@@ -512,15 +522,15 @@ void main(List<String> args) => runApplication(args);
   );
 }
 
-// The generated source without whitespace.
-// The fake starter's module under the condition of debug and profile
-// builds (alone or with a platform's). Only the module's own entry counts:
-// the starters of the workspace, which the build of the test sees too, may
-// have modules under it.
+// The fake starter's module among the auto-configurations of the debug
+// part, those only debug and profile builds have (alone or under a
+// platform's condition too). Only the module's own entry counts: the
+// starters of the workspace, which the build of the test sees too, may
+// have modules there.
 final _notInRelease = RegExp(
-  r"dart\.vm\.product'\)[^,]*_i\d+\.neonCacheAutoConfiguration",
+  r'_\$debugAutoConfigurations=>\[[^\]]*_i\d+\.neonCacheAutoConfiguration',
 );
 
-String _compact(TestBuilderResult result) => result.readerWriter.testing
-    .readString(moduleOutput(result))
-    .replaceAll(RegExp(r'\s+'), '');
+// The generated module and the files beside it, without whitespace.
+String _compact(TestBuilderResult result) =>
+    moduleText(result).replaceAll(RegExp(r'\s+'), '');

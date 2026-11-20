@@ -10,25 +10,25 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'dart:async' as _i3;
-import 'dart:io' as _i12;
+import 'dart:io' as _i13;
 
-import 'package:postgres/postgres.dart' as _i11;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i13;
+import 'package:postgres/postgres.dart' as _i12;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i14;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i14;
-import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i8;
-import 'package:spring_boot_starter_data/src/properties/properties_beans.dart'
-    as _i9;
-import 'package:spring_boot_starter_data/src/transaction/abstract_platform_transaction_manager.dart'
-    as _i6;
-import 'package:spring_boot_starter_data/src/transaction/platform_transaction_manager.dart'
-    as _i7;
-import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart'
     as _i5;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i9;
+import 'package:spring_boot_starter_data/src/properties/properties_beans.dart'
+    as _i10;
+import 'package:spring_boot_starter_data/src/transaction/abstract_platform_transaction_manager.dart'
+    as _i7;
+import 'package:spring_boot_starter_data/src/transaction/platform_transaction_manager.dart'
+    as _i8;
+import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart'
+    as _i6;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i15;
-import 'package:sqlite3/sqlite3.dart' as _i10;
+import 'package:sqlite3/sqlite3.dart' as _i11;
 
 import '../../../transaction/app/transaction_app.dart' as _i2;
 import '../../../transaction/support/recording_transaction_manager.dart' as _i4;
@@ -78,7 +78,7 @@ const _$target1 = _i1.AopTarget(
 const _$target2 = _i1.AopTarget(
   r'Ledger',
   types: [r'Ledger'],
-  annotations: [_i1.Service(), _i5.Transactional()],
+  annotations: [_i1.Service(), _i6.Transactional()],
   annotationTypes: [r'Service', r'Transactional'],
 );
 
@@ -97,9 +97,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'asset:spring_boot_starter_data/test/transaction/app/transaction_app.dart#Managers.transactionManager',
       types: const [
         _i4.RecordingTransactionManager,
-        _i6.AbstractPlatformTransactionManager,
-        _i7.PlatformTransactionManager,
-        _i7.TransactionManagerHooks,
+        _i7.AbstractPlatformTransactionManager,
+        _i8.PlatformTransactionManager,
+        _i8.TransactionManagerHooks,
       ],
       primary: true,
       factoryBeanName: r'managers',
@@ -120,9 +120,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'asset:spring_boot_starter_data/test/transaction/app/transaction_app.dart#Managers.archiveTransactionManager',
       types: const [
         _i4.RecordingTransactionManager,
-        _i6.AbstractPlatformTransactionManager,
-        _i7.PlatformTransactionManager,
-        _i7.TransactionManagerHooks,
+        _i7.AbstractPlatformTransactionManager,
+        _i8.PlatformTransactionManager,
+        _i8.TransactionManagerHooks,
       ],
       factoryBeanName: r'managers',
       factoryMethodName: r'archiveTransactionManager',
@@ -163,7 +163,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             r'transactionId',
             _$target1,
             returnType: r'Future',
-            annotations: [_i5.Transactional()],
+            annotations: [_i6.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
@@ -172,7 +172,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'Object'],
             parameterNames: [r'error'],
-            annotations: [_i5.Transactional()],
+            annotations: [_i6.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
@@ -181,7 +181,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'Object'],
             parameterNames: [r'error'],
-            annotations: [_i5.Transactional()],
+            annotations: [_i6.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
@@ -191,7 +191,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             parameterTypes: [r'Object'],
             parameterNames: [r'error'],
             annotations: [
-              _i5.Transactional(noRollbackFor: [_i2.OutOfStock]),
+              _i6.Transactional(noRollbackFor: [_i2.OutOfStock]),
             ],
             annotationTypes: [r'Transactional'],
           ),
@@ -202,7 +202,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             parameterTypes: [r'Object'],
             parameterNames: [r'error'],
             annotations: [
-              _i5.Transactional(
+              _i6.Transactional(
                 rollbackFor: [_i2.Counterfeit],
                 noRollbackFor: [_i2.OutOfStock],
               ),
@@ -216,7 +216,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             parameterTypes: [r'Object'],
             parameterNames: [r'error'],
             annotations: [
-              _i5.Transactional(
+              _i6.Transactional(
                 rollbackFor: [_i2.OutOfStock],
                 noRollbackFor: [_i2.Counterfeit],
               ),
@@ -227,7 +227,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             r'archived',
             _$target1,
             returnType: r'Future',
-            annotations: [_i5.Transactional(transactionManager: r'archive')],
+            annotations: [_i6.Transactional(transactionManager: r'archive')],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
@@ -235,7 +235,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _$target1,
             returnType: r'Future',
             annotations: [
-              _i5.Transactional(
+              _i6.Transactional(
                 transactionManager: r'archiveTransactionManager',
               ),
             ],
@@ -246,7 +246,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _$target1,
             returnType: r'Future',
             annotations: [
-              _i5.Transactional(propagation: _i5.Propagation.requiresNew),
+              _i6.Transactional(propagation: _i6.Propagation.requiresNew),
             ],
             annotationTypes: [r'Transactional'],
           ),
@@ -255,7 +255,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _$target1,
             returnType: r'Future',
             annotations: [
-              _i5.Transactional(propagation: _i5.Propagation.mandatory),
+              _i6.Transactional(propagation: _i6.Propagation.mandatory),
             ],
             annotationTypes: [r'Transactional'],
           ),
@@ -264,8 +264,8 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _$target1,
             returnType: r'Future',
             annotations: [
-              _i5.Transactional(
-                isolation: _i5.Isolation.serializable,
+              _i6.Transactional(
+                isolation: _i6.Isolation.serializable,
                 timeout: Duration(seconds: 5),
                 readOnly: true,
               ),
@@ -278,14 +278,14 @@ _i1.BeanModule get $application => _i1.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'Ledger'],
             parameterNames: [r'ledger'],
-            annotations: [_i5.Transactional()],
+            annotations: [_i6.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
             r'forgets',
             _$target1,
             returnType: r'Future',
-            annotations: [_i5.Transactional()],
+            annotations: [_i6.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
         ],
@@ -302,7 +302,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
       create: (r) => _i2.Ledger(
         r.dependency<_i4.RecordingTransactionManager>(name: r'manager'),
       ),
-      annotations: const [_i1.Service(), _i5.Transactional()],
+      annotations: const [_i1.Service(), _i6.Transactional()],
       aopProxy: _i1.AopProxyFactory(
         signatures: const [
           _i1.MethodSignature.of(r'a', _$target2, returnType: r'Future'),
@@ -312,7 +312,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _$target2,
             returnType: r'Future',
             annotations: [
-              _i5.Transactional(propagation: _i5.Propagation.requiresNew),
+              _i6.Transactional(propagation: _i6.Propagation.requiresNew),
             ],
             annotationTypes: [r'Transactional'],
           ),
@@ -321,7 +321,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _$target2,
             returnType: r'Future',
             annotations: [
-              _i5.Transactional(propagation: _i5.Propagation.supports),
+              _i6.Transactional(propagation: _i6.Propagation.supports),
             ],
             annotationTypes: [r'Transactional'],
           ),
@@ -336,22 +336,22 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _$LedgerProxy((target as _i2.Ledger), invoker),
       ),
     ),
-    _i1.BeanDefinition<_i8.JdbcDriver>(
+    _i1.BeanDefinition<_i9.JdbcDriver>(
       name: r'sqlite3JdbcDriver',
       source: r'package:spring_boot_starter_data#sqlite3',
-      types: const [_i8.JdbcDriver],
-      conditions: [_i8.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
+      types: const [_i9.JdbcDriver],
+      conditions: [_i9.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
       create: (r) => _$sqlite3JdbcDriver(),
     ),
-    _i1.BeanDefinition<_i8.JdbcDriver>(
+    _i1.BeanDefinition<_i9.JdbcDriver>(
       name: r'postgresJdbcDriver',
       source: r'package:spring_boot_starter_data#postgres',
-      types: const [_i8.JdbcDriver],
-      conditions: [_i8.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
+      types: const [_i9.JdbcDriver],
+      conditions: [_i9.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
       create: (r) => _$postgresJdbcDriver(),
     ),
   ],
-  imports: [_i9.dataConfigBeans],
+  imports: [_i10.dataConfigBeans],
   typeTests: {
     _i2.OutOfStock: (value) => value is _i2.OutOfStock,
     _i2.Counterfeit: (value) => value is _i2.Counterfeit,
@@ -359,29 +359,29 @@ _i1.BeanModule get $application => _i1.BeanModule(
   typeDepths: {_i2.OutOfStock: 2, _i2.Counterfeit: 3},
 );
 
-final class _$Sqlite3Binding implements _i8.SqliteBinding {
+final class _$Sqlite3Binding implements _i9.SqliteBinding {
   const _$Sqlite3Binding();
 
   @override
-  _i8.SqliteDatabase open(
+  _i9.SqliteDatabase open(
     String filename, {
-    _i8.SqliteOpenMode mode = _i8.SqliteOpenMode.readWriteCreate,
+    _i9.SqliteOpenMode mode = _i9.SqliteOpenMode.readWriteCreate,
     bool uri = false,
   }) => _$sqlite3Guard(
     () => _$Sqlite3Database(
-      _i10.sqlite3.open(
+      _i11.sqlite3.open(
         filename,
-        mode: _i10.OpenMode.values.byName(mode.name),
+        mode: _i11.OpenMode.values.byName(mode.name),
         uri: uri,
       ),
     ),
   );
 }
 
-final class _$Sqlite3Database implements _i8.SqliteDatabase {
+final class _$Sqlite3Database implements _i9.SqliteDatabase {
   _$Sqlite3Database(this._database);
 
-  final _i10.Database _database;
+  final _i11.Database _database;
 
   @override
   void execute(String sql, [List<Object?> parameters = const []]) =>
@@ -397,7 +397,7 @@ final class _$Sqlite3Database implements _i8.SqliteDatabase {
   });
 
   @override
-  _i8.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
+  _i9.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
       _$sqlite3Guard(() {
         final statement = _database.prepare(sql);
         try {
@@ -417,7 +417,7 @@ final class _$Sqlite3Database implements _i8.SqliteDatabase {
     () => _database.createFunction(
       functionName: name,
       function: function,
-      argumentCount: _i10.AllowedArgumentCount(argumentCount),
+      argumentCount: _i11.AllowedArgumentCount(argumentCount),
       deterministic: true,
     ),
   );
@@ -435,11 +435,11 @@ final class _$Sqlite3Database implements _i8.SqliteDatabase {
   void close() => _$sqlite3Guard(_database.close);
 }
 
-final class _$Sqlite3Cursor implements _i8.SqliteCursor {
+final class _$Sqlite3Cursor implements _i9.SqliteCursor {
   _$Sqlite3Cursor(this._statement, this._cursor);
 
-  final _i10.PreparedStatement _statement;
-  final _i10.IteratingCursor _cursor;
+  final _i11.PreparedStatement _statement;
+  final _i11.IteratingCursor _cursor;
 
   @override
   List<String> get columns => _cursor.columnNames;
@@ -463,8 +463,8 @@ final class _$Sqlite3Cursor implements _i8.SqliteCursor {
 T _$sqlite3Guard<T>(T Function() action) {
   try {
     return action();
-  } on _i10.SqliteException catch (e) {
-    throw _i8.SqlError(
+  } on _i11.SqliteException catch (e) {
+    throw _i9.SqlError(
       e.message,
       vendorCode: e.resultCode,
       extendedCode: e.extendedResultCode,
@@ -472,34 +472,34 @@ T _$sqlite3Guard<T>(T Function() action) {
   }
 }
 
-_i8.JdbcDriver _$sqlite3JdbcDriver() =>
-    _i8.SqliteJdbcDriver(const _$Sqlite3Binding());
+_i9.JdbcDriver _$sqlite3JdbcDriver() =>
+    _i9.SqliteJdbcDriver(const _$Sqlite3Binding());
 
-final class _$PostgresBinding implements _i8.PostgresBinding {
+final class _$PostgresBinding implements _i9.PostgresBinding {
   const _$PostgresBinding();
 
   @override
-  Future<_i8.PostgresSession> open(_i8.PostgresEndpoint endpoint) =>
+  Future<_i9.PostgresSession> open(_i9.PostgresEndpoint endpoint) =>
       _$postgresGuard(() async {
         final roots = endpoint.rootCertificate;
         return _$PostgresSession(
-          await _i11.Connection.open(
-            _i11.Endpoint(
+          await _i12.Connection.open(
+            _i12.Endpoint(
               host: endpoint.host,
               port: endpoint.port,
               database: endpoint.database,
               username: endpoint.username,
               password: endpoint.password,
             ),
-            settings: _i11.ConnectionSettings(
+            settings: _i12.ConnectionSettings(
               sslMode: switch (endpoint.sslMode) {
-                _i8.PostgresSslMode.disable => _i11.SslMode.disable,
-                _i8.PostgresSslMode.require => _i11.SslMode.require,
-                _i8.PostgresSslMode.verifyFull => _i11.SslMode.verifyFull,
+                _i9.PostgresSslMode.disable => _i12.SslMode.disable,
+                _i9.PostgresSslMode.require => _i12.SslMode.require,
+                _i9.PostgresSslMode.verifyFull => _i12.SslMode.verifyFull,
               },
               securityContext: roots == null
                   ? null
-                  : (_i12.SecurityContext(withTrustedRoots: false)
+                  : (_i13.SecurityContext(withTrustedRoots: false)
                       ..setTrustedCertificates(roots)),
               connectTimeout: endpoint.connectTimeout,
               applicationName: endpoint.applicationName,
@@ -509,16 +509,16 @@ final class _$PostgresBinding implements _i8.PostgresBinding {
       });
 }
 
-final class _$PostgresSession implements _i8.PostgresSession {
+final class _$PostgresSession implements _i9.PostgresSession {
   _$PostgresSession(this._connection);
 
-  final _i11.Connection _connection;
+  final _i12.Connection _connection;
 
   @override
   bool get isOpen => _connection.isOpen;
 
   @override
-  Future<_i8.PostgresResult> execute(
+  Future<_i9.PostgresResult> execute(
     String sql, {
     List<Object?> parameters = const [],
     bool simple = false,
@@ -529,17 +529,17 @@ final class _$PostgresSession implements _i8.PostgresSession {
       parameters: parameters.isEmpty
           ? null
           : [for (final value in parameters) _$postgresParameter(value)],
-      queryMode: simple ? _i11.QueryMode.simple : null,
+      queryMode: simple ? _i12.QueryMode.simple : null,
       timeout: timeout,
     );
     final columns = _$postgresColumns(result.schema);
-    return _i8.PostgresResult(columns, [
+    return _i9.PostgresResult(columns, [
       for (final row in result) _$postgresValues(row),
     ], result.affectedRows);
   });
 
   @override
-  Stream<_i8.PostgresRow> stream(
+  Stream<_i9.PostgresRow> stream(
     String sql, {
     List<Object?> parameters = const [],
     Duration? timeout,
@@ -551,7 +551,7 @@ final class _$PostgresSession implements _i8.PostgresSession {
         for (final value in parameters) _$postgresParameter(value),
       ])) {
         columns ??= _$postgresColumns(row.schema);
-        yield _i8.PostgresRow(columns, _$postgresValues(row));
+        yield _i9.PostgresRow(columns, _$postgresValues(row));
       }
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(_$postgresError(error), stackTrace);
@@ -571,18 +571,18 @@ final class _$PostgresSession implements _i8.PostgresSession {
 // The package writes a double that is not finite (`Infinity`, `NaN`) as a
 // quoted text the server refuses, unless it knows the type.
 Object? _$postgresParameter(Object? value) => value is double && !value.isFinite
-    ? _i11.TypedValue(_i11.Type.double, value)
+    ? _i12.TypedValue(_i12.Type.double, value)
     : value;
 
-List<String> _$postgresColumns(_i11.ResultSchema schema) => [
+List<String> _$postgresColumns(_i12.ResultSchema schema) => [
   for (final column in schema.columns) column.columnName ?? '',
 ];
 
 // A value of a type the package does not decode (an enum, `citext`...) as
 // its text or bytes.
-List<Object?> _$postgresValues(_i11.ResultRow row) => [
+List<Object?> _$postgresValues(_i12.ResultRow row) => [
   for (final value in row)
-    value is _i11.UndecodedBytes
+    value is _i12.UndecodedBytes
         ? (value.isBinary ? value.bytes : value.asString)
         : value,
 ];
@@ -591,31 +591,31 @@ List<Object?> _$postgresValues(_i11.ResultRow row) => [
 // driver understands: the message, the SQL state, the constraint's name;
 // never the DETAIL line (it holds values) and never the exception itself.
 Object _$postgresError(Object error) {
-  if (error is _i11.ServerException) {
-    return _i8.SqlError(
+  if (error is _i12.ServerException) {
+    return _i9.SqlError(
       error.message,
       sqlState: error.code,
       constraint: error.constraintName,
       connectionLost:
-          error.severity == _i11.Severity.fatal ||
-          error.severity == _i11.Severity.panic,
+          error.severity == _i12.Severity.fatal ||
+          error.severity == _i12.Severity.panic,
     );
   }
-  if (error is _i11.PgException) {
+  if (error is _i12.PgException) {
     // The package names the value it cannot send.
     final inference = error.message.startsWith('Could not infer');
-    return _i8.SqlError(
+    return _i9.SqlError(
       inference
           ? 'A parameter value has a type the driver cannot send'
           : error.message,
       connectionLost: !inference,
     );
   }
-  if (error is _i12.SocketException || error is _i12.TlsException) {
-    return _i8.SqlError('$error', connectionLost: true);
+  if (error is _i13.SocketException || error is _i13.TlsException) {
+    return _i9.SqlError('$error', connectionLost: true);
   }
   if (error is _i3.TimeoutException) {
-    return _i8.SqlError(
+    return _i9.SqlError(
       error.message ?? 'The connection timed out',
       connectionLost: true,
     );
@@ -631,26 +631,24 @@ Future<T> _$postgresGuard<T>(Future<T> Function() action) async {
   }
 }
 
-_i8.JdbcDriver _$postgresJdbcDriver() =>
-    _i8.PostgresJdbcDriver(const _$PostgresBinding());
+_i9.JdbcDriver _$postgresJdbcDriver() =>
+    _i9.PostgresJdbcDriver(const _$PostgresBinding());
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i13.springBootAutoConfiguration,
-    _i14.springBootStarterCacheAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i14.springBootStarterCacheStartupChecksAutoConfiguration,
+    _i14.springBootAutoConfiguration,
+    _i5.springBootStarterCacheAutoConfiguration,
     _i15.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i14.springBootStarterCacheStartupChecksAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            after: [r'springBootStarterCacheAutoConfiguration'],
-          ),
+    ...!const bool.fromEnvironment('dart.vm.product')
+        ? _$debugAutoConfigurationMetadata
+        : const {},
   },
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

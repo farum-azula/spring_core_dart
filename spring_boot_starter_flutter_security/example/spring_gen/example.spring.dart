@@ -9,14 +9,14 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i8;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i8;
-import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
     as _i9;
+import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
+    as _i2;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    as _i5;
+    as _i6;
 import 'package:spring_boot_starter_flutter_cupertino/spring_auto_configuration.dart'
     as _i10;
 import 'package:spring_boot_starter_flutter_cupertino/src/cupertino_theme_design.dart'
@@ -30,17 +30,17 @@ import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration
 import 'package:spring_boot_starter_flutter_security/spring_auto_configuration.dart'
     as _i13;
 import 'package:spring_boot_starter_flutter_security/src/login/oauth2_login_service.dart'
-    as _i3;
-import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_template.dart'
     as _i4;
+import 'package:spring_boot_starter_flutter_security/src/secret_store/secret_template.dart'
+    as _i5;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i14;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
     as _i15;
 import 'package:spring_security_core/spring_auto_configuration.dart' as _i16;
 
-import '../example.dart' as _i2;
-import 'example.spring.introspection.dart' as _i6;
+import '../example.dart' as _i3;
+import 'example.spring.introspection.dart' as _i7;
 
 part 'example.spring.debug.dart';
 part 'example.spring.env.dart';
@@ -65,41 +65,41 @@ Type _$typeOf<T>() => T;
 _i1.BeanModule get $application => _i1.BeanModule(
   r'application',
   [
-    _i1.BeanDefinition<_i2.Account>(
+    _i1.BeanDefinition<_i3.Account>(
       name: r'account',
       source: r'asset:spring_boot_starter_flutter_security/example/example.dart#Account',
       dependencies: const [
-        _i1.Dependency(_i3.OAuth2LoginService, optional: true, name: r'_login'),
-        _i1.Dependency(_i4.SecretTemplate, name: r'_secrets'),
+        _i1.Dependency(_i4.OAuth2LoginService, optional: true, name: r'_login'),
+        _i1.Dependency(_i5.SecretTemplate, name: r'_secrets'),
       ],
-      create: (r) => _i2.Account(
-        r.optionalDependency<_i3.OAuth2LoginService>(name: r'_login'),
-        r.dependency<_i4.SecretTemplate>(name: r'_secrets'),
+      create: (r) => _i3.Account(
+        r.optionalDependency<_i4.OAuth2LoginService>(name: r'_login'),
+        r.dependency<_i5.SecretTemplate>(name: r'_secrets'),
       ),
       annotations: const [_i1.Service()],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i5.SpringWidgetBindings>(
+    _i1.BeanDefinition<_i6.SpringWidgetBindings>(
       name: r'flutterSpringWidgetBindings#application',
       source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
       autowireCandidate: false,
-      create: (r) => _i5.SpringWidgetBindings([
-        _i5.SpringWidgetBinding(
+      create: (r) => _i6.SpringWidgetBindings([
+        _i6.SpringWidgetBinding(
           widget: r'asset:spring_boot_starter_flutter_security/example/example.dart#HomePage',
-          beans: _$typeOf<(_i2.Account,)>(),
-          types: const [_i2.Account],
-          resolve: (f) => (_i5.SpringWidgetBinding.bean<_i2.Account>(f),),
+          beans: _$typeOf<(_i3.Account,)>(),
+          types: const [_i3.Account],
+          resolve: (f) => (_i6.SpringWidgetBinding.bean<_i3.Account>(f),),
           values: (r) {
-            final v = (r as (_i2.Account,));
+            final v = (r as (_i3.Account,));
             return [v.$1];
           },
         ),
       ]),
     ),
   ],
-  introspections: [..._i6.$applicationIntrospections],
+  introspections: [..._i7.$applicationIntrospections],
 );
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
@@ -107,19 +107,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i7.springBootAutoConfiguration,
-    _i8.springBootStarterFeignAutoConfiguration,
-    _i9.springBootStarterFlutterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i9.springBootStarterFlutterDebugAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i9.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i9.springBootStarterFlutterDebugIsolatesAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i9.springBootStarterFlutterDebugMotionAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i9.springBootStarterFlutterDebugTimelineAutoConfiguration,
+    _i8.springBootAutoConfiguration,
+    _i9.springBootStarterFeignAutoConfiguration,
+    _i2.springBootStarterFlutterAutoConfiguration,
     _i10.springBootStarterFlutterCupertinoAutoConfiguration,
     _i11.springBootStarterFlutterMaterialAutoConfiguration,
     _i12.springBootStarterFlutterNavigationAutoConfiguration,
@@ -127,6 +117,8 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     _i14.springBootStarterLoggingAutoConfiguration,
     _i15.springBootStarterOauth2ClientAutoConfiguration,
     _i16.springSecurityCoreAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
     _i10.springBootStarterFlutterCupertinoAutoConfiguration:

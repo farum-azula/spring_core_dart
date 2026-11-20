@@ -9,1596 +9,1596 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i4;
-import 'dart:io' as _i13;
+import 'dart:async' as _i5;
+import 'dart:io' as _i14;
 
-import 'package:postgres/postgres.dart' as _i12;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i14;
+import 'package:postgres/postgres.dart' as _i13;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i15;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i15;
-import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i2;
-import 'package:spring_boot_starter_data/src/annotations.dart' as _i6;
+    as _i2;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i3;
+import 'package:spring_boot_starter_data/src/annotations.dart' as _i7;
 import 'package:spring_boot_starter_data/src/properties/properties_beans.dart'
-    as _i9;
-import 'package:spring_boot_starter_data/src/repository/page.dart' as _i7;
-import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i8;
-import 'package:spring_boot_starter_data/src/repository/sort.dart' as _i5;
+    as _i10;
+import 'package:spring_boot_starter_data/src/repository/page.dart' as _i8;
+import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i9;
+import 'package:spring_boot_starter_data/src/repository/sort.dart' as _i6;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i16;
-import 'package:sqlite3/sqlite3.dart' as _i11;
+import 'package:sqlite3/sqlite3.dart' as _i12;
 
-import '../../../../repository/jdbc/app/jdbc_app.dart' as _i3;
-import 'jdbc_app.spring.introspection.dart' as _i10;
+import '../../../../repository/jdbc/app/jdbc_app.dart' as _i4;
+import 'jdbc_app.spring.introspection.dart' as _i11;
 
 part 'jdbc_app.spring.debug.dart';
 part 'jdbc_app.spring.env.dart';
 
 /// Implements `BookQueries`: `SimpleRepository` has the CRUD methods.
-class _$BookQueriesImpl extends _i2.SimpleRepository<_i3.Book, int>
-    implements _i3.BookQueries {
+class _$BookQueriesImpl extends _i3.SimpleRepository<_i4.Book, int>
+    implements _i4.BookQueries {
   _$BookQueriesImpl(super.operations);
 
-  static const _findByTitle = _i2.PartTree(r'findByTitle', [
-    _i2.OrPart([_i2.Part(r'title')]),
+  static const _findByTitle = _i3.PartTree(r'findByTitle', [
+    _i3.OrPart([_i3.Part(r'title')]),
   ]);
 
-  static const _findByTitleIgnoreCase = _i2.PartTree(r'findByTitleIgnoreCase', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.simpleProperty, true)]),
+  static const _findByTitleIgnoreCase = _i3.PartTree(r'findByTitleIgnoreCase', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.simpleProperty, true)]),
   ]);
 
-  static const _findOneByTitle = _i2.PartTree(r'findOneByTitle', [
-    _i2.OrPart([_i2.Part(r'title')]),
+  static const _findOneByTitle = _i3.PartTree(r'findOneByTitle', [
+    _i3.OrPart([_i3.Part(r'title')]),
   ]);
 
-  static const _getByTitle = _i2.PartTree(r'getByTitle', [
-    _i2.OrPart([_i2.Part(r'title')]),
+  static const _getByTitle = _i3.PartTree(r'getByTitle', [
+    _i3.OrPart([_i3.Part(r'title')]),
   ]);
 
-  static const _findByTitleAndYear = _i2.PartTree(r'findByTitleAndYear', [
-    _i2.OrPart([_i2.Part(r'title'), _i2.Part(r'year')]),
+  static const _findByTitleAndYear = _i3.PartTree(r'findByTitleAndYear', [
+    _i3.OrPart([_i3.Part(r'title'), _i3.Part(r'year')]),
   ]);
 
-  static const _findByTitleOrYear = _i2.PartTree(r'findByTitleOrYear', [
-    _i2.OrPart([_i2.Part(r'title')]),
-    _i2.OrPart([_i2.Part(r'year')]),
+  static const _findByTitleOrYear = _i3.PartTree(r'findByTitleOrYear', [
+    _i3.OrPart([_i3.Part(r'title')]),
+    _i3.OrPart([_i3.Part(r'year')]),
   ]);
 
-  static const _findByYearNot = _i2.PartTree(r'findByYearNot', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.negatingSimpleProperty)]),
+  static const _findByYearNot = _i3.PartTree(r'findByYearNot', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.negatingSimpleProperty)]),
   ]);
 
-  static const _findByTitleNot = _i2.PartTree(r'findByTitleNot', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.negatingSimpleProperty)]),
+  static const _findByTitleNot = _i3.PartTree(r'findByTitleNot', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.negatingSimpleProperty)]),
   ]);
 
-  static const _findByTitleNotIgnoreCase = _i2.PartTree(
+  static const _findByTitleNotIgnoreCase = _i3.PartTree(
     r'findByTitleNotIgnoreCase',
     [
-      _i2.OrPart([
-        _i2.Part(r'title', _i2.PartType.negatingSimpleProperty, true),
+      _i3.OrPart([
+        _i3.Part(r'title', _i3.PartType.negatingSimpleProperty, true),
       ]),
     ],
   );
 
-  static const _findByYearBetween = _i2.PartTree(r'findByYearBetween', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.between)]),
+  static const _findByYearBetween = _i3.PartTree(r'findByYearBetween', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.between)]),
   ]);
 
-  static const _findByYearGreaterThan = _i2.PartTree(r'findByYearGreaterThan', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.greaterThan)]),
+  static const _findByYearGreaterThan = _i3.PartTree(r'findByYearGreaterThan', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.greaterThan)]),
   ]);
 
-  static const _findByYearGreaterThanEqual = _i2.PartTree(
+  static const _findByYearGreaterThanEqual = _i3.PartTree(
     r'findByYearGreaterThanEqual',
     [
-      _i2.OrPart([_i2.Part(r'year', _i2.PartType.greaterThanEqual)]),
+      _i3.OrPart([_i3.Part(r'year', _i3.PartType.greaterThanEqual)]),
     ],
   );
 
-  static const _findByYearLessThan = _i2.PartTree(r'findByYearLessThan', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.lessThan)]),
+  static const _findByYearLessThan = _i3.PartTree(r'findByYearLessThan', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.lessThan)]),
   ]);
 
-  static const _findByYearLessThanEqual = _i2.PartTree(
+  static const _findByYearLessThanEqual = _i3.PartTree(
     r'findByYearLessThanEqual',
     [
-      _i2.OrPart([_i2.Part(r'year', _i2.PartType.lessThanEqual)]),
+      _i3.OrPart([_i3.Part(r'year', _i3.PartType.lessThanEqual)]),
     ],
   );
 
-  static const _findByYearIn = _i2.PartTree(r'findByYearIn', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.in_)]),
+  static const _findByYearIn = _i3.PartTree(r'findByYearIn', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.in_)]),
   ]);
 
-  static const _findByYearNotIn = _i2.PartTree(r'findByYearNotIn', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.notIn)]),
+  static const _findByYearNotIn = _i3.PartTree(r'findByYearNotIn', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.notIn)]),
   ]);
 
-  static const _findByTitleIn = _i2.PartTree(r'findByTitleIn', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.in_)]),
+  static const _findByTitleIn = _i3.PartTree(r'findByTitleIn', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.in_)]),
   ]);
 
-  static const _findByTitleInIgnoreCase = _i2.PartTree(
+  static const _findByTitleInIgnoreCase = _i3.PartTree(
     r'findByTitleInIgnoreCase',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.in_, true)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.in_, true)]),
     ],
   );
 
-  static const _findBySubtitleIn = _i2.PartTree(r'findBySubtitleIn', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.in_)]),
+  static const _findBySubtitleIn = _i3.PartTree(r'findBySubtitleIn', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.in_)]),
   ]);
 
-  static const _findBySubtitleNotIn = _i2.PartTree(r'findBySubtitleNotIn', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.notIn)]),
+  static const _findBySubtitleNotIn = _i3.PartTree(r'findBySubtitleNotIn', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.notIn)]),
   ]);
 
-  static const _findByTitleStartingWith = _i2.PartTree(
+  static const _findByTitleStartingWith = _i3.PartTree(
     r'findByTitleStartingWith',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.startingWith)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.startingWith)]),
     ],
   );
 
-  static const _findByTitleEndingWith = _i2.PartTree(r'findByTitleEndingWith', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.endingWith)]),
+  static const _findByTitleEndingWith = _i3.PartTree(r'findByTitleEndingWith', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.endingWith)]),
   ]);
 
-  static const _findByTitleContaining = _i2.PartTree(r'findByTitleContaining', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.containing)]),
+  static const _findByTitleContaining = _i3.PartTree(r'findByTitleContaining', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.containing)]),
   ]);
 
-  static const _findByTitleNotContaining = _i2.PartTree(
+  static const _findByTitleNotContaining = _i3.PartTree(
     r'findByTitleNotContaining',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.notContaining)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.notContaining)]),
     ],
   );
 
-  static const _findByTitleLike = _i2.PartTree(r'findByTitleLike', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.like)]),
+  static const _findByTitleLike = _i3.PartTree(r'findByTitleLike', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.like)]),
   ]);
 
-  static const _findByTitleNotLike = _i2.PartTree(r'findByTitleNotLike', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.notLike)]),
+  static const _findByTitleNotLike = _i3.PartTree(r'findByTitleNotLike', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.notLike)]),
   ]);
 
-  static const _findByTitleLikeIgnoreCase = _i2.PartTree(
+  static const _findByTitleLikeIgnoreCase = _i3.PartTree(
     r'findByTitleLikeIgnoreCase',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.like, true)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.like, true)]),
     ],
   );
 
-  static const _findByTitleContainingIgnoreCase = _i2.PartTree(
+  static const _findByTitleContainingIgnoreCase = _i3.PartTree(
     r'findByTitleContainingIgnoreCase',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.containing, true)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.containing, true)]),
     ],
   );
 
-  static const _findByTitleStartingWithIgnoreCase = _i2.PartTree(
+  static const _findByTitleStartingWithIgnoreCase = _i3.PartTree(
     r'findByTitleStartingWithIgnoreCase',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.startingWith, true)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.startingWith, true)]),
     ],
   );
 
-  static const _findByTitleEndingWithIgnoreCase = _i2.PartTree(
+  static const _findByTitleEndingWithIgnoreCase = _i3.PartTree(
     r'findByTitleEndingWithIgnoreCase',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.endingWith, true)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.endingWith, true)]),
     ],
   );
 
-  static const _findBySubtitleIsNull = _i2.PartTree(r'findBySubtitleIsNull', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.isNull)]),
+  static const _findBySubtitleIsNull = _i3.PartTree(r'findBySubtitleIsNull', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.isNull)]),
   ]);
 
-  static const _findBySubtitleIsNotNull = _i2.PartTree(
+  static const _findBySubtitleIsNotNull = _i3.PartTree(
     r'findBySubtitleIsNotNull',
     [
-      _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.isNotNull)]),
+      _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.isNotNull)]),
     ],
   );
 
-  static const _findBySubtitle = _i2.PartTree(r'findBySubtitle', [
-    _i2.OrPart([_i2.Part(r'subtitle')]),
+  static const _findBySubtitle = _i3.PartTree(r'findBySubtitle', [
+    _i3.OrPart([_i3.Part(r'subtitle')]),
   ]);
 
-  static const _findBySubtitleNot = _i2.PartTree(r'findBySubtitleNot', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.negatingSimpleProperty)]),
+  static const _findBySubtitleNot = _i3.PartTree(r'findBySubtitleNot', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.negatingSimpleProperty)]),
   ]);
 
-  static const _findBySubtitleLessThan = _i2.PartTree(
+  static const _findBySubtitleLessThan = _i3.PartTree(
     r'findBySubtitleLessThan',
     [
-      _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.lessThan)]),
+      _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.lessThan)]),
     ],
   );
 
-  static const _findBySubtitleBetween = _i2.PartTree(r'findBySubtitleBetween', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.between)]),
+  static const _findBySubtitleBetween = _i3.PartTree(r'findBySubtitleBetween', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.between)]),
   ]);
 
-  static const _findBySubtitleLike = _i2.PartTree(r'findBySubtitleLike', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.like)]),
+  static const _findBySubtitleLike = _i3.PartTree(r'findBySubtitleLike', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.like)]),
   ]);
 
-  static const _findByInStockTrue = _i2.PartTree(r'findByInStockTrue', [
-    _i2.OrPart([_i2.Part(r'inStock', _i2.PartType.isTrue)]),
+  static const _findByInStockTrue = _i3.PartTree(r'findByInStockTrue', [
+    _i3.OrPart([_i3.Part(r'inStock', _i3.PartType.isTrue)]),
   ]);
 
-  static const _findByInStockFalse = _i2.PartTree(r'findByInStockFalse', [
-    _i2.OrPart([_i2.Part(r'inStock', _i2.PartType.isFalse)]),
+  static const _findByInStockFalse = _i3.PartTree(r'findByInStockFalse', [
+    _i3.OrPart([_i3.Part(r'inStock', _i3.PartType.isFalse)]),
   ]);
 
-  static const _findByInStock = _i2.PartTree(r'findByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
+  static const _findByInStock = _i3.PartTree(r'findByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
   ]);
 
-  static const _findByAuthor = _i2.PartTree(r'findByAuthor', [
-    _i2.OrPart([_i2.Part(r'author')]),
+  static const _findByAuthor = _i3.PartTree(r'findByAuthor', [
+    _i3.OrPart([_i3.Part(r'author')]),
   ]);
 
-  static const _findByAuthorIn = _i2.PartTree(r'findByAuthorIn', [
-    _i2.OrPart([_i2.Part(r'author', _i2.PartType.in_)]),
+  static const _findByAuthorIn = _i3.PartTree(r'findByAuthorIn', [
+    _i3.OrPart([_i3.Part(r'author', _i3.PartType.in_)]),
   ]);
 
-  static const _findByAuthorIsNull = _i2.PartTree(r'findByAuthorIsNull', [
-    _i2.OrPart([_i2.Part(r'author', _i2.PartType.isNull)]),
+  static const _findByAuthorIsNull = _i3.PartTree(r'findByAuthorIsNull', [
+    _i3.OrPart([_i3.Part(r'author', _i3.PartType.isNull)]),
   ]);
 
-  static const _findByGenre = _i2.PartTree(r'findByGenre', [
-    _i2.OrPart([_i2.Part(r'genre')]),
+  static const _findByGenre = _i3.PartTree(r'findByGenre', [
+    _i3.OrPart([_i3.Part(r'genre')]),
   ]);
 
-  static const _findByGenreIn = _i2.PartTree(r'findByGenreIn', [
-    _i2.OrPart([_i2.Part(r'genre', _i2.PartType.in_)]),
+  static const _findByGenreIn = _i3.PartTree(r'findByGenreIn', [
+    _i3.OrPart([_i3.Part(r'genre', _i3.PartType.in_)]),
   ]);
 
-  static const _findByRatingBetween = _i2.PartTree(r'findByRatingBetween', [
-    _i2.OrPart([_i2.Part(r'rating', _i2.PartType.between)]),
+  static const _findByRatingBetween = _i3.PartTree(r'findByRatingBetween', [
+    _i3.OrPart([_i3.Part(r'rating', _i3.PartType.between)]),
   ]);
 
-  static const _findByRatingGreaterThan = _i2.PartTree(
+  static const _findByRatingGreaterThan = _i3.PartTree(
     r'findByRatingGreaterThan',
     [
-      _i2.OrPart([_i2.Part(r'rating', _i2.PartType.greaterThan)]),
+      _i3.OrPart([_i3.Part(r'rating', _i3.PartType.greaterThan)]),
     ],
   );
 
-  static const _findByReleasedAfter = _i2.PartTree(r'findByReleasedAfter', [
-    _i2.OrPart([_i2.Part(r'released', _i2.PartType.greaterThan)]),
+  static const _findByReleasedAfter = _i3.PartTree(r'findByReleasedAfter', [
+    _i3.OrPart([_i3.Part(r'released', _i3.PartType.greaterThan)]),
   ]);
 
-  static const _findByReleased = _i2.PartTree(r'findByReleased', [
-    _i2.OrPart([_i2.Part(r'released')]),
+  static const _findByReleased = _i3.PartTree(r'findByReleased', [
+    _i3.OrPart([_i3.Part(r'released')]),
   ]);
 
-  static const _findByInStockOrderByYearDescTitleAsc = _i2.PartTree(
+  static const _findByInStockOrderByYearDescTitleAsc = _i3.PartTree(
     r'findByInStockOrderByYearDescTitleAsc',
     [
-      _i2.OrPart([_i2.Part(r'inStock')]),
+      _i3.OrPart([_i3.Part(r'inStock')]),
     ],
-    sort: _i2.Sort([_i2.SortOrder.desc(r'year'), _i2.SortOrder.asc(r'title')]),
+    sort: _i3.Sort([_i3.SortOrder.desc(r'year'), _i3.SortOrder.asc(r'title')]),
   );
 
-  static const _findByInStockOrderBySubtitleAscIdAsc = _i2.PartTree(
+  static const _findByInStockOrderBySubtitleAscIdAsc = _i3.PartTree(
     r'findByInStockOrderBySubtitleAscIdAsc',
     [
-      _i2.OrPart([_i2.Part(r'inStock')]),
+      _i3.OrPart([_i3.Part(r'inStock')]),
     ],
-    sort: _i2.Sort([_i2.SortOrder.asc(r'subtitle'), _i2.SortOrder.asc(r'id')]),
+    sort: _i3.Sort([_i3.SortOrder.asc(r'subtitle'), _i3.SortOrder.asc(r'id')]),
   );
 
-  static const _findByInStockOrderBySubtitleDescIdAsc = _i2.PartTree(
+  static const _findByInStockOrderBySubtitleDescIdAsc = _i3.PartTree(
     r'findByInStockOrderBySubtitleDescIdAsc',
     [
-      _i2.OrPart([_i2.Part(r'inStock')]),
+      _i3.OrPart([_i3.Part(r'inStock')]),
     ],
-    sort: _i2.Sort([_i2.SortOrder.desc(r'subtitle'), _i2.SortOrder.asc(r'id')]),
+    sort: _i3.Sort([_i3.SortOrder.desc(r'subtitle'), _i3.SortOrder.asc(r'id')]),
   );
 
-  static const _findByYear = _i2.PartTree(r'findByYear', [
-    _i2.OrPart([_i2.Part(r'year')]),
+  static const _findByYear = _i3.PartTree(r'findByYear', [
+    _i3.OrPart([_i3.Part(r'year')]),
   ]);
 
-  static const _findByYearLessThanOrderByYear = _i2.PartTree(
+  static const _findByYearLessThanOrderByYear = _i3.PartTree(
     r'findByYearLessThanOrderByYear',
     [
-      _i2.OrPart([_i2.Part(r'year', _i2.PartType.lessThan)]),
+      _i3.OrPart([_i3.Part(r'year', _i3.PartType.lessThan)]),
     ],
-    sort: _i2.Sort([_i2.SortOrder.asc(r'year')]),
+    sort: _i3.Sort([_i3.SortOrder.asc(r'year')]),
   );
 
-  static const _findDistinctByInStock = _i2.PartTree(r'findDistinctByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.find, distinct: true));
+  static const _findDistinctByInStock = _i3.PartTree(r'findDistinctByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.find, distinct: true));
 
-  static const _streamByInStock = _i2.PartTree(r'streamByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
+  static const _streamByInStock = _i3.PartTree(r'streamByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
   ]);
 
-  static const _findByYearAfter = _i2.PartTree(r'findByYearAfter', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.greaterThan)]),
+  static const _findByYearAfter = _i3.PartTree(r'findByYearAfter', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.greaterThan)]),
   ]);
 
-  static const _findByInStockIsTrue = _i2.PartTree(r'findByInStockIsTrue', [
-    _i2.OrPart([_i2.Part(r'inStock', _i2.PartType.isTrue)]),
+  static const _findByInStockIsTrue = _i3.PartTree(r'findByInStockIsTrue', [
+    _i3.OrPart([_i3.Part(r'inStock', _i3.PartType.isTrue)]),
   ]);
 
-  static const _findByInStockEquals = _i2.PartTree(r'findByInStockEquals', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
+  static const _findByInStockEquals = _i3.PartTree(r'findByInStockEquals', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
   ]);
 
-  static const _findFirstByOrderByYearAsc = _i2.PartTree(
+  static const _findFirstByOrderByYearAsc = _i3.PartTree(
     r'findFirstByOrderByYearAsc',
     [],
-    subject: _i2.Subject(_i2.SubjectKind.find, maxResults: 1),
-    sort: _i2.Sort([_i2.SortOrder.asc(r'year')]),
+    subject: _i3.Subject(_i3.SubjectKind.find, maxResults: 1),
+    sort: _i3.Sort([_i3.SortOrder.asc(r'year')]),
   );
 
-  static const _findTop2ByOrderByYearDesc = _i2.PartTree(
+  static const _findTop2ByOrderByYearDesc = _i3.PartTree(
     r'findTop2ByOrderByYearDesc',
     [],
-    subject: _i2.Subject(_i2.SubjectKind.find, maxResults: 2),
-    sort: _i2.Sort([_i2.SortOrder.desc(r'year')]),
+    subject: _i3.Subject(_i3.SubjectKind.find, maxResults: 2),
+    sort: _i3.Sort([_i3.SortOrder.desc(r'year')]),
   );
 
-  static const _findTop3ByInStock = _i2.PartTree(r'findTop3ByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.find, maxResults: 3));
+  static const _findTop3ByInStock = _i3.PartTree(r'findTop3ByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.find, maxResults: 3));
 
-  static const _countByInStock = _i2.PartTree(r'countByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.count));
+  static const _countByInStock = _i3.PartTree(r'countByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.count));
 
-  static const _countByTitleContaining = _i2.PartTree(
+  static const _countByTitleContaining = _i3.PartTree(
     r'countByTitleContaining',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.containing)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.containing)]),
     ],
-    subject: _i2.Subject(_i2.SubjectKind.count),
+    subject: _i3.Subject(_i3.SubjectKind.count),
   );
 
-  static const _existsByTitle = _i2.PartTree(r'existsByTitle', [
-    _i2.OrPart([_i2.Part(r'title')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.exists));
+  static const _existsByTitle = _i3.PartTree(r'existsByTitle', [
+    _i3.OrPart([_i3.Part(r'title')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.exists));
 
-  static const _deleteByYearLessThan = _i2.PartTree(r'deleteByYearLessThan', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.lessThan)]),
-  ], subject: _i2.Subject(_i2.SubjectKind.delete));
+  static const _deleteByYearLessThan = _i3.PartTree(r'deleteByYearLessThan', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.lessThan)]),
+  ], subject: _i3.Subject(_i3.SubjectKind.delete));
 
-  static const _removeByTitle = _i2.PartTree(r'removeByTitle', [
-    _i2.OrPart([_i2.Part(r'title')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.delete));
+  static const _removeByTitle = _i3.PartTree(r'removeByTitle', [
+    _i3.OrPart([_i3.Part(r'title')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.delete));
 
-  static const _deleteByInStock = _i2.PartTree(r'deleteByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.delete));
+  static const _deleteByInStock = _i3.PartTree(r'deleteByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.delete));
 
-  static const _deleteByTitleIn = _i2.PartTree(r'deleteByTitleIn', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.in_)]),
-  ], subject: _i2.Subject(_i2.SubjectKind.delete));
+  static const _deleteByTitleIn = _i3.PartTree(r'deleteByTitleIn', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.in_)]),
+  ], subject: _i3.Subject(_i3.SubjectKind.delete));
 
   static _$BookQueriesImpl $create(_i1.DependencyResolver r) =>
       _$BookQueriesImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Book, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Book, int>(
           r'BookQueries',
         ),
       );
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitle(String title) =>
+  _i5.Future<List<_i4.Book>> findByTitle(String title) =>
       this.operations.list(_findByTitle, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleIgnoreCase(String title) =>
+  _i5.Future<List<_i4.Book>> findByTitleIgnoreCase(String title) =>
       this.operations.list(_findByTitleIgnoreCase, [title]);
 
   @override
-  _i4.Future<_i3.Book?> findOneByTitle(String title) =>
+  _i5.Future<_i4.Book?> findOneByTitle(String title) =>
       this.operations.one(_findOneByTitle, [title]);
 
   @override
-  _i4.Future<_i3.Book> getByTitle(String title) =>
+  _i5.Future<_i4.Book> getByTitle(String title) =>
       this.operations.single(_getByTitle, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleAndYear(String title, int year) =>
+  _i5.Future<List<_i4.Book>> findByTitleAndYear(String title, int year) =>
       this.operations.list(_findByTitleAndYear, [title, year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleOrYear(String title, int year) =>
+  _i5.Future<List<_i4.Book>> findByTitleOrYear(String title, int year) =>
       this.operations.list(_findByTitleOrYear, [title, year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearNot(int year) =>
+  _i5.Future<List<_i4.Book>> findByYearNot(int year) =>
       this.operations.list(_findByYearNot, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleNot(String title) =>
+  _i5.Future<List<_i4.Book>> findByTitleNot(String title) =>
       this.operations.list(_findByTitleNot, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleNotIgnoreCase(String title) =>
+  _i5.Future<List<_i4.Book>> findByTitleNotIgnoreCase(String title) =>
       this.operations.list(_findByTitleNotIgnoreCase, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearBetween(int from, int to) =>
+  _i5.Future<List<_i4.Book>> findByYearBetween(int from, int to) =>
       this.operations.list(_findByYearBetween, [from, to]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearGreaterThan(int year) =>
+  _i5.Future<List<_i4.Book>> findByYearGreaterThan(int year) =>
       this.operations.list(_findByYearGreaterThan, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearGreaterThanEqual(int year) =>
+  _i5.Future<List<_i4.Book>> findByYearGreaterThanEqual(int year) =>
       this.operations.list(_findByYearGreaterThanEqual, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearLessThan(int year) =>
+  _i5.Future<List<_i4.Book>> findByYearLessThan(int year) =>
       this.operations.list(_findByYearLessThan, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearLessThanEqual(int year) =>
+  _i5.Future<List<_i4.Book>> findByYearLessThanEqual(int year) =>
       this.operations.list(_findByYearLessThanEqual, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearIn(List<int> years) =>
+  _i5.Future<List<_i4.Book>> findByYearIn(List<int> years) =>
       this.operations.list(_findByYearIn, [years]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearNotIn(Set<int> years) =>
+  _i5.Future<List<_i4.Book>> findByYearNotIn(Set<int> years) =>
       this.operations.list(_findByYearNotIn, [years]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleIn(List<String> titles) =>
+  _i5.Future<List<_i4.Book>> findByTitleIn(List<String> titles) =>
       this.operations.list(_findByTitleIn, [titles]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleInIgnoreCase(List<String> titles) =>
+  _i5.Future<List<_i4.Book>> findByTitleInIgnoreCase(List<String> titles) =>
       this.operations.list(_findByTitleInIgnoreCase, [titles]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleIn(List<String?> subtitles) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleIn(List<String?> subtitles) =>
       this.operations.list(_findBySubtitleIn, [subtitles]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleNotIn(List<String?> subtitles) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleNotIn(List<String?> subtitles) =>
       this.operations.list(_findBySubtitleNotIn, [subtitles]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleStartingWith(String prefix) =>
+  _i5.Future<List<_i4.Book>> findByTitleStartingWith(String prefix) =>
       this.operations.list(_findByTitleStartingWith, [prefix]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleEndingWith(String suffix) =>
+  _i5.Future<List<_i4.Book>> findByTitleEndingWith(String suffix) =>
       this.operations.list(_findByTitleEndingWith, [suffix]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleContaining(String part) =>
+  _i5.Future<List<_i4.Book>> findByTitleContaining(String part) =>
       this.operations.list(_findByTitleContaining, [part]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleNotContaining(String part) =>
+  _i5.Future<List<_i4.Book>> findByTitleNotContaining(String part) =>
       this.operations.list(_findByTitleNotContaining, [part]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleLike(String pattern) =>
+  _i5.Future<List<_i4.Book>> findByTitleLike(String pattern) =>
       this.operations.list(_findByTitleLike, [pattern]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleNotLike(String pattern) =>
+  _i5.Future<List<_i4.Book>> findByTitleNotLike(String pattern) =>
       this.operations.list(_findByTitleNotLike, [pattern]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleLikeIgnoreCase(String pattern) =>
+  _i5.Future<List<_i4.Book>> findByTitleLikeIgnoreCase(String pattern) =>
       this.operations.list(_findByTitleLikeIgnoreCase, [pattern]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleContainingIgnoreCase(String part) =>
+  _i5.Future<List<_i4.Book>> findByTitleContainingIgnoreCase(String part) =>
       this.operations.list(_findByTitleContainingIgnoreCase, [part]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleStartingWithIgnoreCase(String prefix) =>
+  _i5.Future<List<_i4.Book>> findByTitleStartingWithIgnoreCase(String prefix) =>
       this.operations.list(_findByTitleStartingWithIgnoreCase, [prefix]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleEndingWithIgnoreCase(String suffix) =>
+  _i5.Future<List<_i4.Book>> findByTitleEndingWithIgnoreCase(String suffix) =>
       this.operations.list(_findByTitleEndingWithIgnoreCase, [suffix]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleIsNull() =>
+  _i5.Future<List<_i4.Book>> findBySubtitleIsNull() =>
       this.operations.list(_findBySubtitleIsNull, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleIsNotNull() =>
+  _i5.Future<List<_i4.Book>> findBySubtitleIsNotNull() =>
       this.operations.list(_findBySubtitleIsNotNull, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitle(String? subtitle) =>
+  _i5.Future<List<_i4.Book>> findBySubtitle(String? subtitle) =>
       this.operations.list(_findBySubtitle, [subtitle]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleNot(String? subtitle) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleNot(String? subtitle) =>
       this.operations.list(_findBySubtitleNot, [subtitle]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleLessThan(String? subtitle) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleLessThan(String? subtitle) =>
       this.operations.list(_findBySubtitleLessThan, [subtitle]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleBetween(String? from, String? to) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleBetween(String? from, String? to) =>
       this.operations.list(_findBySubtitleBetween, [from, to]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleLike(String? pattern) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleLike(String? pattern) =>
       this.operations.list(_findBySubtitleLike, [pattern]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockTrue() =>
+  _i5.Future<List<_i4.Book>> findByInStockTrue() =>
       this.operations.list(_findByInStockTrue, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockFalse() =>
+  _i5.Future<List<_i4.Book>> findByInStockFalse() =>
       this.operations.list(_findByInStockFalse, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStock(bool inStock, _i5.Sort sort) =>
+  _i5.Future<List<_i4.Book>> findByInStock(bool inStock, _i6.Sort sort) =>
       this.operations.list(_findByInStock, [inStock], sort: sort);
 
   @override
-  _i4.Future<List<_i3.Book>> findByAuthor(
-    _i6.AggregateReference<_i3.Author, int> author,
+  _i5.Future<List<_i4.Book>> findByAuthor(
+    _i7.AggregateReference<_i4.Author, int> author,
   ) => this.operations.list(_findByAuthor, [author]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByAuthorIn(
-    List<_i6.AggregateReference<_i3.Author, int>> authors,
+  _i5.Future<List<_i4.Book>> findByAuthorIn(
+    List<_i7.AggregateReference<_i4.Author, int>> authors,
   ) => this.operations.list(_findByAuthorIn, [authors]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByAuthorIsNull() =>
+  _i5.Future<List<_i4.Book>> findByAuthorIsNull() =>
       this.operations.list(_findByAuthorIsNull, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findByGenre(_i3.Genre genre) =>
+  _i5.Future<List<_i4.Book>> findByGenre(_i4.Genre genre) =>
       this.operations.list(_findByGenre, [genre]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByGenreIn(List<_i3.Genre> genres) =>
+  _i5.Future<List<_i4.Book>> findByGenreIn(List<_i4.Genre> genres) =>
       this.operations.list(_findByGenreIn, [genres]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByRatingBetween(double low, double high) =>
+  _i5.Future<List<_i4.Book>> findByRatingBetween(double low, double high) =>
       this.operations.list(_findByRatingBetween, [low, high]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByRatingGreaterThan(double rating) =>
+  _i5.Future<List<_i4.Book>> findByRatingGreaterThan(double rating) =>
       this.operations.list(_findByRatingGreaterThan, [rating]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByReleasedAfter(DateTime moment) =>
+  _i5.Future<List<_i4.Book>> findByReleasedAfter(DateTime moment) =>
       this.operations.list(_findByReleasedAfter, [moment]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByReleased(DateTime? moment) =>
+  _i5.Future<List<_i4.Book>> findByReleased(DateTime? moment) =>
       this.operations.list(_findByReleased, [moment]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockOrderByYearDescTitleAsc(
+  _i5.Future<List<_i4.Book>> findByInStockOrderByYearDescTitleAsc(
     bool inStock,
   ) => this.operations.list(_findByInStockOrderByYearDescTitleAsc, [inStock]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockOrderBySubtitleAscIdAsc(
+  _i5.Future<List<_i4.Book>> findByInStockOrderBySubtitleAscIdAsc(
     bool inStock,
   ) => this.operations.list(_findByInStockOrderBySubtitleAscIdAsc, [inStock]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockOrderBySubtitleDescIdAsc(
+  _i5.Future<List<_i4.Book>> findByInStockOrderBySubtitleDescIdAsc(
     bool inStock,
   ) => this.operations.list(_findByInStockOrderBySubtitleDescIdAsc, [inStock]);
 
   @override
-  _i4.Future<Set<_i3.Book>> findByYear(int year) =>
+  _i5.Future<Set<_i4.Book>> findByYear(int year) =>
       this.operations.set(_findByYear, [year]);
 
   @override
-  _i4.Future<Iterable<_i3.Book>> findByYearLessThanOrderByYear(int year) =>
+  _i5.Future<Iterable<_i4.Book>> findByYearLessThanOrderByYear(int year) =>
       this.operations.list(_findByYearLessThanOrderByYear, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findDistinctByInStock(bool inStock) =>
+  _i5.Future<List<_i4.Book>> findDistinctByInStock(bool inStock) =>
       this.operations.list(_findDistinctByInStock, [inStock]);
 
   @override
-  _i4.Stream<_i3.Book> streamByInStock(bool inStock) =>
+  _i5.Stream<_i4.Book> streamByInStock(bool inStock) =>
       this.operations.stream(_streamByInStock, [inStock]);
 
   @override
-  _i4.Future<_i7.Page<_i3.Book>> findByYearAfter(
+  _i5.Future<_i8.Page<_i4.Book>> findByYearAfter(
     int year,
-    _i7.Pageable pageable,
+    _i8.Pageable pageable,
   ) => this.operations.page(_findByYearAfter, [year], pageable);
 
   @override
-  _i4.Future<_i7.Slice<_i3.Book>> findByInStockIsTrue(_i7.Pageable pageable) =>
+  _i5.Future<_i8.Slice<_i4.Book>> findByInStockIsTrue(_i8.Pageable pageable) =>
       this.operations.slice(_findByInStockIsTrue, const [], pageable);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockEquals(
+  _i5.Future<List<_i4.Book>> findByInStockEquals(
     bool inStock,
-    _i7.Pageable pageable,
+    _i8.Pageable pageable,
   ) =>
       this.operations.list(_findByInStockEquals, [inStock], pageable: pageable);
 
   @override
-  _i4.Future<_i3.Book?> findFirstByOrderByYearAsc() =>
+  _i5.Future<_i4.Book?> findFirstByOrderByYearAsc() =>
       this.operations.one(_findFirstByOrderByYearAsc, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findTop2ByOrderByYearDesc() =>
+  _i5.Future<List<_i4.Book>> findTop2ByOrderByYearDesc() =>
       this.operations.list(_findTop2ByOrderByYearDesc, const []);
 
   @override
-  _i4.Future<_i7.Page<_i3.Book>> findTop3ByInStock(
+  _i5.Future<_i8.Page<_i4.Book>> findTop3ByInStock(
     bool inStock,
-    _i7.Pageable pageable,
+    _i8.Pageable pageable,
   ) => this.operations.page(_findTop3ByInStock, [inStock], pageable);
 
   @override
-  _i4.Future<int> countByInStock(bool inStock) =>
+  _i5.Future<int> countByInStock(bool inStock) =>
       this.operations.countBy(_countByInStock, [inStock]);
 
   @override
-  _i4.Future<int> countByTitleContaining(String part) =>
+  _i5.Future<int> countByTitleContaining(String part) =>
       this.operations.countBy(_countByTitleContaining, [part]);
 
   @override
-  _i4.Future<bool> existsByTitle(String title) =>
+  _i5.Future<bool> existsByTitle(String title) =>
       this.operations.existsBy(_existsByTitle, [title]);
 
   @override
-  _i4.Future<int> deleteByYearLessThan(int year) =>
+  _i5.Future<int> deleteByYearLessThan(int year) =>
       this.operations.deleteBy(_deleteByYearLessThan, [year]);
 
   @override
-  _i4.Future<void> removeByTitle(String title) =>
+  _i5.Future<void> removeByTitle(String title) =>
       this.operations.deleteBy(_removeByTitle, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> deleteByInStock(bool inStock) =>
+  _i5.Future<List<_i4.Book>> deleteByInStock(bool inStock) =>
       this.operations.deleteByReturning(_deleteByInStock, [inStock]);
 
   @override
-  _i4.Future<int> deleteByTitleIn(List<String> titles) =>
+  _i5.Future<int> deleteByTitleIn(List<String> titles) =>
       this.operations.deleteBy(_deleteByTitleIn, [titles]);
 }
 
 /// Implements `MemoryBooks`: `SimpleRepository` has the CRUD methods.
-class _$MemoryBooksImpl extends _i2.SimpleRepository<_i3.Book, int>
-    implements _i3.MemoryBooks {
+class _$MemoryBooksImpl extends _i3.SimpleRepository<_i4.Book, int>
+    implements _i4.MemoryBooks {
   _$MemoryBooksImpl(super.operations);
 
-  static const _findByTitle = _i2.PartTree(r'findByTitle', [
-    _i2.OrPart([_i2.Part(r'title')]),
+  static const _findByTitle = _i3.PartTree(r'findByTitle', [
+    _i3.OrPart([_i3.Part(r'title')]),
   ]);
 
-  static const _findByTitleIgnoreCase = _i2.PartTree(r'findByTitleIgnoreCase', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.simpleProperty, true)]),
+  static const _findByTitleIgnoreCase = _i3.PartTree(r'findByTitleIgnoreCase', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.simpleProperty, true)]),
   ]);
 
-  static const _findOneByTitle = _i2.PartTree(r'findOneByTitle', [
-    _i2.OrPart([_i2.Part(r'title')]),
+  static const _findOneByTitle = _i3.PartTree(r'findOneByTitle', [
+    _i3.OrPart([_i3.Part(r'title')]),
   ]);
 
-  static const _getByTitle = _i2.PartTree(r'getByTitle', [
-    _i2.OrPart([_i2.Part(r'title')]),
+  static const _getByTitle = _i3.PartTree(r'getByTitle', [
+    _i3.OrPart([_i3.Part(r'title')]),
   ]);
 
-  static const _findByTitleAndYear = _i2.PartTree(r'findByTitleAndYear', [
-    _i2.OrPart([_i2.Part(r'title'), _i2.Part(r'year')]),
+  static const _findByTitleAndYear = _i3.PartTree(r'findByTitleAndYear', [
+    _i3.OrPart([_i3.Part(r'title'), _i3.Part(r'year')]),
   ]);
 
-  static const _findByTitleOrYear = _i2.PartTree(r'findByTitleOrYear', [
-    _i2.OrPart([_i2.Part(r'title')]),
-    _i2.OrPart([_i2.Part(r'year')]),
+  static const _findByTitleOrYear = _i3.PartTree(r'findByTitleOrYear', [
+    _i3.OrPart([_i3.Part(r'title')]),
+    _i3.OrPart([_i3.Part(r'year')]),
   ]);
 
-  static const _findByYearNot = _i2.PartTree(r'findByYearNot', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.negatingSimpleProperty)]),
+  static const _findByYearNot = _i3.PartTree(r'findByYearNot', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.negatingSimpleProperty)]),
   ]);
 
-  static const _findByTitleNot = _i2.PartTree(r'findByTitleNot', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.negatingSimpleProperty)]),
+  static const _findByTitleNot = _i3.PartTree(r'findByTitleNot', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.negatingSimpleProperty)]),
   ]);
 
-  static const _findByTitleNotIgnoreCase = _i2.PartTree(
+  static const _findByTitleNotIgnoreCase = _i3.PartTree(
     r'findByTitleNotIgnoreCase',
     [
-      _i2.OrPart([
-        _i2.Part(r'title', _i2.PartType.negatingSimpleProperty, true),
+      _i3.OrPart([
+        _i3.Part(r'title', _i3.PartType.negatingSimpleProperty, true),
       ]),
     ],
   );
 
-  static const _findByYearBetween = _i2.PartTree(r'findByYearBetween', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.between)]),
+  static const _findByYearBetween = _i3.PartTree(r'findByYearBetween', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.between)]),
   ]);
 
-  static const _findByYearGreaterThan = _i2.PartTree(r'findByYearGreaterThan', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.greaterThan)]),
+  static const _findByYearGreaterThan = _i3.PartTree(r'findByYearGreaterThan', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.greaterThan)]),
   ]);
 
-  static const _findByYearGreaterThanEqual = _i2.PartTree(
+  static const _findByYearGreaterThanEqual = _i3.PartTree(
     r'findByYearGreaterThanEqual',
     [
-      _i2.OrPart([_i2.Part(r'year', _i2.PartType.greaterThanEqual)]),
+      _i3.OrPart([_i3.Part(r'year', _i3.PartType.greaterThanEqual)]),
     ],
   );
 
-  static const _findByYearLessThan = _i2.PartTree(r'findByYearLessThan', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.lessThan)]),
+  static const _findByYearLessThan = _i3.PartTree(r'findByYearLessThan', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.lessThan)]),
   ]);
 
-  static const _findByYearLessThanEqual = _i2.PartTree(
+  static const _findByYearLessThanEqual = _i3.PartTree(
     r'findByYearLessThanEqual',
     [
-      _i2.OrPart([_i2.Part(r'year', _i2.PartType.lessThanEqual)]),
+      _i3.OrPart([_i3.Part(r'year', _i3.PartType.lessThanEqual)]),
     ],
   );
 
-  static const _findByYearIn = _i2.PartTree(r'findByYearIn', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.in_)]),
+  static const _findByYearIn = _i3.PartTree(r'findByYearIn', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.in_)]),
   ]);
 
-  static const _findByYearNotIn = _i2.PartTree(r'findByYearNotIn', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.notIn)]),
+  static const _findByYearNotIn = _i3.PartTree(r'findByYearNotIn', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.notIn)]),
   ]);
 
-  static const _findByTitleIn = _i2.PartTree(r'findByTitleIn', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.in_)]),
+  static const _findByTitleIn = _i3.PartTree(r'findByTitleIn', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.in_)]),
   ]);
 
-  static const _findByTitleInIgnoreCase = _i2.PartTree(
+  static const _findByTitleInIgnoreCase = _i3.PartTree(
     r'findByTitleInIgnoreCase',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.in_, true)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.in_, true)]),
     ],
   );
 
-  static const _findBySubtitleIn = _i2.PartTree(r'findBySubtitleIn', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.in_)]),
+  static const _findBySubtitleIn = _i3.PartTree(r'findBySubtitleIn', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.in_)]),
   ]);
 
-  static const _findBySubtitleNotIn = _i2.PartTree(r'findBySubtitleNotIn', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.notIn)]),
+  static const _findBySubtitleNotIn = _i3.PartTree(r'findBySubtitleNotIn', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.notIn)]),
   ]);
 
-  static const _findByTitleStartingWith = _i2.PartTree(
+  static const _findByTitleStartingWith = _i3.PartTree(
     r'findByTitleStartingWith',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.startingWith)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.startingWith)]),
     ],
   );
 
-  static const _findByTitleEndingWith = _i2.PartTree(r'findByTitleEndingWith', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.endingWith)]),
+  static const _findByTitleEndingWith = _i3.PartTree(r'findByTitleEndingWith', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.endingWith)]),
   ]);
 
-  static const _findByTitleContaining = _i2.PartTree(r'findByTitleContaining', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.containing)]),
+  static const _findByTitleContaining = _i3.PartTree(r'findByTitleContaining', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.containing)]),
   ]);
 
-  static const _findByTitleNotContaining = _i2.PartTree(
+  static const _findByTitleNotContaining = _i3.PartTree(
     r'findByTitleNotContaining',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.notContaining)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.notContaining)]),
     ],
   );
 
-  static const _findByTitleLike = _i2.PartTree(r'findByTitleLike', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.like)]),
+  static const _findByTitleLike = _i3.PartTree(r'findByTitleLike', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.like)]),
   ]);
 
-  static const _findByTitleNotLike = _i2.PartTree(r'findByTitleNotLike', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.notLike)]),
+  static const _findByTitleNotLike = _i3.PartTree(r'findByTitleNotLike', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.notLike)]),
   ]);
 
-  static const _findByTitleLikeIgnoreCase = _i2.PartTree(
+  static const _findByTitleLikeIgnoreCase = _i3.PartTree(
     r'findByTitleLikeIgnoreCase',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.like, true)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.like, true)]),
     ],
   );
 
-  static const _findByTitleContainingIgnoreCase = _i2.PartTree(
+  static const _findByTitleContainingIgnoreCase = _i3.PartTree(
     r'findByTitleContainingIgnoreCase',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.containing, true)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.containing, true)]),
     ],
   );
 
-  static const _findByTitleStartingWithIgnoreCase = _i2.PartTree(
+  static const _findByTitleStartingWithIgnoreCase = _i3.PartTree(
     r'findByTitleStartingWithIgnoreCase',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.startingWith, true)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.startingWith, true)]),
     ],
   );
 
-  static const _findByTitleEndingWithIgnoreCase = _i2.PartTree(
+  static const _findByTitleEndingWithIgnoreCase = _i3.PartTree(
     r'findByTitleEndingWithIgnoreCase',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.endingWith, true)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.endingWith, true)]),
     ],
   );
 
-  static const _findBySubtitleIsNull = _i2.PartTree(r'findBySubtitleIsNull', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.isNull)]),
+  static const _findBySubtitleIsNull = _i3.PartTree(r'findBySubtitleIsNull', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.isNull)]),
   ]);
 
-  static const _findBySubtitleIsNotNull = _i2.PartTree(
+  static const _findBySubtitleIsNotNull = _i3.PartTree(
     r'findBySubtitleIsNotNull',
     [
-      _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.isNotNull)]),
+      _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.isNotNull)]),
     ],
   );
 
-  static const _findBySubtitle = _i2.PartTree(r'findBySubtitle', [
-    _i2.OrPart([_i2.Part(r'subtitle')]),
+  static const _findBySubtitle = _i3.PartTree(r'findBySubtitle', [
+    _i3.OrPart([_i3.Part(r'subtitle')]),
   ]);
 
-  static const _findBySubtitleNot = _i2.PartTree(r'findBySubtitleNot', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.negatingSimpleProperty)]),
+  static const _findBySubtitleNot = _i3.PartTree(r'findBySubtitleNot', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.negatingSimpleProperty)]),
   ]);
 
-  static const _findBySubtitleLessThan = _i2.PartTree(
+  static const _findBySubtitleLessThan = _i3.PartTree(
     r'findBySubtitleLessThan',
     [
-      _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.lessThan)]),
+      _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.lessThan)]),
     ],
   );
 
-  static const _findBySubtitleBetween = _i2.PartTree(r'findBySubtitleBetween', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.between)]),
+  static const _findBySubtitleBetween = _i3.PartTree(r'findBySubtitleBetween', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.between)]),
   ]);
 
-  static const _findBySubtitleLike = _i2.PartTree(r'findBySubtitleLike', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.like)]),
+  static const _findBySubtitleLike = _i3.PartTree(r'findBySubtitleLike', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.like)]),
   ]);
 
-  static const _findByInStockTrue = _i2.PartTree(r'findByInStockTrue', [
-    _i2.OrPart([_i2.Part(r'inStock', _i2.PartType.isTrue)]),
+  static const _findByInStockTrue = _i3.PartTree(r'findByInStockTrue', [
+    _i3.OrPart([_i3.Part(r'inStock', _i3.PartType.isTrue)]),
   ]);
 
-  static const _findByInStockFalse = _i2.PartTree(r'findByInStockFalse', [
-    _i2.OrPart([_i2.Part(r'inStock', _i2.PartType.isFalse)]),
+  static const _findByInStockFalse = _i3.PartTree(r'findByInStockFalse', [
+    _i3.OrPart([_i3.Part(r'inStock', _i3.PartType.isFalse)]),
   ]);
 
-  static const _findByInStock = _i2.PartTree(r'findByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
+  static const _findByInStock = _i3.PartTree(r'findByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
   ]);
 
-  static const _findByAuthor = _i2.PartTree(r'findByAuthor', [
-    _i2.OrPart([_i2.Part(r'author')]),
+  static const _findByAuthor = _i3.PartTree(r'findByAuthor', [
+    _i3.OrPart([_i3.Part(r'author')]),
   ]);
 
-  static const _findByAuthorIn = _i2.PartTree(r'findByAuthorIn', [
-    _i2.OrPart([_i2.Part(r'author', _i2.PartType.in_)]),
+  static const _findByAuthorIn = _i3.PartTree(r'findByAuthorIn', [
+    _i3.OrPart([_i3.Part(r'author', _i3.PartType.in_)]),
   ]);
 
-  static const _findByAuthorIsNull = _i2.PartTree(r'findByAuthorIsNull', [
-    _i2.OrPart([_i2.Part(r'author', _i2.PartType.isNull)]),
+  static const _findByAuthorIsNull = _i3.PartTree(r'findByAuthorIsNull', [
+    _i3.OrPart([_i3.Part(r'author', _i3.PartType.isNull)]),
   ]);
 
-  static const _findByGenre = _i2.PartTree(r'findByGenre', [
-    _i2.OrPart([_i2.Part(r'genre')]),
+  static const _findByGenre = _i3.PartTree(r'findByGenre', [
+    _i3.OrPart([_i3.Part(r'genre')]),
   ]);
 
-  static const _findByGenreIn = _i2.PartTree(r'findByGenreIn', [
-    _i2.OrPart([_i2.Part(r'genre', _i2.PartType.in_)]),
+  static const _findByGenreIn = _i3.PartTree(r'findByGenreIn', [
+    _i3.OrPart([_i3.Part(r'genre', _i3.PartType.in_)]),
   ]);
 
-  static const _findByRatingBetween = _i2.PartTree(r'findByRatingBetween', [
-    _i2.OrPart([_i2.Part(r'rating', _i2.PartType.between)]),
+  static const _findByRatingBetween = _i3.PartTree(r'findByRatingBetween', [
+    _i3.OrPart([_i3.Part(r'rating', _i3.PartType.between)]),
   ]);
 
-  static const _findByRatingGreaterThan = _i2.PartTree(
+  static const _findByRatingGreaterThan = _i3.PartTree(
     r'findByRatingGreaterThan',
     [
-      _i2.OrPart([_i2.Part(r'rating', _i2.PartType.greaterThan)]),
+      _i3.OrPart([_i3.Part(r'rating', _i3.PartType.greaterThan)]),
     ],
   );
 
-  static const _findByReleasedAfter = _i2.PartTree(r'findByReleasedAfter', [
-    _i2.OrPart([_i2.Part(r'released', _i2.PartType.greaterThan)]),
+  static const _findByReleasedAfter = _i3.PartTree(r'findByReleasedAfter', [
+    _i3.OrPart([_i3.Part(r'released', _i3.PartType.greaterThan)]),
   ]);
 
-  static const _findByReleased = _i2.PartTree(r'findByReleased', [
-    _i2.OrPart([_i2.Part(r'released')]),
+  static const _findByReleased = _i3.PartTree(r'findByReleased', [
+    _i3.OrPart([_i3.Part(r'released')]),
   ]);
 
-  static const _findByInStockOrderByYearDescTitleAsc = _i2.PartTree(
+  static const _findByInStockOrderByYearDescTitleAsc = _i3.PartTree(
     r'findByInStockOrderByYearDescTitleAsc',
     [
-      _i2.OrPart([_i2.Part(r'inStock')]),
+      _i3.OrPart([_i3.Part(r'inStock')]),
     ],
-    sort: _i2.Sort([_i2.SortOrder.desc(r'year'), _i2.SortOrder.asc(r'title')]),
+    sort: _i3.Sort([_i3.SortOrder.desc(r'year'), _i3.SortOrder.asc(r'title')]),
   );
 
-  static const _findByInStockOrderBySubtitleAscIdAsc = _i2.PartTree(
+  static const _findByInStockOrderBySubtitleAscIdAsc = _i3.PartTree(
     r'findByInStockOrderBySubtitleAscIdAsc',
     [
-      _i2.OrPart([_i2.Part(r'inStock')]),
+      _i3.OrPart([_i3.Part(r'inStock')]),
     ],
-    sort: _i2.Sort([_i2.SortOrder.asc(r'subtitle'), _i2.SortOrder.asc(r'id')]),
+    sort: _i3.Sort([_i3.SortOrder.asc(r'subtitle'), _i3.SortOrder.asc(r'id')]),
   );
 
-  static const _findByInStockOrderBySubtitleDescIdAsc = _i2.PartTree(
+  static const _findByInStockOrderBySubtitleDescIdAsc = _i3.PartTree(
     r'findByInStockOrderBySubtitleDescIdAsc',
     [
-      _i2.OrPart([_i2.Part(r'inStock')]),
+      _i3.OrPart([_i3.Part(r'inStock')]),
     ],
-    sort: _i2.Sort([_i2.SortOrder.desc(r'subtitle'), _i2.SortOrder.asc(r'id')]),
+    sort: _i3.Sort([_i3.SortOrder.desc(r'subtitle'), _i3.SortOrder.asc(r'id')]),
   );
 
-  static const _findByYear = _i2.PartTree(r'findByYear', [
-    _i2.OrPart([_i2.Part(r'year')]),
+  static const _findByYear = _i3.PartTree(r'findByYear', [
+    _i3.OrPart([_i3.Part(r'year')]),
   ]);
 
-  static const _findByYearLessThanOrderByYear = _i2.PartTree(
+  static const _findByYearLessThanOrderByYear = _i3.PartTree(
     r'findByYearLessThanOrderByYear',
     [
-      _i2.OrPart([_i2.Part(r'year', _i2.PartType.lessThan)]),
+      _i3.OrPart([_i3.Part(r'year', _i3.PartType.lessThan)]),
     ],
-    sort: _i2.Sort([_i2.SortOrder.asc(r'year')]),
+    sort: _i3.Sort([_i3.SortOrder.asc(r'year')]),
   );
 
-  static const _findDistinctByInStock = _i2.PartTree(r'findDistinctByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.find, distinct: true));
+  static const _findDistinctByInStock = _i3.PartTree(r'findDistinctByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.find, distinct: true));
 
-  static const _streamByInStock = _i2.PartTree(r'streamByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
+  static const _streamByInStock = _i3.PartTree(r'streamByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
   ]);
 
-  static const _findByYearAfter = _i2.PartTree(r'findByYearAfter', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.greaterThan)]),
+  static const _findByYearAfter = _i3.PartTree(r'findByYearAfter', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.greaterThan)]),
   ]);
 
-  static const _findByInStockIsTrue = _i2.PartTree(r'findByInStockIsTrue', [
-    _i2.OrPart([_i2.Part(r'inStock', _i2.PartType.isTrue)]),
+  static const _findByInStockIsTrue = _i3.PartTree(r'findByInStockIsTrue', [
+    _i3.OrPart([_i3.Part(r'inStock', _i3.PartType.isTrue)]),
   ]);
 
-  static const _findByInStockEquals = _i2.PartTree(r'findByInStockEquals', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
+  static const _findByInStockEquals = _i3.PartTree(r'findByInStockEquals', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
   ]);
 
-  static const _findFirstByOrderByYearAsc = _i2.PartTree(
+  static const _findFirstByOrderByYearAsc = _i3.PartTree(
     r'findFirstByOrderByYearAsc',
     [],
-    subject: _i2.Subject(_i2.SubjectKind.find, maxResults: 1),
-    sort: _i2.Sort([_i2.SortOrder.asc(r'year')]),
+    subject: _i3.Subject(_i3.SubjectKind.find, maxResults: 1),
+    sort: _i3.Sort([_i3.SortOrder.asc(r'year')]),
   );
 
-  static const _findTop2ByOrderByYearDesc = _i2.PartTree(
+  static const _findTop2ByOrderByYearDesc = _i3.PartTree(
     r'findTop2ByOrderByYearDesc',
     [],
-    subject: _i2.Subject(_i2.SubjectKind.find, maxResults: 2),
-    sort: _i2.Sort([_i2.SortOrder.desc(r'year')]),
+    subject: _i3.Subject(_i3.SubjectKind.find, maxResults: 2),
+    sort: _i3.Sort([_i3.SortOrder.desc(r'year')]),
   );
 
-  static const _findTop3ByInStock = _i2.PartTree(r'findTop3ByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.find, maxResults: 3));
+  static const _findTop3ByInStock = _i3.PartTree(r'findTop3ByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.find, maxResults: 3));
 
-  static const _countByInStock = _i2.PartTree(r'countByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.count));
+  static const _countByInStock = _i3.PartTree(r'countByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.count));
 
-  static const _countByTitleContaining = _i2.PartTree(
+  static const _countByTitleContaining = _i3.PartTree(
     r'countByTitleContaining',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.containing)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.containing)]),
     ],
-    subject: _i2.Subject(_i2.SubjectKind.count),
+    subject: _i3.Subject(_i3.SubjectKind.count),
   );
 
-  static const _existsByTitle = _i2.PartTree(r'existsByTitle', [
-    _i2.OrPart([_i2.Part(r'title')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.exists));
+  static const _existsByTitle = _i3.PartTree(r'existsByTitle', [
+    _i3.OrPart([_i3.Part(r'title')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.exists));
 
-  static const _deleteByYearLessThan = _i2.PartTree(r'deleteByYearLessThan', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.lessThan)]),
-  ], subject: _i2.Subject(_i2.SubjectKind.delete));
+  static const _deleteByYearLessThan = _i3.PartTree(r'deleteByYearLessThan', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.lessThan)]),
+  ], subject: _i3.Subject(_i3.SubjectKind.delete));
 
-  static const _removeByTitle = _i2.PartTree(r'removeByTitle', [
-    _i2.OrPart([_i2.Part(r'title')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.delete));
+  static const _removeByTitle = _i3.PartTree(r'removeByTitle', [
+    _i3.OrPart([_i3.Part(r'title')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.delete));
 
-  static const _deleteByInStock = _i2.PartTree(r'deleteByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.delete));
+  static const _deleteByInStock = _i3.PartTree(r'deleteByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.delete));
 
-  static const _deleteByTitleIn = _i2.PartTree(r'deleteByTitleIn', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.in_)]),
-  ], subject: _i2.Subject(_i2.SubjectKind.delete));
+  static const _deleteByTitleIn = _i3.PartTree(r'deleteByTitleIn', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.in_)]),
+  ], subject: _i3.Subject(_i3.SubjectKind.delete));
 
   static _$MemoryBooksImpl $create(_i1.DependencyResolver r) =>
       _$MemoryBooksImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Book, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Book, int>(
           r'MemoryBooks',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitle(String title) =>
+  _i5.Future<List<_i4.Book>> findByTitle(String title) =>
       this.operations.list(_findByTitle, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleIgnoreCase(String title) =>
+  _i5.Future<List<_i4.Book>> findByTitleIgnoreCase(String title) =>
       this.operations.list(_findByTitleIgnoreCase, [title]);
 
   @override
-  _i4.Future<_i3.Book?> findOneByTitle(String title) =>
+  _i5.Future<_i4.Book?> findOneByTitle(String title) =>
       this.operations.one(_findOneByTitle, [title]);
 
   @override
-  _i4.Future<_i3.Book> getByTitle(String title) =>
+  _i5.Future<_i4.Book> getByTitle(String title) =>
       this.operations.single(_getByTitle, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleAndYear(String title, int year) =>
+  _i5.Future<List<_i4.Book>> findByTitleAndYear(String title, int year) =>
       this.operations.list(_findByTitleAndYear, [title, year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleOrYear(String title, int year) =>
+  _i5.Future<List<_i4.Book>> findByTitleOrYear(String title, int year) =>
       this.operations.list(_findByTitleOrYear, [title, year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearNot(int year) =>
+  _i5.Future<List<_i4.Book>> findByYearNot(int year) =>
       this.operations.list(_findByYearNot, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleNot(String title) =>
+  _i5.Future<List<_i4.Book>> findByTitleNot(String title) =>
       this.operations.list(_findByTitleNot, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleNotIgnoreCase(String title) =>
+  _i5.Future<List<_i4.Book>> findByTitleNotIgnoreCase(String title) =>
       this.operations.list(_findByTitleNotIgnoreCase, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearBetween(int from, int to) =>
+  _i5.Future<List<_i4.Book>> findByYearBetween(int from, int to) =>
       this.operations.list(_findByYearBetween, [from, to]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearGreaterThan(int year) =>
+  _i5.Future<List<_i4.Book>> findByYearGreaterThan(int year) =>
       this.operations.list(_findByYearGreaterThan, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearGreaterThanEqual(int year) =>
+  _i5.Future<List<_i4.Book>> findByYearGreaterThanEqual(int year) =>
       this.operations.list(_findByYearGreaterThanEqual, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearLessThan(int year) =>
+  _i5.Future<List<_i4.Book>> findByYearLessThan(int year) =>
       this.operations.list(_findByYearLessThan, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearLessThanEqual(int year) =>
+  _i5.Future<List<_i4.Book>> findByYearLessThanEqual(int year) =>
       this.operations.list(_findByYearLessThanEqual, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearIn(List<int> years) =>
+  _i5.Future<List<_i4.Book>> findByYearIn(List<int> years) =>
       this.operations.list(_findByYearIn, [years]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearNotIn(Set<int> years) =>
+  _i5.Future<List<_i4.Book>> findByYearNotIn(Set<int> years) =>
       this.operations.list(_findByYearNotIn, [years]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleIn(List<String> titles) =>
+  _i5.Future<List<_i4.Book>> findByTitleIn(List<String> titles) =>
       this.operations.list(_findByTitleIn, [titles]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleInIgnoreCase(List<String> titles) =>
+  _i5.Future<List<_i4.Book>> findByTitleInIgnoreCase(List<String> titles) =>
       this.operations.list(_findByTitleInIgnoreCase, [titles]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleIn(List<String?> subtitles) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleIn(List<String?> subtitles) =>
       this.operations.list(_findBySubtitleIn, [subtitles]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleNotIn(List<String?> subtitles) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleNotIn(List<String?> subtitles) =>
       this.operations.list(_findBySubtitleNotIn, [subtitles]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleStartingWith(String prefix) =>
+  _i5.Future<List<_i4.Book>> findByTitleStartingWith(String prefix) =>
       this.operations.list(_findByTitleStartingWith, [prefix]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleEndingWith(String suffix) =>
+  _i5.Future<List<_i4.Book>> findByTitleEndingWith(String suffix) =>
       this.operations.list(_findByTitleEndingWith, [suffix]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleContaining(String part) =>
+  _i5.Future<List<_i4.Book>> findByTitleContaining(String part) =>
       this.operations.list(_findByTitleContaining, [part]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleNotContaining(String part) =>
+  _i5.Future<List<_i4.Book>> findByTitleNotContaining(String part) =>
       this.operations.list(_findByTitleNotContaining, [part]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleLike(String pattern) =>
+  _i5.Future<List<_i4.Book>> findByTitleLike(String pattern) =>
       this.operations.list(_findByTitleLike, [pattern]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleNotLike(String pattern) =>
+  _i5.Future<List<_i4.Book>> findByTitleNotLike(String pattern) =>
       this.operations.list(_findByTitleNotLike, [pattern]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleLikeIgnoreCase(String pattern) =>
+  _i5.Future<List<_i4.Book>> findByTitleLikeIgnoreCase(String pattern) =>
       this.operations.list(_findByTitleLikeIgnoreCase, [pattern]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleContainingIgnoreCase(String part) =>
+  _i5.Future<List<_i4.Book>> findByTitleContainingIgnoreCase(String part) =>
       this.operations.list(_findByTitleContainingIgnoreCase, [part]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleStartingWithIgnoreCase(String prefix) =>
+  _i5.Future<List<_i4.Book>> findByTitleStartingWithIgnoreCase(String prefix) =>
       this.operations.list(_findByTitleStartingWithIgnoreCase, [prefix]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleEndingWithIgnoreCase(String suffix) =>
+  _i5.Future<List<_i4.Book>> findByTitleEndingWithIgnoreCase(String suffix) =>
       this.operations.list(_findByTitleEndingWithIgnoreCase, [suffix]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleIsNull() =>
+  _i5.Future<List<_i4.Book>> findBySubtitleIsNull() =>
       this.operations.list(_findBySubtitleIsNull, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleIsNotNull() =>
+  _i5.Future<List<_i4.Book>> findBySubtitleIsNotNull() =>
       this.operations.list(_findBySubtitleIsNotNull, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitle(String? subtitle) =>
+  _i5.Future<List<_i4.Book>> findBySubtitle(String? subtitle) =>
       this.operations.list(_findBySubtitle, [subtitle]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleNot(String? subtitle) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleNot(String? subtitle) =>
       this.operations.list(_findBySubtitleNot, [subtitle]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleLessThan(String? subtitle) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleLessThan(String? subtitle) =>
       this.operations.list(_findBySubtitleLessThan, [subtitle]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleBetween(String? from, String? to) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleBetween(String? from, String? to) =>
       this.operations.list(_findBySubtitleBetween, [from, to]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleLike(String? pattern) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleLike(String? pattern) =>
       this.operations.list(_findBySubtitleLike, [pattern]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockTrue() =>
+  _i5.Future<List<_i4.Book>> findByInStockTrue() =>
       this.operations.list(_findByInStockTrue, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockFalse() =>
+  _i5.Future<List<_i4.Book>> findByInStockFalse() =>
       this.operations.list(_findByInStockFalse, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStock(bool inStock, _i5.Sort sort) =>
+  _i5.Future<List<_i4.Book>> findByInStock(bool inStock, _i6.Sort sort) =>
       this.operations.list(_findByInStock, [inStock], sort: sort);
 
   @override
-  _i4.Future<List<_i3.Book>> findByAuthor(
-    _i6.AggregateReference<_i3.Author, int> author,
+  _i5.Future<List<_i4.Book>> findByAuthor(
+    _i7.AggregateReference<_i4.Author, int> author,
   ) => this.operations.list(_findByAuthor, [author]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByAuthorIn(
-    List<_i6.AggregateReference<_i3.Author, int>> authors,
+  _i5.Future<List<_i4.Book>> findByAuthorIn(
+    List<_i7.AggregateReference<_i4.Author, int>> authors,
   ) => this.operations.list(_findByAuthorIn, [authors]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByAuthorIsNull() =>
+  _i5.Future<List<_i4.Book>> findByAuthorIsNull() =>
       this.operations.list(_findByAuthorIsNull, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findByGenre(_i3.Genre genre) =>
+  _i5.Future<List<_i4.Book>> findByGenre(_i4.Genre genre) =>
       this.operations.list(_findByGenre, [genre]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByGenreIn(List<_i3.Genre> genres) =>
+  _i5.Future<List<_i4.Book>> findByGenreIn(List<_i4.Genre> genres) =>
       this.operations.list(_findByGenreIn, [genres]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByRatingBetween(double low, double high) =>
+  _i5.Future<List<_i4.Book>> findByRatingBetween(double low, double high) =>
       this.operations.list(_findByRatingBetween, [low, high]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByRatingGreaterThan(double rating) =>
+  _i5.Future<List<_i4.Book>> findByRatingGreaterThan(double rating) =>
       this.operations.list(_findByRatingGreaterThan, [rating]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByReleasedAfter(DateTime moment) =>
+  _i5.Future<List<_i4.Book>> findByReleasedAfter(DateTime moment) =>
       this.operations.list(_findByReleasedAfter, [moment]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByReleased(DateTime? moment) =>
+  _i5.Future<List<_i4.Book>> findByReleased(DateTime? moment) =>
       this.operations.list(_findByReleased, [moment]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockOrderByYearDescTitleAsc(
+  _i5.Future<List<_i4.Book>> findByInStockOrderByYearDescTitleAsc(
     bool inStock,
   ) => this.operations.list(_findByInStockOrderByYearDescTitleAsc, [inStock]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockOrderBySubtitleAscIdAsc(
+  _i5.Future<List<_i4.Book>> findByInStockOrderBySubtitleAscIdAsc(
     bool inStock,
   ) => this.operations.list(_findByInStockOrderBySubtitleAscIdAsc, [inStock]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockOrderBySubtitleDescIdAsc(
+  _i5.Future<List<_i4.Book>> findByInStockOrderBySubtitleDescIdAsc(
     bool inStock,
   ) => this.operations.list(_findByInStockOrderBySubtitleDescIdAsc, [inStock]);
 
   @override
-  _i4.Future<Set<_i3.Book>> findByYear(int year) =>
+  _i5.Future<Set<_i4.Book>> findByYear(int year) =>
       this.operations.set(_findByYear, [year]);
 
   @override
-  _i4.Future<Iterable<_i3.Book>> findByYearLessThanOrderByYear(int year) =>
+  _i5.Future<Iterable<_i4.Book>> findByYearLessThanOrderByYear(int year) =>
       this.operations.list(_findByYearLessThanOrderByYear, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findDistinctByInStock(bool inStock) =>
+  _i5.Future<List<_i4.Book>> findDistinctByInStock(bool inStock) =>
       this.operations.list(_findDistinctByInStock, [inStock]);
 
   @override
-  _i4.Stream<_i3.Book> streamByInStock(bool inStock) =>
+  _i5.Stream<_i4.Book> streamByInStock(bool inStock) =>
       this.operations.stream(_streamByInStock, [inStock]);
 
   @override
-  _i4.Future<_i7.Page<_i3.Book>> findByYearAfter(
+  _i5.Future<_i8.Page<_i4.Book>> findByYearAfter(
     int year,
-    _i7.Pageable pageable,
+    _i8.Pageable pageable,
   ) => this.operations.page(_findByYearAfter, [year], pageable);
 
   @override
-  _i4.Future<_i7.Slice<_i3.Book>> findByInStockIsTrue(_i7.Pageable pageable) =>
+  _i5.Future<_i8.Slice<_i4.Book>> findByInStockIsTrue(_i8.Pageable pageable) =>
       this.operations.slice(_findByInStockIsTrue, const [], pageable);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockEquals(
+  _i5.Future<List<_i4.Book>> findByInStockEquals(
     bool inStock,
-    _i7.Pageable pageable,
+    _i8.Pageable pageable,
   ) =>
       this.operations.list(_findByInStockEquals, [inStock], pageable: pageable);
 
   @override
-  _i4.Future<_i3.Book?> findFirstByOrderByYearAsc() =>
+  _i5.Future<_i4.Book?> findFirstByOrderByYearAsc() =>
       this.operations.one(_findFirstByOrderByYearAsc, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findTop2ByOrderByYearDesc() =>
+  _i5.Future<List<_i4.Book>> findTop2ByOrderByYearDesc() =>
       this.operations.list(_findTop2ByOrderByYearDesc, const []);
 
   @override
-  _i4.Future<_i7.Page<_i3.Book>> findTop3ByInStock(
+  _i5.Future<_i8.Page<_i4.Book>> findTop3ByInStock(
     bool inStock,
-    _i7.Pageable pageable,
+    _i8.Pageable pageable,
   ) => this.operations.page(_findTop3ByInStock, [inStock], pageable);
 
   @override
-  _i4.Future<int> countByInStock(bool inStock) =>
+  _i5.Future<int> countByInStock(bool inStock) =>
       this.operations.countBy(_countByInStock, [inStock]);
 
   @override
-  _i4.Future<int> countByTitleContaining(String part) =>
+  _i5.Future<int> countByTitleContaining(String part) =>
       this.operations.countBy(_countByTitleContaining, [part]);
 
   @override
-  _i4.Future<bool> existsByTitle(String title) =>
+  _i5.Future<bool> existsByTitle(String title) =>
       this.operations.existsBy(_existsByTitle, [title]);
 
   @override
-  _i4.Future<int> deleteByYearLessThan(int year) =>
+  _i5.Future<int> deleteByYearLessThan(int year) =>
       this.operations.deleteBy(_deleteByYearLessThan, [year]);
 
   @override
-  _i4.Future<void> removeByTitle(String title) =>
+  _i5.Future<void> removeByTitle(String title) =>
       this.operations.deleteBy(_removeByTitle, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> deleteByInStock(bool inStock) =>
+  _i5.Future<List<_i4.Book>> deleteByInStock(bool inStock) =>
       this.operations.deleteByReturning(_deleteByInStock, [inStock]);
 
   @override
-  _i4.Future<int> deleteByTitleIn(List<String> titles) =>
+  _i5.Future<int> deleteByTitleIn(List<String> titles) =>
       this.operations.deleteBy(_deleteByTitleIn, [titles]);
 }
 
 /// Implements `SqlBooks`: `SimpleRepository` has the CRUD methods.
-class _$SqlBooksImpl extends _i2.SimpleRepository<_i3.Book, int>
-    implements _i3.SqlBooks {
+class _$SqlBooksImpl extends _i3.SimpleRepository<_i4.Book, int>
+    implements _i4.SqlBooks {
   _$SqlBooksImpl(super.operations);
 
-  static const _byYear = _i2.QueryMethod(
+  static const _byYear = _i3.QueryMethod(
     r'byYear',
-    _i6.Query(r'select * from books where year = :year order by id'),
+    _i7.Query(r'select * from books where year = :year order by id'),
     parameters: [r'year'],
-    element: _i1.ClassType<_i3.Book>(),
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _aroundYear = _i2.QueryMethod(
+  static const _aroundYear = _i3.QueryMethod(
     r'aroundYear',
-    _i6.Query(r'select * from books where year = :year or year = :year + 1'),
+    _i7.Query(r'select * from books where year = :year or year = :year + 1'),
     parameters: [r'year'],
-    element: _i1.ClassType<_i3.Book>(),
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _byIds = _i2.QueryMethod(
+  static const _byIds = _i3.QueryMethod(
     r'byIds',
-    _i6.Query(r'select * from books where id in (:ids) order by id'),
+    _i7.Query(r'select * from books where id in (:ids) order by id'),
     parameters: [r'ids'],
-    element: _i1.ClassType<_i3.Book>(),
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _byTitle = _i2.QueryMethod(
+  static const _byTitle = _i3.QueryMethod(
     r'byTitle',
-    _i6.Query(r'select * from books where title = :title order by id'),
+    _i7.Query(r'select * from books where title = :title order by id'),
     parameters: [r'title'],
-    element: _i1.ClassType<_i3.Book>(),
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _byTitleLike = _i2.QueryMethod(
+  static const _byTitleLike = _i3.QueryMethod(
     r'byTitleLike',
-    _i6.Query(r'select * from books where title like :pattern order by id'),
+    _i7.Query(r'select * from books where title like :pattern order by id'),
     parameters: [r'pattern'],
-    element: _i1.ClassType<_i3.Book>(),
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _byGenre = _i2.QueryMethod(
+  static const _byGenre = _i3.QueryMethod(
     r'byGenre',
-    _i6.Query(r'select * from books where genre = :genre order by id'),
+    _i7.Query(r'select * from books where genre = :genre order by id'),
     parameters: [r'genre'],
-    element: _i1.ClassType<_i3.Book>(),
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _byAuthor = _i2.QueryMethod(
+  static const _byAuthor = _i3.QueryMethod(
     r'byAuthor',
-    _i6.Query(r'select * from books where author = :author order by id'),
+    _i7.Query(r'select * from books where author = :author order by id'),
     parameters: [r'author'],
-    element: _i1.ClassType<_i3.Book>(),
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _byStock = _i2.QueryMethod(
+  static const _byStock = _i3.QueryMethod(
     r'byStock',
-    _i6.Query(r'select * from books where in_stock = :inStock order by id'),
+    _i7.Query(r'select * from books where in_stock = :inStock order by id'),
     parameters: [r'inStock'],
-    element: _i1.ClassType<_i3.Book>(),
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static final _sameTitle = _i2.QueryMethod(
+  static final _sameTitle = _i3.QueryMethod(
     r'sameTitle',
-    const _i6.Query(
+    const _i7.Query(
       r'select * from books where title = :#{#book.title} order by id',
     ),
     parameters: const [r'book'],
-    element: const _i1.ClassType<_i3.Book>(),
-    expressions: [(arguments, context) => (arguments[0] as _i3.Book).title],
+    element: const _i1.ClassType<_i4.Book>(),
+    expressions: [(arguments, context) => (arguments[0] as _i4.Book).title],
   );
 
-  static final _byFirstArgument = _i2.QueryMethod(
+  static final _byFirstArgument = _i3.QueryMethod(
     r'byFirstArgument',
-    const _i6.Query(r'select * from books where year = :#{[0]} order by id'),
+    const _i7.Query(r'select * from books where year = :#{[0]} order by id'),
     parameters: const [r'year'],
-    element: const _i1.ClassType<_i3.Book>(),
+    element: const _i1.ClassType<_i4.Book>(),
     expressions: [
       (arguments, context) => _i1.SpelOperations.listElement(arguments, 0),
     ],
   );
 
-  static final _sinceCutoff = _i2.QueryMethod(
+  static final _sinceCutoff = _i3.QueryMethod(
     r'sinceCutoff',
-    const _i6.Query(
+    const _i7.Query(
       r'select * from books where year >= :#{@years.cutoff} order by id',
     ),
-    element: const _i1.ClassType<_i3.Book>(),
+    element: const _i1.ClassType<_i4.Book>(),
     expressions: [
-      (arguments, context) => (context.bean(r'years') as _i3.Years).cutoff,
+      (arguments, context) => (context.bean(r'years') as _i4.Years).cutoff,
     ],
   );
 
-  static final _yearBefore = _i2.QueryMethod(
+  static final _yearBefore = _i3.QueryMethod(
     r'yearBefore',
-    const _i6.Query(
+    const _i7.Query(
       r'select * from books where year = :#{@years.before(#year)} order by id',
     ),
     parameters: const [r'year'],
-    element: const _i1.ClassType<_i3.Book>(),
+    element: const _i1.ClassType<_i4.Book>(),
     expressions: [
       (arguments, context) =>
-          (context.bean(r'years') as _i3.Years).before((arguments[0] as int)),
+          (context.bean(r'years') as _i4.Years).before((arguments[0] as int)),
     ],
   );
 
-  static final _afterConfiguredCutoff = _i2.QueryMethod(
+  static final _afterConfiguredCutoff = _i3.QueryMethod(
     r'afterConfiguredCutoff',
-    const _i6.Query(
+    const _i7.Query(
       r'select * from books where year > :#{@environment.getProperty("books.cutoff", "0")} order by id',
     ),
-    element: const _i1.ClassType<_i3.Book>(),
+    element: const _i1.ClassType<_i4.Book>(),
     expressions: [
       (arguments, context) =>
           context.environment!.getProperty('books.cutoff', defaultValue: '0'),
     ],
   );
 
-  static final _afterSum = _i2.QueryMethod(
+  static final _afterSum = _i3.QueryMethod(
     r'afterSum',
-    const _i6.Query(
+    const _i7.Query(
       r'select * from books where year > :#{#p0 + #a1} order by id',
     ),
     parameters: const [r'year', r'more'],
-    element: const _i1.ClassType<_i3.Book>(),
+    element: const _i1.ClassType<_i4.Book>(),
     expressions: [
       (arguments, context) => (arguments[0] as int) + (arguments[1] as int),
     ],
   );
 
-  static final _broken = _i2.QueryMethod(
+  static final _broken = _i3.QueryMethod(
     r'broken',
-    const _i6.Query(r'select * from books where title = :#{#year} order by id'),
+    const _i7.Query(r'select * from books where title = :#{#year} order by id'),
     parameters: const [r'year'],
-    element: const _i1.ClassType<_i3.Book>(),
+    element: const _i1.ClassType<_i4.Book>(),
     expressions: [(arguments, context) => (arguments[0] as int)],
   );
 
-  static const _viaEntityName = _i2.QueryMethod(
+  static const _viaEntityName = _i3.QueryMethod(
     r'viaEntityName',
-    _i6.Query(r'select * from #{#entityName} where title = :title'),
+    _i7.Query(r'select * from #{#entityName} where title = :title'),
     parameters: [r'title'],
-    element: _i1.ClassType<_i3.Book>(),
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _firstPage = _i2.QueryMethod(
+  static const _firstPage = _i3.QueryMethod(
     r'firstPage',
-    _i6.Query(r'select * from books order by id limit ${books.page-size:3}'),
-    element: _i1.ClassType<_i3.Book>(),
+    _i7.Query(r'select * from books order by id limit ${books.page-size:3}'),
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _byAuthorName = _i2.QueryMethod(
+  static const _byAuthorName = _i3.QueryMethod(
     r'byAuthorName',
-    _i6.Query(
+    _i7.Query(
       r'select b.* from {Book} b join {Author} a on a.{Author.id} = b.{Book.author} where a.{Author.name} like :name and b.{Book.inStock} = :inStock order by b.{Book.id}',
     ),
     parameters: [r'name', r'inStock'],
-    element: _i1.ClassType<_i3.Book>(),
-    entities: {r'Author': _i3.Author, r'Book': _i3.Book},
+    element: _i1.ClassType<_i4.Book>(),
+    entities: {r'Author': _i4.Author, r'Book': _i4.Book},
   );
 
-  static const _withAuthor = _i2.QueryMethod(
+  static const _withAuthor = _i3.QueryMethod(
     r'withAuthor',
-    _i6.Query(
+    _i7.Query(
       r'select b.id, b.title, a.name as author_name from books b join authors a on a.id = b.author where a.name like :name order by b.id',
     ),
     parameters: [r'name'],
-    element: _i1.ClassType<_i3.BookWithAuthor>(),
+    element: _i1.ClassType<_i4.BookWithAuthor>(),
   );
 
-  static const _missingColumn = _i2.QueryMethod(
+  static const _missingColumn = _i3.QueryMethod(
     r'missingColumn',
-    _i6.Query(r'select b.id, b.title from books b order by b.id'),
-    element: _i1.ClassType<_i3.BookWithAuthor>(),
+    _i7.Query(r'select b.id, b.title from books b order by b.id'),
+    element: _i1.ClassType<_i4.BookWithAuthor>(),
   );
 
-  static const _countAfter = _i2.QueryMethod(
+  static const _countAfter = _i3.QueryMethod(
     r'countAfter',
-    _i6.Query(r'select count(*) from books where year > :year'),
+    _i7.Query(r'select count(*) from books where year > :year'),
     parameters: [r'year'],
-    shape: _i2.QueryShape.single,
+    shape: _i3.QueryShape.single,
     element: _i1.ClassType<int>(),
   );
 
-  static const _titleOf = _i2.QueryMethod(
+  static const _titleOf = _i3.QueryMethod(
     r'titleOf',
-    _i6.Query(r'select title from books where id = :id'),
+    _i7.Query(r'select title from books where id = :id'),
     parameters: [r'id'],
-    shape: _i2.QueryShape.single,
+    shape: _i3.QueryShape.single,
     element: _i1.ClassType<String>(nullable: true),
   );
 
-  static const _requiredTitleOf = _i2.QueryMethod(
+  static const _requiredTitleOf = _i3.QueryMethod(
     r'requiredTitleOf',
-    _i6.Query(r'select title from books where id = :id'),
+    _i7.Query(r'select title from books where id = :id'),
     parameters: [r'id'],
-    shape: _i2.QueryShape.single,
+    shape: _i3.QueryShape.single,
     element: _i1.ClassType<String>(),
   );
 
-  static const _titlesAfter = _i2.QueryMethod(
+  static const _titlesAfter = _i3.QueryMethod(
     r'titlesAfter',
-    _i6.Query(r'select title from books where year > :year order by title'),
+    _i7.Query(r'select title from books where year > :year order by title'),
     parameters: [r'year'],
     element: _i1.ClassType<String>(),
   );
 
-  static const _yearsAfter = _i2.QueryMethod(
+  static const _yearsAfter = _i3.QueryMethod(
     r'yearsAfter',
-    _i6.Query(r'select year from books where year > :year order by year'),
+    _i7.Query(r'select year from books where year > :year order by year'),
     parameters: [r'year'],
-    shape: _i2.QueryShape.set,
+    shape: _i3.QueryShape.set,
     element: _i1.ClassType<int>(),
   );
 
-  static const _inStockOf = _i2.QueryMethod(
+  static const _inStockOf = _i3.QueryMethod(
     r'inStockOf',
-    _i6.Query(r'select in_stock from books where id = :id'),
+    _i7.Query(r'select in_stock from books where id = :id'),
     parameters: [r'id'],
-    shape: _i2.QueryShape.single,
+    shape: _i3.QueryShape.single,
     element: _i1.ClassType<bool>(nullable: true),
   );
 
-  static const _ratingOf = _i2.QueryMethod(
+  static const _ratingOf = _i3.QueryMethod(
     r'ratingOf',
-    _i6.Query(r'select rating from books where id = :id'),
+    _i7.Query(r'select rating from books where id = :id'),
     parameters: [r'id'],
-    shape: _i2.QueryShape.single,
+    shape: _i3.QueryShape.single,
     element: _i1.ClassType<double>(nullable: true),
   );
 
-  static const _releasedOf = _i2.QueryMethod(
+  static const _releasedOf = _i3.QueryMethod(
     r'releasedOf',
-    _i6.Query(r'select released from books where id = :id'),
+    _i7.Query(r'select released from books where id = :id'),
     parameters: [r'id'],
-    shape: _i2.QueryShape.single,
+    shape: _i3.QueryShape.single,
     element: _i1.ClassType<DateTime>(nullable: true),
   );
 
-  static const _genreOf = _i2.QueryMethod(
+  static const _genreOf = _i3.QueryMethod(
     r'genreOf',
-    _i6.Query(r'select genre from books where id = :id'),
+    _i7.Query(r'select genre from books where id = :id'),
     parameters: [r'id'],
-    shape: _i2.QueryShape.single,
-    element: _i1.EnumType<_i3.Genre>(_i3.Genre.values, nullable: true),
+    shape: _i3.QueryShape.single,
+    element: _i1.EnumType<_i4.Genre>(_i4.Genre.values, nullable: true),
   );
 
-  static const _one = _i2.QueryMethod(
+  static const _one = _i3.QueryMethod(
     r'one',
-    _i6.Query(r'select * from books where id = :id'),
+    _i7.Query(r'select * from books where id = :id'),
     parameters: [r'id'],
-    shape: _i2.QueryShape.single,
-    element: _i1.ClassType<_i3.Book>(nullable: true),
+    shape: _i3.QueryShape.single,
+    element: _i1.ClassType<_i4.Book>(nullable: true),
   );
 
-  static const _requiredOne = _i2.QueryMethod(
+  static const _requiredOne = _i3.QueryMethod(
     r'requiredOne',
-    _i6.Query(r'select * from books where id = :id'),
+    _i7.Query(r'select * from books where id = :id'),
     parameters: [r'id'],
-    shape: _i2.QueryShape.single,
-    element: _i1.ClassType<_i3.Book>(),
+    shape: _i3.QueryShape.single,
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _theOnlyOne = _i2.QueryMethod(
+  static const _theOnlyOne = _i3.QueryMethod(
     r'theOnlyOne',
-    _i6.Query(r'select * from books order by id'),
-    shape: _i2.QueryShape.single,
-    element: _i1.ClassType<_i3.Book>(nullable: true),
+    _i7.Query(r'select * from books order by id'),
+    shape: _i3.QueryShape.single,
+    element: _i1.ClassType<_i4.Book>(nullable: true),
   );
 
-  static const _asMap = _i2.QueryMethod(
+  static const _asMap = _i3.QueryMethod(
     r'asMap',
-    _i6.Query(r'select id, title, year from books where id = :id'),
+    _i7.Query(r'select id, title, year from books where id = :id'),
     parameters: [r'id'],
-    shape: _i2.QueryShape.single,
+    shape: _i3.QueryShape.single,
     element: _i1.MapType<String, dynamic>(
       _i1.ClassType<String>(),
       _i1.DynamicType(),
@@ -1606,479 +1606,479 @@ class _$SqlBooksImpl extends _i2.SimpleRepository<_i3.Book, int>
     ),
   );
 
-  static const _afterSorted = _i2.QueryMethod(
+  static const _afterSorted = _i3.QueryMethod(
     r'afterSorted',
-    _i6.Query(r'select * from books where year > :year'),
+    _i7.Query(r'select * from books where year > :year'),
     parameters: [r'year', r'sort'],
     sort: 1,
-    element: _i1.ClassType<_i3.Book>(),
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _afterSortedAndOrdered = _i2.QueryMethod(
+  static const _afterSortedAndOrdered = _i3.QueryMethod(
     r'afterSortedAndOrdered',
-    _i6.Query(r'select * from books where year > :year order by in_stock desc'),
+    _i7.Query(r'select * from books where year > :year order by in_stock desc'),
     parameters: [r'year', r'sort'],
     sort: 1,
-    element: _i1.ClassType<_i3.Book>(),
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _afterWindow = _i2.QueryMethod(
+  static const _afterWindow = _i3.QueryMethod(
     r'afterWindow',
-    _i6.Query(r'select * from books where year > :year'),
+    _i7.Query(r'select * from books where year > :year'),
     parameters: [r'year', r'pageable'],
     pageable: 1,
-    element: _i1.ClassType<_i3.Book>(),
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _pageAfter = _i2.QueryMethod(
+  static const _pageAfter = _i3.QueryMethod(
     r'pageAfter',
-    _i6.Query(r'select * from books where year > :year'),
+    _i7.Query(r'select * from books where year > :year'),
     parameters: [r'year', r'pageable'],
     pageable: 1,
-    shape: _i2.QueryShape.page,
-    element: _i1.ClassType<_i3.Book>(),
+    shape: _i3.QueryShape.page,
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _pageWithAuthor = _i2.QueryMethod(
+  static const _pageWithAuthor = _i3.QueryMethod(
     r'pageWithAuthor',
-    _i6.Query(
+    _i7.Query(
       r'select b.id, b.title, a.name as author_name from books b join authors a on a.id = b.author',
       countQuery:
           r'select count(*) from books b join authors a on a.id = b.author',
     ),
     parameters: [r'pageable'],
     pageable: 0,
-    shape: _i2.QueryShape.page,
-    element: _i1.ClassType<_i3.BookWithAuthor>(),
+    shape: _i3.QueryShape.page,
+    element: _i1.ClassType<_i4.BookWithAuthor>(),
   );
 
-  static const _sliceAfter = _i2.QueryMethod(
+  static const _sliceAfter = _i3.QueryMethod(
     r'sliceAfter',
-    _i6.Query(r'select * from books where year > :year'),
+    _i7.Query(r'select * from books where year > :year'),
     parameters: [r'year', r'pageable'],
     pageable: 1,
-    shape: _i2.QueryShape.slice,
-    element: _i1.ClassType<_i3.Book>(),
+    shape: _i3.QueryShape.slice,
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _streamAfter = _i2.QueryMethod(
+  static const _streamAfter = _i3.QueryMethod(
     r'streamAfter',
-    _i6.Query(r'select * from books where year > :year order by id'),
+    _i7.Query(r'select * from books where year > :year order by id'),
     parameters: [r'year'],
-    shape: _i2.QueryShape.stream,
-    element: _i1.ClassType<_i3.Book>(),
+    shape: _i3.QueryShape.stream,
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _streamTitles = _i2.QueryMethod(
+  static const _streamTitles = _i3.QueryMethod(
     r'streamTitles',
-    _i6.Query(r'select title from books order by id'),
-    shape: _i2.QueryShape.stream,
+    _i7.Query(r'select title from books order by id'),
+    shape: _i3.QueryShape.stream,
     element: _i1.ClassType<String>(),
   );
 
-  static const _streamWithAuthor = _i2.QueryMethod(
+  static const _streamWithAuthor = _i3.QueryMethod(
     r'streamWithAuthor',
-    _i6.Query(
+    _i7.Query(
       r'select b.id, b.title, a.name as author_name from books b join authors a on a.id = b.author order by b.id',
     ),
-    shape: _i2.QueryShape.stream,
-    element: _i1.ClassType<_i3.BookWithAuthor>(),
+    shape: _i3.QueryShape.stream,
+    element: _i1.ClassType<_i4.BookWithAuthor>(),
   );
 
-  static const _shift = _i2.QueryMethod(
+  static const _shift = _i3.QueryMethod(
     r'shift',
-    _i6.Query(r'update books set year = year + :delta where year < :year'),
+    _i7.Query(r'update books set year = year + :delta where year < :year'),
     parameters: [r'year', r'delta'],
-    change: _i2.QueryChange.rows,
+    change: _i3.QueryChange.rows,
   );
 
-  static const _deleteOlder = _i2.QueryMethod(
+  static const _deleteOlder = _i3.QueryMethod(
     r'deleteOlder',
-    _i6.Query(r'delete from books where year < :year'),
+    _i7.Query(r'delete from books where year < :year'),
     parameters: [r'year'],
-    change: _i2.QueryChange.any,
+    change: _i3.QueryChange.any,
   );
 
-  static const _retitle = _i2.QueryMethod(
+  static const _retitle = _i3.QueryMethod(
     r'retitle',
-    _i6.Query(r'update books set subtitle = :subtitle where id = :id'),
+    _i7.Query(r'update books set subtitle = :subtitle where id = :id'),
     parameters: [r'id', r'subtitle'],
-    change: _i2.QueryChange.nothing,
+    change: _i3.QueryChange.nothing,
   );
 
-  static const _authorsWithBooks = _i2.QueryMethod(
+  static const _authorsWithBooks = _i3.QueryMethod(
     r'authorsWithBooks',
-    _i6.Query(
+    _i7.Query(
       r'select a.id, a.name, b.title from authors a left join books b on b.author = a.id order by a.id, b.id',
-      resultSetExtractor: _i3.AuthorWithBooks.extract,
+      resultSetExtractor: _i4.AuthorWithBooks.extract,
     ),
-    element: _i1.ClassType<_i3.AuthorWithBooks>(),
+    element: _i1.ClassType<_i4.AuthorWithBooks>(),
   );
 
-  static const _shouted = _i2.QueryMethod(
+  static const _shouted = _i3.QueryMethod(
     r'shouted',
-    _i6.Query(
+    _i7.Query(
       r'select title from books order by id',
-      rowMapper: _i3.shoutTitle,
+      rowMapper: _i4.shoutTitle,
     ),
     element: _i1.ClassType<String>(),
   );
 
-  static const _bySubtitleText = _i2.QueryMethod(
+  static const _bySubtitleText = _i3.QueryMethod(
     r'bySubtitleText',
-    _i6.Query(r'select * from books where subtitle = :text order by id'),
+    _i7.Query(r'select * from books where subtitle = :text order by id'),
     parameters: [r'text'],
-    element: _i1.ClassType<_i3.Book>(),
+    element: _i1.ClassType<_i4.Book>(),
   );
 
-  static const _findByTitle = _i2.PartTree(r'findByTitle', [
-    _i2.OrPart([_i2.Part(r'title')]),
+  static const _findByTitle = _i3.PartTree(r'findByTitle', [
+    _i3.OrPart([_i3.Part(r'title')]),
   ]);
 
-  static const _findByTitleIgnoreCase = _i2.PartTree(r'findByTitleIgnoreCase', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.simpleProperty, true)]),
+  static const _findByTitleIgnoreCase = _i3.PartTree(r'findByTitleIgnoreCase', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.simpleProperty, true)]),
   ]);
 
-  static const _findOneByTitle = _i2.PartTree(r'findOneByTitle', [
-    _i2.OrPart([_i2.Part(r'title')]),
+  static const _findOneByTitle = _i3.PartTree(r'findOneByTitle', [
+    _i3.OrPart([_i3.Part(r'title')]),
   ]);
 
-  static const _getByTitle = _i2.PartTree(r'getByTitle', [
-    _i2.OrPart([_i2.Part(r'title')]),
+  static const _getByTitle = _i3.PartTree(r'getByTitle', [
+    _i3.OrPart([_i3.Part(r'title')]),
   ]);
 
-  static const _findByTitleAndYear = _i2.PartTree(r'findByTitleAndYear', [
-    _i2.OrPart([_i2.Part(r'title'), _i2.Part(r'year')]),
+  static const _findByTitleAndYear = _i3.PartTree(r'findByTitleAndYear', [
+    _i3.OrPart([_i3.Part(r'title'), _i3.Part(r'year')]),
   ]);
 
-  static const _findByTitleOrYear = _i2.PartTree(r'findByTitleOrYear', [
-    _i2.OrPart([_i2.Part(r'title')]),
-    _i2.OrPart([_i2.Part(r'year')]),
+  static const _findByTitleOrYear = _i3.PartTree(r'findByTitleOrYear', [
+    _i3.OrPart([_i3.Part(r'title')]),
+    _i3.OrPart([_i3.Part(r'year')]),
   ]);
 
-  static const _findByYearNot = _i2.PartTree(r'findByYearNot', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.negatingSimpleProperty)]),
+  static const _findByYearNot = _i3.PartTree(r'findByYearNot', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.negatingSimpleProperty)]),
   ]);
 
-  static const _findByTitleNot = _i2.PartTree(r'findByTitleNot', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.negatingSimpleProperty)]),
+  static const _findByTitleNot = _i3.PartTree(r'findByTitleNot', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.negatingSimpleProperty)]),
   ]);
 
-  static const _findByTitleNotIgnoreCase = _i2.PartTree(
+  static const _findByTitleNotIgnoreCase = _i3.PartTree(
     r'findByTitleNotIgnoreCase',
     [
-      _i2.OrPart([
-        _i2.Part(r'title', _i2.PartType.negatingSimpleProperty, true),
+      _i3.OrPart([
+        _i3.Part(r'title', _i3.PartType.negatingSimpleProperty, true),
       ]),
     ],
   );
 
-  static const _findByYearBetween = _i2.PartTree(r'findByYearBetween', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.between)]),
+  static const _findByYearBetween = _i3.PartTree(r'findByYearBetween', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.between)]),
   ]);
 
-  static const _findByYearGreaterThan = _i2.PartTree(r'findByYearGreaterThan', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.greaterThan)]),
+  static const _findByYearGreaterThan = _i3.PartTree(r'findByYearGreaterThan', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.greaterThan)]),
   ]);
 
-  static const _findByYearGreaterThanEqual = _i2.PartTree(
+  static const _findByYearGreaterThanEqual = _i3.PartTree(
     r'findByYearGreaterThanEqual',
     [
-      _i2.OrPart([_i2.Part(r'year', _i2.PartType.greaterThanEqual)]),
+      _i3.OrPart([_i3.Part(r'year', _i3.PartType.greaterThanEqual)]),
     ],
   );
 
-  static const _findByYearLessThan = _i2.PartTree(r'findByYearLessThan', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.lessThan)]),
+  static const _findByYearLessThan = _i3.PartTree(r'findByYearLessThan', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.lessThan)]),
   ]);
 
-  static const _findByYearLessThanEqual = _i2.PartTree(
+  static const _findByYearLessThanEqual = _i3.PartTree(
     r'findByYearLessThanEqual',
     [
-      _i2.OrPart([_i2.Part(r'year', _i2.PartType.lessThanEqual)]),
+      _i3.OrPart([_i3.Part(r'year', _i3.PartType.lessThanEqual)]),
     ],
   );
 
-  static const _findByYearIn = _i2.PartTree(r'findByYearIn', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.in_)]),
+  static const _findByYearIn = _i3.PartTree(r'findByYearIn', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.in_)]),
   ]);
 
-  static const _findByYearNotIn = _i2.PartTree(r'findByYearNotIn', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.notIn)]),
+  static const _findByYearNotIn = _i3.PartTree(r'findByYearNotIn', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.notIn)]),
   ]);
 
-  static const _findByTitleIn = _i2.PartTree(r'findByTitleIn', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.in_)]),
+  static const _findByTitleIn = _i3.PartTree(r'findByTitleIn', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.in_)]),
   ]);
 
-  static const _findByTitleInIgnoreCase = _i2.PartTree(
+  static const _findByTitleInIgnoreCase = _i3.PartTree(
     r'findByTitleInIgnoreCase',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.in_, true)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.in_, true)]),
     ],
   );
 
-  static const _findBySubtitleIn = _i2.PartTree(r'findBySubtitleIn', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.in_)]),
+  static const _findBySubtitleIn = _i3.PartTree(r'findBySubtitleIn', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.in_)]),
   ]);
 
-  static const _findBySubtitleNotIn = _i2.PartTree(r'findBySubtitleNotIn', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.notIn)]),
+  static const _findBySubtitleNotIn = _i3.PartTree(r'findBySubtitleNotIn', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.notIn)]),
   ]);
 
-  static const _findByTitleStartingWith = _i2.PartTree(
+  static const _findByTitleStartingWith = _i3.PartTree(
     r'findByTitleStartingWith',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.startingWith)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.startingWith)]),
     ],
   );
 
-  static const _findByTitleEndingWith = _i2.PartTree(r'findByTitleEndingWith', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.endingWith)]),
+  static const _findByTitleEndingWith = _i3.PartTree(r'findByTitleEndingWith', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.endingWith)]),
   ]);
 
-  static const _findByTitleContaining = _i2.PartTree(r'findByTitleContaining', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.containing)]),
+  static const _findByTitleContaining = _i3.PartTree(r'findByTitleContaining', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.containing)]),
   ]);
 
-  static const _findByTitleNotContaining = _i2.PartTree(
+  static const _findByTitleNotContaining = _i3.PartTree(
     r'findByTitleNotContaining',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.notContaining)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.notContaining)]),
     ],
   );
 
-  static const _findByTitleLike = _i2.PartTree(r'findByTitleLike', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.like)]),
+  static const _findByTitleLike = _i3.PartTree(r'findByTitleLike', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.like)]),
   ]);
 
-  static const _findByTitleNotLike = _i2.PartTree(r'findByTitleNotLike', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.notLike)]),
+  static const _findByTitleNotLike = _i3.PartTree(r'findByTitleNotLike', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.notLike)]),
   ]);
 
-  static const _findByTitleLikeIgnoreCase = _i2.PartTree(
+  static const _findByTitleLikeIgnoreCase = _i3.PartTree(
     r'findByTitleLikeIgnoreCase',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.like, true)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.like, true)]),
     ],
   );
 
-  static const _findByTitleContainingIgnoreCase = _i2.PartTree(
+  static const _findByTitleContainingIgnoreCase = _i3.PartTree(
     r'findByTitleContainingIgnoreCase',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.containing, true)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.containing, true)]),
     ],
   );
 
-  static const _findByTitleStartingWithIgnoreCase = _i2.PartTree(
+  static const _findByTitleStartingWithIgnoreCase = _i3.PartTree(
     r'findByTitleStartingWithIgnoreCase',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.startingWith, true)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.startingWith, true)]),
     ],
   );
 
-  static const _findByTitleEndingWithIgnoreCase = _i2.PartTree(
+  static const _findByTitleEndingWithIgnoreCase = _i3.PartTree(
     r'findByTitleEndingWithIgnoreCase',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.endingWith, true)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.endingWith, true)]),
     ],
   );
 
-  static const _findBySubtitleIsNull = _i2.PartTree(r'findBySubtitleIsNull', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.isNull)]),
+  static const _findBySubtitleIsNull = _i3.PartTree(r'findBySubtitleIsNull', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.isNull)]),
   ]);
 
-  static const _findBySubtitleIsNotNull = _i2.PartTree(
+  static const _findBySubtitleIsNotNull = _i3.PartTree(
     r'findBySubtitleIsNotNull',
     [
-      _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.isNotNull)]),
+      _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.isNotNull)]),
     ],
   );
 
-  static const _findBySubtitle = _i2.PartTree(r'findBySubtitle', [
-    _i2.OrPart([_i2.Part(r'subtitle')]),
+  static const _findBySubtitle = _i3.PartTree(r'findBySubtitle', [
+    _i3.OrPart([_i3.Part(r'subtitle')]),
   ]);
 
-  static const _findBySubtitleNot = _i2.PartTree(r'findBySubtitleNot', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.negatingSimpleProperty)]),
+  static const _findBySubtitleNot = _i3.PartTree(r'findBySubtitleNot', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.negatingSimpleProperty)]),
   ]);
 
-  static const _findBySubtitleLessThan = _i2.PartTree(
+  static const _findBySubtitleLessThan = _i3.PartTree(
     r'findBySubtitleLessThan',
     [
-      _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.lessThan)]),
+      _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.lessThan)]),
     ],
   );
 
-  static const _findBySubtitleBetween = _i2.PartTree(r'findBySubtitleBetween', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.between)]),
+  static const _findBySubtitleBetween = _i3.PartTree(r'findBySubtitleBetween', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.between)]),
   ]);
 
-  static const _findBySubtitleLike = _i2.PartTree(r'findBySubtitleLike', [
-    _i2.OrPart([_i2.Part(r'subtitle', _i2.PartType.like)]),
+  static const _findBySubtitleLike = _i3.PartTree(r'findBySubtitleLike', [
+    _i3.OrPart([_i3.Part(r'subtitle', _i3.PartType.like)]),
   ]);
 
-  static const _findByInStockTrue = _i2.PartTree(r'findByInStockTrue', [
-    _i2.OrPart([_i2.Part(r'inStock', _i2.PartType.isTrue)]),
+  static const _findByInStockTrue = _i3.PartTree(r'findByInStockTrue', [
+    _i3.OrPart([_i3.Part(r'inStock', _i3.PartType.isTrue)]),
   ]);
 
-  static const _findByInStockFalse = _i2.PartTree(r'findByInStockFalse', [
-    _i2.OrPart([_i2.Part(r'inStock', _i2.PartType.isFalse)]),
+  static const _findByInStockFalse = _i3.PartTree(r'findByInStockFalse', [
+    _i3.OrPart([_i3.Part(r'inStock', _i3.PartType.isFalse)]),
   ]);
 
-  static const _findByInStock = _i2.PartTree(r'findByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
+  static const _findByInStock = _i3.PartTree(r'findByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
   ]);
 
-  static const _findByAuthor = _i2.PartTree(r'findByAuthor', [
-    _i2.OrPart([_i2.Part(r'author')]),
+  static const _findByAuthor = _i3.PartTree(r'findByAuthor', [
+    _i3.OrPart([_i3.Part(r'author')]),
   ]);
 
-  static const _findByAuthorIn = _i2.PartTree(r'findByAuthorIn', [
-    _i2.OrPart([_i2.Part(r'author', _i2.PartType.in_)]),
+  static const _findByAuthorIn = _i3.PartTree(r'findByAuthorIn', [
+    _i3.OrPart([_i3.Part(r'author', _i3.PartType.in_)]),
   ]);
 
-  static const _findByAuthorIsNull = _i2.PartTree(r'findByAuthorIsNull', [
-    _i2.OrPart([_i2.Part(r'author', _i2.PartType.isNull)]),
+  static const _findByAuthorIsNull = _i3.PartTree(r'findByAuthorIsNull', [
+    _i3.OrPart([_i3.Part(r'author', _i3.PartType.isNull)]),
   ]);
 
-  static const _findByGenre = _i2.PartTree(r'findByGenre', [
-    _i2.OrPart([_i2.Part(r'genre')]),
+  static const _findByGenre = _i3.PartTree(r'findByGenre', [
+    _i3.OrPart([_i3.Part(r'genre')]),
   ]);
 
-  static const _findByGenreIn = _i2.PartTree(r'findByGenreIn', [
-    _i2.OrPart([_i2.Part(r'genre', _i2.PartType.in_)]),
+  static const _findByGenreIn = _i3.PartTree(r'findByGenreIn', [
+    _i3.OrPart([_i3.Part(r'genre', _i3.PartType.in_)]),
   ]);
 
-  static const _findByRatingBetween = _i2.PartTree(r'findByRatingBetween', [
-    _i2.OrPart([_i2.Part(r'rating', _i2.PartType.between)]),
+  static const _findByRatingBetween = _i3.PartTree(r'findByRatingBetween', [
+    _i3.OrPart([_i3.Part(r'rating', _i3.PartType.between)]),
   ]);
 
-  static const _findByRatingGreaterThan = _i2.PartTree(
+  static const _findByRatingGreaterThan = _i3.PartTree(
     r'findByRatingGreaterThan',
     [
-      _i2.OrPart([_i2.Part(r'rating', _i2.PartType.greaterThan)]),
+      _i3.OrPart([_i3.Part(r'rating', _i3.PartType.greaterThan)]),
     ],
   );
 
-  static const _findByReleasedAfter = _i2.PartTree(r'findByReleasedAfter', [
-    _i2.OrPart([_i2.Part(r'released', _i2.PartType.greaterThan)]),
+  static const _findByReleasedAfter = _i3.PartTree(r'findByReleasedAfter', [
+    _i3.OrPart([_i3.Part(r'released', _i3.PartType.greaterThan)]),
   ]);
 
-  static const _findByReleased = _i2.PartTree(r'findByReleased', [
-    _i2.OrPart([_i2.Part(r'released')]),
+  static const _findByReleased = _i3.PartTree(r'findByReleased', [
+    _i3.OrPart([_i3.Part(r'released')]),
   ]);
 
-  static const _findByInStockOrderByYearDescTitleAsc = _i2.PartTree(
+  static const _findByInStockOrderByYearDescTitleAsc = _i3.PartTree(
     r'findByInStockOrderByYearDescTitleAsc',
     [
-      _i2.OrPart([_i2.Part(r'inStock')]),
+      _i3.OrPart([_i3.Part(r'inStock')]),
     ],
-    sort: _i2.Sort([_i2.SortOrder.desc(r'year'), _i2.SortOrder.asc(r'title')]),
+    sort: _i3.Sort([_i3.SortOrder.desc(r'year'), _i3.SortOrder.asc(r'title')]),
   );
 
-  static const _findByInStockOrderBySubtitleAscIdAsc = _i2.PartTree(
+  static const _findByInStockOrderBySubtitleAscIdAsc = _i3.PartTree(
     r'findByInStockOrderBySubtitleAscIdAsc',
     [
-      _i2.OrPart([_i2.Part(r'inStock')]),
+      _i3.OrPart([_i3.Part(r'inStock')]),
     ],
-    sort: _i2.Sort([_i2.SortOrder.asc(r'subtitle'), _i2.SortOrder.asc(r'id')]),
+    sort: _i3.Sort([_i3.SortOrder.asc(r'subtitle'), _i3.SortOrder.asc(r'id')]),
   );
 
-  static const _findByInStockOrderBySubtitleDescIdAsc = _i2.PartTree(
+  static const _findByInStockOrderBySubtitleDescIdAsc = _i3.PartTree(
     r'findByInStockOrderBySubtitleDescIdAsc',
     [
-      _i2.OrPart([_i2.Part(r'inStock')]),
+      _i3.OrPart([_i3.Part(r'inStock')]),
     ],
-    sort: _i2.Sort([_i2.SortOrder.desc(r'subtitle'), _i2.SortOrder.asc(r'id')]),
+    sort: _i3.Sort([_i3.SortOrder.desc(r'subtitle'), _i3.SortOrder.asc(r'id')]),
   );
 
-  static const _findByYear = _i2.PartTree(r'findByYear', [
-    _i2.OrPart([_i2.Part(r'year')]),
+  static const _findByYear = _i3.PartTree(r'findByYear', [
+    _i3.OrPart([_i3.Part(r'year')]),
   ]);
 
-  static const _findByYearLessThanOrderByYear = _i2.PartTree(
+  static const _findByYearLessThanOrderByYear = _i3.PartTree(
     r'findByYearLessThanOrderByYear',
     [
-      _i2.OrPart([_i2.Part(r'year', _i2.PartType.lessThan)]),
+      _i3.OrPart([_i3.Part(r'year', _i3.PartType.lessThan)]),
     ],
-    sort: _i2.Sort([_i2.SortOrder.asc(r'year')]),
+    sort: _i3.Sort([_i3.SortOrder.asc(r'year')]),
   );
 
-  static const _findDistinctByInStock = _i2.PartTree(r'findDistinctByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.find, distinct: true));
+  static const _findDistinctByInStock = _i3.PartTree(r'findDistinctByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.find, distinct: true));
 
-  static const _streamByInStock = _i2.PartTree(r'streamByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
+  static const _streamByInStock = _i3.PartTree(r'streamByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
   ]);
 
-  static const _findByYearAfter = _i2.PartTree(r'findByYearAfter', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.greaterThan)]),
+  static const _findByYearAfter = _i3.PartTree(r'findByYearAfter', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.greaterThan)]),
   ]);
 
-  static const _findByInStockIsTrue = _i2.PartTree(r'findByInStockIsTrue', [
-    _i2.OrPart([_i2.Part(r'inStock', _i2.PartType.isTrue)]),
+  static const _findByInStockIsTrue = _i3.PartTree(r'findByInStockIsTrue', [
+    _i3.OrPart([_i3.Part(r'inStock', _i3.PartType.isTrue)]),
   ]);
 
-  static const _findByInStockEquals = _i2.PartTree(r'findByInStockEquals', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
+  static const _findByInStockEquals = _i3.PartTree(r'findByInStockEquals', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
   ]);
 
-  static const _findFirstByOrderByYearAsc = _i2.PartTree(
+  static const _findFirstByOrderByYearAsc = _i3.PartTree(
     r'findFirstByOrderByYearAsc',
     [],
-    subject: _i2.Subject(_i2.SubjectKind.find, maxResults: 1),
-    sort: _i2.Sort([_i2.SortOrder.asc(r'year')]),
+    subject: _i3.Subject(_i3.SubjectKind.find, maxResults: 1),
+    sort: _i3.Sort([_i3.SortOrder.asc(r'year')]),
   );
 
-  static const _findTop2ByOrderByYearDesc = _i2.PartTree(
+  static const _findTop2ByOrderByYearDesc = _i3.PartTree(
     r'findTop2ByOrderByYearDesc',
     [],
-    subject: _i2.Subject(_i2.SubjectKind.find, maxResults: 2),
-    sort: _i2.Sort([_i2.SortOrder.desc(r'year')]),
+    subject: _i3.Subject(_i3.SubjectKind.find, maxResults: 2),
+    sort: _i3.Sort([_i3.SortOrder.desc(r'year')]),
   );
 
-  static const _findTop3ByInStock = _i2.PartTree(r'findTop3ByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.find, maxResults: 3));
+  static const _findTop3ByInStock = _i3.PartTree(r'findTop3ByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.find, maxResults: 3));
 
-  static const _countByInStock = _i2.PartTree(r'countByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.count));
+  static const _countByInStock = _i3.PartTree(r'countByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.count));
 
-  static const _countByTitleContaining = _i2.PartTree(
+  static const _countByTitleContaining = _i3.PartTree(
     r'countByTitleContaining',
     [
-      _i2.OrPart([_i2.Part(r'title', _i2.PartType.containing)]),
+      _i3.OrPart([_i3.Part(r'title', _i3.PartType.containing)]),
     ],
-    subject: _i2.Subject(_i2.SubjectKind.count),
+    subject: _i3.Subject(_i3.SubjectKind.count),
   );
 
-  static const _existsByTitle = _i2.PartTree(r'existsByTitle', [
-    _i2.OrPart([_i2.Part(r'title')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.exists));
+  static const _existsByTitle = _i3.PartTree(r'existsByTitle', [
+    _i3.OrPart([_i3.Part(r'title')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.exists));
 
-  static const _deleteByYearLessThan = _i2.PartTree(r'deleteByYearLessThan', [
-    _i2.OrPart([_i2.Part(r'year', _i2.PartType.lessThan)]),
-  ], subject: _i2.Subject(_i2.SubjectKind.delete));
+  static const _deleteByYearLessThan = _i3.PartTree(r'deleteByYearLessThan', [
+    _i3.OrPart([_i3.Part(r'year', _i3.PartType.lessThan)]),
+  ], subject: _i3.Subject(_i3.SubjectKind.delete));
 
-  static const _removeByTitle = _i2.PartTree(r'removeByTitle', [
-    _i2.OrPart([_i2.Part(r'title')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.delete));
+  static const _removeByTitle = _i3.PartTree(r'removeByTitle', [
+    _i3.OrPart([_i3.Part(r'title')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.delete));
 
-  static const _deleteByInStock = _i2.PartTree(r'deleteByInStock', [
-    _i2.OrPart([_i2.Part(r'inStock')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.delete));
+  static const _deleteByInStock = _i3.PartTree(r'deleteByInStock', [
+    _i3.OrPart([_i3.Part(r'inStock')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.delete));
 
-  static const _deleteByTitleIn = _i2.PartTree(r'deleteByTitleIn', [
-    _i2.OrPart([_i2.Part(r'title', _i2.PartType.in_)]),
-  ], subject: _i2.Subject(_i2.SubjectKind.delete));
+  static const _deleteByTitleIn = _i3.PartTree(r'deleteByTitleIn', [
+    _i3.OrPart([_i3.Part(r'title', _i3.PartType.in_)]),
+  ], subject: _i3.Subject(_i3.SubjectKind.delete));
 
   static _$SqlBooksImpl $create(_i1.DependencyResolver r) => _$SqlBooksImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Book, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Book, int>(
       r'SqlBooks',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       queries: [
         _byYear,
         _aroundYear,
@@ -2130,1596 +2130,1596 @@ class _$SqlBooksImpl extends _i2.SimpleRepository<_i3.Book, int>
         _bySubtitleText,
       ],
       requirements: const [
-        _i2.StoreRequirement(r'byYear', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'aroundYear', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'byIds', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'byTitle', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'byTitleLike', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'byGenre', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'byAuthor', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'byStock', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'sameTitle', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(
+        _i3.StoreRequirement(r'byYear', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'aroundYear', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'byIds', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'byTitle', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'byTitleLike', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'byGenre', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'byAuthor', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'byStock', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'sameTitle', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(
           r'byFirstArgument',
-          _i2.DataStoreCapability.queries,
+          _i3.DataStoreCapability.queries,
         ),
-        _i2.StoreRequirement(r'sinceCutoff', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'yearBefore', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(
+        _i3.StoreRequirement(r'sinceCutoff', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'yearBefore', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(
           r'afterConfiguredCutoff',
-          _i2.DataStoreCapability.queries,
+          _i3.DataStoreCapability.queries,
         ),
-        _i2.StoreRequirement(r'afterSum', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'broken', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'viaEntityName', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'firstPage', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'byAuthorName', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'withAuthor', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'missingColumn', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'countAfter', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'titleOf', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(
+        _i3.StoreRequirement(r'afterSum', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'broken', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'viaEntityName', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'firstPage', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'byAuthorName', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'withAuthor', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'missingColumn', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'countAfter', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'titleOf', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(
           r'requiredTitleOf',
-          _i2.DataStoreCapability.queries,
+          _i3.DataStoreCapability.queries,
         ),
-        _i2.StoreRequirement(r'titlesAfter', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'yearsAfter', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'inStockOf', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'ratingOf', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'releasedOf', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'genreOf', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'one', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'requiredOne', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'theOnlyOne', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'asMap', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'afterSorted', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(
+        _i3.StoreRequirement(r'titlesAfter', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'yearsAfter', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'inStockOf', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'ratingOf', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'releasedOf', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'genreOf', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'one', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'requiredOne', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'theOnlyOne', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'asMap', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'afterSorted', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(
           r'afterSortedAndOrdered',
-          _i2.DataStoreCapability.queries,
+          _i3.DataStoreCapability.queries,
         ),
-        _i2.StoreRequirement(r'afterWindow', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'pageAfter', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(
+        _i3.StoreRequirement(r'afterWindow', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'pageAfter', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(
           r'pageWithAuthor',
-          _i2.DataStoreCapability.queries,
+          _i3.DataStoreCapability.queries,
         ),
-        _i2.StoreRequirement(r'sliceAfter', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'streamAfter', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'streamTitles', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(
+        _i3.StoreRequirement(r'sliceAfter', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'streamAfter', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'streamTitles', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(
           r'streamWithAuthor',
-          _i2.DataStoreCapability.queries,
+          _i3.DataStoreCapability.queries,
         ),
-        _i2.StoreRequirement(r'shift', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'deleteOlder', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'retitle', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(
+        _i3.StoreRequirement(r'shift', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'deleteOlder', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'retitle', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(
           r'authorsWithBooks',
-          _i2.DataStoreCapability.queries,
+          _i3.DataStoreCapability.queries,
         ),
-        _i2.StoreRequirement(r'shouted', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(
+        _i3.StoreRequirement(r'shouted', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(
           r'bySubtitleText',
-          _i2.DataStoreCapability.queries,
+          _i3.DataStoreCapability.queries,
         ),
       ],
     ),
   );
 
   @override
-  _i4.Future<List<_i3.Book>> byYear(int year) =>
-      this.operations.query<List<_i3.Book>>(_byYear, [year]);
+  _i5.Future<List<_i4.Book>> byYear(int year) =>
+      this.operations.query<List<_i4.Book>>(_byYear, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> aroundYear(int year) =>
-      this.operations.query<List<_i3.Book>>(_aroundYear, [year]);
+  _i5.Future<List<_i4.Book>> aroundYear(int year) =>
+      this.operations.query<List<_i4.Book>>(_aroundYear, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> byIds(List<int> ids) =>
-      this.operations.query<List<_i3.Book>>(_byIds, [ids]);
+  _i5.Future<List<_i4.Book>> byIds(List<int> ids) =>
+      this.operations.query<List<_i4.Book>>(_byIds, [ids]);
 
   @override
-  _i4.Future<List<_i3.Book>> byTitle(String title) =>
-      this.operations.query<List<_i3.Book>>(_byTitle, [title]);
+  _i5.Future<List<_i4.Book>> byTitle(String title) =>
+      this.operations.query<List<_i4.Book>>(_byTitle, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> byTitleLike(String pattern) =>
-      this.operations.query<List<_i3.Book>>(_byTitleLike, [pattern]);
+  _i5.Future<List<_i4.Book>> byTitleLike(String pattern) =>
+      this.operations.query<List<_i4.Book>>(_byTitleLike, [pattern]);
 
   @override
-  _i4.Future<List<_i3.Book>> byGenre(_i3.Genre genre) =>
-      this.operations.query<List<_i3.Book>>(_byGenre, [genre]);
+  _i5.Future<List<_i4.Book>> byGenre(_i4.Genre genre) =>
+      this.operations.query<List<_i4.Book>>(_byGenre, [genre]);
 
   @override
-  _i4.Future<List<_i3.Book>> byAuthor(
-    _i6.AggregateReference<_i3.Author, int> author,
-  ) => this.operations.query<List<_i3.Book>>(_byAuthor, [author]);
+  _i5.Future<List<_i4.Book>> byAuthor(
+    _i7.AggregateReference<_i4.Author, int> author,
+  ) => this.operations.query<List<_i4.Book>>(_byAuthor, [author]);
 
   @override
-  _i4.Future<List<_i3.Book>> byStock(bool inStock) =>
-      this.operations.query<List<_i3.Book>>(_byStock, [inStock]);
+  _i5.Future<List<_i4.Book>> byStock(bool inStock) =>
+      this.operations.query<List<_i4.Book>>(_byStock, [inStock]);
 
   @override
-  _i4.Future<List<_i3.Book>> sameTitle(_i3.Book book) =>
-      this.operations.query<List<_i3.Book>>(_sameTitle, [book]);
+  _i5.Future<List<_i4.Book>> sameTitle(_i4.Book book) =>
+      this.operations.query<List<_i4.Book>>(_sameTitle, [book]);
 
   @override
-  _i4.Future<List<_i3.Book>> byFirstArgument(int year) =>
-      this.operations.query<List<_i3.Book>>(_byFirstArgument, [year]);
+  _i5.Future<List<_i4.Book>> byFirstArgument(int year) =>
+      this.operations.query<List<_i4.Book>>(_byFirstArgument, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> sinceCutoff() =>
-      this.operations.query<List<_i3.Book>>(_sinceCutoff, const []);
+  _i5.Future<List<_i4.Book>> sinceCutoff() =>
+      this.operations.query<List<_i4.Book>>(_sinceCutoff, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> yearBefore(int year) =>
-      this.operations.query<List<_i3.Book>>(_yearBefore, [year]);
+  _i5.Future<List<_i4.Book>> yearBefore(int year) =>
+      this.operations.query<List<_i4.Book>>(_yearBefore, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> afterConfiguredCutoff() =>
-      this.operations.query<List<_i3.Book>>(_afterConfiguredCutoff, const []);
+  _i5.Future<List<_i4.Book>> afterConfiguredCutoff() =>
+      this.operations.query<List<_i4.Book>>(_afterConfiguredCutoff, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> afterSum(int year, int more) =>
-      this.operations.query<List<_i3.Book>>(_afterSum, [year, more]);
+  _i5.Future<List<_i4.Book>> afterSum(int year, int more) =>
+      this.operations.query<List<_i4.Book>>(_afterSum, [year, more]);
 
   @override
-  _i4.Future<List<_i3.Book>> broken(int year) =>
-      this.operations.query<List<_i3.Book>>(_broken, [year]);
+  _i5.Future<List<_i4.Book>> broken(int year) =>
+      this.operations.query<List<_i4.Book>>(_broken, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> viaEntityName(String title) =>
-      this.operations.query<List<_i3.Book>>(_viaEntityName, [title]);
+  _i5.Future<List<_i4.Book>> viaEntityName(String title) =>
+      this.operations.query<List<_i4.Book>>(_viaEntityName, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> firstPage() =>
-      this.operations.query<List<_i3.Book>>(_firstPage, const []);
+  _i5.Future<List<_i4.Book>> firstPage() =>
+      this.operations.query<List<_i4.Book>>(_firstPage, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> byAuthorName(String name, bool inStock) =>
-      this.operations.query<List<_i3.Book>>(_byAuthorName, [name, inStock]);
+  _i5.Future<List<_i4.Book>> byAuthorName(String name, bool inStock) =>
+      this.operations.query<List<_i4.Book>>(_byAuthorName, [name, inStock]);
 
   @override
-  _i4.Future<List<_i3.BookWithAuthor>> withAuthor(String name) =>
-      this.operations.query<List<_i3.BookWithAuthor>>(_withAuthor, [name]);
+  _i5.Future<List<_i4.BookWithAuthor>> withAuthor(String name) =>
+      this.operations.query<List<_i4.BookWithAuthor>>(_withAuthor, [name]);
 
   @override
-  _i4.Future<List<_i3.BookWithAuthor>> missingColumn() =>
-      this.operations.query<List<_i3.BookWithAuthor>>(_missingColumn, const []);
+  _i5.Future<List<_i4.BookWithAuthor>> missingColumn() =>
+      this.operations.query<List<_i4.BookWithAuthor>>(_missingColumn, const []);
 
   @override
-  _i4.Future<int> countAfter(int year) =>
+  _i5.Future<int> countAfter(int year) =>
       this.operations.query<int>(_countAfter, [year]);
 
   @override
-  _i4.Future<String?> titleOf(int id) =>
+  _i5.Future<String?> titleOf(int id) =>
       this.operations.query<String?>(_titleOf, [id]);
 
   @override
-  _i4.Future<String> requiredTitleOf(int id) =>
+  _i5.Future<String> requiredTitleOf(int id) =>
       this.operations.query<String>(_requiredTitleOf, [id]);
 
   @override
-  _i4.Future<List<String>> titlesAfter(int year) =>
+  _i5.Future<List<String>> titlesAfter(int year) =>
       this.operations.query<List<String>>(_titlesAfter, [year]);
 
   @override
-  _i4.Future<Set<int>> yearsAfter(int year) =>
+  _i5.Future<Set<int>> yearsAfter(int year) =>
       this.operations.query<Set<int>>(_yearsAfter, [year]);
 
   @override
-  _i4.Future<bool?> inStockOf(int id) =>
+  _i5.Future<bool?> inStockOf(int id) =>
       this.operations.query<bool?>(_inStockOf, [id]);
 
   @override
-  _i4.Future<double?> ratingOf(int id) =>
+  _i5.Future<double?> ratingOf(int id) =>
       this.operations.query<double?>(_ratingOf, [id]);
 
   @override
-  _i4.Future<DateTime?> releasedOf(int id) =>
+  _i5.Future<DateTime?> releasedOf(int id) =>
       this.operations.query<DateTime?>(_releasedOf, [id]);
 
   @override
-  _i4.Future<_i3.Genre?> genreOf(int id) =>
-      this.operations.query<_i3.Genre?>(_genreOf, [id]);
+  _i5.Future<_i4.Genre?> genreOf(int id) =>
+      this.operations.query<_i4.Genre?>(_genreOf, [id]);
 
   @override
-  _i4.Future<_i3.Book?> one(int id) =>
-      this.operations.query<_i3.Book?>(_one, [id]);
+  _i5.Future<_i4.Book?> one(int id) =>
+      this.operations.query<_i4.Book?>(_one, [id]);
 
   @override
-  _i4.Future<_i3.Book> requiredOne(int id) =>
-      this.operations.query<_i3.Book>(_requiredOne, [id]);
+  _i5.Future<_i4.Book> requiredOne(int id) =>
+      this.operations.query<_i4.Book>(_requiredOne, [id]);
 
   @override
-  _i4.Future<_i3.Book?> theOnlyOne() =>
-      this.operations.query<_i3.Book?>(_theOnlyOne, const []);
+  _i5.Future<_i4.Book?> theOnlyOne() =>
+      this.operations.query<_i4.Book?>(_theOnlyOne, const []);
 
   @override
-  _i4.Future<Map<String, Object?>?> asMap(int id) =>
+  _i5.Future<Map<String, Object?>?> asMap(int id) =>
       this.operations.query<Map<String, Object?>?>(_asMap, [id]);
 
   @override
-  _i4.Future<List<_i3.Book>> afterSorted(int year, _i5.Sort sort) =>
-      this.operations.query<List<_i3.Book>>(_afterSorted, [year, sort]);
+  _i5.Future<List<_i4.Book>> afterSorted(int year, _i6.Sort sort) =>
+      this.operations.query<List<_i4.Book>>(_afterSorted, [year, sort]);
 
   @override
-  _i4.Future<List<_i3.Book>> afterSortedAndOrdered(int year, _i5.Sort sort) =>
-      this.operations.query<List<_i3.Book>>(_afterSortedAndOrdered, [
+  _i5.Future<List<_i4.Book>> afterSortedAndOrdered(int year, _i6.Sort sort) =>
+      this.operations.query<List<_i4.Book>>(_afterSortedAndOrdered, [
         year,
         sort,
       ]);
 
   @override
-  _i4.Future<List<_i3.Book>> afterWindow(int year, _i7.Pageable pageable) =>
-      this.operations.query<List<_i3.Book>>(_afterWindow, [year, pageable]);
+  _i5.Future<List<_i4.Book>> afterWindow(int year, _i8.Pageable pageable) =>
+      this.operations.query<List<_i4.Book>>(_afterWindow, [year, pageable]);
 
   @override
-  _i4.Future<_i7.Page<_i3.Book>> pageAfter(int year, _i7.Pageable pageable) =>
-      this.operations.query<_i7.Page<_i3.Book>>(_pageAfter, [year, pageable]);
+  _i5.Future<_i8.Page<_i4.Book>> pageAfter(int year, _i8.Pageable pageable) =>
+      this.operations.query<_i8.Page<_i4.Book>>(_pageAfter, [year, pageable]);
 
   @override
-  _i4.Future<_i7.Page<_i3.BookWithAuthor>> pageWithAuthor(
-    _i7.Pageable pageable,
-  ) => this.operations.query<_i7.Page<_i3.BookWithAuthor>>(_pageWithAuthor, [
+  _i5.Future<_i8.Page<_i4.BookWithAuthor>> pageWithAuthor(
+    _i8.Pageable pageable,
+  ) => this.operations.query<_i8.Page<_i4.BookWithAuthor>>(_pageWithAuthor, [
     pageable,
   ]);
 
   @override
-  _i4.Future<_i7.Slice<_i3.Book>> sliceAfter(int year, _i7.Pageable pageable) =>
-      this.operations.query<_i7.Slice<_i3.Book>>(_sliceAfter, [year, pageable]);
+  _i5.Future<_i8.Slice<_i4.Book>> sliceAfter(int year, _i8.Pageable pageable) =>
+      this.operations.query<_i8.Slice<_i4.Book>>(_sliceAfter, [year, pageable]);
 
   @override
-  _i4.Stream<_i3.Book> streamAfter(int year) =>
-      this.operations.queryStream<_i3.Book>(_streamAfter, [year]);
+  _i5.Stream<_i4.Book> streamAfter(int year) =>
+      this.operations.queryStream<_i4.Book>(_streamAfter, [year]);
 
   @override
-  _i4.Stream<String> streamTitles() =>
+  _i5.Stream<String> streamTitles() =>
       this.operations.queryStream<String>(_streamTitles, const []);
 
   @override
-  _i4.Stream<_i3.BookWithAuthor> streamWithAuthor() => this.operations
-      .queryStream<_i3.BookWithAuthor>(_streamWithAuthor, const []);
+  _i5.Stream<_i4.BookWithAuthor> streamWithAuthor() => this.operations
+      .queryStream<_i4.BookWithAuthor>(_streamWithAuthor, const []);
 
   @override
-  _i4.Future<int> shift(int year, int delta) =>
+  _i5.Future<int> shift(int year, int delta) =>
       this.operations.query<int>(_shift, [year, delta]);
 
   @override
-  _i4.Future<bool> deleteOlder(int year) =>
+  _i5.Future<bool> deleteOlder(int year) =>
       this.operations.query<bool>(_deleteOlder, [year]);
 
   @override
-  _i4.Future<void> retitle(int id, String? subtitle) =>
+  _i5.Future<void> retitle(int id, String? subtitle) =>
       this.operations.query<void>(_retitle, [id, subtitle]);
 
   @override
-  _i4.Future<List<_i3.AuthorWithBooks>> authorsWithBooks() => this.operations
-      .query<List<_i3.AuthorWithBooks>>(_authorsWithBooks, const []);
+  _i5.Future<List<_i4.AuthorWithBooks>> authorsWithBooks() => this.operations
+      .query<List<_i4.AuthorWithBooks>>(_authorsWithBooks, const []);
 
   @override
-  _i4.Future<List<String>> shouted() =>
+  _i5.Future<List<String>> shouted() =>
       this.operations.query<List<String>>(_shouted, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> bySubtitleText(String text) =>
-      this.operations.query<List<_i3.Book>>(_bySubtitleText, [text]);
+  _i5.Future<List<_i4.Book>> bySubtitleText(String text) =>
+      this.operations.query<List<_i4.Book>>(_bySubtitleText, [text]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitle(String title) =>
+  _i5.Future<List<_i4.Book>> findByTitle(String title) =>
       this.operations.list(_findByTitle, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleIgnoreCase(String title) =>
+  _i5.Future<List<_i4.Book>> findByTitleIgnoreCase(String title) =>
       this.operations.list(_findByTitleIgnoreCase, [title]);
 
   @override
-  _i4.Future<_i3.Book?> findOneByTitle(String title) =>
+  _i5.Future<_i4.Book?> findOneByTitle(String title) =>
       this.operations.one(_findOneByTitle, [title]);
 
   @override
-  _i4.Future<_i3.Book> getByTitle(String title) =>
+  _i5.Future<_i4.Book> getByTitle(String title) =>
       this.operations.single(_getByTitle, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleAndYear(String title, int year) =>
+  _i5.Future<List<_i4.Book>> findByTitleAndYear(String title, int year) =>
       this.operations.list(_findByTitleAndYear, [title, year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleOrYear(String title, int year) =>
+  _i5.Future<List<_i4.Book>> findByTitleOrYear(String title, int year) =>
       this.operations.list(_findByTitleOrYear, [title, year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearNot(int year) =>
+  _i5.Future<List<_i4.Book>> findByYearNot(int year) =>
       this.operations.list(_findByYearNot, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleNot(String title) =>
+  _i5.Future<List<_i4.Book>> findByTitleNot(String title) =>
       this.operations.list(_findByTitleNot, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleNotIgnoreCase(String title) =>
+  _i5.Future<List<_i4.Book>> findByTitleNotIgnoreCase(String title) =>
       this.operations.list(_findByTitleNotIgnoreCase, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearBetween(int from, int to) =>
+  _i5.Future<List<_i4.Book>> findByYearBetween(int from, int to) =>
       this.operations.list(_findByYearBetween, [from, to]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearGreaterThan(int year) =>
+  _i5.Future<List<_i4.Book>> findByYearGreaterThan(int year) =>
       this.operations.list(_findByYearGreaterThan, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearGreaterThanEqual(int year) =>
+  _i5.Future<List<_i4.Book>> findByYearGreaterThanEqual(int year) =>
       this.operations.list(_findByYearGreaterThanEqual, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearLessThan(int year) =>
+  _i5.Future<List<_i4.Book>> findByYearLessThan(int year) =>
       this.operations.list(_findByYearLessThan, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearLessThanEqual(int year) =>
+  _i5.Future<List<_i4.Book>> findByYearLessThanEqual(int year) =>
       this.operations.list(_findByYearLessThanEqual, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearIn(List<int> years) =>
+  _i5.Future<List<_i4.Book>> findByYearIn(List<int> years) =>
       this.operations.list(_findByYearIn, [years]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByYearNotIn(Set<int> years) =>
+  _i5.Future<List<_i4.Book>> findByYearNotIn(Set<int> years) =>
       this.operations.list(_findByYearNotIn, [years]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleIn(List<String> titles) =>
+  _i5.Future<List<_i4.Book>> findByTitleIn(List<String> titles) =>
       this.operations.list(_findByTitleIn, [titles]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleInIgnoreCase(List<String> titles) =>
+  _i5.Future<List<_i4.Book>> findByTitleInIgnoreCase(List<String> titles) =>
       this.operations.list(_findByTitleInIgnoreCase, [titles]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleIn(List<String?> subtitles) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleIn(List<String?> subtitles) =>
       this.operations.list(_findBySubtitleIn, [subtitles]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleNotIn(List<String?> subtitles) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleNotIn(List<String?> subtitles) =>
       this.operations.list(_findBySubtitleNotIn, [subtitles]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleStartingWith(String prefix) =>
+  _i5.Future<List<_i4.Book>> findByTitleStartingWith(String prefix) =>
       this.operations.list(_findByTitleStartingWith, [prefix]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleEndingWith(String suffix) =>
+  _i5.Future<List<_i4.Book>> findByTitleEndingWith(String suffix) =>
       this.operations.list(_findByTitleEndingWith, [suffix]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleContaining(String part) =>
+  _i5.Future<List<_i4.Book>> findByTitleContaining(String part) =>
       this.operations.list(_findByTitleContaining, [part]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleNotContaining(String part) =>
+  _i5.Future<List<_i4.Book>> findByTitleNotContaining(String part) =>
       this.operations.list(_findByTitleNotContaining, [part]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleLike(String pattern) =>
+  _i5.Future<List<_i4.Book>> findByTitleLike(String pattern) =>
       this.operations.list(_findByTitleLike, [pattern]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleNotLike(String pattern) =>
+  _i5.Future<List<_i4.Book>> findByTitleNotLike(String pattern) =>
       this.operations.list(_findByTitleNotLike, [pattern]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleLikeIgnoreCase(String pattern) =>
+  _i5.Future<List<_i4.Book>> findByTitleLikeIgnoreCase(String pattern) =>
       this.operations.list(_findByTitleLikeIgnoreCase, [pattern]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleContainingIgnoreCase(String part) =>
+  _i5.Future<List<_i4.Book>> findByTitleContainingIgnoreCase(String part) =>
       this.operations.list(_findByTitleContainingIgnoreCase, [part]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleStartingWithIgnoreCase(String prefix) =>
+  _i5.Future<List<_i4.Book>> findByTitleStartingWithIgnoreCase(String prefix) =>
       this.operations.list(_findByTitleStartingWithIgnoreCase, [prefix]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByTitleEndingWithIgnoreCase(String suffix) =>
+  _i5.Future<List<_i4.Book>> findByTitleEndingWithIgnoreCase(String suffix) =>
       this.operations.list(_findByTitleEndingWithIgnoreCase, [suffix]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleIsNull() =>
+  _i5.Future<List<_i4.Book>> findBySubtitleIsNull() =>
       this.operations.list(_findBySubtitleIsNull, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleIsNotNull() =>
+  _i5.Future<List<_i4.Book>> findBySubtitleIsNotNull() =>
       this.operations.list(_findBySubtitleIsNotNull, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitle(String? subtitle) =>
+  _i5.Future<List<_i4.Book>> findBySubtitle(String? subtitle) =>
       this.operations.list(_findBySubtitle, [subtitle]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleNot(String? subtitle) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleNot(String? subtitle) =>
       this.operations.list(_findBySubtitleNot, [subtitle]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleLessThan(String? subtitle) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleLessThan(String? subtitle) =>
       this.operations.list(_findBySubtitleLessThan, [subtitle]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleBetween(String? from, String? to) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleBetween(String? from, String? to) =>
       this.operations.list(_findBySubtitleBetween, [from, to]);
 
   @override
-  _i4.Future<List<_i3.Book>> findBySubtitleLike(String? pattern) =>
+  _i5.Future<List<_i4.Book>> findBySubtitleLike(String? pattern) =>
       this.operations.list(_findBySubtitleLike, [pattern]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockTrue() =>
+  _i5.Future<List<_i4.Book>> findByInStockTrue() =>
       this.operations.list(_findByInStockTrue, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockFalse() =>
+  _i5.Future<List<_i4.Book>> findByInStockFalse() =>
       this.operations.list(_findByInStockFalse, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStock(bool inStock, _i5.Sort sort) =>
+  _i5.Future<List<_i4.Book>> findByInStock(bool inStock, _i6.Sort sort) =>
       this.operations.list(_findByInStock, [inStock], sort: sort);
 
   @override
-  _i4.Future<List<_i3.Book>> findByAuthor(
-    _i6.AggregateReference<_i3.Author, int> author,
+  _i5.Future<List<_i4.Book>> findByAuthor(
+    _i7.AggregateReference<_i4.Author, int> author,
   ) => this.operations.list(_findByAuthor, [author]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByAuthorIn(
-    List<_i6.AggregateReference<_i3.Author, int>> authors,
+  _i5.Future<List<_i4.Book>> findByAuthorIn(
+    List<_i7.AggregateReference<_i4.Author, int>> authors,
   ) => this.operations.list(_findByAuthorIn, [authors]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByAuthorIsNull() =>
+  _i5.Future<List<_i4.Book>> findByAuthorIsNull() =>
       this.operations.list(_findByAuthorIsNull, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findByGenre(_i3.Genre genre) =>
+  _i5.Future<List<_i4.Book>> findByGenre(_i4.Genre genre) =>
       this.operations.list(_findByGenre, [genre]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByGenreIn(List<_i3.Genre> genres) =>
+  _i5.Future<List<_i4.Book>> findByGenreIn(List<_i4.Genre> genres) =>
       this.operations.list(_findByGenreIn, [genres]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByRatingBetween(double low, double high) =>
+  _i5.Future<List<_i4.Book>> findByRatingBetween(double low, double high) =>
       this.operations.list(_findByRatingBetween, [low, high]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByRatingGreaterThan(double rating) =>
+  _i5.Future<List<_i4.Book>> findByRatingGreaterThan(double rating) =>
       this.operations.list(_findByRatingGreaterThan, [rating]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByReleasedAfter(DateTime moment) =>
+  _i5.Future<List<_i4.Book>> findByReleasedAfter(DateTime moment) =>
       this.operations.list(_findByReleasedAfter, [moment]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByReleased(DateTime? moment) =>
+  _i5.Future<List<_i4.Book>> findByReleased(DateTime? moment) =>
       this.operations.list(_findByReleased, [moment]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockOrderByYearDescTitleAsc(
+  _i5.Future<List<_i4.Book>> findByInStockOrderByYearDescTitleAsc(
     bool inStock,
   ) => this.operations.list(_findByInStockOrderByYearDescTitleAsc, [inStock]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockOrderBySubtitleAscIdAsc(
+  _i5.Future<List<_i4.Book>> findByInStockOrderBySubtitleAscIdAsc(
     bool inStock,
   ) => this.operations.list(_findByInStockOrderBySubtitleAscIdAsc, [inStock]);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockOrderBySubtitleDescIdAsc(
+  _i5.Future<List<_i4.Book>> findByInStockOrderBySubtitleDescIdAsc(
     bool inStock,
   ) => this.operations.list(_findByInStockOrderBySubtitleDescIdAsc, [inStock]);
 
   @override
-  _i4.Future<Set<_i3.Book>> findByYear(int year) =>
+  _i5.Future<Set<_i4.Book>> findByYear(int year) =>
       this.operations.set(_findByYear, [year]);
 
   @override
-  _i4.Future<Iterable<_i3.Book>> findByYearLessThanOrderByYear(int year) =>
+  _i5.Future<Iterable<_i4.Book>> findByYearLessThanOrderByYear(int year) =>
       this.operations.list(_findByYearLessThanOrderByYear, [year]);
 
   @override
-  _i4.Future<List<_i3.Book>> findDistinctByInStock(bool inStock) =>
+  _i5.Future<List<_i4.Book>> findDistinctByInStock(bool inStock) =>
       this.operations.list(_findDistinctByInStock, [inStock]);
 
   @override
-  _i4.Stream<_i3.Book> streamByInStock(bool inStock) =>
+  _i5.Stream<_i4.Book> streamByInStock(bool inStock) =>
       this.operations.stream(_streamByInStock, [inStock]);
 
   @override
-  _i4.Future<_i7.Page<_i3.Book>> findByYearAfter(
+  _i5.Future<_i8.Page<_i4.Book>> findByYearAfter(
     int year,
-    _i7.Pageable pageable,
+    _i8.Pageable pageable,
   ) => this.operations.page(_findByYearAfter, [year], pageable);
 
   @override
-  _i4.Future<_i7.Slice<_i3.Book>> findByInStockIsTrue(_i7.Pageable pageable) =>
+  _i5.Future<_i8.Slice<_i4.Book>> findByInStockIsTrue(_i8.Pageable pageable) =>
       this.operations.slice(_findByInStockIsTrue, const [], pageable);
 
   @override
-  _i4.Future<List<_i3.Book>> findByInStockEquals(
+  _i5.Future<List<_i4.Book>> findByInStockEquals(
     bool inStock,
-    _i7.Pageable pageable,
+    _i8.Pageable pageable,
   ) =>
       this.operations.list(_findByInStockEquals, [inStock], pageable: pageable);
 
   @override
-  _i4.Future<_i3.Book?> findFirstByOrderByYearAsc() =>
+  _i5.Future<_i4.Book?> findFirstByOrderByYearAsc() =>
       this.operations.one(_findFirstByOrderByYearAsc, const []);
 
   @override
-  _i4.Future<List<_i3.Book>> findTop2ByOrderByYearDesc() =>
+  _i5.Future<List<_i4.Book>> findTop2ByOrderByYearDesc() =>
       this.operations.list(_findTop2ByOrderByYearDesc, const []);
 
   @override
-  _i4.Future<_i7.Page<_i3.Book>> findTop3ByInStock(
+  _i5.Future<_i8.Page<_i4.Book>> findTop3ByInStock(
     bool inStock,
-    _i7.Pageable pageable,
+    _i8.Pageable pageable,
   ) => this.operations.page(_findTop3ByInStock, [inStock], pageable);
 
   @override
-  _i4.Future<int> countByInStock(bool inStock) =>
+  _i5.Future<int> countByInStock(bool inStock) =>
       this.operations.countBy(_countByInStock, [inStock]);
 
   @override
-  _i4.Future<int> countByTitleContaining(String part) =>
+  _i5.Future<int> countByTitleContaining(String part) =>
       this.operations.countBy(_countByTitleContaining, [part]);
 
   @override
-  _i4.Future<bool> existsByTitle(String title) =>
+  _i5.Future<bool> existsByTitle(String title) =>
       this.operations.existsBy(_existsByTitle, [title]);
 
   @override
-  _i4.Future<int> deleteByYearLessThan(int year) =>
+  _i5.Future<int> deleteByYearLessThan(int year) =>
       this.operations.deleteBy(_deleteByYearLessThan, [year]);
 
   @override
-  _i4.Future<void> removeByTitle(String title) =>
+  _i5.Future<void> removeByTitle(String title) =>
       this.operations.deleteBy(_removeByTitle, [title]);
 
   @override
-  _i4.Future<List<_i3.Book>> deleteByInStock(bool inStock) =>
+  _i5.Future<List<_i4.Book>> deleteByInStock(bool inStock) =>
       this.operations.deleteByReturning(_deleteByInStock, [inStock]);
 
   @override
-  _i4.Future<int> deleteByTitleIn(List<String> titles) =>
+  _i5.Future<int> deleteByTitleIn(List<String> titles) =>
       this.operations.deleteBy(_deleteByTitleIn, [titles]);
 }
 
 /// Implements `OrderQueries`: `SimpleRepository` has the CRUD methods.
-class _$OrderQueriesImpl extends _i2.SimpleRepository<_i3.PurchaseOrder, int>
-    implements _i3.OrderQueries {
+class _$OrderQueriesImpl extends _i3.SimpleRepository<_i4.PurchaseOrder, int>
+    implements _i4.OrderQueries {
   _$OrderQueriesImpl(super.operations);
 
-  static const _findByCustomer = _i2.PartTree(r'findByCustomer', [
-    _i2.OrPart([_i2.Part(r'customer')]),
+  static const _findByCustomer = _i3.PartTree(r'findByCustomer', [
+    _i3.OrPart([_i3.Part(r'customer')]),
   ]);
 
-  static const _deleteByCustomer = _i2.PartTree(r'deleteByCustomer', [
-    _i2.OrPart([_i2.Part(r'customer')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.delete));
+  static const _deleteByCustomer = _i3.PartTree(r'deleteByCustomer', [
+    _i3.OrPart([_i3.Part(r'customer')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.delete));
 
-  static const _deleteByCustomerStartingWith = _i2.PartTree(
+  static const _deleteByCustomerStartingWith = _i3.PartTree(
     r'deleteByCustomerStartingWith',
     [
-      _i2.OrPart([_i2.Part(r'customer', _i2.PartType.startingWith)]),
+      _i3.OrPart([_i3.Part(r'customer', _i3.PartType.startingWith)]),
     ],
-    subject: _i2.Subject(_i2.SubjectKind.delete),
+    subject: _i3.Subject(_i3.SubjectKind.delete),
   );
 
   static _$OrderQueriesImpl $create(_i1.DependencyResolver r) =>
       _$OrderQueriesImpl(
         r
-            .dependency<_i2.RepositoryFactory>()
-            .operations<_i3.PurchaseOrder, int>(r'OrderQueries'),
+            .dependency<_i3.RepositoryFactory>()
+            .operations<_i4.PurchaseOrder, int>(r'OrderQueries'),
       );
 
   @override
-  _i4.Future<List<_i3.PurchaseOrder>> findByCustomer(String customer) =>
+  _i5.Future<List<_i4.PurchaseOrder>> findByCustomer(String customer) =>
       this.operations.list(_findByCustomer, [customer]);
 
   @override
-  _i4.Future<List<_i3.PurchaseOrder>> deleteByCustomer(String customer) =>
+  _i5.Future<List<_i4.PurchaseOrder>> deleteByCustomer(String customer) =>
       this.operations.deleteByReturning(_deleteByCustomer, [customer]);
 
   @override
-  _i4.Future<int> deleteByCustomerStartingWith(String prefix) =>
+  _i5.Future<int> deleteByCustomerStartingWith(String prefix) =>
       this.operations.deleteBy(_deleteByCustomerStartingWith, [prefix]);
 }
 
 /// Implements `MemoryOrders`: `SimpleRepository` has the CRUD methods.
-class _$MemoryOrdersImpl extends _i2.SimpleRepository<_i3.PurchaseOrder, int>
-    implements _i3.MemoryOrders {
+class _$MemoryOrdersImpl extends _i3.SimpleRepository<_i4.PurchaseOrder, int>
+    implements _i4.MemoryOrders {
   _$MemoryOrdersImpl(super.operations);
 
-  static const _findByCustomer = _i2.PartTree(r'findByCustomer', [
-    _i2.OrPart([_i2.Part(r'customer')]),
+  static const _findByCustomer = _i3.PartTree(r'findByCustomer', [
+    _i3.OrPart([_i3.Part(r'customer')]),
   ]);
 
-  static const _deleteByCustomer = _i2.PartTree(r'deleteByCustomer', [
-    _i2.OrPart([_i2.Part(r'customer')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.delete));
+  static const _deleteByCustomer = _i3.PartTree(r'deleteByCustomer', [
+    _i3.OrPart([_i3.Part(r'customer')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.delete));
 
-  static const _deleteByCustomerStartingWith = _i2.PartTree(
+  static const _deleteByCustomerStartingWith = _i3.PartTree(
     r'deleteByCustomerStartingWith',
     [
-      _i2.OrPart([_i2.Part(r'customer', _i2.PartType.startingWith)]),
+      _i3.OrPart([_i3.Part(r'customer', _i3.PartType.startingWith)]),
     ],
-    subject: _i2.Subject(_i2.SubjectKind.delete),
+    subject: _i3.Subject(_i3.SubjectKind.delete),
   );
 
   static _$MemoryOrdersImpl $create(_i1.DependencyResolver r) =>
       _$MemoryOrdersImpl(
         r
-            .dependency<_i2.RepositoryFactory>()
-            .operations<_i3.PurchaseOrder, int>(
+            .dependency<_i3.RepositoryFactory>()
+            .operations<_i4.PurchaseOrder, int>(
               r'MemoryOrders',
-              annotations: const [_i6.UseStore(r'memory')],
+              annotations: const [_i7.UseStore(r'memory')],
             ),
       );
 
   @override
-  _i4.Future<List<_i3.PurchaseOrder>> findByCustomer(String customer) =>
+  _i5.Future<List<_i4.PurchaseOrder>> findByCustomer(String customer) =>
       this.operations.list(_findByCustomer, [customer]);
 
   @override
-  _i4.Future<List<_i3.PurchaseOrder>> deleteByCustomer(String customer) =>
+  _i5.Future<List<_i4.PurchaseOrder>> deleteByCustomer(String customer) =>
       this.operations.deleteByReturning(_deleteByCustomer, [customer]);
 
   @override
-  _i4.Future<int> deleteByCustomerStartingWith(String prefix) =>
+  _i5.Future<int> deleteByCustomerStartingWith(String prefix) =>
       this.operations.deleteBy(_deleteByCustomerStartingWith, [prefix]);
 }
 
 /// Implements `SqlOrders`: `SimpleRepository` has the CRUD methods.
-class _$SqlOrdersImpl extends _i2.SimpleRepository<_i3.PurchaseOrder, int>
-    implements _i3.SqlOrders {
+class _$SqlOrdersImpl extends _i3.SimpleRepository<_i4.PurchaseOrder, int>
+    implements _i4.SqlOrders {
   _$SqlOrdersImpl(super.operations);
 
-  static const _viaQuery = _i2.QueryMethod(
+  static const _viaQuery = _i3.QueryMethod(
     r'viaQuery',
-    _i6.Query(r'select id, customer from orders where customer = :customer'),
+    _i7.Query(r'select id, customer from orders where customer = :customer'),
     parameters: [r'customer'],
-    element: _i1.ClassType<_i3.PurchaseOrder>(),
+    element: _i1.ClassType<_i4.PurchaseOrder>(),
   );
 
-  static const _withoutId = _i2.QueryMethod(
+  static const _withoutId = _i3.QueryMethod(
     r'withoutId',
-    _i6.Query(r'select customer from orders where customer = :customer'),
+    _i7.Query(r'select customer from orders where customer = :customer'),
     parameters: [r'customer'],
-    element: _i1.ClassType<_i3.PurchaseOrder>(),
+    element: _i1.ClassType<_i4.PurchaseOrder>(),
   );
 
-  static const _findByCustomer = _i2.PartTree(r'findByCustomer', [
-    _i2.OrPart([_i2.Part(r'customer')]),
+  static const _findByCustomer = _i3.PartTree(r'findByCustomer', [
+    _i3.OrPart([_i3.Part(r'customer')]),
   ]);
 
-  static const _deleteByCustomer = _i2.PartTree(r'deleteByCustomer', [
-    _i2.OrPart([_i2.Part(r'customer')]),
-  ], subject: _i2.Subject(_i2.SubjectKind.delete));
+  static const _deleteByCustomer = _i3.PartTree(r'deleteByCustomer', [
+    _i3.OrPart([_i3.Part(r'customer')]),
+  ], subject: _i3.Subject(_i3.SubjectKind.delete));
 
-  static const _deleteByCustomerStartingWith = _i2.PartTree(
+  static const _deleteByCustomerStartingWith = _i3.PartTree(
     r'deleteByCustomerStartingWith',
     [
-      _i2.OrPart([_i2.Part(r'customer', _i2.PartType.startingWith)]),
+      _i3.OrPart([_i3.Part(r'customer', _i3.PartType.startingWith)]),
     ],
-    subject: _i2.Subject(_i2.SubjectKind.delete),
+    subject: _i3.Subject(_i3.SubjectKind.delete),
   );
 
   static _$SqlOrdersImpl $create(_i1.DependencyResolver r) => _$SqlOrdersImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.PurchaseOrder, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.PurchaseOrder, int>(
       r'SqlOrders',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       queries: [_viaQuery, _withoutId],
       requirements: const [
-        _i2.StoreRequirement(r'viaQuery', _i2.DataStoreCapability.queries),
-        _i2.StoreRequirement(r'withoutId', _i2.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'viaQuery', _i3.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'withoutId', _i3.DataStoreCapability.queries),
       ],
     ),
   );
 
   @override
-  _i4.Future<List<_i3.PurchaseOrder>> viaQuery(String customer) =>
-      this.operations.query<List<_i3.PurchaseOrder>>(_viaQuery, [customer]);
+  _i5.Future<List<_i4.PurchaseOrder>> viaQuery(String customer) =>
+      this.operations.query<List<_i4.PurchaseOrder>>(_viaQuery, [customer]);
 
   @override
-  _i4.Future<List<_i3.PurchaseOrder>> withoutId(String customer) =>
-      this.operations.query<List<_i3.PurchaseOrder>>(_withoutId, [customer]);
+  _i5.Future<List<_i4.PurchaseOrder>> withoutId(String customer) =>
+      this.operations.query<List<_i4.PurchaseOrder>>(_withoutId, [customer]);
 
   @override
-  _i4.Future<List<_i3.PurchaseOrder>> findByCustomer(String customer) =>
+  _i5.Future<List<_i4.PurchaseOrder>> findByCustomer(String customer) =>
       this.operations.list(_findByCustomer, [customer]);
 
   @override
-  _i4.Future<List<_i3.PurchaseOrder>> deleteByCustomer(String customer) =>
+  _i5.Future<List<_i4.PurchaseOrder>> deleteByCustomer(String customer) =>
       this.operations.deleteByReturning(_deleteByCustomer, [customer]);
 
   @override
-  _i4.Future<int> deleteByCustomerStartingWith(String prefix) =>
+  _i5.Future<int> deleteByCustomerStartingWith(String prefix) =>
       this.operations.deleteBy(_deleteByCustomerStartingWith, [prefix]);
 }
 
 /// Implements `MemoryShelves`: `SimpleRepository` has the CRUD methods.
-class _$MemoryShelvesImpl extends _i2.SimpleRepository<_i3.Shelf, int>
-    implements _i3.MemoryShelves {
+class _$MemoryShelvesImpl extends _i3.SimpleRepository<_i4.Shelf, int>
+    implements _i4.MemoryShelves {
   _$MemoryShelvesImpl(super.operations);
 
   static _$MemoryShelvesImpl $create(_i1.DependencyResolver r) =>
       _$MemoryShelvesImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Shelf, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Shelf, int>(
           r'MemoryShelves',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 }
 
 /// Implements `SqlShelves`: `SimpleRepository` has the CRUD methods.
-class _$SqlShelvesImpl extends _i2.SimpleRepository<_i3.Shelf, int>
-    implements _i3.SqlShelves {
+class _$SqlShelvesImpl extends _i3.SimpleRepository<_i4.Shelf, int>
+    implements _i4.SqlShelves {
   _$SqlShelvesImpl(super.operations);
 
   static _$SqlShelvesImpl $create(_i1.DependencyResolver r) => _$SqlShelvesImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Shelf, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Shelf, int>(
       r'SqlShelves',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
     ),
   );
 }
 
 /// Implements `MemoryAccounts`: `SimpleRepository` has the CRUD methods.
-class _$MemoryAccountsImpl extends _i2.SimpleRepository<_i3.Account, String>
-    implements _i3.MemoryAccounts {
+class _$MemoryAccountsImpl extends _i3.SimpleRepository<_i4.Account, String>
+    implements _i4.MemoryAccounts {
   _$MemoryAccountsImpl(super.operations);
 
-  static const _findByOwner = _i2.PartTree(r'findByOwner', [
-    _i2.OrPart([_i2.Part(r'owner')]),
+  static const _findByOwner = _i3.PartTree(r'findByOwner', [
+    _i3.OrPart([_i3.Part(r'owner')]),
   ]);
 
   static _$MemoryAccountsImpl $create(_i1.DependencyResolver r) =>
       _$MemoryAccountsImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Account, String>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Account, String>(
           r'MemoryAccounts',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 
   @override
-  _i4.Future<List<_i3.Account>> findByOwner(String owner) =>
+  _i5.Future<List<_i4.Account>> findByOwner(String owner) =>
       this.operations.list(_findByOwner, [owner]);
 }
 
 /// Implements `SqlAccounts`: `SimpleRepository` has the CRUD methods.
-class _$SqlAccountsImpl extends _i2.SimpleRepository<_i3.Account, String>
-    implements _i3.SqlAccounts {
+class _$SqlAccountsImpl extends _i3.SimpleRepository<_i4.Account, String>
+    implements _i4.SqlAccounts {
   _$SqlAccountsImpl(super.operations);
 
-  static const _findByOwner = _i2.PartTree(r'findByOwner', [
-    _i2.OrPart([_i2.Part(r'owner')]),
+  static const _findByOwner = _i3.PartTree(r'findByOwner', [
+    _i3.OrPart([_i3.Part(r'owner')]),
   ]);
 
   static _$SqlAccountsImpl $create(_i1.DependencyResolver r) =>
       _$SqlAccountsImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Account, String>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Account, String>(
           r'SqlAccounts',
-          annotations: const [_i6.UseStore(r'jdbc')],
+          annotations: const [_i7.UseStore(r'jdbc')],
         ),
       );
 
   @override
-  _i4.Future<List<_i3.Account>> findByOwner(String owner) =>
+  _i5.Future<List<_i4.Account>> findByOwner(String owner) =>
       this.operations.list(_findByOwner, [owner]);
 }
 
 /// Implements `MemoryTickets`: `SimpleRepository` has the CRUD methods.
-class _$MemoryTicketsImpl extends _i2.SimpleRepository<_i3.Ticket, int>
-    implements _i3.MemoryTickets {
+class _$MemoryTicketsImpl extends _i3.SimpleRepository<_i4.Ticket, int>
+    implements _i4.MemoryTickets {
   _$MemoryTicketsImpl(super.operations);
 
   static _$MemoryTicketsImpl $create(_i1.DependencyResolver r) =>
       _$MemoryTicketsImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Ticket, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Ticket, int>(
           r'MemoryTickets',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 }
 
 /// Implements `SqlTickets`: `SimpleRepository` has the CRUD methods.
-class _$SqlTicketsImpl extends _i2.SimpleRepository<_i3.Ticket, int>
-    implements _i3.SqlTickets {
+class _$SqlTicketsImpl extends _i3.SimpleRepository<_i4.Ticket, int>
+    implements _i4.SqlTickets {
   _$SqlTicketsImpl(super.operations);
 
   static _$SqlTicketsImpl $create(_i1.DependencyResolver r) => _$SqlTicketsImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Ticket, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Ticket, int>(
       r'SqlTickets',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
     ),
   );
 }
 
 /// Implements `MemoryNotes`: `SimpleRepository` has the CRUD methods.
-class _$MemoryNotesImpl extends _i2.SimpleRepository<_i3.Note, int>
-    implements _i3.MemoryNotes {
+class _$MemoryNotesImpl extends _i3.SimpleRepository<_i4.Note, int>
+    implements _i4.MemoryNotes {
   _$MemoryNotesImpl(super.operations);
 
   static _$MemoryNotesImpl $create(_i1.DependencyResolver r) =>
       _$MemoryNotesImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Note, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Note, int>(
           r'MemoryNotes',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 }
 
 /// Implements `SqlNotes`: `SimpleRepository` has the CRUD methods.
-class _$SqlNotesImpl extends _i2.SimpleRepository<_i3.Note, int>
-    implements _i3.SqlNotes {
+class _$SqlNotesImpl extends _i3.SimpleRepository<_i4.Note, int>
+    implements _i4.SqlNotes {
   _$SqlNotesImpl(super.operations);
 
   static _$SqlNotesImpl $create(_i1.DependencyResolver r) => _$SqlNotesImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Note, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Note, int>(
       r'SqlNotes',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
     ),
   );
 }
 
 /// Implements `SqlCrates`: `SimpleRepository` has the CRUD methods.
-class _$SqlCratesImpl extends _i2.SimpleRepository<_i3.Crate, int>
-    implements _i3.SqlCrates {
+class _$SqlCratesImpl extends _i3.SimpleRepository<_i4.Crate, int>
+    implements _i4.SqlCrates {
   _$SqlCratesImpl(super.operations);
 
   static _$SqlCratesImpl $create(_i1.DependencyResolver r) => _$SqlCratesImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Crate, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Crate, int>(
       r'SqlCrates',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
     ),
   );
 }
 
 /// Implements `SqlAuthors`: `SimpleRepository` has the CRUD methods.
-class _$SqlAuthorsImpl extends _i2.SimpleRepository<_i3.Author, int>
-    implements _i3.SqlAuthors {
+class _$SqlAuthorsImpl extends _i3.SimpleRepository<_i4.Author, int>
+    implements _i4.SqlAuthors {
   _$SqlAuthorsImpl(super.operations);
 
-  static const _findByNameStartingWith = _i2.PartTree(
+  static const _findByNameStartingWith = _i3.PartTree(
     r'findByNameStartingWith',
     [
-      _i2.OrPart([_i2.Part(r'name', _i2.PartType.startingWith)]),
+      _i3.OrPart([_i3.Part(r'name', _i3.PartType.startingWith)]),
     ],
   );
 
   static _$SqlAuthorsImpl $create(_i1.DependencyResolver r) => _$SqlAuthorsImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Author, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Author, int>(
       r'SqlAuthors',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
     ),
   );
 
   @override
-  _i4.Future<List<_i3.Author>> findByNameStartingWith(String prefix) =>
+  _i5.Future<List<_i4.Author>> findByNameStartingWith(String prefix) =>
       this.operations.list(_findByNameStartingWith, [prefix]);
 }
 
 /// Implements `MemoryAuthors`: `SimpleRepository` has the CRUD methods.
-class _$MemoryAuthorsImpl extends _i2.SimpleRepository<_i3.Author, int>
-    implements _i3.MemoryAuthors {
+class _$MemoryAuthorsImpl extends _i3.SimpleRepository<_i4.Author, int>
+    implements _i4.MemoryAuthors {
   _$MemoryAuthorsImpl(super.operations);
 
   static _$MemoryAuthorsImpl $create(_i1.DependencyResolver r) =>
       _$MemoryAuthorsImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Author, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Author, int>(
           r'MemoryAuthors',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 }
 
 /// Implements `SqlStocks`: `SimpleRepository` has the CRUD methods.
-class _$SqlStocksImpl extends _i2.SimpleRepository<_i3.Stock, int>
-    implements _i3.SqlStocks {
+class _$SqlStocksImpl extends _i3.SimpleRepository<_i4.Stock, int>
+    implements _i4.SqlStocks {
   _$SqlStocksImpl(super.operations);
 
-  static const _findBySku = _i2.PartTree(r'findBySku', [
-    _i2.OrPart([_i2.Part(r'sku')]),
+  static const _findBySku = _i3.PartTree(r'findBySku', [
+    _i3.OrPart([_i3.Part(r'sku')]),
   ]);
 
-  static const _findByQuantityLessThan = _i2.PartTree(
+  static const _findByQuantityLessThan = _i3.PartTree(
     r'findByQuantityLessThan',
     [
-      _i2.OrPart([_i2.Part(r'quantity', _i2.PartType.lessThan)]),
+      _i3.OrPart([_i3.Part(r'quantity', _i3.PartType.lessThan)]),
     ],
   );
 
-  static const _findOneBySku = _i2.PartTree(r'findOneBySku', [
-    _i2.OrPart([_i2.Part(r'sku')]),
+  static const _findOneBySku = _i3.PartTree(r'findOneBySku', [
+    _i3.OrPart([_i3.Part(r'sku')]),
   ]);
 
   static _$SqlStocksImpl $create(_i1.DependencyResolver r) => _$SqlStocksImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Stock, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Stock, int>(
       r'SqlStocks',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       requirements: const [
-        _i2.StoreRequirement(r'findBySku', _i2.DataStoreCapability.locks),
-        _i2.StoreRequirement(
+        _i3.StoreRequirement(r'findBySku', _i3.DataStoreCapability.locks),
+        _i3.StoreRequirement(
           r'findByQuantityLessThan',
-          _i2.DataStoreCapability.locks,
+          _i3.DataStoreCapability.locks,
         ),
-        _i2.StoreRequirement(r'findById', _i2.DataStoreCapability.locks),
+        _i3.StoreRequirement(r'findById', _i3.DataStoreCapability.locks),
       ],
     ),
   );
 
   @override
-  _i4.Future<_i3.Stock?> findBySku(String sku) => this.operations.one(
+  _i5.Future<_i4.Stock?> findBySku(String sku) => this.operations.one(
     _findBySku,
     [sku],
-    lock: const _i6.Lock(_i6.LockMode.pessimisticWrite),
+    lock: const _i7.Lock(_i7.LockMode.pessimisticWrite),
   );
 
   @override
-  _i4.Future<List<_i3.Stock>> findByQuantityLessThan(int quantity) =>
+  _i5.Future<List<_i4.Stock>> findByQuantityLessThan(int quantity) =>
       this.operations.list(_findByQuantityLessThan, [
         quantity,
-      ], lock: const _i6.Lock(_i6.LockMode.pessimisticRead));
+      ], lock: const _i7.Lock(_i7.LockMode.pessimisticRead));
 
   @override
-  _i4.Future<_i3.Stock?> findById(int id) => this.operations.findById(
+  _i5.Future<_i4.Stock?> findById(int id) => this.operations.findById(
     id,
-    lock: const _i6.Lock(_i6.LockMode.pessimisticWrite),
+    lock: const _i7.Lock(_i7.LockMode.pessimisticWrite),
   );
 
   @override
-  _i4.Future<_i3.Stock?> findOneBySku(String sku) =>
+  _i5.Future<_i4.Stock?> findOneBySku(String sku) =>
       this.operations.one(_findOneBySku, [sku]);
 }
 
 /// Implements `FanQueries`: `SimpleRepository` has the CRUD methods.
-class _$FanQueriesImpl extends _i2.SimpleRepository<_i3.Fan, int>
-    implements _i3.FanQueries {
+class _$FanQueriesImpl extends _i3.SimpleRepository<_i4.Fan, int>
+    implements _i4.FanQueries {
   _$FanQueriesImpl(super.operations);
 
-  static const _findByClubId = _i2.PartTree(r'findByClubId', [
-    _i2.OrPart([_i2.Part(r'clubId')]),
+  static const _findByClubId = _i3.PartTree(r'findByClubId', [
+    _i3.OrPart([_i3.Part(r'clubId')]),
   ]);
 
   static _$FanQueriesImpl $create(_i1.DependencyResolver r) => _$FanQueriesImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Fan, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Fan, int>(
       r'FanQueries',
     ),
   );
 
   @override
-  _i4.Future<List<_i3.Fan>> findByClubId(int clubId) =>
+  _i5.Future<List<_i4.Fan>> findByClubId(int clubId) =>
       this.operations.list(_findByClubId, [clubId]);
 }
 
 /// Implements `MemoryFans`: `SimpleRepository` has the CRUD methods.
-class _$MemoryFansImpl extends _i2.SimpleRepository<_i3.Fan, int>
-    implements _i3.MemoryFans {
+class _$MemoryFansImpl extends _i3.SimpleRepository<_i4.Fan, int>
+    implements _i4.MemoryFans {
   _$MemoryFansImpl(super.operations);
 
-  static const _findByClubId = _i2.PartTree(r'findByClubId', [
-    _i2.OrPart([_i2.Part(r'clubId')]),
+  static const _findByClubId = _i3.PartTree(r'findByClubId', [
+    _i3.OrPart([_i3.Part(r'clubId')]),
   ]);
 
   static _$MemoryFansImpl $create(_i1.DependencyResolver r) => _$MemoryFansImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Fan, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Fan, int>(
       r'MemoryFans',
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
     ),
   );
 
   @override
-  _i4.Future<List<_i3.Fan>> findByClubId(int clubId) =>
+  _i5.Future<List<_i4.Fan>> findByClubId(int clubId) =>
       this.operations.list(_findByClubId, [clubId]);
 }
 
 /// Implements `SqlFans`: `SimpleRepository` has the CRUD methods.
-class _$SqlFansImpl extends _i2.SimpleRepository<_i3.Fan, int>
-    implements _i3.SqlFans {
+class _$SqlFansImpl extends _i3.SimpleRepository<_i4.Fan, int>
+    implements _i4.SqlFans {
   _$SqlFansImpl(super.operations);
 
-  static const _byClub = _i2.QueryMethod(
+  static const _byClub = _i3.QueryMethod(
     r'byClub',
-    _i6.Query(r'select * from fans where club_id = :clubId order by id'),
+    _i7.Query(r'select * from fans where club_id = :clubId order by id'),
     parameters: [r'clubId'],
-    element: _i1.ClassType<_i3.Fan>(),
+    element: _i1.ClassType<_i4.Fan>(),
   );
 
-  static const _findByClubId = _i2.PartTree(r'findByClubId', [
-    _i2.OrPart([_i2.Part(r'clubId')]),
+  static const _findByClubId = _i3.PartTree(r'findByClubId', [
+    _i3.OrPart([_i3.Part(r'clubId')]),
   ]);
 
   static _$SqlFansImpl $create(_i1.DependencyResolver r) => _$SqlFansImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Fan, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Fan, int>(
       r'SqlFans',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       queries: [_byClub],
       requirements: const [
-        _i2.StoreRequirement(r'byClub', _i2.DataStoreCapability.queries),
+        _i3.StoreRequirement(r'byClub', _i3.DataStoreCapability.queries),
       ],
     ),
   );
 
   @override
-  _i4.Future<List<_i3.Fan>> byClub(int clubId) =>
-      this.operations.query<List<_i3.Fan>>(_byClub, [clubId]);
+  _i5.Future<List<_i4.Fan>> byClub(int clubId) =>
+      this.operations.query<List<_i4.Fan>>(_byClub, [clubId]);
 
   @override
-  _i4.Future<List<_i3.Fan>> findByClubId(int clubId) =>
+  _i5.Future<List<_i4.Fan>> findByClubId(int clubId) =>
       this.operations.list(_findByClubId, [clubId]);
 }
 
 /// Implements `CitizenQueries`: `SimpleRepository` has the CRUD methods.
-class _$CitizenQueriesImpl extends _i2.SimpleRepository<_i3.Citizen, int>
-    implements _i3.CitizenQueries {
+class _$CitizenQueriesImpl extends _i3.SimpleRepository<_i4.Citizen, int>
+    implements _i4.CitizenQueries {
   _$CitizenQueriesImpl(super.operations);
 
-  static const _findByPassport = _i2.PartTree(r'findByPassport', [
-    _i2.OrPart([_i2.Part(r'passport')]),
+  static const _findByPassport = _i3.PartTree(r'findByPassport', [
+    _i3.OrPart([_i3.Part(r'passport')]),
   ]);
 
   static _$CitizenQueriesImpl $create(_i1.DependencyResolver r) =>
       _$CitizenQueriesImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Citizen, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Citizen, int>(
           r'CitizenQueries',
         ),
       );
 
   @override
-  _i4.Future<List<_i3.Citizen>> findByPassport(String? passport) =>
+  _i5.Future<List<_i4.Citizen>> findByPassport(String? passport) =>
       this.operations.list(_findByPassport, [passport]);
 }
 
 /// Implements `MemoryCitizens`: `SimpleRepository` has the CRUD methods.
-class _$MemoryCitizensImpl extends _i2.SimpleRepository<_i3.Citizen, int>
-    implements _i3.MemoryCitizens {
+class _$MemoryCitizensImpl extends _i3.SimpleRepository<_i4.Citizen, int>
+    implements _i4.MemoryCitizens {
   _$MemoryCitizensImpl(super.operations);
 
-  static const _findByPassport = _i2.PartTree(r'findByPassport', [
-    _i2.OrPart([_i2.Part(r'passport')]),
+  static const _findByPassport = _i3.PartTree(r'findByPassport', [
+    _i3.OrPart([_i3.Part(r'passport')]),
   ]);
 
   static _$MemoryCitizensImpl $create(_i1.DependencyResolver r) =>
       _$MemoryCitizensImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Citizen, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Citizen, int>(
           r'MemoryCitizens',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 
   @override
-  _i4.Future<List<_i3.Citizen>> findByPassport(String? passport) =>
+  _i5.Future<List<_i4.Citizen>> findByPassport(String? passport) =>
       this.operations.list(_findByPassport, [passport]);
 }
 
 /// Implements `SqlCitizens`: `SimpleRepository` has the CRUD methods.
-class _$SqlCitizensImpl extends _i2.SimpleRepository<_i3.Citizen, int>
-    implements _i3.SqlCitizens {
+class _$SqlCitizensImpl extends _i3.SimpleRepository<_i4.Citizen, int>
+    implements _i4.SqlCitizens {
   _$SqlCitizensImpl(super.operations);
 
-  static const _findByPassport = _i2.PartTree(r'findByPassport', [
-    _i2.OrPart([_i2.Part(r'passport')]),
+  static const _findByPassport = _i3.PartTree(r'findByPassport', [
+    _i3.OrPart([_i3.Part(r'passport')]),
   ]);
 
   static _$SqlCitizensImpl $create(_i1.DependencyResolver r) =>
       _$SqlCitizensImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Citizen, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Citizen, int>(
           r'SqlCitizens',
-          annotations: const [_i6.UseStore(r'jdbc')],
+          annotations: const [_i7.UseStore(r'jdbc')],
         ),
       );
 
   @override
-  _i4.Future<List<_i3.Citizen>> findByPassport(String? passport) =>
+  _i5.Future<List<_i4.Citizen>> findByPassport(String? passport) =>
       this.operations.list(_findByPassport, [passport]);
 }
 
 /// Implements `CategoryQueries`: `SimpleRepository` has the CRUD methods.
-class _$CategoryQueriesImpl extends _i2.SimpleRepository<_i3.Category, int>
-    implements _i3.CategoryQueries {
+class _$CategoryQueriesImpl extends _i3.SimpleRepository<_i4.Category, int>
+    implements _i4.CategoryQueries {
   _$CategoryQueriesImpl(super.operations);
 
-  static const _deleteByNameStartingWith = _i2.PartTree(
+  static const _deleteByNameStartingWith = _i3.PartTree(
     r'deleteByNameStartingWith',
     [
-      _i2.OrPart([_i2.Part(r'name', _i2.PartType.startingWith)]),
+      _i3.OrPart([_i3.Part(r'name', _i3.PartType.startingWith)]),
     ],
-    subject: _i2.Subject(_i2.SubjectKind.delete),
+    subject: _i3.Subject(_i3.SubjectKind.delete),
   );
 
   static _$CategoryQueriesImpl $create(_i1.DependencyResolver r) =>
       _$CategoryQueriesImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Category, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Category, int>(
           r'CategoryQueries',
         ),
       );
 
   @override
-  _i4.Future<int> deleteByNameStartingWith(String prefix) =>
+  _i5.Future<int> deleteByNameStartingWith(String prefix) =>
       this.operations.deleteBy(_deleteByNameStartingWith, [prefix]);
 }
 
 /// Implements `MemoryCategories`: `SimpleRepository` has the CRUD methods.
-class _$MemoryCategoriesImpl extends _i2.SimpleRepository<_i3.Category, int>
-    implements _i3.MemoryCategories {
+class _$MemoryCategoriesImpl extends _i3.SimpleRepository<_i4.Category, int>
+    implements _i4.MemoryCategories {
   _$MemoryCategoriesImpl(super.operations);
 
-  static const _deleteByNameStartingWith = _i2.PartTree(
+  static const _deleteByNameStartingWith = _i3.PartTree(
     r'deleteByNameStartingWith',
     [
-      _i2.OrPart([_i2.Part(r'name', _i2.PartType.startingWith)]),
+      _i3.OrPart([_i3.Part(r'name', _i3.PartType.startingWith)]),
     ],
-    subject: _i2.Subject(_i2.SubjectKind.delete),
+    subject: _i3.Subject(_i3.SubjectKind.delete),
   );
 
   static _$MemoryCategoriesImpl $create(_i1.DependencyResolver r) =>
       _$MemoryCategoriesImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Category, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Category, int>(
           r'MemoryCategories',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 
   @override
-  _i4.Future<int> deleteByNameStartingWith(String prefix) =>
+  _i5.Future<int> deleteByNameStartingWith(String prefix) =>
       this.operations.deleteBy(_deleteByNameStartingWith, [prefix]);
 }
 
 /// Implements `SqlCategories`: `SimpleRepository` has the CRUD methods.
-class _$SqlCategoriesImpl extends _i2.SimpleRepository<_i3.Category, int>
-    implements _i3.SqlCategories {
+class _$SqlCategoriesImpl extends _i3.SimpleRepository<_i4.Category, int>
+    implements _i4.SqlCategories {
   _$SqlCategoriesImpl(super.operations);
 
-  static const _deleteByNameStartingWith = _i2.PartTree(
+  static const _deleteByNameStartingWith = _i3.PartTree(
     r'deleteByNameStartingWith',
     [
-      _i2.OrPart([_i2.Part(r'name', _i2.PartType.startingWith)]),
+      _i3.OrPart([_i3.Part(r'name', _i3.PartType.startingWith)]),
     ],
-    subject: _i2.Subject(_i2.SubjectKind.delete),
+    subject: _i3.Subject(_i3.SubjectKind.delete),
   );
 
   static _$SqlCategoriesImpl $create(_i1.DependencyResolver r) =>
       _$SqlCategoriesImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Category, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Category, int>(
           r'SqlCategories',
-          annotations: const [_i6.UseStore(r'jdbc')],
+          annotations: const [_i7.UseStore(r'jdbc')],
         ),
       );
 
   @override
-  _i4.Future<int> deleteByNameStartingWith(String prefix) =>
+  _i5.Future<int> deleteByNameStartingWith(String prefix) =>
       this.operations.deleteBy(_deleteByNameStartingWith, [prefix]);
 }
 
 /// Implements `EmployeeQueries`: `SimpleRepository` has the CRUD methods.
-class _$EmployeeQueriesImpl extends _i2.SimpleRepository<_i3.Employee, int>
-    implements _i3.EmployeeQueries {
+class _$EmployeeQueriesImpl extends _i3.SimpleRepository<_i4.Employee, int>
+    implements _i4.EmployeeQueries {
   _$EmployeeQueriesImpl(super.operations);
 
-  static const _deleteByNameStartingWith = _i2.PartTree(
+  static const _deleteByNameStartingWith = _i3.PartTree(
     r'deleteByNameStartingWith',
     [
-      _i2.OrPart([_i2.Part(r'name', _i2.PartType.startingWith)]),
+      _i3.OrPart([_i3.Part(r'name', _i3.PartType.startingWith)]),
     ],
-    subject: _i2.Subject(_i2.SubjectKind.delete),
+    subject: _i3.Subject(_i3.SubjectKind.delete),
   );
 
   static _$EmployeeQueriesImpl $create(_i1.DependencyResolver r) =>
       _$EmployeeQueriesImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Employee, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Employee, int>(
           r'EmployeeQueries',
         ),
       );
 
   @override
-  _i4.Future<int> deleteByNameStartingWith(String prefix) =>
+  _i5.Future<int> deleteByNameStartingWith(String prefix) =>
       this.operations.deleteBy(_deleteByNameStartingWith, [prefix]);
 }
 
 /// Implements `MemoryEmployees`: `SimpleRepository` has the CRUD methods.
-class _$MemoryEmployeesImpl extends _i2.SimpleRepository<_i3.Employee, int>
-    implements _i3.MemoryEmployees {
+class _$MemoryEmployeesImpl extends _i3.SimpleRepository<_i4.Employee, int>
+    implements _i4.MemoryEmployees {
   _$MemoryEmployeesImpl(super.operations);
 
-  static const _deleteByNameStartingWith = _i2.PartTree(
+  static const _deleteByNameStartingWith = _i3.PartTree(
     r'deleteByNameStartingWith',
     [
-      _i2.OrPart([_i2.Part(r'name', _i2.PartType.startingWith)]),
+      _i3.OrPart([_i3.Part(r'name', _i3.PartType.startingWith)]),
     ],
-    subject: _i2.Subject(_i2.SubjectKind.delete),
+    subject: _i3.Subject(_i3.SubjectKind.delete),
   );
 
   static _$MemoryEmployeesImpl $create(_i1.DependencyResolver r) =>
       _$MemoryEmployeesImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Employee, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Employee, int>(
           r'MemoryEmployees',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 
   @override
-  _i4.Future<int> deleteByNameStartingWith(String prefix) =>
+  _i5.Future<int> deleteByNameStartingWith(String prefix) =>
       this.operations.deleteBy(_deleteByNameStartingWith, [prefix]);
 }
 
 /// Implements `SqlEmployees`: `SimpleRepository` has the CRUD methods.
-class _$SqlEmployeesImpl extends _i2.SimpleRepository<_i3.Employee, int>
-    implements _i3.SqlEmployees {
+class _$SqlEmployeesImpl extends _i3.SimpleRepository<_i4.Employee, int>
+    implements _i4.SqlEmployees {
   _$SqlEmployeesImpl(super.operations);
 
-  static const _deleteByNameStartingWith = _i2.PartTree(
+  static const _deleteByNameStartingWith = _i3.PartTree(
     r'deleteByNameStartingWith',
     [
-      _i2.OrPart([_i2.Part(r'name', _i2.PartType.startingWith)]),
+      _i3.OrPart([_i3.Part(r'name', _i3.PartType.startingWith)]),
     ],
-    subject: _i2.Subject(_i2.SubjectKind.delete),
+    subject: _i3.Subject(_i3.SubjectKind.delete),
   );
 
   static _$SqlEmployeesImpl $create(_i1.DependencyResolver r) =>
       _$SqlEmployeesImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Employee, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Employee, int>(
           r'SqlEmployees',
-          annotations: const [_i6.UseStore(r'jdbc')],
+          annotations: const [_i7.UseStore(r'jdbc')],
         ),
       );
 
   @override
-  _i4.Future<int> deleteByNameStartingWith(String prefix) =>
+  _i5.Future<int> deleteByNameStartingWith(String prefix) =>
       this.operations.deleteBy(_deleteByNameStartingWith, [prefix]);
 }
 
 /// Implements `MemoryClubs`: `SimpleRepository` has the CRUD methods.
-class _$MemoryClubsImpl extends _i2.SimpleRepository<_i3.Club, int>
-    implements _i3.MemoryClubs {
+class _$MemoryClubsImpl extends _i3.SimpleRepository<_i4.Club, int>
+    implements _i4.MemoryClubs {
   _$MemoryClubsImpl(super.operations);
 
   static _$MemoryClubsImpl $create(_i1.DependencyResolver r) =>
       _$MemoryClubsImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Club, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Club, int>(
           r'MemoryClubs',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 }
 
 /// Implements `SqlClubs`: `SimpleRepository` has the CRUD methods.
-class _$SqlClubsImpl extends _i2.SimpleRepository<_i3.Club, int>
-    implements _i3.SqlClubs {
+class _$SqlClubsImpl extends _i3.SimpleRepository<_i4.Club, int>
+    implements _i4.SqlClubs {
   _$SqlClubsImpl(super.operations);
 
   static _$SqlClubsImpl $create(_i1.DependencyResolver r) => _$SqlClubsImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Club, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Club, int>(
       r'SqlClubs',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
     ),
   );
 }
 
 /// Implements `MemorySponsors`: `SimpleRepository` has the CRUD methods.
-class _$MemorySponsorsImpl extends _i2.SimpleRepository<_i3.Sponsor, int>
-    implements _i3.MemorySponsors {
+class _$MemorySponsorsImpl extends _i3.SimpleRepository<_i4.Sponsor, int>
+    implements _i4.MemorySponsors {
   _$MemorySponsorsImpl(super.operations);
 
   static _$MemorySponsorsImpl $create(_i1.DependencyResolver r) =>
       _$MemorySponsorsImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Sponsor, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Sponsor, int>(
           r'MemorySponsors',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 }
 
 /// Implements `SqlSponsors`: `SimpleRepository` has the CRUD methods.
-class _$SqlSponsorsImpl extends _i2.SimpleRepository<_i3.Sponsor, int>
-    implements _i3.SqlSponsors {
+class _$SqlSponsorsImpl extends _i3.SimpleRepository<_i4.Sponsor, int>
+    implements _i4.SqlSponsors {
   _$SqlSponsorsImpl(super.operations);
 
   static _$SqlSponsorsImpl $create(_i1.DependencyResolver r) =>
       _$SqlSponsorsImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Sponsor, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Sponsor, int>(
           r'SqlSponsors',
-          annotations: const [_i6.UseStore(r'jdbc')],
+          annotations: const [_i7.UseStore(r'jdbc')],
         ),
       );
 }
 
 /// Implements `MemoryPlayers`: `SimpleRepository` has the CRUD methods.
-class _$MemoryPlayersImpl extends _i2.SimpleRepository<_i3.Player, int>
-    implements _i3.MemoryPlayers {
+class _$MemoryPlayersImpl extends _i3.SimpleRepository<_i4.Player, int>
+    implements _i4.MemoryPlayers {
   _$MemoryPlayersImpl(super.operations);
 
   static _$MemoryPlayersImpl $create(_i1.DependencyResolver r) =>
       _$MemoryPlayersImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Player, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Player, int>(
           r'MemoryPlayers',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 }
 
 /// Implements `SqlPlayers`: `SimpleRepository` has the CRUD methods.
-class _$SqlPlayersImpl extends _i2.SimpleRepository<_i3.Player, int>
-    implements _i3.SqlPlayers {
+class _$SqlPlayersImpl extends _i3.SimpleRepository<_i4.Player, int>
+    implements _i4.SqlPlayers {
   _$SqlPlayersImpl(super.operations);
 
   static _$SqlPlayersImpl $create(_i1.DependencyResolver r) => _$SqlPlayersImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Player, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Player, int>(
       r'SqlPlayers',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
     ),
   );
 }
 
 /// Implements `MemoryGoals`: `SimpleRepository` has the CRUD methods.
-class _$MemoryGoalsImpl extends _i2.SimpleRepository<_i3.Goal, int>
-    implements _i3.MemoryGoals {
+class _$MemoryGoalsImpl extends _i3.SimpleRepository<_i4.Goal, int>
+    implements _i4.MemoryGoals {
   _$MemoryGoalsImpl(super.operations);
 
   static _$MemoryGoalsImpl $create(_i1.DependencyResolver r) =>
       _$MemoryGoalsImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Goal, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Goal, int>(
           r'MemoryGoals',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 }
 
 /// Implements `SqlGoals`: `SimpleRepository` has the CRUD methods.
-class _$SqlGoalsImpl extends _i2.SimpleRepository<_i3.Goal, int>
-    implements _i3.SqlGoals {
+class _$SqlGoalsImpl extends _i3.SimpleRepository<_i4.Goal, int>
+    implements _i4.SqlGoals {
   _$SqlGoalsImpl(super.operations);
 
   static _$SqlGoalsImpl $create(_i1.DependencyResolver r) => _$SqlGoalsImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Goal, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Goal, int>(
       r'SqlGoals',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
     ),
   );
 }
 
 /// Implements `MemoryCoaches`: `SimpleRepository` has the CRUD methods.
-class _$MemoryCoachesImpl extends _i2.SimpleRepository<_i3.Coach, int>
-    implements _i3.MemoryCoaches {
+class _$MemoryCoachesImpl extends _i3.SimpleRepository<_i4.Coach, int>
+    implements _i4.MemoryCoaches {
   _$MemoryCoachesImpl(super.operations);
 
   static _$MemoryCoachesImpl $create(_i1.DependencyResolver r) =>
       _$MemoryCoachesImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Coach, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Coach, int>(
           r'MemoryCoaches',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 }
 
 /// Implements `SqlCoaches`: `SimpleRepository` has the CRUD methods.
-class _$SqlCoachesImpl extends _i2.SimpleRepository<_i3.Coach, int>
-    implements _i3.SqlCoaches {
+class _$SqlCoachesImpl extends _i3.SimpleRepository<_i4.Coach, int>
+    implements _i4.SqlCoaches {
   _$SqlCoachesImpl(super.operations);
 
   static _$SqlCoachesImpl $create(_i1.DependencyResolver r) => _$SqlCoachesImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Coach, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Coach, int>(
       r'SqlCoaches',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
     ),
   );
 }
 
 /// Implements `MemorySquads`: `SimpleRepository` has the CRUD methods.
-class _$MemorySquadsImpl extends _i2.SimpleRepository<_i3.Squad, int>
-    implements _i3.MemorySquads {
+class _$MemorySquadsImpl extends _i3.SimpleRepository<_i4.Squad, int>
+    implements _i4.MemorySquads {
   _$MemorySquadsImpl(super.operations);
 
   static _$MemorySquadsImpl $create(_i1.DependencyResolver r) =>
       _$MemorySquadsImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Squad, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Squad, int>(
           r'MemorySquads',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 }
 
 /// Implements `SqlSquads`: `SimpleRepository` has the CRUD methods.
-class _$SqlSquadsImpl extends _i2.SimpleRepository<_i3.Squad, int>
-    implements _i3.SqlSquads {
+class _$SqlSquadsImpl extends _i3.SimpleRepository<_i4.Squad, int>
+    implements _i4.SqlSquads {
   _$SqlSquadsImpl(super.operations);
 
   static _$SqlSquadsImpl $create(_i1.DependencyResolver r) => _$SqlSquadsImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Squad, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Squad, int>(
       r'SqlSquads',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
     ),
   );
 }
 
 /// Implements `MemoryFolders`: `SimpleRepository` has the CRUD methods.
-class _$MemoryFoldersImpl extends _i2.SimpleRepository<_i3.Folder, int>
-    implements _i3.MemoryFolders {
+class _$MemoryFoldersImpl extends _i3.SimpleRepository<_i4.Folder, int>
+    implements _i4.MemoryFolders {
   _$MemoryFoldersImpl(super.operations);
 
   static _$MemoryFoldersImpl $create(_i1.DependencyResolver r) =>
       _$MemoryFoldersImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Folder, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Folder, int>(
           r'MemoryFolders',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 }
 
 /// Implements `SqlFolders`: `SimpleRepository` has the CRUD methods.
-class _$SqlFoldersImpl extends _i2.SimpleRepository<_i3.Folder, int>
-    implements _i3.SqlFolders {
+class _$SqlFoldersImpl extends _i3.SimpleRepository<_i4.Folder, int>
+    implements _i4.SqlFolders {
   _$SqlFoldersImpl(super.operations);
 
   static _$SqlFoldersImpl $create(_i1.DependencyResolver r) => _$SqlFoldersImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Folder, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Folder, int>(
       r'SqlFolders',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
     ),
   );
 }
 
 /// Implements `SqlMembers`: `SimpleRepository` has the CRUD methods.
-class _$SqlMembersImpl extends _i2.SimpleRepository<_i3.Member, int>
-    implements _i3.SqlMembers {
+class _$SqlMembersImpl extends _i3.SimpleRepository<_i4.Member, int>
+    implements _i4.SqlMembers {
   _$SqlMembersImpl(super.operations);
 
-  static const _findOneByUsernameAndApiToken = _i2.PartTree(
+  static const _findOneByUsernameAndApiToken = _i3.PartTree(
     r'findOneByUsernameAndApiToken',
     [
-      _i2.OrPart([_i2.Part(r'username'), _i2.Part(r'apiToken')]),
+      _i3.OrPart([_i3.Part(r'username'), _i3.Part(r'apiToken')]),
     ],
   );
 
-  static const _findByPasswordHash = _i2.PartTree(r'findByPasswordHash', [
-    _i2.OrPart([_i2.Part(r'passwordHash')]),
+  static const _findByPasswordHash = _i3.PartTree(r'findByPasswordHash', [
+    _i3.OrPart([_i3.Part(r'passwordHash')]),
   ]);
 
-  static const _findByUsernameIn = _i2.PartTree(r'findByUsernameIn', [
-    _i2.OrPart([_i2.Part(r'username', _i2.PartType.in_)]),
+  static const _findByUsernameIn = _i3.PartTree(r'findByUsernameIn', [
+    _i3.OrPart([_i3.Part(r'username', _i3.PartType.in_)]),
   ]);
 
   static _$SqlMembersImpl $create(_i1.DependencyResolver r) => _$SqlMembersImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Member, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Member, int>(
       r'SqlMembers',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
     ),
   );
 
   @override
-  _i4.Future<_i3.Member?> findOneByUsernameAndApiToken(
+  _i5.Future<_i4.Member?> findOneByUsernameAndApiToken(
     String username,
     String apiToken,
   ) => this.operations.one(_findOneByUsernameAndApiToken, [username, apiToken]);
 
   @override
-  _i4.Future<List<_i3.Member>> findByPasswordHash(String passwordHash) =>
+  _i5.Future<List<_i4.Member>> findByPasswordHash(String passwordHash) =>
       this.operations.list(_findByPasswordHash, [passwordHash]);
 
   @override
-  _i4.Future<List<_i3.Member>> findByUsernameIn(List<String> usernames) =>
+  _i5.Future<List<_i4.Member>> findByUsernameIn(List<String> usernames) =>
       this.operations.list(_findByUsernameIn, [usernames]);
 }
 
 /// Implements `MemoryGauges`: `SimpleRepository` has the CRUD methods.
-class _$MemoryGaugesImpl extends _i2.SimpleRepository<_i3.Gauge, int>
-    implements _i3.MemoryGauges {
+class _$MemoryGaugesImpl extends _i3.SimpleRepository<_i4.Gauge, int>
+    implements _i4.MemoryGauges {
   _$MemoryGaugesImpl(super.operations);
 
   static _$MemoryGaugesImpl $create(_i1.DependencyResolver r) =>
       _$MemoryGaugesImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.Gauge, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.Gauge, int>(
           r'MemoryGauges',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 }
 
 /// Implements `SqlGauges`: `SimpleRepository` has the CRUD methods.
-class _$SqlGaugesImpl extends _i2.SimpleRepository<_i3.Gauge, int>
-    implements _i3.SqlGauges {
+class _$SqlGaugesImpl extends _i3.SimpleRepository<_i4.Gauge, int>
+    implements _i4.SqlGauges {
   _$SqlGaugesImpl(super.operations);
 
   static _$SqlGaugesImpl $create(_i1.DependencyResolver r) => _$SqlGaugesImpl(
-    r.dependency<_i2.RepositoryFactory>().operations<_i3.Gauge, int>(
+    r.dependency<_i3.RepositoryFactory>().operations<_i4.Gauge, int>(
       r'SqlGauges',
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
     ),
   );
 }
 
 /// Implements `MemoryProfiles`: `SimpleRepository` has the CRUD methods.
-class _$MemoryProfilesImpl extends _i2.SimpleRepository<_i3.UserProfile, int>
-    implements _i3.MemoryProfiles {
+class _$MemoryProfilesImpl extends _i3.SimpleRepository<_i4.UserProfile, int>
+    implements _i4.MemoryProfiles {
   _$MemoryProfilesImpl(super.operations);
 
-  static const _findByName = _i2.PartTree(r'findByName', [
-    _i2.OrPart([_i2.Part(r'name')]),
+  static const _findByName = _i3.PartTree(r'findByName', [
+    _i3.OrPart([_i3.Part(r'name')]),
   ]);
 
   static _$MemoryProfilesImpl $create(_i1.DependencyResolver r) =>
       _$MemoryProfilesImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.UserProfile, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.UserProfile, int>(
           r'MemoryProfiles',
-          annotations: const [_i6.UseStore(r'memory')],
+          annotations: const [_i7.UseStore(r'memory')],
         ),
       );
 
   @override
-  _i4.Future<List<_i3.UserProfile>> findByName(String name) =>
+  _i5.Future<List<_i4.UserProfile>> findByName(String name) =>
       this.operations.list(_findByName, [name]);
 }
 
 /// Implements `SqlProfiles`: `SimpleRepository` has the CRUD methods.
-class _$SqlProfilesImpl extends _i2.SimpleRepository<_i3.UserProfile, int>
-    implements _i3.SqlProfiles {
+class _$SqlProfilesImpl extends _i3.SimpleRepository<_i4.UserProfile, int>
+    implements _i4.SqlProfiles {
   _$SqlProfilesImpl(super.operations);
 
-  static const _findByName = _i2.PartTree(r'findByName', [
-    _i2.OrPart([_i2.Part(r'name')]),
+  static const _findByName = _i3.PartTree(r'findByName', [
+    _i3.OrPart([_i3.Part(r'name')]),
   ]);
 
-  static const _named = _i2.QueryMethod(
+  static const _named = _i3.QueryMethod(
     r'named',
-    _i6.Query(r'select * from profiles where name = :name'),
+    _i7.Query(r'select * from profiles where name = :name'),
     parameters: [r'name'],
-    shape: _i2.QueryShape.single,
-    element: _i1.ClassType<_i3.UserProfile>(nullable: true),
+    shape: _i3.QueryShape.single,
+    element: _i1.ClassType<_i4.UserProfile>(nullable: true),
   );
 
-  static const _themed = _i2.QueryMethod(
+  static const _themed = _i3.QueryMethod(
     r'themed',
-    _i6.Query(
+    _i7.Query(
       "select * from profiles where settings ->> 'theme' = :theme order by id",
     ),
     parameters: [r'theme'],
-    element: _i1.ClassType<_i3.UserProfile>(),
+    element: _i1.ClassType<_i4.UserProfile>(),
   );
 
-  static const _cards = _i2.QueryMethod(
+  static const _cards = _i3.QueryMethod(
     r'cards',
-    _i6.Query(r'select name, settings from profiles order by id'),
-    element: _i1.ClassType<_i3.ProfileCard>(),
+    _i7.Query(r'select name, settings from profiles order by id'),
+    element: _i1.ClassType<_i4.ProfileCard>(),
   );
 
   static _$SqlProfilesImpl $create(_i1.DependencyResolver r) =>
       _$SqlProfilesImpl(
-        r.dependency<_i2.RepositoryFactory>().operations<_i3.UserProfile, int>(
+        r.dependency<_i3.RepositoryFactory>().operations<_i4.UserProfile, int>(
           r'SqlProfiles',
-          annotations: const [_i6.UseStore(r'jdbc')],
+          annotations: const [_i7.UseStore(r'jdbc')],
           queries: [_named, _themed, _cards],
           requirements: const [
-            _i2.StoreRequirement(r'named', _i2.DataStoreCapability.queries),
-            _i2.StoreRequirement(r'themed', _i2.DataStoreCapability.queries),
-            _i2.StoreRequirement(r'cards', _i2.DataStoreCapability.queries),
+            _i3.StoreRequirement(r'named', _i3.DataStoreCapability.queries),
+            _i3.StoreRequirement(r'themed', _i3.DataStoreCapability.queries),
+            _i3.StoreRequirement(r'cards', _i3.DataStoreCapability.queries),
           ],
         ),
       );
 
   @override
-  _i4.Future<List<_i3.UserProfile>> findByName(String name) =>
+  _i5.Future<List<_i4.UserProfile>> findByName(String name) =>
       this.operations.list(_findByName, [name]);
 
   @override
-  _i4.Future<_i3.UserProfile?> named(String name) =>
-      this.operations.query<_i3.UserProfile?>(_named, [name]);
+  _i5.Future<_i4.UserProfile?> named(String name) =>
+      this.operations.query<_i4.UserProfile?>(_named, [name]);
 
   @override
-  _i4.Future<List<_i3.UserProfile>> themed(String theme) =>
-      this.operations.query<List<_i3.UserProfile>>(_themed, [theme]);
+  _i5.Future<List<_i4.UserProfile>> themed(String theme) =>
+      this.operations.query<List<_i4.UserProfile>>(_themed, [theme]);
 
   @override
-  _i4.Future<List<_i3.ProfileCard>> cards() =>
-      this.operations.query<List<_i3.ProfileCard>>(_cards, const []);
+  _i5.Future<List<_i4.ProfileCard>> cards() =>
+      this.operations.query<List<_i4.ProfileCard>>(_cards, const []);
 }
 
 const _$knownAdvisors0 = {
@@ -3733,974 +3733,974 @@ const _$knownAdvisors0 = {
 _i1.BeanModule get $application => _i1.BeanModule(
   r'application',
   [
-    _i1.BeanDefinition<_i3.Years>(
+    _i1.BeanDefinition<_i4.Years>(
       name: r'years',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#Years',
-      create: (r) => _i3.Years(),
+      create: (r) => _i4.Years(),
       annotations: const [_i1.Component(), _i1.Introspected()],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.BookQueries>(
+    _i1.BeanDefinition<_i4.BookQueries>(
       name: r'bookQueries',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#BookQueries',
       types: const [
-        _i3.BookQueries,
-        _i8.ListCrudRepository<_i3.Book, int>,
-        _i8.CrudRepository<_i3.Book, int>,
-        _i8.DataRepository<_i3.Book, int>,
-        _i8.ListPagingAndSortingRepository<_i3.Book, int>,
-        _i8.PagingAndSortingRepository<_i3.Book, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
-        _i8.ListPagingAndSortingRepository<dynamic, dynamic>,
-        _i8.PagingAndSortingRepository<dynamic, dynamic>,
+        _i4.BookQueries,
+        _i9.ListCrudRepository<_i4.Book, int>,
+        _i9.CrudRepository<_i4.Book, int>,
+        _i9.DataRepository<_i4.Book, int>,
+        _i9.ListPagingAndSortingRepository<_i4.Book, int>,
+        _i9.PagingAndSortingRepository<_i4.Book, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
+        _i9.ListPagingAndSortingRepository<dynamic, dynamic>,
+        _i9.PagingAndSortingRepository<dynamic, dynamic>,
       ],
       create: (r) => _$BookQueriesImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryBooks>(
+    _i1.BeanDefinition<_i4.MemoryBooks>(
       name: r'memoryBooks',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryBooks',
       types: const [
-        _i3.MemoryBooks,
-        _i3.BookQueries,
-        _i8.ListCrudRepository<_i3.Book, int>,
-        _i8.CrudRepository<_i3.Book, int>,
-        _i8.DataRepository<_i3.Book, int>,
-        _i8.ListPagingAndSortingRepository<_i3.Book, int>,
-        _i8.PagingAndSortingRepository<_i3.Book, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
-        _i8.ListPagingAndSortingRepository<dynamic, dynamic>,
-        _i8.PagingAndSortingRepository<dynamic, dynamic>,
+        _i4.MemoryBooks,
+        _i4.BookQueries,
+        _i9.ListCrudRepository<_i4.Book, int>,
+        _i9.CrudRepository<_i4.Book, int>,
+        _i9.DataRepository<_i4.Book, int>,
+        _i9.ListPagingAndSortingRepository<_i4.Book, int>,
+        _i9.PagingAndSortingRepository<_i4.Book, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
+        _i9.ListPagingAndSortingRepository<dynamic, dynamic>,
+        _i9.PagingAndSortingRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryBooksImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlBooks>(
+    _i1.BeanDefinition<_i4.SqlBooks>(
       name: r'sqlBooks',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlBooks',
       types: const [
-        _i3.SqlBooks,
-        _i3.BookQueries,
-        _i8.ListCrudRepository<_i3.Book, int>,
-        _i8.CrudRepository<_i3.Book, int>,
-        _i8.DataRepository<_i3.Book, int>,
-        _i8.ListPagingAndSortingRepository<_i3.Book, int>,
-        _i8.PagingAndSortingRepository<_i3.Book, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
-        _i8.ListPagingAndSortingRepository<dynamic, dynamic>,
-        _i8.PagingAndSortingRepository<dynamic, dynamic>,
+        _i4.SqlBooks,
+        _i4.BookQueries,
+        _i9.ListCrudRepository<_i4.Book, int>,
+        _i9.CrudRepository<_i4.Book, int>,
+        _i9.DataRepository<_i4.Book, int>,
+        _i9.ListPagingAndSortingRepository<_i4.Book, int>,
+        _i9.PagingAndSortingRepository<_i4.Book, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
+        _i9.ListPagingAndSortingRepository<dynamic, dynamic>,
+        _i9.PagingAndSortingRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlBooksImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.OrderQueries>(
+    _i1.BeanDefinition<_i4.OrderQueries>(
       name: r'orderQueries',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#OrderQueries',
       types: const [
-        _i3.OrderQueries,
-        _i8.ListCrudRepository<_i3.PurchaseOrder, int>,
-        _i8.CrudRepository<_i3.PurchaseOrder, int>,
-        _i8.DataRepository<_i3.PurchaseOrder, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.OrderQueries,
+        _i9.ListCrudRepository<_i4.PurchaseOrder, int>,
+        _i9.CrudRepository<_i4.PurchaseOrder, int>,
+        _i9.DataRepository<_i4.PurchaseOrder, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$OrderQueriesImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryOrders>(
+    _i1.BeanDefinition<_i4.MemoryOrders>(
       name: r'memoryOrders',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryOrders',
       types: const [
-        _i3.MemoryOrders,
-        _i3.OrderQueries,
-        _i8.ListCrudRepository<_i3.PurchaseOrder, int>,
-        _i8.CrudRepository<_i3.PurchaseOrder, int>,
-        _i8.DataRepository<_i3.PurchaseOrder, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryOrders,
+        _i4.OrderQueries,
+        _i9.ListCrudRepository<_i4.PurchaseOrder, int>,
+        _i9.CrudRepository<_i4.PurchaseOrder, int>,
+        _i9.DataRepository<_i4.PurchaseOrder, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryOrdersImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlOrders>(
+    _i1.BeanDefinition<_i4.SqlOrders>(
       name: r'sqlOrders',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlOrders',
       types: const [
-        _i3.SqlOrders,
-        _i3.OrderQueries,
-        _i8.ListCrudRepository<_i3.PurchaseOrder, int>,
-        _i8.CrudRepository<_i3.PurchaseOrder, int>,
-        _i8.DataRepository<_i3.PurchaseOrder, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlOrders,
+        _i4.OrderQueries,
+        _i9.ListCrudRepository<_i4.PurchaseOrder, int>,
+        _i9.CrudRepository<_i4.PurchaseOrder, int>,
+        _i9.DataRepository<_i4.PurchaseOrder, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlOrdersImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryShelves>(
+    _i1.BeanDefinition<_i4.MemoryShelves>(
       name: r'memoryShelves',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryShelves',
       types: const [
-        _i3.MemoryShelves,
-        _i8.ListCrudRepository<_i3.Shelf, int>,
-        _i8.CrudRepository<_i3.Shelf, int>,
-        _i8.DataRepository<_i3.Shelf, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryShelves,
+        _i9.ListCrudRepository<_i4.Shelf, int>,
+        _i9.CrudRepository<_i4.Shelf, int>,
+        _i9.DataRepository<_i4.Shelf, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryShelvesImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlShelves>(
+    _i1.BeanDefinition<_i4.SqlShelves>(
       name: r'sqlShelves',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlShelves',
       types: const [
-        _i3.SqlShelves,
-        _i8.ListCrudRepository<_i3.Shelf, int>,
-        _i8.CrudRepository<_i3.Shelf, int>,
-        _i8.DataRepository<_i3.Shelf, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlShelves,
+        _i9.ListCrudRepository<_i4.Shelf, int>,
+        _i9.CrudRepository<_i4.Shelf, int>,
+        _i9.DataRepository<_i4.Shelf, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlShelvesImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryAccounts>(
+    _i1.BeanDefinition<_i4.MemoryAccounts>(
       name: r'memoryAccounts',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryAccounts',
       types: const [
-        _i3.MemoryAccounts,
-        _i8.CrudRepository<_i3.Account, String>,
-        _i8.DataRepository<_i3.Account, String>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryAccounts,
+        _i9.CrudRepository<_i4.Account, String>,
+        _i9.DataRepository<_i4.Account, String>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryAccountsImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlAccounts>(
+    _i1.BeanDefinition<_i4.SqlAccounts>(
       name: r'sqlAccounts',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlAccounts',
       types: const [
-        _i3.SqlAccounts,
-        _i8.CrudRepository<_i3.Account, String>,
-        _i8.DataRepository<_i3.Account, String>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlAccounts,
+        _i9.CrudRepository<_i4.Account, String>,
+        _i9.DataRepository<_i4.Account, String>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlAccountsImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryTickets>(
+    _i1.BeanDefinition<_i4.MemoryTickets>(
       name: r'memoryTickets',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryTickets',
       types: const [
-        _i3.MemoryTickets,
-        _i8.ListCrudRepository<_i3.Ticket, int>,
-        _i8.CrudRepository<_i3.Ticket, int>,
-        _i8.DataRepository<_i3.Ticket, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryTickets,
+        _i9.ListCrudRepository<_i4.Ticket, int>,
+        _i9.CrudRepository<_i4.Ticket, int>,
+        _i9.DataRepository<_i4.Ticket, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryTicketsImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlTickets>(
+    _i1.BeanDefinition<_i4.SqlTickets>(
       name: r'sqlTickets',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlTickets',
       types: const [
-        _i3.SqlTickets,
-        _i8.ListCrudRepository<_i3.Ticket, int>,
-        _i8.CrudRepository<_i3.Ticket, int>,
-        _i8.DataRepository<_i3.Ticket, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlTickets,
+        _i9.ListCrudRepository<_i4.Ticket, int>,
+        _i9.CrudRepository<_i4.Ticket, int>,
+        _i9.DataRepository<_i4.Ticket, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlTicketsImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryNotes>(
+    _i1.BeanDefinition<_i4.MemoryNotes>(
       name: r'memoryNotes',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryNotes',
       types: const [
-        _i3.MemoryNotes,
-        _i8.ListCrudRepository<_i3.Note, int>,
-        _i8.CrudRepository<_i3.Note, int>,
-        _i8.DataRepository<_i3.Note, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryNotes,
+        _i9.ListCrudRepository<_i4.Note, int>,
+        _i9.CrudRepository<_i4.Note, int>,
+        _i9.DataRepository<_i4.Note, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryNotesImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlNotes>(
+    _i1.BeanDefinition<_i4.SqlNotes>(
       name: r'sqlNotes',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlNotes',
       types: const [
-        _i3.SqlNotes,
-        _i8.ListCrudRepository<_i3.Note, int>,
-        _i8.CrudRepository<_i3.Note, int>,
-        _i8.DataRepository<_i3.Note, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlNotes,
+        _i9.ListCrudRepository<_i4.Note, int>,
+        _i9.CrudRepository<_i4.Note, int>,
+        _i9.DataRepository<_i4.Note, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlNotesImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlCrates>(
+    _i1.BeanDefinition<_i4.SqlCrates>(
       name: r'sqlCrates',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlCrates',
       types: const [
-        _i3.SqlCrates,
-        _i8.ListCrudRepository<_i3.Crate, int>,
-        _i8.CrudRepository<_i3.Crate, int>,
-        _i8.DataRepository<_i3.Crate, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlCrates,
+        _i9.ListCrudRepository<_i4.Crate, int>,
+        _i9.CrudRepository<_i4.Crate, int>,
+        _i9.DataRepository<_i4.Crate, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlCratesImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlAuthors>(
+    _i1.BeanDefinition<_i4.SqlAuthors>(
       name: r'sqlAuthors',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlAuthors',
       types: const [
-        _i3.SqlAuthors,
-        _i8.ListCrudRepository<_i3.Author, int>,
-        _i8.CrudRepository<_i3.Author, int>,
-        _i8.DataRepository<_i3.Author, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlAuthors,
+        _i9.ListCrudRepository<_i4.Author, int>,
+        _i9.CrudRepository<_i4.Author, int>,
+        _i9.DataRepository<_i4.Author, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlAuthorsImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryAuthors>(
+    _i1.BeanDefinition<_i4.MemoryAuthors>(
       name: r'memoryAuthors',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryAuthors',
       types: const [
-        _i3.MemoryAuthors,
-        _i8.ListCrudRepository<_i3.Author, int>,
-        _i8.CrudRepository<_i3.Author, int>,
-        _i8.DataRepository<_i3.Author, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryAuthors,
+        _i9.ListCrudRepository<_i4.Author, int>,
+        _i9.CrudRepository<_i4.Author, int>,
+        _i9.DataRepository<_i4.Author, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryAuthorsImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlStocks>(
+    _i1.BeanDefinition<_i4.SqlStocks>(
       name: r'sqlStocks',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlStocks',
       types: const [
-        _i3.SqlStocks,
-        _i8.ListCrudRepository<_i3.Stock, int>,
-        _i8.CrudRepository<_i3.Stock, int>,
-        _i8.DataRepository<_i3.Stock, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlStocks,
+        _i9.ListCrudRepository<_i4.Stock, int>,
+        _i9.CrudRepository<_i4.Stock, int>,
+        _i9.DataRepository<_i4.Stock, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlStocksImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.FanQueries>(
+    _i1.BeanDefinition<_i4.FanQueries>(
       name: r'fanQueries',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#FanQueries',
       types: const [
-        _i3.FanQueries,
-        _i8.ListCrudRepository<_i3.Fan, int>,
-        _i8.CrudRepository<_i3.Fan, int>,
-        _i8.DataRepository<_i3.Fan, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.FanQueries,
+        _i9.ListCrudRepository<_i4.Fan, int>,
+        _i9.CrudRepository<_i4.Fan, int>,
+        _i9.DataRepository<_i4.Fan, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$FanQueriesImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryFans>(
+    _i1.BeanDefinition<_i4.MemoryFans>(
       name: r'memoryFans',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryFans',
       types: const [
-        _i3.MemoryFans,
-        _i3.FanQueries,
-        _i8.ListCrudRepository<_i3.Fan, int>,
-        _i8.CrudRepository<_i3.Fan, int>,
-        _i8.DataRepository<_i3.Fan, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryFans,
+        _i4.FanQueries,
+        _i9.ListCrudRepository<_i4.Fan, int>,
+        _i9.CrudRepository<_i4.Fan, int>,
+        _i9.DataRepository<_i4.Fan, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryFansImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlFans>(
+    _i1.BeanDefinition<_i4.SqlFans>(
       name: r'sqlFans',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlFans',
       types: const [
-        _i3.SqlFans,
-        _i3.FanQueries,
-        _i8.ListCrudRepository<_i3.Fan, int>,
-        _i8.CrudRepository<_i3.Fan, int>,
-        _i8.DataRepository<_i3.Fan, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlFans,
+        _i4.FanQueries,
+        _i9.ListCrudRepository<_i4.Fan, int>,
+        _i9.CrudRepository<_i4.Fan, int>,
+        _i9.DataRepository<_i4.Fan, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlFansImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.CitizenQueries>(
+    _i1.BeanDefinition<_i4.CitizenQueries>(
       name: r'citizenQueries',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#CitizenQueries',
       types: const [
-        _i3.CitizenQueries,
-        _i8.ListCrudRepository<_i3.Citizen, int>,
-        _i8.CrudRepository<_i3.Citizen, int>,
-        _i8.DataRepository<_i3.Citizen, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.CitizenQueries,
+        _i9.ListCrudRepository<_i4.Citizen, int>,
+        _i9.CrudRepository<_i4.Citizen, int>,
+        _i9.DataRepository<_i4.Citizen, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$CitizenQueriesImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryCitizens>(
+    _i1.BeanDefinition<_i4.MemoryCitizens>(
       name: r'memoryCitizens',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryCitizens',
       types: const [
-        _i3.MemoryCitizens,
-        _i3.CitizenQueries,
-        _i8.ListCrudRepository<_i3.Citizen, int>,
-        _i8.CrudRepository<_i3.Citizen, int>,
-        _i8.DataRepository<_i3.Citizen, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryCitizens,
+        _i4.CitizenQueries,
+        _i9.ListCrudRepository<_i4.Citizen, int>,
+        _i9.CrudRepository<_i4.Citizen, int>,
+        _i9.DataRepository<_i4.Citizen, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryCitizensImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlCitizens>(
+    _i1.BeanDefinition<_i4.SqlCitizens>(
       name: r'sqlCitizens',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlCitizens',
       types: const [
-        _i3.SqlCitizens,
-        _i3.CitizenQueries,
-        _i8.ListCrudRepository<_i3.Citizen, int>,
-        _i8.CrudRepository<_i3.Citizen, int>,
-        _i8.DataRepository<_i3.Citizen, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlCitizens,
+        _i4.CitizenQueries,
+        _i9.ListCrudRepository<_i4.Citizen, int>,
+        _i9.CrudRepository<_i4.Citizen, int>,
+        _i9.DataRepository<_i4.Citizen, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlCitizensImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.CategoryQueries>(
+    _i1.BeanDefinition<_i4.CategoryQueries>(
       name: r'categoryQueries',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#CategoryQueries',
       types: const [
-        _i3.CategoryQueries,
-        _i8.ListCrudRepository<_i3.Category, int>,
-        _i8.CrudRepository<_i3.Category, int>,
-        _i8.DataRepository<_i3.Category, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.CategoryQueries,
+        _i9.ListCrudRepository<_i4.Category, int>,
+        _i9.CrudRepository<_i4.Category, int>,
+        _i9.DataRepository<_i4.Category, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$CategoryQueriesImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryCategories>(
+    _i1.BeanDefinition<_i4.MemoryCategories>(
       name: r'memoryCategories',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryCategories',
       types: const [
-        _i3.MemoryCategories,
-        _i3.CategoryQueries,
-        _i8.ListCrudRepository<_i3.Category, int>,
-        _i8.CrudRepository<_i3.Category, int>,
-        _i8.DataRepository<_i3.Category, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryCategories,
+        _i4.CategoryQueries,
+        _i9.ListCrudRepository<_i4.Category, int>,
+        _i9.CrudRepository<_i4.Category, int>,
+        _i9.DataRepository<_i4.Category, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryCategoriesImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlCategories>(
+    _i1.BeanDefinition<_i4.SqlCategories>(
       name: r'sqlCategories',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlCategories',
       types: const [
-        _i3.SqlCategories,
-        _i3.CategoryQueries,
-        _i8.ListCrudRepository<_i3.Category, int>,
-        _i8.CrudRepository<_i3.Category, int>,
-        _i8.DataRepository<_i3.Category, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlCategories,
+        _i4.CategoryQueries,
+        _i9.ListCrudRepository<_i4.Category, int>,
+        _i9.CrudRepository<_i4.Category, int>,
+        _i9.DataRepository<_i4.Category, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlCategoriesImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.EmployeeQueries>(
+    _i1.BeanDefinition<_i4.EmployeeQueries>(
       name: r'employeeQueries',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#EmployeeQueries',
       types: const [
-        _i3.EmployeeQueries,
-        _i8.ListCrudRepository<_i3.Employee, int>,
-        _i8.CrudRepository<_i3.Employee, int>,
-        _i8.DataRepository<_i3.Employee, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.EmployeeQueries,
+        _i9.ListCrudRepository<_i4.Employee, int>,
+        _i9.CrudRepository<_i4.Employee, int>,
+        _i9.DataRepository<_i4.Employee, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$EmployeeQueriesImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryEmployees>(
+    _i1.BeanDefinition<_i4.MemoryEmployees>(
       name: r'memoryEmployees',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryEmployees',
       types: const [
-        _i3.MemoryEmployees,
-        _i3.EmployeeQueries,
-        _i8.ListCrudRepository<_i3.Employee, int>,
-        _i8.CrudRepository<_i3.Employee, int>,
-        _i8.DataRepository<_i3.Employee, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryEmployees,
+        _i4.EmployeeQueries,
+        _i9.ListCrudRepository<_i4.Employee, int>,
+        _i9.CrudRepository<_i4.Employee, int>,
+        _i9.DataRepository<_i4.Employee, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryEmployeesImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlEmployees>(
+    _i1.BeanDefinition<_i4.SqlEmployees>(
       name: r'sqlEmployees',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlEmployees',
       types: const [
-        _i3.SqlEmployees,
-        _i3.EmployeeQueries,
-        _i8.ListCrudRepository<_i3.Employee, int>,
-        _i8.CrudRepository<_i3.Employee, int>,
-        _i8.DataRepository<_i3.Employee, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlEmployees,
+        _i4.EmployeeQueries,
+        _i9.ListCrudRepository<_i4.Employee, int>,
+        _i9.CrudRepository<_i4.Employee, int>,
+        _i9.DataRepository<_i4.Employee, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlEmployeesImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryClubs>(
+    _i1.BeanDefinition<_i4.MemoryClubs>(
       name: r'memoryClubs',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryClubs',
       types: const [
-        _i3.MemoryClubs,
-        _i8.ListCrudRepository<_i3.Club, int>,
-        _i8.CrudRepository<_i3.Club, int>,
-        _i8.DataRepository<_i3.Club, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryClubs,
+        _i9.ListCrudRepository<_i4.Club, int>,
+        _i9.CrudRepository<_i4.Club, int>,
+        _i9.DataRepository<_i4.Club, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryClubsImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlClubs>(
+    _i1.BeanDefinition<_i4.SqlClubs>(
       name: r'sqlClubs',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlClubs',
       types: const [
-        _i3.SqlClubs,
-        _i8.ListCrudRepository<_i3.Club, int>,
-        _i8.CrudRepository<_i3.Club, int>,
-        _i8.DataRepository<_i3.Club, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlClubs,
+        _i9.ListCrudRepository<_i4.Club, int>,
+        _i9.CrudRepository<_i4.Club, int>,
+        _i9.DataRepository<_i4.Club, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlClubsImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemorySponsors>(
+    _i1.BeanDefinition<_i4.MemorySponsors>(
       name: r'memorySponsors',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemorySponsors',
       types: const [
-        _i3.MemorySponsors,
-        _i8.ListCrudRepository<_i3.Sponsor, int>,
-        _i8.CrudRepository<_i3.Sponsor, int>,
-        _i8.DataRepository<_i3.Sponsor, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemorySponsors,
+        _i9.ListCrudRepository<_i4.Sponsor, int>,
+        _i9.CrudRepository<_i4.Sponsor, int>,
+        _i9.DataRepository<_i4.Sponsor, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemorySponsorsImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlSponsors>(
+    _i1.BeanDefinition<_i4.SqlSponsors>(
       name: r'sqlSponsors',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlSponsors',
       types: const [
-        _i3.SqlSponsors,
-        _i8.ListCrudRepository<_i3.Sponsor, int>,
-        _i8.CrudRepository<_i3.Sponsor, int>,
-        _i8.DataRepository<_i3.Sponsor, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlSponsors,
+        _i9.ListCrudRepository<_i4.Sponsor, int>,
+        _i9.CrudRepository<_i4.Sponsor, int>,
+        _i9.DataRepository<_i4.Sponsor, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlSponsorsImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryPlayers>(
+    _i1.BeanDefinition<_i4.MemoryPlayers>(
       name: r'memoryPlayers',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryPlayers',
       types: const [
-        _i3.MemoryPlayers,
-        _i8.ListCrudRepository<_i3.Player, int>,
-        _i8.CrudRepository<_i3.Player, int>,
-        _i8.DataRepository<_i3.Player, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryPlayers,
+        _i9.ListCrudRepository<_i4.Player, int>,
+        _i9.CrudRepository<_i4.Player, int>,
+        _i9.DataRepository<_i4.Player, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryPlayersImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlPlayers>(
+    _i1.BeanDefinition<_i4.SqlPlayers>(
       name: r'sqlPlayers',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlPlayers',
       types: const [
-        _i3.SqlPlayers,
-        _i8.ListCrudRepository<_i3.Player, int>,
-        _i8.CrudRepository<_i3.Player, int>,
-        _i8.DataRepository<_i3.Player, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlPlayers,
+        _i9.ListCrudRepository<_i4.Player, int>,
+        _i9.CrudRepository<_i4.Player, int>,
+        _i9.DataRepository<_i4.Player, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlPlayersImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryGoals>(
+    _i1.BeanDefinition<_i4.MemoryGoals>(
       name: r'memoryGoals',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryGoals',
       types: const [
-        _i3.MemoryGoals,
-        _i8.ListCrudRepository<_i3.Goal, int>,
-        _i8.CrudRepository<_i3.Goal, int>,
-        _i8.DataRepository<_i3.Goal, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryGoals,
+        _i9.ListCrudRepository<_i4.Goal, int>,
+        _i9.CrudRepository<_i4.Goal, int>,
+        _i9.DataRepository<_i4.Goal, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryGoalsImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlGoals>(
+    _i1.BeanDefinition<_i4.SqlGoals>(
       name: r'sqlGoals',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlGoals',
       types: const [
-        _i3.SqlGoals,
-        _i8.ListCrudRepository<_i3.Goal, int>,
-        _i8.CrudRepository<_i3.Goal, int>,
-        _i8.DataRepository<_i3.Goal, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlGoals,
+        _i9.ListCrudRepository<_i4.Goal, int>,
+        _i9.CrudRepository<_i4.Goal, int>,
+        _i9.DataRepository<_i4.Goal, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlGoalsImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryCoaches>(
+    _i1.BeanDefinition<_i4.MemoryCoaches>(
       name: r'memoryCoaches',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryCoaches',
       types: const [
-        _i3.MemoryCoaches,
-        _i8.ListCrudRepository<_i3.Coach, int>,
-        _i8.CrudRepository<_i3.Coach, int>,
-        _i8.DataRepository<_i3.Coach, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryCoaches,
+        _i9.ListCrudRepository<_i4.Coach, int>,
+        _i9.CrudRepository<_i4.Coach, int>,
+        _i9.DataRepository<_i4.Coach, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryCoachesImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlCoaches>(
+    _i1.BeanDefinition<_i4.SqlCoaches>(
       name: r'sqlCoaches',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlCoaches',
       types: const [
-        _i3.SqlCoaches,
-        _i8.ListCrudRepository<_i3.Coach, int>,
-        _i8.CrudRepository<_i3.Coach, int>,
-        _i8.DataRepository<_i3.Coach, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlCoaches,
+        _i9.ListCrudRepository<_i4.Coach, int>,
+        _i9.CrudRepository<_i4.Coach, int>,
+        _i9.DataRepository<_i4.Coach, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlCoachesImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemorySquads>(
+    _i1.BeanDefinition<_i4.MemorySquads>(
       name: r'memorySquads',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemorySquads',
       types: const [
-        _i3.MemorySquads,
-        _i8.ListCrudRepository<_i3.Squad, int>,
-        _i8.CrudRepository<_i3.Squad, int>,
-        _i8.DataRepository<_i3.Squad, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemorySquads,
+        _i9.ListCrudRepository<_i4.Squad, int>,
+        _i9.CrudRepository<_i4.Squad, int>,
+        _i9.DataRepository<_i4.Squad, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemorySquadsImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlSquads>(
+    _i1.BeanDefinition<_i4.SqlSquads>(
       name: r'sqlSquads',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlSquads',
       types: const [
-        _i3.SqlSquads,
-        _i8.ListCrudRepository<_i3.Squad, int>,
-        _i8.CrudRepository<_i3.Squad, int>,
-        _i8.DataRepository<_i3.Squad, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlSquads,
+        _i9.ListCrudRepository<_i4.Squad, int>,
+        _i9.CrudRepository<_i4.Squad, int>,
+        _i9.DataRepository<_i4.Squad, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlSquadsImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryFolders>(
+    _i1.BeanDefinition<_i4.MemoryFolders>(
       name: r'memoryFolders',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryFolders',
       types: const [
-        _i3.MemoryFolders,
-        _i8.ListCrudRepository<_i3.Folder, int>,
-        _i8.CrudRepository<_i3.Folder, int>,
-        _i8.DataRepository<_i3.Folder, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryFolders,
+        _i9.ListCrudRepository<_i4.Folder, int>,
+        _i9.CrudRepository<_i4.Folder, int>,
+        _i9.DataRepository<_i4.Folder, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryFoldersImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlFolders>(
+    _i1.BeanDefinition<_i4.SqlFolders>(
       name: r'sqlFolders',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlFolders',
       types: const [
-        _i3.SqlFolders,
-        _i8.ListCrudRepository<_i3.Folder, int>,
-        _i8.CrudRepository<_i3.Folder, int>,
-        _i8.DataRepository<_i3.Folder, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlFolders,
+        _i9.ListCrudRepository<_i4.Folder, int>,
+        _i9.CrudRepository<_i4.Folder, int>,
+        _i9.DataRepository<_i4.Folder, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlFoldersImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlMembers>(
+    _i1.BeanDefinition<_i4.SqlMembers>(
       name: r'sqlMembers',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlMembers',
       types: const [
-        _i3.SqlMembers,
-        _i8.ListCrudRepository<_i3.Member, int>,
-        _i8.CrudRepository<_i3.Member, int>,
-        _i8.DataRepository<_i3.Member, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlMembers,
+        _i9.ListCrudRepository<_i4.Member, int>,
+        _i9.CrudRepository<_i4.Member, int>,
+        _i9.DataRepository<_i4.Member, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlMembersImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryGauges>(
+    _i1.BeanDefinition<_i4.MemoryGauges>(
       name: r'memoryGauges',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryGauges',
       types: const [
-        _i3.MemoryGauges,
-        _i8.ListCrudRepository<_i3.Gauge, int>,
-        _i8.CrudRepository<_i3.Gauge, int>,
-        _i8.DataRepository<_i3.Gauge, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryGauges,
+        _i9.ListCrudRepository<_i4.Gauge, int>,
+        _i9.CrudRepository<_i4.Gauge, int>,
+        _i9.DataRepository<_i4.Gauge, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryGaugesImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlGauges>(
+    _i1.BeanDefinition<_i4.SqlGauges>(
       name: r'sqlGauges',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlGauges',
       types: const [
-        _i3.SqlGauges,
-        _i8.ListCrudRepository<_i3.Gauge, int>,
-        _i8.CrudRepository<_i3.Gauge, int>,
-        _i8.DataRepository<_i3.Gauge, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlGauges,
+        _i9.ListCrudRepository<_i4.Gauge, int>,
+        _i9.CrudRepository<_i4.Gauge, int>,
+        _i9.DataRepository<_i4.Gauge, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlGaugesImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.MemoryProfiles>(
+    _i1.BeanDefinition<_i4.MemoryProfiles>(
       name: r'memoryProfiles',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#MemoryProfiles',
       types: const [
-        _i3.MemoryProfiles,
-        _i8.ListCrudRepository<_i3.UserProfile, int>,
-        _i8.CrudRepository<_i3.UserProfile, int>,
-        _i8.DataRepository<_i3.UserProfile, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.MemoryProfiles,
+        _i9.ListCrudRepository<_i4.UserProfile, int>,
+        _i9.CrudRepository<_i4.UserProfile, int>,
+        _i9.DataRepository<_i4.UserProfile, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$MemoryProfilesImpl.$create(r),
-      annotations: const [_i6.UseStore(r'memory')],
+      annotations: const [_i7.UseStore(r'memory')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i3.SqlProfiles>(
+    _i1.BeanDefinition<_i4.SqlProfiles>(
       name: r'sqlProfiles',
       source: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart#SqlProfiles',
       types: const [
-        _i3.SqlProfiles,
-        _i8.ListCrudRepository<_i3.UserProfile, int>,
-        _i8.CrudRepository<_i3.UserProfile, int>,
-        _i8.DataRepository<_i3.UserProfile, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.SqlProfiles,
+        _i9.ListCrudRepository<_i4.UserProfile, int>,
+        _i9.CrudRepository<_i4.UserProfile, int>,
+        _i9.DataRepository<_i4.UserProfile, int>,
+        _i9.ListCrudRepository<dynamic, dynamic>,
+        _i9.CrudRepository<dynamic, dynamic>,
+        _i9.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$SqlProfilesImpl.$create(r),
-      annotations: const [_i6.UseStore(r'jdbc')],
+      annotations: const [_i7.UseStore(r'jdbc')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i2.EntityIntrospections>(
+    _i1.BeanDefinition<_i3.EntityIntrospections>(
       name: r'entityIntrospections#application',
       source: r'package:spring_boot_starter_data#EntityIntrospections',
-      types: const [_i2.EntityIntrospections],
-      create: (r) => _i2.EntityIntrospections([
-        _i2.EntityIntrospection<_i3.Author>(
+      types: const [_i3.EntityIntrospections],
+      create: (r) => _i3.EntityIntrospections([
+        _i3.EntityIntrospection<_i4.Author>(
           r'Author',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'authors')],
+          annotations: const [_i7.Table(r'authors')],
           get: (e, i) => switch (i) {
             0 => e.id,
             _ => e.name,
           },
-          create: (v) => _i3.Author(name: v[1] as String, id: v[0] as int?),
+          create: (v) => _i4.Author(name: v[1] as String, id: v[0] as int?),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.name = v as String,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Book>(
+        _i3.EntityIntrospection<_i4.Book>(
           r'Book',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'title',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'year',
               _i1.ClassType<int>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'subtitle',
               _i1.ClassType<String>(nullable: true),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'inStock',
               _i1.ClassType<bool>(),
               parameter: true,
@@ -4708,42 +4708,42 @@ _i1.BeanModule get $application => _i1.BeanModule(
               hasDefaultValue: true,
               defaultValue: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'author',
-              _i1.GenericType<_i6.AggregateReference<_i3.Author, int>>([
-                _i1.ClassType<_i3.Author>(),
+              _i1.GenericType<_i7.AggregateReference<_i4.Author, int>>([
+                _i1.ClassType<_i4.Author>(),
                 _i1.ClassType<int>(),
               ], nullable: true),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'rating',
               _i1.ClassType<double>(nullable: true),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'released',
               _i1.ClassType<DateTime>(nullable: true),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'genre',
-              _i1.EnumType<_i3.Genre>(_i3.Genre.values, nullable: true),
+              _i1.EnumType<_i4.Genre>(_i4.Genre.values, nullable: true),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'version',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Version()],
+              annotations: [_i7.Version()],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'books')],
+          annotations: const [_i7.Table(r'books')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.title,
@@ -4756,16 +4756,16 @@ _i1.BeanModule get $application => _i1.BeanModule(
             8 => e.genre,
             _ => e.version,
           },
-          create: (v) => _i3.Book(
+          create: (v) => _i4.Book(
             title: v[1] as String,
             year: v[2] as int,
             id: v[0] as int?,
             subtitle: v[3] as String?,
             inStock: v[4] as bool,
-            author: v[5] as _i6.AggregateReference<_i3.Author, int>?,
+            author: v[5] as _i7.AggregateReference<_i4.Author, int>?,
             rating: v[6] as double?,
             released: v[7] as DateTime?,
-            genre: v[8] as _i3.Genre?,
+            genre: v[8] as _i4.Genre?,
             version: v[9] as int?,
           ),
           write: (e, i, v) => switch (i) {
@@ -4774,62 +4774,62 @@ _i1.BeanModule get $application => _i1.BeanModule(
             2 => e.year = v as int,
             3 => e.subtitle = v as String?,
             4 => e.inStock = v as bool,
-            5 => e.author = v as _i6.AggregateReference<_i3.Author, int>?,
+            5 => e.author = v as _i7.AggregateReference<_i4.Author, int>?,
             6 => e.rating = v as double?,
             7 => e.released = v as DateTime?,
-            8 => e.genre = v as _i3.Genre?,
+            8 => e.genre = v as _i4.Genre?,
             9 => e.version = v as int?,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.PurchaseOrder>(
+        _i3.EntityIntrospection<_i4.PurchaseOrder>(
           r'PurchaseOrder',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'customer',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'lines',
-              _i1.ListType<_i3.OrderLine>(_i1.ClassType<_i3.OrderLine>()),
-              annotations: [_i6.MappedCollection()],
+              _i1.ListType<_i4.OrderLine>(_i1.ClassType<_i4.OrderLine>()),
+              annotations: [_i7.MappedCollection()],
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: <_i3.OrderLine>[],
+              defaultValue: <_i4.OrderLine>[],
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'notes',
-              _i1.MapType<String, _i3.OrderNote>(
+              _i1.MapType<String, _i4.OrderNote>(
                 _i1.ClassType<String>(),
-                _i1.ClassType<_i3.OrderNote>(),
+                _i1.ClassType<_i4.OrderNote>(),
               ),
-              annotations: [_i6.MappedCollection()],
+              annotations: [_i7.MappedCollection()],
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: <String, _i3.OrderNote>{},
+              defaultValue: <String, _i4.OrderNote>{},
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'tags',
-              _i1.SetType<_i3.OrderTag>(_i1.ClassType<_i3.OrderTag>()),
-              annotations: [_i6.MappedCollection()],
+              _i1.SetType<_i4.OrderTag>(_i1.ClassType<_i4.OrderTag>()),
+              annotations: [_i7.MappedCollection()],
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: <_i3.OrderTag>{},
+              defaultValue: <_i4.OrderTag>{},
             ),
           ],
-          annotations: const [_i6.Table(r'orders')],
+          annotations: const [_i7.Table(r'orders')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.customer,
@@ -4837,108 +4837,108 @@ _i1.BeanModule get $application => _i1.BeanModule(
             3 => e.notes,
             _ => e.tags,
           },
-          create: (v) => _i3.PurchaseOrder(
+          create: (v) => _i4.PurchaseOrder(
             customer: v[1] as String,
             id: v[0] as int?,
-            lines: v[2] as List<_i3.OrderLine>,
-            notes: v[3] as Map<String, _i3.OrderNote>,
-            tags: v[4] as Set<_i3.OrderTag>,
+            lines: v[2] as List<_i4.OrderLine>,
+            notes: v[3] as Map<String, _i4.OrderNote>,
+            tags: v[4] as Set<_i4.OrderTag>,
           ),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.customer = v as String,
-            2 => e.lines = v as List<_i3.OrderLine>,
-            3 => e.notes = v as Map<String, _i3.OrderNote>,
-            4 => e.tags = v as Set<_i3.OrderTag>,
+            2 => e.lines = v as List<_i4.OrderLine>,
+            3 => e.notes = v as Map<String, _i4.OrderNote>,
+            4 => e.tags = v as Set<_i4.OrderTag>,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.OrderLine>(
+        _i3.EntityIntrospection<_i4.OrderLine>(
           r'OrderLine',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'sku',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'quantity',
               _i1.ClassType<int>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'order_lines')],
+          annotations: const [_i7.Table(r'order_lines')],
           get: (e, i) => switch (i) {
             0 => e.sku,
             _ => e.quantity,
           },
           create: (v) =>
-              _i3.OrderLine(sku: v[0] as String, quantity: v[1] as int),
+              _i4.OrderLine(sku: v[0] as String, quantity: v[1] as int),
           write: (e, i, v) => switch (i) {
             0 => e.sku = v as String,
             1 => e.quantity = v as int,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.OrderNote>(
+        _i3.EntityIntrospection<_i4.OrderNote>(
           r'OrderNote',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'text',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'order_notes')],
+          annotations: const [_i7.Table(r'order_notes')],
           get: (e, i) => e.text,
-          create: (v) => _i3.OrderNote(text: v[0] as String),
+          create: (v) => _i4.OrderNote(text: v[0] as String),
           write: (e, i, v) => switch (i) {
             0 => e.text = v as String,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.OrderTag>(
+        _i3.EntityIntrospection<_i4.OrderTag>(
           r'OrderTag',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'label',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'order_tags')],
+          annotations: const [_i7.Table(r'order_tags')],
           get: (e, i) => e.label,
-          create: (v) => _i3.OrderTag(label: v[0] as String),
+          create: (v) => _i4.OrderTag(label: v[0] as String),
           write: (e, i, v) => switch (i) {
             0 => e.label = v as String,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Shelf>(
+        _i3.EntityIntrospection<_i4.Shelf>(
           r'Shelf',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'slots',
-              _i1.ListType<_i3.Slot>(_i1.ClassType<_i3.Slot>()),
+              _i1.ListType<_i4.Slot>(_i1.ClassType<_i4.Slot>()),
               annotations: [
-                _i6.MappedCollection(
+                _i7.MappedCollection(
                   idColumn: r'shelf_id',
                   keyColumn: r'position',
                 ),
@@ -4946,216 +4946,216 @@ _i1.BeanModule get $application => _i1.BeanModule(
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: <_i3.Slot>[],
+              defaultValue: <_i4.Slot>[],
             ),
           ],
-          annotations: const [_i6.Table(r'shelves')],
+          annotations: const [_i7.Table(r'shelves')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.name,
             _ => e.slots,
           },
-          create: (v) => _i3.Shelf(
+          create: (v) => _i4.Shelf(
             name: v[1] as String,
             id: v[0] as int?,
-            slots: v[2] as List<_i3.Slot>,
+            slots: v[2] as List<_i4.Slot>,
           ),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.name = v as String,
-            2 => e.slots = v as List<_i3.Slot>,
+            2 => e.slots = v as List<_i4.Slot>,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Slot>(
+        _i3.EntityIntrospection<_i4.Slot>(
           r'Slot',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'label',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'slots')],
+          annotations: const [_i7.Table(r'slots')],
           get: (e, i) => switch (i) {
             0 => e.id,
             _ => e.label,
           },
-          create: (v) => _i3.Slot(label: v[1] as String, id: v[0] as int?),
+          create: (v) => _i4.Slot(label: v[1] as String, id: v[0] as int?),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.label = v as String,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Crate>(
+        _i3.EntityIntrospection<_i4.Crate>(
           r'Crate',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'jars',
-              _i1.ListType<_i3.Jar>(_i1.ClassType<_i3.Jar>()),
-              annotations: [_i6.MappedCollection()],
+              _i1.ListType<_i4.Jar>(_i1.ClassType<_i4.Jar>()),
+              annotations: [_i7.MappedCollection()],
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: <_i3.Jar>[],
+              defaultValue: <_i4.Jar>[],
             ),
           ],
-          annotations: const [_i6.Table(r'crates')],
+          annotations: const [_i7.Table(r'crates')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.name,
             _ => e.jars,
           },
-          create: (v) => _i3.Crate(
+          create: (v) => _i4.Crate(
             name: v[1] as String,
             id: v[0] as int?,
-            jars: v[2] as List<_i3.Jar>,
+            jars: v[2] as List<_i4.Jar>,
           ),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.name = v as String,
-            2 => e.jars = v as List<_i3.Jar>,
+            2 => e.jars = v as List<_i4.Jar>,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Jar>(
+        _i3.EntityIntrospection<_i4.Jar>(
           r'Jar',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'label',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'lids',
-              _i1.ListType<_i3.Lid>(_i1.ClassType<_i3.Lid>()),
-              annotations: [_i6.MappedCollection()],
+              _i1.ListType<_i4.Lid>(_i1.ClassType<_i4.Lid>()),
+              annotations: [_i7.MappedCollection()],
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: <_i3.Lid>[],
+              defaultValue: <_i4.Lid>[],
             ),
           ],
-          annotations: const [_i6.Table(r'jars')],
+          annotations: const [_i7.Table(r'jars')],
           get: (e, i) => switch (i) {
             0 => e.label,
             _ => e.lids,
           },
           create: (v) =>
-              _i3.Jar(label: v[0] as String, lids: v[1] as List<_i3.Lid>),
+              _i4.Jar(label: v[0] as String, lids: v[1] as List<_i4.Lid>),
           write: (e, i, v) => switch (i) {
             0 => e.label = v as String,
-            1 => e.lids = v as List<_i3.Lid>,
+            1 => e.lids = v as List<_i4.Lid>,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Lid>(
+        _i3.EntityIntrospection<_i4.Lid>(
           r'Lid',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'color',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'lids')],
+          annotations: const [_i7.Table(r'lids')],
           get: (e, i) => e.color,
-          create: (v) => _i3.Lid(color: v[0] as String),
+          create: (v) => _i4.Lid(color: v[0] as String),
           write: (e, i, v) => switch (i) {
             0 => e.color = v as String,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Account>(
+        _i3.EntityIntrospection<_i4.Account>(
           r'Account',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'iban',
               _i1.ClassType<String>(),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'owner',
               _i1.ClassType<String>(),
               parameter: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'version',
               _i1.ClassType<int>(),
-              annotations: [_i6.Version()],
+              annotations: [_i7.Version()],
               parameter: true,
               hasDefaultValue: true,
               defaultValue: 0,
             ),
           ],
-          annotations: const [_i6.Table(r'accounts')],
+          annotations: const [_i7.Table(r'accounts')],
           get: (e, i) => switch (i) {
             0 => e.iban,
             1 => e.owner,
             _ => e.version,
           },
-          create: (v) => _i3.Account(
+          create: (v) => _i4.Account(
             iban: v[0] as String,
             owner: v[1] as String,
             version: v[2] as int,
           ),
         ),
-        _i2.EntityIntrospection<_i3.Ticket>(
+        _i3.EntityIntrospection<_i4.Ticket>(
           r'Ticket',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'subject',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'stamp',
               _i1.ClassType<DateTime>(nullable: true),
-              annotations: [_i6.Version()],
+              annotations: [_i7.Version()],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'tickets')],
+          annotations: const [_i7.Table(r'tickets')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.subject,
             _ => e.stamp,
           },
-          create: (v) => _i3.Ticket(
+          create: (v) => _i4.Ticket(
             subject: v[1] as String,
             id: v[0] as int?,
             stamp: v[2] as DateTime?,
@@ -5167,36 +5167,36 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Stock>(
+        _i3.EntityIntrospection<_i4.Stock>(
           r'Stock',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'sku',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'quantity',
               _i1.ClassType<int>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'stock')],
+          annotations: const [_i7.Table(r'stock')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.sku,
             _ => e.quantity,
           },
-          create: (v) => _i3.Stock(
+          create: (v) => _i4.Stock(
             sku: v[1] as String,
             quantity: v[2] as int,
             id: v[0] as int?,
@@ -5208,72 +5208,72 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Note>(
+        _i3.EntityIntrospection<_i4.Note>(
           r'Note',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'text',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'notes')],
+          annotations: const [_i7.Table(r'notes')],
           get: (e, i) => switch (i) {
             0 => e.id,
             _ => e.text,
           },
-          create: (v) => _i3.Note(text: v[1] as String, id: v[0] as int?),
+          create: (v) => _i4.Note(text: v[1] as String, id: v[0] as int?),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.text = v as String,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Member>(
+        _i3.EntityIntrospection<_i4.Member>(
           r'Member',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'username',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'passwordHash',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'apiToken',
               _i1.ClassType<String>(nullable: true),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'members')],
+          annotations: const [_i7.Table(r'members')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.username,
             2 => e.passwordHash,
             _ => e.apiToken,
           },
-          create: (v) => _i3.Member(
+          create: (v) => _i4.Member(
             username: v[1] as String,
             passwordHash: v[2] as String,
             apiToken: v[3] as String?,
@@ -5287,37 +5287,37 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Gauge>(
+        _i3.EntityIntrospection<_i4.Gauge>(
           r'Gauge',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'version',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Version()],
+              annotations: [_i7.Version()],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'gauges')],
+          annotations: const [_i7.Table(r'gauges')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.name,
             _ => e.version,
           },
-          create: (v) => _i3.Gauge(
+          create: (v) => _i4.Gauge(
             name: v[1] as String,
             id: v[0] as int?,
             version: v[2] as int?,
@@ -5329,67 +5329,67 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Club>(
+        _i3.EntityIntrospection<_i4.Club>(
           r'Club',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
-              annotations: [_i6.Unique()],
+              annotations: [_i7.Unique()],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'clubs')],
+          annotations: const [_i7.Table(r'clubs')],
           get: (e, i) => switch (i) {
             0 => e.id,
             _ => e.name,
           },
-          create: (v) => _i3.Club(name: v[1] as String, id: v[0] as int?),
+          create: (v) => _i4.Club(name: v[1] as String, id: v[0] as int?),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.name = v as String,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Fan>(
+        _i3.EntityIntrospection<_i4.Fan>(
           r'Fan',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'clubId',
               _i1.ClassType<int>(),
-              annotations: [_i6.Reference(_i3.Club)],
+              annotations: [_i7.Reference(_i4.Club)],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'fans')],
+          annotations: const [_i7.Table(r'fans')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.name,
             _ => e.clubId,
           },
-          create: (v) => _i3.Fan(
+          create: (v) => _i4.Fan(
             name: v[1] as String,
             clubId: v[2] as int,
             id: v[0] as int?,
@@ -5401,40 +5401,40 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Sponsor>(
+        _i3.EntityIntrospection<_i4.Sponsor>(
           r'Sponsor',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'clubId',
               _i1.ClassType<int>(),
               annotations: [
-                _i6.Reference(_i3.Club),
-                _i6.OnDelete(_i6.OnDeleteAction.restrict),
+                _i7.Reference(_i4.Club),
+                _i7.OnDelete(_i7.OnDeleteAction.restrict),
               ],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'sponsors')],
+          annotations: const [_i7.Table(r'sponsors')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.name,
             _ => e.clubId,
           },
-          create: (v) => _i3.Sponsor(
+          create: (v) => _i4.Sponsor(
             name: v[1] as String,
             clubId: v[2] as int,
             id: v[0] as int?,
@@ -5446,115 +5446,115 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Player>(
+        _i3.EntityIntrospection<_i4.Player>(
           r'Player',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'club',
-              _i1.GenericType<_i6.AggregateReference<_i3.Club, int>>([
-                _i1.ClassType<_i3.Club>(),
+              _i1.GenericType<_i7.AggregateReference<_i4.Club, int>>([
+                _i1.ClassType<_i4.Club>(),
                 _i1.ClassType<int>(),
               ]),
-              annotations: [_i6.OnDelete(_i6.OnDeleteAction.cascade)],
+              annotations: [_i7.OnDelete(_i7.OnDeleteAction.cascade)],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'medals',
-              _i1.ListType<_i3.Medal>(_i1.ClassType<_i3.Medal>()),
-              annotations: [_i6.MappedCollection()],
+              _i1.ListType<_i4.Medal>(_i1.ClassType<_i4.Medal>()),
+              annotations: [_i7.MappedCollection()],
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: <_i3.Medal>[],
+              defaultValue: <_i4.Medal>[],
             ),
           ],
-          annotations: const [_i6.Table(r'players')],
+          annotations: const [_i7.Table(r'players')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.name,
             2 => e.club,
             _ => e.medals,
           },
-          create: (v) => _i3.Player(
+          create: (v) => _i4.Player(
             name: v[1] as String,
-            club: v[2] as _i6.AggregateReference<_i3.Club, int>,
+            club: v[2] as _i7.AggregateReference<_i4.Club, int>,
             id: v[0] as int?,
-            medals: v[3] as List<_i3.Medal>,
+            medals: v[3] as List<_i4.Medal>,
           ),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.name = v as String,
-            2 => e.club = v as _i6.AggregateReference<_i3.Club, int>,
-            3 => e.medals = v as List<_i3.Medal>,
+            2 => e.club = v as _i7.AggregateReference<_i4.Club, int>,
+            3 => e.medals = v as List<_i4.Medal>,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Medal>(
+        _i3.EntityIntrospection<_i4.Medal>(
           r'Medal',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'title',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'medals')],
+          annotations: const [_i7.Table(r'medals')],
           get: (e, i) => e.title,
-          create: (v) => _i3.Medal(title: v[0] as String),
+          create: (v) => _i4.Medal(title: v[0] as String),
           write: (e, i, v) => switch (i) {
             0 => e.title = v as String,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Goal>(
+        _i3.EntityIntrospection<_i4.Goal>(
           r'Goal',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'playerId',
               _i1.ClassType<int>(),
               annotations: [
-                _i6.Reference(_i3.Player),
-                _i6.OnDelete(_i6.OnDeleteAction.cascade),
+                _i7.Reference(_i4.Player),
+                _i7.OnDelete(_i7.OnDeleteAction.cascade),
               ],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'minute',
               _i1.ClassType<int>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'goals')],
+          annotations: const [_i7.Table(r'goals')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.playerId,
             _ => e.minute,
           },
-          create: (v) => _i3.Goal(
+          create: (v) => _i4.Goal(
             playerId: v[1] as int,
             minute: v[2] as int,
             id: v[0] as int?,
@@ -5566,40 +5566,40 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Coach>(
+        _i3.EntityIntrospection<_i4.Coach>(
           r'Coach',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'clubId',
               _i1.ClassType<int>(nullable: true),
               annotations: [
-                _i6.Reference(_i3.Club),
-                _i6.OnDelete(_i6.OnDeleteAction.setNull),
+                _i7.Reference(_i4.Club),
+                _i7.OnDelete(_i7.OnDeleteAction.setNull),
               ],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'coaches')],
+          annotations: const [_i7.Table(r'coaches')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.name,
             _ => e.clubId,
           },
-          create: (v) => _i3.Coach(
+          create: (v) => _i4.Coach(
             name: v[1] as String,
             clubId: v[2] as int?,
             id: v[0] as int?,
@@ -5611,113 +5611,113 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Squad>(
+        _i3.EntityIntrospection<_i4.Squad>(
           r'Squad',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'places',
-              _i1.ListType<_i3.Place>(_i1.ClassType<_i3.Place>()),
-              annotations: [_i6.MappedCollection()],
+              _i1.ListType<_i4.Place>(_i1.ClassType<_i4.Place>()),
+              annotations: [_i7.MappedCollection()],
               parameter: true,
               writable: true,
               hasDefaultValue: true,
-              defaultValue: <_i3.Place>[],
+              defaultValue: <_i4.Place>[],
             ),
           ],
-          annotations: const [_i6.Table(r'squads')],
+          annotations: const [_i7.Table(r'squads')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.name,
             _ => e.places,
           },
-          create: (v) => _i3.Squad(
+          create: (v) => _i4.Squad(
             name: v[1] as String,
             id: v[0] as int?,
-            places: v[2] as List<_i3.Place>,
+            places: v[2] as List<_i4.Place>,
           ),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.name = v as String,
-            2 => e.places = v as List<_i3.Place>,
+            2 => e.places = v as List<_i4.Place>,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Place>(
+        _i3.EntityIntrospection<_i4.Place>(
           r'Place',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'label',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'clubId',
               _i1.ClassType<int>(),
               annotations: [
-                _i6.Reference(_i3.Club),
-                _i6.OnDelete(_i6.OnDeleteAction.cascade),
+                _i7.Reference(_i4.Club),
+                _i7.OnDelete(_i7.OnDeleteAction.cascade),
               ],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'places')],
+          annotations: const [_i7.Table(r'places')],
           get: (e, i) => switch (i) {
             0 => e.label,
             _ => e.clubId,
           },
-          create: (v) => _i3.Place(label: v[0] as String, clubId: v[1] as int),
+          create: (v) => _i4.Place(label: v[0] as String, clubId: v[1] as int),
           write: (e, i, v) => switch (i) {
             0 => e.label = v as String,
             1 => e.clubId = v as int,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Employee>(
+        _i3.EntityIntrospection<_i4.Employee>(
           r'Employee',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'bossId',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Reference(_i3.Employee)],
+              annotations: [_i7.Reference(_i4.Employee)],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'employees')],
+          annotations: const [_i7.Table(r'employees')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.name,
             _ => e.bossId,
           },
-          create: (v) => _i3.Employee(
+          create: (v) => _i4.Employee(
             name: v[1] as String,
             bossId: v[2] as int?,
             id: v[0] as int?,
@@ -5729,40 +5729,40 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Category>(
+        _i3.EntityIntrospection<_i4.Category>(
           r'Category',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'parentId',
               _i1.ClassType<int>(nullable: true),
               annotations: [
-                _i6.Reference(_i3.Category),
-                _i6.OnDelete(_i6.OnDeleteAction.restrict),
+                _i7.Reference(_i4.Category),
+                _i7.OnDelete(_i7.OnDeleteAction.restrict),
               ],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'categories')],
+          annotations: const [_i7.Table(r'categories')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.name,
             _ => e.parentId,
           },
-          create: (v) => _i3.Category(
+          create: (v) => _i4.Category(
             name: v[1] as String,
             parentId: v[2] as int?,
             id: v[0] as int?,
@@ -5774,40 +5774,40 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Folder>(
+        _i3.EntityIntrospection<_i4.Folder>(
           r'Folder',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'parentId',
               _i1.ClassType<int>(nullable: true),
               annotations: [
-                _i6.Reference(_i3.Folder),
-                _i6.OnDelete(_i6.OnDeleteAction.cascade),
+                _i7.Reference(_i4.Folder),
+                _i7.OnDelete(_i7.OnDeleteAction.cascade),
               ],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'folders')],
+          annotations: const [_i7.Table(r'folders')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.name,
             _ => e.parentId,
           },
-          create: (v) => _i3.Folder(
+          create: (v) => _i4.Folder(
             name: v[1] as String,
             parentId: v[2] as int?,
             id: v[0] as int?,
@@ -5819,39 +5819,39 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.Citizen>(
+        _i3.EntityIntrospection<_i4.Citizen>(
           r'Citizen',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'firstName',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'lastName',
               _i1.ClassType<String>(nullable: true),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'passport',
               _i1.ClassType<String>(nullable: true),
-              annotations: [_i6.Unique()],
+              annotations: [_i7.Unique()],
               parameter: true,
               writable: true,
             ),
           ],
           annotations: const [
-            _i6.Table(r'citizens'),
-            _i6.UniqueConstraint([
+            _i7.Table(r'citizens'),
+            _i7.UniqueConstraint([
               r'firstName',
               r'lastName',
             ], name: r'uq_citizens_name'),
@@ -5862,7 +5862,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             2 => e.lastName,
             _ => e.passport,
           },
-          create: (v) => _i3.Citizen(
+          create: (v) => _i4.Citizen(
             firstName: v[1] as String,
             lastName: v[2] as String?,
             passport: v[3] as String?,
@@ -5876,16 +5876,16 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.BookWithAuthor>(
+        _i3.EntityIntrospection<_i4.BookWithAuthor>(
           r'BookWithAuthor',
           const [
-            _i2.EntityProperty(r'id', _i1.ClassType<int>(), parameter: true),
-            _i2.EntityProperty(
+            _i3.EntityProperty(r'id', _i1.ClassType<int>(), parameter: true),
+            _i3.EntityProperty(
               r'title',
               _i1.ClassType<String>(),
               parameter: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'authorName',
               _i1.ClassType<String>(),
               parameter: true,
@@ -5896,59 +5896,59 @@ _i1.BeanModule get $application => _i1.BeanModule(
             1 => e.title,
             _ => e.authorName,
           },
-          create: (v) => _i3.BookWithAuthor(
+          create: (v) => _i4.BookWithAuthor(
             id: v[0] as int,
             title: v[1] as String,
             authorName: v[2] as String,
           ),
         ),
-        _i2.EntityIntrospection<_i3.UserProfile>(
+        _i3.EntityIntrospection<_i4.UserProfile>(
           r'UserProfile',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i6.Id()],
+              annotations: [_i7.Id()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'settings',
-              _i1.ClassType<_i3.Settings>(),
-              annotations: [_i6.Json()],
+              _i1.ClassType<_i4.Settings>(),
+              annotations: [_i7.Json()],
               parameter: true,
               writable: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'raw',
               _i1.MapType<String, dynamic>(
                 _i1.ClassType<String>(),
                 _i1.DynamicType(),
               ),
-              annotations: [_i6.Json(binary: false)],
+              annotations: [_i7.Json(binary: false)],
               parameter: true,
               writable: true,
               hasDefaultValue: true,
               defaultValue: <String, Object?>{},
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'addresses',
-              _i1.ListType<_i3.Address>(
-                _i1.ClassType<_i3.Address>(),
+              _i1.ListType<_i4.Address>(
+                _i1.ClassType<_i4.Address>(),
                 nullable: true,
               ),
-              annotations: [_i6.Json()],
+              annotations: [_i7.Json()],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i6.Table(r'profiles')],
+          annotations: const [_i7.Table(r'profiles')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.name,
@@ -5956,34 +5956,34 @@ _i1.BeanModule get $application => _i1.BeanModule(
             3 => e.raw,
             _ => e.addresses,
           },
-          create: (v) => _i3.UserProfile(
+          create: (v) => _i4.UserProfile(
             name: v[1] as String,
-            settings: v[2] as _i3.Settings,
+            settings: v[2] as _i4.Settings,
             raw: v[3] as Map<String, Object?>,
-            addresses: v[4] as List<_i3.Address>?,
+            addresses: v[4] as List<_i4.Address>?,
             id: v[0] as int?,
           ),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.name = v as String,
-            2 => e.settings = v as _i3.Settings,
+            2 => e.settings = v as _i4.Settings,
             3 => e.raw = v as Map<String, Object?>,
-            4 => e.addresses = v as List<_i3.Address>?,
+            4 => e.addresses = v as List<_i4.Address>?,
             _ => null,
           },
         ),
-        _i2.EntityIntrospection<_i3.ProfileCard>(
+        _i3.EntityIntrospection<_i4.ProfileCard>(
           r'ProfileCard',
           const [
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
             ),
-            _i2.EntityProperty(
+            _i3.EntityProperty(
               r'settings',
-              _i1.ClassType<_i3.Settings>(),
-              annotations: [_i6.Json()],
+              _i1.ClassType<_i4.Settings>(),
+              annotations: [_i7.Json()],
               parameter: true,
             ),
           ],
@@ -5991,69 +5991,69 @@ _i1.BeanModule get $application => _i1.BeanModule(
             0 => e.name,
             _ => e.settings,
           },
-          create: (v) => _i3.ProfileCard(
+          create: (v) => _i4.ProfileCard(
             name: v[0] as String,
-            settings: v[1] as _i3.Settings,
+            settings: v[1] as _i4.Settings,
           ),
         ),
       ]),
     ),
-    _i1.BeanDefinition<_i2.JdbcDriver>(
+    _i1.BeanDefinition<_i3.JdbcDriver>(
       name: r'sqlite3JdbcDriver',
       source: r'package:spring_boot_starter_data#sqlite3',
-      types: const [_i2.JdbcDriver],
-      conditions: [_i2.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
+      types: const [_i3.JdbcDriver],
+      conditions: [_i3.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
       create: (r) => _$sqlite3JdbcDriver(),
     ),
-    _i1.BeanDefinition<_i2.JdbcDriver>(
+    _i1.BeanDefinition<_i3.JdbcDriver>(
       name: r'postgresJdbcDriver',
       source: r'package:spring_boot_starter_data#postgres',
-      types: const [_i2.JdbcDriver],
-      conditions: [_i2.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
+      types: const [_i3.JdbcDriver],
+      conditions: [_i3.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
       create: (r) => _$postgresJdbcDriver(),
     ),
   ],
-  imports: [_i9.dataConfigBeans],
-  introspections: [..._i10.$applicationIntrospections],
+  imports: [_i10.dataConfigBeans],
+  introspections: [..._i11.$applicationIntrospections],
   typeTests: {
-    _i3.Club: (value) => value is _i3.Club,
-    _i3.Player: (value) => value is _i3.Player,
-    _i3.Employee: (value) => value is _i3.Employee,
-    _i3.Category: (value) => value is _i3.Category,
-    _i3.Folder: (value) => value is _i3.Folder,
+    _i4.Club: (value) => value is _i4.Club,
+    _i4.Player: (value) => value is _i4.Player,
+    _i4.Employee: (value) => value is _i4.Employee,
+    _i4.Category: (value) => value is _i4.Category,
+    _i4.Folder: (value) => value is _i4.Folder,
   },
   typeDepths: {
-    _i3.Club: 1,
-    _i3.Player: 1,
-    _i3.Employee: 1,
-    _i3.Category: 1,
-    _i3.Folder: 1,
+    _i4.Club: 1,
+    _i4.Player: 1,
+    _i4.Employee: 1,
+    _i4.Category: 1,
+    _i4.Folder: 1,
   },
 );
 
-final class _$Sqlite3Binding implements _i2.SqliteBinding {
+final class _$Sqlite3Binding implements _i3.SqliteBinding {
   const _$Sqlite3Binding();
 
   @override
-  _i2.SqliteDatabase open(
+  _i3.SqliteDatabase open(
     String filename, {
-    _i2.SqliteOpenMode mode = _i2.SqliteOpenMode.readWriteCreate,
+    _i3.SqliteOpenMode mode = _i3.SqliteOpenMode.readWriteCreate,
     bool uri = false,
   }) => _$sqlite3Guard(
     () => _$Sqlite3Database(
-      _i11.sqlite3.open(
+      _i12.sqlite3.open(
         filename,
-        mode: _i11.OpenMode.values.byName(mode.name),
+        mode: _i12.OpenMode.values.byName(mode.name),
         uri: uri,
       ),
     ),
   );
 }
 
-final class _$Sqlite3Database implements _i2.SqliteDatabase {
+final class _$Sqlite3Database implements _i3.SqliteDatabase {
   _$Sqlite3Database(this._database);
 
-  final _i11.Database _database;
+  final _i12.Database _database;
 
   @override
   void execute(String sql, [List<Object?> parameters = const []]) =>
@@ -6069,7 +6069,7 @@ final class _$Sqlite3Database implements _i2.SqliteDatabase {
   });
 
   @override
-  _i2.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
+  _i3.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
       _$sqlite3Guard(() {
         final statement = _database.prepare(sql);
         try {
@@ -6089,7 +6089,7 @@ final class _$Sqlite3Database implements _i2.SqliteDatabase {
     () => _database.createFunction(
       functionName: name,
       function: function,
-      argumentCount: _i11.AllowedArgumentCount(argumentCount),
+      argumentCount: _i12.AllowedArgumentCount(argumentCount),
       deterministic: true,
     ),
   );
@@ -6107,11 +6107,11 @@ final class _$Sqlite3Database implements _i2.SqliteDatabase {
   void close() => _$sqlite3Guard(_database.close);
 }
 
-final class _$Sqlite3Cursor implements _i2.SqliteCursor {
+final class _$Sqlite3Cursor implements _i3.SqliteCursor {
   _$Sqlite3Cursor(this._statement, this._cursor);
 
-  final _i11.PreparedStatement _statement;
-  final _i11.IteratingCursor _cursor;
+  final _i12.PreparedStatement _statement;
+  final _i12.IteratingCursor _cursor;
 
   @override
   List<String> get columns => _cursor.columnNames;
@@ -6135,8 +6135,8 @@ final class _$Sqlite3Cursor implements _i2.SqliteCursor {
 T _$sqlite3Guard<T>(T Function() action) {
   try {
     return action();
-  } on _i11.SqliteException catch (e) {
-    throw _i2.SqlError(
+  } on _i12.SqliteException catch (e) {
+    throw _i3.SqlError(
       e.message,
       vendorCode: e.resultCode,
       extendedCode: e.extendedResultCode,
@@ -6144,34 +6144,34 @@ T _$sqlite3Guard<T>(T Function() action) {
   }
 }
 
-_i2.JdbcDriver _$sqlite3JdbcDriver() =>
-    _i2.SqliteJdbcDriver(const _$Sqlite3Binding());
+_i3.JdbcDriver _$sqlite3JdbcDriver() =>
+    _i3.SqliteJdbcDriver(const _$Sqlite3Binding());
 
-final class _$PostgresBinding implements _i2.PostgresBinding {
+final class _$PostgresBinding implements _i3.PostgresBinding {
   const _$PostgresBinding();
 
   @override
-  Future<_i2.PostgresSession> open(_i2.PostgresEndpoint endpoint) =>
+  Future<_i3.PostgresSession> open(_i3.PostgresEndpoint endpoint) =>
       _$postgresGuard(() async {
         final roots = endpoint.rootCertificate;
         return _$PostgresSession(
-          await _i12.Connection.open(
-            _i12.Endpoint(
+          await _i13.Connection.open(
+            _i13.Endpoint(
               host: endpoint.host,
               port: endpoint.port,
               database: endpoint.database,
               username: endpoint.username,
               password: endpoint.password,
             ),
-            settings: _i12.ConnectionSettings(
+            settings: _i13.ConnectionSettings(
               sslMode: switch (endpoint.sslMode) {
-                _i2.PostgresSslMode.disable => _i12.SslMode.disable,
-                _i2.PostgresSslMode.require => _i12.SslMode.require,
-                _i2.PostgresSslMode.verifyFull => _i12.SslMode.verifyFull,
+                _i3.PostgresSslMode.disable => _i13.SslMode.disable,
+                _i3.PostgresSslMode.require => _i13.SslMode.require,
+                _i3.PostgresSslMode.verifyFull => _i13.SslMode.verifyFull,
               },
               securityContext: roots == null
                   ? null
-                  : (_i13.SecurityContext(withTrustedRoots: false)
+                  : (_i14.SecurityContext(withTrustedRoots: false)
                       ..setTrustedCertificates(roots)),
               connectTimeout: endpoint.connectTimeout,
               applicationName: endpoint.applicationName,
@@ -6181,16 +6181,16 @@ final class _$PostgresBinding implements _i2.PostgresBinding {
       });
 }
 
-final class _$PostgresSession implements _i2.PostgresSession {
+final class _$PostgresSession implements _i3.PostgresSession {
   _$PostgresSession(this._connection);
 
-  final _i12.Connection _connection;
+  final _i13.Connection _connection;
 
   @override
   bool get isOpen => _connection.isOpen;
 
   @override
-  Future<_i2.PostgresResult> execute(
+  Future<_i3.PostgresResult> execute(
     String sql, {
     List<Object?> parameters = const [],
     bool simple = false,
@@ -6201,17 +6201,17 @@ final class _$PostgresSession implements _i2.PostgresSession {
       parameters: parameters.isEmpty
           ? null
           : [for (final value in parameters) _$postgresParameter(value)],
-      queryMode: simple ? _i12.QueryMode.simple : null,
+      queryMode: simple ? _i13.QueryMode.simple : null,
       timeout: timeout,
     );
     final columns = _$postgresColumns(result.schema);
-    return _i2.PostgresResult(columns, [
+    return _i3.PostgresResult(columns, [
       for (final row in result) _$postgresValues(row),
     ], result.affectedRows);
   });
 
   @override
-  Stream<_i2.PostgresRow> stream(
+  Stream<_i3.PostgresRow> stream(
     String sql, {
     List<Object?> parameters = const [],
     Duration? timeout,
@@ -6223,7 +6223,7 @@ final class _$PostgresSession implements _i2.PostgresSession {
         for (final value in parameters) _$postgresParameter(value),
       ])) {
         columns ??= _$postgresColumns(row.schema);
-        yield _i2.PostgresRow(columns, _$postgresValues(row));
+        yield _i3.PostgresRow(columns, _$postgresValues(row));
       }
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(_$postgresError(error), stackTrace);
@@ -6243,18 +6243,18 @@ final class _$PostgresSession implements _i2.PostgresSession {
 // The package writes a double that is not finite (`Infinity`, `NaN`) as a
 // quoted text the server refuses, unless it knows the type.
 Object? _$postgresParameter(Object? value) => value is double && !value.isFinite
-    ? _i12.TypedValue(_i12.Type.double, value)
+    ? _i13.TypedValue(_i13.Type.double, value)
     : value;
 
-List<String> _$postgresColumns(_i12.ResultSchema schema) => [
+List<String> _$postgresColumns(_i13.ResultSchema schema) => [
   for (final column in schema.columns) column.columnName ?? '',
 ];
 
 // A value of a type the package does not decode (an enum, `citext`...) as
 // its text or bytes.
-List<Object?> _$postgresValues(_i12.ResultRow row) => [
+List<Object?> _$postgresValues(_i13.ResultRow row) => [
   for (final value in row)
-    value is _i12.UndecodedBytes
+    value is _i13.UndecodedBytes
         ? (value.isBinary ? value.bytes : value.asString)
         : value,
 ];
@@ -6263,31 +6263,31 @@ List<Object?> _$postgresValues(_i12.ResultRow row) => [
 // driver understands: the message, the SQL state, the constraint's name;
 // never the DETAIL line (it holds values) and never the exception itself.
 Object _$postgresError(Object error) {
-  if (error is _i12.ServerException) {
-    return _i2.SqlError(
+  if (error is _i13.ServerException) {
+    return _i3.SqlError(
       error.message,
       sqlState: error.code,
       constraint: error.constraintName,
       connectionLost:
-          error.severity == _i12.Severity.fatal ||
-          error.severity == _i12.Severity.panic,
+          error.severity == _i13.Severity.fatal ||
+          error.severity == _i13.Severity.panic,
     );
   }
-  if (error is _i12.PgException) {
+  if (error is _i13.PgException) {
     // The package names the value it cannot send.
     final inference = error.message.startsWith('Could not infer');
-    return _i2.SqlError(
+    return _i3.SqlError(
       inference
           ? 'A parameter value has a type the driver cannot send'
           : error.message,
       connectionLost: !inference,
     );
   }
-  if (error is _i13.SocketException || error is _i13.TlsException) {
-    return _i2.SqlError('$error', connectionLost: true);
+  if (error is _i14.SocketException || error is _i14.TlsException) {
+    return _i3.SqlError('$error', connectionLost: true);
   }
-  if (error is _i4.TimeoutException) {
-    return _i2.SqlError(
+  if (error is _i5.TimeoutException) {
+    return _i3.SqlError(
       error.message ?? 'The connection timed out',
       connectionLost: true,
     );
@@ -6303,26 +6303,24 @@ Future<T> _$postgresGuard<T>(Future<T> Function() action) async {
   }
 }
 
-_i2.JdbcDriver _$postgresJdbcDriver() =>
-    _i2.PostgresJdbcDriver(const _$PostgresBinding());
+_i3.JdbcDriver _$postgresJdbcDriver() =>
+    _i3.PostgresJdbcDriver(const _$PostgresBinding());
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i14.springBootAutoConfiguration,
-    _i15.springBootStarterCacheAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i15.springBootStarterCacheStartupChecksAutoConfiguration,
+    _i15.springBootAutoConfiguration,
+    _i2.springBootStarterCacheAutoConfiguration,
     _i16.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i15.springBootStarterCacheStartupChecksAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            after: [r'springBootStarterCacheAutoConfiguration'],
-          ),
+    ...!const bool.fromEnvironment('dart.vm.product')
+        ? _$debugAutoConfigurationMetadata
+        : const {},
   },
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

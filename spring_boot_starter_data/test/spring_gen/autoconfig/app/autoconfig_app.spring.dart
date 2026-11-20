@@ -10,25 +10,25 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'dart:async' as _i3;
-import 'dart:io' as _i13;
+import 'dart:io' as _i14;
 
-import 'package:postgres/postgres.dart' as _i12;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i14;
+import 'package:postgres/postgres.dart' as _i13;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i15;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
-import 'package:spring_boot_dart/src/conditions.dart' as _i8;
-import 'package:spring_boot_dart/src/runners.dart' as _i9;
+import 'package:spring_boot_dart/src/conditions.dart' as _i9;
+import 'package:spring_boot_dart/src/runners.dart' as _i10;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i15;
-import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i4;
-import 'package:spring_boot_starter_data/src/annotations.dart' as _i5;
+    as _i4;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i5;
+import 'package:spring_boot_starter_data/src/annotations.dart' as _i6;
 import 'package:spring_boot_starter_data/src/properties/properties_beans.dart'
-    as _i10;
-import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i6;
+    as _i11;
+import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i7;
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart'
-    as _i7;
+    as _i8;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i16;
-import 'package:sqlite3/sqlite3.dart' as _i11;
+import 'package:sqlite3/sqlite3.dart' as _i12;
 
 import '../../../autoconfig/app/autoconfig_app.dart' as _i2;
 
@@ -37,30 +37,30 @@ part 'autoconfig_app.spring.env.dart';
 part 'autoconfig_app.spring.proxies.dart';
 
 /// Implements `AuthorRepository`: `SimpleRepository` has the CRUD methods.
-class _$AuthorRepositoryImpl extends _i4.SimpleRepository<_i2.Author, int>
+class _$AuthorRepositoryImpl extends _i5.SimpleRepository<_i2.Author, int>
     implements _i2.AuthorRepository {
   _$AuthorRepositoryImpl(super.operations);
 
   static _$AuthorRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$AuthorRepositoryImpl(
-        r.dependency<_i4.RepositoryFactory>().operations<_i2.Author, int>(
+        r.dependency<_i5.RepositoryFactory>().operations<_i2.Author, int>(
           r'AuthorRepository',
         ),
       );
 }
 
 /// Implements `BookRepository`: `SimpleRepository` has the CRUD methods.
-class _$BookRepositoryImpl extends _i4.SimpleRepository<_i2.Book, int>
+class _$BookRepositoryImpl extends _i5.SimpleRepository<_i2.Book, int>
     implements _i2.BookRepository {
   _$BookRepositoryImpl(super.operations);
 
-  static const _findByYearGreaterThan = _i4.PartTree(r'findByYearGreaterThan', [
-    _i4.OrPart([_i4.Part(r'year', _i4.PartType.greaterThan)]),
+  static const _findByYearGreaterThan = _i5.PartTree(r'findByYearGreaterThan', [
+    _i5.OrPart([_i5.Part(r'year', _i5.PartType.greaterThan)]),
   ]);
 
   static _$BookRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$BookRepositoryImpl(
-        r.dependency<_i4.RepositoryFactory>().operations<_i2.Book, int>(
+        r.dependency<_i5.RepositoryFactory>().operations<_i2.Book, int>(
           r'BookRepository',
         ),
       );
@@ -71,44 +71,44 @@ class _$BookRepositoryImpl extends _i4.SimpleRepository<_i2.Book, int>
 }
 
 /// Implements `OrderRepository`: `SimpleRepository` has the CRUD methods.
-class _$OrderRepositoryImpl extends _i4.SimpleRepository<_i2.PurchaseOrder, int>
+class _$OrderRepositoryImpl extends _i5.SimpleRepository<_i2.PurchaseOrder, int>
     implements _i2.OrderRepository {
   _$OrderRepositoryImpl(super.operations);
 
   static _$OrderRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$OrderRepositoryImpl(
         r
-            .dependency<_i4.RepositoryFactory>()
+            .dependency<_i5.RepositoryFactory>()
             .operations<_i2.PurchaseOrder, int>(r'OrderRepository'),
       );
 }
 
 /// Implements `VisitRepository`: `SimpleRepository` has the CRUD methods.
-class _$VisitRepositoryImpl extends _i4.SimpleRepository<_i2.Visit, int>
+class _$VisitRepositoryImpl extends _i5.SimpleRepository<_i2.Visit, int>
     implements _i2.VisitRepository {
   _$VisitRepositoryImpl(super.operations);
 
   static _$VisitRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$VisitRepositoryImpl(
-        r.dependency<_i4.RepositoryFactory>().operations<_i2.Visit, int>(
+        r.dependency<_i5.RepositoryFactory>().operations<_i2.Visit, int>(
           r'VisitRepository',
-          annotations: const [_i5.UseDataSource(r'stats')],
+          annotations: const [_i6.UseDataSource(r'stats')],
         ),
       );
 }
 
 /// Implements `NoteRepository`: `SimpleRepository` has the CRUD methods.
-class _$NoteRepositoryImpl extends _i4.SimpleRepository<_i2.Note, int>
+class _$NoteRepositoryImpl extends _i5.SimpleRepository<_i2.Note, int>
     implements _i2.NoteRepository {
   _$NoteRepositoryImpl(super.operations);
 
   static _$NoteRepositoryImpl $create(_i1.DependencyResolver r) =>
       _$NoteRepositoryImpl(
-        r.dependency<_i4.RepositoryFactory>().operations<_i2.Note, int>(
+        r.dependency<_i5.RepositoryFactory>().operations<_i2.Note, int>(
           r'NoteRepository',
           annotations: const [
-            _i5.UseStore(r'memory'),
-            _i5.UseDataSource(r'scratch'),
+            _i6.UseStore(r'memory'),
+            _i6.UseDataSource(r'scratch'),
           ],
         ),
       );
@@ -136,12 +136,12 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#AuthorRepository',
       types: const [
         _i2.AuthorRepository,
-        _i6.ListCrudRepository<_i2.Author, int>,
-        _i6.CrudRepository<_i2.Author, int>,
-        _i6.DataRepository<_i2.Author, int>,
-        _i6.ListCrudRepository<dynamic, dynamic>,
-        _i6.CrudRepository<dynamic, dynamic>,
-        _i6.DataRepository<dynamic, dynamic>,
+        _i7.ListCrudRepository<_i2.Author, int>,
+        _i7.CrudRepository<_i2.Author, int>,
+        _i7.DataRepository<_i2.Author, int>,
+        _i7.ListCrudRepository<dynamic, dynamic>,
+        _i7.CrudRepository<dynamic, dynamic>,
+        _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$AuthorRepositoryImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
@@ -153,12 +153,12 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#BookRepository',
       types: const [
         _i2.BookRepository,
-        _i6.ListCrudRepository<_i2.Book, int>,
-        _i6.CrudRepository<_i2.Book, int>,
-        _i6.DataRepository<_i2.Book, int>,
-        _i6.ListCrudRepository<dynamic, dynamic>,
-        _i6.CrudRepository<dynamic, dynamic>,
-        _i6.DataRepository<dynamic, dynamic>,
+        _i7.ListCrudRepository<_i2.Book, int>,
+        _i7.CrudRepository<_i2.Book, int>,
+        _i7.DataRepository<_i2.Book, int>,
+        _i7.ListCrudRepository<dynamic, dynamic>,
+        _i7.CrudRepository<dynamic, dynamic>,
+        _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$BookRepositoryImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
@@ -170,12 +170,12 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#OrderRepository',
       types: const [
         _i2.OrderRepository,
-        _i6.ListCrudRepository<_i2.PurchaseOrder, int>,
-        _i6.CrudRepository<_i2.PurchaseOrder, int>,
-        _i6.DataRepository<_i2.PurchaseOrder, int>,
-        _i6.ListCrudRepository<dynamic, dynamic>,
-        _i6.CrudRepository<dynamic, dynamic>,
-        _i6.DataRepository<dynamic, dynamic>,
+        _i7.ListCrudRepository<_i2.PurchaseOrder, int>,
+        _i7.CrudRepository<_i2.PurchaseOrder, int>,
+        _i7.DataRepository<_i2.PurchaseOrder, int>,
+        _i7.ListCrudRepository<dynamic, dynamic>,
+        _i7.CrudRepository<dynamic, dynamic>,
+        _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$OrderRepositoryImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
@@ -187,15 +187,15 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#VisitRepository',
       types: const [
         _i2.VisitRepository,
-        _i6.ListCrudRepository<_i2.Visit, int>,
-        _i6.CrudRepository<_i2.Visit, int>,
-        _i6.DataRepository<_i2.Visit, int>,
-        _i6.ListCrudRepository<dynamic, dynamic>,
-        _i6.CrudRepository<dynamic, dynamic>,
-        _i6.DataRepository<dynamic, dynamic>,
+        _i7.ListCrudRepository<_i2.Visit, int>,
+        _i7.CrudRepository<_i2.Visit, int>,
+        _i7.DataRepository<_i2.Visit, int>,
+        _i7.ListCrudRepository<dynamic, dynamic>,
+        _i7.CrudRepository<dynamic, dynamic>,
+        _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$VisitRepositoryImpl.$create(r),
-      annotations: const [_i5.UseDataSource(r'stats')],
+      annotations: const [_i6.UseDataSource(r'stats')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
@@ -205,17 +205,17 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#NoteRepository',
       types: const [
         _i2.NoteRepository,
-        _i6.ListCrudRepository<_i2.Note, int>,
-        _i6.CrudRepository<_i2.Note, int>,
-        _i6.DataRepository<_i2.Note, int>,
-        _i6.ListCrudRepository<dynamic, dynamic>,
-        _i6.CrudRepository<dynamic, dynamic>,
-        _i6.DataRepository<dynamic, dynamic>,
+        _i7.ListCrudRepository<_i2.Note, int>,
+        _i7.CrudRepository<_i2.Note, int>,
+        _i7.DataRepository<_i2.Note, int>,
+        _i7.ListCrudRepository<dynamic, dynamic>,
+        _i7.CrudRepository<dynamic, dynamic>,
+        _i7.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$NoteRepositoryImpl.$create(r),
       annotations: const [
-        _i5.UseStore(r'memory'),
-        _i5.UseDataSource(r'scratch'),
+        _i6.UseStore(r'memory'),
+        _i6.UseDataSource(r'scratch'),
       ],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
@@ -243,7 +243,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String'],
             parameterNames: [r'title'],
-            annotations: [_i7.Transactional()],
+            annotations: [_i8.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
           _i1.MethodSignature.of(
@@ -252,7 +252,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String', r'bool'],
             parameterNames: [r'page', r'fail'],
-            annotations: [_i7.Transactional(transactionManager: r'stats')],
+            annotations: [_i8.Transactional(transactionManager: r'stats')],
             annotationTypes: [r'Transactional'],
           ),
         ],
@@ -268,7 +268,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i1.ConditionGroup(
           r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#EagerQuery',
           [
-            const _i8.ConditionalOnProperty(
+            const _i9.ConditionalOnProperty(
               r'app.early-queries',
               matchIfMissing: true,
             ),
@@ -283,7 +283,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
       },
       annotations: const [
         _i1.Component(),
-        _i8.ConditionalOnProperty(r'app.early-queries', matchIfMissing: true),
+        _i9.ConditionalOnProperty(r'app.early-queries', matchIfMissing: true),
       ],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
@@ -296,7 +296,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i1.ConditionGroup(
           r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#AsyncQuery',
           [
-            const _i8.ConditionalOnProperty(
+            const _i9.ConditionalOnProperty(
               r'app.early-queries',
               matchIfMissing: true,
             ),
@@ -316,7 +316,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
       },
       annotations: const [
         _i1.Component(),
-        _i8.ConditionalOnProperty(r'app.early-queries', matchIfMissing: true),
+        _i9.ConditionalOnProperty(r'app.early-queries', matchIfMissing: true),
       ],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
@@ -325,7 +325,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
     _i1.BeanDefinition<_i2.SeedRunner>(
       name: r'seedRunner',
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#SeedRunner',
-      types: const [_i2.SeedRunner, _i9.CommandLineRunner],
+      types: const [_i2.SeedRunner, _i10.CommandLineRunner],
       dependencies: const [
         _i1.Dependency(_i2.AuthorRepository, name: r'authors'),
       ],
@@ -339,7 +339,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
     _i1.BeanDefinition<_i2.SeedApplicationRunner>(
       name: r'seedApplicationRunner',
       source: r'asset:spring_boot_starter_data/test/autoconfig/app/autoconfig_app.dart#SeedApplicationRunner',
-      types: const [_i2.SeedApplicationRunner, _i9.ApplicationRunner],
+      types: const [_i2.SeedApplicationRunner, _i10.ApplicationRunner],
       dependencies: const [_i1.Dependency(_i2.BookRepository, name: r'books')],
       create: (r) => _i2.SeedApplicationRunner(
         r.dependency<_i2.BookRepository>(name: r'books'),
@@ -349,29 +349,29 @@ _i1.BeanModule get $application => _i1.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i4.EntityIntrospections>(
+    _i1.BeanDefinition<_i5.EntityIntrospections>(
       name: r'entityIntrospections#application',
       source: r'package:spring_boot_starter_data#EntityIntrospections',
-      types: const [_i4.EntityIntrospections],
-      create: (r) => _i4.EntityIntrospections([
-        _i4.EntityIntrospection<_i2.Author>(
+      types: const [_i5.EntityIntrospections],
+      create: (r) => _i5.EntityIntrospections([
+        _i5.EntityIntrospection<_i2.Author>(
           r'Author',
           const [
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i5.Id()],
+              annotations: [_i6.Id()],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'name',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i5.Table(r'authors')],
+          annotations: const [_i6.Table(r'authors')],
           get: (e, i) => switch (i) {
             0 => e.id,
             _ => e.name,
@@ -383,46 +383,46 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i2.Book>(
+        _i5.EntityIntrospection<_i2.Book>(
           r'Book',
           const [
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i5.Id()],
+              annotations: [_i6.Id()],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'title',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'year',
               _i1.ClassType<int>(),
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'author',
-              _i1.GenericType<_i5.AggregateReference<_i2.Author, int>>([
+              _i1.GenericType<_i6.AggregateReference<_i2.Author, int>>([
                 _i1.ClassType<_i2.Author>(),
                 _i1.ClassType<int>(),
               ], nullable: true),
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'version',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i5.Version()],
+              annotations: [_i6.Version()],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i5.Table(r'books')],
+          annotations: const [_i6.Table(r'books')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.title,
@@ -434,45 +434,45 @@ _i1.BeanModule get $application => _i1.BeanModule(
             title: v[1] as String,
             year: v[2] as int,
             id: v[0] as int?,
-            author: v[3] as _i5.AggregateReference<_i2.Author, int>?,
+            author: v[3] as _i6.AggregateReference<_i2.Author, int>?,
             version: v[4] as int?,
           ),
           write: (e, i, v) => switch (i) {
             0 => e.id = v as int?,
             1 => e.title = v as String,
             2 => e.year = v as int,
-            3 => e.author = v as _i5.AggregateReference<_i2.Author, int>?,
+            3 => e.author = v as _i6.AggregateReference<_i2.Author, int>?,
             4 => e.version = v as int?,
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i2.PurchaseOrder>(
+        _i5.EntityIntrospection<_i2.PurchaseOrder>(
           r'PurchaseOrder',
           const [
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i5.Id()],
+              annotations: [_i6.Id()],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'customer',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'lines',
               _i1.ListType<_i2.OrderLine>(_i1.ClassType<_i2.OrderLine>()),
-              annotations: [_i5.MappedCollection()],
+              annotations: [_i6.MappedCollection()],
               parameter: true,
               writable: true,
               hasDefaultValue: true,
               defaultValue: <_i2.OrderLine>[],
             ),
           ],
-          annotations: const [_i5.Table(r'orders')],
+          annotations: const [_i6.Table(r'orders')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.customer,
@@ -490,23 +490,23 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i2.OrderLine>(
+        _i5.EntityIntrospection<_i2.OrderLine>(
           r'OrderLine',
           const [
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'sku',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'quantity',
               _i1.ClassType<int>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i5.Table(r'order_lines')],
+          annotations: const [_i6.Table(r'order_lines')],
           get: (e, i) => switch (i) {
             0 => e.sku,
             _ => e.quantity,
@@ -519,24 +519,24 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i2.Visit>(
+        _i5.EntityIntrospection<_i2.Visit>(
           r'Visit',
           const [
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i5.Id()],
+              annotations: [_i6.Id()],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'page',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i5.Table(r'visits')],
+          annotations: const [_i6.Table(r'visits')],
           get: (e, i) => switch (i) {
             0 => e.id,
             _ => e.page,
@@ -548,24 +548,24 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i4.EntityIntrospection<_i2.Note>(
+        _i5.EntityIntrospection<_i2.Note>(
           r'Note',
           const [
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i5.Id()],
+              annotations: [_i6.Id()],
               parameter: true,
               writable: true,
             ),
-            _i4.EntityProperty(
+            _i5.EntityProperty(
               r'text',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i5.Table(r'notes')],
+          annotations: const [_i6.Table(r'notes')],
           get: (e, i) => switch (i) {
             0 => e.id,
             _ => e.text,
@@ -579,22 +579,22 @@ _i1.BeanModule get $application => _i1.BeanModule(
         ),
       ]),
     ),
-    _i1.BeanDefinition<_i4.JdbcDriver>(
+    _i1.BeanDefinition<_i5.JdbcDriver>(
       name: r'sqlite3JdbcDriver',
       source: r'package:spring_boot_starter_data#sqlite3',
-      types: const [_i4.JdbcDriver],
-      conditions: [_i4.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
+      types: const [_i5.JdbcDriver],
+      conditions: [_i5.ConditionalOnMissingBean.named(r'sqlite3JdbcDriver')],
       create: (r) => _$sqlite3JdbcDriver(),
     ),
-    _i1.BeanDefinition<_i4.JdbcDriver>(
+    _i1.BeanDefinition<_i5.JdbcDriver>(
       name: r'postgresJdbcDriver',
       source: r'package:spring_boot_starter_data#postgres',
-      types: const [_i4.JdbcDriver],
-      conditions: [_i4.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
+      types: const [_i5.JdbcDriver],
+      conditions: [_i5.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
       create: (r) => _$postgresJdbcDriver(),
     ),
   ],
-  imports: [_i10.dataConfigBeans],
+  imports: [_i11.dataConfigBeans],
   resources: const {
     r'db/migration/R__book_titles.sql': _i1.EmbeddedResource.text(
       'drop view if exists book_titles;\ncreate view book_titles as select id, title from books;\n',
@@ -614,29 +614,29 @@ _i1.BeanModule get $application => _i1.BeanModule(
   },
 );
 
-final class _$Sqlite3Binding implements _i4.SqliteBinding {
+final class _$Sqlite3Binding implements _i5.SqliteBinding {
   const _$Sqlite3Binding();
 
   @override
-  _i4.SqliteDatabase open(
+  _i5.SqliteDatabase open(
     String filename, {
-    _i4.SqliteOpenMode mode = _i4.SqliteOpenMode.readWriteCreate,
+    _i5.SqliteOpenMode mode = _i5.SqliteOpenMode.readWriteCreate,
     bool uri = false,
   }) => _$sqlite3Guard(
     () => _$Sqlite3Database(
-      _i11.sqlite3.open(
+      _i12.sqlite3.open(
         filename,
-        mode: _i11.OpenMode.values.byName(mode.name),
+        mode: _i12.OpenMode.values.byName(mode.name),
         uri: uri,
       ),
     ),
   );
 }
 
-final class _$Sqlite3Database implements _i4.SqliteDatabase {
+final class _$Sqlite3Database implements _i5.SqliteDatabase {
   _$Sqlite3Database(this._database);
 
-  final _i11.Database _database;
+  final _i12.Database _database;
 
   @override
   void execute(String sql, [List<Object?> parameters = const []]) =>
@@ -652,7 +652,7 @@ final class _$Sqlite3Database implements _i4.SqliteDatabase {
   });
 
   @override
-  _i4.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
+  _i5.SqliteCursor cursor(String sql, [List<Object?> parameters = const []]) =>
       _$sqlite3Guard(() {
         final statement = _database.prepare(sql);
         try {
@@ -672,7 +672,7 @@ final class _$Sqlite3Database implements _i4.SqliteDatabase {
     () => _database.createFunction(
       functionName: name,
       function: function,
-      argumentCount: _i11.AllowedArgumentCount(argumentCount),
+      argumentCount: _i12.AllowedArgumentCount(argumentCount),
       deterministic: true,
     ),
   );
@@ -690,11 +690,11 @@ final class _$Sqlite3Database implements _i4.SqliteDatabase {
   void close() => _$sqlite3Guard(_database.close);
 }
 
-final class _$Sqlite3Cursor implements _i4.SqliteCursor {
+final class _$Sqlite3Cursor implements _i5.SqliteCursor {
   _$Sqlite3Cursor(this._statement, this._cursor);
 
-  final _i11.PreparedStatement _statement;
-  final _i11.IteratingCursor _cursor;
+  final _i12.PreparedStatement _statement;
+  final _i12.IteratingCursor _cursor;
 
   @override
   List<String> get columns => _cursor.columnNames;
@@ -718,8 +718,8 @@ final class _$Sqlite3Cursor implements _i4.SqliteCursor {
 T _$sqlite3Guard<T>(T Function() action) {
   try {
     return action();
-  } on _i11.SqliteException catch (e) {
-    throw _i4.SqlError(
+  } on _i12.SqliteException catch (e) {
+    throw _i5.SqlError(
       e.message,
       vendorCode: e.resultCode,
       extendedCode: e.extendedResultCode,
@@ -727,34 +727,34 @@ T _$sqlite3Guard<T>(T Function() action) {
   }
 }
 
-_i4.JdbcDriver _$sqlite3JdbcDriver() =>
-    _i4.SqliteJdbcDriver(const _$Sqlite3Binding());
+_i5.JdbcDriver _$sqlite3JdbcDriver() =>
+    _i5.SqliteJdbcDriver(const _$Sqlite3Binding());
 
-final class _$PostgresBinding implements _i4.PostgresBinding {
+final class _$PostgresBinding implements _i5.PostgresBinding {
   const _$PostgresBinding();
 
   @override
-  Future<_i4.PostgresSession> open(_i4.PostgresEndpoint endpoint) =>
+  Future<_i5.PostgresSession> open(_i5.PostgresEndpoint endpoint) =>
       _$postgresGuard(() async {
         final roots = endpoint.rootCertificate;
         return _$PostgresSession(
-          await _i12.Connection.open(
-            _i12.Endpoint(
+          await _i13.Connection.open(
+            _i13.Endpoint(
               host: endpoint.host,
               port: endpoint.port,
               database: endpoint.database,
               username: endpoint.username,
               password: endpoint.password,
             ),
-            settings: _i12.ConnectionSettings(
+            settings: _i13.ConnectionSettings(
               sslMode: switch (endpoint.sslMode) {
-                _i4.PostgresSslMode.disable => _i12.SslMode.disable,
-                _i4.PostgresSslMode.require => _i12.SslMode.require,
-                _i4.PostgresSslMode.verifyFull => _i12.SslMode.verifyFull,
+                _i5.PostgresSslMode.disable => _i13.SslMode.disable,
+                _i5.PostgresSslMode.require => _i13.SslMode.require,
+                _i5.PostgresSslMode.verifyFull => _i13.SslMode.verifyFull,
               },
               securityContext: roots == null
                   ? null
-                  : (_i13.SecurityContext(withTrustedRoots: false)
+                  : (_i14.SecurityContext(withTrustedRoots: false)
                       ..setTrustedCertificates(roots)),
               connectTimeout: endpoint.connectTimeout,
               applicationName: endpoint.applicationName,
@@ -764,16 +764,16 @@ final class _$PostgresBinding implements _i4.PostgresBinding {
       });
 }
 
-final class _$PostgresSession implements _i4.PostgresSession {
+final class _$PostgresSession implements _i5.PostgresSession {
   _$PostgresSession(this._connection);
 
-  final _i12.Connection _connection;
+  final _i13.Connection _connection;
 
   @override
   bool get isOpen => _connection.isOpen;
 
   @override
-  Future<_i4.PostgresResult> execute(
+  Future<_i5.PostgresResult> execute(
     String sql, {
     List<Object?> parameters = const [],
     bool simple = false,
@@ -784,17 +784,17 @@ final class _$PostgresSession implements _i4.PostgresSession {
       parameters: parameters.isEmpty
           ? null
           : [for (final value in parameters) _$postgresParameter(value)],
-      queryMode: simple ? _i12.QueryMode.simple : null,
+      queryMode: simple ? _i13.QueryMode.simple : null,
       timeout: timeout,
     );
     final columns = _$postgresColumns(result.schema);
-    return _i4.PostgresResult(columns, [
+    return _i5.PostgresResult(columns, [
       for (final row in result) _$postgresValues(row),
     ], result.affectedRows);
   });
 
   @override
-  Stream<_i4.PostgresRow> stream(
+  Stream<_i5.PostgresRow> stream(
     String sql, {
     List<Object?> parameters = const [],
     Duration? timeout,
@@ -806,7 +806,7 @@ final class _$PostgresSession implements _i4.PostgresSession {
         for (final value in parameters) _$postgresParameter(value),
       ])) {
         columns ??= _$postgresColumns(row.schema);
-        yield _i4.PostgresRow(columns, _$postgresValues(row));
+        yield _i5.PostgresRow(columns, _$postgresValues(row));
       }
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(_$postgresError(error), stackTrace);
@@ -826,18 +826,18 @@ final class _$PostgresSession implements _i4.PostgresSession {
 // The package writes a double that is not finite (`Infinity`, `NaN`) as a
 // quoted text the server refuses, unless it knows the type.
 Object? _$postgresParameter(Object? value) => value is double && !value.isFinite
-    ? _i12.TypedValue(_i12.Type.double, value)
+    ? _i13.TypedValue(_i13.Type.double, value)
     : value;
 
-List<String> _$postgresColumns(_i12.ResultSchema schema) => [
+List<String> _$postgresColumns(_i13.ResultSchema schema) => [
   for (final column in schema.columns) column.columnName ?? '',
 ];
 
 // A value of a type the package does not decode (an enum, `citext`...) as
 // its text or bytes.
-List<Object?> _$postgresValues(_i12.ResultRow row) => [
+List<Object?> _$postgresValues(_i13.ResultRow row) => [
   for (final value in row)
-    value is _i12.UndecodedBytes
+    value is _i13.UndecodedBytes
         ? (value.isBinary ? value.bytes : value.asString)
         : value,
 ];
@@ -846,31 +846,31 @@ List<Object?> _$postgresValues(_i12.ResultRow row) => [
 // driver understands: the message, the SQL state, the constraint's name;
 // never the DETAIL line (it holds values) and never the exception itself.
 Object _$postgresError(Object error) {
-  if (error is _i12.ServerException) {
-    return _i4.SqlError(
+  if (error is _i13.ServerException) {
+    return _i5.SqlError(
       error.message,
       sqlState: error.code,
       constraint: error.constraintName,
       connectionLost:
-          error.severity == _i12.Severity.fatal ||
-          error.severity == _i12.Severity.panic,
+          error.severity == _i13.Severity.fatal ||
+          error.severity == _i13.Severity.panic,
     );
   }
-  if (error is _i12.PgException) {
+  if (error is _i13.PgException) {
     // The package names the value it cannot send.
     final inference = error.message.startsWith('Could not infer');
-    return _i4.SqlError(
+    return _i5.SqlError(
       inference
           ? 'A parameter value has a type the driver cannot send'
           : error.message,
       connectionLost: !inference,
     );
   }
-  if (error is _i13.SocketException || error is _i13.TlsException) {
-    return _i4.SqlError('$error', connectionLost: true);
+  if (error is _i14.SocketException || error is _i14.TlsException) {
+    return _i5.SqlError('$error', connectionLost: true);
   }
   if (error is _i3.TimeoutException) {
-    return _i4.SqlError(
+    return _i5.SqlError(
       error.message ?? 'The connection timed out',
       connectionLost: true,
     );
@@ -886,26 +886,24 @@ Future<T> _$postgresGuard<T>(Future<T> Function() action) async {
   }
 }
 
-_i4.JdbcDriver _$postgresJdbcDriver() =>
-    _i4.PostgresJdbcDriver(const _$PostgresBinding());
+_i5.JdbcDriver _$postgresJdbcDriver() =>
+    _i5.PostgresJdbcDriver(const _$PostgresBinding());
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i14.springBootAutoConfiguration,
-    _i15.springBootStarterCacheAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i15.springBootStarterCacheStartupChecksAutoConfiguration,
+    _i15.springBootAutoConfiguration,
+    _i4.springBootStarterCacheAutoConfiguration,
     _i16.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i15.springBootStarterCacheStartupChecksAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            after: [r'springBootStarterCacheAutoConfiguration'],
-          ),
+    ...!const bool.fromEnvironment('dart.vm.product')
+        ? _$debugAutoConfigurationMetadata
+        : const {},
   },
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

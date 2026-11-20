@@ -9,17 +9,16 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i8;
-import 'dart:io' as _i7;
+import 'dart:async' as _i10;
+import 'dart:io' as _i9;
 
-import 'package:postgres/postgres.dart' as _i6;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
+import 'package:postgres/postgres.dart' as _i8;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i11;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i10;
-import 'package:spring_boot_starter_data/spring_auto_configuration.dart'
-    as _i11;
-import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i3;
+    as _i2;
+import 'package:spring_boot_starter_data/spring_auto_configuration.dart' as _i3;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i5;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
     as _i12;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
@@ -31,79 +30,79 @@ import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
 import 'package:spring_boot_starter_supabase/spring_auto_configuration.dart'
     as _i16;
 import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i17;
-import 'package:spring_boot_starter_web/spring_boot_starter_web.dart' as _i4;
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart' as _i6;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
     as _i18;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i4;
 import 'package:spring_security_core/spring_auto_configuration.dart' as _i19;
-import 'package:supabase_example_server/src/app.dart' as _i5;
+import 'package:supabase_example_server/src/app.dart' as _i7;
 
 part 'main.spring.debug.dart';
 part 'main.spring.env.dart';
 
 /// Beans found by `@ComponentScan` in `lib/ and bin/`.
-_i2.BeanModule get $application => _i2.BeanModule(
+_i4.BeanModule get $application => _i4.BeanModule(
   r'application',
   [
-    _i2.BeanDefinition<_i3.JdbcDriver>(
+    _i4.BeanDefinition<_i5.JdbcDriver>(
       name: r'postgresJdbcDriver',
       source: r'package:spring_boot_starter_data#postgres',
-      types: const [_i3.JdbcDriver],
-      conditions: [_i3.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
+      types: const [_i5.JdbcDriver],
+      conditions: [_i5.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
       create: (r) => _$postgresJdbcDriver(),
     ),
-    _i2.BeanDefinition<_i4.HandlerExceptionResolver>(
+    _i4.BeanDefinition<_i6.HandlerExceptionResolver>(
       name: r'dataAccessExceptionResolver',
       source: r'package:spring_boot_starter_data#spring_boot_starter_web',
-      types: const [_i4.HandlerExceptionResolver],
+      types: const [_i6.HandlerExceptionResolver],
       conditions: [
-        _i3.ConditionalOnMissingBean.named(r'dataAccessExceptionResolver'),
+        _i5.ConditionalOnMissingBean.named(r'dataAccessExceptionResolver'),
       ],
       create: (r) => _$dataAccessExceptionResolver(),
     ),
-    _i2.BeanDefinition<_i4.WebMvcConfigurer>(
+    _i4.BeanDefinition<_i6.WebMvcConfigurer>(
       name: r'pagingArgumentResolvers',
       source: r'package:spring_boot_starter_data#spring_boot_starter_web',
-      types: const [_i4.WebMvcConfigurer],
+      types: const [_i6.WebMvcConfigurer],
       conditions: [
-        _i3.ConditionalOnMissingBean.named(r'pagingArgumentResolvers'),
+        _i5.ConditionalOnMissingBean.named(r'pagingArgumentResolvers'),
       ],
-      create: (r) => _$pagingArgumentResolvers(r.dependency<_i2.Environment>()),
+      create: (r) => _$pagingArgumentResolvers(r.dependency<_i4.Environment>()),
     ),
   ],
-  imports: [_i5.appBeans],
+  imports: [_i7.appBeans],
   resources: const {
-    r'application.yml': _i2.EmbeddedResource.text(
+    r'application.yml': _i4.EmbeddedResource.text(
       '# The server of the Supabase example. Nothing of a project is written\n# here: its address and keys come from the environment (the variables\n# `supabase status -o env` gives, see ../../README.md), and the start fails\n# with the name of the variable that is missing.\nspring:\n  application:\n    name: supabase-example\n  main:\n    # Close the context on Ctrl+C / SIGTERM.\n    register-shutdown-hook: true\n  supabase:\n    # The local stack unless SUPABASE_URL says otherwise.\n    url: \${SUPABASE_URL:http://127.0.0.1:54321}\n    anon-key: \${SUPABASE_ANON_KEY}\n    # Only inside SupabaseCredentials.asServiceRole (AdminReports).\n    service-role-key: \${SUPABASE_SERVICE_ROLE_KEY}\n    db:\n      # Set: the repositories use SQL over the project\'s database, so\n      # @Transactional works (TodoLists.addPair).\n      url: \${SUPABASE_DB_URL}\n      # Every transaction, and every statement outside one, runs as the\n      # caller: the role `authenticated` and the claims of their token, so\n      # auth.uid() and the policies of the project see who asks.\n      rls: user\n  datasource:\n    postgresql:\n      # The local stack\'s database has no TLS; a hosted project\'s has\n      # (SUPABASE_DB_SSLMODE=require).\n      sslmode: \${SUPABASE_DB_SSLMODE:disable}\n  data:\n    jdbc:\n      # The tables are the project\'s (../../supabase/migrations): nothing\n      # is created or checked at startup.\n      schema: none\n\n# The project\'s access tokens are accepted as bearer tokens with the\n# starter\'s defaults (spring.security.oauth2.resourceserver.jwt.*): signed\n# by one of the project\'s keys (ES256 or RS256, read from\n# <url>/auth/v1/.well-known/jwks.json), its issuer, the audience and the\n# role `authenticated`, roles from app_metadata.roles. A project that still\n# signs with its legacy secret (HS256) sets\n# spring.supabase.auth.jwt-secret (SPRING_SUPABASE_AUTH_JWT_SECRET).\n\nserver:\n  port: 8082\n  shutdown: graceful\n',
     ),
   },
 );
 
-final class _$PostgresBinding implements _i3.PostgresBinding {
+final class _$PostgresBinding implements _i5.PostgresBinding {
   const _$PostgresBinding();
 
   @override
-  Future<_i3.PostgresSession> open(_i3.PostgresEndpoint endpoint) =>
+  Future<_i5.PostgresSession> open(_i5.PostgresEndpoint endpoint) =>
       _$postgresGuard(() async {
         final roots = endpoint.rootCertificate;
         return _$PostgresSession(
-          await _i6.Connection.open(
-            _i6.Endpoint(
+          await _i8.Connection.open(
+            _i8.Endpoint(
               host: endpoint.host,
               port: endpoint.port,
               database: endpoint.database,
               username: endpoint.username,
               password: endpoint.password,
             ),
-            settings: _i6.ConnectionSettings(
+            settings: _i8.ConnectionSettings(
               sslMode: switch (endpoint.sslMode) {
-                _i3.PostgresSslMode.disable => _i6.SslMode.disable,
-                _i3.PostgresSslMode.require => _i6.SslMode.require,
-                _i3.PostgresSslMode.verifyFull => _i6.SslMode.verifyFull,
+                _i5.PostgresSslMode.disable => _i8.SslMode.disable,
+                _i5.PostgresSslMode.require => _i8.SslMode.require,
+                _i5.PostgresSslMode.verifyFull => _i8.SslMode.verifyFull,
               },
               securityContext: roots == null
                   ? null
-                  : (_i7.SecurityContext(withTrustedRoots: false)
+                  : (_i9.SecurityContext(withTrustedRoots: false)
                       ..setTrustedCertificates(roots)),
               connectTimeout: endpoint.connectTimeout,
               applicationName: endpoint.applicationName,
@@ -113,16 +112,16 @@ final class _$PostgresBinding implements _i3.PostgresBinding {
       });
 }
 
-final class _$PostgresSession implements _i3.PostgresSession {
+final class _$PostgresSession implements _i5.PostgresSession {
   _$PostgresSession(this._connection);
 
-  final _i6.Connection _connection;
+  final _i8.Connection _connection;
 
   @override
   bool get isOpen => _connection.isOpen;
 
   @override
-  Future<_i3.PostgresResult> execute(
+  Future<_i5.PostgresResult> execute(
     String sql, {
     List<Object?> parameters = const [],
     bool simple = false,
@@ -133,17 +132,17 @@ final class _$PostgresSession implements _i3.PostgresSession {
       parameters: parameters.isEmpty
           ? null
           : [for (final value in parameters) _$postgresParameter(value)],
-      queryMode: simple ? _i6.QueryMode.simple : null,
+      queryMode: simple ? _i8.QueryMode.simple : null,
       timeout: timeout,
     );
     final columns = _$postgresColumns(result.schema);
-    return _i3.PostgresResult(columns, [
+    return _i5.PostgresResult(columns, [
       for (final row in result) _$postgresValues(row),
     ], result.affectedRows);
   });
 
   @override
-  Stream<_i3.PostgresRow> stream(
+  Stream<_i5.PostgresRow> stream(
     String sql, {
     List<Object?> parameters = const [],
     Duration? timeout,
@@ -155,7 +154,7 @@ final class _$PostgresSession implements _i3.PostgresSession {
         for (final value in parameters) _$postgresParameter(value),
       ])) {
         columns ??= _$postgresColumns(row.schema);
-        yield _i3.PostgresRow(columns, _$postgresValues(row));
+        yield _i5.PostgresRow(columns, _$postgresValues(row));
       }
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(_$postgresError(error), stackTrace);
@@ -175,18 +174,18 @@ final class _$PostgresSession implements _i3.PostgresSession {
 // The package writes a double that is not finite (`Infinity`, `NaN`) as a
 // quoted text the server refuses, unless it knows the type.
 Object? _$postgresParameter(Object? value) => value is double && !value.isFinite
-    ? _i6.TypedValue(_i6.Type.double, value)
+    ? _i8.TypedValue(_i8.Type.double, value)
     : value;
 
-List<String> _$postgresColumns(_i6.ResultSchema schema) => [
+List<String> _$postgresColumns(_i8.ResultSchema schema) => [
   for (final column in schema.columns) column.columnName ?? '',
 ];
 
 // A value of a type the package does not decode (an enum, `citext`...) as
 // its text or bytes.
-List<Object?> _$postgresValues(_i6.ResultRow row) => [
+List<Object?> _$postgresValues(_i8.ResultRow row) => [
   for (final value in row)
-    value is _i6.UndecodedBytes
+    value is _i8.UndecodedBytes
         ? (value.isBinary ? value.bytes : value.asString)
         : value,
 ];
@@ -195,31 +194,31 @@ List<Object?> _$postgresValues(_i6.ResultRow row) => [
 // driver understands: the message, the SQL state, the constraint's name;
 // never the DETAIL line (it holds values) and never the exception itself.
 Object _$postgresError(Object error) {
-  if (error is _i6.ServerException) {
-    return _i3.SqlError(
+  if (error is _i8.ServerException) {
+    return _i5.SqlError(
       error.message,
       sqlState: error.code,
       constraint: error.constraintName,
       connectionLost:
-          error.severity == _i6.Severity.fatal ||
-          error.severity == _i6.Severity.panic,
+          error.severity == _i8.Severity.fatal ||
+          error.severity == _i8.Severity.panic,
     );
   }
-  if (error is _i6.PgException) {
+  if (error is _i8.PgException) {
     // The package names the value it cannot send.
     final inference = error.message.startsWith('Could not infer');
-    return _i3.SqlError(
+    return _i5.SqlError(
       inference
           ? 'A parameter value has a type the driver cannot send'
           : error.message,
       connectionLost: !inference,
     );
   }
-  if (error is _i7.SocketException || error is _i7.TlsException) {
-    return _i3.SqlError('$error', connectionLost: true);
+  if (error is _i9.SocketException || error is _i9.TlsException) {
+    return _i5.SqlError('$error', connectionLost: true);
   }
-  if (error is _i8.TimeoutException) {
-    return _i3.SqlError(
+  if (error is _i10.TimeoutException) {
+    return _i5.SqlError(
       error.message ?? 'The connection timed out',
       connectionLost: true,
     );
@@ -235,51 +234,51 @@ Future<T> _$postgresGuard<T>(Future<T> Function() action) async {
   }
 }
 
-_i3.JdbcDriver _$postgresJdbcDriver() =>
-    _i3.PostgresJdbcDriver(const _$PostgresBinding());
+_i5.JdbcDriver _$postgresJdbcDriver() =>
+    _i5.PostgresJdbcDriver(const _$PostgresBinding());
 
 final class _$DataAccessExceptionResolver
-    implements _i4.HandlerExceptionResolver {
+    implements _i6.HandlerExceptionResolver {
   const _$DataAccessExceptionResolver();
 
   @override
-  _i4.ErrorResponse? resolveException(
-    _i4.ServerHttpRequest request,
+  _i6.ErrorResponse? resolveException(
+    _i6.ServerHttpRequest request,
     Object error, {
-    _i4.HandlerMethod? handler,
+    _i6.HandlerMethod? handler,
   }) => switch (error) {
-    _i3.OptimisticLockingFailureException() => _i4.ResponseStatusException(
-      _i4.HttpStatus.conflict,
+    _i5.OptimisticLockingFailureException() => _i6.ResponseStatusException(
+      _i6.HttpStatus.conflict,
       'The resource was changed by someone else',
       error,
     ),
-    _i3.DuplicateKeyException() => _i4.ResponseStatusException(
-      _i4.HttpStatus.conflict,
+    _i5.DuplicateKeyException() => _i6.ResponseStatusException(
+      _i6.HttpStatus.conflict,
       'The resource already exists',
       error,
     ),
-    _i3.PermissionDeniedDataAccessException() => _i4.ResponseStatusException(
-      _i4.HttpStatus.forbidden,
+    _i5.PermissionDeniedDataAccessException() => _i6.ResponseStatusException(
+      _i6.HttpStatus.forbidden,
       'Access denied',
       error,
     ),
-    _i3.EmptyResultDataAccessException() => _i4.ResponseStatusException(
-      _i4.HttpStatus.notFound,
+    _i5.EmptyResultDataAccessException() => _i6.ResponseStatusException(
+      _i6.HttpStatus.notFound,
       'Not found',
       error,
     ),
-    _i3.PropertyReferenceException() => _i4.ResponseStatusException(
-      _i4.HttpStatus.badRequest,
+    _i5.PropertyReferenceException() => _i6.ResponseStatusException(
+      _i6.HttpStatus.badRequest,
       'Invalid sort property',
       error,
     ),
-    _i3.InvalidPagingRequestException() => _i4.ResponseStatusException(
-      _i4.HttpStatus.badRequest,
+    _i5.InvalidPagingRequestException() => _i6.ResponseStatusException(
+      _i6.HttpStatus.badRequest,
       'Invalid page or sort request',
       error,
     ),
-    _i3.InvalidDataArgumentException() => _i4.ResponseStatusException(
-      _i4.HttpStatus.badRequest,
+    _i5.InvalidDataArgumentException() => _i6.ResponseStatusException(
+      _i6.HttpStatus.badRequest,
       'Invalid request value',
       error,
     ),
@@ -287,24 +286,24 @@ final class _$DataAccessExceptionResolver
   };
 }
 
-_i4.HandlerExceptionResolver _$dataAccessExceptionResolver() =>
+_i6.HandlerExceptionResolver _$dataAccessExceptionResolver() =>
     const _$DataAccessExceptionResolver();
 
 final class _$PagingArgumentResolver
-    implements _i4.HandlerMethodArgumentResolver {
+    implements _i6.HandlerMethodArgumentResolver {
   const _$PagingArgumentResolver(this._paging);
 
-  final _i3.WebPaging _paging;
+  final _i5.WebPaging _paging;
 
   @override
-  bool supportsParameter(_i4.MethodParameter parameter) {
+  bool supportsParameter(_i6.MethodParameter parameter) {
     final type = parameter.type.type;
-    if (type == _i3.Pageable) {
+    if (type == _i5.Pageable) {
       // Spring: two Pageable parameters need a @Qualifier each, or they
       // would read the same query parameters.
       final unqualified = parameter.handler.parameters.where(
         (other) =>
-            other.type.type == _i3.Pageable && !other.has<_i3.Qualifier>(),
+            other.type.type == _i5.Pageable && !other.has<_i5.Qualifier>(),
       );
       if (unqualified.length > 1) {
         throw StateError(
@@ -315,23 +314,23 @@ final class _$PagingArgumentResolver
       }
       return true;
     }
-    return type == _i3.Sort;
+    return type == _i5.Sort;
   }
 
   @override
   Object? resolveArgument(
-    _i4.MethodParameter parameter,
-    _i4.ServerHttpRequest request,
-    _i4.ServerHttpResponse response,
+    _i6.MethodParameter parameter,
+    _i6.ServerHttpRequest request,
+    _i6.ServerHttpResponse response,
   ) {
-    final qualifier = parameter.annotation<_i3.Qualifier>()?.value;
+    final qualifier = parameter.annotation<_i5.Qualifier>()?.value;
     final defaults = parameter.annotations
-        .whereType<_i3.SortDefault>()
+        .whereType<_i5.SortDefault>()
         .toList();
-    return parameter.type.type == _i3.Pageable
+    return parameter.type.type == _i5.Pageable
         ? _paging.pageable(
             request.queryParameters,
-            pageableDefault: parameter.annotation<_i3.PageableDefault>(),
+            pageableDefault: parameter.annotation<_i5.PageableDefault>(),
             sortDefaults: defaults,
             qualifier: qualifier,
           )
@@ -343,21 +342,21 @@ final class _$PagingArgumentResolver
   }
 }
 
-final class _$PagingWebMvcConfigurer with _i4.WebMvcConfigurer {
+final class _$PagingWebMvcConfigurer with _i6.WebMvcConfigurer {
   const _$PagingWebMvcConfigurer(this._resolver);
 
   final _$PagingArgumentResolver _resolver;
 
   @override
   void addArgumentResolvers(
-    List<_i4.HandlerMethodArgumentResolver> resolvers,
+    List<_i6.HandlerMethodArgumentResolver> resolvers,
   ) => resolvers.add(_resolver);
 }
 
-_i4.WebMvcConfigurer _$pagingArgumentResolvers(_i2.Environment environment) =>
+_i6.WebMvcConfigurer _$pagingArgumentResolvers(_i4.Environment environment) =>
     _$PagingWebMvcConfigurer(
       _$PagingArgumentResolver(
-        _i3.WebPaging(_i3.WebPagingProperties.of(environment)),
+        _i5.WebPaging(_i5.WebPagingProperties.of(environment)),
       ),
     );
 
@@ -366,15 +365,9 @@ _i4.WebMvcConfigurer _$pagingArgumentResolvers(_i2.Environment environment) =>
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i9.springBootAutoConfiguration,
-    _i10.springBootStarterCacheAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i10.springBootStarterCacheStartupChecksAutoConfiguration,
-    _i11.springBootStarterDataAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i11.springBootStarterDataSqlLoggingAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i11.springBootStarterDataStartupChecksAutoConfiguration,
+    _i11.springBootAutoConfiguration,
+    _i2.springBootStarterCacheAutoConfiguration,
+    _i3.springBootStarterDataAutoConfiguration,
     _i12.springBootStarterFeignAutoConfiguration,
     _i13.springBootStarterLoggingAutoConfiguration,
     _i14.springBootStarterOauth2ClientAutoConfiguration,
@@ -405,23 +398,10 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i18.springBootStarterWebsocketServerAutoConfiguration,
     _i19.springSecurityCoreAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i10.springBootStarterCacheStartupChecksAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            after: [r'springBootStarterCacheAutoConfiguration'],
-          ),
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i11.springBootStarterDataSqlLoggingAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            before: [r'springBootStarterDataAutoConfiguration'],
-          ),
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i11.springBootStarterDataStartupChecksAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            after: [r'springBootStarterDataAutoConfiguration'],
-          ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i15.springBootStarterSecurityAutoConfiguration:
@@ -466,6 +446,9 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
               r'springBootStarterSupabaseAutoConfiguration',
             ],
           ),
+    ...!const bool.fromEnvironment('dart.vm.product')
+        ? _$debugAutoConfigurationMetadata
+        : const {},
   },
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

@@ -9,11 +9,11 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:neon_books_server/src/app.dart' as _i3;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i4;
+import 'package:neon_books_server/src/app.dart' as _i4;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i5;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i5;
+    as _i2;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
     as _i6;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
@@ -27,64 +27,64 @@ import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
 import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i11;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
     as _i12;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
 import 'package:spring_security_core/spring_auto_configuration.dart' as _i13;
 
 part 'main.spring.debug.dart';
 part 'main.spring.env.dart';
 
 /// Beans found by `@ComponentScan` in `lib/ and bin/`.
-_i2.BeanModule get $application => _i2.BeanModule(
+_i3.BeanModule get $application => _i3.BeanModule(
   r'application',
   [],
-  imports: [_i3.appBeans],
+  imports: [_i4.appBeans],
   resources: const {
-    r'application-dev.properties': _i2.EmbeddedResource.text(
+    r'application-dev.properties': _i3.EmbeddedResource.text(
       '# The dev profile (the default): sample data, a local supplier stub, more\n# logging. Profile files are read on top of application.properties.\n\n# Loaded into the empty catalog at startup (SampleData, @Profile dev).\nneon.catalog.sample-data=resources:data/books.json\n# Faster restocking to watch the live stock in the app.\nneon.stock.restock-interval=20s\nlogging.level.spring.web.mvc=info\n',
     ),
-    r'application-prod.yml': _i2.EmbeddedResource.text(
+    r'application-prod.yml': _i3.EmbeddedResource.text(
       "# The prod profile, in YAML (application.properties and YAML files mix;\n# a .properties file wins over a YAML file in the same place). No sample\n# data, logs to a file, secrets from the environment.\nserver:\n  address: 0.0.0.0\n  session:\n    cookie:\n      secure: true\n\nneon:\n  stock:\n    restock-interval: 5m\n  # The Flutter web build is served from the shop's own site.\n  cors:\n    allowed-origin-patterns: https://*.neon.books\n\nlogging:\n  level:\n    shop: info\n    feign: info\n  file:\n    name: build/logs/neon-books.log\n    rolling-policy:\n      max-file-size: 10MB\n      max-history: 5\n",
     ),
-    r'application-sso.properties': _i2.EmbeddedResource.text(
+    r'application-sso.properties': _i3.EmbeddedResource.text(
       '# The sso profile: single sign-on with Keycloak (example/keycloak, the\n# realm `neon` on port 8180) instead of the form login. Chapter 4.\n#   dart run bin/main.dart --spring.profiles.active=dev,sso\n\n# Where the browser goes after a Keycloak login or logout: the Flutter web\n# app (`flutter run -d chrome --web-port 5050` in example/flutter_guide).\nneon.app.web-url=http://localhost:5050/\n\n# --- oauth2Login(): this server logs browsers in (Flutter web) -----------\n# A confidential client: the server has a secret, the browser never sees\n# the tokens. Keycloak sends the browser back to the default redirect URI,\n# {baseUrl}/login/oauth2/code/{registrationId}\n# (http://localhost:8080/login/oauth2/code/keycloak).\nspring.security.oauth2.client.registration.keycloak.client-id=neon-server\n# A development value, public in example/keycloak/neon-realm.json. Any\n# real Keycloak gets its own secret, from the environment:\n# NEON_KEYCLOAK_SECRET=... dart run bin/main.dart ...\nspring.security.oauth2.client.registration.keycloak.client-secret=\${NEON_KEYCLOAK_SECRET:neon-server-dev-secret}\nspring.security.oauth2.client.registration.keycloak.client-name=Keycloak\nspring.security.oauth2.client.registration.keycloak.scope=openid,profile,email\n# Everything else (endpoints, keys) comes from the issuer\'s metadata.\nspring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8180/realms/neon\n# The user\'s name is `ada` or `root`, as with the form login (orders\n# belong to a name), not Keycloak\'s id (`sub`).\nspring.security.oauth2.client.provider.keycloak.user-name-attribute=preferred_username\n\n# --- Bearer tokens: the native apps log in themselves ---------------------\n# Their access tokens are checked against the realm\'s keys, issuer and\n# audience (Keycloak adds `neon-api` to the tokens of neon-app).\nspring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8180/realms/neon\nspring.security.oauth2.resourceserver.jwt.audiences=neon-api\nspring.security.oauth2.resourceserver.jwt.principal-claim-name=preferred_username\n# The realm roles, in the token\'s `roles` claim: USER -> ROLE_USER.\nspring.security.oauth2.resourceserver.jwt.authorities-claim-name=roles\nspring.security.oauth2.resourceserver.jwt.authority-prefix=ROLE_\n',
     ),
-    r'application.properties': _i2.EmbeddedResource.text(
+    r'application.properties': _i3.EmbeddedResource.text(
       '# NEON Books server: the configuration every profile shares.\n# lib/resources/ is the classpath (src/main/resources in Java): the\n# generator embeds these files, so `resources:` works in `dart run`, AOT\n# executables and tests alike. Chapter 2 of the README walks through it.\n\nspring.application.name=neon-books\n# dev unless the command line (--spring.profiles.active=prod) or the\n# environment (SPRING_PROFILES_ACTIVE=prod) says otherwise.\nspring.profiles.active=dev\n# A profile group: dev brings the supplier stub with it.\nspring.profiles.group.dev=supplier-stub\n# More files: the supplier\'s address and key (optional: absent is fine).\nspring.config.import=optional:resources:config/supplier.properties\n# MessageSource: resources:messages/messages*.properties (en, ja).\nspring.messages.basename=messages/messages\n# Close the context on Ctrl+C / SIGTERM: graceful shutdown of the server.\nspring.main.register-shutdown-hook=true\n\n# --- The web server (spring_boot_starter_web) -----------------------------\nserver.port=8080\nserver.shutdown=graceful\nspring.lifecycle.timeout-per-shutdown-phase=10s\nserver.max-http-request-body-size=1MB\nserver.compression.enabled=true\nserver.session.timeout=30m\nspring.web.multipart.max-file-size=2MB\nspring.web.multipart.max-request-size=3MB\n# Keeps idle event streams open through proxies.\nspring.mvc.sse.heartbeat-interval=15s\n\n# --- JSON (ObjectMapper) ---------------------------------------------------\nspring.json.default-property-inclusion=non_null\nspring.json.time-zone=UTC\n\n# --- The shop (@ConfigurationProperties ShopProperties) --------------------\nneon.shop.name=NEON Books\nneon.shop.opens-at=9\nneon.shop.closes-at=21\nneon.shop.max-basket-size=10\nneon.shop.delivery-time=2d\nneon.shop.max-cover-size=512KB\n\n# The catalog: page size, and where uploaded covers are kept.\nneon.catalog.page-size=10\nneon.covers.directory=build/covers\n\n# Orders are shipped this long after they are placed (TaskScheduler).\nneon.orders.shipping-delay=5s\n\n# Stock: restock books below the threshold, every restock-interval\n# (@Scheduled fixed delay) and report at 06:00 (cron).\nneon.stock.low-threshold=2\nneon.stock.restock-interval=30s\nneon.stock.restock-initial-delay=10s\nneon.stock.report-cron=0 0 6 * * *\n# Server-sent events kept for clients that reconnect with Last-Event-ID.\nneon.stock.replay-size=100\n\n# The support chat\'s bot (off: only humans answer).\nneon.support.bot.enabled=true\n\n# --- Users ------------------------------------------------------------------\n# In memory, passwords as {argon2} hashes (tool/hash_password.dart), never\n# as they are. Override per environment: NEON_SECURITY_USERS_ROOT_PASSWORD.\nneon.security.users.ada.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$nvd2L/IEt9yQ0mCeI4V6ow\$OvES6oQDiZXXRGP6Asd/8hzR/SOa7t991TW1LaZcq9Q\nneon.security.users.ada.roles=USER\nneon.security.users.root.password={argon2}\$argon2id\$v=19\$m=16384,t=2,p=1\$tjsMTThOt2qDAng+KxZnhQ\$bSbP+/b78i0IUQmD+hEuLPSdGADCW+ZKYc38gDEopxs\nneon.security.users.root.roles=USER,ADMIN\n\n# --- Cache (spring_boot_starter_cache) ---------------------------------------\nspring.cache.simple.max-size=500\nspring.cache.simple.time-to-live=10m\nspring.cache.simple.caches.catalog.time-to-live=1m\nspring.cache.simple.caches.supplier-offers.time-to-live=5m\n\n# --- Feign: the supplier ------------------------------------------------------\nspring.feign.client.config.default.connect-timeout=2s\nspring.feign.client.config.default.read-timeout=5s\nspring.feign.client.config.supplier-offers.logger-level=basic\nspring.feign.client.config.supplier-deliveries.logger-level=basic\n\n# --- Logging (spring_boot_starter_logging) ----------------------------------\nlogging.level.root=info\n# A log group: the loggers named by topic (neon.*) and the @Log defaults\n# (the package name, neon_books_server.*).\nlogging.group.shop=neon,neon_books_server\nlogging.level.shop=debug\nlogging.level.feign=debug\n# Shorter than Spring Boot\'s, aligned the same way: the level padded to 5,\n# the logger abbreviated and padded to 30. Coloured like Spring Boot\'s\n# (spring.output.ansi.enabled=never for plain text).\nlogging.pattern.console=%d{HH:mm:ss.SSS} %5p %-30.30logger{29} : %m%X%n%ex\nlogging.buffer.capacity=2000\n\n#---\nspring.config.activate.on-profile=!prod\n# A second document of this file, for every profile but prod (a negated\n# on-profile guard): CORS for the Flutter web build on any localhost port.\nneon.cors.allowed-origin-patterns=http://localhost:[*],http://127.0.0.1:[*]\n',
     ),
-    r'banner.txt': _i2.EmbeddedResource.text(
+    r'banner.txt': _i3.EmbeddedResource.text(
       ' _  _ ___ ___  _  _   ___           _\n| \\| | __/ _ \\| \\| | | _ ) ___  ___| |__ ___\n| .` | _| (_) | .` | | _ \\/ _ \\/ _ \\ / /(_-<\n|_|\\_|___\\___/|_|\\_| |___/\\___/\\___/_\\_\\/__/\n',
     ),
-    r'config/supplier-dev.properties': _i2.EmbeddedResource.text(
+    r'config/supplier-dev.properties': _i3.EmbeddedResource.text(
       '# dev: the supplier is a stub controller of this same server\n# (lib/src/supplier/supplier_stub.dart), so everything runs offline.\nneon.supplier.url=http://localhost:\${server.port}/supplier\nneon.supplier.api-key=dev-key\n',
     ),
-    r'config/supplier.properties': _i2.EmbeddedResource.text(
+    r'config/supplier.properties': _i3.EmbeddedResource.text(
       '# Imported by application.properties (spring.config.import): the supplier\n# service the Feign clients call. Its -{profile} variants are read too\n# (config/supplier-dev.properties).\nneon.supplier.url=https://supplier.neon.books/api\n# A secret: from the environment (SUPPLIER_API_KEY), empty when not set\n# (restocking is then switched off, see SupplierConfigured).\nneon.supplier.api-key=\${SUPPLIER_API_KEY:}\n',
     ),
-    r'covers/9780345539434.png': _i2.EmbeddedResource.base64(
+    r'covers/9780345539434.png': _i3.EmbeddedResource.base64(
       r'iVBORw0KGgoAAAANSUhEUgAAAHgAAAC0CAIAAADQLH9KAAABD0lEQVR42u3QoQ0AIAwAMAwGjUZzE/9fMQM/IBYSmvSClj4WCYoC0aIRLVq0BdGiES1atAXRohEtWjSiRSNatGhEi0a0aNGIFo1o0aIRLRrRokUjWjSiRYtGtGhEixaNaNGIFi0a0aIRLVo0okUjWrRoRItGtGjRiBaNaNGiES0a0aJFI1o0okWLRrRoRIv+Ljpik0C0aNGIFi1agWjRXETXNkkgWrRoRIsWrUC0aESLFm1BtGhEixZtQbRoRIsWjWjRiBYtGtGiES1aNKJFI1q0aESLRrRo0YgWjWjRohEtGtGiRSNaNKJFi0a0aESLFo1o0YgWLRrRohEtWjSiRSNatGhEi0a0aNGIFo3odxwNKg7WGpm08wAAAABJRU5ErkJggg==',
     ),
-    r'covers/9780441013593.png': _i2.EmbeddedResource.base64(
+    r'covers/9780441013593.png': _i3.EmbeddedResource.base64(
       r'iVBORw0KGgoAAAANSUhEUgAAAHgAAAC0CAIAAADQLH9KAAABEUlEQVR42u3QUQ0AEBQAQEkkEUIw35LIIoIadPDxZnPbJbg0WyFAUiBaNKJFi7YgWjSiRYu2IFo0okWLRrRoRIsWjWjRiBYtGtGiES1aNKJFI1q0aESLRrRo0YgWjWjRohEtGtGiRSNaNKJFi0a0aESLFo1o0YgWLRrRohEtWjSiRSNatGhEi0a0aNGIFo1o0d9F7zUIIFq0aESLFq1AtGguonvNBBAtWjSiRYtWIFo0okWLtiBaNKJFi7YgWjSiRYtGtGhEixaNaNGIFi0a0aIRLVo0okUjWrRoRItGtGjRiBaNaNGiES0a0aJFI1o0okWLRrRoRIsWjWjRiBYtGtGiES1aNKJFI1q0aESLRvQ7DgbMpQWZ6UNMAAAAAElFTkSuQmCC',
     ),
-    r'covers/9780547928227.png': _i2.EmbeddedResource.base64(
+    r'covers/9780547928227.png': _i3.EmbeddedResource.base64(
       r'iVBORw0KGgoAAAANSUhEUgAAAHgAAAC0CAIAAADQLH9KAAABEUlEQVR42u3QMQ0AIAwAMERwcyNimriRiBJ04IFjIaFJFbT0ESQoCkSLRrRo0RZEi0a0aNEWRItGtGjRiBaNaNGiES0a0aJFI1o0okWLRrRoRIsWjWjRiBYtGtGiES1aNKJFI1q0aESLRrRo0YgWjWjRohEtGtGiRSNaNKJFi0a0aESLFo1o0YgWLRrRohEt+rvovSYJRIsWjWjRohWIFs1FdI1GAtGiRSNatGgFokUjWrRoC6JFI1q0aAuiRSNatGhEi0a0aNGIFo1o0aIRLRrRokUjWjSiRYtGtGhEixaNaNGIFi0a0aIRLVo0okUjWrRoRItGtGjRiBaNaNGiES0a0aJFI1o0okWLRrRoRL/jAB55RDYkTWYrAAAAAElFTkSuQmCC',
     ),
-    r'covers/default.png': _i2.EmbeddedResource.base64(
+    r'covers/default.png': _i3.EmbeddedResource.base64(
       r'iVBORw0KGgoAAAANSUhEUgAAAHgAAAC0CAIAAADQLH9KAAABCUlEQVR42u3QQQ0AIAwEsJODCIyidmjgsyyhSRU0lUODKBAtGtGiRVsQLRrRokVbEC0a0aJFI1o0okWLRrRoRIsWjWjRiBYtGtGiES1aNKJFI1q0aESLRrRo0YgWjWjRohEtGtGiRSNaNKJFi0a0aESLFo1o0YgWLRrRohEtWjSiRSNatGhEi0a06O+iU0UHBaJFI1q0aAWiRfNuZdNAtGjRiBYtWoFo0YgWLdqCaNGIFi3agmjRiBYtGtGiES1aNKJFI1q0aESLRrRo0YgWjWjRohEtGtGiRSNaNKJFi0a0aESLFo1o0YgWLRrRohEtWjSiRSNatGhEi0a0aNGIFo1o0aIRLRrRc1xRsjyZZWZL8gAAAABJRU5ErkJggg==',
     ),
-    r'data/books.json': _i2.EmbeddedResource.text(
+    r'data/books.json': _i3.EmbeddedResource.text(
       '[\n  {"isbn": "9780441013593", "title": "Dune", "author": "Frank Herbert", "price": 9.99, "year": 1965, "tags": ["fiction", "science-fiction"], "format": "PAPERBACK", "stock": 5},\n  {"isbn": "9780345391803", "title": "The Hitchhiker\'s Guide to the Galaxy", "author": "Douglas Adams", "price": 7.99, "year": 1979, "tags": ["fiction", "humour"], "format": "PAPERBACK", "stock": 3},\n  {"isbn": "9780345539434", "title": "Cosmos", "author": "Carl Sagan", "price": 12.5, "year": 1980, "tags": ["science"], "format": "HARDCOVER", "stock": 2},\n  {"isbn": "9780140421996", "title": "Leaves of Grass", "author": "Walt Whitman", "price": 8.0, "year": 1855, "tags": ["poetry"], "format": "PAPERBACK", "stock": 1},\n  {"isbn": "9780451524935", "title": "1984", "author": "George Orwell", "price": 8.99, "year": 1949, "tags": ["fiction"], "format": "PAPERBACK", "stock": 4},\n  {"isbn": "9780547928227", "title": "The Hobbit", "author": "J. R. R. Tolkien", "price": 10.99, "year": 1937, "tags": ["fiction", "fantasy"], "format": "HARDCOVER", "stock": 6},\n  {"isbn": "9780156012195", "title": "The Little Prince", "author": "Antoine de Saint-Exupéry", "price": 6.99, "year": 1943, "tags": ["fiction", "children"], "format": "EBOOK", "stock": 0},\n  {"isbn": "9784101006055", "title": "人間失格", "author": "太宰治", "price": 5.5, "year": 1948, "tags": ["fiction", "japanese"], "format": "PAPERBACK", "stock": 2}\n]\n',
     ),
-    r'messages/messages.properties': _i2.EmbeddedResource.text(
+    r'messages/messages.properties': _i3.EmbeddedResource.text(
       "# English (the default). Spring's MessageFormat: {0} arguments, choice.\nshop.welcome=Welcome to {0}!\norder.confirmation.subject=Your order {0} at {1}\norder.items={0,choice,0#no books|1#one book|1<{0,number,integer} books}\n\nbot.greeting=Hi {0}, this is the NEON Books support bot. Ask about delivery, opening hours or refunds.\nbot.delivery=Books are delivered within {0} days.\nbot.hours=We are open from {0}:00 to {1}:00.\nbot.refund=Refunds are possible within 14 days; a person from the shop will contact you.\nbot.fallback=Thanks, {0}! Someone from the shop will answer soon.\n\n# Validation messages: Spring's codes, most specific first\n# (NotBlank.newBook.title, NotBlank.title, NotBlank). The object name is\n# the name of the validated parameter (newBook, quantityRequest). {0} is\n# the field, then the constraint's attributes ({1}: the limit of Min/Max).\n# @Matches keeps Bean Validation's code, Pattern.\nNotBlank=must not be blank\nNotEmpty=must not be empty\nNotNull=must be given\nPositive=must be above zero\nPositiveOrZero=must not be negative\nMin=must be at least {1}\nMax=must be at most {1}\nSize=is too long\nPattern=has the wrong format\nValidOpeningHours=The shop must close after it opens\nNotBlank.newBook.title=Every book needs a title\nPattern.newBook.isbn=An ISBN has 13 digits and starts with 978 or 979\nPositive.newBook.price=The price must be above zero\nMin.quantityRequest.quantity=The quantity cannot be negative\nMax.quantityRequest.quantity=At most {1} copies per book\ntypeMismatch=has an invalid value\n",
     ),
-    r'messages/messages_ja.properties': _i2.EmbeddedResource.text(
+    r'messages/messages_ja.properties': _i3.EmbeddedResource.text(
       '# Japanese. Files are UTF-8.\nshop.welcome={0}へようこそ！\norder.confirmation.subject={1}のご注文 {0}\norder.items={0,choice,0#本はありません|1#本1冊|1<本{0,number,integer}冊}\n\nbot.greeting={0}さん、こんにちは。NEON Booksのサポートボットです。配送、営業時間、返金についてお尋ねください。\nbot.delivery=本は{0}日以内にお届けします。\nbot.hours=営業時間は{0}時から{1}時までです。\nbot.refund=返金は14日以内に可能です。担当者からご連絡します。\nbot.fallback={0}さん、ありがとうございます。担当者がまもなくお答えします。\n\nNotBlank=空白にはできません\nNotEmpty=空にはできません\nNotNull=入力してください\nPositive=0より大きくしてください\nPositiveOrZero=マイナスにはできません\nMin={1}以上にしてください\nMax={1}以下にしてください\nSize=長すぎます\nPattern=形式が正しくありません\nValidOpeningHours=閉店時刻は開店時刻より後にしてください\nNotBlank.newBook.title=タイトルを入力してください\nPattern.newBook.isbn=ISBNは978または979で始まる13桁です\nPositive.newBook.price=価格は0より大きくしてください\nMin.quantityRequest.quantity=数量はマイナスにできません\nMax.quantityRequest.quantity=1冊につき最大{1}部までです\ntypeMismatch=無効な値です\n',
     ),
-    r'support/bot.properties': _i2.EmbeddedResource.text(
+    r'support/bot.properties': _i3.EmbeddedResource.text(
       "# The support bot's answers, loaded with @PropertySource by SupportBot\n# (lib/src/support/support_bot.dart). A keyword in a question picks its\n# answer: bot.answers.<keyword>=<message code in messages*.properties>.\nbot.answers.delivery=bot.delivery\nbot.answers.shipping=bot.delivery\nbot.answers.hours=bot.hours\nbot.answers.open=bot.hours\nbot.answers.refund=bot.refund\nbot.fallback=bot.fallback\n",
     ),
-    r'templates/order-confirmation.txt': _i2.EmbeddedResource.text(
+    r'templates/order-confirmation.txt': _i3.EmbeddedResource.text(
       'Dear {0},\n\nthank you for your order {1} at NEON Books: {2} for {3} EUR.\nIt ships within {4} days.\n',
     ),
   },
@@ -95,10 +95,8 @@ _i2.BeanModule get $application => _i2.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i4.springBootAutoConfiguration,
-    _i5.springBootStarterCacheAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i5.springBootStarterCacheStartupChecksAutoConfiguration,
+    _i5.springBootAutoConfiguration,
+    _i2.springBootStarterCacheAutoConfiguration,
     _i6.springBootStarterFeignAutoConfiguration,
     _i7.springBootStarterLoggingAutoConfiguration,
     _i8.springBootStarterOauth2ClientAutoConfiguration,
@@ -120,13 +118,10 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i12.springBootStarterWebsocketServerAutoConfiguration,
     _i13.springSecurityCoreAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i5.springBootStarterCacheStartupChecksAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            after: [r'springBootStarterCacheAutoConfiguration'],
-          ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i10.springBootStarterSecurityAutoConfiguration:
@@ -148,6 +143,9 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
               r'springBootStarterSupabaseAutoConfiguration',
             ],
           ),
+    ...!const bool.fromEnvironment('dart.vm.product')
+        ? _$debugAutoConfigurationMetadata
+        : const {},
   },
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

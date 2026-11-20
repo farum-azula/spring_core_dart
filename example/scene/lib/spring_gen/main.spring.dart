@@ -11,21 +11,21 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:flutter/widgets.dart';
-import 'package:scene_showcase/src/backdrop.dart' as _i3;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i6;
+import 'package:scene_showcase/src/backdrop.dart' as _i4;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i7;
+    as _i2;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart'
     as _i8;
 import 'package:spring_boot_starter_flutter_scene/src/app/scene_customizer.dart'
-    as _i4;
-import 'package:spring_boot_starter_flutter_scene/src/models/scene_models.dart'
     as _i5;
+import 'package:spring_boot_starter_flutter_scene/src/models/scene_models.dart'
+    as _i6;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i9;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
 
 part 'main.spring.debug.dart';
 part 'main.spring.env.dart';
@@ -39,28 +39,28 @@ const _$knownAdvisors0 = {
 };
 
 /// Beans found by `@ComponentScan` in `lib/`.
-_i2.BeanModule get $application => _i2.BeanModule(
+_i3.BeanModule get $application => _i3.BeanModule(
   r'application',
   [
-    _i2.BeanDefinition<_i3.Backdrop>(
+    _i3.BeanDefinition<_i4.Backdrop>(
       name: r'backdrop',
       source: r'package:scene_showcase/src/backdrop.dart#Backdrop',
-      types: const [_i3.Backdrop, _i4.SceneCustomizer],
+      types: const [_i4.Backdrop, _i5.SceneCustomizer],
       dependencies: const [
-        _i2.Dependency.provider(_i5.SceneModels, name: r'models'),
+        _i3.Dependency.provider(_i6.SceneModels, name: r'models'),
       ],
-      create: (r) => _i3.Backdrop(r.provider<_i5.SceneModels>(name: r'models')),
-      annotations: const [_i2.Component()],
-      aopProxy: const _i2.AopProxyFactory.pruned(
+      create: (r) => _i4.Backdrop(r.provider<_i6.SceneModels>(name: r'models')),
+      annotations: const [_i3.Component()],
+      aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
   ],
   resources: const {
-    r'application.yml': _i2.EmbeddedResource.text(
+    r'application.yml': _i3.EmbeddedResource.text(
       "# SCENE SHOWCASE: every scene of this app is set up here.\nspring:\n  flutter:\n    web:\n      dev-server:\n        # `flutter run -d chrome` serves the app on http://localhost:5075/.\n        port: 5075\n        # Flutter draws in a worker, not on the page's thread, when the\n        # page is cross-origin isolated: a scene costs half as much.\n        headers:\n          Cross-Origin-Opener-Policy: same-origin\n          Cross-Origin-Embedder-Policy: require-corp\n    app:\n      title: Scene Showcase\n      debug-banner: false\n    debug:\n      # The debug panel in a release build too: this app is for looking at\n      # what the scenes cost, and only a release shows that truly.\n      enabled: true\n\n    scene:\n      # animated | still (one frame that stands) | off (placeholders only)\n      render: animated\n      # The most frames a second any scene draws. Every frame of a scene\n      # has Flutter draw the page again: this is what scenes cost.\n      max-frame-rate: 30\n      # The engine starts while the splash shows, not when a scene appears.\n      preload: eager\n      debug:\n        # The scenes' tab of the debug panel, in every build (see above).\n        enabled: true\n      models:\n        # A model by name: SpringSceneModel('crate') shows it, the\n        # `sceneModels` bean gives it to code.\n        crate:\n          source: asset:assets/models/crate.glb\n          # Loaded with the splash too: the first screen has it at once.\n          preload: eager\n      app:\n        # One scene of the app's own, under every screen (Backdrop in\n        # lib/src/backdrop.dart puts the crates into it).\n        enabled: true\n        placement: background\n        camera:\n          position: 0, 0.6, -6\n          target: 0, 0, 0\n          fov: 40\n",
     ),
-    r'messages.properties': _i2.EmbeddedResource.text(
+    r'messages.properties': _i3.EmbeddedResource.text(
       "# The steps of the scenes' start, as the status line says them. Without\n# these keys the starter's own English is shown.\nscene.loading.engine=Compiling shaders…\nscene.loading.model=Loading {0}, {1} of {2}…\n",
     ),
   },
@@ -71,20 +71,14 @@ _i2.BeanModule get $application => _i2.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i6.springBootAutoConfiguration,
-    _i7.springBootStarterFlutterAutoConfiguration,
-    _i7.springBootStarterFlutterDebugAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugIsolatesAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugMotionAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterFlutterDebugTimelineAutoConfiguration,
+    _i7.springBootAutoConfiguration,
+    _i2.springBootStarterFlutterAutoConfiguration,
+    _i2.springBootStarterFlutterDebugAutoConfiguration,
     _i8.springBootStarterFlutterSceneAutoConfiguration,
     _i8.springBootStarterFlutterSceneDebugAutoConfiguration,
     _i9.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

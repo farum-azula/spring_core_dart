@@ -10,14 +10,14 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:flutter/src/widgets/navigator.dart' as _i5;
+import 'package:flutter/src/widgets/navigator.dart' as _i6;
 import 'package:flutter/widgets.dart';
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i20;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i21;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i21;
+    as _i2;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    as _i6;
+    as _i7;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter_cupertino/spring_auto_configuration.dart'
     as _i22;
@@ -30,25 +30,25 @@ import 'package:spring_boot_starter_flutter_material/src/material_theme_design.d
 import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
     as _i24;
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
-    as _i4;
+    as _i5;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i25;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:theme_showcase_material/src/app/logs.dart' as _i3;
-import 'package:theme_showcase_material/src/app/shell.dart' as _i8;
-import 'package:theme_showcase_material/src/app/theme_menu.dart' as _i7;
-import 'package:theme_showcase_material/src/pages/background_page.dart' as _i9;
-import 'package:theme_showcase_material/src/pages/colors_page.dart' as _i10;
-import 'package:theme_showcase_material/src/pages/components_page.dart' as _i11;
-import 'package:theme_showcase_material/src/pages/images_page.dart' as _i12;
-import 'package:theme_showcase_material/src/pages/loaders_page.dart' as _i13;
-import 'package:theme_showcase_material/src/pages/motion_page.dart' as _i14;
-import 'package:theme_showcase_material/src/pages/states_page.dart' as _i15;
-import 'package:theme_showcase_material/src/pages/themes_page.dart' as _i16;
-import 'package:theme_showcase_material/src/pages/tokens_page.dart' as _i17;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
+import 'package:theme_showcase_material/src/app/logs.dart' as _i4;
+import 'package:theme_showcase_material/src/app/shell.dart' as _i9;
+import 'package:theme_showcase_material/src/app/theme_menu.dart' as _i8;
+import 'package:theme_showcase_material/src/pages/background_page.dart' as _i10;
+import 'package:theme_showcase_material/src/pages/colors_page.dart' as _i11;
+import 'package:theme_showcase_material/src/pages/components_page.dart' as _i12;
+import 'package:theme_showcase_material/src/pages/images_page.dart' as _i13;
+import 'package:theme_showcase_material/src/pages/loaders_page.dart' as _i14;
+import 'package:theme_showcase_material/src/pages/motion_page.dart' as _i15;
+import 'package:theme_showcase_material/src/pages/states_page.dart' as _i16;
+import 'package:theme_showcase_material/src/pages/themes_page.dart' as _i17;
+import 'package:theme_showcase_material/src/pages/tokens_page.dart' as _i18;
 import 'package:theme_showcase_material/src/pages/transitions_page.dart'
-    as _i18;
-import 'package:theme_showcase_material/src/pages/type_page.dart' as _i19;
+    as _i19;
+import 'package:theme_showcase_material/src/pages/type_page.dart' as _i20;
 
 part 'main.spring.debug.dart';
 part 'main.spring.env.dart';
@@ -65,76 +65,76 @@ const _$knownAdvisors0 = {
 };
 
 /// Beans found by `@ComponentScan` in `lib/`.
-_i2.BeanModule get $application => _i2.BeanModule(
+_i3.BeanModule get $application => _i3.BeanModule(
   r'application',
   [
-    _i2.BeanDefinition<_i3.PageLog>(
+    _i3.BeanDefinition<_i4.PageLog>(
       name: r'pageLog',
       source: r'package:theme_showcase_material/src/app/logs.dart#PageLog',
-      create: (r) => _i3.PageLog(),
+      create: (r) => _i4.PageLog(),
       annotations: const [
-        _i2.Component(),
-        _i2.Log(topic: r'theme_showcase_material.pages'),
+        _i3.Component(),
+        _i3.Log(topic: r'theme_showcase_material.pages'),
       ],
-      aopProxy: const _i2.AopProxyFactory.pruned(
+      aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i2.BeanDefinition<_i3.ThemeLog>(
+    _i3.BeanDefinition<_i4.ThemeLog>(
       name: r'themeLog',
       source: r'package:theme_showcase_material/src/app/logs.dart#ThemeLog',
       dependencies: const [
-        _i2.Dependency(_i4.ThemeSelection, name: r'_selection'),
+        _i3.Dependency(_i5.ThemeSelection, name: r'_selection'),
       ],
       create: (r) =>
-          _i3.ThemeLog(r.dependency<_i4.ThemeSelection>(name: r'_selection')),
+          _i4.ThemeLog(r.dependency<_i5.ThemeSelection>(name: r'_selection')),
       annotations: const [
-        _i2.Component(),
-        _i2.Log(topic: r'theme_showcase_material.themes'),
+        _i3.Component(),
+        _i3.Log(topic: r'theme_showcase_material.themes'),
       ],
-      aopProxy: const _i2.AopProxyFactory.pruned(
+      aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i2.BeanDefinition<_i3.RouteLog>(
+    _i3.BeanDefinition<_i4.RouteLog>(
       name: r'routeLog',
       source: r'package:theme_showcase_material/src/app/logs.dart#RouteLog',
-      types: const [_i3.RouteLog, _i5.NavigatorObserver],
-      create: (r) => _i3.RouteLog(),
+      types: const [_i4.RouteLog, _i6.NavigatorObserver],
+      create: (r) => _i4.RouteLog(),
       annotations: const [
-        _i2.Component(),
-        _i2.Log(topic: r'theme_showcase_material.navigation'),
+        _i3.Component(),
+        _i3.Log(topic: r'theme_showcase_material.navigation'),
       ],
-      aopProxy: const _i2.AopProxyFactory.pruned(
+      aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i2.BeanDefinition<_i6.SpringWidgetBindings>(
+    _i3.BeanDefinition<_i7.SpringWidgetBindings>(
       name: r'flutterSpringWidgetBindings#application',
       source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
       autowireCandidate: false,
-      create: (r) => _i6.SpringWidgetBindings([
-        _i6.SpringWidgetBinding(
+      create: (r) => _i7.SpringWidgetBindings([
+        _i7.SpringWidgetBinding(
           widget: r'package:theme_showcase_material/src/app/theme_menu.dart#ThemeMenu',
-          beans: _i7.ThemeMenuBeans,
-          types: const [_i4.ThemeSelection, _i4.SpringThemes],
+          beans: _i8.ThemeMenuBeans,
+          types: const [_i5.ThemeSelection, _i5.SpringThemes],
           resolve: (f) => (
-            _i6.SpringWidgetBinding.bean<_i4.ThemeSelection>(f),
-            _i6.SpringWidgetBinding.bean<_i4.SpringThemes>(f),
+            _i7.SpringWidgetBinding.bean<_i5.ThemeSelection>(f),
+            _i7.SpringWidgetBinding.bean<_i5.SpringThemes>(f),
           ),
           values: (r) {
-            final v = (r as (_i4.ThemeSelection, _i4.SpringThemes));
+            final v = (r as (_i5.ThemeSelection, _i5.SpringThemes));
             return [v.$1, v.$2];
           },
         ),
       ]),
     ),
-    _i2.BeanDefinition<_i4.ScreenRoutes>(
+    _i3.BeanDefinition<_i5.ScreenRoutes>(
       name: r'screenRoutes#application',
       source: r'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart#ScreenRoutes',
-      create: (r) => _i4.ScreenRoutes.route(source: r'application')
+      create: (r) => _i5.ScreenRoutes.route(source: r'application')
           .shell(
-            (s) => _i8.Shell(s),
+            (s) => _i9.Shell(s),
             (t) => t
                 .branch(r'/colors', (b) => b)
                 .branch(r'/type', (b) => b)
@@ -147,106 +147,106 @@ _i2.BeanModule get $application => _i2.BeanModule(
                 .branch(r'/images', (b) => b)
                 .branch(r'/transitions', (b) => b)
                 .branch(r'/themes', (b) => b),
-            key: _i8.Shell,
+            key: _i9.Shell,
             source: r'package:theme_showcase_material/src/app/shell.dart#Shell',
           )
-          .notFound((r) => const _i8.NotFoundPage())
+          .notFound((r) => const _i9.NotFoundPage())
           .screen(
             r'/background',
-            (r) => const _i9.BackgroundPage(),
+            (r) => const _i10.BackgroundPage(),
             name: r'background-page',
             title: r'#{nav.background}',
             source: r'package:theme_showcase_material/src/pages/background_page.dart#BackgroundPage',
           )
           .screen(
             r'/colors',
-            (r) => const _i10.ColorsPage(),
+            (r) => const _i11.ColorsPage(),
             name: r'colors-page',
             title: r'#{nav.colors}',
             source: r'package:theme_showcase_material/src/pages/colors_page.dart#ColorsPage',
           )
           .screen(
             r'/components',
-            (r) => const _i11.ComponentsPage(),
+            (r) => const _i12.ComponentsPage(),
             name: r'components-page',
             title: r'#{nav.components}',
             source: r'package:theme_showcase_material/src/pages/components_page.dart#ComponentsPage',
           )
           .screen(
             r'/images',
-            (r) => const _i12.ImagesPage(),
+            (r) => const _i13.ImagesPage(),
             name: r'images-page',
             title: r'#{nav.images}',
             source: r'package:theme_showcase_material/src/pages/images_page.dart#ImagesPage',
           )
           .screen(
             r'/loaders',
-            (r) => const _i13.LoadersPage(),
+            (r) => const _i14.LoadersPage(),
             name: r'loaders-page',
             title: r'#{nav.loaders}',
             source: r'package:theme_showcase_material/src/pages/loaders_page.dart#LoadersPage',
           )
           .screen(
             r'/motion',
-            (r) => const _i14.MotionPage(),
+            (r) => const _i15.MotionPage(),
             name: r'motion-page',
             title: r'#{nav.motion}',
             source: r'package:theme_showcase_material/src/pages/motion_page.dart#MotionPage',
           )
           .screen(
             r'/states',
-            (r) => const _i15.StatesPage(),
+            (r) => const _i16.StatesPage(),
             name: r'states-page',
             title: r'#{nav.states}',
             source: r'package:theme_showcase_material/src/pages/states_page.dart#StatesPage',
           )
           .screen(
             r'/themes',
-            (r) => const _i16.ThemesPage(),
+            (r) => const _i17.ThemesPage(),
             name: r'themes-page',
             title: r'#{nav.themes}',
             source: r'package:theme_showcase_material/src/pages/themes_page.dart#ThemesPage',
           )
           .screen(
             r'/tokens',
-            (r) => const _i17.TokensPage(),
+            (r) => const _i18.TokensPage(),
             name: r'tokens-page',
             title: r'#{nav.tokens}',
             source: r'package:theme_showcase_material/src/pages/tokens_page.dart#TokensPage',
           )
           .screen(
             r'/transitions',
-            (r) => const _i18.TransitionsPage(),
+            (r) => const _i19.TransitionsPage(),
             name: r'transitions-page',
             title: r'#{nav.transitions}',
             source: r'package:theme_showcase_material/src/pages/transitions_page.dart#TransitionsPage',
           )
           .screen(
             r'/transitions/default',
-            (r) => const _i18.TransitionThemePage(),
+            (r) => const _i19.TransitionThemePage(),
             name: r'transition-theme-page',
             title: r'With the default',
             source: r'package:theme_showcase_material/src/pages/transitions_page.dart#TransitionThemePage',
           )
           .screen(
             r'/transitions/platform',
-            (r) => const _i18.TransitionPlatformPage(),
+            (r) => const _i19.TransitionPlatformPage(),
             name: r'transition-platform-page',
             title: "With the platform's",
-            transition: _i4.PageTransition.platform,
+            transition: _i5.PageTransition.platform,
             source: r'package:theme_showcase_material/src/pages/transitions_page.dart#TransitionPlatformPage',
           )
           .screen(
             r'/transitions/fade',
-            (r) => const _i18.TransitionFadePage(),
+            (r) => const _i19.TransitionFadePage(),
             name: r'transition-fade-page',
             title: r'With a fade',
-            transition: _i4.PageTransition.fade,
+            transition: _i5.PageTransition.fade,
             source: r'package:theme_showcase_material/src/pages/transitions_page.dart#TransitionFadePage',
           )
           .screen(
             r'/type',
-            (r) => const _i19.TypePage(),
+            (r) => const _i20.TypePage(),
             name: r'type-page',
             title: r'#{nav.type}',
             source: r'package:theme_showcase_material/src/pages/type_page.dart#TypePage',
@@ -255,28 +255,28 @@ _i2.BeanModule get $application => _i2.BeanModule(
     ),
   ],
   resources: const {
-    r'application-desktop.properties': _i2.EmbeddedResource.text(
+    r'application-desktop.properties': _i3.EmbeddedResource.text(
       '# Desktops: the window opens wide and cannot get small.\nspring.flutter.desktop.window.title=Theme Showcase Material\nspring.flutter.desktop.window.initial-size=1280x800\nspring.flutter.desktop.window.min-size=900x600\n',
     ),
-    r'application-network.yml': _i2.EmbeddedResource.text(
+    r'application-network.yml': _i3.EmbeddedResource.text(
       '# The network profile: NOT active by default (the app never goes online on\n# its own). Start it with\n#\n#   flutter run --dart-define=SPRING_PROFILES_ACTIVE=network\n#\n# It points the neon background and the badge token at https images. Each\n# is downloaded once, cached in the app\'s files (IndexedDB on the web) and\n# shown at once on the next start; until then, and offline, the asset named\n# by `fallback` is shown. Replace the hosts with your own.\n# (On the web the server must allow this origin with CORS headers.)\nspring:\n  flutter:\n    theme:\n      themes:\n        neon:\n          background:\n            image:\n              source: https://cdn.example.com/theme-showcase-material/neon-grid.png\n              fallback: assets/images/neon-grid.png\n              refresh: 1d\n              timeout: 10s\n              # source-sha256: <64 hexadecimal digits>   pins the content\n              # headers: { Authorization: \'Bearer \${cdn.token}\' }\n      tokens:\n        brand:\n          badge:\n            source: https://cdn.example.com/theme-showcase-material/badge.png\n            fallback: assets/images/badge.png\n            refresh: 1d\n\n      # A whole theme from a URL works the same way: it is downloaded,\n      # cached, and replaced in the background every `refresh`. The file is\n      # written like a theme of themes/*.yml. Uncomment, and add the name\n      # to the lists of the Themes page if you want a button for it.\n      #\n      # themes:\n      #   brand:\n      #     source: https://themes.example.com/theme-showcase-material/brand.yml\n      #     source-sha256: 3f9a1c5e7b2d4a6f8c0e1b3d5f7a9c2e4b6d8f0a1c3e5b7d9f1a3c5e7b9d1f3a\n      #     refresh: 1h\n      #   brand-dark:\n      #     extends: brand\n      #     brightness: dark\n',
     ),
-    r'application.yml': _i2.EmbeddedResource.text(
+    r'application.yml': _i3.EmbeddedResource.text(
       '# THEME SHOWCASE MATERIAL: the whole look of this app is in this file and in\n# themes/*.yml. There is no ThemeData in the Dart code. The pages show each\n# part of the theme next to the YAML line that makes it (their little grey\n# code boxes quote this file; a test checks they do).\n#\n# Read it top to bottom:\n#   1. the app and the theme list                (this block)\n#   2. colors, references and color objects      (colors, tokens.palette)\n#   3. typography, spacing, shapes               (typography, spacing, shape)\n#   4. tokens: groups, lists, durations, an image (tokens)\n#   5. components: Flutter\'s widgets, per state  (components)\n#   6. styles for our own widgets                (styles)\n#   7. motion, animations, loaders, the splash   (motion, animations, loaders, splash)\n#   8. themes: light, dark, ocean, ocean-night, neon, high-contrast\nspring:\n  config:\n    import: >-\n      resources:themes/ocean.yml, resources:themes/neon.yml,\n      resources:themes/high-contrast.yml,\n      resources:themes/code.yml\n\n  flutter:\n    web:\n      dev-server:\n        # `flutter run -d chrome` serves the app on http://localhost:5070/.\n        port: 5070\n    app:\n      # A MaterialApp: Scaffold, AppBar and the other Material widgets.\n      # spring_boot_starter_flutter_material builds it.\n      type: material\n      title: Theme Showcase Material\n      debug-banner: false\n    # The pages are screens of the navigation starter; `/` opens the first.\n    navigation:\n      initial: /colors\n\n    theme:\n      # The theme shown at the start. `system` follows the device and picks\n      # system-light or system-dark.\n      # Names: light | dark | ocean | ocean-night | neon | high-contrast\n      active: light\n      system-light: light\n      system-dark: dark\n\n      # ---------------------------------------------------------------- 2\n      # Everything below is the "root": shared by every theme. A theme under\n      # `themes:` (or in themes/*.yml) holds only what it changes.\n\n      # One color makes the whole Material 3 palette (primary, surfaces...).\n      seed-color: \'#3F51B5\'\n      scheme-variant: tonalSpot\n      colors:\n        # Declared colors win over the palette made from the seed.\n        secondary: \'#00897B\'\n        error: \'#B3261E\'\n        surface-container-low: grey.shade100\n        # A reference to a color the palette makes and we never wrote down.\n        outline-variant: { color: \$colors.outline, alpha: 50% }\n        # A reference to a declared color, mixed with white.\n        tertiary: { color: \$colors.secondary, mix: { with: white, amount: 35% } }\n\n      # ---------------------------------------------------------------- 3\n      typography:\n        defaults: { letter-spacing: 0.1 }\n        display: { weight: bold }\n        headline: { weight: semibold }\n        title-large: { size: 24, weight: semibold }\n        body-medium: { height: 1.5 }\n        code: { font-family: monospace, size: 13 }\n      spacing:\n        xs: 4\n        s: 8\n        m: 16\n        l: 24\n        xl: 32\n        gutter: 20\n      shape:\n        medium: 16\n        large: 24\n\n      # ---------------------------------------------------------------- 4\n      # Tokens: values of our own. Groups nest, lists and durations work.\n      tokens:\n        brand:\n          name: Theme Showcase\n          tagline: Every look in this app is a line of YAML\n          accent: \$colors.primary\n          # A token with a `source` is an image (see the Images page).\n          badge: { source: assets/images/badge.png }\n        palette:\n          # Color objects: alpha, mix, and a reference to a reference.\n          soft: { color: \$colors.primary, alpha: 12% }\n          hover: { color: \$colors.primary, mix: { with: white, amount: 14% } }\n          deep: { color: \$palette.hover, mix: { with: black, amount: 30% } }\n          # Roles we never declared, by reference.\n          edge: \$colors.outline\n          lowest: \$colors.surface-container-lowest\n        corner:\n          # The Material shape scale by reference.\n          tiny: \$shape.extra-small\n          roomy: \$shape.extra-large\n        chart:\n          # A list of colors (List<Color>), of numbers and of texts.\n          colors: [\$colors.primary, \$colors.secondary, \$colors.tertiary, \$palette.deep]\n          bars: [4, 9, 6, 11, 7]\n          days: [Mon, Tue, Wed, Thu, Fri]\n        timing:\n          # Durations, and a reference to a motion duration.\n          intro: 600ms\n          stagger: \$motion.durations.fast\n        layout:\n          content-width: 980\n          card:\n            padding: 20\n            radius: \$shape.large\n\n      # ---------------------------------------------------------------- 5\n      # Flutter\'s own components, adjusted from here. A property that takes\n      # a state takes a map: default, hovered, focused, pressed, disabled,\n      # selected, error...\n      components:\n        app-bar: { center-title: false, scrolled-under-elevation: level2, title-text-style: title-large }\n        # `button` holds what the four buttons share.\n        button: { shape: full, min-height: 44 }\n        filled-button:\n          background-color:\n            default: \$colors.primary\n            hovered: { color: \$colors.primary, alpha: 85% }\n            pressed: \$colors.tertiary\n            disabled: { color: \$colors.on-surface, alpha: 12% }\n          side:\n            default: none\n            focused: { color: \$colors.secondary, width: 2 }\n          text-style: { style: label-large, weight: bold }\n        elevated-button:\n          elevation: { default: level1, hovered: level3, pressed: level0 }\n        outlined-button:\n          side:\n            default: { color: \$colors.outline, width: 1 }\n            hovered: { color: \$colors.primary, width: 2 }\n            disabled: { color: { color: \$colors.on-surface, alpha: 12% }, width: 1 }\n        text-button:\n          foreground-color: { default: \$colors.primary, hovered: \$colors.tertiary, disabled: { color: \$colors.on-surface, alpha: 38% } }\n          overlay-color: { hovered: { color: \$colors.primary, alpha: 8% }, pressed: { color: \$colors.primary, alpha: 16% } }\n        icon-button:\n          foreground-color: { default: \$colors.on-surface-variant, hovered: \$colors.primary, selected: \$colors.primary }\n        segmented-button:\n          background-color: { selected: \$colors.secondary-container }\n          foreground-color: { selected: \$colors.on-secondary-container }\n        floating-action-button: { shape: large, elevation: level2 }\n        checkbox:\n          fill-color: { default: \$colors.outline, selected: \$colors.primary, error: \$colors.error, disabled: { color: \$colors.on-surface, alpha: 12% } }\n          shape: { type: rounded, radius: extra-small }\n        radio:\n          fill-color: { default: \$colors.outline, selected: \$colors.primary, disabled: { color: \$colors.on-surface, alpha: 38% } }\n        switch:\n          thumb-color: { default: \$colors.outline, selected: \$colors.on-primary }\n          track-color: { default: \$colors.surface-container-highest, selected: \$colors.primary }\n        slider:\n          track-height: 6\n          active-track-color: \$colors.primary\n          inactive-track-color: { color: \$colors.primary, alpha: 24% }\n          thumb-color: \$colors.tertiary\n          value-indicator-color: \$colors.tertiary\n          show-value-indicator: on-drag\n        chip:\n          shape: stadium\n          side: \$colors.outline-variant\n          selected-color: \$colors.secondary-container\n          label-style: label-large\n        input:\n          style: outline\n          shape: small\n          filled: true\n          fill-color: \$colors.surface-container-low\n          focused-border: { type: outline, radius: small, side: { color: \$colors.primary, width: 2 } }\n          error-border: { type: outline, radius: small, side: { color: \$colors.error, width: 2 } }\n        card: { shape: large, color: \$colors.surface-container-low, elevation: level0 }\n        list-tile: { shape: medium, selected-tile-color: { color: \$colors.primary, alpha: 12% }, selected-color: \$colors.primary }\n        divider: { color: \$colors.outline-variant, thickness: 1 }\n        expansion-tile: { shape: medium, collapsed-shape: medium }\n        progress-indicator: { color: \$colors.primary, linear-track-color: { color: \$colors.primary, alpha: 16% }, stroke-cap: round, linear-min-height: 6 }\n        badge: { background-color: \$colors.tertiary, text-color: \$colors.on-tertiary }\n        navigation-bar: { height: 72, label-behavior: only-show-selected, indicator-color: \$colors.secondary-container }\n        navigation-rail: { label-type: all, use-indicator: true, indicator-color: \$colors.secondary-container }\n        tab-bar:\n          indicator-size: tab\n          indicator-color: \$colors.tertiary\n          label-color: \$colors.primary\n          unselected-label-color: \$colors.on-surface-variant\n          divider-height: 0\n        dialog: { shape: extra-large, elevation: level3, title-text-style: headline-small }\n        snack-bar:\n          behavior: floating\n          shape: medium\n          show-close-icon: true\n          background-color: \$colors.inverse-surface\n          content-text-style: { style: body-medium, color: \$colors.on-inverse-surface }\n        banner: { background-color: \$colors.secondary-container, content-text-style: { style: body-medium, color: \$colors.on-secondary-container } }\n        tooltip:\n          decoration: { color: \$colors.inverse-surface, radius: small }\n          text-style: { style: label-medium, color: \$colors.on-inverse-surface }\n          padding: 12, 8\n          wait-duration: 300ms\n        popup-menu: { shape: medium, elevation: level3 }\n        bottom-sheet: { shape: extra-large, constraints: { max-width: 640 } }\n        scrollbar: { thumb-color: { default: \$colors.outline, hovered: \$colors.primary }, thickness: { default: 6, hovered: 10 } }\n      # CupertinoThemeData (the iOS look) has a root of its own; the Components\n      # page shows it.\n      cupertino:\n        primary-color: \$colors.primary\n        scaffold-background-color: \$colors.surface\n        bar-background-color: \$colors.surface-container\n        text-theme:\n          primary-color: \$colors.primary\n          nav-title-text-style: { style: title-large, weight: 600 }\n\n      # ---------------------------------------------------------------- 6\n      # Looks for our own widgets (ThemeStates): one value, or a value per\n      # state; `transition` animates between them.\n      styles:\n        # Code (YamlBox, MarkdownView): a tinted panel in the outline\'s\n        # color; the pieces of code in the scheme\'s roles.\n        code:\n          background: { color: \$colors.surface-container-highest, alpha: 55% }\n          border: \$colors.outline-variant\n          radius: \$spacing.s\n          padding: \$spacing.m\n          text: \$colors.on-surface-variant\n          keyword: \$colors.primary\n          string: \$colors.tertiary\n          comment: \$colors.outline\n          number: \$colors.secondary\n          key: \$colors.primary\n          annotation: \$colors.tertiary\n          variable: { color: \$colors.primary, mix: { with: \$colors.tertiary, amount: 50% } }\n          type: \$colors.secondary\n          punctuation: \$colors.outline\n        pill:\n          padding: [12, 6]\n          radius: 999\n          border: { default: \$colors.outline, hovered: \$colors.primary, selected: \$colors.primary, disabled: \$colors.outline-variant, error: \$colors.error }\n          fill: { default: transparent, hovered: { color: \$colors.primary, alpha: 8% }, selected: { color: \$colors.primary, alpha: 18% }, disabled: transparent }\n          text: { default: \$colors.on-surface-variant, hovered: \$colors.primary, selected: \$colors.primary, disabled: \$colors.outline, error: \$colors.error }\n          transition: 120ms ease-out\n        action:\n          padding: [24, 14]\n          radius: 12\n          fill:\n            default: \$colors.primary\n            hovered: { color: \$colors.primary, mix: { with: white, amount: 14% } }\n            focused: { color: \$colors.primary, mix: { with: white, amount: 14% } }\n            pressed: \$colors.tertiary\n            disabled: { color: \$colors.on-surface, alpha: 12% }\n          text: { default: \$colors.on-primary, disabled: \$colors.outline }\n          border: { default: transparent, focused: \$colors.secondary }\n          # The glow (a blur radius) grows on hover and shrinks when pressed.\n          glow: { default: 0, hovered: 14, pressed: 4, disabled: 0 }\n          transition: 160ms ease-out\n        field:\n          padding: [16, 12]\n          radius: 12\n          border: { default: \$colors.outline, hovered: \$colors.on-surface-variant, focused: \$colors.primary, error: \$colors.error, disabled: \$colors.outline-variant }\n          fill: { default: \$colors.surface-container-low, focused: \$colors.surface-container, disabled: transparent }\n          glow: { default: 0, focused: 10, error: 10 }\n          transition: 140ms ease-out\n        tile:\n          padding: [20]\n          radius: 20\n          border: { default: \$colors.outline-variant, hovered: \$colors.secondary, selected: \$colors.primary }\n          fill: { default: \$colors.surface-container-low, hovered: \$colors.surface-container, selected: { color: \$colors.primary, alpha: 10% } }\n          glow: { default: 0, hovered: 12, selected: 18 }\n          transition: 200ms ease-out\n\n      # ---------------------------------------------------------------- 7\n      motion:\n        # What a new page does: not written here, so the platform\'s, as in\n        # Flutter (Material\'s own, per platform). The themes neon (zoom) and\n        # high-contrast (none: pages switch at once) set their own; the\n        # Transitions page shows the kinds: platform | fade-upwards | zoom |\n        # cupertino | fade | none, or { type, duration, curve }.\n        durations:\n          fast: 120ms\n          medium: 250ms\n          slow: 600ms\n        curves:\n          emphasized: [0.2, 0, 0, 1]\n          out: ease-out\n          standard: ease-in-out\n      animations:\n        # repeat: none (once) | loop (again and again) | reverse (back and forth)\n        border-spin: { duration: 4s, curve: linear, repeat: loop }\n        glow-pulse: { duration: 1.6s, curve: ease-in-out, repeat: reverse }\n        enter: { duration: \$motion.durations.slow, curve: ease-out, repeat: none }\n        background-drift: { duration: 24s, curve: ease-in-out, repeat: reverse }\n\n      # Loaders: ThemeLoader and ThemeSkeleton show them, by name. A built-in\n      # kind is spinner, dots, pulse, bar or skeleton.\n      loaders:\n        spinner: { kind: spinner, size: 32, stroke: 3, track: { color: \$colors.primary, alpha: 20% } }\n        bar: { kind: bar, color: \$colors.primary, track: { color: \$colors.primary, alpha: 20% }, height: 4, width: 240 }\n        card:\n          kind: skeleton\n          base: \$colors.surface-container-high\n          highlight: \$colors.surface-container-highest\n          radius: \$shape.medium\n          shimmer: { duration: 1.2s, angle: 20 }\n\n      # The splash: what shows while the app starts (and, on the web, before\n      # Flutter runs: the generator writes it into web/index.html). The bar\n      # follows the start\'s progress. A plain `splash: ripple` would be the\n      # ink of taps instead; this map is the start screen.\n      splash:\n        background: { color: \$colors.surface }\n        logo: { source: assets/images/badge.png, size: 96 }\n        title: Theme Showcase\n        loader: bar\n        min-duration: 1.2s\n        exit: { transition: 400ms ease-out }\n\n      # ---------------------------------------------------------------- 8\n      themes:\n        # `light` is the root above; `dark` is the root with these changes.\n        dark:\n          seed-color: \'#7986CB\'\n          colors:\n            surface-container-low: grey.shade900\n',
     ),
-    r'messages.properties': _i2.EmbeddedResource.text(
+    r'messages.properties': _i3.EmbeddedResource.text(
       '# Typed messages: context.messages.nav.colors, context.messages.themes.active(name).\nnav.colors=Colors\nnav.type=Type and space\nnav.tokens=Tokens\nnav.components=Components\nnav.states=Own widgets\nnav.motion=Motion\nnav.loaders=Loaders\nnav.background=Background\nnav.images=Images\nnav.transitions=Transitions\nnav.themes=Themes\nthemes.active=Active theme: {0}\nthemes.switch=Switch theme\n',
     ),
-    r'themes/code.yml': _i2.EmbeddedResource.text(
+    r'themes/code.yml': _i3.EmbeddedResource.text(
       '# The languages of the code blocks (`syntax.<language>`), a copy of\n# themes/code.yml of github.com/farum-azula/themes: the starter knows no\n# language by itself. The colors of the pieces are each theme\'s\n# `styles.code`. An app online can take the file instead:\n#   spring.flutter.theme.source: github:farum-azula/themes/themes/code.yml@<tag>\nspring:\n  flutter:\n    theme:\n      syntax:\n        dart:\n          keywords: [abstract, as, assert, async, await, base, break, case, catch, class, const, continue, covariant, default, deferred, do, dynamic, else, enum, export, extends, extension, external, factory, \'false\', final, finally, for, Function, get, hide, if, implements, import, in, interface, is, late, library, mixin, new, \'null\', of, \'on\', operator, part, required, rethrow, return, sealed, set, show, static, super, switch, sync, this, throw, \'true\', try, typedef, var, void, when, while, with, yield]\n          types: \'^(?:int|double|num|bool|_?[A-Z][A-Za-z0-9_]*[a-z][A-Za-z0-9_]*)\$\'\n          rules:\n            - { match: \'//[^\\n]*|/\\*[\\s\\S]*?\\*/\', kind: comment }\n            - { match: \'r?\'\'\'\'\'\'[\\s\\S]*?\'\'\'\'\'\'|r?"""[\\s\\S]*?"""|r?\'\'(?:\\\\.|[^\'\'\\\\\\n])*\'\'|r?"(?:\\\\.|[^"\\\\\\n])*"\', kind: string }\n            - { match: \'@[A-Za-z_][A-Za-z0-9_.]*\', kind: annotation }\n            - { match: \'\\b(?:0x[0-9a-fA-F]+|\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)\\b\', kind: number }\n            - { match: \'[A-Za-z_\$][A-Za-z0-9_\$]*\', kind: word }\n            - { match: \'[{}()\\[\\];,]\', kind: punctuation }\n\n        java:\n          keywords: [abstract, assert, boolean, break, byte, case, catch, char, class, const, continue, default, do, double, else, enum, extends, \'false\', final, finally, float, for, if, implements, import, instanceof, int, interface, long, native, new, \'null\', package, permits, private, protected, public, record, return, sealed, short, static, super, switch, synchronized, this, throw, throws, \'true\', try, var, void, volatile, while, yield]\n          types: \'^[A-Z][A-Za-z0-9_]*[a-z][A-Za-z0-9_]*\$\'\n          rules:\n            - { match: \'//[^\\n]*|/\\*[\\s\\S]*?\\*/\', kind: comment }\n            - { match: \'"""[\\s\\S]*?"""|"(?:\\\\.|[^"\\\\\\n])*"|\'\'(?:\\\\.|[^\'\'\\\\\\n])*\'\'\', kind: string }\n            - { match: \'@[A-Za-z_][A-Za-z0-9_.]*\', kind: annotation }\n            - { match: \'\\b(?:0x[0-9a-fA-F_]+[lL]?|\\d[\\d_]*(?:\\.\\d+)?(?:[eE][+-]?\\d+)?[lLfFdD]?)\\b\', kind: number }\n            - { match: \'[A-Za-z_\$][A-Za-z0-9_\$]*\', kind: word }\n            - { match: \'[{}()\\[\\];,]\', kind: punctuation }\n\n        yaml:\n          aliases: [yml]\n          rules:\n            - { match: \'(?<=^|\\s)#[^\\n]*\', kind: comment }\n            - { match: \'^(?:---|\\.\\.\\.)(?=\\s|\$)\', kind: punctuation }\n            - { match: \'(?<=^[ \\t]*(?:-[ \\t]+)*)-(?=\\s|\$)\', kind: punctuation }\n            - { match: \'(?<=^[ \\t]*(?:-[ \\t]+)*)(?:"(?:\\\\.|[^"\\\\\\n])*"|\'\'(?:\'\'\'\'|[^\'\'\\n])*\'\'|[^\\s#:,{}\\[\\]&*!|>%@`\'\'"-][^#:,{}\\[\\]\\n]*?|-[^\\s#:,{}\\[\\]][^#:,{}\\[\\]\\n]*?)(?=[ \\t]*:(?:\\s|\$))\', kind: key }\n            - { match: \'(?<=[{,][ \\t]*)[^\\s#:,{}\\[\\]\'\'"][^#:,{}\\[\\]\\n]*?(?=[ \\t]*:(?:\\s|\$|[,}\\]]))\', kind: key }\n            - { match: \':(?=\\s|\$|[,}\\]])\', kind: punctuation }\n            - { match: \'[{}\\[\\],]\', kind: punctuation }\n            - { match: \'"(?:\\\\.|[^"\\\\\\n])*"?|\'\'(?:\'\'\'\'|[^\'\'\\n])*\'\'?\', kind: string }\n            - { match: \'[|>][-+0-9]*(?=[ \\t]*\$)\', kind: punctuation }\n            - { match: \'[&*][\\w.-]+\', kind: variable }\n            - { match: \'![\\w!./:-]*\', kind: annotation }\n            - { match: \'\\\$\\{[^}\\n]*\\}|\\\$[A-Za-z_][A-Za-z0-9_]*(?:[.-][A-Za-z0-9_]+)*\', kind: variable }\n            - { match: \'(?<![\\w.\$-])[-+]?(?:0x[0-9a-fA-F]+|(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:[eE][-+]?\\d+)?(?:ms|us|ns|s|m|h|d|%|px|x)?)(?![\\w.\$-])\', kind: number }\n            - { match: \'(?<![\\w.\$-])(?:true|false|null|yes|no|on|off|True|False|Null|TRUE|FALSE|NULL|~)(?![\\w.\$-])\', kind: keyword }\n            - { match: \'[^\\s,{}\\[\\]#\$]+\', kind: string }\n\n        properties:\n          aliases: [ini]\n          rules:\n            - { match: \'^[ \\t]*[#!][^\\n]*\', kind: comment }\n            - { match: \'(?<=^[ \\t]*)[^\\s=:#!][^=:\\n]*?(?=[ \\t]*[=:]|[ \\t]+\\S|[ \\t]*\$)\', kind: key }\n            - { match: \'(?<=^[ \\t]*[^\\s=:#!][^=:\\n]*?[ \\t]*)[=:]\', kind: punctuation }\n            - { match: \',\', kind: punctuation }\n            - { match: \'\\\$\\{[^}\\n]*\\}|\\\$[A-Za-z_][A-Za-z0-9_]*(?:[.-][A-Za-z0-9_]+)*\', kind: variable }\n            - { match: \'(?<![\\w.\$-])[-+]?(?:0x[0-9a-fA-F]+|(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:[eE][-+]?\\d+)?(?:ms|us|ns|s|m|h|d|%|px|x)?)(?![\\w.\$-])\', kind: number }\n            - { match: \'(?<![\\w.\$-])(?:true|false|null|yes|no|on|off)(?![\\w.\$-])\', kind: keyword }\n            - { match: \'[^\\s,\$]+\', kind: string }\n\n        shell:\n          aliases: [sh, bash, zsh, console]\n          keywords: [if, then, else, elif, fi, for, in, do, done, while, case, esac, function, export, cd, echo, return]\n          rules:\n            - { match: \'#[^\\n]*\', kind: comment }\n            - { match: \'\'\'[^\'\']*\'\'|"(?:\\\\.|[^"\\\\])*"\', kind: string }\n            - { match: \'\\s--?[A-Za-z][\\w-]*\', kind: key }\n            - { match: \'\\\$\\{[^}\\n]*\\}|\\\$[A-Za-z_][A-Za-z0-9_]*(?:[.-][A-Za-z0-9_]+)*\', kind: variable }\n            - { match: \'\\|\\||&&|[|;<>]\', kind: punctuation }\n            - { match: \'[A-Za-z_][A-Za-z0-9_-]*\', kind: word }\n\n        json:\n          rules:\n            - { match: \'"(?:\\\\.|[^"\\\\])*"(?=\\s*:)\', kind: key }\n            - { match: \'"(?:\\\\.|[^"\\\\])*"\', kind: string }\n            - { match: \'-?\\b\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?\\b\', kind: number }\n            - { match: \'\\b(?:true|false|null)\\b\', kind: keyword }\n            - { match: \'[{}\\[\\],:]\', kind: punctuation }\n',
     ),
-    r'themes/high-contrast.yml': _i2.EmbeddedResource.text(
+    r'themes/high-contrast.yml': _i3.EmbeddedResource.text(
       '# High contrast: black on white, thick borders, no motion between pages.\nspring:\n  flutter:\n    theme:\n      themes:\n        high-contrast:\n          extends: light\n          seed-color: \'#000000\'\n          contrast: 1\n          colors:\n            primary: \'#000000\'\n            on-primary: \'#FFFFFF\'\n            secondary: \'#0000CC\'\n            tertiary: \'#8A0000\'\n            surface: \'#FFFFFF\'\n            on-surface: \'#000000\'\n            surface-container-low: \'#FFFFFF\'\n            outline: \'#000000\'\n          components:\n            outlined-button:\n              side:\n                default: { color: \$colors.outline, width: 3 }\n                hovered: { color: \$colors.secondary, width: 4 }\n                disabled: { color: \$colors.on-surface, width: 2 }\n            input:\n              focused-border: { type: outline, radius: small, side: { color: \$colors.secondary, width: 4 } }\n              enabled-border: { type: outline, radius: small, side: { color: \$colors.outline, width: 2 } }\n            card:\n              color: \$colors.surface\n              shape:\n                type: rounded\n                radius: large\n                side: { color: \$colors.outline, width: 2 }\n          motion:\n            page-transition: none\n          tokens:\n            brand:\n              name: High contrast\n              tagline: Black, white and thick lines\n',
     ),
-    r'themes/neon.yml': _i2.EmbeddedResource.text(
+    r'themes/neon.yml': _i3.EmbeddedResource.text(
       '# NEON: a dark theme in the spirit of neon signs: yellow, cyan and pink on a\n# near-black night, a glowing border, a drifting grid behind it.\nspring:\n  flutter:\n    theme:\n      themes:\n        neon:\n          brightness: dark\n          seed-color: \'#F5E000\'\n          scheme-variant: fidelity\n          colors:\n            primary: \'#F5E000\'\n            on-primary: \'#14110A\'\n            secondary: \'#00E5FF\'\n            on-secondary: \'#001F24\'\n            tertiary: \'#FF40A0\'\n            on-tertiary: \'#2A0016\'\n            surface: \'#0B0D14\'\n            on-surface: \'#E8EAF2\'\n            surface-container-lowest: \'#07080D\'\n            surface-container-low: \'#10131C\'\n            outline: \'#3A4160\'\n          shape: { medium: 12, large: 20, extra-large: 28 }\n          components:\n            card:\n              elevation: level0\n              shape:\n                type: rounded\n                radius: large\n                side: { color: \$colors.outline-variant, width: 1 }\n          tokens:\n            brand:\n              name: NEON\n              tagline: Yellow, cyan and pink after dark\n          motion:\n            page-transition: zoom\n          # The page behind everything: a color, a picture, a gradient over\n          # it, and the picture drifting slowly (the animation\n          # `background-drift`).\n          background:\n            color: \$colors.surface-container-lowest\n            image:\n              source: assets/images/neon-grid.png\n              fit: cover\n              alignment: center\n              opacity: 0.9\n              blur: 0\n            overlay:\n              gradient: { type: linear, begin: top, end: bottom, colors: [transparent, \'#CC0A0C12\'] }\n            animation: background-drift\n            effect: drift\n            transition: 400ms ease-out\n            # ThemeBackground.screen(\'showcase\') shows this over the background.\n            screens:\n              showcase:\n                overlay:\n                  gradient: { type: radial, begin: center, colors: [{ color: \$colors.tertiary, alpha: 35% }, transparent] }\n',
     ),
-    r'themes/ocean.yml': _i2.EmbeddedResource.text(
+    r'themes/ocean.yml': _i3.EmbeddedResource.text(
       '# Two themes in one file. `ocean` is `light` with a teal seed and rounder\n# corners; `ocean-night` is `ocean`, dark: `extends` copies a theme and\n# `brightness: dark` turns it around. Colors that refer to the palette\n# (\$colors.primary...) follow the new seed.\nspring:\n  flutter:\n    theme:\n      themes:\n        ocean:\n          extends: light\n          seed-color: teal\n          scheme-variant: vibrant\n          shape: { medium: 20, large: 28 }\n          colors:\n            secondary: \'#0277BD\'\n            surface-container-low: \'#E6F4F1\'\n          components:\n            card: { elevation: level0 }\n          tokens:\n            brand:\n              name: Ocean\n              tagline: Light, teal and round\n        ocean-night:\n          extends: ocean\n          brightness: dark\n          colors:\n            surface-container-low: \'#10302E\'\n          tokens:\n            brand:\n              name: Ocean at night\n          # A background without an image: a color and a gradient over it.\n          background:\n            color: \$colors.surface-container-lowest\n            overlay:\n              gradient:\n                type: linear\n                begin: top\n                end: bottom\n                colors: [transparent, { color: \$colors.primary, alpha: 22% }]\n            transition: 400ms ease-out\n',
     ),
   },
@@ -287,22 +287,14 @@ _i2.BeanModule get $application => _i2.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i20.springBootAutoConfiguration,
-    _i21.springBootStarterFlutterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i21.springBootStarterFlutterDebugAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i21.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i21.springBootStarterFlutterDebugIsolatesAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i21.springBootStarterFlutterDebugMotionAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i21.springBootStarterFlutterDebugTimelineAutoConfiguration,
+    _i21.springBootAutoConfiguration,
+    _i2.springBootStarterFlutterAutoConfiguration,
     _i22.springBootStarterFlutterCupertinoAutoConfiguration,
     _i23.springBootStarterFlutterMaterialAutoConfiguration,
     _i24.springBootStarterFlutterNavigationAutoConfiguration,
     _i25.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
     _i22.springBootStarterFlutterCupertinoAutoConfiguration:
@@ -333,7 +325,7 @@ Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// The route of [BackgroundPage]: its path, name, values and `to`.
-extension BackgroundPageRoute on _i9.BackgroundPage {
+extension BackgroundPageRoute on _i10.BackgroundPage {
   /// The path pattern.
   static const pattern = r'/background';
 
@@ -341,11 +333,11 @@ extension BackgroundPageRoute on _i9.BackgroundPage {
   static const routeName = r'background-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [ColorsPage]: its path, name, values and `to`.
-extension ColorsPageRoute on _i10.ColorsPage {
+extension ColorsPageRoute on _i11.ColorsPage {
   /// The path pattern.
   static const pattern = r'/colors';
 
@@ -353,11 +345,11 @@ extension ColorsPageRoute on _i10.ColorsPage {
   static const routeName = r'colors-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [ComponentsPage]: its path, name, values and `to`.
-extension ComponentsPageRoute on _i11.ComponentsPage {
+extension ComponentsPageRoute on _i12.ComponentsPage {
   /// The path pattern.
   static const pattern = r'/components';
 
@@ -365,11 +357,11 @@ extension ComponentsPageRoute on _i11.ComponentsPage {
   static const routeName = r'components-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [ImagesPage]: its path, name, values and `to`.
-extension ImagesPageRoute on _i12.ImagesPage {
+extension ImagesPageRoute on _i13.ImagesPage {
   /// The path pattern.
   static const pattern = r'/images';
 
@@ -377,11 +369,11 @@ extension ImagesPageRoute on _i12.ImagesPage {
   static const routeName = r'images-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [LoadersPage]: its path, name, values and `to`.
-extension LoadersPageRoute on _i13.LoadersPage {
+extension LoadersPageRoute on _i14.LoadersPage {
   /// The path pattern.
   static const pattern = r'/loaders';
 
@@ -389,11 +381,11 @@ extension LoadersPageRoute on _i13.LoadersPage {
   static const routeName = r'loaders-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [MotionPage]: its path, name, values and `to`.
-extension MotionPageRoute on _i14.MotionPage {
+extension MotionPageRoute on _i15.MotionPage {
   /// The path pattern.
   static const pattern = r'/motion';
 
@@ -401,11 +393,11 @@ extension MotionPageRoute on _i14.MotionPage {
   static const routeName = r'motion-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [StatesPage]: its path, name, values and `to`.
-extension StatesPageRoute on _i15.StatesPage {
+extension StatesPageRoute on _i16.StatesPage {
   /// The path pattern.
   static const pattern = r'/states';
 
@@ -413,11 +405,11 @@ extension StatesPageRoute on _i15.StatesPage {
   static const routeName = r'states-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [ThemesPage]: its path, name, values and `to`.
-extension ThemesPageRoute on _i16.ThemesPage {
+extension ThemesPageRoute on _i17.ThemesPage {
   /// The path pattern.
   static const pattern = r'/themes';
 
@@ -425,11 +417,11 @@ extension ThemesPageRoute on _i16.ThemesPage {
   static const routeName = r'themes-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [TokensPage]: its path, name, values and `to`.
-extension TokensPageRoute on _i17.TokensPage {
+extension TokensPageRoute on _i18.TokensPage {
   /// The path pattern.
   static const pattern = r'/tokens';
 
@@ -437,11 +429,11 @@ extension TokensPageRoute on _i17.TokensPage {
   static const routeName = r'tokens-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [TransitionsPage]: its path, name, values and `to`.
-extension TransitionsPageRoute on _i18.TransitionsPage {
+extension TransitionsPageRoute on _i19.TransitionsPage {
   /// The path pattern.
   static const pattern = r'/transitions';
 
@@ -449,11 +441,11 @@ extension TransitionsPageRoute on _i18.TransitionsPage {
   static const routeName = r'transitions-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [TransitionThemePage]: its path, name, values and `to`.
-extension TransitionThemePageRoute on _i18.TransitionThemePage {
+extension TransitionThemePageRoute on _i19.TransitionThemePage {
   /// The path pattern.
   static const pattern = r'/transitions/default';
 
@@ -461,11 +453,11 @@ extension TransitionThemePageRoute on _i18.TransitionThemePage {
   static const routeName = r'transition-theme-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [TransitionPlatformPage]: its path, name, values and `to`.
-extension TransitionPlatformPageRoute on _i18.TransitionPlatformPage {
+extension TransitionPlatformPageRoute on _i19.TransitionPlatformPage {
   /// The path pattern.
   static const pattern = r'/transitions/platform';
 
@@ -473,11 +465,11 @@ extension TransitionPlatformPageRoute on _i18.TransitionPlatformPage {
   static const routeName = r'transition-platform-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [TransitionFadePage]: its path, name, values and `to`.
-extension TransitionFadePageRoute on _i18.TransitionFadePage {
+extension TransitionFadePageRoute on _i19.TransitionFadePage {
   /// The path pattern.
   static const pattern = r'/transitions/fade';
 
@@ -485,11 +477,11 @@ extension TransitionFadePageRoute on _i18.TransitionFadePage {
   static const routeName = r'transition-fade-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [TypePage]: its path, name, values and `to`.
-extension TypePageRoute on _i19.TypePage {
+extension TypePageRoute on _i20.TypePage {
   /// The path pattern.
   static const pattern = r'/type';
 
@@ -497,23 +489,23 @@ extension TypePageRoute on _i19.TypePage {
   static const routeName = r'type-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// `@Log` of [PageLog]: the logger 'theme_showcase_material.pages'.
-extension $PageLogLog on _i3.PageLog {
-  _i2.SpringLog get log =>
-      const _i2.SpringLog(r'theme_showcase_material.pages');
+extension $PageLogLog on _i4.PageLog {
+  _i3.SpringLog get log =>
+      const _i3.SpringLog(r'theme_showcase_material.pages');
 }
 
 /// `@Log` of [ThemeLog]: the logger 'theme_showcase_material.themes'.
-extension $ThemeLogLog on _i3.ThemeLog {
-  _i2.SpringLog get log =>
-      const _i2.SpringLog(r'theme_showcase_material.themes');
+extension $ThemeLogLog on _i4.ThemeLog {
+  _i3.SpringLog get log =>
+      const _i3.SpringLog(r'theme_showcase_material.themes');
 }
 
 /// `@Log` of [RouteLog]: the logger 'theme_showcase_material.navigation'.
-extension $RouteLogLog on _i3.RouteLog {
-  _i2.SpringLog get log =>
-      const _i2.SpringLog(r'theme_showcase_material.navigation');
+extension $RouteLogLog on _i4.RouteLog {
+  _i3.SpringLog get log =>
+      const _i3.SpringLog(r'theme_showcase_material.navigation');
 }

@@ -717,7 +717,8 @@ Good to know:
   lets the application's configuration decide, when the generator runs:
   `true` builds the module in, `false` leaves it out (no code at all),
   not set follows `whenMissing` (`BuildInclusion.notInRelease` by
-  default: in debug and profile builds, under
+  default: in debug and profile builds, listed in the generated
+  `main.spring.debug.dart` and added under
   `if (!const bool.fromEnvironment('dart.vm.product'))`, so a release
   compiles it away; or `always`, `never`). The generator reads
   `application.yml` and `application.properties` without a profile; a

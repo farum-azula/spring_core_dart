@@ -9,17 +9,17 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i4;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i6;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i5;
+    as _i2;
 import 'package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart'
-    as _i6;
-import 'package:spring_boot_starter_flutter_scene/src/scene_events.dart' as _i3;
+    as _i3;
+import 'package:spring_boot_starter_flutter_scene/src/scene_events.dart' as _i5;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i7;
 
-import '../example.dart' as _i2;
+import '../example.dart' as _i4;
 
 part 'example.spring.debug.dart';
 part 'example.spring.env.dart';
@@ -35,12 +35,12 @@ const _$knownAdvisors0 = {
 _i1.BeanModule get $application => _i1.BeanModule(
   r'application',
   [
-    _i1.BeanDefinition<_i2.LoadedModels>(
+    _i1.BeanDefinition<_i4.LoadedModels>(
       name: r'loadedModels',
       source: r'asset:spring_boot_starter_flutter_scene/example/example.dart#LoadedModels',
-      create: (r) => _i2.LoadedModels(),
+      create: (r) => _i4.LoadedModels(),
       eventListeners: [
-        _i1.EventListenerMethod.of<_i2.LoadedModels, _i3.SceneModelLoadedEvent>(
+        _i1.EventListenerMethod.of<_i4.LoadedModels, _i5.SceneModelLoadedEvent>(
           r'LoadedModels.onLoaded',
           (bean, event) {
             bean.onLoaded(event);
@@ -66,22 +66,12 @@ _i1.BeanModule get $application => _i1.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i4.springBootAutoConfiguration,
-    _i5.springBootStarterFlutterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i5.springBootStarterFlutterDebugAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i5.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i5.springBootStarterFlutterDebugIsolatesAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i5.springBootStarterFlutterDebugMotionAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i5.springBootStarterFlutterDebugTimelineAutoConfiguration,
-    _i6.springBootStarterFlutterSceneAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i6.springBootStarterFlutterSceneDebugAutoConfiguration,
+    _i6.springBootAutoConfiguration,
+    _i2.springBootStarterFlutterAutoConfiguration,
+    _i3.springBootStarterFlutterSceneAutoConfiguration,
     _i7.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

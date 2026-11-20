@@ -11,34 +11,34 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:flutter/widgets.dart';
-import 'package:neon_ui/spring_auto_configuration.dart' as _i18;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i19;
+import 'package:neon_ui/spring_auto_configuration.dart' as _i19;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i20;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i20;
+    as _i2;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    as _i5;
+    as _i6;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
     as _i21;
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
-    as _i4;
+    as _i5;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i22;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
-import 'package:theme_showcase_neon/src/app/logs.dart' as _i3;
-import 'package:theme_showcase_neon/src/app/shell.dart' as _i8;
-import 'package:theme_showcase_neon/src/pages/background_page.dart' as _i9;
-import 'package:theme_showcase_neon/src/pages/components_page.dart' as _i10;
-import 'package:theme_showcase_neon/src/pages/loaders_page.dart' as _i11;
-import 'package:theme_showcase_neon/src/pages/logs_page.dart' as _i6;
-import 'package:theme_showcase_neon/src/pages/motion_page.dart' as _i12;
-import 'package:theme_showcase_neon/src/pages/not_found_page.dart' as _i13;
-import 'package:theme_showcase_neon/src/pages/overview_page.dart' as _i14;
-import 'package:theme_showcase_neon/src/pages/states_page.dart' as _i15;
-import 'package:theme_showcase_neon/src/pages/themes_page.dart' as _i7;
-import 'package:theme_showcase_neon/src/pages/tokens_page.dart' as _i16;
-import 'package:theme_showcase_neon/src/pages/transitions_page.dart' as _i17;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
+import 'package:theme_showcase_neon/src/app/logs.dart' as _i4;
+import 'package:theme_showcase_neon/src/app/shell.dart' as _i9;
+import 'package:theme_showcase_neon/src/pages/background_page.dart' as _i10;
+import 'package:theme_showcase_neon/src/pages/components_page.dart' as _i11;
+import 'package:theme_showcase_neon/src/pages/loaders_page.dart' as _i12;
+import 'package:theme_showcase_neon/src/pages/logs_page.dart' as _i7;
+import 'package:theme_showcase_neon/src/pages/motion_page.dart' as _i13;
+import 'package:theme_showcase_neon/src/pages/not_found_page.dart' as _i14;
+import 'package:theme_showcase_neon/src/pages/overview_page.dart' as _i15;
+import 'package:theme_showcase_neon/src/pages/states_page.dart' as _i16;
+import 'package:theme_showcase_neon/src/pages/themes_page.dart' as _i8;
+import 'package:theme_showcase_neon/src/pages/tokens_page.dart' as _i17;
+import 'package:theme_showcase_neon/src/pages/transitions_page.dart' as _i18;
 
 part 'main.spring.debug.dart';
 part 'main.spring.env.dart';
@@ -57,100 +57,100 @@ const _$knownAdvisors0 = {
 Type _$typeOf<T>() => T;
 
 /// Beans found by `@ComponentScan` in `lib/`.
-_i2.BeanModule get $application => _i2.BeanModule(
+_i3.BeanModule get $application => _i3.BeanModule(
   r'application',
   [
-    _i2.BeanDefinition<_i3.PageLog>(
+    _i3.BeanDefinition<_i4.PageLog>(
       name: r'pageLog',
       source: r'package:theme_showcase_neon/src/app/logs.dart#PageLog',
-      create: (r) => _i3.PageLog(),
+      create: (r) => _i4.PageLog(),
       annotations: const [
-        _i2.Component(),
-        _i2.Log(topic: r'theme_showcase_neon.pages'),
+        _i3.Component(),
+        _i3.Log(topic: r'theme_showcase_neon.pages'),
       ],
-      aopProxy: const _i2.AopProxyFactory.pruned(
+      aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i2.BeanDefinition<_i3.ThemeLog>(
+    _i3.BeanDefinition<_i4.ThemeLog>(
       name: r'themeLog',
       source: r'package:theme_showcase_neon/src/app/logs.dart#ThemeLog',
       dependencies: const [
-        _i2.Dependency(_i4.ThemeSelection, name: r'_selection'),
+        _i3.Dependency(_i5.ThemeSelection, name: r'_selection'),
       ],
       create: (r) =>
-          _i3.ThemeLog(r.dependency<_i4.ThemeSelection>(name: r'_selection')),
+          _i4.ThemeLog(r.dependency<_i5.ThemeSelection>(name: r'_selection')),
       annotations: const [
-        _i2.Component(),
-        _i2.Log(topic: r'theme_showcase_neon.themes'),
+        _i3.Component(),
+        _i3.Log(topic: r'theme_showcase_neon.themes'),
       ],
-      aopProxy: const _i2.AopProxyFactory.pruned(
+      aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i2.BeanDefinition<_i3.DemoLog>(
+    _i3.BeanDefinition<_i4.DemoLog>(
       name: r'demoLog',
       source: r'package:theme_showcase_neon/src/app/logs.dart#DemoLog',
-      create: (r) => _i3.DemoLog(),
+      create: (r) => _i4.DemoLog(),
       annotations: const [
-        _i2.Component(),
-        _i2.Log(topic: r'theme_showcase_neon.demo'),
+        _i3.Component(),
+        _i3.Log(topic: r'theme_showcase_neon.demo'),
       ],
-      aopProxy: const _i2.AopProxyFactory.pruned(
+      aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i2.BeanDefinition<_i5.SpringWidgetBindings>(
+    _i3.BeanDefinition<_i6.SpringWidgetBindings>(
       name: r'flutterSpringWidgetBindings#application',
       source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
       autowireCandidate: false,
-      create: (r) => _i5.SpringWidgetBindings([
-        _i5.SpringWidgetBinding(
+      create: (r) => _i6.SpringWidgetBindings([
+        _i6.SpringWidgetBinding(
           widget: r'package:theme_showcase_neon/src/app/theme_switcher.dart#ThemeSwitcher',
-          beans: _$typeOf<(_i4.ThemeSelection,)>(),
-          types: const [_i4.ThemeSelection],
+          beans: _$typeOf<(_i5.ThemeSelection,)>(),
+          types: const [_i5.ThemeSelection],
           resolve: (f) =>
-              (_i5.SpringWidgetBinding.bean<_i4.ThemeSelection>(f),),
+              (_i6.SpringWidgetBinding.bean<_i5.ThemeSelection>(f),),
           values: (r) {
-            final v = (r as (_i4.ThemeSelection,));
+            final v = (r as (_i5.ThemeSelection,));
             return [v.$1];
           },
         ),
-        _i5.SpringWidgetBinding(
+        _i6.SpringWidgetBinding(
           widget: r'package:theme_showcase_neon/src/pages/logs_page.dart#_LogsPageState',
-          beans: _i6.LogsBeans,
-          types: const [_i4.LogBuffer, _i3.DemoLog],
+          beans: _i7.LogsBeans,
+          types: const [_i5.LogBuffer, _i4.DemoLog],
           resolve: (f) => (
-            _i5.SpringWidgetBinding.bean<_i4.LogBuffer>(f),
-            _i5.SpringWidgetBinding.bean<_i3.DemoLog>(f),
+            _i6.SpringWidgetBinding.bean<_i5.LogBuffer>(f),
+            _i6.SpringWidgetBinding.bean<_i4.DemoLog>(f),
           ),
           values: (r) {
-            final v = (r as (_i4.LogBuffer, _i3.DemoLog));
+            final v = (r as (_i5.LogBuffer, _i4.DemoLog));
             return [v.$1, v.$2];
           },
         ),
-        _i5.SpringWidgetBinding(
+        _i6.SpringWidgetBinding(
           widget: r'package:theme_showcase_neon/src/pages/themes_page.dart#ThemesPage',
-          beans: _i7.ThemesBeans,
-          types: const [_i4.ThemeSelection, _i4.SpringThemes],
+          beans: _i8.ThemesBeans,
+          types: const [_i5.ThemeSelection, _i5.SpringThemes],
           resolve: (f) => (
-            _i5.SpringWidgetBinding.bean<_i4.ThemeSelection>(f),
-            _i5.SpringWidgetBinding.bean<_i4.SpringThemes>(f),
+            _i6.SpringWidgetBinding.bean<_i5.ThemeSelection>(f),
+            _i6.SpringWidgetBinding.bean<_i5.SpringThemes>(f),
           ),
           values: (r) {
-            final v = (r as (_i4.ThemeSelection, _i4.SpringThemes));
+            final v = (r as (_i5.ThemeSelection, _i5.SpringThemes));
             return [v.$1, v.$2];
           },
         ),
       ]),
     ),
-    _i2.BeanDefinition<_i4.ScreenRoutes>(
+    _i3.BeanDefinition<_i5.ScreenRoutes>(
       name: r'screenRoutes#application',
       source: r'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart#ScreenRoutes',
       create: (r) =>
-          _i4.ScreenRoutes.route(source: r'application')
+          _i5.ScreenRoutes.route(source: r'application')
               .shell(
-                (s) => _i8.Shell(s),
+                (s) => _i9.Shell(s),
                 (t) => t
                     .branch(r'/overview', (b) => b)
                     .branch(r'/components', (b) => b)
@@ -162,117 +162,117 @@ _i2.BeanModule get $application => _i2.BeanModule(
                     .branch(r'/logs', (b) => b)
                     .branch(r'/transitions', (b) => b)
                     .branch(r'/themes', (b) => b),
-                key: _i8.Shell,
+                key: _i9.Shell,
                 source: r'package:theme_showcase_neon/src/app/shell.dart#Shell',
               )
               .screen(
                 r'/background',
-                (r) => const _i9.BackgroundPage(),
+                (r) => const _i10.BackgroundPage(),
                 name: r'background-page',
                 title: r'#{nav.background}',
                 source: r'package:theme_showcase_neon/src/pages/background_page.dart#BackgroundPage',
               )
               .screen(
                 r'/components',
-                (r) => const _i10.ComponentsPage(),
+                (r) => const _i11.ComponentsPage(),
                 name: r'components-page',
                 title: r'#{nav.components}',
                 source: r'package:theme_showcase_neon/src/pages/components_page.dart#ComponentsPage',
               )
               .screen(
                 r'/loaders',
-                (r) => const _i11.LoadersPage(),
+                (r) => const _i12.LoadersPage(),
                 name: r'loaders-page',
                 title: r'#{nav.loaders}',
                 source: r'package:theme_showcase_neon/src/pages/loaders_page.dart#LoadersPage',
               )
               .screen(
                 r'/logs',
-                (r) => const _i6.LogsPage(),
+                (r) => const _i7.LogsPage(),
                 name: r'logs-page',
                 title: r'#{nav.logs}',
                 source: r'package:theme_showcase_neon/src/pages/logs_page.dart#LogsPage',
               )
               .screen(
                 r'/motion',
-                (r) => const _i12.MotionPage(),
+                (r) => const _i13.MotionPage(),
                 name: r'motion-page',
                 title: r'#{nav.motion}',
                 source: r'package:theme_showcase_neon/src/pages/motion_page.dart#MotionPage',
               )
-              .notFound((r) => const _i13.NotFoundPage())
+              .notFound((r) => const _i14.NotFoundPage())
               .screen(
                 r'/overview',
-                (r) => const _i14.OverviewPage(),
+                (r) => const _i15.OverviewPage(),
                 name: r'overview-page',
                 title: r'#{nav.overview}',
                 source: r'package:theme_showcase_neon/src/pages/overview_page.dart#OverviewPage',
               )
               .screen(
                 r'/states',
-                (r) => const _i15.StatesPage(),
+                (r) => const _i16.StatesPage(),
                 name: r'states-page',
                 title: r'#{nav.states}',
                 source: r'package:theme_showcase_neon/src/pages/states_page.dart#StatesPage',
               )
               .screen(
                 r'/themes',
-                (r) => const _i7.ThemesPage(),
+                (r) => const _i8.ThemesPage(),
                 name: r'themes-page',
                 title: r'#{nav.themes}',
                 source: r'package:theme_showcase_neon/src/pages/themes_page.dart#ThemesPage',
               )
               .screen(
                 r'/tokens',
-                (r) => const _i16.TokensPage(),
+                (r) => const _i17.TokensPage(),
                 name: r'tokens-page',
                 title: r'#{nav.tokens}',
                 source: r'package:theme_showcase_neon/src/pages/tokens_page.dart#TokensPage',
               )
               .screen(
                 r'/transitions',
-                (r) => const _i17.TransitionsPage(),
+                (r) => const _i18.TransitionsPage(),
                 name: r'transitions-page',
                 title: r'#{nav.transitions}',
                 source: r'package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionsPage',
               )
               .screen(
                 r'/transitions/default',
-                (r) => const _i17.TransitionThemePage(),
+                (r) => const _i18.TransitionThemePage(),
                 name: r'transition-theme-page',
                 title: r'With the default',
                 source: r'package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionThemePage',
               )
               .screen(
                 r'/transitions/platform',
-                (r) => const _i17.TransitionPlatformPage(),
+                (r) => const _i18.TransitionPlatformPage(),
                 name: r'transition-platform-page',
                 title: "With the platform's",
-                transition: _i4.PageTransition.platform,
+                transition: _i5.PageTransition.platform,
                 source: r'package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionPlatformPage',
               )
               .screen(
                 r'/transitions/fade-upwards',
-                (r) => const _i17.TransitionFadeUpwardsPage(),
+                (r) => const _i18.TransitionFadeUpwardsPage(),
                 name: r'transition-fade-upwards-page',
                 title: r'With a fade upwards',
-                transition: _i4.PageTransition.fadeUpwards,
+                transition: _i5.PageTransition.fadeUpwards,
                 source: r'package:theme_showcase_neon/src/pages/transitions_page.dart#TransitionFadeUpwardsPage',
               )
               .build(),
     ),
   ],
   resources: const {
-    r'application-desktop.properties': _i2.EmbeddedResource.text(
+    r'application-desktop.properties': _i3.EmbeddedResource.text(
       '# Desktops: the window opens wide and cannot get small.\nspring.flutter.desktop.window.title=Theme Showcase NEON\nspring.flutter.desktop.window.initial-size=1280x800\nspring.flutter.desktop.window.min-size=900x600\n',
     ),
-    r'application.yml': _i2.EmbeddedResource.text(
+    r'application.yml': _i3.EmbeddedResource.text(
       '# THEME SHOWCASE NEON: a custom design system on the theme, with no\n# Material and no Cupertino. The look of every widget is in neon_ui\'s\n# themes/neon.yml (imported below); this file holds the app and a second theme\n# of its own that extends it. The pages quote lines of these two files in\n# their code boxes (a test checks that they do).\nspring:\n   config:\n      # The theme of the library: `neon_ui` embeds its lib/resources/, so the\n      # file is found as if it were ours. code.yml: the languages of the\n      # code blocks, a copy of themes/code.yml of farum-azula/themes.\n      import: resources:themes/neon.yml, resources:themes/code.yml\n\n   flutter:\n      web:\n         dev-server:\n            port: 1010\n      # The pages are screens with their own addresses (/components,\n      # /themes, ...): `/` opens the overview.\n      navigation:\n         initial: /overview\n      app:\n         # A WidgetsApp: no Scaffold, no AppBar, no Material or Cupertino\n         # widgets. Everything on screen is a neon_ui widget or our own.\n         type: widgets\n         title: Theme Showcase NEON\n         debug-banner: false\n\n      theme:\n         # The theme shown at the start. `neon` is the library\'s.\n         active: neon\n\n         themes:\n            # The library\'s theme again, to add what is the app\'s: the splash\n            # that shows while the app starts, and loaders in the neon colors.\n            # The splash is the neon-gate loader of neon_ui\'s themes/neon.yml\n            # (a kind of the library): a gate of panels it draws itself, so\n            # the splash has no logo or title. With `reveal` the panels part\n            # over the app, not over the background. The built-in kinds are\n            # written here.\n            neon:\n               splash:\n                  background: { color: \$colors.surface-container-lowest }\n                  loader: neon-gate\n                  exit: { transition: 200ms ease-out, reveal: true }\n               loaders:\n                  spinner: { kind: spinner, color: \$neon.cyan, size: 28, stroke: 3, track: { color: \$neon.cyan, alpha: 20% } }\n                  dots: { kind: dots, color: \$neon.pink, size: 10, count: 3 }\n                  upload: { kind: bar, color: \$neon.yellow, track: { color: \$neon.yellow, alpha: 20% }, height: 4, width: 240 }\n                  card:\n                     kind: skeleton\n                     base: \$colors.surface-container-high\n                     highlight: \$colors.surface-container-highest\n                     radius: \$shape.extra-small\n                     shimmer: { duration: 1.2s, angle: 20 }\n            # A theme of our own: neon with cyan as its primary color. Only\n            # what changes is written; `extends` brings the rest. The accent,\n            # the glow, the button fills and the modal border all say\n            # `\$colors.primary` or `\$neon.accent`, so they turn cyan too.\n            neon-ice:\n               extends: neon\n               colors:\n                  primary: \$neon.cyan\n                  secondary: \$neon.yellow\n               tokens:\n                  neon:\n                     panel: "#CC0B1218"\n                     input-fill: "#B3081016"\n\n         # The tokens of this app (the library\'s are neon_ui\'s).\n         tokens:\n            showcase:\n               content-width: 980\n               tile-height: 150\n               tagline: Yellow, cyan and pink after dark\n         styles:\n            # A tile of the theme switcher: our own style, per state, made with\n            # the same ThemeStates as the library\'s widgets.\n            showcase-tile:\n               padding: [16, 14]\n               radius: \$shape.extra-small\n               border:\n                  default: \$colors.outline\n                  hovered: \$colors.secondary\n                  focused: \$colors.secondary\n                  selected: \$colors.primary\n               fill:\n                  default: { color: \$colors.surface-container-low, alpha: 80% }\n                  hovered: { color: \$colors.surface-container, alpha: 90% }\n                  selected: { color: \$colors.primary, alpha: 12% }\n               glow: { default: 0, hovered: 8, selected: 14 }\n               transition: 160ms ease-out\n',
     ),
-    r'messages.properties': _i2.EmbeddedResource.text(
+    r'messages.properties': _i3.EmbeddedResource.text(
       '# Typed messages: context.messages.nav.overview, context.messages.themes.active(name).\nnav.overview=Overview\nnav.components=Components\nnav.states=States\nnav.motion=Motion\nnav.loaders=Loaders\nnav.background=Background\nnav.tokens=Tokens\nnav.logs=Logs\nnav.transitions=Transitions\nnav.themes=Themes\nthemes.active=Theme: {0}\n',
     ),
-    r'themes/code.yml': _i2.EmbeddedResource.text(
+    r'themes/code.yml': _i3.EmbeddedResource.text(
       '# The languages of the code blocks (`syntax.<language>`), a copy of\n# themes/code.yml of github.com/farum-azula/themes: the starter knows no\n# language by itself. The colors of the pieces are each theme\'s\n# `styles.code`. An app online can take the file instead:\n#   spring.flutter.theme.source: github:farum-azula/themes/themes/code.yml@<tag>\nspring:\n  flutter:\n    theme:\n      syntax:\n        dart:\n          keywords: [abstract, as, assert, async, await, base, break, case, catch, class, const, continue, covariant, default, deferred, do, dynamic, else, enum, export, extends, extension, external, factory, \'false\', final, finally, for, Function, get, hide, if, implements, import, in, interface, is, late, library, mixin, new, \'null\', of, \'on\', operator, part, required, rethrow, return, sealed, set, show, static, super, switch, sync, this, throw, \'true\', try, typedef, var, void, when, while, with, yield]\n          types: \'^(?:int|double|num|bool|_?[A-Z][A-Za-z0-9_]*[a-z][A-Za-z0-9_]*)\$\'\n          rules:\n            - { match: \'//[^\\n]*|/\\*[\\s\\S]*?\\*/\', kind: comment }\n            - { match: \'r?\'\'\'\'\'\'[\\s\\S]*?\'\'\'\'\'\'|r?"""[\\s\\S]*?"""|r?\'\'(?:\\\\.|[^\'\'\\\\\\n])*\'\'|r?"(?:\\\\.|[^"\\\\\\n])*"\', kind: string }\n            - { match: \'@[A-Za-z_][A-Za-z0-9_.]*\', kind: annotation }\n            - { match: \'\\b(?:0x[0-9a-fA-F]+|\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)\\b\', kind: number }\n            - { match: \'[A-Za-z_\$][A-Za-z0-9_\$]*\', kind: word }\n            - { match: \'[{}()\\[\\];,]\', kind: punctuation }\n\n        java:\n          keywords: [abstract, assert, boolean, break, byte, case, catch, char, class, const, continue, default, do, double, else, enum, extends, \'false\', final, finally, float, for, if, implements, import, instanceof, int, interface, long, native, new, \'null\', package, permits, private, protected, public, record, return, sealed, short, static, super, switch, synchronized, this, throw, throws, \'true\', try, var, void, volatile, while, yield]\n          types: \'^[A-Z][A-Za-z0-9_]*[a-z][A-Za-z0-9_]*\$\'\n          rules:\n            - { match: \'//[^\\n]*|/\\*[\\s\\S]*?\\*/\', kind: comment }\n            - { match: \'"""[\\s\\S]*?"""|"(?:\\\\.|[^"\\\\\\n])*"|\'\'(?:\\\\.|[^\'\'\\\\\\n])*\'\'\', kind: string }\n            - { match: \'@[A-Za-z_][A-Za-z0-9_.]*\', kind: annotation }\n            - { match: \'\\b(?:0x[0-9a-fA-F_]+[lL]?|\\d[\\d_]*(?:\\.\\d+)?(?:[eE][+-]?\\d+)?[lLfFdD]?)\\b\', kind: number }\n            - { match: \'[A-Za-z_\$][A-Za-z0-9_\$]*\', kind: word }\n            - { match: \'[{}()\\[\\];,]\', kind: punctuation }\n\n        yaml:\n          aliases: [yml]\n          rules:\n            - { match: \'(?<=^|\\s)#[^\\n]*\', kind: comment }\n            - { match: \'^(?:---|\\.\\.\\.)(?=\\s|\$)\', kind: punctuation }\n            - { match: \'(?<=^[ \\t]*(?:-[ \\t]+)*)-(?=\\s|\$)\', kind: punctuation }\n            - { match: \'(?<=^[ \\t]*(?:-[ \\t]+)*)(?:"(?:\\\\.|[^"\\\\\\n])*"|\'\'(?:\'\'\'\'|[^\'\'\\n])*\'\'|[^\\s#:,{}\\[\\]&*!|>%@`\'\'"-][^#:,{}\\[\\]\\n]*?|-[^\\s#:,{}\\[\\]][^#:,{}\\[\\]\\n]*?)(?=[ \\t]*:(?:\\s|\$))\', kind: key }\n            - { match: \'(?<=[{,][ \\t]*)[^\\s#:,{}\\[\\]\'\'"][^#:,{}\\[\\]\\n]*?(?=[ \\t]*:(?:\\s|\$|[,}\\]]))\', kind: key }\n            - { match: \':(?=\\s|\$|[,}\\]])\', kind: punctuation }\n            - { match: \'[{}\\[\\],]\', kind: punctuation }\n            - { match: \'"(?:\\\\.|[^"\\\\\\n])*"?|\'\'(?:\'\'\'\'|[^\'\'\\n])*\'\'?\', kind: string }\n            - { match: \'[|>][-+0-9]*(?=[ \\t]*\$)\', kind: punctuation }\n            - { match: \'[&*][\\w.-]+\', kind: variable }\n            - { match: \'![\\w!./:-]*\', kind: annotation }\n            - { match: \'\\\$\\{[^}\\n]*\\}|\\\$[A-Za-z_][A-Za-z0-9_]*(?:[.-][A-Za-z0-9_]+)*\', kind: variable }\n            - { match: \'(?<![\\w.\$-])[-+]?(?:0x[0-9a-fA-F]+|(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:[eE][-+]?\\d+)?(?:ms|us|ns|s|m|h|d|%|px|x)?)(?![\\w.\$-])\', kind: number }\n            - { match: \'(?<![\\w.\$-])(?:true|false|null|yes|no|on|off|True|False|Null|TRUE|FALSE|NULL|~)(?![\\w.\$-])\', kind: keyword }\n            - { match: \'[^\\s,{}\\[\\]#\$]+\', kind: string }\n\n        properties:\n          aliases: [ini]\n          rules:\n            - { match: \'^[ \\t]*[#!][^\\n]*\', kind: comment }\n            - { match: \'(?<=^[ \\t]*)[^\\s=:#!][^=:\\n]*?(?=[ \\t]*[=:]|[ \\t]+\\S|[ \\t]*\$)\', kind: key }\n            - { match: \'(?<=^[ \\t]*[^\\s=:#!][^=:\\n]*?[ \\t]*)[=:]\', kind: punctuation }\n            - { match: \',\', kind: punctuation }\n            - { match: \'\\\$\\{[^}\\n]*\\}|\\\$[A-Za-z_][A-Za-z0-9_]*(?:[.-][A-Za-z0-9_]+)*\', kind: variable }\n            - { match: \'(?<![\\w.\$-])[-+]?(?:0x[0-9a-fA-F]+|(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:[eE][-+]?\\d+)?(?:ms|us|ns|s|m|h|d|%|px|x)?)(?![\\w.\$-])\', kind: number }\n            - { match: \'(?<![\\w.\$-])(?:true|false|null|yes|no|on|off)(?![\\w.\$-])\', kind: keyword }\n            - { match: \'[^\\s,\$]+\', kind: string }\n\n        shell:\n          aliases: [sh, bash, zsh, console]\n          keywords: [if, then, else, elif, fi, for, in, do, done, while, case, esac, function, export, cd, echo, return]\n          rules:\n            - { match: \'#[^\\n]*\', kind: comment }\n            - { match: \'\'\'[^\'\']*\'\'|"(?:\\\\.|[^"\\\\])*"\', kind: string }\n            - { match: \'\\s--?[A-Za-z][\\w-]*\', kind: key }\n            - { match: \'\\\$\\{[^}\\n]*\\}|\\\$[A-Za-z_][A-Za-z0-9_]*(?:[.-][A-Za-z0-9_]+)*\', kind: variable }\n            - { match: \'\\|\\||&&|[|;<>]\', kind: punctuation }\n            - { match: \'[A-Za-z_][A-Za-z0-9_-]*\', kind: word }\n\n        json:\n          rules:\n            - { match: \'"(?:\\\\.|[^"\\\\])*"(?=\\s*:)\', kind: key }\n            - { match: \'"(?:\\\\.|[^"\\\\])*"\', kind: string }\n            - { match: \'-?\\b\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?\\b\', kind: number }\n            - { match: \'\\b(?:true|false|null)\\b\', kind: keyword }\n            - { match: \'[{}\\[\\],:]\', kind: punctuation }\n',
     ),
   },
@@ -283,21 +283,13 @@ _i2.BeanModule get $application => _i2.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i18.neonUiAutoConfiguration,
-    _i19.springBootAutoConfiguration,
-    _i20.springBootStarterFlutterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i20.springBootStarterFlutterDebugAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i20.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i20.springBootStarterFlutterDebugIsolatesAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i20.springBootStarterFlutterDebugMotionAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i20.springBootStarterFlutterDebugTimelineAutoConfiguration,
+    _i19.neonUiAutoConfiguration,
+    _i20.springBootAutoConfiguration,
+    _i2.springBootStarterFlutterAutoConfiguration,
     _i21.springBootStarterFlutterNavigationAutoConfiguration,
     _i22.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')
@@ -318,7 +310,7 @@ Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// The route of [BackgroundPage]: its path, name, values and `to`.
-extension BackgroundPageRoute on _i9.BackgroundPage {
+extension BackgroundPageRoute on _i10.BackgroundPage {
   /// The path pattern.
   static const pattern = r'/background';
 
@@ -326,11 +318,11 @@ extension BackgroundPageRoute on _i9.BackgroundPage {
   static const routeName = r'background-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [ComponentsPage]: its path, name, values and `to`.
-extension ComponentsPageRoute on _i10.ComponentsPage {
+extension ComponentsPageRoute on _i11.ComponentsPage {
   /// The path pattern.
   static const pattern = r'/components';
 
@@ -338,11 +330,11 @@ extension ComponentsPageRoute on _i10.ComponentsPage {
   static const routeName = r'components-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [LoadersPage]: its path, name, values and `to`.
-extension LoadersPageRoute on _i11.LoadersPage {
+extension LoadersPageRoute on _i12.LoadersPage {
   /// The path pattern.
   static const pattern = r'/loaders';
 
@@ -350,11 +342,11 @@ extension LoadersPageRoute on _i11.LoadersPage {
   static const routeName = r'loaders-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [LogsPage]: its path, name, values and `to`.
-extension LogsPageRoute on _i6.LogsPage {
+extension LogsPageRoute on _i7.LogsPage {
   /// The path pattern.
   static const pattern = r'/logs';
 
@@ -362,11 +354,11 @@ extension LogsPageRoute on _i6.LogsPage {
   static const routeName = r'logs-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [MotionPage]: its path, name, values and `to`.
-extension MotionPageRoute on _i12.MotionPage {
+extension MotionPageRoute on _i13.MotionPage {
   /// The path pattern.
   static const pattern = r'/motion';
 
@@ -374,11 +366,11 @@ extension MotionPageRoute on _i12.MotionPage {
   static const routeName = r'motion-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [OverviewPage]: its path, name, values and `to`.
-extension OverviewPageRoute on _i14.OverviewPage {
+extension OverviewPageRoute on _i15.OverviewPage {
   /// The path pattern.
   static const pattern = r'/overview';
 
@@ -386,11 +378,11 @@ extension OverviewPageRoute on _i14.OverviewPage {
   static const routeName = r'overview-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [StatesPage]: its path, name, values and `to`.
-extension StatesPageRoute on _i15.StatesPage {
+extension StatesPageRoute on _i16.StatesPage {
   /// The path pattern.
   static const pattern = r'/states';
 
@@ -398,11 +390,11 @@ extension StatesPageRoute on _i15.StatesPage {
   static const routeName = r'states-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [ThemesPage]: its path, name, values and `to`.
-extension ThemesPageRoute on _i7.ThemesPage {
+extension ThemesPageRoute on _i8.ThemesPage {
   /// The path pattern.
   static const pattern = r'/themes';
 
@@ -410,11 +402,11 @@ extension ThemesPageRoute on _i7.ThemesPage {
   static const routeName = r'themes-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [TokensPage]: its path, name, values and `to`.
-extension TokensPageRoute on _i16.TokensPage {
+extension TokensPageRoute on _i17.TokensPage {
   /// The path pattern.
   static const pattern = r'/tokens';
 
@@ -422,11 +414,11 @@ extension TokensPageRoute on _i16.TokensPage {
   static const routeName = r'tokens-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [TransitionsPage]: its path, name, values and `to`.
-extension TransitionsPageRoute on _i17.TransitionsPage {
+extension TransitionsPageRoute on _i18.TransitionsPage {
   /// The path pattern.
   static const pattern = r'/transitions';
 
@@ -434,11 +426,11 @@ extension TransitionsPageRoute on _i17.TransitionsPage {
   static const routeName = r'transitions-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [TransitionThemePage]: its path, name, values and `to`.
-extension TransitionThemePageRoute on _i17.TransitionThemePage {
+extension TransitionThemePageRoute on _i18.TransitionThemePage {
   /// The path pattern.
   static const pattern = r'/transitions/default';
 
@@ -446,11 +438,11 @@ extension TransitionThemePageRoute on _i17.TransitionThemePage {
   static const routeName = r'transition-theme-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [TransitionPlatformPage]: its path, name, values and `to`.
-extension TransitionPlatformPageRoute on _i17.TransitionPlatformPage {
+extension TransitionPlatformPageRoute on _i18.TransitionPlatformPage {
   /// The path pattern.
   static const pattern = r'/transitions/platform';
 
@@ -458,11 +450,11 @@ extension TransitionPlatformPageRoute on _i17.TransitionPlatformPage {
   static const routeName = r'transition-platform-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [TransitionFadeUpwardsPage]: its path, name, values and `to`.
-extension TransitionFadeUpwardsPageRoute on _i17.TransitionFadeUpwardsPage {
+extension TransitionFadeUpwardsPageRoute on _i18.TransitionFadeUpwardsPage {
   /// The path pattern.
   static const pattern = r'/transitions/fade-upwards';
 
@@ -470,20 +462,20 @@ extension TransitionFadeUpwardsPageRoute on _i17.TransitionFadeUpwardsPage {
   static const routeName = r'transition-fade-upwards-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// `@Log` of [PageLog]: the logger 'theme_showcase_neon.pages'.
-extension $PageLogLog on _i3.PageLog {
-  _i2.SpringLog get log => const _i2.SpringLog(r'theme_showcase_neon.pages');
+extension $PageLogLog on _i4.PageLog {
+  _i3.SpringLog get log => const _i3.SpringLog(r'theme_showcase_neon.pages');
 }
 
 /// `@Log` of [ThemeLog]: the logger 'theme_showcase_neon.themes'.
-extension $ThemeLogLog on _i3.ThemeLog {
-  _i2.SpringLog get log => const _i2.SpringLog(r'theme_showcase_neon.themes');
+extension $ThemeLogLog on _i4.ThemeLog {
+  _i3.SpringLog get log => const _i3.SpringLog(r'theme_showcase_neon.themes');
 }
 
 /// `@Log` of [DemoLog]: the logger 'theme_showcase_neon.demo'.
-extension $DemoLogLog on _i3.DemoLog {
-  _i2.SpringLog get log => const _i2.SpringLog(r'theme_showcase_neon.demo');
+extension $DemoLogLog on _i4.DemoLog {
+  _i3.SpringLog get log => const _i3.SpringLog(r'theme_showcase_neon.demo');
 }

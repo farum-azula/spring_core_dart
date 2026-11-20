@@ -12,14 +12,14 @@
 import 'dart:async' as _i4;
 import 'dart:collection' as _i3;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i8;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i8;
-import 'package:spring_boot_starter_flutter_signals/src/annotations.dart'
     as _i5;
-import 'package:spring_boot_starter_flutter_signals/src/properties/properties_beans.dart'
+import 'package:spring_boot_starter_flutter_signals/src/annotations.dart'
     as _i6;
+import 'package:spring_boot_starter_flutter_signals/src/properties/properties_beans.dart'
+    as _i7;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i9;
 
@@ -204,7 +204,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           r'watch',
           isVoid: true,
           invoke: _$invoke0,
-          annotations: [_i5.Effect()],
+          annotations: [_i6.Effect()],
         ),
       ],
       annotations: const [_i2.Component()],
@@ -214,7 +214,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             r'watch',
             _$target1,
             returnType: r'void',
-            annotations: [_i5.Effect()],
+            annotations: [_i6.Effect()],
             annotationTypes: [r'Effect'],
           ),
           _i2.MethodSignature.of(
@@ -229,7 +229,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target1,
             kind: _i2.MemberKind.getter,
             returnType: r'double',
-            annotations: [_i5.Computed()],
+            annotations: [_i6.Computed()],
             annotationTypes: [r'Computed'],
           ),
           _i2.MethodSignature.of(
@@ -238,7 +238,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringType: r'Counted',
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
             implementingTypes: [r'Counted'],
             implementingTypeAnnotations: [],
@@ -250,7 +250,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringType: r'Counted',
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Computed()],
+            annotations: [_i6.Computed()],
             annotationTypes: [r'Computed'],
             implementingTypes: [r'Counted'],
             implementingTypeAnnotations: [],
@@ -262,7 +262,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringType: r'Counted',
             kind: _i2.MemberKind.setter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
             implementingTypes: [r'Counted'],
             implementingTypeAnnotations: [],
@@ -274,7 +274,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringType: r'Priced',
             kind: _i2.MemberKind.getter,
             returnType: r'double',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
             implementingTypes: [r'Priced'],
             implementingTypeAnnotations: [],
@@ -286,7 +286,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringType: r'Priced',
             kind: _i2.MemberKind.setter,
             returnType: r'double',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
             implementingTypes: [r'Priced'],
             implementingTypeAnnotations: [],
@@ -313,7 +313,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringTypes: [r'Overriding', r'Counted'],
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Computed()],
+            annotations: [_i6.Computed()],
             annotationTypes: [r'Computed'],
           ),
           _i2.MethodSignature.of(
@@ -322,7 +322,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringType: r'Counted',
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
             implementingTypes: [r'Counted'],
             implementingTypeAnnotations: [],
@@ -334,7 +334,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             declaringType: r'Counted',
             kind: _i2.MemberKind.setter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
             implementingTypes: [r'Counted'],
             implementingTypeAnnotations: [],
@@ -358,7 +358,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target3,
             kind: _i2.MemberKind.getter,
             returnType: r'String',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -366,7 +366,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target3,
             kind: _i2.MemberKind.getter,
             returnType: r'String',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -374,7 +374,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target3,
             kind: _i2.MemberKind.getter,
             returnType: r'String',
-            annotations: [_i5.Computed()],
+            annotations: [_i6.Computed()],
             annotationTypes: [r'Computed'],
           ),
           _i2.MethodSignature.of(
@@ -382,7 +382,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target3,
             kind: _i2.MemberKind.setter,
             returnType: r'String',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -390,7 +390,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target3,
             kind: _i2.MemberKind.setter,
             returnType: r'String',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
         ],
@@ -428,7 +428,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           r'start',
           isVoid: true,
           invoke: _$invoke5,
-          annotations: [_i5.Effect()],
+          annotations: [_i6.Effect()],
         ),
       ],
       annotations: const [_i2.Component()],
@@ -438,7 +438,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             r'start',
             _$target6,
             returnType: r'void',
-            annotations: [_i5.Effect()],
+            annotations: [_i6.Effect()],
             annotationTypes: [r'Effect'],
           ),
           _i2.MethodSignature.of(
@@ -446,7 +446,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target6,
             kind: _i2.MemberKind.getter,
             returnType: r'Settings',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -454,7 +454,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target6,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -468,7 +468,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target6,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Computed()],
+            annotations: [_i6.Computed()],
             annotationTypes: [r'Computed'],
           ),
           _i2.MethodSignature.of(
@@ -476,7 +476,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target6,
             kind: _i2.MemberKind.setter,
             returnType: r'Settings',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -484,7 +484,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target6,
             kind: _i2.MemberKind.setter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -515,7 +515,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target7,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -535,7 +535,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target7,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Computed()],
+            annotations: [_i6.Computed()],
             annotationTypes: [r'Computed'],
           ),
           _i2.MethodSignature.of(
@@ -543,7 +543,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target7,
             kind: _i2.MemberKind.setter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -574,7 +574,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           r'watch',
           isVoid: true,
           invoke: _$invoke8,
-          annotations: [_i5.Effect()],
+          annotations: [_i6.Effect()],
         ),
       ],
       annotations: const [_i2.Component(), _i2.Scope(r'prototype')],
@@ -584,7 +584,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             r'watch',
             _$target9,
             returnType: r'void',
-            annotations: [_i5.Effect()],
+            annotations: [_i6.Effect()],
             annotationTypes: [r'Effect'],
           ),
           _i2.MethodSignature.of(
@@ -592,7 +592,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target9,
             kind: _i2.MemberKind.getter,
             returnType: r'String',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -606,7 +606,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target9,
             kind: _i2.MemberKind.setter,
             returnType: r'String',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -634,7 +634,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           r'watch',
           isVoid: true,
           invoke: _$invoke10,
-          annotations: [_i5.Effect()],
+          annotations: [_i6.Effect()],
         ),
       ],
       annotations: const [_i2.Component(), _i2.Scope(r'screen')],
@@ -644,7 +644,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             r'watch',
             _$target11,
             returnType: r'void',
-            annotations: [_i5.Effect()],
+            annotations: [_i6.Effect()],
             annotationTypes: [r'Effect'],
           ),
           _i2.MethodSignature.of(r'bye', _$target11, returnType: r'void'),
@@ -653,7 +653,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target11,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -679,7 +679,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target11,
             kind: _i2.MemberKind.setter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -734,7 +734,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.getter,
             returnType: r'Function',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -742,7 +742,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.getter,
             returnType: r'Record',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -754,7 +754,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
               _i2.TypeCapture<String>(),
               _i2.TypeCapture<List<int>>(),
             ],
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -763,14 +763,14 @@ _i2.BeanModule get $application => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'Iterable',
             returnTypeArguments: [_i2.TypeCapture<int>()],
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
             r'any',
             _$target12,
             kind: _i2.MemberKind.getter,
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -778,7 +778,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.getter,
             returnType: r'Object',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -787,7 +787,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'List',
             returnTypeArguments: [_i2.TypeCapture<String>()],
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -796,7 +796,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'Set',
             returnTypeArguments: [_i2.TypeCapture<int>()],
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -804,7 +804,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.getter,
             returnType: r'num',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -813,7 +813,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'HashSet',
             returnTypeArguments: [_i2.TypeCapture<int>()],
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -822,7 +822,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'ListQueue',
             returnTypeArguments: [_i2.TypeCapture<int>()],
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -834,7 +834,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
               _i2.TypeCapture<String>(),
               _i2.TypeCapture<int>(),
             ],
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -843,7 +843,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'UnmodifiableListView',
             returnTypeArguments: [_i2.TypeCapture<int>()],
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -857,7 +857,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.setter,
             returnType: r'Function',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -865,7 +865,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.setter,
             returnType: r'Record',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -873,7 +873,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.setter,
             returnType: r'Map',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -881,14 +881,14 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.setter,
             returnType: r'Iterable',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
             r'any',
             _$target12,
             kind: _i2.MemberKind.setter,
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -896,7 +896,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.setter,
             returnType: r'Object',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -904,7 +904,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.setter,
             returnType: r'List',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -912,7 +912,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.setter,
             returnType: r'Set',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -920,7 +920,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.setter,
             returnType: r'num',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -928,7 +928,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.setter,
             returnType: r'HashSet',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -936,7 +936,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.setter,
             returnType: r'ListQueue',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -944,7 +944,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.setter,
             returnType: r'LinkedHashMap',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -952,7 +952,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target12,
             kind: _i2.MemberKind.setter,
             returnType: r'UnmodifiableListView',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -976,7 +976,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           r'watch',
           isVoid: true,
           invoke: _$invoke13,
-          annotations: [_i5.Effect()],
+          annotations: [_i6.Effect()],
         ),
       ],
       annotations: const [_i2.Component()],
@@ -986,7 +986,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             r'watch',
             _$target14,
             returnType: r'void',
-            annotations: [_i5.Effect()],
+            annotations: [_i6.Effect()],
             annotationTypes: [r'Effect'],
           ),
           _i2.MethodSignature.of(r'later', _$target14, returnType: r'Future'),
@@ -996,7 +996,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target14,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -1004,7 +1004,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target14,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -1019,7 +1019,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target14,
             kind: _i2.MemberKind.setter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -1027,7 +1027,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target14,
             kind: _i2.MemberKind.setter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
         ],
@@ -1045,7 +1045,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           r'clamp',
           isVoid: true,
           invoke: _$invoke15,
-          annotations: [_i5.Effect()],
+          annotations: [_i6.Effect()],
         ),
       ],
       annotations: const [_i2.Component()],
@@ -1055,7 +1055,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             r'clamp',
             _$target16,
             returnType: r'void',
-            annotations: [_i5.Effect()],
+            annotations: [_i6.Effect()],
             annotationTypes: [r'Effect'],
           ),
           _i2.MethodSignature.of(
@@ -1063,7 +1063,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target16,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -1077,7 +1077,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target16,
             kind: _i2.MemberKind.setter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -1101,7 +1101,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           r'check',
           isVoid: true,
           invoke: _$invoke17,
-          annotations: [_i5.Effect()],
+          annotations: [_i6.Effect()],
         ),
       ],
       annotations: const [_i2.Component()],
@@ -1111,7 +1111,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             r'check',
             _$target18,
             returnType: r'void',
-            annotations: [_i5.Effect()],
+            annotations: [_i6.Effect()],
             annotationTypes: [r'Effect'],
           ),
           _i2.MethodSignature.of(
@@ -1119,7 +1119,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target18,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -1127,7 +1127,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target18,
             kind: _i2.MemberKind.setter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
         ],
@@ -1148,7 +1148,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target19,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -1156,7 +1156,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target19,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Computed()],
+            annotations: [_i6.Computed()],
             annotationTypes: [r'Computed'],
           ),
           _i2.MethodSignature.of(
@@ -1164,7 +1164,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target19,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Computed()],
+            annotations: [_i6.Computed()],
             annotationTypes: [r'Computed'],
           ),
           _i2.MethodSignature.of(
@@ -1172,7 +1172,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target19,
             kind: _i2.MemberKind.setter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
         ],
@@ -1209,7 +1209,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target20,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -1217,7 +1217,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target20,
             kind: _i2.MemberKind.setter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
         ],
@@ -1274,7 +1274,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           r'watch',
           isVoid: true,
           invoke: _$invoke21,
-          annotations: [_i5.Effect()],
+          annotations: [_i6.Effect()],
         ),
       ],
       annotations: const [_i2.Component()],
@@ -1284,7 +1284,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             r'watch',
             _$target22,
             returnType: r'void',
-            annotations: [_i5.Effect()],
+            annotations: [_i6.Effect()],
             annotationTypes: [r'Effect'],
           ),
           _i2.MethodSignature.of(
@@ -1324,7 +1324,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target22,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -1332,7 +1332,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target22,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -1348,7 +1348,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             kind: _i2.MemberKind.getter,
             returnType: r'Future',
             returnTypeArguments: [_i2.TypeCapture<int>()],
-            annotations: [_i1.Audited(), _i5.Computed()],
+            annotations: [_i1.Audited(), _i6.Computed()],
             annotationTypes: [r'Audited', r'Computed'],
           ),
           _i2.MethodSignature.of(
@@ -1362,7 +1362,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target22,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i1.OwnerOnly(), _i5.Computed()],
+            annotations: [_i1.OwnerOnly(), _i6.Computed()],
             annotationTypes: [r'OwnerOnly', r'Computed'],
           ),
           _i2.MethodSignature.of(
@@ -1370,7 +1370,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target22,
             kind: _i2.MemberKind.setter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -1378,7 +1378,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target22,
             kind: _i2.MemberKind.setter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -1405,7 +1405,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target23,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -1413,7 +1413,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target23,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i1.OwnerOnly(), _i5.Computed()],
+            annotations: [_i1.OwnerOnly(), _i6.Computed()],
             annotationTypes: [r'OwnerOnly', r'Computed'],
           ),
           _i2.MethodSignature.of(
@@ -1421,7 +1421,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target23,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Computed()],
+            annotations: [_i6.Computed()],
             annotationTypes: [r'Computed'],
           ),
           _i2.MethodSignature.of(
@@ -1429,7 +1429,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target23,
             kind: _i2.MemberKind.setter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
         ],
@@ -1447,7 +1447,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           r'note',
           isVoid: true,
           invoke: _$invoke24,
-          annotations: [_i1.OwnerOnly(), _i5.Effect()],
+          annotations: [_i1.OwnerOnly(), _i6.Effect()],
         ),
       ],
       annotations: const [_i2.Component()],
@@ -1457,7 +1457,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             r'note',
             _$target25,
             returnType: r'void',
-            annotations: [_i1.OwnerOnly(), _i5.Effect()],
+            annotations: [_i1.OwnerOnly(), _i6.Effect()],
             annotationTypes: [r'OwnerOnly', r'Effect'],
           ),
           _i2.MethodSignature.of(
@@ -1465,7 +1465,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target25,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
           _i2.MethodSignature.of(
@@ -1480,7 +1480,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target25,
             kind: _i2.MemberKind.setter,
             returnType: r'int',
-            annotations: [_i5.Signal()],
+            annotations: [_i6.Signal()],
             annotationTypes: [r'Signal'],
           ),
         ],
@@ -1499,7 +1499,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
           r'watch',
           isVoid: true,
           invoke: _$invoke26,
-          annotations: [_i5.Effect()],
+          annotations: [_i6.Effect()],
         ),
       ],
       annotations: const [_i2.Component()],
@@ -1509,7 +1509,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             r'watch',
             _$target27,
             returnType: r'void',
-            annotations: [_i5.Effect()],
+            annotations: [_i6.Effect()],
             annotationTypes: [r'Effect'],
           ),
           _i2.MethodSignature.of(
@@ -1530,7 +1530,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
             _$target27,
             kind: _i2.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i5.Computed()],
+            annotations: [_i6.Computed()],
             annotationTypes: [r'Computed'],
           ),
         ],
@@ -1540,7 +1540,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
       ),
     ),
   ],
-  imports: [_i6.signalsConfigBeans],
+  imports: [_i7.signalsConfigBeans],
 );
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
@@ -1548,19 +1548,11 @@ _i2.BeanModule get $application => _i2.BeanModule(
 _i2.SpringApplication get springApplication => _i2.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i7.springBootAutoConfiguration,
-    _i8.springBootStarterFlutterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterFlutterDebugAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterFlutterDebugIsolatesAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterFlutterDebugMotionAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterFlutterDebugTimelineAutoConfiguration,
+    _i8.springBootAutoConfiguration,
+    _i5.springBootStarterFlutterAutoConfiguration,
     _i9.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

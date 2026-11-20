@@ -11,12 +11,12 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:flutter/widgets.dart';
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i8;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i8;
+    as _i2;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    as _i5;
+    as _i6;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter_material/spring_auto_configuration.dart'
     as _i9;
@@ -25,12 +25,12 @@ import 'package:spring_boot_starter_flutter_material/src/material_theme_design.d
 import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
     as _i10;
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
-    as _i4;
+    as _i5;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i11;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
-import 'package:static_site_app/src/pages.dart' as _i6;
-import 'package:static_site_app/src/server_info.dart' as _i2;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i4;
+import 'package:static_site_app/src/pages.dart' as _i7;
+import 'package:static_site_app/src/server_info.dart' as _i3;
 
 part 'main.spring.debug.dart';
 part 'main.spring.env.dart';
@@ -38,16 +38,16 @@ part 'theme.spring.keys.dart';
 
 /// `NetworkConfig` whose `@Bean` methods return the beans of the container
 /// (full-mode `@Configuration`).
-class _$NetworkConfigConfiguration extends _i2.NetworkConfig {
+class _$NetworkConfigConfiguration extends _i3.NetworkConfig {
   _$NetworkConfigConfiguration(this._$beanFactory);
 
-  final _i3.BeanFactory _$beanFactory;
+  final _i4.BeanFactory _$beanFactory;
 
   @override
-  _i4.HttpTransport httpTransport() =>
-      (this._$beanFactory.getBeanByName(r'httpTransport') as _i4.HttpTransport);
+  _i5.HttpTransport httpTransport() =>
+      (this._$beanFactory.getBeanByName(r'httpTransport') as _i5.HttpTransport);
 
-  _i4.HttpTransport _$httpTransport(_i3.DependencyResolver r) =>
+  _i5.HttpTransport _$httpTransport(_i4.DependencyResolver r) =>
       super.httpTransport();
 }
 
@@ -63,74 +63,74 @@ const _$knownAdvisors0 = {
 Type _$typeOf<T>() => T;
 
 /// Beans found by `@ComponentScan` in `lib/`.
-_i3.BeanModule get $application => _i3.BeanModule(
+_i4.BeanModule get $application => _i4.BeanModule(
   r'application',
   [
-    _i3.BeanDefinition<_i2.NetworkConfig>(
+    _i4.BeanDefinition<_i3.NetworkConfig>(
       name: r'networkConfig',
       source: r'package:static_site_app/src/server_info.dart#NetworkConfig',
       create: (r) => _$NetworkConfigConfiguration(r),
-      annotations: const [_i3.Configuration()],
+      annotations: const [_i4.Configuration()],
     ),
-    _i3.BeanDefinition<_i4.HttpTransport>(
+    _i4.BeanDefinition<_i5.HttpTransport>(
       name: r'httpTransport',
       source: r'package:static_site_app/src/server_info.dart#NetworkConfig.httpTransport',
       factoryBeanName: r'networkConfig',
       factoryMethodName: r'httpTransport',
       dependencies: const [
-        _i3.Dependency(_i2.NetworkConfig, qualifier: r'networkConfig'),
+        _i4.Dependency(_i3.NetworkConfig, qualifier: r'networkConfig'),
       ],
-      create: (r) => (r.dependency<_i2.NetworkConfig>(
+      create: (r) => (r.dependency<_i3.NetworkConfig>(
         qualifier: r'networkConfig',
       ) as _$NetworkConfigConfiguration)._$httpTransport(r),
       destroyMethod: (bean) {
         bean.close();
       },
       destroyMethodName: r'(inferred)',
-      annotations: const [_i3.Bean()],
-      aopProxy: const _i3.AopProxyFactory.pruned(
+      annotations: const [_i4.Bean()],
+      aopProxy: const _i4.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i2.ServerInfoClient>(
+    _i4.BeanDefinition<_i3.ServerInfoClient>(
       name: r'serverInfoClient',
       source: r'package:static_site_app/src/server_info.dart#ServerInfoClient',
       dependencies: const [
-        _i3.Dependency(_i4.HttpTransport, name: r'_transport'),
+        _i4.Dependency(_i5.HttpTransport, name: r'_transport'),
       ],
-      create: (r) => _i2.ServerInfoClient(
-        r.dependency<_i4.HttpTransport>(name: r'_transport'),
+      create: (r) => _i3.ServerInfoClient(
+        r.dependency<_i5.HttpTransport>(name: r'_transport'),
       ),
-      annotations: const [_i3.Service()],
-      aopProxy: const _i3.AopProxyFactory.pruned(
+      annotations: const [_i4.Service()],
+      aopProxy: const _i4.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i3.BeanDefinition<_i5.SpringWidgetBindings>(
+    _i4.BeanDefinition<_i6.SpringWidgetBindings>(
       name: r'flutterSpringWidgetBindings#application',
       source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
       autowireCandidate: false,
-      create: (r) => _i5.SpringWidgetBindings([
-        _i5.SpringWidgetBinding(
+      create: (r) => _i6.SpringWidgetBindings([
+        _i6.SpringWidgetBinding(
           widget: r'package:static_site_app/src/pages.dart#_ServerPageState',
-          beans: _$typeOf<(_i2.ServerInfoClient,)>(),
-          types: const [_i2.ServerInfoClient],
+          beans: _$typeOf<(_i3.ServerInfoClient,)>(),
+          types: const [_i3.ServerInfoClient],
           resolve: (f) =>
-              (_i5.SpringWidgetBinding.bean<_i2.ServerInfoClient>(f),),
+              (_i6.SpringWidgetBinding.bean<_i3.ServerInfoClient>(f),),
           values: (r) {
-            final v = (r as (_i2.ServerInfoClient,));
+            final v = (r as (_i3.ServerInfoClient,));
             return [v.$1];
           },
         ),
       ]),
     ),
-    _i3.BeanDefinition<_i4.ScreenRoutes>(
+    _i4.BeanDefinition<_i5.ScreenRoutes>(
       name: r'screenRoutes#application',
       source: r'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart#ScreenRoutes',
-      create: (r) => _i4.ScreenRoutes.route(source: r'application')
+      create: (r) => _i5.ScreenRoutes.route(source: r'application')
           .screen(
             r'/',
-            (r) => const _i6.HomePage(),
+            (r) => const _i7.HomePage(),
             name: r'home-page',
             title: r'Home',
             content: r'resources:content/home.md',
@@ -138,7 +138,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           )
           .screen(
             r'/guide',
-            (r) => const _i6.GuidePage(),
+            (r) => const _i7.GuidePage(),
             name: r'guide-page',
             title: r'Guide',
             content: r'resources:content/guide.md',
@@ -146,23 +146,23 @@ _i3.BeanModule get $application => _i3.BeanModule(
           )
           .screen(
             r'/server',
-            (r) => const _i6.ServerPage(),
+            (r) => const _i7.ServerPage(),
             name: r'server-page',
             title: r'Server',
             source: r'package:static_site_app/src/pages.dart#ServerPage',
           )
-          .notFound((r) => const _i6.NotFoundPage())
+          .notFound((r) => const _i7.NotFoundPage())
           .build(),
     ),
   ],
   resources: const {
-    r'application.yml': _i3.EmbeddedResource.text(
+    r'application.yml': _i4.EmbeddedResource.text(
       '# The site: the app widget, its theme and the dev server of `flutter run`.\nspring:\n  application:\n    name: static-site\n  flutter:\n    app:\n      type: material\n      title: Static site\n      description: A Flutter web site served by its Spring server.\n      debug-banner: false\n    theme:\n      seed-color: \'#2E7D6B\'\n      styles:\n        code:\n          background: \$colors.surface-container-high\n          radius: 8\n    web:\n      # `flutter run -d chrome`: the app on 5090, the API of the running\n      # server (../server, port 8081) through the dev server, so /api/info\n      # is on the page\'s origin there too.\n      dev-server:\n        port: 5090\n        proxy:\n          - prefix: /api/\n            target: http://localhost:8081\n',
     ),
-    r'content/guide.md': _i3.EmbeddedResource.text(
+    r'content/guide.md': _i4.EmbeddedResource.text(
       "# How it is served\n\nBuild the site, then start the server next to it:\n\n```shell\ncd app && flutter build web\ncd ../server && dart run bin/main.dart\n```\n\nThe server reads the build from a folder at run time:\n\n```yaml\nspring:\n  web:\n    resources:\n      static-locations: file:../app/build/web/\n      spa-fallback: true        # /guide gets index.html\n      chain:\n        compressed: true        # main.dart.js.br when the browser takes it\n```\n\nA controller always wins over a file, so `/api/info` is the API's. The\nfiles get an `ETag`, `Last-Modified` and `Cache-Control`; a reload answers\n`304 Not Modified` for what did not change.\n\nBack to [the start](home.md).\n",
     ),
-    r'content/home.md': _i3.EmbeddedResource.text(
+    r'content/home.md': _i4.EmbeddedResource.text(
       '# A Flutter site on a Spring server\n\nThis page is a Flutter web app. The server that sent it is a Spring Boot\napplication in Dart: it serves the files of `flutter build web` as Spring\nBoot serves `src/main/resources/static/`, and its own API on the same\nport.\n\n- The pages have real addresses: [the guide](guide.md) is `/guide`. Open it\n  directly or reload it: the server answers with `index.html` and the app\n  opens the page.\n- The [server page](/server) asks `GET /api/info`: same origin, no CORS.\n- An address the app does not know shows its not-found page.\n',
     ),
   },
@@ -173,21 +173,13 @@ _i3.BeanModule get $application => _i3.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i7.springBootAutoConfiguration,
-    _i8.springBootStarterFlutterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterFlutterDebugAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterFlutterDebugIsolatesAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterFlutterDebugMotionAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterFlutterDebugTimelineAutoConfiguration,
+    _i8.springBootAutoConfiguration,
+    _i2.springBootStarterFlutterAutoConfiguration,
     _i9.springBootStarterFlutterMaterialAutoConfiguration,
     _i10.springBootStarterFlutterNavigationAutoConfiguration,
     _i11.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
     _i9.springBootStarterFlutterMaterialAutoConfiguration:
@@ -214,7 +206,7 @@ Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// The route of [HomePage]: its path, name, values and `to`.
-extension HomePageRoute on _i6.HomePage {
+extension HomePageRoute on _i7.HomePage {
   /// The path pattern.
   static const pattern = r'/';
 
@@ -222,11 +214,11 @@ extension HomePageRoute on _i6.HomePage {
   static const routeName = r'home-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [GuidePage]: its path, name, values and `to`.
-extension GuidePageRoute on _i6.GuidePage {
+extension GuidePageRoute on _i7.GuidePage {
   /// The path pattern.
   static const pattern = r'/guide';
 
@@ -234,11 +226,11 @@ extension GuidePageRoute on _i6.GuidePage {
   static const routeName = r'guide-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }
 
 /// The route of [ServerPage]: its path, name, values and `to`.
-extension ServerPageRoute on _i6.ServerPage {
+extension ServerPageRoute on _i7.ServerPage {
   /// The path pattern.
   static const pattern = r'/server';
 
@@ -246,5 +238,5 @@ extension ServerPageRoute on _i6.ServerPage {
   static const routeName = r'server-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i5.RouteLocation to() => _i5.RouteLocation.expand(pattern);
 }

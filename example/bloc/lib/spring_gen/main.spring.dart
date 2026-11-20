@@ -9,31 +9,31 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:bloc_showcase/src/blocs/books_bloc.dart' as _i3;
-import 'package:bloc_showcase/src/blocs/books_event.dart' as _i5;
-import 'package:bloc_showcase/src/blocs/books_state.dart' as _i6;
-import 'package:bloc_showcase/src/blocs/closed_with_bean.dart' as _i7;
-import 'package:bloc_showcase/src/blocs/counter_cubit.dart' as _i9;
-import 'package:bloc_showcase/src/blocs/draft_cubit.dart' as _i10;
-import 'package:bloc_showcase/src/books/book_repository.dart' as _i8;
-import 'package:bloc_showcase/src/events/bloc_application_events.dart' as _i14;
-import 'package:bloc_showcase/src/events/spring_bloc_observer.dart' as _i11;
-import 'package:bloc_showcase/src/journal.dart' as _i12;
-import 'package:bloc_showcase/src/pages/home_page.dart' as _i16;
-import 'package:bloc_showcase/src/pages/new_book_page.dart' as _i17;
-import 'package:flutter/foundation.dart' as _i13;
-import 'package:flutter_bloc/flutter_bloc.dart' as _i4;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i18;
+import 'package:bloc_showcase/src/blocs/books_bloc.dart' as _i4;
+import 'package:bloc_showcase/src/blocs/books_event.dart' as _i6;
+import 'package:bloc_showcase/src/blocs/books_state.dart' as _i7;
+import 'package:bloc_showcase/src/blocs/closed_with_bean.dart' as _i8;
+import 'package:bloc_showcase/src/blocs/counter_cubit.dart' as _i10;
+import 'package:bloc_showcase/src/blocs/draft_cubit.dart' as _i11;
+import 'package:bloc_showcase/src/books/book_repository.dart' as _i9;
+import 'package:bloc_showcase/src/events/bloc_application_events.dart' as _i15;
+import 'package:bloc_showcase/src/events/spring_bloc_observer.dart' as _i12;
+import 'package:bloc_showcase/src/journal.dart' as _i13;
+import 'package:bloc_showcase/src/pages/home_page.dart' as _i17;
+import 'package:bloc_showcase/src/pages/new_book_page.dart' as _i18;
+import 'package:flutter/foundation.dart' as _i14;
+import 'package:flutter_bloc/flutter_bloc.dart' as _i5;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i19;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i19;
+    as _i2;
 import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
     as _i20;
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
-    as _i15;
+    as _i16;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i21;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
 
 part 'main.spring.debug.dart';
 part 'main.spring.env.dart';
@@ -46,170 +46,170 @@ const _$knownAdvisors0 = {
 };
 
 /// Beans found by `@ComponentScan` in `lib/`.
-_i2.BeanModule get $application => _i2.BeanModule(
+_i3.BeanModule get $application => _i3.BeanModule(
   r'application',
   [
-    _i2.BeanDefinition<_i3.BooksBloc>(
+    _i3.BeanDefinition<_i4.BooksBloc>(
       name: r'booksBloc',
       source: r'package:bloc_showcase/src/blocs/books_bloc.dart#BooksBloc',
       types: const [
-        _i3.BooksBloc,
-        _i4.Bloc<_i5.BooksEvent, _i6.BooksState>,
-        _i4.BlocBase<_i6.BooksState>,
-        _i4.EmittableStateStreamableSource<_i6.BooksState>,
-        _i4.StateStreamableSource<_i6.BooksState>,
-        _i4.StateStreamable<_i6.BooksState>,
-        _i4.Streamable<_i6.BooksState>,
-        _i4.Closable,
-        _i4.Emittable<_i6.BooksState>,
-        _i4.ErrorSink,
-        _i4.BlocEventSink<_i5.BooksEvent>,
-        _i7.ClosedWithBean<_i6.BooksState>,
-        _i4.Bloc<dynamic, dynamic>,
-        _i4.BlocBase<dynamic>,
-        _i4.EmittableStateStreamableSource<dynamic>,
-        _i4.StateStreamableSource<dynamic>,
-        _i4.StateStreamable<dynamic>,
-        _i4.Streamable<Object?>,
-        _i4.Emittable<Object?>,
-        _i4.BlocEventSink<Object?>,
-        _i7.ClosedWithBean<dynamic>,
+        _i4.BooksBloc,
+        _i5.Bloc<_i6.BooksEvent, _i7.BooksState>,
+        _i5.BlocBase<_i7.BooksState>,
+        _i5.EmittableStateStreamableSource<_i7.BooksState>,
+        _i5.StateStreamableSource<_i7.BooksState>,
+        _i5.StateStreamable<_i7.BooksState>,
+        _i5.Streamable<_i7.BooksState>,
+        _i5.Closable,
+        _i5.Emittable<_i7.BooksState>,
+        _i5.ErrorSink,
+        _i5.BlocEventSink<_i6.BooksEvent>,
+        _i8.ClosedWithBean<_i7.BooksState>,
+        _i5.Bloc<dynamic, dynamic>,
+        _i5.BlocBase<dynamic>,
+        _i5.EmittableStateStreamableSource<dynamic>,
+        _i5.StateStreamableSource<dynamic>,
+        _i5.StateStreamable<dynamic>,
+        _i5.Streamable<Object?>,
+        _i5.Emittable<Object?>,
+        _i5.BlocEventSink<Object?>,
+        _i8.ClosedWithBean<dynamic>,
       ],
       dependencies: const [
-        _i2.Dependency(_i8.BookRepository, name: r'repository'),
+        _i3.Dependency(_i9.BookRepository, name: r'repository'),
       ],
       create: (r) =>
-          _i3.BooksBloc(r.dependency<_i8.BookRepository>(name: r'repository')),
+          _i4.BooksBloc(r.dependency<_i9.BookRepository>(name: r'repository')),
       preDestroy: (bean) {
         bean.closeWithBean();
       },
-      annotations: const [_i2.Component()],
-      aopProxy: const _i2.AopProxyFactory.pruned(
+      annotations: const [_i3.Component()],
+      aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i2.BeanDefinition<_i9.CounterCubit>(
+    _i3.BeanDefinition<_i10.CounterCubit>(
       name: r'counterCubit',
       source:
           r'package:bloc_showcase/src/blocs/counter_cubit.dart#CounterCubit',
       types: const [
-        _i9.CounterCubit,
-        _i4.Cubit<int>,
-        _i4.BlocBase<int>,
-        _i4.EmittableStateStreamableSource<int>,
-        _i4.StateStreamableSource<int>,
-        _i4.StateStreamable<int>,
-        _i4.Streamable<int>,
-        _i4.Closable,
-        _i4.Emittable<int>,
-        _i4.ErrorSink,
-        _i7.ClosedWithBean<int>,
-        _i4.Cubit<dynamic>,
-        _i4.BlocBase<dynamic>,
-        _i4.EmittableStateStreamableSource<dynamic>,
-        _i4.StateStreamableSource<dynamic>,
-        _i4.StateStreamable<dynamic>,
-        _i4.Streamable<Object?>,
-        _i4.Emittable<Object?>,
-        _i7.ClosedWithBean<dynamic>,
+        _i10.CounterCubit,
+        _i5.Cubit<int>,
+        _i5.BlocBase<int>,
+        _i5.EmittableStateStreamableSource<int>,
+        _i5.StateStreamableSource<int>,
+        _i5.StateStreamable<int>,
+        _i5.Streamable<int>,
+        _i5.Closable,
+        _i5.Emittable<int>,
+        _i5.ErrorSink,
+        _i8.ClosedWithBean<int>,
+        _i5.Cubit<dynamic>,
+        _i5.BlocBase<dynamic>,
+        _i5.EmittableStateStreamableSource<dynamic>,
+        _i5.StateStreamableSource<dynamic>,
+        _i5.StateStreamable<dynamic>,
+        _i5.Streamable<Object?>,
+        _i5.Emittable<Object?>,
+        _i8.ClosedWithBean<dynamic>,
       ],
-      create: (r) => _i9.CounterCubit(),
+      create: (r) => _i10.CounterCubit(),
       preDestroy: (bean) {
         bean.closeWithBean();
       },
-      annotations: const [_i2.Component()],
-      aopProxy: const _i2.AopProxyFactory.pruned(
+      annotations: const [_i3.Component()],
+      aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i2.BeanDefinition<_i10.DraftCubit>(
+    _i3.BeanDefinition<_i11.DraftCubit>(
       name: r'draftCubit',
       source: r'package:bloc_showcase/src/blocs/draft_cubit.dart#DraftCubit',
       types: const [
-        _i10.DraftCubit,
-        _i4.Cubit<String>,
-        _i4.BlocBase<String>,
-        _i4.EmittableStateStreamableSource<String>,
-        _i4.StateStreamableSource<String>,
-        _i4.StateStreamable<String>,
-        _i4.Streamable<String>,
-        _i4.Closable,
-        _i4.Emittable<String>,
-        _i4.ErrorSink,
-        _i7.ClosedWithBean<String>,
-        _i4.Cubit<dynamic>,
-        _i4.BlocBase<dynamic>,
-        _i4.EmittableStateStreamableSource<dynamic>,
-        _i4.StateStreamableSource<dynamic>,
-        _i4.StateStreamable<dynamic>,
-        _i4.Streamable<Object?>,
-        _i4.Emittable<Object?>,
-        _i7.ClosedWithBean<dynamic>,
+        _i11.DraftCubit,
+        _i5.Cubit<String>,
+        _i5.BlocBase<String>,
+        _i5.EmittableStateStreamableSource<String>,
+        _i5.StateStreamableSource<String>,
+        _i5.StateStreamable<String>,
+        _i5.Streamable<String>,
+        _i5.Closable,
+        _i5.Emittable<String>,
+        _i5.ErrorSink,
+        _i8.ClosedWithBean<String>,
+        _i5.Cubit<dynamic>,
+        _i5.BlocBase<dynamic>,
+        _i5.EmittableStateStreamableSource<dynamic>,
+        _i5.StateStreamableSource<dynamic>,
+        _i5.StateStreamable<dynamic>,
+        _i5.Streamable<Object?>,
+        _i5.Emittable<Object?>,
+        _i8.ClosedWithBean<dynamic>,
       ],
       scope: r'route',
-      create: (r) => _i10.DraftCubit(),
+      create: (r) => _i11.DraftCubit(),
       preDestroy: (bean) {
         bean.closeWithBean();
       },
-      annotations: const [_i2.Component(), _i2.Scope(r'route')],
-      aopProxy: const _i2.AopProxyFactory.pruned(
+      annotations: const [_i3.Component(), _i3.Scope(r'route')],
+      aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i2.BeanDefinition<_i8.BookRepository>(
+    _i3.BeanDefinition<_i9.BookRepository>(
       name: r'bookRepository',
       source: r'package:bloc_showcase/src/books/book_repository.dart#BookRepository',
-      create: (r) => _i8.BookRepository(),
-      annotations: const [_i2.Service()],
-      aopProxy: const _i2.AopProxyFactory.pruned(
+      create: (r) => _i9.BookRepository(),
+      annotations: const [_i3.Service()],
+      aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i2.BeanDefinition<_i11.SpringBlocObserver>(
+    _i3.BeanDefinition<_i12.SpringBlocObserver>(
       name: r'springBlocObserver',
       source: r'package:bloc_showcase/src/events/spring_bloc_observer.dart#SpringBlocObserver',
       types: const [
-        _i11.SpringBlocObserver,
-        _i4.BlocObserver,
-        _i2.BeanFactoryPostProcessor,
-        _i2.ApplicationEventPublisherAware,
-        _i2.Aware,
+        _i12.SpringBlocObserver,
+        _i5.BlocObserver,
+        _i3.BeanFactoryPostProcessor,
+        _i3.ApplicationEventPublisherAware,
+        _i3.Aware,
       ],
-      create: (r) => _i11.SpringBlocObserver(),
+      create: (r) => _i12.SpringBlocObserver(),
       preDestroy: (bean) {
         bean.uninstall();
       },
-      annotations: const [_i2.Component()],
+      annotations: const [_i3.Component()],
     ),
-    _i2.BeanDefinition<_i12.Journal>(
+    _i3.BeanDefinition<_i13.Journal>(
       name: r'journal',
       source: r'package:bloc_showcase/src/journal.dart#Journal',
-      types: const [_i12.Journal, _i13.ChangeNotifier, _i13.Listenable],
-      create: (r) => _i12.Journal(),
+      types: const [_i13.Journal, _i14.ChangeNotifier, _i14.Listenable],
+      create: (r) => _i13.Journal(),
       eventListeners: [
-        _i2.EventListenerMethod.of<_i12.Journal, _i14.BlocEventAdded>(
+        _i3.EventListenerMethod.of<_i13.Journal, _i15.BlocEventAdded>(
           r'Journal.onEvent',
           (bean, event) {
             bean.onEvent(event);
             return null;
           },
         ),
-        _i2.EventListenerMethod.of<_i12.Journal, _i14.BlocStateChanged>(
+        _i3.EventListenerMethod.of<_i13.Journal, _i15.BlocStateChanged>(
           r'Journal.onChange',
           (bean, event) {
             bean.onChange(event);
             return null;
           },
         ),
-        _i2.EventListenerMethod.of<_i12.Journal, _i14.BlocStateChanged>(
+        _i3.EventListenerMethod.of<_i13.Journal, _i15.BlocStateChanged>(
           r'Journal.onCounter',
           (bean, event) {
             bean.onCounter(event);
             return null;
           },
-          condition: _i12.ofCounter,
+          condition: _i13.ofCounter,
         ),
-        _i2.EventListenerMethod.of<_i12.Journal, _i14.BlocFailed>(
+        _i3.EventListenerMethod.of<_i13.Journal, _i15.BlocFailed>(
           r'Journal.onFailure',
           (bean, event) {
             bean.onFailure(event);
@@ -217,25 +217,25 @@ _i2.BeanModule get $application => _i2.BeanModule(
           },
         ),
       ],
-      annotations: const [_i2.Service()],
-      aopProxy: const _i2.AopProxyFactory.pruned(
+      annotations: const [_i3.Service()],
+      aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i2.BeanDefinition<_i15.ScreenRoutes>(
+    _i3.BeanDefinition<_i16.ScreenRoutes>(
       name: r'screenRoutes#application',
       source: r'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart#ScreenRoutes',
-      create: (r) => _i15.ScreenRoutes.route(source: r'application')
+      create: (r) => _i16.ScreenRoutes.route(source: r'application')
           .screen(
             r'/',
-            (r) => const _i16.HomePage(),
+            (r) => const _i17.HomePage(),
             name: r'home-page',
             title: r'Bloc Showcase',
             source: r'package:bloc_showcase/src/pages/home_page.dart#HomePage',
           )
           .screen(
             r'/new',
-            (r) => const _i17.NewBookPage(),
+            (r) => const _i18.NewBookPage(),
             name: r'new-book-page',
             title: r'A new book',
             source: r'package:bloc_showcase/src/pages/new_book_page.dart#NewBookPage',
@@ -244,7 +244,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
     ),
   ],
   resources: const {
-    r'application.yml': _i2.EmbeddedResource.text(
+    r'application.yml': _i3.EmbeddedResource.text(
       '# BLOC SHOWCASE: the app, its first screen and the port of `flutter run`.\nspring:\n  flutter:\n    web:\n      dev-server:\n        # `flutter run -d chrome` serves the app on http://localhost:5076/.\n        port: 5076\n    app:\n      title: Bloc Showcase\n      debug-banner: false\n    navigation:\n      initial: /\n',
     ),
   },
@@ -255,20 +255,12 @@ _i2.BeanModule get $application => _i2.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i18.springBootAutoConfiguration,
-    _i19.springBootStarterFlutterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i19.springBootStarterFlutterDebugAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i19.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i19.springBootStarterFlutterDebugIsolatesAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i19.springBootStarterFlutterDebugMotionAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i19.springBootStarterFlutterDebugTimelineAutoConfiguration,
+    _i19.springBootAutoConfiguration,
+    _i2.springBootStarterFlutterAutoConfiguration,
     _i20.springBootStarterFlutterNavigationAutoConfiguration,
     _i21.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')
@@ -289,7 +281,7 @@ Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// The route of [HomePage]: its path, name, values and `to`.
-extension HomePageRoute on _i16.HomePage {
+extension HomePageRoute on _i17.HomePage {
   /// The path pattern.
   static const pattern = r'/';
 
@@ -297,11 +289,11 @@ extension HomePageRoute on _i16.HomePage {
   static const routeName = r'home-page';
 
   /// The location of this screen with these values.
-  static _i15.RouteLocation to() => _i15.RouteLocation.expand(pattern);
+  static _i16.RouteLocation to() => _i16.RouteLocation.expand(pattern);
 }
 
 /// The route of [NewBookPage]: its path, name, values and `to`.
-extension NewBookPageRoute on _i17.NewBookPage {
+extension NewBookPageRoute on _i18.NewBookPage {
   /// The path pattern.
   static const pattern = r'/new';
 
@@ -309,5 +301,5 @@ extension NewBookPageRoute on _i17.NewBookPage {
   static const routeName = r'new-book-page';
 
   /// The location of this screen with these values.
-  static _i15.RouteLocation to() => _i15.RouteLocation.expand(pattern);
+  static _i16.RouteLocation to() => _i16.RouteLocation.expand(pattern);
 }

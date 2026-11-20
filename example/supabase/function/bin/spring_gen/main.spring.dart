@@ -9,13 +9,13 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i6;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i7;
-import 'package:spring_boot_starter_data/spring_auto_configuration.dart' as _i8;
-import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i4;
-import 'package:spring_boot_starter_edge/spring_auto_configuration.dart' as _i9;
+    as _i2;
+import 'package:spring_boot_starter_data/spring_auto_configuration.dart' as _i3;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i7;
+import 'package:spring_boot_starter_edge/spring_auto_configuration.dart' as _i4;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
     as _i10;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
@@ -27,89 +27,89 @@ import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
 import 'package:spring_boot_starter_supabase/spring_auto_configuration.dart'
     as _i14;
 import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i15;
-import 'package:spring_boot_starter_web/spring_boot_starter_web.dart' as _i3;
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart' as _i6;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
     as _i16;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i5;
 import 'package:spring_security_core/spring_auto_configuration.dart' as _i17;
-import 'package:supabase_example_function/src/app.dart' as _i5;
+import 'package:supabase_example_function/src/app.dart' as _i8;
 
 part 'main.spring.debug.dart';
 part 'main.spring.env.dart';
 
 /// Beans found by `@ComponentScan` in `lib/ and bin/`.
-_i2.BeanModule get $application => _i2.BeanModule(
+_i5.BeanModule get $application => _i5.BeanModule(
   r'application',
   [
-    _i2.BeanDefinition<_i3.HandlerExceptionResolver>(
+    _i5.BeanDefinition<_i6.HandlerExceptionResolver>(
       name: r'dataAccessExceptionResolver',
       source: r'package:spring_boot_starter_data#spring_boot_starter_web',
-      types: const [_i3.HandlerExceptionResolver],
+      types: const [_i6.HandlerExceptionResolver],
       conditions: [
-        _i4.ConditionalOnMissingBean.named(r'dataAccessExceptionResolver'),
+        _i7.ConditionalOnMissingBean.named(r'dataAccessExceptionResolver'),
       ],
       create: (r) => _$dataAccessExceptionResolver(),
     ),
-    _i2.BeanDefinition<_i3.WebMvcConfigurer>(
+    _i5.BeanDefinition<_i6.WebMvcConfigurer>(
       name: r'pagingArgumentResolvers',
       source: r'package:spring_boot_starter_data#spring_boot_starter_web',
-      types: const [_i3.WebMvcConfigurer],
+      types: const [_i6.WebMvcConfigurer],
       conditions: [
-        _i4.ConditionalOnMissingBean.named(r'pagingArgumentResolvers'),
+        _i7.ConditionalOnMissingBean.named(r'pagingArgumentResolvers'),
       ],
-      create: (r) => _$pagingArgumentResolvers(r.dependency<_i2.Environment>()),
+      create: (r) => _$pagingArgumentResolvers(r.dependency<_i5.Environment>()),
     ),
   ],
-  imports: [_i5.appBeans],
+  imports: [_i8.appBeans],
   resources: const {
-    r'application.yml': _i2.EmbeddedResource.text(
+    r'application.yml': _i5.EmbeddedResource.text(
       '# In a Supabase Edge Function the project is the function\'s environment\n# (SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY): the edge\n# starter makes spring.supabase.* of them. Run as a server\n# (`dart run bin/main.dart`), the same variables are read here.\nspring:\n  application:\n    name: supabase-example-function\n  main:\n    banner-mode: off\n  supabase:\n    url: \${SUPABASE_URL:http://127.0.0.1:54321}\n    anon-key: \${SUPABASE_ANON_KEY:}\n    service-role-key: \${SUPABASE_SERVICE_ROLE_KEY:}\n  web:\n    rate-limit:\n      # The counters live in the project\'s database (the function\n      # rate_limit_acquire of supabase/migrations), called as the service\n      # role: the default store with the Supabase starter.\n      enabled: true\n\nserver:\n  port: 8083\n',
     ),
   },
 );
 
 final class _$DataAccessExceptionResolver
-    implements _i3.HandlerExceptionResolver {
+    implements _i6.HandlerExceptionResolver {
   const _$DataAccessExceptionResolver();
 
   @override
-  _i3.ErrorResponse? resolveException(
-    _i3.ServerHttpRequest request,
+  _i6.ErrorResponse? resolveException(
+    _i6.ServerHttpRequest request,
     Object error, {
-    _i3.HandlerMethod? handler,
+    _i6.HandlerMethod? handler,
   }) => switch (error) {
-    _i4.OptimisticLockingFailureException() => _i3.ResponseStatusException(
-      _i3.HttpStatus.conflict,
+    _i7.OptimisticLockingFailureException() => _i6.ResponseStatusException(
+      _i6.HttpStatus.conflict,
       'The resource was changed by someone else',
       error,
     ),
-    _i4.DuplicateKeyException() => _i3.ResponseStatusException(
-      _i3.HttpStatus.conflict,
+    _i7.DuplicateKeyException() => _i6.ResponseStatusException(
+      _i6.HttpStatus.conflict,
       'The resource already exists',
       error,
     ),
-    _i4.PermissionDeniedDataAccessException() => _i3.ResponseStatusException(
-      _i3.HttpStatus.forbidden,
+    _i7.PermissionDeniedDataAccessException() => _i6.ResponseStatusException(
+      _i6.HttpStatus.forbidden,
       'Access denied',
       error,
     ),
-    _i4.EmptyResultDataAccessException() => _i3.ResponseStatusException(
-      _i3.HttpStatus.notFound,
+    _i7.EmptyResultDataAccessException() => _i6.ResponseStatusException(
+      _i6.HttpStatus.notFound,
       'Not found',
       error,
     ),
-    _i4.PropertyReferenceException() => _i3.ResponseStatusException(
-      _i3.HttpStatus.badRequest,
+    _i7.PropertyReferenceException() => _i6.ResponseStatusException(
+      _i6.HttpStatus.badRequest,
       'Invalid sort property',
       error,
     ),
-    _i4.InvalidPagingRequestException() => _i3.ResponseStatusException(
-      _i3.HttpStatus.badRequest,
+    _i7.InvalidPagingRequestException() => _i6.ResponseStatusException(
+      _i6.HttpStatus.badRequest,
       'Invalid page or sort request',
       error,
     ),
-    _i4.InvalidDataArgumentException() => _i3.ResponseStatusException(
-      _i3.HttpStatus.badRequest,
+    _i7.InvalidDataArgumentException() => _i6.ResponseStatusException(
+      _i6.HttpStatus.badRequest,
       'Invalid request value',
       error,
     ),
@@ -117,24 +117,24 @@ final class _$DataAccessExceptionResolver
   };
 }
 
-_i3.HandlerExceptionResolver _$dataAccessExceptionResolver() =>
+_i6.HandlerExceptionResolver _$dataAccessExceptionResolver() =>
     const _$DataAccessExceptionResolver();
 
 final class _$PagingArgumentResolver
-    implements _i3.HandlerMethodArgumentResolver {
+    implements _i6.HandlerMethodArgumentResolver {
   const _$PagingArgumentResolver(this._paging);
 
-  final _i4.WebPaging _paging;
+  final _i7.WebPaging _paging;
 
   @override
-  bool supportsParameter(_i3.MethodParameter parameter) {
+  bool supportsParameter(_i6.MethodParameter parameter) {
     final type = parameter.type.type;
-    if (type == _i4.Pageable) {
+    if (type == _i7.Pageable) {
       // Spring: two Pageable parameters need a @Qualifier each, or they
       // would read the same query parameters.
       final unqualified = parameter.handler.parameters.where(
         (other) =>
-            other.type.type == _i4.Pageable && !other.has<_i4.Qualifier>(),
+            other.type.type == _i7.Pageable && !other.has<_i7.Qualifier>(),
       );
       if (unqualified.length > 1) {
         throw StateError(
@@ -145,23 +145,23 @@ final class _$PagingArgumentResolver
       }
       return true;
     }
-    return type == _i4.Sort;
+    return type == _i7.Sort;
   }
 
   @override
   Object? resolveArgument(
-    _i3.MethodParameter parameter,
-    _i3.ServerHttpRequest request,
-    _i3.ServerHttpResponse response,
+    _i6.MethodParameter parameter,
+    _i6.ServerHttpRequest request,
+    _i6.ServerHttpResponse response,
   ) {
-    final qualifier = parameter.annotation<_i4.Qualifier>()?.value;
+    final qualifier = parameter.annotation<_i7.Qualifier>()?.value;
     final defaults = parameter.annotations
-        .whereType<_i4.SortDefault>()
+        .whereType<_i7.SortDefault>()
         .toList();
-    return parameter.type.type == _i4.Pageable
+    return parameter.type.type == _i7.Pageable
         ? _paging.pageable(
             request.queryParameters,
-            pageableDefault: parameter.annotation<_i4.PageableDefault>(),
+            pageableDefault: parameter.annotation<_i7.PageableDefault>(),
             sortDefaults: defaults,
             qualifier: qualifier,
           )
@@ -173,21 +173,21 @@ final class _$PagingArgumentResolver
   }
 }
 
-final class _$PagingWebMvcConfigurer with _i3.WebMvcConfigurer {
+final class _$PagingWebMvcConfigurer with _i6.WebMvcConfigurer {
   const _$PagingWebMvcConfigurer(this._resolver);
 
   final _$PagingArgumentResolver _resolver;
 
   @override
   void addArgumentResolvers(
-    List<_i3.HandlerMethodArgumentResolver> resolvers,
+    List<_i6.HandlerMethodArgumentResolver> resolvers,
   ) => resolvers.add(_resolver);
 }
 
-_i3.WebMvcConfigurer _$pagingArgumentResolvers(_i2.Environment environment) =>
+_i6.WebMvcConfigurer _$pagingArgumentResolvers(_i5.Environment environment) =>
     _$PagingWebMvcConfigurer(
       _$PagingArgumentResolver(
-        _i4.WebPaging(_i4.WebPagingProperties.of(environment)),
+        _i7.WebPaging(_i7.WebPagingProperties.of(environment)),
       ),
     );
 
@@ -196,18 +196,10 @@ _i3.WebMvcConfigurer _$pagingArgumentResolvers(_i2.Environment environment) =>
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i6.springBootAutoConfiguration,
-    _i7.springBootStarterCacheAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterCacheStartupChecksAutoConfiguration,
-    _i8.springBootStarterDataAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterDataSqlLoggingAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterDataStartupChecksAutoConfiguration,
-    _i9.springBootStarterEdgeAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i9.springBootStarterEdgeStartupChecksAutoConfiguration,
+    _i9.springBootAutoConfiguration,
+    _i2.springBootStarterCacheAutoConfiguration,
+    _i3.springBootStarterDataAutoConfiguration,
+    _i4.springBootStarterEdgeAutoConfiguration,
     _i10.springBootStarterFeignAutoConfiguration,
     _i11.springBootStarterLoggingAutoConfiguration,
     _i12.springBootStarterOauth2ClientAutoConfiguration,
@@ -238,24 +230,11 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i16.springBootStarterWebsocketServerAutoConfiguration,
     _i17.springSecurityCoreAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i7.springBootStarterCacheStartupChecksAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            after: [r'springBootStarterCacheAutoConfiguration'],
-          ),
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterDataSqlLoggingAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            before: [r'springBootStarterDataAutoConfiguration'],
-          ),
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i8.springBootStarterDataStartupChecksAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            after: [r'springBootStarterDataAutoConfiguration'],
-          ),
-    _i9.springBootStarterEdgeAutoConfiguration:
+    _i4.springBootStarterEdgeAutoConfiguration:
         const _i1.AutoConfigurationModule(
           before: [
             r'springBootStarterWebAutoConfiguration',
@@ -308,6 +287,9 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
               r'springBootStarterSupabaseAutoConfiguration',
             ],
           ),
+    ...!const bool.fromEnvironment('dart.vm.product')
+        ? _$debugAutoConfigurationMetadata
+        : const {},
   },
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

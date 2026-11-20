@@ -83,7 +83,8 @@ automatically to every package that depends on it.
   AutoConfigurationBuild('<property>'))` is written by the property in
   the application's `application.yml` / `application.properties` (no
   profile): always (`true`), never (`false`: no code, no import), or,
-  when not set, as its `whenMissing` says (by default under
+  when not set, as its `whenMissing` says (by default in the debug part,
+  `_$debugAutoConfigurations`, which the library spreads in under
   `if (!const bool.fromEnvironment('dart.vm.product'))`, so a release
   compiles it away). The proxies written for library beans follow the
   modules they come from. A property the build cannot read (`${FLAG}`
@@ -159,6 +160,7 @@ before, hot reload included.
 | In the debug part | What it is for |
 |---|---|
 | `_$fingerprint` | the hash of the generated code (the library and its files), which `springApplication` passes as `fingerprint:` in debug and profile builds (`null` in release): `SpringApplication.reload` keeps the running context when it is unchanged, else restarts it |
+| `_$debugAutoConfigurations`, `_$debugAutoConfigurationMetadata` | the auto-configurations only debug and profile builds have (a module whose build key leaves it out of release: the Flutter debug panel and its meters, the startup checks) and their orderings; `springApplication` spreads them into its own outside release builds |
 | `reloadApplication`, `reloadApplicationAsync` | the generated hot-reload calls (`context = reloadApplication(context)` in a root widget's `reassemble()`, or a server's restart on reload) |
 
 What stays in every build, on purpose: the `hotReload: () =>

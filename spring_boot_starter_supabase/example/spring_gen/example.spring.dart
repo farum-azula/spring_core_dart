@@ -9,20 +9,20 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i6;
-import 'dart:io' as _i14;
+import 'dart:async' as _i8;
+import 'dart:io' as _i16;
 
-import 'package:postgres/postgres.dart' as _i13;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i15;
+import 'package:postgres/postgres.dart' as _i15;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i17;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
-import 'package:spring_boot_dart/src/runners.dart' as _i9;
+import 'package:spring_boot_dart/src/runners.dart' as _i11;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i16;
-import 'package:spring_boot_starter_data/spring_auto_configuration.dart'
-    as _i17;
-import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i7;
-import 'package:spring_boot_starter_data/src/annotations.dart' as _i10;
-import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i8;
+    as _i2;
+import 'package:spring_boot_starter_data/spring_auto_configuration.dart' as _i3;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i9;
+import 'package:spring_boot_starter_data/src/annotations.dart' as _i12;
+import 'package:spring_boot_starter_data/src/repository/repository.dart'
+    as _i10;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
     as _i18;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
@@ -34,34 +34,34 @@ import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
 import 'package:spring_boot_starter_supabase/spring_auto_configuration.dart'
     as _i22;
 import 'package:spring_boot_starter_supabase/src/functions/edge_functions.dart'
-    as _i4;
+    as _i6;
 import 'package:spring_boot_starter_supabase/src/storage/storage_bucket.dart'
-    as _i3;
+    as _i5;
 import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i23;
-import 'package:spring_boot_starter_web/spring_boot_starter_web.dart' as _i11;
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart' as _i13;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
     as _i24;
 import 'package:spring_security_core/spring_auto_configuration.dart' as _i25;
-import 'package:spring_web_dart/src/annotations.dart' as _i5;
+import 'package:spring_web_dart/src/annotations.dart' as _i7;
 
-import '../example.dart' as _i2;
-import 'example.spring.introspection.dart' as _i12;
+import '../example.dart' as _i4;
+import 'example.spring.introspection.dart' as _i14;
 
 part 'example.spring.debug.dart';
 part 'example.spring.env.dart';
 
 /// Implements `Avatars` through an `InvocationHandler`.
-class _$AvatarsImpl implements _i2.Avatars {
+class _$AvatarsImpl implements _i4.Avatars {
   _$AvatarsImpl(this._handler, this._metadata);
 
   final _i1.InvocationHandler _handler;
 
-  final _i1.InterfaceMetadata<_i2.Avatars> _metadata;
+  final _i1.InterfaceMetadata<_i4.Avatars> _metadata;
 
   static _$AvatarsImpl $create(_i1.DependencyResolver r) {
-    final metadata = _i1.InterfaceMetadata<_i2.Avatars>(
+    final metadata = _i1.InterfaceMetadata<_i4.Avatars>(
       typeName: r'Avatars',
-      annotations: const [_i3.StorageBucket(r'avatars')],
+      annotations: const [_i5.StorageBucket(r'avatars')],
       methods: [
         _i1.ProxyMethod(
           r'link',
@@ -73,9 +73,9 @@ class _$AvatarsImpl implements _i2.Avatars {
             ),
           ],
           returnType: const _i1.ClassType<Uri>(),
-          annotations: const [_i3.PublicUrl(r'{userId}/avatar.png')],
+          annotations: const [_i5.PublicUrl(r'{userId}/avatar.png')],
           call: (target, arguments) =>
-              (target as _i2.Avatars).link((arguments[0] as String)),
+              (target as _i4.Avatars).link((arguments[0] as String)),
         ),
       ],
     );
@@ -91,17 +91,17 @@ class _$AvatarsImpl implements _i2.Avatars {
 }
 
 /// Implements `Functions` through an `InvocationHandler`.
-class _$FunctionsImpl implements _i2.Functions {
+class _$FunctionsImpl implements _i4.Functions {
   _$FunctionsImpl(this._handler, this._metadata);
 
   final _i1.InvocationHandler _handler;
 
-  final _i1.InterfaceMetadata<_i2.Functions> _metadata;
+  final _i1.InterfaceMetadata<_i4.Functions> _metadata;
 
   static _$FunctionsImpl $create(_i1.DependencyResolver r) {
-    final metadata = _i1.InterfaceMetadata<_i2.Functions>(
+    final metadata = _i1.InterfaceMetadata<_i4.Functions>(
       typeName: r'Functions',
-      annotations: const [_i4.EdgeFunctions()],
+      annotations: const [_i6.EdgeFunctions()],
       methods: [
         _i1.ProxyMethod(
           r'hello',
@@ -113,7 +113,7 @@ class _$FunctionsImpl implements _i2.Functions {
                 _i1.DynamicType(),
               ),
               isRequired: true,
-              annotations: const [_i5.RequestBody()],
+              annotations: const [_i7.RequestBody()],
             ),
           ],
           returnType: const _i1.MapType<String, dynamic>(
@@ -121,8 +121,8 @@ class _$FunctionsImpl implements _i2.Functions {
             _i1.DynamicType(),
           ),
           isFuture: true,
-          annotations: const [_i4.EdgeFunction(r'hello')],
-          call: (target, arguments) => (target as _i2.Functions).hello(
+          annotations: const [_i6.EdgeFunction(r'hello')],
+          call: (target, arguments) => (target as _i4.Functions).hello(
             (arguments[0] as Map<String, Object?>),
           ),
         ),
@@ -135,27 +135,27 @@ class _$FunctionsImpl implements _i2.Functions {
   }
 
   @override
-  _i6.Future<Map<String, Object?>> hello(Map<String, Object?> body) =>
+  _i8.Future<Map<String, Object?>> hello(Map<String, Object?> body) =>
       _i1.retypeFuture<Map<String, Object?>>(
         this._handler.invoke(this._metadata.methods[0], [body]),
       );
 }
 
 /// Implements `Todos`: `SimpleRepository` has the CRUD methods.
-class _$TodosImpl extends _i7.SimpleRepository<_i2.Todo, int>
-    implements _i2.Todos {
+class _$TodosImpl extends _i9.SimpleRepository<_i4.Todo, int>
+    implements _i4.Todos {
   _$TodosImpl(super.operations);
 
-  static const _findByDoneOrderById = _i7.PartTree(r'findByDoneOrderById', [
-    _i7.OrPart([_i7.Part(r'done')]),
-  ], sort: _i7.Sort([_i7.SortOrder.asc(r'id')]));
+  static const _findByDoneOrderById = _i9.PartTree(r'findByDoneOrderById', [
+    _i9.OrPart([_i9.Part(r'done')]),
+  ], sort: _i9.Sort([_i9.SortOrder.asc(r'id')]));
 
   static _$TodosImpl $create(_i1.DependencyResolver r) => _$TodosImpl(
-    r.dependency<_i7.RepositoryFactory>().operations<_i2.Todo, int>(r'Todos'),
+    r.dependency<_i9.RepositoryFactory>().operations<_i4.Todo, int>(r'Todos'),
   );
 
   @override
-  _i6.Future<List<_i2.Todo>> findByDoneOrderById(bool done) =>
+  _i8.Future<List<_i4.Todo>> findByDoneOrderById(bool done) =>
       this.operations.list(_findByDoneOrderById, [done]);
 }
 
@@ -177,58 +177,58 @@ const _$knownAdvisors0 = {
 _i1.BeanModule get $application => _i1.BeanModule(
   r'application',
   [
-    _i1.BeanDefinition<_i2.Todos>(
+    _i1.BeanDefinition<_i4.Todos>(
       name: r'todos',
       source: r'asset:spring_boot_starter_supabase/example/example.dart#Todos',
       types: const [
-        _i2.Todos,
-        _i8.ListCrudRepository<_i2.Todo, int>,
-        _i8.CrudRepository<_i2.Todo, int>,
-        _i8.DataRepository<_i2.Todo, int>,
-        _i8.ListCrudRepository<dynamic, dynamic>,
-        _i8.CrudRepository<dynamic, dynamic>,
-        _i8.DataRepository<dynamic, dynamic>,
+        _i4.Todos,
+        _i10.ListCrudRepository<_i4.Todo, int>,
+        _i10.CrudRepository<_i4.Todo, int>,
+        _i10.DataRepository<_i4.Todo, int>,
+        _i10.ListCrudRepository<dynamic, dynamic>,
+        _i10.CrudRepository<dynamic, dynamic>,
+        _i10.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$TodosImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i2.Avatars>(
+    _i1.BeanDefinition<_i4.Avatars>(
       name: r'avatars',
       source:
           r'asset:spring_boot_starter_supabase/example/example.dart#Avatars',
       primary: true,
       create: (r) => _$AvatarsImpl.$create(r),
-      annotations: const [_i3.StorageBucket(r'avatars')],
+      annotations: const [_i5.StorageBucket(r'avatars')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i2.Functions>(
+    _i1.BeanDefinition<_i4.Functions>(
       name: r'functions',
       source:
           r'asset:spring_boot_starter_supabase/example/example.dart#Functions',
       primary: true,
       create: (r) => _$FunctionsImpl.$create(r),
-      annotations: const [_i4.EdgeFunctions()],
+      annotations: const [_i6.EdgeFunctions()],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i2.Tour>(
+    _i1.BeanDefinition<_i4.Tour>(
       name: r'tour',
       source: r'asset:spring_boot_starter_supabase/example/example.dart#Tour',
-      types: const [_i2.Tour, _i9.CommandLineRunner],
+      types: const [_i4.Tour, _i11.CommandLineRunner],
       dependencies: const [
-        _i1.Dependency(_i2.Todos, name: r'todos'),
-        _i1.Dependency(_i2.Avatars, name: r'avatars'),
-        _i1.Dependency(_i2.Functions, name: r'functions'),
+        _i1.Dependency(_i4.Todos, name: r'todos'),
+        _i1.Dependency(_i4.Avatars, name: r'avatars'),
+        _i1.Dependency(_i4.Functions, name: r'functions'),
       ],
-      create: (r) => _i2.Tour(
-        r.dependency<_i2.Todos>(name: r'todos'),
-        r.dependency<_i2.Avatars>(name: r'avatars'),
-        r.dependency<_i2.Functions>(name: r'functions'),
+      create: (r) => _i4.Tour(
+        r.dependency<_i4.Todos>(name: r'todos'),
+        r.dependency<_i4.Avatars>(name: r'avatars'),
+        r.dependency<_i4.Functions>(name: r'functions'),
       ),
       annotations: const [
         _i1.Component(),
@@ -238,28 +238,28 @@ _i1.BeanModule get $application => _i1.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i7.EntityIntrospections>(
+    _i1.BeanDefinition<_i9.EntityIntrospections>(
       name: r'entityIntrospections#application',
       source: r'package:spring_boot_starter_data#EntityIntrospections',
-      types: const [_i7.EntityIntrospections],
-      create: (r) => _i7.EntityIntrospections([
-        _i7.EntityIntrospection<_i2.Todo>(
+      types: const [_i9.EntityIntrospections],
+      create: (r) => _i9.EntityIntrospections([
+        _i9.EntityIntrospection<_i4.Todo>(
           r'Todo',
           const [
-            _i7.EntityProperty(
+            _i9.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i10.Id()],
+              annotations: [_i12.Id()],
               parameter: true,
               writable: true,
             ),
-            _i7.EntityProperty(
+            _i9.EntityProperty(
               r'title',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i7.EntityProperty(
+            _i9.EntityProperty(
               r'done',
               _i1.ClassType<bool>(),
               parameter: true,
@@ -268,13 +268,13 @@ _i1.BeanModule get $application => _i1.BeanModule(
               defaultValue: false,
             ),
           ],
-          annotations: const [_i10.Table(r'todos')],
+          annotations: const [_i12.Table(r'todos')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.title,
             _ => e.done,
           },
-          create: (v) => _i2.Todo(
+          create: (v) => _i4.Todo(
             title: v[1] as String,
             done: v[2] as bool,
             id: v[0] as int?,
@@ -288,60 +288,60 @@ _i1.BeanModule get $application => _i1.BeanModule(
         ),
       ]),
     ),
-    _i1.BeanDefinition<_i7.JdbcDriver>(
+    _i1.BeanDefinition<_i9.JdbcDriver>(
       name: r'postgresJdbcDriver',
       source: r'package:spring_boot_starter_data#postgres',
-      types: const [_i7.JdbcDriver],
-      conditions: [_i7.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
+      types: const [_i9.JdbcDriver],
+      conditions: [_i9.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
       create: (r) => _$postgresJdbcDriver(),
     ),
-    _i1.BeanDefinition<_i11.HandlerExceptionResolver>(
+    _i1.BeanDefinition<_i13.HandlerExceptionResolver>(
       name: r'dataAccessExceptionResolver',
       source: r'package:spring_boot_starter_data#spring_boot_starter_web',
-      types: const [_i11.HandlerExceptionResolver],
+      types: const [_i13.HandlerExceptionResolver],
       conditions: [
-        _i7.ConditionalOnMissingBean.named(r'dataAccessExceptionResolver'),
+        _i9.ConditionalOnMissingBean.named(r'dataAccessExceptionResolver'),
       ],
       create: (r) => _$dataAccessExceptionResolver(),
     ),
-    _i1.BeanDefinition<_i11.WebMvcConfigurer>(
+    _i1.BeanDefinition<_i13.WebMvcConfigurer>(
       name: r'pagingArgumentResolvers',
       source: r'package:spring_boot_starter_data#spring_boot_starter_web',
-      types: const [_i11.WebMvcConfigurer],
+      types: const [_i13.WebMvcConfigurer],
       conditions: [
-        _i7.ConditionalOnMissingBean.named(r'pagingArgumentResolvers'),
+        _i9.ConditionalOnMissingBean.named(r'pagingArgumentResolvers'),
       ],
       create: (r) => _$pagingArgumentResolvers(r.dependency<_i1.Environment>()),
     ),
   ],
-  introspections: [..._i12.$applicationIntrospections],
+  introspections: [..._i14.$applicationIntrospections],
 );
 
-final class _$PostgresBinding implements _i7.PostgresBinding {
+final class _$PostgresBinding implements _i9.PostgresBinding {
   const _$PostgresBinding();
 
   @override
-  Future<_i7.PostgresSession> open(_i7.PostgresEndpoint endpoint) =>
+  Future<_i9.PostgresSession> open(_i9.PostgresEndpoint endpoint) =>
       _$postgresGuard(() async {
         final roots = endpoint.rootCertificate;
         return _$PostgresSession(
-          await _i13.Connection.open(
-            _i13.Endpoint(
+          await _i15.Connection.open(
+            _i15.Endpoint(
               host: endpoint.host,
               port: endpoint.port,
               database: endpoint.database,
               username: endpoint.username,
               password: endpoint.password,
             ),
-            settings: _i13.ConnectionSettings(
+            settings: _i15.ConnectionSettings(
               sslMode: switch (endpoint.sslMode) {
-                _i7.PostgresSslMode.disable => _i13.SslMode.disable,
-                _i7.PostgresSslMode.require => _i13.SslMode.require,
-                _i7.PostgresSslMode.verifyFull => _i13.SslMode.verifyFull,
+                _i9.PostgresSslMode.disable => _i15.SslMode.disable,
+                _i9.PostgresSslMode.require => _i15.SslMode.require,
+                _i9.PostgresSslMode.verifyFull => _i15.SslMode.verifyFull,
               },
               securityContext: roots == null
                   ? null
-                  : (_i14.SecurityContext(withTrustedRoots: false)
+                  : (_i16.SecurityContext(withTrustedRoots: false)
                       ..setTrustedCertificates(roots)),
               connectTimeout: endpoint.connectTimeout,
               applicationName: endpoint.applicationName,
@@ -351,16 +351,16 @@ final class _$PostgresBinding implements _i7.PostgresBinding {
       });
 }
 
-final class _$PostgresSession implements _i7.PostgresSession {
+final class _$PostgresSession implements _i9.PostgresSession {
   _$PostgresSession(this._connection);
 
-  final _i13.Connection _connection;
+  final _i15.Connection _connection;
 
   @override
   bool get isOpen => _connection.isOpen;
 
   @override
-  Future<_i7.PostgresResult> execute(
+  Future<_i9.PostgresResult> execute(
     String sql, {
     List<Object?> parameters = const [],
     bool simple = false,
@@ -371,17 +371,17 @@ final class _$PostgresSession implements _i7.PostgresSession {
       parameters: parameters.isEmpty
           ? null
           : [for (final value in parameters) _$postgresParameter(value)],
-      queryMode: simple ? _i13.QueryMode.simple : null,
+      queryMode: simple ? _i15.QueryMode.simple : null,
       timeout: timeout,
     );
     final columns = _$postgresColumns(result.schema);
-    return _i7.PostgresResult(columns, [
+    return _i9.PostgresResult(columns, [
       for (final row in result) _$postgresValues(row),
     ], result.affectedRows);
   });
 
   @override
-  Stream<_i7.PostgresRow> stream(
+  Stream<_i9.PostgresRow> stream(
     String sql, {
     List<Object?> parameters = const [],
     Duration? timeout,
@@ -393,7 +393,7 @@ final class _$PostgresSession implements _i7.PostgresSession {
         for (final value in parameters) _$postgresParameter(value),
       ])) {
         columns ??= _$postgresColumns(row.schema);
-        yield _i7.PostgresRow(columns, _$postgresValues(row));
+        yield _i9.PostgresRow(columns, _$postgresValues(row));
       }
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(_$postgresError(error), stackTrace);
@@ -413,18 +413,18 @@ final class _$PostgresSession implements _i7.PostgresSession {
 // The package writes a double that is not finite (`Infinity`, `NaN`) as a
 // quoted text the server refuses, unless it knows the type.
 Object? _$postgresParameter(Object? value) => value is double && !value.isFinite
-    ? _i13.TypedValue(_i13.Type.double, value)
+    ? _i15.TypedValue(_i15.Type.double, value)
     : value;
 
-List<String> _$postgresColumns(_i13.ResultSchema schema) => [
+List<String> _$postgresColumns(_i15.ResultSchema schema) => [
   for (final column in schema.columns) column.columnName ?? '',
 ];
 
 // A value of a type the package does not decode (an enum, `citext`...) as
 // its text or bytes.
-List<Object?> _$postgresValues(_i13.ResultRow row) => [
+List<Object?> _$postgresValues(_i15.ResultRow row) => [
   for (final value in row)
-    value is _i13.UndecodedBytes
+    value is _i15.UndecodedBytes
         ? (value.isBinary ? value.bytes : value.asString)
         : value,
 ];
@@ -433,31 +433,31 @@ List<Object?> _$postgresValues(_i13.ResultRow row) => [
 // driver understands: the message, the SQL state, the constraint's name;
 // never the DETAIL line (it holds values) and never the exception itself.
 Object _$postgresError(Object error) {
-  if (error is _i13.ServerException) {
-    return _i7.SqlError(
+  if (error is _i15.ServerException) {
+    return _i9.SqlError(
       error.message,
       sqlState: error.code,
       constraint: error.constraintName,
       connectionLost:
-          error.severity == _i13.Severity.fatal ||
-          error.severity == _i13.Severity.panic,
+          error.severity == _i15.Severity.fatal ||
+          error.severity == _i15.Severity.panic,
     );
   }
-  if (error is _i13.PgException) {
+  if (error is _i15.PgException) {
     // The package names the value it cannot send.
     final inference = error.message.startsWith('Could not infer');
-    return _i7.SqlError(
+    return _i9.SqlError(
       inference
           ? 'A parameter value has a type the driver cannot send'
           : error.message,
       connectionLost: !inference,
     );
   }
-  if (error is _i14.SocketException || error is _i14.TlsException) {
-    return _i7.SqlError('$error', connectionLost: true);
+  if (error is _i16.SocketException || error is _i16.TlsException) {
+    return _i9.SqlError('$error', connectionLost: true);
   }
-  if (error is _i6.TimeoutException) {
-    return _i7.SqlError(
+  if (error is _i8.TimeoutException) {
+    return _i9.SqlError(
       error.message ?? 'The connection timed out',
       connectionLost: true,
     );
@@ -473,51 +473,51 @@ Future<T> _$postgresGuard<T>(Future<T> Function() action) async {
   }
 }
 
-_i7.JdbcDriver _$postgresJdbcDriver() =>
-    _i7.PostgresJdbcDriver(const _$PostgresBinding());
+_i9.JdbcDriver _$postgresJdbcDriver() =>
+    _i9.PostgresJdbcDriver(const _$PostgresBinding());
 
 final class _$DataAccessExceptionResolver
-    implements _i11.HandlerExceptionResolver {
+    implements _i13.HandlerExceptionResolver {
   const _$DataAccessExceptionResolver();
 
   @override
-  _i11.ErrorResponse? resolveException(
-    _i11.ServerHttpRequest request,
+  _i13.ErrorResponse? resolveException(
+    _i13.ServerHttpRequest request,
     Object error, {
-    _i11.HandlerMethod? handler,
+    _i13.HandlerMethod? handler,
   }) => switch (error) {
-    _i7.OptimisticLockingFailureException() => _i11.ResponseStatusException(
-      _i11.HttpStatus.conflict,
+    _i9.OptimisticLockingFailureException() => _i13.ResponseStatusException(
+      _i13.HttpStatus.conflict,
       'The resource was changed by someone else',
       error,
     ),
-    _i7.DuplicateKeyException() => _i11.ResponseStatusException(
-      _i11.HttpStatus.conflict,
+    _i9.DuplicateKeyException() => _i13.ResponseStatusException(
+      _i13.HttpStatus.conflict,
       'The resource already exists',
       error,
     ),
-    _i7.PermissionDeniedDataAccessException() => _i11.ResponseStatusException(
-      _i11.HttpStatus.forbidden,
+    _i9.PermissionDeniedDataAccessException() => _i13.ResponseStatusException(
+      _i13.HttpStatus.forbidden,
       'Access denied',
       error,
     ),
-    _i7.EmptyResultDataAccessException() => _i11.ResponseStatusException(
-      _i11.HttpStatus.notFound,
+    _i9.EmptyResultDataAccessException() => _i13.ResponseStatusException(
+      _i13.HttpStatus.notFound,
       'Not found',
       error,
     ),
-    _i7.PropertyReferenceException() => _i11.ResponseStatusException(
-      _i11.HttpStatus.badRequest,
+    _i9.PropertyReferenceException() => _i13.ResponseStatusException(
+      _i13.HttpStatus.badRequest,
       'Invalid sort property',
       error,
     ),
-    _i7.InvalidPagingRequestException() => _i11.ResponseStatusException(
-      _i11.HttpStatus.badRequest,
+    _i9.InvalidPagingRequestException() => _i13.ResponseStatusException(
+      _i13.HttpStatus.badRequest,
       'Invalid page or sort request',
       error,
     ),
-    _i7.InvalidDataArgumentException() => _i11.ResponseStatusException(
-      _i11.HttpStatus.badRequest,
+    _i9.InvalidDataArgumentException() => _i13.ResponseStatusException(
+      _i13.HttpStatus.badRequest,
       'Invalid request value',
       error,
     ),
@@ -525,24 +525,24 @@ final class _$DataAccessExceptionResolver
   };
 }
 
-_i11.HandlerExceptionResolver _$dataAccessExceptionResolver() =>
+_i13.HandlerExceptionResolver _$dataAccessExceptionResolver() =>
     const _$DataAccessExceptionResolver();
 
 final class _$PagingArgumentResolver
-    implements _i11.HandlerMethodArgumentResolver {
+    implements _i13.HandlerMethodArgumentResolver {
   const _$PagingArgumentResolver(this._paging);
 
-  final _i7.WebPaging _paging;
+  final _i9.WebPaging _paging;
 
   @override
-  bool supportsParameter(_i11.MethodParameter parameter) {
+  bool supportsParameter(_i13.MethodParameter parameter) {
     final type = parameter.type.type;
-    if (type == _i7.Pageable) {
+    if (type == _i9.Pageable) {
       // Spring: two Pageable parameters need a @Qualifier each, or they
       // would read the same query parameters.
       final unqualified = parameter.handler.parameters.where(
         (other) =>
-            other.type.type == _i7.Pageable && !other.has<_i7.Qualifier>(),
+            other.type.type == _i9.Pageable && !other.has<_i9.Qualifier>(),
       );
       if (unqualified.length > 1) {
         throw StateError(
@@ -553,23 +553,23 @@ final class _$PagingArgumentResolver
       }
       return true;
     }
-    return type == _i7.Sort;
+    return type == _i9.Sort;
   }
 
   @override
   Object? resolveArgument(
-    _i11.MethodParameter parameter,
-    _i11.ServerHttpRequest request,
-    _i11.ServerHttpResponse response,
+    _i13.MethodParameter parameter,
+    _i13.ServerHttpRequest request,
+    _i13.ServerHttpResponse response,
   ) {
-    final qualifier = parameter.annotation<_i7.Qualifier>()?.value;
+    final qualifier = parameter.annotation<_i9.Qualifier>()?.value;
     final defaults = parameter.annotations
-        .whereType<_i7.SortDefault>()
+        .whereType<_i9.SortDefault>()
         .toList();
-    return parameter.type.type == _i7.Pageable
+    return parameter.type.type == _i9.Pageable
         ? _paging.pageable(
             request.queryParameters,
-            pageableDefault: parameter.annotation<_i7.PageableDefault>(),
+            pageableDefault: parameter.annotation<_i9.PageableDefault>(),
             sortDefaults: defaults,
             qualifier: qualifier,
           )
@@ -581,21 +581,21 @@ final class _$PagingArgumentResolver
   }
 }
 
-final class _$PagingWebMvcConfigurer with _i11.WebMvcConfigurer {
+final class _$PagingWebMvcConfigurer with _i13.WebMvcConfigurer {
   const _$PagingWebMvcConfigurer(this._resolver);
 
   final _$PagingArgumentResolver _resolver;
 
   @override
   void addArgumentResolvers(
-    List<_i11.HandlerMethodArgumentResolver> resolvers,
+    List<_i13.HandlerMethodArgumentResolver> resolvers,
   ) => resolvers.add(_resolver);
 }
 
-_i11.WebMvcConfigurer _$pagingArgumentResolvers(_i1.Environment environment) =>
+_i13.WebMvcConfigurer _$pagingArgumentResolvers(_i1.Environment environment) =>
     _$PagingWebMvcConfigurer(
       _$PagingArgumentResolver(
-        _i7.WebPaging(_i7.WebPagingProperties.of(environment)),
+        _i9.WebPaging(_i9.WebPagingProperties.of(environment)),
       ),
     );
 
@@ -604,15 +604,9 @@ _i11.WebMvcConfigurer _$pagingArgumentResolvers(_i1.Environment environment) =>
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i15.springBootAutoConfiguration,
-    _i16.springBootStarterCacheAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i16.springBootStarterCacheStartupChecksAutoConfiguration,
-    _i17.springBootStarterDataAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i17.springBootStarterDataSqlLoggingAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i17.springBootStarterDataStartupChecksAutoConfiguration,
+    _i17.springBootAutoConfiguration,
+    _i2.springBootStarterCacheAutoConfiguration,
+    _i3.springBootStarterDataAutoConfiguration,
     _i18.springBootStarterFeignAutoConfiguration,
     _i19.springBootStarterLoggingAutoConfiguration,
     _i20.springBootStarterOauth2ClientAutoConfiguration,
@@ -643,23 +637,10 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i24.springBootStarterWebsocketServerAutoConfiguration,
     _i25.springSecurityCoreAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product'))
+      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i16.springBootStarterCacheStartupChecksAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            after: [r'springBootStarterCacheAutoConfiguration'],
-          ),
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i17.springBootStarterDataSqlLoggingAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            before: [r'springBootStarterDataAutoConfiguration'],
-          ),
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      _i17.springBootStarterDataStartupChecksAutoConfiguration:
-          const _i1.AutoConfigurationModule(
-            after: [r'springBootStarterDataAutoConfiguration'],
-          ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i21.springBootStarterSecurityAutoConfiguration:
@@ -704,6 +685,9 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
               r'springBootStarterSupabaseAutoConfiguration',
             ],
           ),
+    ...!const bool.fromEnvironment('dart.vm.product')
+        ? _$debugAutoConfigurationMetadata
+        : const {},
   },
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')
@@ -724,6 +708,6 @@ Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// `@Log` of [Tour]: the logger 'example'.
-extension $TourLog on _i2.Tour {
+extension $TourLog on _i4.Tour {
   _i1.SpringLog get log => const _i1.SpringLog(r'example');
 }
