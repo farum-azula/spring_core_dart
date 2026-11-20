@@ -231,7 +231,7 @@ final dataAutoConfiguration = <BeanDefinition<Object>>[
       ]),
     ],
     create: (r) => EntityConverter(
-      introspector: r.dependency<BeanIntrospector>(),
+      introspector: r.dependency<Introspector>(),
       mapper: r.optionalDependency<ObjectMapper>(),
     ),
   ),
@@ -345,7 +345,7 @@ final dataAutoConfiguration = <BeanDefinition<Object>>[
     source: _source,
     create: (r) => TransactionInterceptor(
       beanFactory: r.dependency<BeanFactory>(),
-      introspector: r.dependency<BeanIntrospector>(),
+      introspector: r.dependency<Introspector>(),
     ),
   ),
   BeanDefinition<DefaultPointcutAdvisor>(

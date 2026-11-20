@@ -80,18 +80,18 @@ abstract interface class OddLobby {
 
 // ---- generated ----
 
-final ackIntrospection = BeanIntrospection<Ack>(
+final ackIntrospection = Introspection<Ack>(
   properties: [
-    BeanProperty<Ack>(
+    IntrospectedProperty<Ack>(
       'id',
       type: int,
       typeInfo: const ClassType<int>(),
       get: (ack) => ack.id,
     ),
   ],
-  constructor: BeanConstructor<Ack>(
+  constructor: IntrospectedConstructor<Ack>(
     parameters: const [
-      BeanParameter(
+      IntrospectedParameter(
         'id',
         type: ClassType<int>(),
         symbol: #id,
@@ -103,18 +103,18 @@ final ackIntrospection = BeanIntrospection<Ack>(
   ),
 );
 
-final roomJoinIntrospection = BeanIntrospection<RoomJoin>(
+final roomJoinIntrospection = Introspection<RoomJoin>(
   properties: [
-    BeanProperty<RoomJoin>(
+    IntrospectedProperty<RoomJoin>(
       'since',
       type: int,
       typeInfo: const ClassType<int>(),
       get: (join) => join.since,
     ),
   ],
-  constructor: BeanConstructor<RoomJoin>(
+  constructor: IntrospectedConstructor<RoomJoin>(
     parameters: const [
-      BeanParameter(
+      IntrospectedParameter(
         'since',
         type: ClassType<int>(),
         symbol: #since,
@@ -126,7 +126,11 @@ final roomJoinIntrospection = BeanIntrospection<RoomJoin>(
   ),
 );
 
-const _id = BeanParameter('id', type: ClassType<String>(), isRequired: true);
+const _id = IntrospectedParameter(
+  'id',
+  type: ClassType<String>(),
+  isRequired: true,
+);
 const _messageStream = GenericType<Stream<ChatMessage>>([
   ClassType<ChatMessage>(),
 ]);
@@ -160,7 +164,7 @@ class RoomImpl implements Room {
           'messagesSince',
           parameters: const [
             _id,
-            BeanParameter(
+            IntrospectedParameter(
               'join',
               type: ClassType<RoomJoin>(),
               isRequired: true,
@@ -174,7 +178,7 @@ class RoomImpl implements Room {
           'send',
           parameters: const [
             _id,
-            BeanParameter(
+            IntrospectedParameter(
               'message',
               type: ClassType<ChatMessage>(),
               isRequired: true,
@@ -188,7 +192,7 @@ class RoomImpl implements Room {
           'seen',
           parameters: const [
             _id,
-            BeanParameter(
+            IntrospectedParameter(
               'what',
               type: MapType<String, Object?>(
                 ClassType<String>(),
@@ -308,8 +312,16 @@ class LobbyImpl implements Lobby {
 
 /// The handler of an invalid interface, which fails when it is made.
 InvocationHandler brokenRoomHandler(DependencyResolver r) {
-  const a = BeanParameter('a', type: ClassType<String>(), isRequired: true);
-  const b = BeanParameter('b', type: ClassType<String>(), isRequired: true);
+  const a = IntrospectedParameter(
+    'a',
+    type: ClassType<String>(),
+    isRequired: true,
+  );
+  const b = IntrospectedParameter(
+    'b',
+    type: ClassType<String>(),
+    isRequired: true,
+  );
   return InterfaceProxies.handlerFor(
     r,
     InterfaceMetadata<BrokenRoom>(
@@ -361,7 +373,7 @@ InvocationHandler brokenRoomHandler(DependencyResolver r) {
           'leave',
           parameters: const [
             _id,
-            BeanParameter(
+            IntrospectedParameter(
               'extra',
               type: ClassType<String>(),
               isRequired: true,

@@ -1,6 +1,8 @@
 // Orders and the events around them (chapter 6). The JSON classes are
 // immutable: the ObjectMapper writes their fields and reads them back
-// through the constructor.
+// through the constructor. Their ==, hashCode and toString() come from
+// their descriptions (IntrospectedObject), their copyWith from the
+// generated lib/spring_gen/src/app.spring.introspection.dart.
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 enum OrderStatus {
@@ -14,8 +16,11 @@ enum OrderStatus {
 }
 
 /// A line of a basket or an order: `quantity` copies of a book at `price`
-/// each, `discount` percent off, `total` to pay.
-class OrderLine {
+/// each, `discount` percent off, `total` to pay. Two lines with the same
+/// values are equal.
+@EqualsAndHashCode()
+@ToString()
+class OrderLine with IntrospectedObject {
   const OrderLine({
     required this.isbn,
     required this.title,
@@ -50,9 +55,14 @@ class Basket {
 
 /// An order: `{"id": 1, "user": "ada", "lines": [...], "total": 27.5,
 /// "status": "PLACED", "placedAt": "2026-10-27T10:00:00.000Z",
-/// "payment": "sandbox-1"}`.
+/// "payment": "sandbox-1"}`. `toString()` hides the payment reference;
+/// shipping an order is a copy with another status
+/// (`order.copyWith(status: OrderStatus.shipped)`).
 @Introspected()
-class CustomerOrder {
+@EqualsAndHashCode()
+@ToString(mask: ['payment'])
+@CopyWith()
+class CustomerOrder with IntrospectedObject {
   const CustomerOrder({
     required this.id,
     required this.customer,
@@ -75,16 +85,6 @@ class CustomerOrder {
 
   /// The payment reference of the gateway.
   final String? payment;
-
-  CustomerOrder withStatus(OrderStatus status) => CustomerOrder(
-    id: id,
-    customer: customer,
-    lines: lines,
-    total: total,
-    placedAt: placedAt,
-    status: status,
-    payment: payment,
-  );
 }
 
 /// An order was placed: a plain object published as an event (listeners

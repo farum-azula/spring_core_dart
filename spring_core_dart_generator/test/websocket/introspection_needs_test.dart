@@ -1,6 +1,6 @@
 // What the WebSocket handlers and the methods that send JSON need of the
 // classes they read and write (the WebSocket part, IntrospectionNeed).
-import 'package:spring_core_dart_generator/src/core/bean_scanner.dart'
+import 'package:spring_core_dart_generator/src/core/introspection/introspection_scanner.dart'
     show mayCallMapper;
 import 'package:spring_core_dart_generator/src/websocket/websocket_generation.dart';
 import 'package:test/test.dart';

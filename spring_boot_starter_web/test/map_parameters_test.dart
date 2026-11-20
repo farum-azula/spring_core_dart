@@ -27,16 +27,16 @@ final class _Api {
       .join();
 }
 
-BeanMethod<_Api> _route(
+IntrospectedMethod<_Api> _route(
   String name,
   Function Function(_Api bean) method,
   Object annotation,
   TypeInfo<Object?> type,
-) => BeanMethod<_Api>(
+) => IntrospectedMethod<_Api>(
   name,
   parameterTypes: [type.type],
   parameters: [
-    BeanParameter(
+    IntrospectedParameter(
       'parameters',
       type: type,
       isRequired: true,

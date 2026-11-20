@@ -103,8 +103,8 @@ PersistentEntity<Object> bookEntity() {
 }
 
 /// A positional parameter of [type].
-BeanParameter param(String name, TypeInfo<Object?> type) =>
-    BeanParameter(name, type: type);
+IntrospectedParameter param(String name, TypeInfo<Object?> type) =>
+    IntrospectedParameter(name, type: type);
 
 /// `String`.
 const string = ClassType<String>();

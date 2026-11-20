@@ -10,24 +10,24 @@ class Pool {
   Duration timeout = const Duration(seconds: 5);
 }
 
-final poolIntrospection = BeanIntrospection<Pool>(
+final poolIntrospection = Introspection<Pool>(
   annotations: const [ConfigurationProperties('db'), Validated()],
   properties: [
-    BeanProperty<Pool>(
+    IntrospectedProperty<Pool>(
       'url',
       type: String,
       get: (b) => b.url,
       set: (b, v) => b.url = v! as String,
       annotations: const [NotBlank()],
     ),
-    BeanProperty<Pool>(
+    IntrospectedProperty<Pool>(
       'maxSize',
       type: int,
       get: (b) => b.maxSize,
       set: (b, v) => b.maxSize = v! as int,
       annotations: const [Min(1)],
     ),
-    BeanProperty<Pool>(
+    IntrospectedProperty<Pool>(
       'timeout',
       type: Duration,
       get: (b) => b.timeout,
@@ -286,7 +286,7 @@ void main() {
         'plain',
         [BeanDefinition<Pool>(name: 'pool', create: (_) => Pool())],
         introspections: [
-          BeanIntrospection<Pool>(
+          Introspection<Pool>(
             annotations: const [ConfigurationProperties('db')],
             properties: poolIntrospection.properties.toList(),
             instantiate: Pool.new,

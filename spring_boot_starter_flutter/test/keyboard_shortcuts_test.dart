@@ -66,19 +66,19 @@ BeanDefinition<Object> _actions({
   types: const [SearchActions],
   create: (r) => SearchActions(r.dependency<Calls>()),
   annotatedMethods: [
-    BeanMethod<SearchActions>(
+    IntrospectedMethod<SearchActions>(
       'open',
       invoke: (bean, arguments) => Function.apply(bean.open, arguments),
       parameterTypes: const [BuildContext],
       annotations: [Shortcut('search.open', keys: keys)],
     ),
-    BeanMethod<SearchActions>(
+    IntrospectedMethod<SearchActions>(
       'help',
       invoke: (bean, arguments) => Function.apply(bean.help, arguments),
       annotations: const [Shortcut('help.show')],
     ),
     if (wrong)
-      BeanMethod<SearchActions>(
+      IntrospectedMethod<SearchActions>(
         'wrong',
         invoke: (bean, arguments) => Function.apply(bean.wrong, arguments),
         parameterTypes: const [String],

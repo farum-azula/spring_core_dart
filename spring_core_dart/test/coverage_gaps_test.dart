@@ -29,9 +29,9 @@ class _Matrix {
   ];
 }
 
-final _matrixIntrospection = BeanIntrospection<_Matrix>(
+final _matrixIntrospection = Introspection<_Matrix>(
   properties: [
-    BeanProperty<_Matrix>(
+    IntrospectedProperty<_Matrix>(
       'rows',
       type: List<List<int>?>,
       get: (b) => b.rows,
@@ -243,7 +243,7 @@ void main() {
       final matrix = _Matrix();
       final wrapper = BeanWrapper(
         matrix,
-        introspector: BeanIntrospector(introspections: [_matrixIntrospection]),
+        introspector: Introspector(introspections: [_matrixIntrospection]),
       )..setPropertyValue('rows[0][1]', 9);
       expect(matrix.rows[0], [1, 9]);
       expect(
@@ -408,6 +408,11 @@ class _Event extends ApplicationEvent {
 class _AsyncProxy {
   _AsyncProxy(this._invoker);
   final ProxyInvoker _invoker;
-  Future<int> later() =>
-      _invoker.invokeAsync<int>(this, this, 0, const [], (_) async => 7);
+  Future<int> later() => _invoker.invokeAsync<int>(
+    proxy: this,
+    target: this,
+    methodIndex: 0,
+    arguments: const [],
+    original: (_) async => 7,
+  );
 }

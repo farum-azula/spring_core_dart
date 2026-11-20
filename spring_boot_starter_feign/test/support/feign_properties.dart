@@ -7,7 +7,7 @@ FeignProperties bindFeignProperties(ConfigurableEnvironment environment) {
   ConfigurationPropertySources.attach(environment);
   final binder = ConfigurationPropertiesBinder(
     environment,
-    BeanIntrospector(introspections: feignConfigBeans.introspections),
+    Introspector(introspections: feignConfigBeans.introspections),
   );
   return binder.postProcessBeforeInitialization(
     FeignProperties(),

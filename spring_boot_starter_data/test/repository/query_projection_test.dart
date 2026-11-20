@@ -1,7 +1,7 @@
 // The classes a @Query returns that are not entities: the build describes
 // them (an EntityIntrospection in the mapping context), and the rows are
 // mapped through that description. A class that is only @Introspected is
-// still mapped through its BeanIntrospection.
+// still mapped through its Introspection.
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:test/test.dart';
 
@@ -45,7 +45,7 @@ void main() {
   RepositoryOperations<Book, int> operationsFor(
     QueryMethod method, {
     List<EntityIntrospection<Object>> described = const [],
-    BeanIntrospector? introspector,
+    Introspector? introspector,
   }) =>
       RepositoryFactory(
         mappingContext: RelationalMappingContext(
@@ -90,7 +90,7 @@ void main() {
   );
 
   test(
-    'a class that is only @Introspected keeps its BeanIntrospection',
+    'a class that is only @Introspected keeps its Introspection',
     () async {
       final method = findPeople(people);
       final operations = operationsFor(
@@ -103,7 +103,7 @@ void main() {
     },
   );
 
-  test('the description wins over a BeanIntrospection', () async {
+  test('the description wins over an Introspection', () async {
     // A description that shouts the first name, to tell the two apart.
     final base = personEntityIntrospection();
     final shouting = EntityIntrospection<Person>(

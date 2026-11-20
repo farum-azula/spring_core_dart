@@ -259,7 +259,7 @@ final class MethodSecurityExpressionHandler {
 
   /// Makes the application's classes readable in expressions; `null`
   /// leaves only the security types readable.
-  final BeanIntrospector? introspector;
+  final Introspector? introspector;
 
   /// Resolves `@bean` references in expressions; `null` makes them
   /// fail.

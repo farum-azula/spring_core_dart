@@ -130,7 +130,7 @@ class PlainClientImpl implements PlainClient {
         ProxyMethod(
           'items',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'page',
               type: ClassType<int>(),
               isRequired: true,

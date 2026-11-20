@@ -1,7 +1,9 @@
 /// The dependency-injection container: bean definitions, the bean factory
 /// that creates and wires the beans, scopes, lifecycle callbacks and the
 /// post-processor hooks, plus `BeanWrapper` and the compile-time
-/// introspection that data binding and SpEL read.
+/// introspection that data binding and SpEL read, with the object methods
+/// of `@EqualsAndHashCode`, `@ToString` and `@CopyWith`
+/// (`IntrospectedObject`).
 ///
 /// Import it when you use the container without an application context
 /// (a small tool, a test), or when you write library code that registers
@@ -41,6 +43,7 @@ export 'package:spring_core_dart/src/beans/interface_proxy.dart';
 export 'package:spring_core_dart/src/beans/introspection.dart';
 export 'package:spring_core_dart/src/beans/lifecycle_callbacks.dart';
 export 'package:spring_core_dart/src/beans/null_bean.dart';
+export 'package:spring_core_dart/src/beans/object_methods.dart';
 export 'package:spring_core_dart/src/beans/object_provider.dart';
 export 'package:spring_core_dart/src/beans/post_processors.dart';
 export 'package:spring_core_dart/src/beans/scope.dart';

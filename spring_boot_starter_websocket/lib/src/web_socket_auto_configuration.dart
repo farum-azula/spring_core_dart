@@ -66,7 +66,7 @@ final webSocketAutoConfiguration = <BeanDefinition<Object>>[
       properties: r.dependency<WebSocketProperties>(),
       mapper:
           r.optionalDependency<ObjectMapper>() ??
-          ObjectMapper(introspector: r.dependency<BeanIntrospector>()),
+          ObjectMapper(introspector: r.dependency<Introspector>()),
       transport: r.dependency<WebSocketTransport>(),
       interceptors:
           r.optionalDependencyList<WebSocketHandshakeInterceptor>() ??
@@ -104,7 +104,7 @@ final webSocketAutoConfiguration = <BeanDefinition<Object>>[
       environment: r.dependency<Environment>(),
       mapper:
           r.optionalDependency<ObjectMapper>() ??
-          ObjectMapper(introspector: r.dependency<BeanIntrospector>()),
+          ObjectMapper(introspector: r.dependency<Introspector>()),
       sockets: r.dependency<PhoenixSocketFactory>(),
       interceptors:
           r.optionalDependencyList<PhoenixJoinInterceptor>() ??
@@ -142,7 +142,7 @@ final webSocketServerAutoConfiguration = <BeanDefinition<Object>>[
       beanFactory: r.dependency<ListableBeanFactory>(),
       mapper:
           r.optionalDependency<ObjectMapper>() ??
-          ObjectMapper(introspector: r.dependency<BeanIntrospector>()),
+          ObjectMapper(introspector: r.dependency<Introspector>()),
       sessions: r.dependency<WebSocketSessionRegistry>(),
       configurers:
           r.optionalDependencyList<WebSocketConfigurer>() ??

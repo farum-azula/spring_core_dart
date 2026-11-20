@@ -7,18 +7,18 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/core/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_model.dart';
 import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart'
     show LoaderKinds;
 
 /// What the part of `spring_boot_starter_flutter` found in a module: the
 /// `@BuildContextAccess` getters, the Spring widgets and the
 /// `@ThemeLoaderKind` classes. It lives in the module
-/// ([ModuleModel.starterModel]), so the core knows none of these types.
+/// ([ModuleModel.packageModel]), so the core knows none of these types.
 final class FlutterModuleModel {
   /// The Flutter model of [module], made the first time it is asked for.
   static FlutterModuleModel of(ModuleModel module) =>
-      module.starterModel(FlutterModuleModel.new);
+      module.packageModel(FlutterModuleModel.new);
 
   /// The `BuildContext` getters to generate for `@BuildContextAccess`
   /// beans.

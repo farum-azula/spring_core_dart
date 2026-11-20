@@ -353,12 +353,12 @@ final class _Cors with WebMvcConfigurer {
   }
 }
 
-BeanMethod<T> _get<T extends Object>(
+IntrospectedMethod<T> _get<T extends Object>(
   String name,
   String path,
   Function Function(T bean) method, {
   TypeInfo<Object?> returns = const ClassType<String>(),
-}) => BeanMethod<T>(
+}) => IntrospectedMethod<T>(
   name,
   returnTypeInfo: returns,
   invoke: (bean, arguments) => Function.apply(method(bean), arguments),

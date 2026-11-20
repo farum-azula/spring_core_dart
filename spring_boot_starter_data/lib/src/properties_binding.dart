@@ -77,7 +77,7 @@ T? bindSettingsOrNull<T extends Object>(
   }
   final binder = Binder.get(
     environment,
-    introspector: BeanIntrospector(
+    introspector: Introspector(
       introspections: dataConfigBeans.introspections,
     ),
   );

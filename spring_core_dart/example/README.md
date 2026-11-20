@@ -432,7 +432,7 @@ for (final error in binder.bindingResult.allErrors) {
 }
 ```
 
-`introspector` is `context.getBean<BeanIntrospector>()`. `'old'` is not a
+`introspector` is `context.getBean<Introspector>()`. `'old'` is not a
 number, so `age` gets a `typeMismatch` error instead of an exception.
 Messages can be translated with `messages.properties` (next section).
 

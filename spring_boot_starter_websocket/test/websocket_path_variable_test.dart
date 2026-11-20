@@ -30,23 +30,23 @@ BeanDefinition<OrderEndpoint> _orders(OrderEndpoint endpoint) =>
       types: const [OrderEndpoint],
       create: (_) => endpoint,
       annotatedMethods: [
-        BeanMethod<OrderEndpoint>(
+        IntrospectedMethod<OrderEndpoint>(
           'open',
           parameterTypes: const [int, Shelf, double],
           parameters: [
-            const BeanParameter(
+            const IntrospectedParameter(
               'id',
               type: ClassType<int>(),
               isRequired: true,
               annotations: [PathVariable()],
             ),
-            const BeanParameter(
+            const IntrospectedParameter(
               'shelf',
               type: EnumType<Shelf>(Shelf.values),
               isRequired: true,
               annotations: [PathVariable()],
             ),
-            const BeanParameter(
+            const IntrospectedParameter(
               'price',
               type: ClassType<double>(nullable: true),
               isRequired: true,
@@ -66,11 +66,11 @@ final _rooms = BeanDefinition<RoomEndpoint>(
   types: const [RoomEndpoint],
   create: (_) => RoomEndpoint(),
   annotatedMethods: [
-    BeanMethod<RoomEndpoint>(
+    IntrospectedMethod<RoomEndpoint>(
       'open',
       parameterTypes: const [Room],
       parameters: [
-        const BeanParameter(
+        const IntrospectedParameter(
           'room',
           type: ClassType<Room>(),
           isRequired: true,

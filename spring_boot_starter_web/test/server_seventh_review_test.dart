@@ -451,15 +451,15 @@ final class _Room {
 
 // The definitions the generator writes for the two endpoints.
 
-const _session = BeanParameter(
+const _session = IntrospectedParameter(
   'session',
   type: ClassType<ServerWebSocketSession>(),
   isRequired: true,
 );
 
-BeanMethod<T> _onOpen<T extends Object>(
+IntrospectedMethod<T> _onOpen<T extends Object>(
   void Function(T bean, ServerWebSocketSession s) open,
-) => BeanMethod<T>(
+) => IntrospectedMethod<T>(
   'open',
   parameterTypes: const [ServerWebSocketSession],
   parameters: const [_session],
@@ -469,25 +469,29 @@ BeanMethod<T> _onOpen<T extends Object>(
   annotations: const [OnOpen()],
 );
 
-BeanMethod<T> _onMessage<T extends Object>(
+IntrospectedMethod<T> _onMessage<T extends Object>(
   String Function(T bean, String text) message,
-) => BeanMethod<T>(
+) => IntrospectedMethod<T>(
   'message',
   parameterTypes: const [String],
   parameters: const [
-    BeanParameter('text', type: ClassType<String>(), isRequired: true),
+    IntrospectedParameter('text', type: ClassType<String>(), isRequired: true),
   ],
   invoke: (bean, arguments) => message(bean, arguments.single! as String),
   annotations: const [OnMessage()],
 );
 
-BeanMethod<T> _onClose<T extends Object>(
+IntrospectedMethod<T> _onClose<T extends Object>(
   void Function(T bean, CloseStatus status) close,
-) => BeanMethod<T>(
+) => IntrospectedMethod<T>(
   'close',
   parameterTypes: const [CloseStatus],
   parameters: const [
-    BeanParameter('status', type: ClassType<CloseStatus>(), isRequired: true),
+    IntrospectedParameter(
+      'status',
+      type: ClassType<CloseStatus>(),
+      isRequired: true,
+    ),
   ],
   isVoid: true,
   invoke: (bean, arguments) => close(bean, arguments.single! as CloseStatus),
@@ -514,12 +518,12 @@ BeanDefinition<_Room> _roomDefinition(_Room room) => BeanDefinition<_Room>(
     _onOpen<_Room>((bean, session) => bean.open(session)),
     _onMessage<_Room>((bean, text) => bean.message(text)),
     _onClose<_Room>((bean, status) => bean.close(status)),
-    BeanMethod<_Room>(
+    IntrospectedMethod<_Room>(
       'error',
       parameterTypes: const [ServerWebSocketSession, Object],
       parameters: const [
         _session,
-        BeanParameter('error', type: ClassType<Object>()),
+        IntrospectedParameter('error', type: ClassType<Object>()),
       ],
       isVoid: true,
       invoke: (bean, arguments) => bean.error(

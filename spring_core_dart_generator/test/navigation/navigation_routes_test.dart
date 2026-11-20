@@ -12,11 +12,13 @@ import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/core/package_directory.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/core/spring_metadata_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/metadata/spring_metadata_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -178,7 +180,7 @@ Future<TestBuilderResult> _build(String code) async {
   );
   await readerWriter.testing.loadIsolateSources();
   return await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/app.dart': '$_header$code',
@@ -203,21 +205,17 @@ Future<String> _generate(String code) async {
   final result = await _build(code);
   expect(result.errors, isEmpty);
   const path = 'lib/spring_gen/src/beans.spring.dart';
-  final output = result.readerWriter.testing.readString(
-    result.outputs.singleWhere((o) => o.path == path),
-  );
+  final output = moduleText(result, AssetId('pkg', path));
   final errors = await resolveSources<List<String>>(
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/app.dart': '$_header$code',
-      'pkg|$path': output,
+      ...moduleSources(output),
       ..._stubs,
     },
     (resolver) async {
       final library = await resolver.libraryFor(AssetId('pkg', path));
-      final errors = await library.session.getErrors(
-        library.firstFragment.source.fullName,
-      );
+      final errors = await moduleErrors(library);
       return [
         if (errors case ErrorsResult(:final diagnostics))
           for (final diagnostic in diagnostics)
@@ -495,7 +493,7 @@ class A extends StatelessWidget {
     await readerWriter.testing.loadIsolateSources();
     await testBuilder(
       SpringMetadataBuilder(
-        generations: starterGenerations,
+        generations: packageGenerations,
         packageDirectories: PackageDirectories(),
       ),
       {

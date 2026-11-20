@@ -21,9 +21,9 @@ class Cart {
   Line? main;
 }
 
-final _lineIntrospection = BeanIntrospection<Line>(
+final _lineIntrospection = Introspection<Line>(
   properties: [
-    BeanProperty<Line>(
+    IntrospectedProperty<Line>(
       'sku',
       type: String,
       typeInfo: const ClassType<String>(),
@@ -31,7 +31,7 @@ final _lineIntrospection = BeanIntrospection<Line>(
       set: (b, v) => b.sku = v! as String,
       annotations: const [NotBlank()],
     ),
-    BeanProperty<Line>(
+    IntrospectedProperty<Line>(
       'qty',
       type: int,
       typeInfo: const ClassType<int>(),
@@ -43,9 +43,9 @@ final _lineIntrospection = BeanIntrospection<Line>(
   instantiate: Line.new,
 );
 
-final _cartIntrospection = BeanIntrospection<Cart>(
+final _cartIntrospection = Introspection<Cart>(
   properties: [
-    BeanProperty<Cart>(
+    IntrospectedProperty<Cart>(
       'lines',
       type: List<Line>,
       typeInfo: const ListType<Line>(ClassType<Line>()),
@@ -53,21 +53,21 @@ final _cartIntrospection = BeanIntrospection<Cart>(
       set: (b, v) => b.lines = v! as List<Line>,
       annotations: const [Valid()],
     ),
-    BeanProperty<Cart>(
+    IntrospectedProperty<Cart>(
       'numbers',
       type: List<int>,
       typeInfo: const ListType<int>(ClassType<int>()),
       get: (b) => b.numbers,
       set: (b, v) => b.numbers = v! as List<int>,
     ),
-    BeanProperty<Cart>(
+    IntrospectedProperty<Cart>(
       'tags',
       type: List<String>,
       typeInfo: const ListType<String>(ClassType<String>()),
       get: (b) => b.tags,
       set: (b, v) => b.tags = v! as List<String>,
     ),
-    BeanProperty<Cart>(
+    IntrospectedProperty<Cart>(
       'prices',
       type: Map<int, double>,
       typeInfo: const MapType<int, double>(
@@ -77,7 +77,7 @@ final _cartIntrospection = BeanIntrospection<Cart>(
       get: (b) => b.prices,
       set: (b, v) => b.prices = v! as Map<int, double>,
     ),
-    BeanProperty<Cart>(
+    IntrospectedProperty<Cart>(
       'byCode',
       type: Map<String, Line>,
       typeInfo: const MapType<String, Line>(
@@ -88,7 +88,7 @@ final _cartIntrospection = BeanIntrospection<Cart>(
       set: (b, v) => b.byCode = v! as Map<String, Line>,
       annotations: const [Valid()],
     ),
-    BeanProperty<Cart>(
+    IntrospectedProperty<Cart>(
       'main',
       type: Line,
       nullable: true,
@@ -124,15 +124,24 @@ class Book {
   final Map<String, double> prices;
 }
 
-final _authorIntrospection = BeanIntrospection<Author>(
+final _authorIntrospection = Introspection<Author>(
   properties: [
-    BeanProperty<Author>('name', type: String, get: (b) => b.name),
-    BeanProperty<Author>('born', type: int, nullable: true, get: (b) => b.born),
+    IntrospectedProperty<Author>('name', type: String, get: (b) => b.name),
+    IntrospectedProperty<Author>(
+      'born',
+      type: int,
+      nullable: true,
+      get: (b) => b.born,
+    ),
   ],
-  constructor: BeanConstructor<Author>(
+  constructor: IntrospectedConstructor<Author>(
     parameters: const [
-      BeanParameter('name', type: ClassType<String>(), isRequired: true),
-      BeanParameter(
+      IntrospectedParameter(
+        'name',
+        type: ClassType<String>(),
+        isRequired: true,
+      ),
+      IntrospectedParameter(
         'born',
         type: ClassType<int>(nullable: true),
         symbol: #born,
@@ -143,43 +152,43 @@ final _authorIntrospection = BeanIntrospection<Author>(
   ),
 );
 
-final _bookIntrospection = BeanIntrospection<Book>(
+final _bookIntrospection = Introspection<Book>(
   properties: [
-    BeanProperty<Book>(
+    IntrospectedProperty<Book>(
       'isbn',
       type: String,
       get: (b) => b.isbn,
       annotations: const [NotBlank()],
     ),
-    BeanProperty<Book>('title', type: String, get: (b) => b.title),
-    BeanProperty<Book>('pages', type: int, get: (b) => b.pages),
+    IntrospectedProperty<Book>('title', type: String, get: (b) => b.title),
+    IntrospectedProperty<Book>('pages', type: int, get: (b) => b.pages),
   ],
-  constructor: BeanConstructor<Book>(
+  constructor: IntrospectedConstructor<Book>(
     parameters: const [
-      BeanParameter(
+      IntrospectedParameter(
         'isbn',
         type: ClassType<String>(),
         symbol: #isbn,
         isRequired: true,
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'title',
         type: ClassType<String>(),
         symbol: #title,
         isRequired: true,
       ),
-      BeanParameter('pages', type: ClassType<int>(), symbol: #pages),
-      BeanParameter(
+      IntrospectedParameter('pages', type: ClassType<int>(), symbol: #pages),
+      IntrospectedParameter(
         'tags',
         type: ListType<String>(ClassType<String>()),
         symbol: #tags,
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'author',
         type: ClassType<Author>(nullable: true),
         symbol: #author,
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'prices',
         type: MapType<String, double>(ClassType<String>(), ClassType<double>()),
         symbol: #prices,
@@ -226,22 +235,22 @@ class Signup {
   DateTime? start;
 }
 
-final _signupIntrospection = BeanIntrospection<Signup>(
+final _signupIntrospection = Introspection<Signup>(
   annotations: const [PasswordsMatch()],
   properties: [
-    BeanProperty<Signup>(
+    IntrospectedProperty<Signup>(
       'password',
       type: String,
       get: (b) => b.password,
       set: (b, v) => b.password = v! as String,
     ),
-    BeanProperty<Signup>(
+    IntrospectedProperty<Signup>(
       'confirm',
       type: String,
       get: (b) => b.confirm,
       set: (b, v) => b.confirm = v! as String,
     ),
-    BeanProperty<Signup>(
+    IntrospectedProperty<Signup>(
       'nick',
       type: String,
       nullable: true,
@@ -249,7 +258,7 @@ final _signupIntrospection = BeanIntrospection<Signup>(
       set: (b, v) => b.nick = v as String?,
       annotations: const [Size(min: 3, message: '{nick.size}')],
     ),
-    BeanProperty<Signup>(
+    IntrospectedProperty<Signup>(
       'birthday',
       type: DateTime,
       nullable: true,
@@ -257,7 +266,7 @@ final _signupIntrospection = BeanIntrospection<Signup>(
       set: (b, v) => b.birthday = v as DateTime?,
       annotations: const [Past()],
     ),
-    BeanProperty<Signup>(
+    IntrospectedProperty<Signup>(
       'start',
       type: DateTime,
       nullable: true,
@@ -275,9 +284,9 @@ class Employee extends Person {
 
 class Manager extends Employee {}
 
-final _employeeIntrospection = BeanIntrospection<Employee>(
+final _employeeIntrospection = Introspection<Employee>(
   properties: [
-    BeanProperty<Employee>(
+    IntrospectedProperty<Employee>(
       'badge',
       type: String,
       get: (b) => b.badge,
@@ -297,7 +306,7 @@ final class _FixedClock implements ClockProvider {
   DateTime now() => time;
 }
 
-BeanIntrospector _introspector() => BeanIntrospector(
+Introspector _introspector() => Introspector(
   introspections: [
     personIntrospection,
     addressIntrospection,
@@ -718,7 +727,7 @@ void main() {
       final violations = BeanValidator(introspector: _introspector())
           .validateObject(manager);
       expect(violations.map((v) => v.propertyPath), ['badge']);
-      expect(_introspector().findIntrospection(manager)!.beanType, Employee);
+      expect(_introspector().findIntrospection(manager)!.type, Employee);
     });
   });
 
@@ -1035,11 +1044,18 @@ void main() {
       MethodSignature signature,
       List<Object?> args,
       Object? result,
-    ) => ProxyInvoker(
-      [signature],
-      [advisor],
-      'registration',
-    ).invoke(target, target, 0, args, (_) => result);
+    ) =>
+        ProxyInvoker(
+          [signature],
+          [advisor],
+          'registration',
+        ).invoke(
+          proxy: target,
+          target: target,
+          methodIndex: 0,
+          arguments: args,
+          original: (_) => result,
+        );
 
     test('only @Validated classes are advised', () {
       expect(advisor.pointcut.matches(signature, 'x'), isTrue);
@@ -1105,24 +1121,42 @@ void main() {
     test('Future methods complete with the violation', () async {
       final invoker = ProxyInvoker([signature], [advisor], 'registration');
       await expectLater(
-        invoker.invokeAsync<String>(target, target, 0, [
-          '',
-          null,
-        ], (_) async => 'ok'),
+        invoker.invokeAsync<String>(
+          proxy: target,
+          target: target,
+          methodIndex: 0,
+          arguments: [
+            '',
+            null,
+          ],
+          original: (_) async => 'ok',
+        ),
         throwsA(isA<ConstraintViolationException>()),
       );
       await expectLater(
-        invoker.invokeAsync<String>(target, target, 0, [
-          'a@b.c',
-          null,
-        ], (_) async => 'too long'),
+        invoker.invokeAsync<String>(
+          proxy: target,
+          target: target,
+          methodIndex: 0,
+          arguments: [
+            'a@b.c',
+            null,
+          ],
+          original: (_) async => 'too long',
+        ),
         throwsA(isA<ConstraintViolationException>()),
       );
       expect(
-        await invoker.invokeAsync<String>(target, target, 0, [
-          'a@b.c',
-          null,
-        ], (_) async => 'ok'),
+        await invoker.invokeAsync<String>(
+          proxy: target,
+          target: target,
+          methodIndex: 0,
+          arguments: [
+            'a@b.c',
+            null,
+          ],
+          original: (_) async => 'ok',
+        ),
         'ok',
       );
     });

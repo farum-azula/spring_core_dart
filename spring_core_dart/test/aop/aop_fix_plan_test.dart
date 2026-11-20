@@ -126,28 +126,40 @@ class _$OrdersProxy implements Orders, UsageTracked, Advised {
 
   @override
   String place(Object item) =>
-      this._invoker.invoke(this, this._target, 0, [
-            item,
-          ], (args) => this._target.place(args[0]!))!
+      this._invoker.invoke(
+            proxy: this,
+            target: this._target,
+            methodIndex: 0,
+            arguments: [
+              item,
+            ],
+            original: (args) => this._target.place(args[0]!),
+          )!
           as String;
 
   @override
   int count() =>
       this._invoker.invoke(
-            this,
-            this._target,
-            1,
-            const [],
-            (args) => this._target.count(),
+            proxy: this,
+            target: this._target,
+            methodIndex: 1,
+            arguments: const [],
+            original: (args) => this._target.count(),
           )!
           as int;
 
   @override
   void audit() {
-    this._invoker.invoke(this, this._target, 2, const [], (args) {
-      this._target.audit();
-      return null;
-    });
+    this._invoker.invoke(
+      proxy: this,
+      target: this._target,
+      methodIndex: 2,
+      arguments: const [],
+      original: (args) {
+        this._target.audit();
+        return null;
+      },
+    );
   }
 
   // `@DeclareParents`: forwarded to the introduction, not advised.

@@ -9,16 +9,16 @@ class Upstream {
   Duration readTimeout = Duration.zero;
 }
 
-final upstreamIntrospection = BeanIntrospection<Upstream>(
+final upstreamIntrospection = Introspection<Upstream>(
   properties: [
-    BeanProperty<Upstream>(
+    IntrospectedProperty<Upstream>(
       'host',
       type: String,
       typeInfo: const ClassType<String>(),
       get: (b) => b.host,
       set: (b, v) => b.host = v! as String,
     ),
-    BeanProperty<Upstream>(
+    IntrospectedProperty<Upstream>(
       'readTimeout',
       type: Duration,
       typeInfo: const ClassType<Duration>(),
@@ -42,7 +42,7 @@ void main() {
 
   Binder binder(Map<String, String> system) => Binder(
     environment(system),
-    introspector: BeanIntrospector()..register(upstreamIntrospection),
+    introspector: Introspector()..register(upstreamIntrospection),
   );
 
   const strings = ListType<String>(ClassType<String>());

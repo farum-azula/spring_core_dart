@@ -13,10 +13,11 @@ import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
 
+import 'module_files.dart';
 import 'real_sources.dart';
 
 const _scan = r'''
@@ -538,7 +539,7 @@ Future<(String, List<String>)> generateNeeds(String models) async {
   );
   final own = await loadRealSources(readerWriter, sources);
   final result = await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     own,
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -546,16 +547,17 @@ Future<(String, List<String>)> generateNeeds(String models) async {
     flattenOutput: true,
   );
   expect(result.errors, isEmpty);
-  final output = result.readerWriter.testing.readString(result.outputs.single);
+  final output = moduleText(result);
   final errors = await resolveSources<List<String>>(
-    {...sources, 'pkg|lib/spring_gen/src/beans.spring.dart': output},
+    {
+      ...sources,
+      ...moduleSources(output),
+    },
     (resolver) async {
       final library = await resolver.libraryFor(
         AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
       );
-      final result = await library.session.getErrors(
-        library.firstFragment.source.fullName,
-      );
+      final result = await moduleErrors(library);
       return [
         if (result case ErrorsResult(:final diagnostics))
           for (final diagnostic in diagnostics)
@@ -566,7 +568,7 @@ Future<(String, List<String>)> generateNeeds(String models) async {
     resolverFor: 'pkg|lib/spring_gen/src/beans.spring.dart',
     readAllSourcesFromFilesystem: true,
   );
-  return (_normalize(output), errors);
+  return (_normalize(moduleText(result)), errors);
 }
 
 String _normalize(String code) => code
@@ -574,9 +576,9 @@ String _normalize(String code) => code
     .replaceAll(RegExp(r'\s'), '')
     .replaceAllMapped(RegExp(r',([)\]}])'), (m) => m[1]!);
 
-/// The `BeanIntrospection<name>(...)` of the output, `null` without one.
+/// The `Introspection<name>(...)` of the output, `null` without one.
 String? introspectionOf(String output, String name) {
-  final start = output.indexOf('BeanIntrospection<$name>(');
+  final start = output.indexOf('Introspection<$name>(');
   if (start < 0) {
     return null;
   }
@@ -602,11 +604,14 @@ String shapeOf(String output, String name) {
     for (final match in RegExp(pattern).allMatches(block)) match[1]!,
   ];
   // A constant description refers to top-level functions
-  // (`get:_$get3`, `Object? _$get3(Book bean) => bean.title;`).
+  // (`get:_$get3`, `Object? _$get3(Book object) => object.title;`) of the
+  // generated file it is in (each file of the module numbers its own).
+  final file = _fileOf(output, output.indexOf(block));
   final functions = {
     for (final match in RegExp(
-      r'_\$((?:get|set)\d+)\([\w<>,.?]+bean(?:,Object\?value)?\)=>bean\.(\w+)',
-    ).allMatches(output))
+      r'_\$((?:get|set)\d+)\([\w<>,.?]+object(?:,Object\?value)?\)=>'
+      r'object\.(\w+)',
+    ).allMatches(file))
       match[1]!: match[2]!,
   };
   List<String> accessors(String kind, String closure) => [
@@ -615,9 +620,9 @@ String shapeOf(String output, String name) {
     ).allMatches(block))
       match[1] ?? functions[match[2]]!,
   ];
-  final getters = accessors('get', r'\(bean\)=>bean\.(\w+)');
-  final setters = accessors('set', r'\(bean,value\)=>bean\.(\w+)=');
-  final methods = names(r"BeanMethod<[\w<>,.?]+>\(r'(\w+)'");
+  final getters = accessors('get', r'\(object\)=>object\.(\w+)');
+  final setters = accessors('set', r'\(object,value\)=>object\.(\w+)=');
+  final methods = names(r"IntrospectedMethod<[\w<>,.?]+>\(r'(\w+)'");
   final parts = RegExp(
     r'parts:(?:const)?\{([^}]*)\}',
   ).firstMatch(block)?[1];
@@ -625,9 +630,21 @@ String shapeOf(String output, String name) {
     if (getters.isNotEmpty) 'get ${getters.join(',')}',
     if (setters.isNotEmpty) 'set ${setters.join(',')}',
     if (block.contains('instantiate:')) 'instantiate',
-    if (block.contains('constructor:BeanConstructor')) 'constructor',
+    if (block.contains('constructor:IntrospectedConstructor')) 'constructor',
     if (methods.isNotEmpty) 'methods ${methods.join(',')}',
     if (parts != null)
       'parts ${parts.replaceAll('IntrospectionPart.', '')}'.trim(),
   ].join('; ');
+}
+
+// The generated file of the module's text [output] (its files one after
+// the other, each starting with the generated header) that holds [at].
+String _fileOf(String output, int at) {
+  const header = '//GENERATEDCODE';
+  final start = output.lastIndexOf(header, at);
+  final end = output.indexOf(header, at);
+  return output.substring(
+    start < 0 ? 0 : start,
+    end < 0 ? output.length : end,
+  );
 }

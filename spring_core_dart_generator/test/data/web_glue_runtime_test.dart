@@ -12,8 +12,8 @@ import 'dart:isolate';
 
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
 
 const _pubspec = '''
@@ -135,12 +135,12 @@ List<MethodParameter> parameters(List<(TypeInfo<Object?>, List<Object>)> all) =>
     HandlerMethod(
       beanName: 'controller',
       beanTypeName: 'Controller',
-      method: BeanMethod<Object>(
+      method: IntrospectedMethod<Object>(
         'handle',
         invoke: (bean, arguments) => null,
         parameters: [
           for (final (i, (type, annotations)) in all.indexed)
-            BeanParameter('p$i', type: type, annotations: annotations),
+            IntrospectedParameter('p$i', type: type, annotations: annotations),
         ],
       ),
       classAnnotations: const [],
@@ -389,7 +389,7 @@ Future<Map<String, Object?>> _run() async {
   );
   await readerWriter.testing.loadIsolateSources();
   final result = await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
     readerWriter: readerWriter,

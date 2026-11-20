@@ -1,6 +1,6 @@
 // `@Configuration` classes: full mode, `@Bean` types inferred from the
 // method body, `@ConfigurationProperties` constructor binding.
-import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
 import 'package:test/test.dart';
 
 import '../support/spring_builder.dart';
@@ -43,7 +43,7 @@ class DbProperties {
       expect(output, isNot(contains('Dependency(')));
       // The introspection carries the same constructor, with @DefaultValue.
       expect(output, contains("DefaultValue(r'10')"));
-      expect(output, contains('BeanConstructor<'));
+      expect(output, contains('IntrospectedConstructor<'));
       expect(await compileErrors({'lib/src/db.dart': boot + db}), isEmpty);
     });
 

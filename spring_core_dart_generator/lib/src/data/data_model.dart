@@ -2,12 +2,13 @@
 // the repositories and their methods, what the build knows of the stores,
 // and the drivers' glue. The scan fills it (data_scanner.dart), the
 // emitter writes it (data_emitter.dart). It lives in the module
-// ([ModuleModel.starterModel]), so the core knows none of these types.
+// ([ModuleModel.packageModel]), so the core knows none of these types.
 
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
-import 'package:spring_core_dart_generator/src/core/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/introspection/introspection_model.dart';
 import 'package:spring_core_dart_generator/src/data/data_stores.dart';
 import 'package:spring_core_dart_generator/src/data/driver_glue.dart';
 import 'package:spring_core_dart_generator/src/data/part_tree.dart';
@@ -20,7 +21,7 @@ import 'package:spring_core_dart_generator/src/data/part_tree.dart';
 final class DataModuleModel {
   /// The data model of [module], made the first time it is asked for.
   static DataModuleModel of(ModuleModel module) =>
-      module.starterModel(DataModuleModel.new);
+      module.packageModel(DataModuleModel.new);
 
   /// The classes the data layer stores or reads: `@Table` classes and the
   /// DTOs of `@Query` methods.
@@ -97,7 +98,7 @@ final class RepositoryCheck {
 /// // Output:
 /// create: (r) => _$BookRepositoryImpl.$create(r),
 /// ```
-final class RepositoryCreation extends StarterCreation {
+final class RepositoryCreation extends PackageCreation {
   /// Creates the repository of [model].
   RepositoryCreation(this.model);
 
@@ -135,7 +136,7 @@ class EntityPropertyModel {
   /// The constant the property defaults to: the initializer of the field,
   /// else the default of the constructor parameter; `null` when there is
   /// none or the generated code cannot write it (see
-  /// [IntrospectedProperty.initialValue] for the shapes).
+  /// [IntrospectionPropertyModel.initialValue] for the shapes).
   final ({Object? value})? defaultValue;
 }
 

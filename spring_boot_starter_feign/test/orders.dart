@@ -39,30 +39,30 @@ abstract interface class BadStreamClient {
 
 // ---- generated ----
 
-final orderEventIntrospection = BeanIntrospection<OrderEvent>(
+final orderEventIntrospection = Introspection<OrderEvent>(
   properties: [
-    BeanProperty<OrderEvent>(
+    IntrospectedProperty<OrderEvent>(
       'id',
       type: int,
       typeInfo: const ClassType<int>(),
       get: (e) => e.id,
     ),
-    BeanProperty<OrderEvent>(
+    IntrospectedProperty<OrderEvent>(
       'status',
       type: String,
       typeInfo: const ClassType<String>(),
       get: (e) => e.status,
     ),
   ],
-  constructor: BeanConstructor<OrderEvent>(
+  constructor: IntrospectedConstructor<OrderEvent>(
     parameters: const [
-      BeanParameter(
+      IntrospectedParameter(
         'id',
         type: ClassType<int>(),
         symbol: #id,
         isRequired: true,
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'status',
         type: ClassType<String>(),
         symbol: #status,
@@ -85,7 +85,7 @@ class OrdersClientImpl implements OrdersClient {
         ProxyMethod(
           'events',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'shop',
               type: ClassType<String>(),
               isRequired: true,

@@ -4,8 +4,8 @@
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/core/bean_model.dart';
-import 'package:spring_core_dart_generator/src/core/starter_generation.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_generation.dart';
 
 // The cache annotations, matched by URL (the generator does not depend on
 // the cache starter).
@@ -33,7 +33,7 @@ const _caching = TypeChecker.fromUrl('$_annotations#Caching');
 /// Future<Book> find(Isbn isbn) => ...
 /// // Isbn: described so the key reads `value`.
 /// ```
-final class CacheGeneration extends StarterGeneration {
+final class CacheGeneration extends PackageGeneration {
   /// The part; it keeps no state of a build.
   const CacheGeneration();
 

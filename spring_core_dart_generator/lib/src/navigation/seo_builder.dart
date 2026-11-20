@@ -6,9 +6,9 @@ import 'package:glob/glob.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:path/path.dart' as p;
 import 'package:spring_core_dart/core.dart';
-import 'package:spring_core_dart_generator/src/core/build_environment.dart';
-import 'package:spring_core_dart_generator/src/core/package_directory.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/builder/build_environment.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/flutter/web_page_head.dart';
 import 'package:yaml/yaml.dart';
 

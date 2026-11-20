@@ -7,11 +7,11 @@ library;
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/flutter/flutter_keys_builder.dart';
 import 'package:spring_core_dart_generator/src/flutter/spring_key_files.dart';
 import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
 
 ({String? code, KeysDiagnostics diagnostics}) _theme(String yaml) {
@@ -777,7 +777,7 @@ spring.flutter.theme.tokens.a.x: $nope.y
       );
       await readerWriter.testing.loadIsolateSources();
       final result = await testBuilder(
-        SpringBuilder(generations: starterGenerations),
+        SpringBuilder(generations: packageGenerations),
         {
           'app|pubspec.yaml': pubspec,
           for (final MapEntry(:key, :value) in files.entries) 'app|$key': value,

@@ -22,7 +22,7 @@ const _source =
 
 ObjectMapper _mapper(DependencyResolver r) =>
     r.optionalDependency<ObjectMapper>() ??
-    ObjectMapper(introspector: r.dependency<BeanIntrospector>());
+    ObjectMapper(introspector: r.dependency<Introspector>());
 
 // The changes of rows of the store, from Realtime: of the whole table,
 // since a subscription with a filter gets no delete and no update that
@@ -173,7 +173,7 @@ final supabaseAutoConfiguration = <BeanDefinition<Object>>[
     create: (r) => CallTemplates(
       environment: r.dependency<Environment>(),
       beanFactory: r.dependency<ListableBeanFactory>(),
-      introspector: r.dependency<BeanIntrospector>(),
+      introspector: r.dependency<Introspector>(),
       security: r.optionalDependency<MethodSecurityExpressionHandler>(),
     ),
   ),

@@ -63,16 +63,16 @@ final BeanModule springBootStarterActuatorQpsAutoConfiguration = BeanModule(
       ],
       create: (r) => QpsEndpoint(r.dependency<PrimaryIsolate>()),
       annotatedMethods: [
-        BeanMethod<QpsEndpoint>(
+        IntrospectedMethod<QpsEndpoint>(
           'qps',
           invoke: (bean, _) => bean.qps(),
           annotations: const [ReadOperation()],
         ),
-        BeanMethod<QpsEndpoint>(
+        IntrospectedMethod<QpsEndpoint>(
           'window',
           invoke: (bean, arguments) => bean.window(arguments.single! as String),
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'window',
               type: ClassType<String>(),
               isRequired: true,

@@ -32,7 +32,7 @@ BeanDefinition<Reports> reportsDefinition(
   create: (_) => instance ?? Reports(),
   annotatedMethods: [
     for (final MapEntry(key: name, value: annotations) in methods.entries)
-      BeanMethod<Reports>(
+      IntrospectedMethod<Reports>(
         name,
         invoke: (bean, arguments) => Function.apply(switch (name) {
           'refresh' => bean.refresh,
@@ -439,7 +439,7 @@ void main() {
           name: 'reports',
           create: (_) => Reports(),
           annotatedMethods: [
-            BeanMethod<Reports>(
+            IntrospectedMethod<Reports>(
               'refresh',
               parameterTypes: const [int],
               invoke: (bean, arguments) => null,

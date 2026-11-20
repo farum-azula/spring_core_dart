@@ -1,4 +1,4 @@
-import 'package:spring_core_dart_generator/src/core/did_you_mean.dart';
+import 'package:spring_core_dart_generator/src/core/builder/closest_name.dart';
 import 'package:spring_core_dart_generator/src/flutter/theme_value_syntax.dart';
 import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart';
 

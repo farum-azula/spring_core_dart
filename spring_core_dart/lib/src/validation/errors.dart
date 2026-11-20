@@ -837,7 +837,7 @@ abstract class AbstractBindingResult implements BindingResult {
 class BeanPropertyBindingResult extends AbstractBindingResult {
   /// An empty result for [target], named [objectName] in message codes.
   ///
-  /// `introspector` (default `BeanIntrospector.shared`) and
+  /// `introspector` (default `Introspector.shared`) and
   /// `conversionService` configure the [wrapper]. [target] is `null` when
   /// `DataBinder.construct` could not create the object; field values and
   /// types then come from [recordFieldValue].
@@ -852,7 +852,7 @@ class BeanPropertyBindingResult extends AbstractBindingResult {
   @override
   final Object? target;
 
-  final BeanIntrospector? _introspector;
+  final Introspector? _introspector;
   final ConversionService? _conversionService;
   final _fieldValues = <String, Object?>{};
   final _fieldTypes = <String, Type?>{};

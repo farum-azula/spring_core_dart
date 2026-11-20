@@ -86,8 +86,8 @@ final class TransactionPlan {
 ///   `noRollbackFor` closest to its class (the type itself or the nearest
 ///   supertype listed) is in `noRollbackFor`: then the transaction commits
 ///   and the error is thrown again. Types are matched with subtypes through
-///   [BeanIntrospector.isInstanceOf], the closest found with
-///   [BeanIntrospector.typeDepth], as Spring's
+///   [Introspector.isInstanceOf], the closest found with
+///   [Introspector.typeDepth], as Spring's
 ///   `RuleBasedTransactionAttribute` does.
 /// - The transaction is named `Class.method`.
 ///
@@ -107,9 +107,9 @@ final class TransactionInterceptor implements MethodInterceptor {
   TransactionInterceptor({
     this.beanFactory,
     PlatformTransactionManager? transactionManager,
-    BeanIntrospector? introspector,
+    Introspector? introspector,
   }) : _fixedManager = transactionManager,
-       introspector = introspector ?? BeanIntrospector.shared {
+       introspector = introspector ?? Introspector.shared {
     if (beanFactory == null && transactionManager == null) {
       throw ArgumentError(
         'Give a beanFactory or a transactionManager to find the transaction '
@@ -125,7 +125,7 @@ final class TransactionInterceptor implements MethodInterceptor {
   final BeanFactory? beanFactory;
 
   /// Matches exception types with subtypes.
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   final PlatformTransactionManager? _fixedManager;
   final _plans = Map<MethodSignature, TransactionPlan?>.identity();

@@ -372,7 +372,7 @@ final class _ScheduledMethod {
 
   final String name;
   final String beanName;
-  final BeanMethod<Object> method;
+  final IntrospectedMethod<Object> method;
   final Trigger trigger;
   // `@Scheduled(scheduler:)`; null: the default scheduler.
   final String? schedulerName;

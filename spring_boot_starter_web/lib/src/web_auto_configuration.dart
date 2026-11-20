@@ -144,7 +144,7 @@ final webMvcAutoConfiguration = <BeanDefinition<Object>>[
       return ResponseWriter(
         mapper:
             r.optionalDependency<ObjectMapper>() ??
-            ObjectMapper(introspector: r.dependency<BeanIntrospector>()),
+            ObjectMapper(introspector: r.dependency<Introspector>()),
         messageSource: r.optionalDependency<MessageSource>(),
         asyncTimeout: mvc.async.requestTimeout,
         sseHeartbeat: mvc.sse.heartbeatInterval,

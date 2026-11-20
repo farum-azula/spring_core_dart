@@ -1333,9 +1333,9 @@ The parser can be used directly:
 final parser = SpelExpressionParser();
 // The generated descriptions of @Introspected classes live in the
 // application context's introspector, a bean (`app` is the context; a bean
-// can inject BeanIntrospector instead). An evaluation context made by hand
-// reads only BeanIntrospector.shared, so give it the context's.
-final introspector = app.getBean<BeanIntrospector>();
+// can inject Introspector instead). An evaluation context made by hand
+// reads only Introspector.shared, so give it the context's.
+final introspector = app.getBean<Introspector>();
 final evaluation = StandardEvaluationContext()
   ..addPropertyAccessor(IntrospectionPropertyAccessor(introspector))
   ..addMethodResolver(IntrospectionMethodResolver(introspector));
@@ -1375,7 +1375,7 @@ methods; `T(Objects)`, `T(System)` and `new StringBuilder()` work too.
 
 **Your classes.** Dart has no reflection, so expressions reach your
 classes through `@Introspected` metadata (read by default from
-`BeanIntrospector.shared`), through `FunctionPropertyAccessor` /
+`Introspector.shared`), through `FunctionPropertyAccessor` /
 `FunctionMethodResolver`, or through maps. `SimpleEvaluationContext`
 restricts expressions for data binding: no types, constructors, bean
 references or variable assignment.
@@ -1448,8 +1448,8 @@ class SignupForm {
 }
 
 final binder = DataBinder(SignupForm(), objectName: 'signup',
-    introspector: context.getBean<BeanIntrospector>())
-  ..validators.add(BeanValidator(introspector: context.getBean<BeanIntrospector>()))
+    introspector: context.getBean<Introspector>())
+  ..validators.add(BeanValidator(introspector: context.getBean<Introspector>()))
   ..bind({'name': 'Ada', 'age': '17'}) // e.g. the fields of a form
   ..validate();
 
@@ -1503,7 +1503,7 @@ class Registration {
 class ValidationConfig {
   @Bean()
   MethodValidationPostProcessor methodValidationPostProcessor(
-    BeanIntrospector introspector,
+    Introspector introspector,
   ) => MethodValidationPostProcessor(BeanValidator(introspector: introspector));
 }
 ```
@@ -1661,6 +1661,92 @@ offset such as `+02:00`), `indentOutput`, and `sortPropertiesAlphabetically`
   `DeserializationFeature`, `DateTimeFeature`, `MapperFeature`).
 
 Not supported yet: getters without a field.
+
+### Object methods (`@EqualsAndHashCode`, `@ToString`, `@CopyWith`)
+
+A data class needs `==`, `hashCode`, `toString()` and a copy with some
+values changed. `@EqualsAndHashCode`, `@ToString` and `@CopyWith` ask the
+generator to write them from the class's fields; in Spring (Java) this is
+Lombok's `@EqualsAndHashCode`, `@ToString` and `@With`. Each annotation
+makes the class described (no `@Introspected` needed); options are
+parameters only.
+
+```dart
+import 'package:spring_core_dart/spring_core_dart.dart';
+// copyWith is in the module's generated file:
+import 'package:shop/spring_gen/src/app.spring.introspection.dart';
+
+@EqualsAndHashCode()
+@ToString(mask: ['card'])
+@CopyWith()
+class Book with IntrospectedObject {
+  const Book({
+    required this.title,
+    this.pages = 0,
+    this.tags = const [],
+    this.card,
+  });
+
+  final String title;
+  final int pages;
+  final List<String> tags;
+  final String? card;
+}
+
+final dune = Book(title: 'Dune', tags: ['sf', 'classic']);
+
+dune == Book(title: 'Dune', tags: ['sf', 'classic']); // true (lists by content)
+dune.toString();
+// Book(title: Dune, pages: 0, tags: [sf, classic], card: ******)
+dune.copyWith(pages: 412);        // the other values are kept
+dune.copyWith(card: null);        // null clears a nullable field
+```
+
+**What is generated, and where.** Nothing is written into your file. The
+`==`, `hashCode` and `toString()` are typed functions in the class's
+description, in `lib/spring_gen/<library>.spring.introspection.dart`. The mixin
+`IntrospectedObject` (the framework's, written once by hand) finds them
+by the object's runtime type: its `==`, `hashCode` and `toString()` call
+them, so the class says `with IntrospectedObject` and the build tells you
+when it is missing. A subclass without a description of its own uses its
+closest described superclass's. The same file has the `copyWith` (an
+extension). `copyWith` is not a member of the class, so **the library
+that calls it imports that generated file**; the class's own file needs
+nothing.
+
+**Fields.** The public instance fields the class declares, in their order
+(`include` chooses exactly some, `exclude` leaves some out, `callSuper`
+adds the superclass's part). `List`, `Set` and `Map` fields compare and
+hash by content (`deepEquals`, `deepHash`). Objects of different classes
+are never equal. A private field is left out, with a warning.
+
+**Masking.** `@ToString` writes a field whose name looks secret
+(`password`, `apiKey`, `refresh_token`, ... by `SecretNames`) as `******`,
+and so does a field of `mask`; `reveal` shows one the rule would hide. It
+is decided at build time: the value of a masked field is never read. In
+logs objects are printed through `toString()`, so the masking applies
+there; it does not apply to JSON output: keep a field out of JSON with
+`@JsonProperty('', access: JsonPropertyAccess.writeOnly)`.
+
+**`copyWith`.** A typed function: an argument left out keeps the value,
+`null` clears a nullable field, a value of the wrong type does not compile.
+It makes the copy through the unnamed constructor (or `constructor:`), so
+each field must match a constructor parameter.
+
+**In a unit test**, register the descriptions without a context:
+`Introspector.shared.registerAll($appIntrospections)` (the getter of the
+generated file; `$<module>Introspections`). Without a registered
+description `==`, `hashCode` and `toString()` throw a `StateError` that says
+so; they never compare by identity silently.
+
+The build fails for every misuse (the annotations on a mixin, enum or
+abstract class, an `include` with `exclude`, an unknown field name, a
+missing constructor, ...) with a message that names the fix. There is no build key: the
+methods are the application's behaviour at run time in every build.
+`benchmark/object_methods_benchmark.dart` compares them with hand-written
+ones. Measured on an Apple M5 (ns per call, AOT, hand-written in
+parentheses): `==` 14 (8), `hashCode` 17 (11), a lookup in a set of 1,000
+33 (19), `toString()` 199 (195).
 
 ### AOP
 
@@ -2302,7 +2388,8 @@ to the `PasswordEncoder`s of `spring_security_core`.
 | SpEL `matches` and String methods are Java's | Dart's `RegExp` syntax and Dart's String methods (`replaceAll` with a string is literal) | Dart runtime |
 | SpEL `T(java.lang.Math)` finds any class | `T()` needs registered types and takes Dart type names (`T(int)`) and the common `java.lang` / `java.util` ones (`Math`, `Integer`, `Objects`, `System`, `StringBuilder`, ...); `T(System).getProperty(name, default)` gives the default | No reflection; Dart has no system properties |
 | SpEL on the JVM knows `7.0` from `7` | On the web, an integral double that comes from outside SpEL (a variable, a property not declared `double` on an `@Introspected` class, an element of a collection SpEL did not build) counts as an `int` | JavaScript has one number type |
-| SpEL reads the public properties and methods of any object (reflection) | `StandardEvaluationContext` and `SimpleEvaluationContext` read the `@Introspected` classes of `BeanIntrospector.shared` (methods: `withInstanceMethods()` for the simple one); other objects need a `PropertyAccessor` / `MethodResolver` | No reflection |
+| SpEL reads the public properties and methods of any object (reflection) | `StandardEvaluationContext` and `SimpleEvaluationContext` read the `@Introspected` classes of `Introspector.shared` (methods: `withInstanceMethods()` for the simple one); other objects need a `PropertyAccessor` / `MethodResolver` | No reflection |
+| Lombok writes `equals`, `hashCode`, `toString` and `with...` into the class at compile time | The generator writes them into the class's description and `IntrospectedObject` calls them (`with IntrospectedObject`); `copyWith` is in the generated `<library>.spring.introspection.dart`, which the calling library imports | Dart cannot add a member to a class without experiments |
 | Jackson reads and writes any enum | An enum that no `@Introspected` class uses has no values known at runtime: `readValue<Color>` fails with a message; pass `EnumType<Color>(Color.values)` or call `introspector.registerEnum(...)` | No reflection |
 | Jackson reads `Range<Integer>` of `class Range<T extends Number>` | A generic class with bounded type parameters is described raw (`Range<num>`): writing works, reading it with type arguments fails with a message (register a `JsonDeserializer`) | Dart cannot build `Range<X>` for a type parameter `X` without that bound |
 | SpEL `1 instanceof T(Long)` is `false` (an `Integer`) | `true`: `T(Long)`, `T(Integer)`, `T(Short)` and `T(Byte)` are all Dart's `int` | Dart has one integer type |

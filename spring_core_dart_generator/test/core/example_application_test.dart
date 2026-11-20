@@ -3,7 +3,7 @@
 // used, as for any application depending on the package. Elsewhere (bin/,
 // lib/) the package's lib/ is scanned and its own auto-configuration is
 // not, as before.
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
 import 'package:test/test.dart';
 
 import '../support/example_application.dart';

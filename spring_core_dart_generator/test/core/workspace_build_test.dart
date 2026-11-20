@@ -14,10 +14,10 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/core/package_directory.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:spring_core_dart_generator/src/test/test_builder.dart';
 import 'package:test/test.dart';
 
@@ -120,7 +120,7 @@ void main() {
   group('the output kept while the sources have errors', () {
     // The build runs in app's directory and builds pkg.
     SpringBuilder builder() => SpringBuilder(
-      generations: starterGenerations,
+      generations: packageGenerations,
       proxyMode: ProxyMode.none,
       packageDirectories: PackageDirectories(workingDirectory: _package('app')),
     );
@@ -186,7 +186,7 @@ class AppAssets {
 
     Future<TestBuilderResult> build() async => (await _build(
       SpringBuilder(
-        generations: starterGenerations,
+        generations: packageGenerations,
         packageDirectories: PackageDirectories(workingDirectory: _workspace),
       ),
       {

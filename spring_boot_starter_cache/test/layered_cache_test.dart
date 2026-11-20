@@ -64,7 +64,7 @@ void main() {
       disk = DiskCacheManager(
         store: InMemoryCacheStore(),
         mapper: ObjectMapper(),
-        introspector: BeanIntrospector(),
+        introspector: Introspector(),
       );
       layered = LayeredCacheManager([memory, disk]);
     });
@@ -90,7 +90,7 @@ void main() {
                 DiskCacheManager(
                   store: disk.store,
                   mapper: ObjectMapper(),
-                  introspector: BeanIntrospector(),
+                  introspector: Introspector(),
                 ),
               ]).getCache('books')!
               as LayeredCache;

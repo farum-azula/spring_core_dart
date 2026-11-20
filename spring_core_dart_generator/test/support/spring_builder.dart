@@ -5,10 +5,14 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import 'module_files.dart';
+
+export 'module_files.dart';
 
 /// The scan root of `pkg`: its beans are those of `lib/src/`.
 const scanRoot = r'''
@@ -35,7 +39,7 @@ Future<TestBuilderResult> buildPackage(
   await readerWriter.testing.loadIsolateSources();
   return await testBuilder(
     SpringBuilder(
-      generations: starterGenerations,
+      generations: packageGenerations,
       proxyMode: proxyMode,
       pruneProxies: prune,
     ),
@@ -64,9 +68,7 @@ Future<String> generateModule(
     prune: prune,
   );
   expect(result.errors, isEmpty);
-  return normalize(
-    result.readerWriter.testing.readString(result.outputs.single),
-  );
+  return normalize(moduleText(result));
 }
 
 /// Drops whitespace, trailing commas (formatter choices) and import
@@ -105,11 +107,7 @@ void main(List<String> args) => runApplication(args);
   );
   expect(result.errors, isEmpty);
   return normalize(
-    result.readerWriter.testing.readString(
-      result.outputs.singleWhere(
-        (o) => o.path == 'bin/spring_gen/main.spring.dart',
-      ),
-    ),
+    moduleText(result, AssetId('pkg', 'bin/spring_gen/main.spring.dart')),
   );
 }
 
@@ -142,21 +140,20 @@ Future<List<String>> compileErrors(
   };
   final result = await buildPackage(sources, proxyMode: proxyMode);
   expect(result.errors, isEmpty);
-  final output = result.readerWriter.testing.readString(result.outputs.single);
+  final generated = moduleFiles(result);
   return await resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
-      'pkg|lib/spring_gen/src/beans.spring.dart': output,
+      for (final file in generated)
+        '$file': result.readerWriter.testing.readString(file),
     },
     (resolver) async {
       final library = await resolver.libraryFor(
         AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
       );
-      final errors = await library.session.getErrors(
-        library.firstFragment.source.fullName,
-      );
       return [
-        if (errors case ErrorsResult(:final diagnostics))
+        // The library, its part and the libraries of its descriptions.
+        if (await moduleErrors(library) case ErrorsResult(:final diagnostics))
           for (final diagnostic in diagnostics)
             if (diagnostic.severity == Severity.error) diagnostic.message,
       ];

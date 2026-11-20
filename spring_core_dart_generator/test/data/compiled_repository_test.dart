@@ -12,11 +12,13 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/data/part_tree_parser.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _scan = r'''
 import 'package:pkg/spring_gen/src/beans.spring.dart';
@@ -104,7 +106,7 @@ Future<TestBuilderResult> _build(
   );
   await readerWriter.testing.loadIsolateSources();
   return await testBuilder(
-    SpringBuilder(generations: starterGenerations, proxyMode: proxyMode),
+    SpringBuilder(generations: packageGenerations, proxyMode: proxyMode),
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/model.dart': '$header$entities$model',
@@ -139,7 +141,8 @@ Future<String> _generate(
     files: files,
   );
   expect(result.errors, isEmpty);
-  return result.readerWriter.testing.readString(
+  return moduleText(
+    result,
     AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
   );
 }
@@ -432,6 +435,12 @@ Future<List<Book>> removeByYearIs(int y) :: year ; delete
 Future<int?> countByYearIs(int y) :: year ; count
 '''),
 ].map(_Case.new).toList();
+
+// The core's description of a class, `Introspection` followed by [code]
+// (`<Book>(`) in the flattened output, and not the data starter's
+// `EntityIntrospection<Book>`.
+Matcher _introspection(String code) =>
+    matches(RegExp('(?<!Entity)Introspection${RegExp.escape(code)}'));
 
 void main() {
   group('the class of a repository', () {
@@ -864,15 +873,13 @@ Future<Page<Book>> findByTitle(String title, Pageable operations) =>
         {
           'pkg|lib/src/beans.dart': _scan,
           'pkg|lib/src/model.dart': '$_header$_entities$model',
-          'pkg|lib/spring_gen/src/beans.spring.dart': raw,
+          ...moduleSources(raw),
         },
         (resolver) async {
           final library = await resolver.libraryFor(
             AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
           );
-          final result = await library.session.getErrors(
-            library.firstFragment.source.fullName,
-          );
+          final result = await moduleErrors(library);
           return [
             if (result case ErrorsResult(:final diagnostics))
               for (final diagnostic in diagnostics)
@@ -1148,7 +1155,7 @@ Future<List<Book>> findByTitleContaining(String part) =>
     });
 
     test('the types of repository signatures are not introspected', () {
-      expect(output, isNot(contains('BeanIntrospection')));
+      expect(output, isNot(_introspection('<')));
     });
 
     test('the generated code compiles against the starter', () async {
@@ -1156,15 +1163,13 @@ Future<List<Book>> findByTitleContaining(String part) =>
         {
           'pkg|lib/src/beans.dart': _scan,
           'pkg|lib/src/model.dart': '$_header$_entities$model',
-          'pkg|lib/spring_gen/src/beans.spring.dart': raw,
+          ...moduleSources(raw),
         },
         (resolver) async {
           final library = await resolver.libraryFor(
             AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
           );
-          final result = await library.session.getErrors(
-            library.firstFragment.source.fullName,
-          );
+          final result = await moduleErrors(library);
           return [
             if (result case ErrorsResult(:final diagnostics))
               for (final diagnostic in diagnostics)
@@ -1821,7 +1826,7 @@ abstract interface class AccountRepository
   Future<List<Account>> themed(String theme);'''),
       );
       expect(output, contains('findByName'));
-      expect(_normalize(output), _has('BeanIntrospection<Settings>('));
+      expect(_normalize(output), _introspection('<Settings>('));
     });
   });
 
@@ -2198,15 +2203,13 @@ operations<Book, int>(
         {
           'pkg|lib/src/beans.dart': _scan,
           'pkg|lib/src/model.dart': '$_header$_entities$model',
-          'pkg|lib/spring_gen/src/beans.spring.dart': raw,
+          ...moduleSources(raw),
         },
         (resolver) async {
           final library = await resolver.libraryFor(
             AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
           );
-          final result = await library.session.getErrors(
-            library.firstFragment.source.fullName,
-          );
+          final result = await moduleErrors(library);
           return [
             if (result case ErrorsResult(:final diagnostics))
               for (final diagnostic in diagnostics)

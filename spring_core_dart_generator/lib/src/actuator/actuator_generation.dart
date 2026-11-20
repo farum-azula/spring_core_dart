@@ -1,7 +1,7 @@
 // spring_boot_actuator's part of the module build: the application's
 // `build-info.properties`, which the `info` endpoint shows.
 import 'package:build/build.dart';
-import 'package:spring_core_dart_generator/src/core/starter_generation.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_generation.dart';
 import 'package:yaml/yaml.dart';
 
 /// The part of `spring_boot_actuator` in the module build: an application
@@ -21,7 +21,7 @@ import 'package:yaml/yaml.dart';
 /// build.name=shop
 /// build.version=1.2.0
 /// ```
-final class ActuatorGeneration extends StarterGeneration {
+final class ActuatorGeneration extends PackageGeneration {
   /// The part; it keeps no state of a build.
   const ActuatorGeneration();
 

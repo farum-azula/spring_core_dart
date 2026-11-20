@@ -86,7 +86,7 @@ void main() {
     test('SpEL used directly', () {
       final results = spel(
         app.getBean<Catalog>().all(),
-        app.getBean<BeanIntrospector>(),
+        app.getBean<Introspector>(),
       );
       expect(results['#books.?[price > 10].![title]'], [
         'Cosmos',
@@ -103,7 +103,7 @@ void main() {
         'opensAt': '22',
         'closesAt': '20',
         'maxBasketSize': 'many',
-      }, app.getBean<BeanIntrospector>());
+      }, app.getBean<Introspector>());
       expect(settings.name, 'NEON Books'); // disallowed field
       expect(errors, [
         'maxBasketSize: typeMismatch.shop.maxBasketSize',

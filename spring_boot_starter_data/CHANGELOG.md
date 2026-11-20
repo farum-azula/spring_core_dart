@@ -1,3 +1,8 @@
+## Unreleased
+
+- Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.
+- The statement logging masks values by `SecretNames` of spring_core_dart, the rule `@ToString` uses too (moved there unchanged from `LogValues`): the same names as before.
+
 ## 0.8.4
 
 - Repositories that keep their data in memory say so at start: the first repository given the in-memory store logs `memory - Starting... (in memory: the data lives until the application stops)` once, at info, as a database's pool logs its own start. An application meant to run on a database and started without `spring.datasource.url` used to run in memory without a word.

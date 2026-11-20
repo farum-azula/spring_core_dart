@@ -138,44 +138,74 @@ class _$CalcProxy implements Calc, Advised {
 
   @override
   int add(int a, int b) =>
-      _invoker.invoke(this, _target, 0, [
-            a,
-            b,
-          ], (args) => _target.add(args[0]! as int, args[1]! as int))!
+      _invoker.invoke(
+            proxy: this,
+            target: _target,
+            methodIndex: 0,
+            arguments: [
+              a,
+              b,
+            ],
+            original: (args) => _target.add(args[0]! as int, args[1]! as int),
+          )!
           as int;
 
   @override
-  Future<int> later(int a) => _invoker.invokeAsync<int>(this, _target, 1, [
-    a,
-  ], (args) => _target.later(args[0]! as int));
+  Future<int> later(int a) => _invoker.invokeAsync<int>(
+    proxy: this,
+    target: _target,
+    methodIndex: 1,
+    arguments: [
+      a,
+    ],
+    original: (args) => _target.later(args[0]! as int),
+  );
 
   @override
-  FutureOr<int> maybe(int a) => _invoker.invokeFutureOr<int>(this, _target, 2, [
-    a,
-  ], (args) => _target.maybe(args[0]! as int));
+  FutureOr<int> maybe(int a) => _invoker.invokeFutureOr<int>(
+    proxy: this,
+    target: _target,
+    methodIndex: 2,
+    arguments: [
+      a,
+    ],
+    original: (args) => _target.maybe(args[0]! as int),
+  );
 
   @override
   void reset() {
-    _invoker.invoke(this, _target, 3, const [], (args) {
-      _target.reset();
-      return null;
-    });
+    _invoker.invoke(
+      proxy: this,
+      target: _target,
+      methodIndex: 3,
+      arguments: const [],
+      original: (args) {
+        _target.reset();
+        return null;
+      },
+    );
   }
 
   @override
   String echo(Object value) =>
-      _invoker.invoke(this, _target, 4, [
-            value,
-          ], (args) => _target.echo(args[0]!))!
+      _invoker.invoke(
+            proxy: this,
+            target: _target,
+            methodIndex: 4,
+            arguments: [
+              value,
+            ],
+            original: (args) => _target.echo(args[0]!),
+          )!
           as String;
 
   @override
   Future<int> failFast(int code) => _invoker.invokeAsync<int>(
-    this,
-    _target,
-    5,
-    [code],
-    (args) => _target.failFast(args[0]! as int),
+    proxy: this,
+    target: _target,
+    methodIndex: 5,
+    arguments: [code],
+    original: (args) => _target.failFast(args[0]! as int),
   );
 }
 
@@ -226,7 +256,13 @@ class _$CounterProxy extends Counter implements Advised {
     final invoker = _$invoker;
     return invoker == null
         ? super.next()
-        : invoker.invoke(this, this, 0, const [], (args) => super.next())!
+        : invoker.invoke(
+                proxy: this,
+                target: this,
+                methodIndex: 0,
+                arguments: const [],
+                original: (args) => super.next(),
+              )!
               as int;
   }
 
@@ -273,16 +309,21 @@ class _$SelfieProxy implements Selfie, Advised {
   bool removeAdvice(MethodInterceptor advice) => _invoker.removeAdvice(advice);
 
   @override
-  Object who() =>
-      _invoker.invoke(this, _target, 0, const [], (_) => _target.who())!;
+  Object who() => _invoker.invoke(
+    proxy: this,
+    target: _target,
+    methodIndex: 0,
+    arguments: const [],
+    original: (_) => _target.who(),
+  )!;
 
   @override
   Future<Object> whoLater() => _invoker.invokeAsync<Object>(
-    this,
-    _target,
-    1,
-    const [],
-    (_) => _target.whoLater(),
+    proxy: this,
+    target: _target,
+    methodIndex: 1,
+    arguments: const [],
+    original: (_) => _target.whoLater(),
   );
 }
 

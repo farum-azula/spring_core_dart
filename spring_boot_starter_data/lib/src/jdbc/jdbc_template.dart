@@ -58,13 +58,13 @@ class JdbcTemplate {
   /// A template over [dataSource]. [queryTimeout] bounds each statement;
   /// [logSettings] are the `spring.data.jdbc.*` switches; [introspector]
   /// finds the classes of data-class mapping (default
-  /// `BeanIntrospector.shared`).
+  /// `Introspector.shared`).
   JdbcTemplate(
     this.dataSource, {
     this.queryTimeout,
     this.logSettings = const JdbcLogSettings(),
-    BeanIntrospector? introspector,
-  }) : introspector = introspector ?? BeanIntrospector.shared,
+    Introspector? introspector,
+  }) : introspector = introspector ?? Introspector.shared,
        converter = EntityConverter(introspector: introspector),
        _logger = StatementLogger(dataSource, logSettings);
 
@@ -79,7 +79,7 @@ class JdbcTemplate {
   final JdbcLogSettings logSettings;
 
   /// The introspector for [dataClassRowMapper].
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   /// Converts the values bound and read.
   final EntityConverter converter;

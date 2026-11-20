@@ -155,7 +155,7 @@ final _module = BeanModule('server_eighth_review', [
     types: const [_Pattern],
     create: (_) => _Pattern(),
     annotatedMethods: [
-      BeanMethod<_Pattern>(
+      IntrospectedMethod<_Pattern>(
         'plain',
         returnTypeInfo: const ClassType<String>(),
         invoke: (bean, arguments) => Function.apply(bean.plain, arguments),
@@ -172,7 +172,7 @@ final _module = BeanModule('server_eighth_review', [
     types: const [_Star],
     create: (_) => _Star(),
     annotatedMethods: [
-      BeanMethod<_Star>(
+      IntrospectedMethod<_Star>(
         'plain',
         returnTypeInfo: const ClassType<String>(),
         invoke: (bean, arguments) => Function.apply(bean.plain, arguments),

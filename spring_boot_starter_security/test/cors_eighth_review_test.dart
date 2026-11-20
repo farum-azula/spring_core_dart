@@ -118,7 +118,7 @@ final _module = BeanModule('security_cors_eighth_review', [
     types: const [_Patterns],
     create: (_) => _Patterns(),
     annotatedMethods: [
-      BeanMethod<_Patterns>(
+      IntrospectedMethod<_Patterns>(
         'entity',
         returnTypeInfo: const GenericType<ResponseEntity<String>>([
           ClassType<String>(),
@@ -137,7 +137,7 @@ final _module = BeanModule('security_cors_eighth_review', [
     types: const [_NoCors],
     create: (_) => _NoCors(),
     annotatedMethods: [
-      BeanMethod<_NoCors>(
+      IntrospectedMethod<_NoCors>(
         'plain',
         returnTypeInfo: const ClassType<String>(),
         invoke: (bean, arguments) => Function.apply(bean.plain, arguments),

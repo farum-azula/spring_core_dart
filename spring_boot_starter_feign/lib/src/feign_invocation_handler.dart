@@ -737,7 +737,11 @@ final class _Plan {
     // Values of path variables, query parameters, headers and cookies must
     // be single values (or lists of them); maps only for query parameters
     // and headers, one per entry.
-    void check(BeanParameter parameter, String role, {bool map = false}) {
+    void check(
+      IntrospectedParameter parameter,
+      String role, {
+      bool map = false,
+    }) {
       final reason = _unsupported(parameter.type, handler.mapper, map: map);
       if (reason != null) {
         problems.add(
@@ -989,7 +993,7 @@ final class _Plan {
   final List<_Binding>? parts;
   final String? produces;
   final String? consumes;
-  final List<BeanParameter> parameters;
+  final List<IntrospectedParameter> parameters;
 
   /// The data type `T` of a method returning `EventStream<T>`; `null` for
   /// a normal call.

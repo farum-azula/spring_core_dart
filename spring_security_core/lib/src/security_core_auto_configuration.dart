@@ -122,7 +122,7 @@ final securityCoreAutoConfiguration = <BeanDefinition<Object>>[
       ]),
     ],
     create: (r) => MethodSecurityExpressionHandler(
-      introspector: r.optionalDependency<BeanIntrospector>(),
+      introspector: r.optionalDependency<Introspector>(),
       beanFactory: r.dependency<BeanFactory>(),
       roleHierarchy:
           r.optionalDependency<RoleHierarchy>() ?? const NullRoleHierarchy(),

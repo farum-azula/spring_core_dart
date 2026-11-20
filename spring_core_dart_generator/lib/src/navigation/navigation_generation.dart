@@ -3,9 +3,9 @@
 // bean, the constants of each screen, and the routes in the metadata.
 import 'package:analyzer/dart/element/element.dart';
 import 'package:code_builder/code_builder.dart';
-import 'package:spring_core_dart_generator/src/core/module_emitter.dart';
-import 'package:spring_core_dart_generator/src/core/spring_metadata.dart';
-import 'package:spring_core_dart_generator/src/core/starter_generation.dart';
+import 'package:spring_core_dart_generator/src/core/beans/module_emitter.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_generation.dart';
+import 'package:spring_core_dart_generator/src/core/metadata/spring_metadata.dart';
 import 'package:spring_core_dart_generator/src/navigation/navigation_emitter.dart';
 import 'package:spring_core_dart_generator/src/navigation/navigation_scanning.dart';
 
@@ -28,7 +28,7 @@ import 'package:spring_core_dart_generator/src/navigation/navigation_scanning.da
 ///       .build(),
 /// ),
 /// ```
-final class NavigationGeneration extends StarterGeneration {
+final class NavigationGeneration extends PackageGeneration {
   /// The part; it keeps no state of a build.
   const NavigationGeneration();
 

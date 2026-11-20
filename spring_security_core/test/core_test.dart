@@ -511,7 +511,7 @@ void main() {
                 name: 'unproxied',
                 create: (_) => _Unproxied(),
                 annotatedMethods: [
-                  BeanMethod<_Unproxied>(
+                  IntrospectedMethod<_Unproxied>(
                     'delete',
                     invoke: (bean, _) => bean.delete(),
                     annotations: const [PreAuthorize("hasRole('ADMIN')")],

@@ -34,7 +34,7 @@ class FilesClientImpl implements FilesClient {
         ProxyMethod(
           'download',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'name',
               type: ClassType<String>(),
               isRequired: true,
@@ -51,7 +51,7 @@ class FilesClientImpl implements FilesClient {
         ProxyMethod(
           'events',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'name',
               type: ClassType<String>(),
               isRequired: true,

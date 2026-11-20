@@ -1,3 +1,7 @@
+## Unreleased
+
+- Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.
+
 ## 0.8.4
 
 - No changes of its own; released with the family version 0.8.4.

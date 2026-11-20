@@ -2,8 +2,8 @@
 // proxy pruning, subclass proxies, argument binding, the proxies' members.
 import 'package:build/build.dart';
 import 'package:spring_core_dart_generator/builder.dart';
-import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
 import 'package:test/test.dart';
 
 import '../support/spring_builder.dart';
@@ -234,26 +234,30 @@ class Counter {
       expect(
         output,
         hasCode(
-          r'int next() { final _$i = this.aopInvoker; return _$i == null ? '
-          r'super.next() : (_$i.invoke(this, this, 0, const [], (args) => '
-          'super.next()) as int); '
+          r'int next() { final _$invoker = this.aopInvoker; return '
+          r'_$invoker == null ? super.next() : (_$invoker.invoke(proxy: '
+          'this, target: this, methodIndex: 0, arguments: const [], '
+          'original: (args) => super.next()) as int); '
           '}',
         ),
       );
       expect(
         output,
         hasCode(
-          r'void reset() { final _$i = this.aopInvoker; if (_$i == null) { '
-          r'super.reset(); } else { _$i.invoke(this, this, 1, const [], (args) '
-          '{ super.reset(); return null; }); } '
+          r'void reset() { final _$invoker = this.aopInvoker; if '
+          r'(_$invoker == null) { super.reset(); } else { '
+          r'_$invoker.invoke(proxy: this, target: this, methodIndex: 1, '
+          'arguments: const [], '
+          'original: (args) { super.reset(); return null; }); } '
           '}',
         ),
       );
-      expect(output, hasCode(r'Future<int> later() { final _$i'));
+      expect(output, hasCode(r'Future<int> later() { final _$invoker'));
       expect(
         output,
         hasCode(
-          r'_$i.invokeAsync<int>(this, this, 2, const [], (args) => '
+          r'_$invoker.invokeAsync<int>(proxy: this, target: this, '
+          'methodIndex: 2, arguments: const [], original: (args) => '
           'super.later())',
         ),
       );
@@ -266,11 +270,11 @@ class Counter {
       expect(
         output,
         hasCode(
-          r'int get count { final _$i = this.aopInvoker; return _$i == null ? '
-          r'super.count : (_$i.invoke(',
+          r'int get count { final _$invoker = this.aopInvoker; return '
+          r'_$invoker == null ? super.count : (_$invoker.invoke(',
         ),
       );
-      expect(output, hasCode(r'set count(int value) { final _$i'));
+      expect(output, hasCode(r'set count(int value) { final _$invoker'));
       expect(output, hasCode('super.count = value;'));
       expect(
         output,
@@ -714,8 +718,9 @@ class Impl implements Api {
         output,
         hasCode(
           'String plain(int a, [int b = 2, String? c]) => '
-          '(this.aopInvoker.invoke(this, this._target, 0, [a, b, c], '
-          '(args) => this._target.plain((args[0] as int), (args[1] as int), '
+          '(this.aopInvoker.invoke(proxy: this, target: this._target, '
+          'methodIndex: 0, arguments: [a, b, c], original: (args) => '
+          'this._target.plain((args[0] as int), (args[1] as int), '
           '(args[2] as String?))) as String);',
         ),
       );
@@ -724,40 +729,42 @@ class Impl implements Api {
         hasCode(
           'T generic<T extends Object>(T value, {required String key, int '
           'retries = 3}) => '
-          '(this.aopInvoker.invoke(this, this._target, 1, '
-          '[value, key, retries], '
-          '(args) => this._target.generic<T>((args[0] as T), '
+          '(this.aopInvoker.invoke(proxy: this, target: this._target, '
+          'methodIndex: 1, arguments: [value, key, retries], '
+          'original: (args) => this._target.generic<T>((args[0] as T), '
           'key: (args[1] as String), retries: (args[2] as int))) as T);',
         ),
       );
       expect(
         output,
         hasCode(
-          'void act() {this.aopInvoker.invoke(this, this._target, 2, const [], '
+          'void act() {this.aopInvoker.invoke(proxy: this, target: '
+          'this._target, methodIndex: 2, arguments: const [], original: '
           '(args) {this._target.act(); return null;});}',
         ),
       );
       expect(
         output,
         hasCode(
-          'Future<int> later() => this.aopInvoker.invokeAsync<int>(this, '
-          'this._target, 3, const [], (args) => this._target.later());',
+          'Future<int> later() => this.aopInvoker.invokeAsync<int>(proxy: '
+          'this, target: this._target, methodIndex: 3, arguments: const [], '
+          'original: (args) => this._target.later());',
         ),
       );
       expect(
         output,
         hasCode(
-          'int get count => (this.aopInvoker.invoke(this, this._target, 5, '
-          'const '
-          '[], (_) => this._target.count) as int);',
+          'int get count => (this.aopInvoker.invoke(proxy: this, target: '
+          'this._target, methodIndex: 5, arguments: const [], original: (_) '
+          '=> this._target.count) as int);',
         ),
       );
       expect(
         output,
         hasCode(
-          'set count(int value) {this.aopInvoker.invoke(this, this._target, 6, '
-          '[value], (args) {this._target.count = (args[0] as int); return '
-          'null;});}',
+          'set count(int value) {this.aopInvoker.invoke(proxy: this, target: '
+          'this._target, methodIndex: 6, arguments: [value], original: (args) '
+          '{this._target.count = (args[0] as int); return null;});}',
         ),
       );
       expect(
@@ -857,12 +864,12 @@ class Hidden {
         expect(
           output,
           hasCode(
-            r'int get count { final _$i = this.aopInvoker; '
-            r'return _$i == null ? '
-            r'super.count : (_$i.invoke(',
+            r'int get count { final _$invoker = this.aopInvoker; '
+            r'return _$invoker == null ? '
+            r'super.count : (_$invoker.invoke(',
           ),
         );
-        expect(output, hasCode(r'set count(int value) { final _$i'));
+        expect(output, hasCode(r'set count(int value) { final _$invoker'));
       },
     );
 

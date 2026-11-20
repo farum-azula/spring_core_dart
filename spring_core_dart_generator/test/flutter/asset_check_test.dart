@@ -3,8 +3,8 @@
 // in pubspec.yaml, with the line to add, instead of the app failing when it
 // reads the asset.
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
 
 const _scan = r'''
@@ -54,7 +54,7 @@ Future<TestBuilderResult> _build(
   );
   await readerWriter.testing.loadIsolateSources();
   return await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/app.dart': app,

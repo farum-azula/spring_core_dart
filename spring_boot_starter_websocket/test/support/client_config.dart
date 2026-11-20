@@ -10,7 +10,7 @@ WebSocketClientConfig configOf(
   ConfigurationPropertySources.attach(environment);
   final binder = ConfigurationPropertiesBinder(
     environment,
-    BeanIntrospector(introspections: webSocketConfigBeans.introspections),
+    Introspector(introspections: webSocketConfigBeans.introspections),
   );
   final properties = binder.postProcessBeforeInitialization(
     WebSocketProperties(),

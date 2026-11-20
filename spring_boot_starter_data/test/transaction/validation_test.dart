@@ -484,7 +484,7 @@ void main() {
     });
 
     test('rules: the entry closest to the error decides, as in Spring', () {
-      final introspector = BeanIntrospector()
+      final introspector = Introspector()
         ..registerTypeTests({
           _Boom: (value) => value is _Boom,
           _SubBoom: (value) => value is _SubBoom,
@@ -520,7 +520,7 @@ void main() {
     });
 
     test("rules use the introspector's subtype tests", () {
-      final introspector = BeanIntrospector()
+      final introspector = Introspector()
         ..registerTypeTests({_Boom: (value) => value is _Boom});
       final custom = TransactionInterceptor(
         transactionManager: manager,

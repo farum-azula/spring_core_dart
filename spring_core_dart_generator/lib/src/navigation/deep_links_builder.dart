@@ -4,9 +4,9 @@ import 'dart:io' as io;
 import 'package:build/build.dart';
 import 'package:crypto/crypto.dart';
 import 'package:spring_core_dart/core.dart';
-import 'package:spring_core_dart_generator/src/core/build_environment.dart';
-import 'package:spring_core_dart_generator/src/core/package_directory.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/builder/build_environment.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
 
 /// Writes the deep links of an app (`spring.flutter.navigation.deep-links.*`
 /// of `spring_boot_starter_flutter_navigation`) into its platform files,

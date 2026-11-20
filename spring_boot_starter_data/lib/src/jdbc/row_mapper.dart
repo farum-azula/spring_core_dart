@@ -238,14 +238,14 @@ class ColumnMapRowMapper {
 /// Spring (Java): `org.springframework.jdbc.core.DataClassRowMapper`.
 class DataClassRowMapper<T extends Object> {
   /// A mapper of [T]. [introspection] describes it; without it, the
-  /// [introspector] (default `BeanIntrospector.shared`) is asked on first
+  /// [introspector] (default `Introspector.shared`) is asked on first
   /// use.
   DataClassRowMapper({
     this.dialect,
     EntityConverter? converter,
-    BeanIntrospector? introspector,
-    BeanIntrospection<T>? introspection,
-  }) : _introspector = introspector ?? BeanIntrospector.shared,
+    Introspector? introspector,
+    Introspection<T>? introspection,
+  }) : _introspector = introspector ?? Introspector.shared,
        converter = converter ?? EntityConverter(introspector: introspector),
        // The field is private; the parameter is public.
        // ignore: prefer_initializing_formals
@@ -258,18 +258,18 @@ class DataClassRowMapper<T extends Object> {
   /// The converter doing the enums and the widening.
   final EntityConverter converter;
 
-  final BeanIntrospector _introspector;
-  BeanIntrospection<T>? _introspection;
+  final Introspector _introspector;
+  Introspection<T>? _introspection;
 
   List<String>? _columns;
   List<int?> _parameterColumns = const [];
-  List<(BeanProperty<T>, int)> _propertyColumns = [];
+  List<(IntrospectedProperty<T>, int)> _propertyColumns = [];
 
   static String _normalize(String name) =>
       name.replaceAll('_', '').toLowerCase();
 
-  BeanIntrospection<T> get _description => _introspection ??=
-      ((_introspector.forTypeArgument<T>() as BeanIntrospection<T>?) ??
+  Introspection<T> get _description => _introspection ??=
+      ((_introspector.forTypeArgument<T>() as Introspection<T>?) ??
             (throw InvalidDataAccessApiUsageException(
               '$T is not introspected: mark it @Introspected and '
               'register its module, or use a RowMapper function',
@@ -288,7 +288,7 @@ class DataClassRowMapper<T extends Object> {
       byName.putIfAbsent(_normalize(row.columns[i]), () => i);
     }
     final parameters =
-        description.constructor?.parameters ?? const <BeanParameter>[];
+        description.constructor?.parameters ?? const <IntrospectedParameter>[];
     _parameterColumns = [
       for (final parameter in parameters) byName[_normalize(parameter.name)],
     ];

@@ -208,7 +208,7 @@ final class CallTemplates {
 
   /// How the properties of the application's own classes are read
   /// (`#user.id`).
-  final BeanIntrospector? introspector;
+  final Introspector? introspector;
 
   /// What gives the expressions `authentication`, `principal` and the
   /// functions of `@PreAuthorize`.

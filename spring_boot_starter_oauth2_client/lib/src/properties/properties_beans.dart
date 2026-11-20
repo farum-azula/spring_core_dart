@@ -22,6 +22,6 @@ OAuth2ClientProperties bindOAuth2ClientProperties(Environment environment) {
   ConfigurationPropertySources.attach(environment);
   return ConfigurationPropertiesBinder(
     environment,
-    BeanIntrospector(introspections: oauth2ClientConfigBeans.introspections),
+    Introspector(introspections: oauth2ClientConfigBeans.introspections),
   ).bindOrCreate<OAuth2ClientProperties>('oauth2ClientProperties');
 }

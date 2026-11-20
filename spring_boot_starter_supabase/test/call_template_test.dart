@@ -18,7 +18,7 @@ void main() {
     returnType: const ClassType<String>(),
     parameters: [
       for (final name in parameters)
-        BeanParameter(name, type: const ClassType<Object>()),
+        IntrospectedParameter(name, type: const ClassType<Object>()),
     ],
   );
 

@@ -415,7 +415,7 @@ void main() {
               CrossOrigin(allowPrivateNetwork: true),
             ],
             annotatedMethods: [
-              BeanMethod<_Pn>(
+              IntrospectedMethod<_Pn>(
                 'get',
                 invoke: (bean, arguments) => 'open',
                 annotations: const [GetMapping('/open')],
@@ -842,12 +842,12 @@ final class _Config {
       );
 }
 
-BeanMethod<T> _map<T extends Object>(
+IntrospectedMethod<T> _map<T extends Object>(
   String name,
   Function Function(T bean) method,
   List<Object> annotations, {
   TypeInfo<Object?> returns = const ClassType<String>(),
-}) => BeanMethod<T>(
+}) => IntrospectedMethod<T>(
   name,
   returnTypeInfo: returns,
   invoke: (bean, arguments) => Function.apply(method(bean), arguments),

@@ -2,10 +2,13 @@
 // whose only advice is the starters' annotation-driven advisors
 // (`@Transactional`, `@Cacheable`, `@Validated`), gets proxy classes for the
 // beans carrying those annotations and for nothing else.
+import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _main = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -114,18 +117,14 @@ Future<String> _build(String beans) async {
   );
   await readerWriter.testing.loadIsolateSources();
   final result = await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     {'pkg|bin/main.dart': _main, 'pkg|lib/src/beans.dart': beans},
     rootPackage: 'pkg',
     readerWriter: readerWriter,
     flattenOutput: true,
   );
   expect(result.errors, isEmpty);
-  return readerWriter.testing.readString(
-    result.outputs.singleWhere(
-      (o) => o.path == 'bin/spring_gen/main.spring.dart',
-    ),
-  );
+  return moduleText(result, AssetId('pkg', 'bin/spring_gen/main.spring.dart'));
 }
 
 const _advised = '''
@@ -165,18 +164,14 @@ Future<String> _app() async {
   );
   await readerWriter.testing.loadIsolateSources();
   final result = await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     {'pkg|bin/main.dart': _main, 'pkg|lib/src/beans.dart': _beans},
     rootPackage: 'pkg',
     readerWriter: readerWriter,
     flattenOutput: true,
   );
   expect(result.errors, isEmpty);
-  return readerWriter.testing.readString(
-    result.outputs.singleWhere(
-      (o) => o.path == 'bin/spring_gen/main.spring.dart',
-    ),
-  );
+  return moduleText(result, AssetId('pkg', 'bin/spring_gen/main.spring.dart'));
 }
 
 void main() {
@@ -521,7 +516,7 @@ class Orders {
       );
       await readerWriter.testing.loadIsolateSources();
       final result = await testBuilder(
-        SpringBuilder(generations: starterGenerations),
+        SpringBuilder(generations: packageGenerations),
         {
           if (application)
             'pkg|pubspec.yaml':
@@ -538,10 +533,9 @@ class Orders {
         flattenOutput: true,
       );
       expect(result.errors, isEmpty);
-      return readerWriter.testing.readString(
-        result.outputs.singleWhere(
-          (o) => o.path == 'lib/spring_gen/src/scan.spring.dart',
-        ),
+      return moduleText(
+        result,
+        AssetId('pkg', 'lib/spring_gen/src/scan.spring.dart'),
       );
     }
 
@@ -559,7 +553,7 @@ class Orders {
       );
       await readerWriter.testing.loadIsolateSources();
       final result = await testBuilder(
-        SpringBuilder(generations: starterGenerations),
+        SpringBuilder(generations: packageGenerations),
         {
           'pkg|bin/main.dart': _main,
           'pkg|lib/src/beans.dart': beans,
@@ -585,10 +579,9 @@ class Guards {}
         flattenOutput: true,
       );
       expect(result.errors, isEmpty);
-      final output = readerWriter.testing.readString(
-        result.outputs.singleWhere(
-          (o) => o.path == 'bin/spring_gen/main.spring.dart',
-        ),
+      final output = moduleText(
+        result,
+        AssetId('pkg', 'bin/spring_gen/main.spring.dart'),
       );
       expect(output, isNot(contains(r'class _$PlainProxy')));
       expect(output, contains('knownAdvisors'));

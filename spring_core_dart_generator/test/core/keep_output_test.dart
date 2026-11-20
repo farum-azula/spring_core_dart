@@ -8,9 +8,10 @@ library;
 // not make the generated file flicker in and out on every keystroke.
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/builder/generated_path.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
 
 const _scan = r'''
@@ -33,9 +34,15 @@ const _validationError = '$_header@Service()\nclass _Greeter {}\n';
 
 final _output = AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart');
 
+// The files of the module beside its library.
+final List<AssetId> _files = [
+  for (final extension in moduleFileExtensions)
+    moduleFileId(_output, extension),
+];
+
 SpringBuilder _builder({Future<String?> Function(AssetId)? read}) =>
     SpringBuilder(
-      generations: starterGenerations,
+      generations: packageGenerations,
       proxyMode: ProxyMode.none,
       readExistingOutput: read ?? (_) async => null,
     );
@@ -122,14 +129,38 @@ void main() {
     final builder = _builder(
       read: (id) async {
         reads.add(id);
-        return onDisk;
+        return id == _output ? onDisk : null;
       },
     );
     final (result, kept, logs) = await _build(builder, _syntaxError);
     expect(result.succeeded, isTrue);
     expect(kept, onDisk);
-    expect(reads, [_output]);
+    expect(reads, [_output, ..._files]);
     expect(_warnings(logs), hasLength(1));
+  });
+
+  test("the module's files on disk are kept with it, those it had none of "
+      'are not written', () async {
+    const onDisk = '// previous generation\n';
+    const proxies = "// previous proxies\npart of 'beans.spring.dart';\n";
+    final builder = _builder(
+      read: (id) async => id == _output
+          ? onDisk
+          : id.path.endsWith('.spring.proxies.dart')
+          ? proxies
+          : null,
+    );
+    final (result, kept, _) = await _build(builder, _syntaxError);
+    expect(result.succeeded, isTrue);
+    expect(kept, onDisk);
+    final testing = result.readerWriter.testing;
+    for (final file in _files) {
+      if (file.path.endsWith('.spring.proxies.dart')) {
+        expect(testing.readString(file), proxies);
+      } else {
+        expect(testing.exists(file), isFalse, reason: file.path);
+      }
+    }
   });
 
   test('cold build with a syntax error fails', () async {

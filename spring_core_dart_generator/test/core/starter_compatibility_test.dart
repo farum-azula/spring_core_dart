@@ -4,9 +4,11 @@ import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart' show springBootVersion;
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _app = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -51,7 +53,7 @@ Future<TestBuilderResult> _build(
   );
   await readerWriter.testing.loadIsolateSources();
   return await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     {
       'pkg|bin/main.dart': app,
       'pkg|lib/resources/$configFile': ?config,
@@ -346,9 +348,7 @@ void main() {
   test('a compatible starter is discovered', () async {
     final result = await _build('^$springBootVersion');
     expect(result.errors, isEmpty);
-    final output = result.readerWriter.testing.readString(
-      result.outputs.single,
-    );
+    final output = moduleText(result);
     expect(output, contains('neonCacheAutoConfiguration'));
   });
 
@@ -522,5 +522,5 @@ final _notInRelease = RegExp(
 );
 
 String _compact(TestBuilderResult result) => result.readerWriter.testing
-    .readString(result.outputs.single)
+    .readString(moduleOutput(result))
     .replaceAll(RegExp(r'\s+'), '');

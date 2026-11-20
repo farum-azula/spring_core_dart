@@ -9,9 +9,9 @@ class Box {
   Object? value;
 }
 
-BeanIntrospection<Box> _box(List<Object> annotations) => BeanIntrospection<Box>(
+Introspection<Box> _box(List<Object> annotations) => Introspection<Box>(
   properties: [
-    BeanProperty<Box>(
+    IntrospectedProperty<Box>(
       'value',
       type: Object,
       nullable: true,
@@ -28,7 +28,7 @@ List<ConstraintViolation> _validate(
   List<Object> annotations, {
   List<Type> groups = const [],
 }) => BeanValidator(
-  introspector: BeanIntrospector(
+  introspector: Introspector(
     introspections: [_box(annotations), addressIntrospection],
   ),
 ).validateObject(Box(value), groups: groups);
@@ -60,26 +60,25 @@ class _InStock extends Constraint {
   bool isValid(Object? value) => value == 'main';
 }
 
-BeanIntrospection<Order> _order(List<Type> sequence) =>
-    BeanIntrospection<Order>(
-      annotations: [GroupSequence(sequence)],
-      properties: [
-        BeanProperty<Order>(
-          'sku',
-          type: String,
-          get: (b) => b.sku,
-          annotations: const [NotBlank()],
-        ),
-        BeanProperty<Order>(
-          'warehouse',
-          type: String,
-          get: (b) => b.warehouse,
-          annotations: const [
-            _InStock(groups: [Expensive]),
-          ],
-        ),
+Introspection<Order> _order(List<Type> sequence) => Introspection<Order>(
+  annotations: [GroupSequence(sequence)],
+  properties: [
+    IntrospectedProperty<Order>(
+      'sku',
+      type: String,
+      get: (b) => b.sku,
+      annotations: const [NotBlank()],
+    ),
+    IntrospectedProperty<Order>(
+      'warehouse',
+      type: String,
+      get: (b) => b.warehouse,
+      annotations: const [
+        _InStock(groups: [Expensive]),
       ],
-    );
+    ),
+  ],
+);
 
 class Driver {
   String name = '';
@@ -90,15 +89,15 @@ class Car {
   Driver? driver = Driver();
 }
 
-final _driverIntrospection = BeanIntrospection<Driver>(
+final _driverIntrospection = Introspection<Driver>(
   properties: [
-    BeanProperty<Driver>(
+    IntrospectedProperty<Driver>(
       'name',
       type: String,
       get: (b) => b.name,
       annotations: const [NotBlank()],
     ),
-    BeanProperty<Driver>(
+    IntrospectedProperty<Driver>(
       'licensed',
       type: bool,
       get: (b) => b.licensed,
@@ -109,9 +108,9 @@ final _driverIntrospection = BeanIntrospection<Driver>(
   ],
 );
 
-BeanIntrospection<Car> _car(List<Object> annotations) => BeanIntrospection<Car>(
+Introspection<Car> _car(List<Object> annotations) => Introspection<Car>(
   properties: [
-    BeanProperty<Car>(
+    IntrospectedProperty<Car>(
       'driver',
       type: Driver,
       nullable: true,
@@ -125,9 +124,9 @@ class Lottery {
   Set<Address> lucky = {};
 }
 
-final _lotteryIntrospection = BeanIntrospection<Lottery>(
+final _lotteryIntrospection = Introspection<Lottery>(
   properties: [
-    BeanProperty<Lottery>(
+    IntrospectedProperty<Lottery>(
       'lucky',
       type: Set<Address>,
       get: (b) => b.lucky,
@@ -141,9 +140,9 @@ class Survey {
   Map<String, int> scores = {};
 }
 
-final _surveyIntrospection = BeanIntrospection<Survey>(
+final _surveyIntrospection = Introspection<Survey>(
   properties: [
-    BeanProperty<Survey>(
+    IntrospectedProperty<Survey>(
       'answers',
       type: List<String>,
       get: (b) => b.answers,
@@ -152,7 +151,7 @@ final _surveyIntrospection = BeanIntrospection<Survey>(
         Each([NotBlank()]),
       ],
     ),
-    BeanProperty<Survey>(
+    IntrospectedProperty<Survey>(
       'scores',
       type: Map<String, int>,
       get: (b) => b.scores,
@@ -171,7 +170,7 @@ void main() {
       final binder =
           DataBinder(
               Address(),
-              introspector: BeanIntrospector(
+              introspector: Introspector(
                 introspections: [addressIntrospection],
               ),
             )
@@ -186,7 +185,7 @@ void main() {
       final binder =
           DataBinder(
               Address(),
-              introspector: BeanIntrospector(
+              introspector: Introspector(
                 introspections: [addressIntrospection],
               ),
             )
@@ -300,7 +299,7 @@ void main() {
   });
 
   group('@Valid on a Set', () {
-    final introspector = BeanIntrospector(
+    final introspector = Introspector(
       introspections: [_lotteryIntrospection, addressIntrospection],
     );
 
@@ -335,7 +334,7 @@ void main() {
       final person = Person()..previous = [Address('Lviv'), Address()];
       final violations =
           BeanValidator(
-            introspector: BeanIntrospector(
+            introspector: Introspector(
               introspections: [personIntrospection, addressIntrospection],
             ),
           ).validateObject(
@@ -348,7 +347,7 @@ void main() {
   });
 
   group('container element constraints (@Each, @EachKey)', () {
-    final introspector = BeanIntrospector(
+    final introspector = Introspector(
       introspections: [_surveyIntrospection],
     );
 
@@ -444,7 +443,7 @@ void main() {
 
   group('@GroupSequence on a class redefines Default', () {
     BeanValidator validator(List<Type> sequence) => BeanValidator(
-      introspector: BeanIntrospector(introspections: [_order(sequence)]),
+      introspector: Introspector(introspections: [_order(sequence)]),
     );
 
     test('later groups run only when the earlier ones pass', () {
@@ -499,7 +498,7 @@ void main() {
   });
 
   group('group sequences', () {
-    final introspector = BeanIntrospector(
+    final introspector = Introspector(
       introspections: [personIntrospection, addressIntrospection],
     );
 
@@ -539,7 +538,7 @@ void main() {
 
   group('@ConvertGroup', () {
     BeanValidator validator(List<Object> annotations) => BeanValidator(
-      introspector: BeanIntrospector(
+      introspector: Introspector(
         introspections: [_car(annotations), _driverIntrospection],
       ),
     );

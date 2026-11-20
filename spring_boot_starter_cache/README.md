@@ -362,7 +362,7 @@ class CacheConfig {
 
   @Bean()
   CacheManager disk(CacheStore store, ObjectMapper mapper,
-          BeanIntrospector introspector) =>
+          Introspector introspector) =>
       DiskCacheManager(store: store, mapper: mapper,
           introspector: introspector,
           timeToLive: const Duration(days: 1));

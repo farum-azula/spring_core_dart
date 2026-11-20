@@ -213,9 +213,9 @@ void main() {
           ),
         ],
         introspections: [
-          BeanIntrospection<_Svc>(
+          Introspection<_Svc>(
             properties: [
-              BeanProperty<_Svc>(
+              IntrospectedProperty<_Svc>(
                 'greeter',
                 type: Greeter,
                 get: (s) => s.greeter,
@@ -223,7 +223,7 @@ void main() {
               ),
             ],
             methods: [
-              BeanMethod<_Svc>(
+              IntrospectedMethod<_Svc>(
                 'process',
                 invoke: (s, a) => s.process(a[0]! as Greeter),
                 parameterTypes: [Greeter],

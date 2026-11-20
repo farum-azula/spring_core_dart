@@ -89,15 +89,98 @@ automatically to every package that depends on it.
   modules they come from. A property the build cannot read (`${FLAG}`
   without a default, a file that does not parse) fails the build naming
   the module; one set only in a profile's file is warned about. A
-  starter's part of the generator can take a key the same way
-  (`StarterGeneration.build`, a `StarterBuild('<property>')`), so one key
-  leaves out the starter's module and all its part writes: `false` runs
+  package's part of the generator can take a key the same way
+  (`PackageGeneration.build`, a `PackageBuild('<property>')`), so one key
+  leaves out the package's module and all its part writes: `false` runs
   none of the part, and under `whenMissing: notInRelease` its bean
   definitions, module statements, introspection lists and resources sit
   under the same `dart.vm.product` constant (its classes and top-level
   declarations cannot, and a release build drops them unused).
 
-Into that file it writes:
+**The files of a module.** A module's generated code is in a file per
+kind, beside its `.spring.dart`, each written only when the module has
+some of it (they are outputs of the main builder in `build.yaml`):
+
+| File | Holds |
+|---|---|
+| `<library>.spring.dart` | the bean definitions and the wiring; it imports the two libraries below and hands their lists to the module's `introspections:` |
+| `<library>.spring.introspection.dart` | a library with the descriptions (`Introspection`) of the classes the module uses, in a getter `$<module>Introspections` (`$appBeansIntrospections`); the object methods' `copyWith`. A unit test registers them without a context: `Introspector.shared.registerAll($appBeansIntrospections)` |
+| `<library>.spring.properties.dart` | the binding of the `@ConfigurationProperties` classes: the descriptions only their binder uses, in `$<module>PropertiesIntrospections` |
+| `<library>.spring.proxies.dart` | a part of the module's library: the AOP proxy classes and the lazy-resolution proxies |
+| `<library>.spring.debug.dart` | for a `@SpringBootApplication` only, a part of its library: what only debug and profile builds use (below) |
+| `<library>.spring.env.dart` | for a `@SpringBootApplication` only, a part of its library: `_$dartDefines`, the constant map of the `--dart-define`s it may read (below) |
+
+The names follow the framework's convention for generated files,
+`<name>.spring.<kind>.dart`, as `theme.spring.keys.dart` and
+`json_schemas.spring.classes.dart`. A user's file never needs an import,
+an export or a `part` line for them, except the libraries that call
+`copyWith` (they import `<library>.spring.introspection.dart`).
+
+Every file is formatted as `dart format` formats the files of its package:
+at the package's language version (the short style before 3.7) and with
+the `formatter:` options (`page_width`, `trailing_commas`) of the
+`analysis_options.yaml` nearest to it, its `include:`s followed. Running
+`dart format` over a package changes no generated file. The comments,
+which `dart format` leaves as they are written, fit in the page too: a
+doc comment paragraph with a longer line is wrapped (a code span in
+backticks is never broken).
+
+**The `--dart-define`s: `<library>.spring.env.dart`.** A compiled program
+reads a `--dart-define` only through `String.fromEnvironment` with a
+literal key, so the build writes one for each property and environment
+variable the application may read (its `${...}` placeholders,
+`@ConditionalOnProperty` names, `@ConfigurationProperties` fields, the keys
+of its `application*` files, and a few read before them, such as
+`spring.profiles.active`; `dart_defines_exclude:` leaves some out), into a
+constant the compiler computes:
+
+```dart
+// bin/spring_gen/main.spring.env.dart
+const Map<String, String> _$dartDefines = {
+  if (bool.hasEnvironment('SPRING_PROFILES_ACTIVE'))
+    'SPRING_PROFILES_ACTIVE': String.fromEnvironment('SPRING_PROFILES_ACTIVE'),
+  // ...
+};
+```
+
+`springApplication` passes it as `dartDefines: _$dartDefines`, a property
+source above the config files. Only the defines given to the build are in
+it: `dart run -DSPRING_PROFILES_ACTIVE=prod`, `flutter build web
+--dart-define=API_URL=...`.
+
+**What only development needs: `<library>.spring.debug.dart`.** The
+`@SpringBootApplication` output puts into a part of its own what only a
+hot reload uses, and its library refers to it only under
+`!const bool.fromEnvironment('dart.vm.product')`, the constant the
+`notInRelease` modules use. A release build (`dart compile exe`, AOT, a
+Flutter release) compiles none of it; a debug or profile run behaves as
+before, hot reload included.
+
+| In the debug part | What it is for |
+|---|---|
+| `_$fingerprint` | the hash of the generated code (the library and its files), which `springApplication` passes as `fingerprint:` in debug and profile builds (`null` in release): `SpringApplication.reload` keeps the running context when it is unchanged, else restarts it |
+| `reloadApplication`, `reloadApplicationAsync` | the generated hot-reload calls (`context = reloadApplication(context)` in a root widget's `reassemble()`, or a server's restart on reload) |
+
+What stays in every build, on purpose: the `hotReload: () =>
+springApplication` that `runApplication` passes, since it is also how the
+context starts the same application in another isolate
+(`ApplicationLaunch`, the web server's `server.isolates.count`); the
+getters `springApplication` and `$application` (a getter costs nothing in
+release); a bean's `source:` (start-up error messages and the actuator
+read it); the `notInRelease` modules, guarded by their own build key.
+
+**Object methods.** `@EqualsAndHashCode`, `@ToString` and `@CopyWith`
+(`spring_core_dart`) are read by introspection, which describes the
+annotated class and writes into `<library>.spring.introspection.dart` the typed
+`==`, `hashCode` and `toString()` of its description (a masked field's
+value is never read, `******` is written into the text), and the
+`copyWith` type and extension. Nothing is written into the user's files.
+Every misuse fails the build (the annotations on a mixin, enum or
+abstract class, a class without `with IntrospectedObject`, `include` with
+`exclude`, an unknown field name, a constructor `copyWith` cannot use).
+No build key: the methods are the application's behaviour at run time.
+
+Into the `.spring.dart` file it writes:
 
 - one `BeanDefinition` per bean: its types, scope, laziness,
   primary / fallback, qualifiers, aliases, order, depends-on, conditions,
@@ -111,7 +194,7 @@ Into that file it writes:
   `@Table` class and each class a `@Query` method returns (a DTO), held by
   one `EntityIntrospections` bean per module: the properties, and closures
   that read them, call the constructor and set one, and no more. A
-  `@Table` class has no `BeanIntrospection` unless it is also
+  `@Table` class has no `Introspection` unless it is also
   `@Introspected`. A class the data layer could not create or fill (a
   required constructor parameter that names no field, a `final` field
   nothing sets) fails the build;
@@ -144,7 +227,35 @@ Into that file it writes:
   `collectionsNeedJson` (the SQL store) a `Map`, a `Set`, or a `List` of
   anything but simple values in the entity, with neither `@Json` nor
   `@MappedCollection`, is one of those problems too, with the fix;
-- `@Aspect` advice metadata and the AOP proxy classes;
+- `@Aspect` advice metadata and the AOP proxy classes. Each proxy class
+  and each of its members has a `///` comment with what the build found
+  to run around it: the annotations an annotation-driven advisor matches
+  (`@PreAuthorize("hasRole('ADMIN')")`, `@Cacheable('books')`, as
+  written), the aspects' advice (`@Around TimingAspect.time`) and the
+  advisor beans whose pointcuts match; advice registered at run time may
+  add to it. A member hands its call to the invoker with named
+  arguments:
+
+  ```dart
+  /// cancel: `@PreAuthorize("hasRole('ADMIN') or #order.owner == authentication.name")`
+  @override
+  Future<String> cancel(Order order) {
+    final _$invoker = this.aopInvoker; // a subclass proxy: null until advised
+    return _$invoker == null
+        ? super.cancel(order)
+        : _$invoker.invokeAsync<String>(
+            proxy: this,
+            target: this,
+            methodIndex: 0,
+            arguments: [order],
+            original: (args) => super.cancel((args[0] as Order)),
+          );
+  }
+  ```
+
+  The named arguments cost nothing: a call through an advised and an
+  unadvised proxy took the same time with positional ones
+  (`spring_core_dart/benchmark/proxy_invoker_benchmark.dart`, AOT);
 - generated subclasses of full-mode `@Configuration` classes and of beans
   with `@Lookup` methods;
 - the files of `lib/resources/`, embedded so that `resources:` locations
@@ -223,10 +334,10 @@ annotations and the list of properties are always written.
 
 | Part | What | Written when |
 |---|---|---|
-| getters | `BeanProperty.get` | the class is written out: a controller's return type (also in `Future`, `Stream`, `ResponseEntity`, `Page`), an `@ExceptionHandler`'s answer, a WebSocket reply, a client's argument, the static type of a value given to `ObjectMapper.writeValueAsString`, `valueToTree` or `convertValue`, or to a WebSocket session's `sendJson` and the registry's `broadcast`; `@ConfigurationProperties` |
-| constructor and setters | `BeanConstructor`, `instantiate`, `set`, `fromJson` | the class is read in: `@RequestBody` and `@RequestPart`, a controller's return type and an `@ExceptionHandler`'s answer (a test reads the answer back with `mapper.readValue<BookDto>(res.body)`, and `test/` is not scanned), a WebSocket message, a client's answer (Feign, `@WebSocketClient`), the type argument of `ObjectMapper.readValue<T>`, `treeToValue`, `readList`, `readMap` or `convertValue<T>`; `@ConfigurationProperties` |
+| getters | `IntrospectedProperty.get` | the class is written out: a controller's return type (also in `Future`, `Stream`, `ResponseEntity`, `Page`), an `@ExceptionHandler`'s answer, a WebSocket reply, a client's argument, the static type of a value given to `ObjectMapper.writeValueAsString`, `valueToTree` or `convertValue`, or to a WebSocket session's `sendJson` and the registry's `broadcast`; `@ConfigurationProperties` |
+| constructor and setters | `IntrospectedConstructor`, `instantiate`, `set`, `fromJson` | the class is read in: `@RequestBody` and `@RequestPart`, a controller's return type and an `@ExceptionHandler`'s answer (a test reads the answer back with `mapper.readValue<BookDto>(res.body)`, and `test/` is not scanned), a WebSocket message, a client's answer (Feign, `@WebSocketClient`), the type argument of `ObjectMapper.readValue<T>`, `treeToValue`, `readList`, `readMap` or `convertValue<T>`; `@ConfigurationProperties` |
 | the getters of constrained properties | `get` of the properties with a constraint, `@Valid()` or `@Each()` | the class is validated: `@RequestBody @Valid()` |
-| methods | `BeanMethod` | a SpEL expression may call them: `@PreAuthorize`, `@PostAuthorize`, `@PreFilter`, `@PostFilter` and `@Cacheable`, `@CachePut`, `@CacheEvict` (keys and conditions) over the arguments or the result they name, a `@Query` with a `:#{...}` the build does not compile; also the methods a JSON annotation marks (`@JsonValue`, `@JsonAnyGetter` with the getters, `@JsonAnySetter` with the setters) |
+| methods | `IntrospectedMethod` | a SpEL expression may call them: `@PreAuthorize`, `@PostAuthorize`, `@PreFilter`, `@PostFilter` and `@Cacheable`, `@CachePut`, `@CacheEvict` (keys and conditions) over the arguments or the result they name, a `@Query` with a `:#{...}` the build does not compile; also the methods a JSON annotation marks (`@JsonValue`, `@JsonAnyGetter` with the getters, `@JsonAnySetter` with the setters) |
 
 The calls of the mapper count where the build sees their static types and
 the class is in the package of the call (a library that names none of
@@ -243,7 +354,7 @@ of a new instance. A method of a custom `@BeanMethodAnnotation()` keeps
 everything of its types; `@Scheduled`, `@Secured`, and a WebSocket
 `@OnOpen`, `@OnClose` or `@OnError` describe nothing.
 
-The description says what it holds (`BeanIntrospection.parts`). What the
+The description says what it holds (`Introspection.parts`). What the
 build did not see used is left out, and code that needs it anyway, such as
 a value cast to `Object` that is written as JSON, fails with a message that
 names the class, the missing part and the fix, never with an empty object:
@@ -824,37 +935,50 @@ Dev dependencies: `build_test`, `test`, `coverage`, `package_config`, and
 
 ## Structure
 
-The generator is a core plus one part per starter. The core
+The generator is a core plus one part per package. The core
 (`lib/src/core/`) scans beans, writes their definitions, proxies and
-introspections, and checks them; it names no starter. What a starter adds
-to a module's generation is its part, a `StarterGeneration` in
-`lib/src/<starter>/` (`data/`, `flutter/`, `navigation/`, `signals/`,
-`web/`, `websocket/`, `scheduling/`, `security/`, `cache/`, `actuator/`,
-`json_schemas/`; `search/` and `test/` hold their builders' code).
+introspections, and checks them; it names no other package's part. What a
+package (a starter, or a library such as `spring_web_dart`) adds to a
+module's generation is its part, a `PackageGeneration` in
+`lib/src/<part>/` (`data/`, `flutter/`, `navigation/`, `signals/`,
+`web/`, `websocket/`, `scheduling/`, `security/`, `cache/`, `actuator/`;
+`search/` and `test/` hold their builders' code). What `spring_core_dart`
+brings itself (the JSON Schemas of `spring.json.schemas`) is the core's.
 
 ```
 lib/
   builder.dart              build_runner entry points and options
   src/
-    starters.dart           the parts, listed once, in the order they run
-    core/                   scanning, models, emitting, AOP, metadata,
-                            the build-time reading of the configuration
-    <starter>/              one folder per starter: its part and its code
+    packages.dart           the parts, listed once, in the order they run
+    core/                   by concern, as spring_core_dart's lib/src:
+      beans/                bean scanning, the bean model, the module's
+                            emitter, @Configuration and @Lookup subclasses
+      aop/                  pointcuts, advisors, proxy decisions
+      introspection/        what a class needs described, JSON and
+                            validation checks, json_schemas/
+      properties/           property keys for --dart-define, Dart names
+      spel/                 SpEL compiled to Dart
+      metadata/             spring_metadata.json
+      builder/              the builders, the build-time configuration,
+                            the build keys, the parts' interface, the
+                            formatting of what they write
+    <part>/                 one folder per package's part: its code
 build.yaml
 test/<part>/                generated output and every rejected declaration
 ```
 
-- **A part runs only when the application reaches its starter's
-  package** (`StarterGeneration.package`, among the packages the
+- **A part runs only when the application reaches its package**
+  (`PackageGeneration.package`, among the packages the
   application lists or gets through them): an application without
   `spring_boot_starter_flutter` runs none of the Flutter code, one
   without `spring_boot_starter_data` none of the data code.
-- **The parts are listed once**, in `lib/src/starters.dart`, in the order
+- **The parts are listed once**, in `lib/src/packages.dart`, in the order
   the builders ask them (the order of what they write and of the errors
   they report): the data starter's metadata, Flutter, navigation, the
   change notifier (Flutter), signals, web, WebSocket, scheduling,
-  security, cache, the actuator's, the JSON Schemas' and the data
-  starter's module part.
+  security, cache, the actuator's and the data starter's module part.
+  The core's own part file (the JSON Schemas' classes) comes after the
+  parts'.
 - **What a part does:** the Flutter, navigation and data parts write
   code of their own (widget bindings, the `ScreenRoutes` bean,
   repositories and entity introspections, the drivers' glue); the web,
@@ -862,9 +986,9 @@ test/<part>/                generated output and every rejected declaration
   and say what their annotations do with the values of a bean's methods
   (which classes the build describes, for what) or fail the build for
   what cannot work; the actuator's adds `build-info.properties` to an
-  application's resources; the JSON Schemas' adds the classes' file.
+  application's resources.
 - **A part can be left out by a build key**, as an auto-configuration
-  module can: `StarterBuild('<property>', whenMissing:)` has the same
+  module can: `PackageBuild('<property>', whenMissing:)` has the same
   reading as `AutoConfigurationBuild` (`application.yml` /
   `application.properties` without a profile; `true`, `false`, not set;
   `BuildInclusion.notInRelease` by default). No built-in part takes a key
@@ -873,7 +997,7 @@ test/<part>/                generated output and every rejected declaration
   example and package gives the same bytes as before, and a clean
   `build_runner build` takes the same time.
 - There is no public registration for parts of packages outside this
-  repository yet: `starters.dart` is the list the builder factories pass
+  repository yet: `packages.dart` is the list the builder factories pass
   to the builders.
 
 ## Status

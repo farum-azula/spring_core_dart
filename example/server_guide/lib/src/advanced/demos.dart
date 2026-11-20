@@ -100,7 +100,7 @@ Map<String, String> failureReports() {
 /// of [books] (`@Introspected`, so SpEL can read their properties), with a
 /// variable and a function; and a `SimpleEvaluationContext` that allows
 /// reading properties only (for expressions from users).
-Map<String, Object?> spel(List<Book> books, BeanIntrospector introspector) {
+Map<String, Object?> spel(List<Book> books, Introspector introspector) {
   final parser = SpelExpressionParser();
   final context = StandardEvaluationContext(books.first)
     ..propertyAccessors.insert(0, IntrospectionPropertyAccessor(introspector))
@@ -137,7 +137,7 @@ Map<String, Object?> spel(List<Book> books, BeanIntrospector introspector) {
 /// properties read and written by name.
 (ShopProperties, List<String>) bindShopSettings(
   Map<String, String> values,
-  BeanIntrospector introspector,
+  Introspector introspector,
 ) {
   final settings = ShopProperties();
   final binder =

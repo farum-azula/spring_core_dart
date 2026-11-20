@@ -13,16 +13,16 @@ class Server {
   int port = 0;
 }
 
-final serverIntrospection = BeanIntrospection<Server>(
+final serverIntrospection = Introspection<Server>(
   properties: [
-    BeanProperty<Server>(
+    IntrospectedProperty<Server>(
       'host',
       type: String,
       typeInfo: const ClassType<String>(),
       get: (b) => b.host,
       set: (b, v) => b.host = v! as String,
     ),
-    BeanProperty<Server>(
+    IntrospectedProperty<Server>(
       'port',
       type: int,
       typeInfo: const ClassType<int>(),
@@ -39,16 +39,16 @@ class Pool {
   int size = 1;
 }
 
-final poolIntrospection = BeanIntrospection<Pool>(
+final poolIntrospection = Introspection<Pool>(
   properties: [
-    BeanProperty<Pool>(
+    IntrospectedProperty<Pool>(
       'url',
       type: String,
       typeInfo: const ClassType<String>(),
       get: (b) => b.url,
       set: (b, v) => b.url = v! as String,
     ),
-    BeanProperty<Pool>(
+    IntrospectedProperty<Pool>(
       'size',
       type: int,
       typeInfo: const ClassType<int>(),
@@ -75,10 +75,10 @@ class Modes implements Validator {
   }
 }
 
-final modesIntrospection = BeanIntrospection<Modes>(
+final modesIntrospection = Introspection<Modes>(
   annotations: const [ConfigurationProperties('modes')],
   properties: [
-    BeanProperty<Modes>(
+    IntrospectedProperty<Modes>(
       'mode',
       type: String,
       typeInfo: const ClassType<String>(),
@@ -111,9 +111,9 @@ class Units {
   String importFrom = '';
 }
 
-final unitsIntrospection = BeanIntrospection<Units>(
+final unitsIntrospection = Introspection<Units>(
   properties: [
-    BeanProperty<Units>(
+    IntrospectedProperty<Units>(
       'timeout',
       type: Duration,
       typeInfo: const ClassType<Duration>(),
@@ -121,7 +121,7 @@ final unitsIntrospection = BeanIntrospection<Units>(
       get: (b) => b.timeout,
       set: (b, v) => b.timeout = v! as Duration,
     ),
-    BeanProperty<Units>(
+    IntrospectedProperty<Units>(
       'retries',
       type: List<Duration>,
       typeInfo: const ListType<Duration>(ClassType<Duration>()),
@@ -129,7 +129,7 @@ final unitsIntrospection = BeanIntrospection<Units>(
       get: (b) => b.retries,
       set: (b, v) => b.retries = v! as List<Duration>,
     ),
-    BeanProperty<Units>(
+    IntrospectedProperty<Units>(
       'buffer',
       type: DataSize,
       typeInfo: const ClassType<DataSize>(),
@@ -137,7 +137,7 @@ final unitsIntrospection = BeanIntrospection<Units>(
       get: (b) => b.buffer,
       set: (b, v) => b.buffer = v! as DataSize,
     ),
-    BeanProperty<Units>(
+    IntrospectedProperty<Units>(
       'importFrom',
       type: String,
       typeInfo: const ClassType<String>(),
@@ -155,18 +155,18 @@ class Renamed {
   final String value;
 }
 
-final renamedIntrospection = BeanIntrospection<Renamed>(
+final renamedIntrospection = Introspection<Renamed>(
   properties: [
-    BeanProperty<Renamed>(
+    IntrospectedProperty<Renamed>(
       'value',
       type: String,
       typeInfo: const ClassType<String>(),
       get: (b) => b.value,
     ),
   ],
-  constructor: BeanConstructor<Renamed>(
+  constructor: IntrospectedConstructor<Renamed>(
     parameters: const [
-      BeanParameter(
+      IntrospectedParameter(
         'value',
         type: ClassType<String>(),
         isRequired: true,
@@ -253,7 +253,7 @@ Matcher bindFailure(String text) => throwsA(
 );
 
 void main() {
-  BeanIntrospector introspector() => BeanIntrospector()
+  Introspector introspector() => Introspector()
     ..registerAll([
       serverIntrospection,
       unitsIntrospection,
@@ -273,7 +273,7 @@ void main() {
   ConfigurableApplicationContext run(
     List<BeanDefinition<Object>> definitions, {
     List<String> args = const [],
-    List<BeanIntrospection<Object>> introspections = const [],
+    List<Introspection<Object>> introspections = const [],
     List<BeanModule> autoConfigurations = const [],
     List<EnvironmentPostProcessor> environmentPostProcessors = const [],
     void Function(String line)? out,

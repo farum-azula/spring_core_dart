@@ -201,13 +201,13 @@ final actuatorAutoConfiguration = <BeanDefinition<Object>>[
           .slowIndicatorThreshold,
     ),
     annotatedMethods: [
-      BeanMethod<HealthEndpoint>(
+      IntrospectedMethod<HealthEndpoint>(
         'health',
         invoke: (bean, _) => bean.health(),
         annotations: const [ReadOperation()],
         isFuture: true,
       ),
-      BeanMethod<HealthEndpoint>(
+      IntrospectedMethod<HealthEndpoint>(
         'healthForPath',
         invoke: (bean, arguments) =>
             bean.healthForPath(arguments.single! as List<String>),
@@ -237,7 +237,7 @@ final actuatorAutoConfiguration = <BeanDefinition<Object>>[
           .slowIndicatorThreshold,
     ),
     annotatedMethods: [
-      BeanMethod<HealthEndpointWebExtension>(
+      IntrospectedMethod<HealthEndpointWebExtension>(
         'health',
         invoke: (bean, arguments) => bean.health(
           arguments[0]! as ApiVersion,
@@ -247,7 +247,7 @@ final actuatorAutoConfiguration = <BeanDefinition<Object>>[
         annotations: const [ReadOperation()],
         isFuture: true,
       ),
-      BeanMethod<HealthEndpointWebExtension>(
+      IntrospectedMethod<HealthEndpointWebExtension>(
         'healthForPath',
         invoke: (bean, arguments) => bean.healthForPath(
           arguments[0]! as ApiVersion,
@@ -388,7 +388,7 @@ final actuatorAutoConfiguration = <BeanDefinition<Object>>[
       r.optionalDependencyList<InfoContributor>() ?? const [],
     ),
     annotatedMethods: [
-      BeanMethod<InfoEndpoint>(
+      IntrospectedMethod<InfoEndpoint>(
         'info',
         invoke: (bean, _) => bean.info(),
         annotations: const [ReadOperation()],
@@ -417,7 +417,7 @@ final actuatorAutoConfiguration = <BeanDefinition<Object>>[
       },
     ),
     annotatedMethods: [
-      BeanMethod<MappingsEndpoint>(
+      IntrospectedMethod<MappingsEndpoint>(
         'mappings',
         invoke: (bean, _) => bean.mappings(),
         annotations: const [ReadOperation()],
@@ -439,19 +439,19 @@ final actuatorAutoConfiguration = <BeanDefinition<Object>>[
       registry: r.optionalDependency<JsonSchemaRegistry>(),
       // The names the app's JSON has.
       generator: JsonSchemaGenerator(
-        introspector: r.dependency<BeanIntrospector>(),
+        introspector: r.dependency<Introspector>(),
         namingStrategy:
             r.optionalDependency<ObjectMapper>()?.namingStrategy ??
             PropertyNamingStrategy.lowerCamelCase,
       ),
     ),
     annotatedMethods: [
-      BeanMethod<JsonSchemasEndpoint>(
+      IntrospectedMethod<JsonSchemasEndpoint>(
         'schemas',
         invoke: (bean, _) => bean.schemas(),
         annotations: const [ReadOperation()],
       ),
-      BeanMethod<JsonSchemasEndpoint>(
+      IntrospectedMethod<JsonSchemasEndpoint>(
         'schema',
         invoke: (bean, arguments) =>
             bean.schema(arguments.single! as List<String>),
@@ -474,7 +474,7 @@ final actuatorAutoConfiguration = <BeanDefinition<Object>>[
     ],
     create: (r) => IsolatesEndpoint(r.dependency<PrimaryIsolate>()),
     annotatedMethods: [
-      BeanMethod<IsolatesEndpoint>(
+      IntrospectedMethod<IsolatesEndpoint>(
         'isolates',
         invoke: (bean, _) => bean.isolates(),
         annotations: const [ReadOperation()],
@@ -515,18 +515,18 @@ final actuatorAutoConfiguration = <BeanDefinition<Object>>[
 // Spring Boot's InfoContributorAutoConfiguration.DEFAULT_ORDER.
 const int _infoContributorOrder = Ordered.highestPrecedence + 10;
 
-const _pathParameter = BeanParameter(
+const _pathParameter = IntrospectedParameter(
   'path',
   type: ListType<String>(ClassType<String>()),
   isRequired: true,
   annotations: [Selector(match: SelectorMatch.allRemaining)],
 );
-const _apiVersionParameter = BeanParameter(
+const _apiVersionParameter = IntrospectedParameter(
   'apiVersion',
   type: EnumType<ApiVersion>(ApiVersion.values),
   isRequired: true,
 );
-const _securityContextParameter = BeanParameter(
+const _securityContextParameter = IntrospectedParameter(
   'securityContext',
   type: ClassType<SecurityContext>(),
   isRequired: true,
@@ -721,7 +721,7 @@ WebEndpointHandlerMapping _handlerMapping(DependencyResolver r) {
     endpoints: endpoints,
     mapper:
         r.optionalDependency<ObjectMapper>() ??
-        ObjectMapper(introspector: r.dependency<BeanIntrospector>()),
+        ObjectMapper(introspector: r.dependency<Introspector>()),
     basePath: basePath,
     pathMappings: web.pathMapping,
     linksEnabled: web.discovery.enabled,

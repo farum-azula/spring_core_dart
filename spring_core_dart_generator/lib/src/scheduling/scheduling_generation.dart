@@ -3,8 +3,7 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/core/bean_model.dart';
-import 'package:spring_core_dart_generator/src/core/starter_generation.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_generation.dart';
 
 // Matched by URL (the generator does not depend on the starter).
 const _scheduled = TypeChecker.fromUrl(
@@ -16,7 +15,7 @@ const _scheduled = TypeChecker.fromUrl(
 /// values, so the build describes none of its types for it (an annotation
 /// of a `@BeanMethodAnnotation()` it did not know would have them
 /// described entirely). It writes nothing of its own.
-final class SchedulingGeneration extends StarterGeneration {
+final class SchedulingGeneration extends PackageGeneration {
   /// The part; it keeps no state of a build.
   const SchedulingGeneration();
 

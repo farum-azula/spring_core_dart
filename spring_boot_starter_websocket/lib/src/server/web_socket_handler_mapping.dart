@@ -450,8 +450,8 @@ final class _Call {
 final class _Handler {
   _Handler(this.method, this.binders);
 
-  final BeanMethod<Object> method;
-  final List<(BeanParameter, _Binder)> binders;
+  final IntrospectedMethod<Object> method;
+  final List<(IntrospectedParameter, _Binder)> binders;
 }
 
 /// Calls the annotated methods of a `@WebSocketEndpoint` bean, with their
@@ -472,7 +472,7 @@ final class _EndpointAdapter implements WebSocketHandler {
     String beanName,
     String typeName,
     PathPattern pattern,
-    List<BeanMethod<Object>> methods,
+    List<IntrospectedMethod<Object>> methods,
     List<String> problems,
   ) {
     final before = problems.length;
@@ -491,7 +491,7 @@ final class _EndpointAdapter implements WebSocketHandler {
       if (method == null) {
         return null;
       }
-      final binders = <(BeanParameter, _Binder)>[];
+      final binders = <(IntrospectedParameter, _Binder)>[];
       var payload = false;
       for (final parameter in method.parameters) {
         final where = '$typeName.${method.name}(${parameter.name})';

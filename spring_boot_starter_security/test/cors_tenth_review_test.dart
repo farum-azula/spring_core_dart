@@ -125,7 +125,7 @@ final _wsBeans = <BeanDefinition<Object>>[
     types: const [_Api],
     create: (_) => _Api(),
     annotatedMethods: [
-      BeanMethod<_Api>(
+      IntrospectedMethod<_Api>(
         'x',
         returnTypeInfo: const ClassType<String>(),
         invoke: (bean, arguments) => Function.apply(bean.x, arguments),
@@ -179,11 +179,11 @@ final class _S {
   String aput() => 'ap';
 }
 
-BeanMethod<_S> _m(
+IntrospectedMethod<_S> _m(
   String name,
   Function Function(_S) method,
   List<Object> annotations,
-) => BeanMethod<_S>(
+) => IntrospectedMethod<_S>(
   name,
   returnTypeInfo: const ClassType<String>(),
   invoke: (bean, arguments) => Function.apply(method(bean), arguments),

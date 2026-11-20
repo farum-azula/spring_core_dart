@@ -179,7 +179,7 @@ final class _MethodHandler implements ShortcutHandler {
 
   factory _MethodHandler.of(
     Object bean,
-    BeanMethod<Object> method,
+    IntrospectedMethod<Object> method,
     Shortcut shortcut,
     BeanDefinition<Object> definition,
   ) {
@@ -209,7 +209,7 @@ final class _MethodHandler implements ShortcutHandler {
   @override
   final String action;
   final Object _bean;
-  final BeanMethod<Object> _method;
+  final IntrospectedMethod<Object> _method;
   final Type? _argument;
 
   @override

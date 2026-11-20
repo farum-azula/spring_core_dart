@@ -12,10 +12,12 @@ import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -105,7 +107,7 @@ Future<TestBuilderResult> _build(
     ]);
   }
   return await testBuilder(
-    SpringBuilder(generations: starterGenerations, proxyMode: ProxyMode.none),
+    SpringBuilder(generations: packageGenerations, proxyMode: ProxyMode.none),
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/model.dart': '$_header$entities$repositories',
@@ -152,7 +154,8 @@ Future<String> _generate(
     packages: packages,
   );
   expect(result.errors, isEmpty);
-  return result.readerWriter.testing.readString(
+  return moduleText(
+    result,
     AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
   );
 }
@@ -174,6 +177,12 @@ abstract interface class $name implements ListCrudRepository<Book, int> {
 $methods
 }
 ''';
+
+// The core's description of a class, `Introspection` followed by [code]
+// (`<Book>(`) in the flattened output, and not the data starter's
+// `EntityIntrospection<Book>`.
+Matcher _introspection(String code) =>
+    matches(RegExp('(?<!Entity)Introspection${RegExp.escape(code)}'));
 
 void main() {
   group('the method against its @Query', () {
@@ -1041,7 +1050,7 @@ class Cutoffs {
       expect(output, isNot(contains('expressions:[null')));
       expect(output, isNot(contains(',null')));
       // Nothing is introspected for them.
-      expect(output, isNot(contains('BeanIntrospection')));
+      expect(output, isNot(_introspection('<')));
     });
 
     test('what the compiler leaves stays null, and is introspected', () async {
@@ -1086,7 +1095,7 @@ class Cutoffs {
       expect(output, contains(flat('expressions: [null]')));
       // `Book` is an entity, never introspected; `BookCard` is read by the
       // interpreter at run time.
-      expect(output, contains('BeanIntrospection<BookCard>('));
+      expect(output, _introspection('<BookCard>('));
     });
 
     test('a bean an interpreted expression names is introspected', () async {
@@ -1113,10 +1122,10 @@ class Clock {
       );
       final output = flat(raw);
       // The interpreter finds `lookup` through the bean's introspection.
-      expect(output, contains('BeanIntrospection<Catalog>('));
-      expect(output, contains("BeanMethod<Catalog>(r'lookup'"));
+      expect(output, _introspection('<Catalog>('));
+      expect(output, contains("IntrospectedMethod<Catalog>(r'lookup'"));
       // A compiled expression calls the method itself.
-      expect(output, isNot(contains('BeanIntrospection<Clock>(')));
+      expect(output, isNot(_introspection('<Clock>(')));
     });
 
     test('the generated code compiles against the starter', () async {
@@ -1134,15 +1143,13 @@ $compiled
         {
           'pkg|lib/src/beans.dart': _scan,
           'pkg|lib/src/model.dart': '$_header$_entities$repositories',
-          'pkg|lib/spring_gen/src/beans.spring.dart': raw,
+          ...moduleSources(raw),
         },
         (resolver) async {
           final library = await resolver.libraryFor(
             AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
           );
-          final result = await library.session.getErrors(
-            library.firstFragment.source.fullName,
-          );
+          final result = await moduleErrors(library);
           return [
             if (result case ErrorsResult(:final diagnostics))
               for (final diagnostic in diagnostics)

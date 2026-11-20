@@ -24,11 +24,11 @@ class Address {
   String get abc => 'x';
 }
 
-BeanProperty<T> _property<T extends Object>(
+IntrospectedProperty<T> _property<T extends Object>(
   String name,
   String Function(T) get, {
   List<Object> annotations = const [],
-}) => BeanProperty<T>(
+}) => IntrospectedProperty<T>(
   name,
   type: String,
   typeInfo: const ClassType<String>(),
@@ -36,7 +36,7 @@ BeanProperty<T> _property<T extends Object>(
   annotations: annotations,
 );
 
-List<BeanProperty<T>> _plainProperties<T extends Plain>() => [
+List<IntrospectedProperty<T>> _plainProperties<T extends Plain>() => [
   _property<T>('zeta', (b) => b.zeta),
   _property<T>('beta', (b) => b.beta),
   _property<T>(
@@ -47,27 +47,27 @@ List<BeanProperty<T>> _plainProperties<T extends Plain>() => [
   _property<T>('alpha', (b) => b.alpha),
 ];
 
-final _introspector = BeanIntrospector(
+final _introspector = Introspector(
   introspections: [
-    BeanIntrospection<Plain>(
+    Introspection<Plain>(
       properties: _plainProperties<Plain>(),
       instantiate: Plain.new,
     ),
-    BeanIntrospection<Listed>(
+    Introspection<Listed>(
       annotations: const [
         JsonPropertyOrder(['alpha', 'hidden', 'nothing']),
       ],
       properties: _plainProperties<Listed>(),
       instantiate: Listed.new,
     ),
-    BeanIntrospection<Sorted>(
+    Introspection<Sorted>(
       annotations: const [
         JsonPropertyOrder.alphabetic(value: ['beta']),
       ],
       properties: _plainProperties<Sorted>(),
       instantiate: Sorted.new,
     ),
-    BeanIntrospection<Unknown>(
+    Introspection<Unknown>(
       annotations: const [
         // The Dart name of a renamed property works too.
         JsonPropertyOrder(['hidden']),
@@ -75,22 +75,22 @@ final _introspector = BeanIntrospector(
       properties: _plainProperties<Unknown>(),
       instantiate: Unknown.new,
     ),
-    BeanIntrospection<Address>(
+    Introspection<Address>(
       properties: [
         _property<Address>('zip', (b) => b.zip),
         _property<Address>('note', (b) => b.note),
         _property<Address>('city', (b) => b.city),
         _property<Address>('abc', (b) => b.abc),
       ],
-      constructor: BeanConstructor<Address>(
+      constructor: IntrospectedConstructor<Address>(
         parameters: const [
-          BeanParameter(
+          IntrospectedParameter(
             'zip',
             type: ClassType<String>(),
             symbol: #zip,
             isRequired: true,
           ),
-          BeanParameter(
+          IntrospectedParameter(
             'city',
             type: ClassType<String>(),
             symbol: #city,

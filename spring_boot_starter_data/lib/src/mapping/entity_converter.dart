@@ -62,19 +62,19 @@ import 'package:spring_boot_starter_data/src/mapping/persistent_entity.dart';
 /// the id and version).
 class EntityConverter {
   /// A converter looking enums up in [introspector] (by default
-  /// `BeanIntrospector.shared`) when the type given does not carry them (a
+  /// `Introspector.shared`) when the type given does not carry them (a
   /// `ClassType` of the JDBC-level mappers; an entity's enum property is an
   /// `EnumType`), and writing and reading the [Json] properties with
   /// [mapper] (the application's `ObjectMapper` bean in an application; by
   /// default one over [introspector]).
-  EntityConverter({BeanIntrospector? introspector, ObjectMapper? mapper})
-    : introspector = introspector ?? BeanIntrospector.shared,
+  EntityConverter({Introspector? introspector, ObjectMapper? mapper})
+    : introspector = introspector ?? Introspector.shared,
       // The field is private; the parameter is public.
       // ignore: prefer_initializing_formals
       _mapper = mapper;
 
   /// Where enums not described by their type are looked up.
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   ObjectMapper? _mapper;
 

@@ -9,6 +9,8 @@ import 'package:build_test/build_test.dart';
 import 'package:spring_core_dart_generator/src/test/test_builder.dart';
 import 'package:test/test.dart';
 
+import '../support/module_files.dart';
+
 const _app = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'spring_gen/app.spring.dart';
@@ -128,7 +130,10 @@ class ShopTest {
           '});',
         ),
       );
-      expect(source, contains('from the @DataTest classes of shop_test.dart'));
+      expect(
+        source,
+        contains('from the @DataTest classes of\n// shop_test.dart.'),
+      );
       expect(
         source,
         contains('Declares the tests of the `@DataTest` classes of'),
@@ -150,7 +155,10 @@ class SliceTest {
   void works() {}
 }
 ''');
-    expect(source, contains('from the @SpringBootTest and @DataTest classes'));
+    expect(
+      source,
+      contains('from the @SpringBootTest and\n// @DataTest classes of'),
+    );
     // Only the slice's tests run in a transaction.
     expect(
       source,
@@ -862,9 +870,7 @@ abstract class Clock {}
           'test/spring_gen/shop.test.spring.dart',
         ]) {
           final library = await resolver.libraryFor(AssetId('pkg', path));
-          final result = await library.session.getErrors(
-            library.firstFragment.source.fullName,
-          );
+          final result = await moduleErrors(library);
           if (result case ErrorsResult(:final diagnostics)) {
             messages.addAll([
               for (final diagnostic in diagnostics)

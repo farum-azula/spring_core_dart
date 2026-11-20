@@ -33,16 +33,16 @@ BeanDefinition<Features> features({String id = 'features'}) =>
       annotations: [Endpoint(id: id)],
       create: (_) => Features(),
       annotatedMethods: [
-        BeanMethod<Features>(
+        IntrospectedMethod<Features>(
           'all',
           invoke: (bean, _) => bean.all(),
           annotations: const [ReadOperation()],
         ),
-        BeanMethod<Features>(
+        IntrospectedMethod<Features>(
           'one',
           invoke: (bean, arguments) => bean.one(arguments.single! as String),
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'name',
               type: ClassType<String>(),
               isRequired: true,
@@ -52,7 +52,7 @@ BeanDefinition<Features> features({String id = 'features'}) =>
           annotations: const [ReadOperation()],
         ),
         // Not an operation.
-        BeanMethod<Features>('other', invoke: (bean, _) => null),
+        IntrospectedMethod<Features>('other', invoke: (bean, _) => null),
       ],
     );
 
@@ -61,7 +61,7 @@ BeanDefinition<Object> echoEndpoint() => BeanDefinition<Features>(
   annotations: const [Endpoint(id: 'echo', enableByDefault: false)],
   create: (_) => Features(),
   annotatedMethods: [
-    BeanMethod<Features>(
+    IntrospectedMethod<Features>(
       'echo',
       invoke: (bean, arguments) => bean.echo(arguments.single! as String),
       invokeNamed: (bean, positional, named) => bean.echo(
@@ -69,8 +69,12 @@ BeanDefinition<Object> echoEndpoint() => BeanDefinition<Features>(
         times: named.argumentOr(#times, 1),
       ),
       parameters: const [
-        BeanParameter('text', type: ClassType<String>(), isRequired: true),
-        BeanParameter(
+        IntrospectedParameter(
+          'text',
+          type: ClassType<String>(),
+          isRequired: true,
+        ),
+        IntrospectedParameter(
           'times',
           type: ClassType<int>(),
           symbol: #times,
@@ -80,24 +84,24 @@ BeanDefinition<Object> echoEndpoint() => BeanDefinition<Features>(
       ],
       annotations: const [ReadOperation()],
     ),
-    BeanMethod<Features>(
+    IntrospectedMethod<Features>(
       'who',
       invoke: (bean, arguments) => bean.who(
         arguments[0]! as SecurityContext,
         arguments[1]! as ApiVersion,
       ),
       parameters: const [
-        BeanParameter(
+        IntrospectedParameter(
           'user',
           type: ClassType<SecurityContext>(),
           isRequired: true,
         ),
-        BeanParameter(
+        IntrospectedParameter(
           'version',
           type: EnumType<ApiVersion>(ApiVersion.values),
           isRequired: true,
         ),
-        BeanParameter(
+        IntrospectedParameter(
           'path',
           type: ListType<String>(ClassType<String>()),
           isRequired: true,
@@ -114,7 +118,7 @@ BeanDefinition<FeaturesWeb> featuresWeb() => BeanDefinition<FeaturesWeb>(
   annotations: const [EndpointWebExtension(endpoint: Features)],
   create: (_) => FeaturesWeb(),
   annotatedMethods: [
-    BeanMethod<FeaturesWeb>(
+    IntrospectedMethod<FeaturesWeb>(
       'all',
       invoke: (bean, _) => bean.all(),
       annotations: const [ReadOperation()],

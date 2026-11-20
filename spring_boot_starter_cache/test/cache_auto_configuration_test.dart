@@ -48,7 +48,7 @@ CacheManager managerFor(ConfigurableEnvironment environment) {
   ConfigurationPropertySources.attach(environment);
   final binder = ConfigurationPropertiesBinder(
     environment,
-    BeanIntrospector(introspections: cacheConfigBeans.introspections),
+    Introspector(introspections: cacheConfigBeans.introspections),
   );
   final properties = binder.postProcessBeforeInitialization(
     CacheProperties(),

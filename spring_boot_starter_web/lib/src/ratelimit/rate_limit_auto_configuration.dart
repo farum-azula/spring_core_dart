@@ -217,7 +217,7 @@ final rateLimitAutoConfiguration = <BeanDefinition<Object>>[
         storeFailureRetryAfter: properties.storeFailureRetryAfter,
         headers: properties.headers,
         hashSecret: properties.hashAddresses ? secret : null,
-        introspector: r.dependency<BeanIntrospector>(),
+        introspector: r.dependency<Introspector>(),
       );
     },
   ),

@@ -312,15 +312,15 @@ class PropertyBatchUpdateException extends BeansException {
 /// as they are. Reads never grow anything.
 class BeanWrapper {
   /// Wraps [wrappedInstance]; [introspector] defaults to
-  /// [BeanIntrospector.shared] and [conversionService] to the shared
+  /// [Introspector.shared] and [conversionService] to the shared
   /// `DefaultConversionService`.
   BeanWrapper(
     this.wrappedInstance, {
-    BeanIntrospector? introspector,
+    Introspector? introspector,
     ConversionService? conversionService,
     this.autoGrowNestedPaths = false,
     this.autoGrowCollectionLimit = 0x7FFFFFFF,
-  }) : introspector = introspector ?? BeanIntrospector.shared,
+  }) : introspector = introspector ?? Introspector.shared,
        conversionService =
            conversionService ?? DefaultConversionService.sharedInstance;
 
@@ -328,7 +328,7 @@ class BeanWrapper {
   final Object wrappedInstance;
 
   /// Where the descriptions of the classes on the path come from.
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   /// Converts written values to the property types.
   final ConversionService conversionService;
@@ -602,7 +602,7 @@ class BeanWrapper {
     return (value, type);
   }
 
-  BeanProperty<Object>? _property(Object target, String name) =>
+  IntrospectedProperty<Object>? _property(Object target, String name) =>
       introspector.findIntrospection(target)?.getProperty(name);
 
   (Object?, TypeInfo<Object?>?) _readProperty(
@@ -648,12 +648,12 @@ class BeanWrapper {
   // part (the message of its `IntrospectionPartError`), or it is a plain
   // missing accessor of a hand-written description.
   static String _withoutPart(
-    BeanIntrospection<Object> introspection,
+    Introspection<Object> introspection,
     IntrospectionPart part,
     String use,
   ) => introspection.describesPart(part)
       ? 'no ${part == IntrospectionPart.read ? 'getter' : 'setter'}'
-      : IntrospectionPartError(introspection.beanType, part, use).message;
+      : IntrospectionPartError(introspection.type, part, use).message;
 
   void _writeProperty(Object target, String name, Object? value, String path) {
     if (target is Map) {

@@ -53,18 +53,18 @@ import 'package:spring_core_dart/src/validation/constraints.dart';
 /// Jackson's `jsonSchema` module or victools' `jsonschema-generator`.
 final class JsonSchemaGenerator {
   /// A generator reading classes from [introspector]
-  /// ([BeanIntrospector.shared] by default) and naming properties with
+  /// ([Introspector.shared] by default) and naming properties with
   /// [namingStrategy], as the `ObjectMapper` it describes does.
   JsonSchemaGenerator({
-    BeanIntrospector? introspector,
+    Introspector? introspector,
     this.namingStrategy = PropertyNamingStrategy.lowerCamelCase,
-  }) : introspector = introspector ?? BeanIntrospector.shared;
+  }) : introspector = introspector ?? Introspector.shared;
 
   /// The `$schema` of every generated schema: draft 2020-12.
   static const draft = 'https://json-schema.org/draft/2020-12/schema';
 
   /// Where the classes are described.
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   /// How Dart property names become JSON names, for classes without
   /// `@JsonNaming`.
@@ -96,7 +96,7 @@ final class JsonSchemaGenerator {
     final result = <String, Map<String, Object?>>{};
     for (final introspection in introspector.introspections) {
       if (introspection.isGeneric ||
-          introspector.enumTypeFor(introspection.beanType) != null ||
+          introspector.enumTypeFor(introspection.type) != null ||
           result.containsKey(introspection.className)) {
         continue;
       }
@@ -114,11 +114,11 @@ final class _Run {
   _Run(this.generator, this.rootIntrospection);
 
   final JsonSchemaGenerator generator;
-  final BeanIntrospection<Object> rootIntrospection;
-  final _names = <BeanIntrospection<Object>, String>{};
+  final Introspection<Object> rootIntrospection;
+  final _names = <Introspection<Object>, String>{};
   final _defs = <String, Map<String, Object?>>{};
 
-  BeanIntrospector get introspector => generator.introspector;
+  Introspector get introspector => generator.introspector;
 
   Map<String, Object?> root() {
     final body = objectSchema(rootIntrospection);
@@ -131,7 +131,7 @@ final class _Run {
   }
 
   Map<String, Object?> refTo(
-    BeanIntrospection<Object> introspection, [
+    Introspection<Object> introspection, [
     String? name,
   ]) {
     if (identical(introspection, rootIntrospection)) {
@@ -161,7 +161,7 @@ final class _Run {
     return name;
   }
 
-  Map<String, Object?> objectSchema(BeanIntrospection<Object> introspection) {
+  Map<String, Object?> objectSchema(Introspection<Object> introspection) {
     if (introspection.hasFromJson || introspection.hasToJson) {
       return {};
     }
@@ -174,7 +174,8 @@ final class _Run {
     };
     final parameters = {
       for (final parameter
-          in introspection.constructor?.parameters ?? const <BeanParameter>[])
+          in introspection.constructor?.parameters ??
+              const <IntrospectedParameter>[])
         parameter.name: parameter,
     };
     final names = {
@@ -481,7 +482,7 @@ final class _TypeSchema implements TypeInfoVisitor<Map<String, Object?>> {
 
   final _Run run;
 
-  BeanIntrospector get introspector => run.introspector;
+  Introspector get introspector => run.introspector;
 
   Map<String, Object?> _of(TypeInfo<Object?> type) {
     final schema = type.accept(this);

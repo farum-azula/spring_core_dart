@@ -2,9 +2,11 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 // The default values the introspection describes: the defaults of the
 // constructor parameters and the constant initializers of the fields.
@@ -114,26 +116,24 @@ Future<(String, List<String>)> _generate(String source) async {
   );
   await readerWriter.testing.loadIsolateSources();
   final result = await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
     readerWriter: readerWriter,
     flattenOutput: true,
   );
   expect(result.errors, isEmpty);
-  final output = result.readerWriter.testing.readString(result.outputs.single);
+  final output = moduleText(result);
   final errors = await resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
-      'pkg|lib/spring_gen/src/beans.spring.dart': output,
+      ...moduleSources(output),
     },
     (resolver) async {
       final library = await resolver.libraryFor(
         AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
       );
-      final result = await library.session.getErrors(
-        library.firstFragment.source.fullName,
-      );
+      final result = await moduleErrors(library);
       return [
         if (result case ErrorsResult(:final diagnostics))
           for (final diagnostic in diagnostics)
@@ -144,7 +144,7 @@ Future<(String, List<String>)> _generate(String source) async {
     resolverFor: 'pkg|lib/spring_gen/src/beans.spring.dart',
     readAllSourcesFromFilesystem: true,
   );
-  return (_normalize(output), errors);
+  return (_normalize(moduleText(result)), errors);
 }
 
 String _normalize(String code) => code
@@ -156,7 +156,7 @@ Matcher _has(String code) => contains(_normalize(code));
 
 // The arguments of the property `Class.name` before its `get` closure.
 String _property(String output, String bean, String name) {
-  final start = output.indexOf("BeanProperty<$bean>(r'$name',");
+  final start = output.indexOf("IntrospectedProperty<$bean>(r'$name',");
   expect(start, isNonNegative, reason: 'property $bean.$name');
   return output.substring(start, output.indexOf('get:', start));
 }
@@ -164,10 +164,10 @@ String _property(String output, String bean, String name) {
 // The arguments of the constructor parameter `name` of `bean` (up to the
 // next parameter or the end of the list).
 String _parameter(String output, String bean, String name) {
-  final model = output.indexOf('BeanIntrospection<$bean>(');
-  final start = output.indexOf("BeanParameter(r'$name',", model);
+  final model = output.indexOf('Introspection<$bean>(');
+  final start = output.indexOf("IntrospectedParameter(r'$name',", model);
   expect(start, isNonNegative, reason: 'parameter $bean($name)');
-  final next = output.indexOf('BeanParameter(', start + 1);
+  final next = output.indexOf('IntrospectedParameter(', start + 1);
   final close = output.indexOf('],create:', start);
   return output.substring(
     start,
@@ -265,8 +265,8 @@ void main() {
   });
 
   test('a class without defaults is written as before', () {
-    final start = output.indexOf('BeanIntrospection<Fresh>(');
-    final end = output.indexOf('BeanIntrospection<', start + 1);
+    final start = output.indexOf('Introspection<Fresh>(');
+    final end = output.indexOf('Introspection<', start + 1);
     final fresh = output.substring(start, end == -1 ? output.length : end);
     expect(fresh, isNot(contains('hasInitialValue')));
     expect(fresh, isNot(contains('hasDefaultValue')));

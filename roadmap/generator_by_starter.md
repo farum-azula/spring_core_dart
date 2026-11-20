@@ -129,7 +129,10 @@ Its code is not organised that way:
 - Found by measuring (18 November 2026): `spring.main.startup-checks.enabled`
   is bound at run time (`MainProperties`), +3 KB of wasm in every app
   (`flutter_guide`: 5,062,110 → 5,065,210 bytes) for a key only the build
-  reads; declare it for the editors only, without a binding.
+  reads; declare it for the editors only, without a binding. Done (19
+  November 2026): `MainStartupChecksProperties`, abstract, outside the
+  scanned `properties/` folder, read by the metadata only;
+  `flutter_guide`'s wasm 5,065,477 → 5,064,212 bytes.
 
 ## The main modules: what only development needs
 
@@ -166,3 +169,108 @@ Not done, on purpose (the owner, 17 November 2026):
 Found on the way: `dart compile js` / `wasm` define no `dart.vm.product`,
 so a deployed edge function keeps the `notInRelease` modules unless their
 key is `false` (Flutter's release builds and AOT drop them).
+
+## Next: the core by concern, introspection on its own (the owner, 19 November 2026)
+
+Mostly a matter of structure, for the next release; found while
+discussing equality through introspection, where "bean" in the
+introspection's names confused us more than once.
+
+- **The core by concern**, as `spring_core_dart/lib/src` is laid out:
+  `core/beans/`, `core/aop/`, `core/introspection/` (with JSON and
+  validation), `core/properties/`, `core/spel/`, `core/metadata/`,
+  `core/build/` (the builder, the build-time configuration, the build
+  keys). First the files moved (the generated code byte for byte the
+  same), then the code split.
+- **Introspection on its own:** its own scanner, model and emitter in
+  `core/introspection/`. The bean scanner and the packages' parts (web,
+  WebSocket, data) no longer build descriptions; they tell introspection
+  what a class needs (`toJson` for a controller's result, a constructor
+  for a `@RequestBody`, a method a SpEL expression calls) through a small
+  internal interface. One pass over the classes may stay; the roles are
+  apart.
+- **Its own generated file:** `lib/spring_gen/<library>.spring.introspection.dart`,
+  a library with the list of descriptions (`$appIntrospections`), which
+  the module imports and hands to the context at start as today; a second
+  output of the main builder in `build.yaml`. A unit test can then
+  register the descriptions without starting a context, and the module's
+  file holds beans only (the server guide's is about 5,000 lines today,
+  most of them descriptions).
+- **Names:** `BeanIntrospection`, `BeanIntrospector`, `BeanProperty`,
+  `BeanMethod`, `BeanConstructor`, `BeanParameter` become `Introspection`,
+  `Introspector`, `IntrospectedProperty`, `IntrospectedMethod`,
+  `IntrospectedConstructor`, `IntrospectedParameter` (named from
+  `@Introspected`, not from beans; "bean" stays the container's), the old
+  names removed (pre-1.0: no deprecated aliases, the owner, 20 November
+  2026). `BeanWrapper` stays, Spring's own name.
+- **The parts are a package's, not a starter's:** `StarterGeneration`
+  becomes `PackageGeneration` (`starters.dart` → `packages.dart`,
+  `StarterBuild` → `PackageBuild`): several parts belong to libraries
+  (`spring_web_dart`, `spring_security_core`, `spring_boot_actuator`), and
+  `JsonSchemasGeneration` is `spring_core_dart`'s own, so it moves into the
+  core (`core/introspection/`). The halves kept only for the order of the
+  output (`ChangeNotifierGeneration`, `DataMetadataGeneration`) join their
+  parts again once a slot has an explicit order.
+- **The rest of the module's file by stereotype too** (the owner, 19
+  November 2026): the AOP proxies in `<library>.spring.proxies.dart`, the binding
+  of `@ConfigurationProperties` classes in `<library>.spring.properties.dart`;
+  the module's `.spring.dart` keeps the bean definitions and the wiring.
+  No change at run time; the files say what they hold.
+- **Object methods on introspection, in the core** (the owner, 19 November
+  2026; in place of the deferred generated mixins of the branch
+  `feat/object-methods`, whose `SecretNames`, `deepEquals`/`deepHash`,
+  `copyWith` generation and misuse checks are reused):
+  - `@EqualsAndHashCode(include, exclude, callSuper)`,
+    `@ToString(include, exclude, includeNames, callSuper, mask, reveal)`
+    (secret-looking names masked by `SecretNames`, moved into the core and
+    used by the data starter's logs too; `mask` adds fields, `reveal` shows
+    one the rule would hide; the value of a masked field is never read);
+    the class mixes in `IntrospectedObject` (the framework's, written by
+    hand once), whose `==`, `hashCode` and `toString` call the typed
+    functions the generator put into the class's description;
+  - `@CopyWith(include, exclude, constructor)`: a typed `copyWith` (a
+    function type, so `copyWith(x: null)` clears a field without a lint),
+    written into `<library>.spring.introspection.dart`; where it is used, one
+    import of that file; never an export or a part line;
+  - two classes of one name in one library (different folders): the names
+    nobody writes by hand (the `copyWith` extension and type) are made
+    unique by the generator;
+  - no `@Builder` (the owner, 20 November 2026: written once, then removed
+    before any release; a constructor with named parameters and `copyWith`
+    do its work in Dart);
+  - no build key: runtime behaviour, not development code.
+
+Done (19-20 November 2026, uncommitted):
+- the core by concern (`core/beans/`, `aop/`, `introspection/`,
+  `properties/`, `spel/`, `metadata/`, `builder/`), with introspection's
+  own scanner, model and emitter; the bean scan and the packages' parts
+  tell it what a class needs (`IntrospectionRequests`);
+- `<library>.spring.introspection.dart` (`$<module>Introspections`; a unit test
+  registers it with `Introspector.shared.registerAll`),
+  `<library>.spring.properties.dart` and `<library>.spring.proxies.dart`; the
+  `.spring.dart` keeps the bean definitions and the wiring;
+- the names: `Introspection`, `Introspector`, `IntrospectedProperty`,
+  `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`
+  (the old ones removed, the bean `introspector`; `BeanWrapper` stays);
+- the parts are a package's: `PackageGeneration`, `PackageBuild`,
+  `PackageCreation`, `packages.dart`; the JSON Schemas are the core's;
+- the object methods (`@EqualsAndHashCode`, `@ToString`, `@CopyWith`,
+  `IntrospectedObject`, `SecretNames`, `deepEquals`), with the misuse
+  checks and the benchmark (`benchmark/object_methods_benchmark.dart`);
+- the generated files named `<name>.spring.<kind>.dart`
+  (`.spring.introspection.dart`, `.spring.properties.dart`,
+  `.spring.proxies.dart`), as the typed keys and the JSON Schema classes;
+- what only development needs in `<library>.spring.debug.dart` (the
+  fingerprint, `reloadApplication`/`reloadApplicationAsync`), referred to
+  under `!dart.vm.product`, so a release build drops it; the
+  `hotReload:` callback stays (the isolates of `server.isolates.count`
+  start the application through it);
+- no "bean" in introspection: the describing functions take `object`,
+  `Introspection.type` (was `beanType`);
+- readable proxies: `_$invoker`, the invoker's named arguments
+  (`proxy`, `target`, `methodIndex`, `arguments`, `original`; measured
+  with `benchmark/proxy_invoker_benchmark.dart`), a `///` comment per
+  proxy class and member with the advice the build found;
+- every generated Dart file formatted as `dart format` formats its
+  package (language version, `formatter:` options), its comments wrapped
+  to the page, with a test.

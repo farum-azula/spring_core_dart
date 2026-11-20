@@ -10,11 +10,11 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/core/bean_model.dart';
-import 'package:spring_core_dart_generator/src/core/metadata_locations.dart'
+import 'package:spring_core_dart_generator/src/core/beans/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_generation.dart';
+import 'package:spring_core_dart_generator/src/core/metadata/metadata_locations.dart'
     show lineOf, sourceOf;
-import 'package:spring_core_dart_generator/src/core/spel_compiler.dart';
-import 'package:spring_core_dart_generator/src/core/starter_generation.dart';
+import 'package:spring_core_dart_generator/src/core/spel/spel_compiler.dart';
 import 'package:spring_core_dart_generator/src/data/data_model.dart';
 import 'package:spring_core_dart_generator/src/data/data_schema.dart';
 import 'package:spring_core_dart_generator/src/data/data_stores.dart';

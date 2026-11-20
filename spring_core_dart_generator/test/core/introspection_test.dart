@@ -1,6 +1,6 @@
 // Introspection metadata: `@Introspected` for JSON and the validation
 // constraints.
-import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
 import 'package:test/test.dart';
 
 import '../support/spring_builder.dart';
@@ -76,7 +76,7 @@ class Holder {
       expect(
         output,
         hasCode(
-          "BeanProperty<Book>(r'tags', "
+          "IntrospectedProperty<Book>(r'tags', "
           'typeInfo: const ListType<String>(ClassType<String>()),',
         ),
       );
@@ -103,7 +103,7 @@ class Holder {
       expect(
         output,
         hasCode(
-          "BeanParameter(r'isbn', type: const ClassType<String>(), "
+          "IntrospectedParameter(r'isbn', type: const ClassType<String>(), "
           'symbol: #isbn, isRequired: true)',
         ),
       );
@@ -118,11 +118,12 @@ class Holder {
       );
       // Author (used by Book, same package) is introspected automatically,
       // with positional parameters.
-      expect(output, hasCode('BeanIntrospection<Author>('));
+      expect(output, hasCode('Introspection<Author>('));
       expect(
         output,
         hasCode(
-          "BeanParameter(r'born', type: ClassType<int>(nullable: true))",
+          "IntrospectedParameter(r'born', "
+          'type: ClassType<int>(nullable: true))',
         ),
       );
       // @Introspected(classes:) and @JsonCreator.
@@ -143,13 +144,13 @@ class Holder {
           'Legacy.fromJson((json as Map<String, dynamic>));',
         ),
       );
-      expect(output, hasCode('(Legacy bean) => bean.toJson();'));
+      expect(output, hasCode('(Legacy object) => object.toJson();'));
       expect(
         output,
         matches(RegExp(r'fromJson:_\$fromJson\d+,toJson:_\$toJson\d+')),
       );
       // Enums are described by EnumType, not introspected.
-      expect(output, isNot(contains('BeanIntrospection<Genre>')));
+      expect(output, isNot(contains('Introspection<Genre>')));
     });
 
     test('the generated code compiles', () async {

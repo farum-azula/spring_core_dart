@@ -299,16 +299,35 @@ class BooksProxy extends Books implements Advised {
   int count(String method) => _target.count(method);
 
   String _call(int index, List<Object?> args, String Function() call) =>
-      _invoker.invoke(this, _target, index, args, (_) => call())! as String;
+      _invoker.invoke(
+            proxy: this,
+            target: _target,
+            methodIndex: index,
+            arguments: args,
+            original: (_) => call(),
+          )!
+          as String;
 
   String? _maybe(int index, List<Object?> args, String? Function() call) =>
-      _invoker.invoke(this, _target, index, args, (_) => call()) as String?;
+      _invoker.invoke(
+        proxy: this,
+        target: _target,
+        methodIndex: index,
+        arguments: args,
+        original: (_) => call(),
+      ) as String?;
 
   void _void(int index, List<Object?> args, void Function() call) {
-    _invoker.invoke(this, _target, index, args, (_) {
-      call();
-      return null;
-    });
+    _invoker.invoke(
+      proxy: this,
+      target: _target,
+      methodIndex: index,
+      arguments: args,
+      original: (_) {
+        call();
+        return null;
+      },
+    );
   }
 
   @override
@@ -361,20 +380,20 @@ class BooksProxy extends Books implements Advised {
 
   @override
   Future<String> fetch(String isbn) => _invoker.invokeAsync<String>(
-    this,
-    _target,
-    14,
-    [isbn],
-    (args) => _target.fetch(args[0]! as String),
+    proxy: this,
+    target: _target,
+    methodIndex: 14,
+    arguments: [isbn],
+    original: (args) => _target.fetch(args[0]! as String),
   );
 
   @override
   Future<String> fetchShared(String isbn) => _invoker.invokeAsync<String>(
-    this,
-    _target,
-    15,
-    [isbn],
-    (args) => _target.fetchShared(args[0]! as String),
+    proxy: this,
+    target: _target,
+    methodIndex: 15,
+    arguments: [isbn],
+    original: (args) => _target.fetchShared(args[0]! as String),
   );
 
   @override
@@ -390,11 +409,11 @@ class BooksProxy extends Books implements Advised {
 
   @override
   Future<String> fetchBadKey(String isbn) => _invoker.invokeAsync<String>(
-    this,
-    _target,
-    19,
-    [isbn],
-    (args) => _target.fetchBadKey(args[0]! as String),
+    proxy: this,
+    target: _target,
+    methodIndex: 19,
+    arguments: [isbn],
+    original: (args) => _target.fetchBadKey(args[0]! as String),
   );
 }
 

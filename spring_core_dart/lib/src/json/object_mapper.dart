@@ -97,7 +97,7 @@ import 'package:spring_core_dart/src/json/schema/json_schema_source.dart';
 /// ```
 class ObjectMapper {
   /// A mapper reading class metadata from [introspector] (the context's one
-  /// in an application; [BeanIntrospector.shared] by default). Every setting
+  /// in an application; [Introspector.shared] by default). Every setting
   /// is optional; the defaults are those of Jackson 3 and Spring Boot.
   ///
   /// - [namingStrategy] turns Dart names into JSON names.
@@ -133,7 +133,7 @@ class ObjectMapper {
   ///   `@JsonSchemaSource`, which its JSON is checked against before it is
   ///   read (none by default: nothing is checked).
   ObjectMapper({
-    BeanIntrospector? introspector,
+    Introspector? introspector,
     this.namingStrategy = PropertyNamingStrategy.lowerCamelCase,
     this.inclusion = JsonInclusion.always,
     this.failOnUnknownProperties = false,
@@ -151,7 +151,7 @@ class ObjectMapper {
     Iterable<JsonDeserializer<Object>> deserializers = const [],
     Iterable<JsonModule> modules = const [],
     this.schemaResolver,
-  }) : introspector = introspector ?? BeanIntrospector.shared,
+  }) : introspector = introspector ?? Introspector.shared,
        _offset = timeZone == null ? null : parseTimeZone(timeZone),
        _view = null,
        serializers = List.unmodifiable([
@@ -185,7 +185,7 @@ class ObjectMapper {
 
   /// Where class metadata comes from: the generated introspections of the
   /// `@Introspected` classes.
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   /// How Dart property names become JSON names, for classes without
   /// `@JsonNaming` and properties without a `@JsonProperty` name.
@@ -276,8 +276,8 @@ class ObjectMapper {
 
   static final _conversion = DefaultConversionService();
   static final _patterns = <String, DatePattern>{};
-  final _classes = <BeanIntrospection<Object>, _ClassInfo>{};
-  final _polymorphisms = <BeanIntrospection<Object>, _Polymorphism>{};
+  final _classes = <Introspection<Object>, _ClassInfo>{};
+  final _polymorphisms = <Introspection<Object>, _Polymorphism>{};
 
   // dart2js: every number is a double, `int` is exact up to 2^53.
   static const bool _web = identical(0, 0.0);
@@ -484,10 +484,10 @@ class ObjectMapper {
 
   static bool _isNodeType<T>() => <T>[] is List<JsonNode?>;
 
-  _ClassInfo _info(BeanIntrospection<Object> introspection) =>
+  _ClassInfo _info(Introspection<Object> introspection) =>
       _classes[introspection] ??= _ClassInfo(introspection, this);
 
-  _Polymorphism _polymorphism(BeanIntrospection<Object> base) =>
+  _Polymorphism _polymorphism(Introspection<Object> base) =>
       _polymorphisms[base] ??= _Polymorphism(this, base);
 
   // Whether the view class [active] extends [view] (both introspected).
@@ -939,14 +939,14 @@ class ObjectMapper {
               !i.isGeneric &&
               i.isRawTypeOf<T>() &&
               !i.describes<T>() &&
-              '${i.beanType}'.contains('<'),
+              '${i.type}'.contains('<'),
         )
         .firstOrNull;
     if (bounded != null) {
       throw JsonMappingException(
         'cannot read $T: ${bounded.className} has bounded type parameters, '
         'so its introspection cannot be specialized with type arguments '
-        '(only ${bounded.beanType} is described); register a '
+        '(only ${bounded.type} is described); register a '
         'JsonDeserializer for $T, or drop the bounds',
         path: '$path',
       );
@@ -970,7 +970,7 @@ class ObjectMapper {
 
   // `@JsonSchemaSource`: the decoded JSON of the value against its schema.
   void _checkSchema(
-    BeanIntrospection<Object> introspection,
+    Introspection<Object> introspection,
     Object json,
     _Path path,
   ) {
@@ -1318,34 +1318,33 @@ final class _Reader implements TypeInfoVisitor<Object?> {
 
 /// The introspection of a class type (or generic type), if any.
 final class _IntrospectionOf
-    implements TypeInfoVisitor<BeanIntrospection<Object>?> {
+    implements TypeInfoVisitor<Introspection<Object>?> {
   _IntrospectionOf(this.introspector);
 
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   @override
-  BeanIntrospection<Object>? visitClass<T>(ClassType<T> type) =>
+  Introspection<Object>? visitClass<T>(ClassType<T> type) =>
       introspector.forTypeArgument<T>();
 
   @override
-  BeanIntrospection<Object>? visitGeneric<T>(GenericType<T> type) =>
+  Introspection<Object>? visitGeneric<T>(GenericType<T> type) =>
       introspector.forGenericType<T>(type.arguments);
 
   @override
-  BeanIntrospection<Object>? visitDynamic(DynamicType type) => null;
+  Introspection<Object>? visitDynamic(DynamicType type) => null;
 
   @override
-  BeanIntrospection<Object>? visitEnum<E extends Enum>(EnumType<E> type) =>
-      null;
+  Introspection<Object>? visitEnum<E extends Enum>(EnumType<E> type) => null;
 
   @override
-  BeanIntrospection<Object>? visitList<E>(ListType<E> type) => null;
+  Introspection<Object>? visitList<E>(ListType<E> type) => null;
 
   @override
-  BeanIntrospection<Object>? visitMap<K, V>(MapType<K, V> type) => null;
+  Introspection<Object>? visitMap<K, V>(MapType<K, V> type) => null;
 
   @override
-  BeanIntrospection<Object>? visitSet<E>(SetType<E> type) => null;
+  Introspection<Object>? visitSet<E>(SetType<E> type) => null;
 }
 
 bool _deepEquals(Object? a, Object? b) {
@@ -1391,7 +1390,8 @@ final class _ClassInfo {
         mapper.namingStrategy;
     final parameters = {
       for (final parameter
-          in introspection.constructor?.parameters ?? const <BeanParameter>[])
+          in introspection.constructor?.parameters ??
+              const <IntrospectedParameter>[])
         parameter.name: parameter,
     };
     final names = {
@@ -1464,7 +1464,7 @@ final class _ClassInfo {
     );
   }
 
-  final BeanIntrospection<Object> introspection;
+  final Introspection<Object> introspection;
   final ObjectMapper mapper;
   late final bool ignoreUnknown;
   late final JsonInclusion? classInclusion;
@@ -1501,32 +1501,32 @@ final class _ClassInfo {
 
   /// The `@JsonValue` property or method: the class is written as its
   /// value.
-  BeanProperty<Object>? valueProperty;
-  BeanMethod<Object>? valueMethod;
+  IntrospectedProperty<Object>? valueProperty;
+  IntrospectedMethod<Object>? valueMethod;
 
   /// Dart names of `@JsonAnyGetter` / `@JsonAnySetter` properties.
   final anyNames = <String>{};
-  BeanProperty<Object>? anyGetter;
-  BeanMethod<Object>? anyGetterMethod;
+  IntrospectedProperty<Object>? anyGetter;
+  IntrospectedMethod<Object>? anyGetterMethod;
   String? anySetterName;
-  BeanMethod<Object>? anySetterMethod;
+  IntrospectedMethod<Object>? anySetterMethod;
 
   bool get hasAnySetter => anySetterName != null || anySetterMethod != null;
 
   /// The properties in the order they are written.
-  late final List<BeanProperty<Object>> writeOrder;
+  late final List<IntrospectedProperty<Object>> writeOrder;
 
   /// The polymorphic base this class belongs to (`@JsonTypeInfo` on it or
   /// on an introspected supertype), if any.
   late final _Polymorphism? polymorphism = _findPolymorphism();
 
   _Polymorphism? _findPolymorphism() {
-    bool hasTypeInfo(BeanIntrospection<Object> i) =>
+    bool hasTypeInfo(Introspection<Object> i) =>
         i.annotations.whereType<JsonTypeInfo>().isNotEmpty;
     if (hasTypeInfo(introspection)) {
       return mapper._polymorphism(introspection);
     }
-    BeanIntrospection<Object>? best;
+    Introspection<Object>? best;
     for (final other in mapper.introspector.introspections) {
       if (other != introspection &&
           hasTypeInfo(other) &&
@@ -1619,19 +1619,21 @@ final class _ClassInfo {
   // `@JsonPropertyOrder` first, then (when sorting) the constructor
   // parameters, then the rest; sorted by JSON name when [sorting], else in
   // declaration order.
-  List<BeanProperty<Object>> _writeOrder(JsonPropertyOrder? order) {
+  List<IntrospectedProperty<Object>> _writeOrder(JsonPropertyOrder? order) {
     final properties = introspection.properties.toList();
     final sorting =
         (order?.alphabetic ?? false) || mapper.sortPropertiesAlphabetically;
     if (!sorting && (order == null || order.value.isEmpty)) {
       return properties;
     }
-    int byName(BeanProperty<Object> a, BeanProperty<Object> b) =>
-        jsonNames[a.name]!.compareTo(jsonNames[b.name]!);
+    int byName(
+      IntrospectedProperty<Object> a,
+      IntrospectedProperty<Object> b,
+    ) => jsonNames[a.name]!.compareTo(jsonNames[b.name]!);
     if (sorting) {
       properties.sort(byName);
     }
-    final ordered = <BeanProperty<Object>>[];
+    final ordered = <IntrospectedProperty<Object>>[];
     for (final name in order?.value ?? const <String>[]) {
       // A JSON name, or the Dart name of a property.
       var index = properties.indexWhere((p) => jsonNames[p.name] == name);
@@ -1645,7 +1647,8 @@ final class _ClassInfo {
     if (sorting) {
       final creator = {
         for (final parameter
-            in introspection.constructor?.parameters ?? const <BeanParameter>[])
+            in introspection.constructor?.parameters ??
+                const <IntrospectedParameter>[])
           parameter.name,
       };
       ordered.addAll(properties.where((p) => creator.contains(p.name)));
@@ -1850,7 +1853,7 @@ final class _ClassInfo {
         rethrow;
       } on Object catch (error) {
         throw JsonMappingException(
-          'fromJson of ${introspection.beanType} failed: $error',
+          'fromJson of ${introspection.type} failed: $error',
           path: '$path',
           cause: error,
         );
@@ -1881,12 +1884,13 @@ final class _ClassInfo {
   // JSON read as that parameter's type.
   Object _readDelegating(Object json, _Path path) {
     final constructor = introspection.constructor;
-    final parameters = constructor?.parameters ?? const <BeanParameter>[];
+    final parameters =
+        constructor?.parameters ?? const <IntrospectedParameter>[];
     if (constructor == null ||
         parameters.isEmpty ||
         parameters.skip(1).any((p) => p.isRequired)) {
       throw JsonMappingException(
-        'cannot read ${introspection.beanType}: it is written through its '
+        'cannot read ${introspection.type}: it is written through its '
         '@JsonValue, so it is read through a constructor with one '
         'parameter (or a fromJson); it has none',
         path: '$path',
@@ -1916,7 +1920,7 @@ final class _ClassInfo {
     final constructor = introspection.constructor;
     final parameterNames = {
       for (final parameter
-          in constructor?.parameters ?? const <BeanParameter>[])
+          in constructor?.parameters ?? const <IntrospectedParameter>[])
         parameter.name,
     };
     // Every regular property and parameter that is present.
@@ -2000,7 +2004,7 @@ final class _ClassInfo {
       bean = introspection.instantiate();
     } else {
       throw JsonMappingException(
-        '${introspection.beanType} has no public constructor to create it '
+        '${introspection.type} has no public constructor to create it '
         'from JSON (add one, or mark one @JsonCreator())',
         path: '$path',
       );
@@ -2042,7 +2046,7 @@ final class _ClassInfo {
             !known.contains(key) &&
             !ignoredNames.contains(key)) {
           throw JsonMappingException(
-            'unknown property "$key" of ${introspection.beanType} (known: '
+            'unknown property "$key" of ${introspection.type} (known: '
             '${known.join(', ')})',
             path: '$path',
           );
@@ -2083,7 +2087,7 @@ final class _ClassInfo {
       rethrow;
     } on Object catch (error) {
       throw JsonMappingException(
-        'the @JsonAnySetter of ${introspection.beanType} failed: $error',
+        'the @JsonAnySetter of ${introspection.type} failed: $error',
         path: '$path',
         cause: error,
       );
@@ -2094,24 +2098,24 @@ final class _ClassInfo {
   // constructor parameter that needs it cannot get a value: says so
   // instead of calling it missing.
   JsonMappingException? _readOnlyParameter(
-    BeanParameter parameter,
+    IntrospectedParameter parameter,
     _Path path,
   ) => readOnlyNames.contains(parameter.name)
       ? JsonMappingException(
           'property "${jsonNames[parameter.name]}" is read-only '
           '(JsonPropertyAccess.readOnly), so it is not read from JSON, but '
-          'the constructor of ${introspection.beanType} requires it: make '
+          'the constructor of ${introspection.type} requires it: make '
           'the parameter optional or nullable, or the property not read-only',
           path: '$path',
         )
       : null;
 
   Object _construct(
-    BeanConstructor<Object> constructor,
+    IntrospectedConstructor<Object> constructor,
     Map<String, Object?> values,
     _Path path,
   ) {
-    final positional = <(BeanParameter, Object?, bool)>[];
+    final positional = <(IntrospectedParameter, Object?, bool)>[];
     final named = <Symbol, Object?>{};
     for (final parameter in constructor.parameters) {
       final name = jsonNames[parameter.name]!;
@@ -2127,7 +2131,7 @@ final class _ClassInfo {
         throw _readOnlyParameter(parameter, path) ??
             JsonMappingException(
               'missing property "$name" (required by '
-              '${introspection.beanType})',
+              '${introspection.type})',
               path: '$path',
             );
       }
@@ -2163,7 +2167,7 @@ final class _ClassInfo {
       rethrow;
     } on Object catch (error) {
       throw JsonMappingException(
-        'cannot create ${introspection.beanType}: $error',
+        'cannot create ${introspection.type}: $error',
         path: '$path',
         cause: error,
       );
@@ -2177,22 +2181,22 @@ final class _Polymorphism {
     : info = base.annotations.whereType<JsonTypeInfo>().first;
 
   final ObjectMapper mapper;
-  final BeanIntrospection<Object> base;
+  final Introspection<Object> base;
   final JsonTypeInfo info;
 
   /// The type id property (`@type` by default, like Jackson's `Id.NAME`).
   String get property => info.property.isEmpty ? '@type' : info.property;
 
   // Ids from `@JsonSubTypes` names.
-  final _names = <BeanIntrospection<Object>, String>{};
+  final _names = <Introspection<Object>, String>{};
 
   /// Type id → class: the base, the `@JsonSubTypes` of the base and,
   /// transitively, of the listed classes.
-  late final Map<String, BeanIntrospection<Object>> byId = _collect();
+  late final Map<String, Introspection<Object>> byId = _collect();
 
-  Map<String, BeanIntrospection<Object>> _collect() {
-    final ids = <String, BeanIntrospection<Object>>{};
-    final seen = <BeanIntrospection<Object>>[];
+  Map<String, Introspection<Object>> _collect() {
+    final ids = <String, Introspection<Object>>{};
+    final seen = <Introspection<Object>>[];
     final queue = [base];
     while (queue.isNotEmpty) {
       final current = queue.removeLast();
@@ -2205,7 +2209,7 @@ final class _Polymorphism {
           final target =
               mapper.introspector.forType(sub.value) ??
               (throw JsonMappingException(
-                'subtype ${sub.value} of ${base.beanType} is not '
+                'subtype ${sub.value} of ${base.type} is not '
                 '@Introspected',
               ));
           if (sub.name.isNotEmpty) {
@@ -2225,13 +2229,13 @@ final class _Polymorphism {
     return ids;
   }
 
-  String _idOf(BeanIntrospection<Object> introspection) =>
+  String _idOf(Introspection<Object> introspection) =>
       _names[introspection] ??
       introspection.annotations.whereType<JsonTypeName>().firstOrNull?.value ??
       introspection.className;
 
   /// The type id written for [introspection].
-  String idOf(BeanIntrospection<Object> introspection) {
+  String idOf(Introspection<Object> introspection) {
     // Reading the getter collects the @JsonSubTypes names.
     // ignore: unnecessary_statements
     byId; // collects the @JsonSubTypes names
@@ -2241,7 +2245,7 @@ final class _Polymorphism {
   Object read(_ClassInfo requested, Object json, _Path path) {
     String? id;
     Object? body = json;
-    BeanIntrospection<Object>? target;
+    Introspection<Object>? target;
     var valuePath = path;
     switch (info.include) {
       case _ when info.use == JsonTypeId.deduction:
@@ -2263,7 +2267,7 @@ final class _Polymorphism {
       case JsonTypeInclusion.wrapperObject:
         if (json is! Map<Object?, Object?> || json.length != 1) {
           throw mapper._expected(
-            'an object wrapping the value of ${base.beanType} with its type '
+            'an object wrapping the value of ${base.type} with its type '
             'id as the only property',
             json,
             path,
@@ -2277,7 +2281,7 @@ final class _Polymorphism {
             json.length != 2 ||
             json.first is! String) {
           throw mapper._expected(
-            'an array [type id, value] for ${base.beanType}',
+            'an array [type id, value] for ${base.type}',
             json,
             path,
           );
@@ -2291,8 +2295,8 @@ final class _Polymorphism {
         info.include == JsonTypeInclusion.property ||
                 info.include == JsonTypeInclusion.existingProperty
             ? 'missing type id property "$property" (for '
-                  '${requested.introspection.beanType})'
-            : 'missing type id (for ${requested.introspection.beanType})',
+                  '${requested.introspection.type})'
+            : 'missing type id (for ${requested.introspection.type})',
         valuePath,
       );
     }
@@ -2300,41 +2304,41 @@ final class _Polymorphism {
     // one it is an error.
     final unknown =
         'could not resolve type id "$id" as a subtype of '
-        '${requested.introspection.beanType}: known type ids = '
+        '${requested.introspection.type}: known type ids = '
         '[${(byId.keys.toList()..sort()).join(', ')}]';
     target ??= byId[id] ?? _defaultImpl(unknown, valuePath);
     if (target != requested.introspection &&
         !target.isSubtypeOf(requested.introspection)) {
       throw JsonMappingException(
-        'type id "${id ?? _idOf(target)}" (${target.beanType}) is not a '
-        'subtype of ${requested.introspection.beanType}',
+        'type id "${id ?? _idOf(target)}" (${target.type}) is not a '
+        'subtype of ${requested.introspection.type}',
         path: '$valuePath',
       );
     }
     if (body == null) {
       throw JsonMappingException(
-        'null is not allowed here (expected ${target.beanType})',
+        'null is not allowed here (expected ${target.type})',
         path: '$valuePath',
       );
     }
     return mapper._info(target).readPlain(body, valuePath);
   }
 
-  BeanIntrospection<Object> _defaultImpl(String message, _Path path) {
+  Introspection<Object> _defaultImpl(String message, _Path path) {
     final type = info.defaultImpl;
     if (type == null) {
       throw JsonMappingException(message, path: '$path');
     }
     return mapper.introspector.forType(type) ??
         (throw JsonMappingException(
-          'defaultImpl $type of ${base.beanType} is not @Introspected',
+          'defaultImpl $type of ${base.type} is not @Introspected',
           path: '$path',
         ));
   }
 
   // Jackson's AsDeductionTypeDeserializer: every property known to some
   // candidate removes the candidates without it; one left wins.
-  BeanIntrospection<Object> _deduce(Object json, _Path path) {
+  Introspection<Object> _deduce(Object json, _Path path) {
     if (json is! Map<Object?, Object?>) {
       throw mapper._expected('an object', json, path);
     }
@@ -2361,7 +2365,7 @@ final class _Polymorphism {
       }
     }
     return _defaultImpl(
-      'cannot deduce unique subtype of ${base.beanType} '
+      'cannot deduce unique subtype of ${base.type} '
       '(${candidates.length} candidates match)',
       path,
     );

@@ -113,12 +113,12 @@ final class CacheInterceptor implements MethodInterceptor {
     this._errorHandler,
     this.beanFactory,
     AnnotationCacheOperationSource? cacheOperationSource,
-    BeanIntrospector? introspector,
+    Introspector? introspector,
     ExpressionParser? parser,
     this.resourceVersion = false,
   }) : cacheOperationSource =
            cacheOperationSource ?? AnnotationCacheOperationSource(),
-       introspector = introspector ?? BeanIntrospector.shared,
+       introspector = introspector ?? Introspector.shared,
        _parser = parser ?? SpelExpressionParser();
 
   /// Whether the default key generator keys a `VersionedResource` by its
@@ -135,7 +135,7 @@ final class CacheInterceptor implements MethodInterceptor {
 
   /// The generated accessors that let SpEL read properties and call
   /// methods of `@Introspected` classes (`#book.isbn`).
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   final ExpressionParser _parser;
   CacheManager? _cacheManager;

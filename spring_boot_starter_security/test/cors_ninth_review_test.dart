@@ -192,11 +192,11 @@ final class _Cors with WebMvcConfigurer {
       .allowedMethods(['GET']);
 }
 
-BeanMethod<T> _map<T extends Object>(
+IntrospectedMethod<T> _map<T extends Object>(
   String name,
   Function Function(T bean) method,
   List<Object> annotations,
-) => BeanMethod<T>(
+) => IntrospectedMethod<T>(
   name,
   returnTypeInfo: const ClassType<String>(),
   invoke: (bean, arguments) => Function.apply(method(bean), arguments),

@@ -58,7 +58,7 @@ final jsonSchemaAutoConfiguration = <BeanDefinition<Object>>[
     create: (r) => PropertiesJsonSchemas(
       r.dependency<JsonProperties>(),
       r.dependency<ResourceLoader>(),
-      introspector: r.dependency<BeanIntrospector>(),
+      introspector: r.dependency<Introspector>(),
       schemas: r.optionalDependencyList<JsonSchema>() ?? const [],
     ),
   ),
@@ -162,9 +162,9 @@ final class PropertiesJsonSchemas implements JsonSchemaRegistryCustomizer {
   PropertiesJsonSchemas(
     this.properties,
     this.resources, {
-    BeanIntrospector? introspector,
+    Introspector? introspector,
     this.schemas = const [],
-  }) : introspector = introspector ?? BeanIntrospector.shared;
+  }) : introspector = introspector ?? Introspector.shared;
 
   /// The `spring.json.*` settings.
   final JsonProperties properties;
@@ -173,7 +173,7 @@ final class PropertiesJsonSchemas implements JsonSchemaRegistryCustomizer {
   final ResourceLoader resources;
 
   /// The classes whose `@JsonSchemaSource` count.
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   /// The `JsonSchema` beans.
   final List<JsonSchema> schemas;

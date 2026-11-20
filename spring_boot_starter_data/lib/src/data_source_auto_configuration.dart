@@ -364,7 +364,7 @@ JdbcTemplate _jdbcTemplate(DependencyResolver r, DataSource dataSource) =>
       queryTimeout: jdbcQueryTimeout(r.dependency<Environment>()),
       logSettings:
           r.optionalDependency<JdbcLogSettings>() ?? const JdbcLogSettings(),
-      introspector: r.dependency<BeanIntrospector>(),
+      introspector: r.dependency<Introspector>(),
     );
 
 /// The bean definitions that connect the application to SQL databases from

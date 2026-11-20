@@ -1334,8 +1334,9 @@ class Async {
 /// `@Scheduled` methods, a message consumer) need to find and call them,
 /// and Dart has no reflection for that. Put `@BeanMethodAnnotation()` on
 /// such an annotation class: for every bean method carrying it, the
-/// generator writes a `BeanMethod` into `BeanDefinition.annotatedMethods`
-/// with the method's name, annotations and a closure that calls it.
+/// generator writes an `IntrospectedMethod` into
+/// `BeanDefinition.annotatedMethods` with the method's name, annotations
+/// and a closure that calls it.
 /// Application code rarely needs it; library authors do.
 ///
 /// ```dart

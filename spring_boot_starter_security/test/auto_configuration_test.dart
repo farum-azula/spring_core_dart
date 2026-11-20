@@ -17,7 +17,7 @@ SecurityProperties _properties(Map<String, Object?> values) {
   ConfigurationPropertySources.attach(environment);
   final binder = ConfigurationPropertiesBinder(
     environment,
-    BeanIntrospector(introspections: securityConfigBeans.introspections),
+    Introspector(introspections: securityConfigBeans.introspections),
   );
   return binder.postProcessBeforeInitialization(
     SecurityProperties(),

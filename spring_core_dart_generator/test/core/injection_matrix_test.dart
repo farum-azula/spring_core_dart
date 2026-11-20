@@ -2,10 +2,12 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -27,7 +29,7 @@ Future<TestBuilderResult> _build(
   );
   await readerWriter.testing.loadIsolateSources();
   return await testBuilder(
-    SpringBuilder(generations: starterGenerations, proxyMode: proxyMode),
+    SpringBuilder(generations: packageGenerations, proxyMode: proxyMode),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -49,7 +51,7 @@ Future<String> _generate(
   }, proxyMode: proxyMode);
   expect(result.errors, isEmpty);
   return _normalize(
-    result.readerWriter.testing.readString(result.outputs.single),
+    moduleText(result),
   );
 }
 
@@ -75,19 +77,17 @@ Future<List<String>> _compileErrors(
   };
   final result = await _build(sources, proxyMode: proxyMode);
   expect(result.errors, isEmpty);
-  final output = result.readerWriter.testing.readString(result.outputs.single);
+  final output = moduleText(result);
   return await resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
-      'pkg|lib/spring_gen/src/beans.spring.dart': output,
+      ...moduleSources(output),
     },
     (resolver) async {
       final library = await resolver.libraryFor(
         AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
       );
-      final errors = await library.session.getErrors(
-        library.firstFragment.source.fullName,
-      );
+      final errors = await moduleErrors(library);
       return [
         if (errors case ErrorsResult(:final diagnostics))
           for (final diagnostic in diagnostics)

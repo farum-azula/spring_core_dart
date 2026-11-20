@@ -5,9 +5,11 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -52,33 +54,32 @@ void main() {
     );
     await readerWriter.testing.loadIsolateSources();
     final result = await testBuilder(
-      SpringBuilder(generations: starterGenerations),
+      SpringBuilder(generations: packageGenerations),
       sources,
       rootPackage: 'pkg',
       readerWriter: readerWriter,
       flattenOutput: true,
     );
     expect(result.errors, isEmpty);
-    final output = result.readerWriter.testing.readString(
-      result.outputs.single,
-    );
+    final output = moduleText(result);
     final compact = output
         .replaceAll(RegExp(r'\b_i\d+\.'), '')
         .replaceAll(RegExp(r'\s'), '');
-    expect(compact, contains('BeanIntrospection<Pool>('));
-    expect(compact, contains("BeanProperty<Pool>(r'url'"));
+    expect(compact, contains('Introspection<Pool>('));
+    expect(compact, contains("IntrospectedProperty<Pool>(r'url'"));
     expect(compact, contains("ConfigurationProperties(r'pool')"));
     expect(compact, contains('Validated('));
 
     final errors = await resolveSources<List<String>>(
-      {...sources, 'pkg|lib/spring_gen/src/beans.spring.dart': output},
+      {
+        ...sources,
+        ...moduleSources(output),
+      },
       (resolver) async {
         final library = await resolver.libraryFor(
           AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
         );
-        final errors = await library.session.getErrors(
-          library.firstFragment.source.fullName,
-        );
+        final errors = await moduleErrors(library);
         return [
           if (errors case ErrorsResult(:final diagnostics))
             for (final diagnostic in diagnostics)

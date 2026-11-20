@@ -6,16 +6,16 @@ import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/core/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_model.dart';
 
 /// What the part of `spring_boot_starter_flutter_navigation` found in a
 /// module: its screens and shells. It lives in the module
-/// ([ModuleModel.starterModel]), so the core knows none of these types.
+/// ([ModuleModel.packageModel]), so the core knows none of these types.
 final class NavigationModuleModel {
   /// The navigation model of [module], made the first time it is asked
   /// for.
   static NavigationModuleModel of(ModuleModel module) =>
-      module.starterModel(NavigationModuleModel.new);
+      module.packageModel(NavigationModuleModel.new);
 
   /// The `@ScreenRoute` widgets, in scan order: the module's
   /// `ScreenRoutes` bean and their constants.

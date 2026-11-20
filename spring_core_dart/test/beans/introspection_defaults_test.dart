@@ -14,27 +14,27 @@ class Item {
 void main() {
   group('default values in the description', () {
     test('a parameter has no default unless it is described with one', () {
-      const plain = BeanParameter('a', type: ClassType<int>());
+      const plain = IntrospectedParameter('a', type: ClassType<int>());
       expect(plain.hasDefaultValue, isFalse);
       expect(plain.defaultValue, isNull);
     });
 
     test('a parameter carries a default, also an explicit null', () {
-      const stock = BeanParameter(
+      const stock = IntrospectedParameter(
         'stock',
         type: ClassType<int>(),
         symbol: #stock,
         hasDefaultValue: true,
         defaultValue: 0,
       );
-      const status = BeanParameter(
+      const status = IntrospectedParameter(
         'status',
         type: ClassType<Status?>(),
         symbol: #status,
         hasDefaultValue: true,
         defaultValue: Status.draft,
       );
-      const none = BeanParameter(
+      const none = IntrospectedParameter(
         'note',
         type: ClassType<String?>(),
         hasDefaultValue: true,
@@ -47,14 +47,14 @@ void main() {
     });
 
     test('a property carries the initial value of its field', () {
-      final inStock = BeanProperty<Item>(
+      final inStock = IntrospectedProperty<Item>(
         'inStock',
         type: bool,
         get: (b) => b.inStock,
         hasInitialValue: true,
         initialValue: true,
       );
-      final added = BeanProperty<Item>(
+      final added = IntrospectedProperty<Item>(
         'added',
         type: DateTime,
         get: (b) => b.added,

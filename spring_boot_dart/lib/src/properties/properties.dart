@@ -9,7 +9,7 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 @ComponentScan()
 final BeanModule bootPropertiesBeans = $bootPropertiesBeans;
 
-final _introspector = BeanIntrospector(
+final _introspector = Introspector(
   introspections: bootPropertiesBeans.introspections,
 );
 

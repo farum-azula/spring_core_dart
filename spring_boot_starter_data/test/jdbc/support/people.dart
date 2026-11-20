@@ -34,13 +34,13 @@ const _st = EnumType<Status>(Status.values, nullable: true);
 const _dn = ClassType<DateTime>(nullable: true);
 const _b = ClassType<bool>();
 
-BeanProperty<Person> _p(
+IntrospectedProperty<Person> _p(
   String n,
   Type t,
   TypeInfo<Object?> i,
   Object? Function(Person) g, [
   void Function(Person, Object?)? s,
-]) => BeanProperty<Person>(
+]) => IntrospectedProperty<Person>(
   n,
   type: t,
   typeInfo: i,
@@ -49,10 +49,14 @@ BeanProperty<Person> _p(
   set: s,
 );
 
-BeanParameter _a(String n, TypeInfo<Object?> i, {bool required = false}) =>
-    BeanParameter(n, type: i, symbol: Symbol(n), isRequired: required);
+IntrospectedParameter _a(
+  String n,
+  TypeInfo<Object?> i, {
+  bool required = false,
+}) =>
+    IntrospectedParameter(n, type: i, symbol: Symbol(n), isRequired: required);
 
-BeanIntrospection<Person> personIntrospection() => BeanIntrospection<Person>(
+Introspection<Person> personIntrospection() => Introspection<Person>(
   className: 'Person',
   properties: [
     _p('firstName', String, _s, (p) => p.firstName),
@@ -69,7 +73,7 @@ BeanIntrospection<Person> personIntrospection() => BeanIntrospection<Person>(
       (p, v) => p.nickname = v as String?,
     ),
   ],
-  constructor: BeanConstructor<Person>(
+  constructor: IntrospectedConstructor<Person>(
     parameters: [
       _a('firstName', _s, required: true),
       _a('lastName', _s, required: true),
@@ -83,8 +87,8 @@ BeanIntrospection<Person> personIntrospection() => BeanIntrospection<Person>(
   ),
 );
 
-BeanIntrospector peopleIntrospector() =>
-    BeanIntrospector(introspections: [personIntrospection()]);
+Introspector peopleIntrospector() =>
+    Introspector(introspections: [personIntrospection()]);
 
 /// The same class described as the build describes a class a `@Query`
 /// returns.

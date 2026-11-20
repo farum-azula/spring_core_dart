@@ -12,7 +12,7 @@ abstract interface class SqlParameterSource {
   /// names to values, or an introspected bean (its properties by name).
   factory SqlParameterSource.of(
     Object source, {
-    BeanIntrospector? introspector,
+    Introspector? introspector,
   }) {
     return switch (source) {
       final SqlParameterSource s => s,
@@ -59,10 +59,10 @@ final class MapSqlParameterSource implements SqlParameterSource {
 /// Spring (Java): `BeanPropertySqlParameterSource`.
 final class BeanPropertySqlParameterSource implements SqlParameterSource {
   /// A source reading [bean]; its class is looked up in [introspector]
-  /// (default `BeanIntrospector.shared`).
-  BeanPropertySqlParameterSource(this.bean, {BeanIntrospector? introspector})
+  /// (default `Introspector.shared`).
+  BeanPropertySqlParameterSource(this.bean, {Introspector? introspector})
     : _introspection =
-          (introspector ?? BeanIntrospector.shared).findIntrospection(bean) ??
+          (introspector ?? Introspector.shared).findIntrospection(bean) ??
           (throw InvalidDataAccessApiUsageException(
             '${bean.runtimeType} is not introspected: use a Map, or mark '
             'the class @Introspected',
@@ -71,12 +71,12 @@ final class BeanPropertySqlParameterSource implements SqlParameterSource {
   /// The bean read.
   final Object bean;
 
-  final BeanIntrospection<Object> _introspection;
+  final Introspection<Object> _introspection;
 
   static String _normalize(String name) =>
       name.replaceAll('_', '').toLowerCase();
 
-  BeanProperty<Object>? _property(String name) {
+  IntrospectedProperty<Object>? _property(String name) {
     final exact = _introspection.getProperty(name);
     if (exact != null) {
       return exact;

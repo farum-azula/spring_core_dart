@@ -14,7 +14,7 @@ const _log = SpringLog('spring_boot_dart.JacksonAutoConfiguration');
 /// Any bean can inject `ObjectMapper` and convert its `@Introspected`
 /// classes to and from JSON; web starters use the same bean for request
 /// and response bodies. The bean is named `jacksonJsonMapper` (Spring Boot
-/// 4's name). It knows every class of the context's `BeanIntrospector`,
+/// 4's name). It knows every class of the context's `Introspector`,
 /// and adds every `JsonSerializer` / `JsonDeserializer` bean (Spring
 /// Boot's `@JsonComponent`) and every `JsonModule` bean. Then the
 /// [JsonMapperBuilderCustomizer] beans adjust it, in `@Order` order.
@@ -47,7 +47,7 @@ final jacksonAutoConfiguration = <BeanDefinition<Object>>[
     create: (r) {
       final builder = jsonMapperBuilderFromProperties(
         r.dependency<Environment>(),
-        introspector: r.dependency<BeanIntrospector>(),
+        introspector: r.dependency<Introspector>(),
         serializers:
             r.optionalDependencyList<JsonSerializer<Object>>() ?? const [],
         deserializers:
@@ -160,7 +160,7 @@ final class _FunctionCustomizer implements JsonMapperBuilderCustomizer {
 /// with a `ConfigurationPropertiesBindException`.
 ObjectMapper objectMapperFromProperties(
   Environment environment, {
-  BeanIntrospector? introspector,
+  Introspector? introspector,
   Iterable<JsonSerializer<Object>> serializers = const [],
   Iterable<JsonDeserializer<Object>> deserializers = const [],
   Iterable<JsonModule> modules = const [],
@@ -181,7 +181,7 @@ ObjectMapper objectMapperFromProperties(
 /// [objectMapperFromProperties].
 JsonMapperBuilder jsonMapperBuilderFromProperties(
   Environment environment, {
-  BeanIntrospector? introspector,
+  Introspector? introspector,
   Iterable<JsonSerializer<Object>> serializers = const [],
   Iterable<JsonDeserializer<Object>> deserializers = const [],
   Iterable<JsonModule> modules = const [],

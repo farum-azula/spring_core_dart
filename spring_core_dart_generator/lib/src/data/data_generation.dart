@@ -4,11 +4,11 @@
 // its own, DataMetadataGeneration below).
 import 'package:analyzer/dart/element/element.dart';
 import 'package:code_builder/code_builder.dart';
-import 'package:spring_core_dart_generator/src/core/bean_model.dart';
-import 'package:spring_core_dart_generator/src/core/module_emitter.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/core/spring_metadata.dart';
-import 'package:spring_core_dart_generator/src/core/starter_generation.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/beans/module_emitter.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_generation.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/metadata/spring_metadata.dart';
 import 'package:spring_core_dart_generator/src/data/data_emitter.dart';
 import 'package:spring_core_dart_generator/src/data/data_model.dart';
 import 'package:spring_core_dart_generator/src/data/data_scanner.dart';
@@ -50,7 +50,7 @@ import 'package:spring_core_dart_generator/src/data/driver_glue.dart';
 ///
 /// Spring (Java): Spring Data's `RepositoryRegistrationAotProcessor`, and
 /// the repository scan of `@EnableJdbcRepositories`.
-final class DataGeneration extends StarterGeneration {
+final class DataGeneration extends PackageGeneration {
   /// The part; it keeps no state of a build.
   const DataGeneration();
 
@@ -125,8 +125,8 @@ final class DataGeneration extends StarterGeneration {
 /// read from the module [DataGeneration] scanned, so the editor and the
 /// build agree. A part of its own, as its entries come right after the
 /// core's, before those of the Flutter starter's parts (see
-/// `lib/src/starters.dart`).
-final class DataMetadataGeneration extends StarterGeneration {
+/// `lib/src/packages.dart`).
+final class DataMetadataGeneration extends PackageGeneration {
   /// The part; it keeps no state of a build.
   const DataMetadataGeneration();
 

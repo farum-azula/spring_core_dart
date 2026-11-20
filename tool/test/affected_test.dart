@@ -134,7 +134,7 @@ targets:
         for (final path in [
           '$gen/lib/src/core/x.dart',
           '$gen/lib/builder.dart',
-          '$gen/lib/src/starters.dart',
+          '$gen/lib/src/packages.dart',
           '$gen/build.yaml',
           '$gen/pubspec.yaml',
           '$gen/test/support/helpers.dart',

@@ -16,10 +16,12 @@ MethodParameter _parameter(
 ]) => HandlerMethod(
   beanName: 'controller',
   beanTypeName: 'Controller',
-  method: BeanMethod<Object>(
+  method: IntrospectedMethod<Object>(
     'handle',
     invoke: (bean, arguments) => null,
-    parameters: [BeanParameter('p', type: type, annotations: annotations)],
+    parameters: [
+      IntrospectedParameter('p', type: type, annotations: annotations),
+    ],
   ),
   classAnnotations: const [],
   beanFactory: _NoBeans(),

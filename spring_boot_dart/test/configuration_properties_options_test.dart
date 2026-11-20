@@ -25,9 +25,9 @@ class StrictRecord {
   final int port;
 }
 
-final endpointIntrospection = BeanIntrospection<Endpoint>(
+final endpointIntrospection = Introspection<Endpoint>(
   properties: [
-    BeanProperty<Endpoint>(
+    IntrospectedProperty<Endpoint>(
       'host',
       type: String,
       typeInfo: const ClassType<String>(),
@@ -38,26 +38,26 @@ final endpointIntrospection = BeanIntrospection<Endpoint>(
   instantiate: Endpoint.new,
 );
 
-final strictIntrospection = BeanIntrospection<Strict>(
+final strictIntrospection = Introspection<Strict>(
   annotations: const [
     ConfigurationProperties('strict', ignoreUnknownFields: false),
   ],
   properties: [
-    BeanProperty<Strict>(
+    IntrospectedProperty<Strict>(
       'port',
       type: int,
       typeInfo: const ClassType<int>(),
       get: (b) => b.port,
       set: (b, v) => b.port = v! as int,
     ),
-    BeanProperty<Strict>(
+    IntrospectedProperty<Strict>(
       'hosts',
       type: List<String>,
       typeInfo: const ListType<String>(ClassType<String>()),
       get: (b) => b.hosts,
       set: (b, v) => b.hosts = v! as List<String>,
     ),
-    BeanProperty<Strict>(
+    IntrospectedProperty<Strict>(
       'endpoint',
       type: Endpoint,
       typeInfo: const ClassType<Endpoint>(),
@@ -68,26 +68,26 @@ final strictIntrospection = BeanIntrospection<Strict>(
   instantiate: Strict.new,
 );
 
-final lenientIntrospection = BeanIntrospection<Lenient>(
+final lenientIntrospection = Introspection<Lenient>(
   annotations: const [
     ConfigurationProperties('lenient', ignoreInvalidFields: true),
   ],
   properties: [
-    BeanProperty<Lenient>(
+    IntrospectedProperty<Lenient>(
       'port',
       type: int,
       typeInfo: const ClassType<int>(),
       get: (b) => b.port,
       set: (b, v) => b.port = v! as int,
     ),
-    BeanProperty<Lenient>(
+    IntrospectedProperty<Lenient>(
       'ids',
       type: List<int>,
       typeInfo: const ListType<int>(ClassType<int>()),
       get: (b) => b.ids,
       set: (b, v) => b.ids = v! as List<int>,
     ),
-    BeanProperty<Lenient>(
+    IntrospectedProperty<Lenient>(
       'name',
       type: String,
       typeInfo: const ClassType<String>(),
@@ -98,21 +98,21 @@ final lenientIntrospection = BeanIntrospection<Lenient>(
   instantiate: Lenient.new,
 );
 
-final strictRecordIntrospection = BeanIntrospection<StrictRecord>(
+final strictRecordIntrospection = Introspection<StrictRecord>(
   annotations: const [
     ConfigurationProperties('record', ignoreUnknownFields: false),
   ],
   properties: [
-    BeanProperty<StrictRecord>(
+    IntrospectedProperty<StrictRecord>(
       'port',
       type: int,
       typeInfo: const ClassType<int>(),
       get: (b) => b.port,
     ),
   ],
-  constructor: BeanConstructor<StrictRecord>(
+  constructor: IntrospectedConstructor<StrictRecord>(
     parameters: const [
-      BeanParameter('port', type: ClassType<int>(), symbol: #port),
+      IntrospectedParameter('port', type: ClassType<int>(), symbol: #port),
     ],
     create: (positional, named) =>
         Function.apply(StrictRecord.new, positional, named) as StrictRecord,

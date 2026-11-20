@@ -53,7 +53,7 @@ class Form {
 }
 
 // What the generator writes for each use of Book.
-BeanIntrospection<Book> _book({
+Introspection<Book> _book({
   Set<IntrospectionPart> parts = const {
     IntrospectionPart.read,
     IntrospectionPart.write,
@@ -62,18 +62,18 @@ BeanIntrospection<Book> _book({
 }) {
   final read = parts.contains(IntrospectionPart.read);
   final write = parts.contains(IntrospectionPart.write);
-  return BeanIntrospection<Book>(
+  return Introspection<Book>(
     className: 'Book',
     parts: parts,
     properties: [
-      BeanProperty<Book>(
+      IntrospectedProperty<Book>(
         'title',
         type: String,
         typeInfo: const ClassType<String>(),
         get: read ? (b) => b.title : null,
         set: write ? (b, v) => b.title = v! as String : null,
       ),
-      BeanProperty<Book>(
+      IntrospectedProperty<Book>(
         'pages',
         type: int,
         typeInfo: const ClassType<int>(),
@@ -84,7 +84,7 @@ BeanIntrospection<Book> _book({
     instantiate: write ? Book.new : null,
     methods: [
       if (parts.contains(IntrospectionPart.methods))
-        BeanMethod<Book>(
+        IntrospectedMethod<Book>(
           'shout',
           returnType: String,
           invoke: (b, _) => b.shout(),
@@ -93,14 +93,14 @@ BeanIntrospection<Book> _book({
   );
 }
 
-BeanIntrospector _introspector(
-  BeanIntrospection<Object> Function() describe,
-) => BeanIntrospector(introspections: [describe()]);
+Introspector _introspector(
+  Introspection<Object> Function() describe,
+) => Introspector(introspections: [describe()]);
 
 void main() {
-  group('BeanProperty', () {
+  group('IntrospectedProperty', () {
     test('a property without a getter is not readable', () {
-      final property = BeanProperty<Book>(
+      final property = IntrospectedProperty<Book>(
         'title',
         type: String,
         set: (b, v) => b.title = v! as String,
@@ -111,7 +111,7 @@ void main() {
         () => property.getValue(Book()),
         throwsA(
           isA<IntrospectionPartError>()
-              .having((e) => e.beanType, 'beanType', Book)
+              .having((e) => e.type, 'beanType', Book)
               .having((e) => e.part, 'part', IntrospectionPart.read)
               .having(
                 (e) => e.message,
@@ -127,7 +127,7 @@ void main() {
     });
 
     test('a property with a getter is readable', () {
-      final property = BeanProperty<Book>(
+      final property = IntrospectedProperty<Book>(
         'title',
         type: String,
         get: (b) => b.title,
@@ -137,9 +137,9 @@ void main() {
     });
   });
 
-  group('BeanIntrospection', () {
+  group('Introspection', () {
     test('describes every part unless told otherwise', () {
-      const all = BeanIntrospection<Book>();
+      const all = Introspection<Book>();
       for (final part in IntrospectionPart.values) {
         expect(all.describesPart(part), isTrue);
       }
@@ -179,7 +179,7 @@ void main() {
     });
 
     test('a class with the write part and no constructor keeps its error', () {
-      const introspection = BeanIntrospection<Book>();
+      const introspection = Introspection<Book>();
       expect(
         introspection.instantiate,
         throwsA(
@@ -252,11 +252,11 @@ void main() {
     });
 
     test('grows a nested object only when its class can be created', () {
-      final introspector = BeanIntrospector(
+      final introspector = Introspector(
         introspections: [
-          BeanIntrospection<Desk>(
+          Introspection<Desk>(
             properties: [
-              BeanProperty<Desk>(
+              IntrospectedProperty<Desk>(
                 'book',
                 type: Book,
                 nullable: true,
@@ -284,11 +284,11 @@ void main() {
     test('a null final nested property stays a null path', () {
       // The class of the value is described for reading only, yet the
       // property cannot be set: the path is null, not a missing part.
-      final introspector = BeanIntrospector(
+      final introspector = Introspector(
         introspections: [
-          BeanIntrospection<Frame>(
+          Introspection<Frame>(
             properties: [
-              BeanProperty<Frame>(
+              IntrospectedProperty<Frame>(
                 'book',
                 type: Book,
                 nullable: true,
@@ -379,12 +379,12 @@ void main() {
 
     test('a nested value is written through its own description', () {
       final mapper = ObjectMapper(
-        introspector: BeanIntrospector(
+        introspector: Introspector(
           introspections: [
-            BeanIntrospection<Desk>(
+            Introspection<Desk>(
               parts: {IntrospectionPart.read},
               properties: [
-                BeanProperty<Desk>(
+                IntrospectedProperty<Desk>(
                   'book',
                   type: Book,
                   nullable: true,
@@ -405,18 +405,18 @@ void main() {
 
     test('nonDefault inclusion needs the constructor of the class', () {
       Counter counter() => Counter();
-      BeanIntrospection<Counter> describe(Set<IntrospectionPart> parts) =>
-          BeanIntrospection<Counter>(
+      Introspection<Counter> describe(Set<IntrospectionPart> parts) =>
+          Introspection<Counter>(
             parts: parts,
             annotations: const [JsonInclude(JsonInclusion.nonDefault)],
             properties: [
-              BeanProperty<Counter>(
+              IntrospectedProperty<Counter>(
                 'count',
                 type: int,
                 typeInfo: const ClassType<int>(),
                 get: (c) => c.count,
               ),
-              BeanProperty<Counter>(
+              IntrospectedProperty<Counter>(
                 'live',
                 type: bool,
                 typeInfo: const ClassType<bool>(),
@@ -428,7 +428,7 @@ void main() {
                 : null,
           );
       final full = ObjectMapper(
-        introspector: BeanIntrospector(
+        introspector: Introspector(
           introspections: [
             describe({IntrospectionPart.read, IntrospectionPart.write}),
           ],
@@ -440,7 +440,7 @@ void main() {
         '{"count":2}',
       );
       final readOnly = ObjectMapper(
-        introspector: BeanIntrospector(
+        introspector: Introspector(
           introspections: [
             describe({IntrospectionPart.read}),
           ],
@@ -474,12 +474,12 @@ void main() {
 
     test('a @JsonValue method is described with the read part only', () {
       final mapper = ObjectMapper(
-        introspector: BeanIntrospector(
+        introspector: Introspector(
           introspections: [
-            BeanIntrospection<Tag>(
+            Introspection<Tag>(
               parts: {IntrospectionPart.read},
               methods: [
-                BeanMethod<Tag>(
+                IntrospectedMethod<Tag>(
                   'asText',
                   returnType: String,
                   annotations: const [JsonValue()],
@@ -495,20 +495,20 @@ void main() {
   });
 
   group('BeanValidator', () {
-    BeanIntrospection<Form> describe({
+    Introspection<Form> describe({
       required bool name,
       required bool note,
-    }) => BeanIntrospection<Form>(
+    }) => Introspection<Form>(
       parts: const {},
       properties: [
-        BeanProperty<Form>(
+        IntrospectedProperty<Form>(
           'name',
           type: String,
           typeInfo: const ClassType<String>(),
           get: name ? (f) => f.name : null,
           annotations: const [NotBlank()],
         ),
-        BeanProperty<Form>(
+        IntrospectedProperty<Form>(
           'note',
           type: String,
           typeInfo: const ClassType<String>(),
@@ -519,7 +519,7 @@ void main() {
 
     test('reads only the properties that carry constraints', () {
       final validator = BeanValidator(
-        introspector: BeanIntrospector(
+        introspector: Introspector(
           introspections: [describe(name: true, note: false)],
         ),
       );
@@ -529,7 +529,7 @@ void main() {
 
     test('a constrained property without a getter is an error', () {
       final validator = BeanValidator(
-        introspector: BeanIntrospector(
+        introspector: Introspector(
           introspections: [describe(name: false, note: true)],
         ),
       );
@@ -550,7 +550,7 @@ void main() {
 
     test('validateProperty of a property without a getter is an error', () {
       final validator = BeanValidator(
-        introspector: BeanIntrospector(
+        introspector: Introspector(
           introspections: [describe(name: false, note: false)],
         ),
       );
@@ -618,10 +618,10 @@ void main() {
   });
 
   group('expressions', () {
-    BeanIntrospector introspector(Set<IntrospectionPart> parts) =>
+    Introspector introspector(Set<IntrospectionPart> parts) =>
         _introspector(() => _book(parts: parts));
 
-    StandardEvaluationContext context(Object root, BeanIntrospector i) =>
+    StandardEvaluationContext context(Object root, Introspector i) =>
         StandardEvaluationContext(root)
           ..addPropertyAccessor(IntrospectionPropertyAccessor(i))
           ..addMethodResolver(IntrospectionMethodResolver(i));
@@ -721,8 +721,8 @@ void main() {
   });
 
   group('registering two descriptions of one class', () {
-    BeanIntrospector register(List<BeanIntrospection<Object>> descriptions) =>
-        BeanIntrospector()..registerAll(descriptions);
+    Introspector register(List<Introspection<Object>> descriptions) =>
+        Introspector()..registerAll(descriptions);
 
     test('two modules that use a class differently both get their parts', () {
       // One module writes Book out, the other reads it in: the order they
@@ -796,10 +796,10 @@ void main() {
     });
 
     test('where both have a part, the later description is kept', () {
-      final first = BeanIntrospection<Book>(
+      final first = Introspection<Book>(
         parts: const {IntrospectionPart.read, IntrospectionPart.write},
         properties: [
-          BeanProperty<Book>(
+          IntrospectedProperty<Book>(
             'title',
             type: String,
             get: (b) => 'first',
@@ -808,13 +808,17 @@ void main() {
         ],
         instantiate: () => Book(title: 'first'),
       );
-      final second = BeanIntrospection<Book>(
+      final second = Introspection<Book>(
         parts: const {IntrospectionPart.read, IntrospectionPart.methods},
         properties: [
-          BeanProperty<Book>('title', type: String, get: (b) => 'second'),
+          IntrospectedProperty<Book>(
+            'title',
+            type: String,
+            get: (b) => 'second',
+          ),
         ],
         methods: [
-          BeanMethod<Book>('shout', invoke: (b, _) => 'second'),
+          IntrospectedMethod<Book>('shout', invoke: (b, _) => 'second'),
         ],
       );
       final merged = register([first, second]).forType(Book)!;
@@ -833,15 +837,15 @@ void main() {
     });
 
     test('the constructor, fromJson, toJson and annotations are kept', () {
-      final withConstructor = BeanIntrospection<Tag>(
+      final withConstructor = Introspection<Tag>(
         parts: const {IntrospectionPart.write},
         properties: [
-          const BeanProperty<Tag>('label', type: String),
+          const IntrospectedProperty<Tag>('label', type: String),
         ],
         annotations: const [JsonInclude(JsonInclusion.nonNull)],
-        constructor: BeanConstructor<Tag>(
+        constructor: IntrospectedConstructor<Tag>(
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'label',
               type: ClassType<String>(),
               isRequired: true,
@@ -853,10 +857,10 @@ void main() {
         toJson: (b) => b.label,
         className: 'Tag',
       );
-      final readOnly = BeanIntrospection<Tag>(
+      final readOnly = Introspection<Tag>(
         parts: const {IntrospectionPart.read},
         properties: [
-          BeanProperty<Tag>('label', type: String, get: (b) => b.label),
+          IntrospectedProperty<Tag>('label', type: String, get: (b) => b.label),
         ],
         annotations: const [JsonInclude(JsonInclusion.nonNull)],
       );
@@ -877,10 +881,10 @@ void main() {
 
     test('the enums of both descriptions are known', () {
       final introspector = register([
-        BeanIntrospection<Book>(
+        Introspection<Book>(
           parts: const {IntrospectionPart.read},
           properties: [
-            BeanProperty<Book>(
+            IntrospectedProperty<Book>(
               'title',
               type: String,
               typeInfo: const EnumType<Mood>(Mood.values),
@@ -888,10 +892,10 @@ void main() {
             ),
           ],
         ),
-        BeanIntrospection<Book>(
+        Introspection<Book>(
           parts: const {IntrospectionPart.write},
           properties: [
-            BeanProperty<Book>(
+            IntrospectedProperty<Book>(
               'title',
               type: String,
               set: (b, v) => b.title = '$v',
@@ -908,12 +912,12 @@ void main() {
     });
 
     test('a generic class is specialized from both', () {
-      BeanIntrospection<Box<Object?>> box(
+      Introspection<Box<Object?>> box(
         IntrospectionPart part,
-      ) => BeanIntrospection<Box<Object?>>(
+      ) => Introspection<Box<Object?>>(
         parts: {part},
         properties: [
-          BeanProperty<Box<Object?>>(
+          IntrospectedProperty<Box<Object?>>(
             'content',
             type: Object,
             get: part == IntrospectionPart.read ? (b) => b.content : null,
@@ -923,10 +927,10 @@ void main() {
           ),
         ],
         instantiate: part == IntrospectionPart.write ? Box<Object?>.new : null,
-        specialize: (arguments) => BeanIntrospection<Box<String>>(
+        specialize: (arguments) => Introspection<Box<String>>(
           parts: {part},
           properties: [
-            BeanProperty<Box<String>>(
+            IntrospectedProperty<Box<String>>(
               'content',
               type: String,
               get: part == IntrospectionPart.read ? (b) => b.content : null,
@@ -973,11 +977,11 @@ void main() {
         ),
       ]);
       addTearDown(context.close);
-      final book = context.getBean<BeanIntrospector>().forType(Book)!;
+      final book = context.getBean<Introspector>().forType(Book)!;
       expect(book.parts, {IntrospectionPart.read, IntrospectionPart.write});
       final wrapper = BeanWrapper(
         Book(),
-        introspector: context.getBean<BeanIntrospector>(),
+        introspector: context.getBean<Introspector>(),
       )..setPropertyValue('title', 'Dune');
       expect(wrapper.getPropertyValue('title'), 'Dune');
     });

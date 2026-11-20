@@ -94,16 +94,16 @@ class Node {
 }
 
 // What the generator writes for the classes above.
-final _introspections = <BeanIntrospection<Object>>[
-  BeanIntrospection<Author>(
+final _introspections = <Introspection<Object>>[
+  Introspection<Author>(
     properties: [
-      BeanProperty<Author>(
+      IntrospectedProperty<Author>(
         'name',
         type: String,
         typeInfo: const ClassType<String>(),
         get: (b) => b.name,
       ),
-      BeanProperty<Author>(
+      IntrospectedProperty<Author>(
         'born',
         type: int,
         nullable: true,
@@ -111,65 +111,69 @@ final _introspections = <BeanIntrospection<Object>>[
         get: (b) => b.born,
       ),
     ],
-    constructor: BeanConstructor<Author>(
+    constructor: IntrospectedConstructor<Author>(
       parameters: const [
-        BeanParameter('name', type: ClassType<String>(), isRequired: true),
-        BeanParameter('born', type: ClassType<int>(nullable: true)),
+        IntrospectedParameter(
+          'name',
+          type: ClassType<String>(),
+          isRequired: true,
+        ),
+        IntrospectedParameter('born', type: ClassType<int>(nullable: true)),
       ],
       create: (positional, named) =>
           Function.apply(Author.new, positional, named) as Author,
     ),
   ),
-  BeanIntrospection<Book>(
+  Introspection<Book>(
     annotations: const [
       JsonIgnoreProperties(value: ['secret']),
     ],
     properties: [
-      BeanProperty<Book>(
+      IntrospectedProperty<Book>(
         'isbn',
         type: String,
         typeInfo: const ClassType<String>(),
         get: (b) => b.isbn,
       ),
-      BeanProperty<Book>(
+      IntrospectedProperty<Book>(
         'title',
         type: String,
         typeInfo: const ClassType<String>(),
         get: (b) => b.title,
       ),
-      BeanProperty<Book>(
+      IntrospectedProperty<Book>(
         'tags',
         type: List<String>,
         typeInfo: const ListType<String>(ClassType<String>()),
         get: (b) => b.tags,
       ),
-      BeanProperty<Book>(
+      IntrospectedProperty<Book>(
         'author',
         type: Author,
         nullable: true,
         typeInfo: const ClassType<Author>(nullable: true),
         get: (b) => b.author,
       ),
-      BeanProperty<Book>(
+      IntrospectedProperty<Book>(
         'genre',
         type: Genre,
         typeInfo: const EnumType<Genre>(Genre.values),
         get: (b) => b.genre,
       ),
-      BeanProperty<Book>(
+      IntrospectedProperty<Book>(
         'stock',
         type: Stock,
         typeInfo: EnumType<Stock>(Stock.values, jsonValue: (e) => e.json),
         get: (b) => b.stock,
       ),
-      BeanProperty<Book>(
+      IntrospectedProperty<Book>(
         'published',
         type: DateTime,
         nullable: true,
         typeInfo: const ClassType<DateTime>(nullable: true),
         get: (b) => b.published,
       ),
-      BeanProperty<Book>(
+      IntrospectedProperty<Book>(
         'ratings',
         type: Map<String, int>,
         typeInfo: const MapType<String, int>(
@@ -178,7 +182,7 @@ final _introspections = <BeanIntrospection<Object>>[
         ),
         get: (b) => b.ratings,
       ),
-      BeanProperty<Book>(
+      IntrospectedProperty<Book>(
         'note',
         type: String,
         nullable: true,
@@ -186,51 +190,51 @@ final _introspections = <BeanIntrospection<Object>>[
         get: (b) => b.note,
       ),
     ],
-    constructor: BeanConstructor<Book>(
+    constructor: IntrospectedConstructor<Book>(
       parameters: [
-        const BeanParameter(
+        const IntrospectedParameter(
           'isbn',
           type: ClassType<String>(),
           symbol: #isbn,
           isRequired: true,
         ),
-        const BeanParameter(
+        const IntrospectedParameter(
           'title',
           type: ClassType<String>(),
           symbol: #title,
           isRequired: true,
         ),
-        const BeanParameter(
+        const IntrospectedParameter(
           'tags',
           type: ListType<String>(ClassType<String>()),
           symbol: #tags,
         ),
-        const BeanParameter(
+        const IntrospectedParameter(
           'author',
           type: ClassType<Author>(nullable: true),
           symbol: #author,
         ),
-        const BeanParameter(
+        const IntrospectedParameter(
           'genre',
           type: EnumType<Genre>(Genre.values),
           symbol: #genre,
         ),
-        BeanParameter(
+        IntrospectedParameter(
           'stock',
           type: EnumType<Stock>(Stock.values, jsonValue: (e) => e.json),
           symbol: #stock,
         ),
-        const BeanParameter(
+        const IntrospectedParameter(
           'published',
           type: ClassType<DateTime>(nullable: true),
           symbol: #published,
         ),
-        const BeanParameter(
+        const IntrospectedParameter(
           'ratings',
           type: MapType<String, int>(ClassType<String>(), ClassType<int>()),
           symbol: #ratings,
         ),
-        const BeanParameter(
+        const IntrospectedParameter(
           'note',
           type: ClassType<String>(nullable: true),
           symbol: #note,
@@ -240,9 +244,9 @@ final _introspections = <BeanIntrospection<Object>>[
           Function.apply(Book.new, positional, named) as Book,
     ),
   ),
-  BeanIntrospection<Patch>(
+  Introspection<Patch>(
     properties: [
-      BeanProperty<Patch>(
+      IntrospectedProperty<Patch>(
         'title',
         type: String,
         nullable: true,
@@ -251,7 +255,7 @@ final _introspections = <BeanIntrospection<Object>>[
         set: (b, v) => b.title = v as String?,
         annotations: const [JsonProperty('the_title')],
       ),
-      BeanProperty<Patch>(
+      IntrospectedProperty<Patch>(
         'password',
         type: String,
         nullable: true,
@@ -260,21 +264,21 @@ final _introspections = <BeanIntrospection<Object>>[
         set: (b, v) => b.password = v as String?,
         annotations: const [JsonIgnore()],
       ),
-      BeanProperty<Patch>(
+      IntrospectedProperty<Patch>(
         'count',
         type: int,
         typeInfo: const ClassType<int>(),
         get: (b) => b.count,
         set: (b, v) => b.count = v! as int,
       ),
-      BeanProperty<Patch>(
+      IntrospectedProperty<Patch>(
         'labels',
         type: Set<String>,
         typeInfo: const SetType<String>(ClassType<String>()),
         get: (b) => b.labels,
         set: (b, v) => b.labels = v! as Set<String>,
       ),
-      BeanProperty<Patch>(
+      IntrospectedProperty<Patch>(
         'timeout',
         type: Duration,
         nullable: true,
@@ -282,7 +286,7 @@ final _introspections = <BeanIntrospection<Object>>[
         get: (b) => b.timeout,
         set: (b, v) => b.timeout = v as Duration?,
       ),
-      BeanProperty<Patch>(
+      IntrospectedProperty<Patch>(
         'link',
         type: Uri,
         nullable: true,
@@ -290,7 +294,7 @@ final _introspections = <BeanIntrospection<Object>>[
         get: (b) => b.link,
         set: (b, v) => b.link = v as Uri?,
       ),
-      BeanProperty<Patch>(
+      IntrospectedProperty<Patch>(
         'big',
         type: BigInt,
         nullable: true,
@@ -301,13 +305,13 @@ final _introspections = <BeanIntrospection<Object>>[
     ],
     instantiate: Patch.new,
   ),
-  BeanIntrospection<Legacy>(
+  Introspection<Legacy>(
     fromJson: (json) => Legacy.fromJson(json! as Map<String, dynamic>),
     toJson: (bean) => bean.toJson(),
   ),
-  BeanIntrospection<Node>(
+  Introspection<Node>(
     properties: [
-      BeanProperty<Node>(
+      IntrospectedProperty<Node>(
         'next',
         type: Node,
         nullable: true,
@@ -321,7 +325,7 @@ final _introspections = <BeanIntrospection<Object>>[
 ];
 
 void main() {
-  final introspector = BeanIntrospector(introspections: _introspections);
+  final introspector = Introspector(introspections: _introspections);
   final mapper = ObjectMapper(introspector: introspector);
 
   final book = Book(

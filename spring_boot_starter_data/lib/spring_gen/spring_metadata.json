@@ -1665,7 +1665,7 @@
         {
           "name": "introspector",
           "kind": "field",
-          "type": "BeanIntrospector"
+          "type": "Introspector"
         },
         {
           "name": "mapper",
@@ -2375,7 +2375,7 @@
         {
           "name": "introspector",
           "kind": "field",
-          "type": "BeanIntrospector"
+          "type": "Introspector"
         },
         {
           "name": "logSettings",
@@ -2952,7 +2952,7 @@
         {
           "name": "introspector",
           "kind": "field",
-          "type": "BeanIntrospector"
+          "type": "Introspector"
         },
         {
           "name": "invoke",

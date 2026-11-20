@@ -67,37 +67,37 @@ class ParamsClientImpl implements ParamsClient {
         ProxyMethod(
           'search',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'query',
               type: ClassType<String>(),
               isRequired: true,
               annotations: [RequestParam('q')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'sort',
               type: ClassType<String>(),
               symbol: #sort,
               annotations: [RequestParam('sort')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'page',
               type: ClassType<int>(nullable: true),
               symbol: #page,
               annotations: [RequestParam('page')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'lang',
               type: ClassType<String>(nullable: true),
               symbol: #lang,
               annotations: [RequestParam('lang')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'tenant',
               type: ClassType<String>(),
               symbol: #tenant,
               annotations: [RequestHeader('X-Tenant')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'trace',
               type: ClassType<String>(nullable: true),
               symbol: #trace,
@@ -119,7 +119,7 @@ class ParamsClientImpl implements ParamsClient {
         ProxyMethod(
           'pages',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'isbn',
               type: ClassType<String>(nullable: true),
               isRequired: true,
@@ -135,7 +135,7 @@ class ParamsClientImpl implements ParamsClient {
         ProxyMethod(
           'loose',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'id',
               type: ClassType<String>(nullable: true),
               isRequired: true,
@@ -151,19 +151,19 @@ class ParamsClientImpl implements ParamsClient {
         ProxyMethod(
           'strict',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'id',
               type: ClassType<String>(),
               isRequired: true,
               annotations: [PathVariable()],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'query',
               type: ClassType<String>(),
               isRequired: true,
               annotations: [RequestParam('q')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'requestId',
               type: ClassType<String>(),
               isRequired: true,
@@ -245,7 +245,7 @@ class RootClientImpl implements RootClient {
         ProxyMethod(
           'create',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'text',
               type: ClassType<String>(),
               isRequired: true,

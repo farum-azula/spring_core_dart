@@ -55,30 +55,30 @@ abstract interface class BrokenClient {
 
 // ---- generated ----
 
-final bookIntrospection = BeanIntrospection<Book>(
+final bookIntrospection = Introspection<Book>(
   properties: [
-    BeanProperty<Book>(
+    IntrospectedProperty<Book>(
       'isbn',
       type: String,
       typeInfo: const ClassType<String>(),
       get: (b) => b.isbn,
     ),
-    BeanProperty<Book>(
+    IntrospectedProperty<Book>(
       'title',
       type: String,
       typeInfo: const ClassType<String>(),
       get: (b) => b.title,
     ),
   ],
-  constructor: BeanConstructor<Book>(
+  constructor: IntrospectedConstructor<Book>(
     parameters: const [
-      BeanParameter(
+      IntrospectedParameter(
         'isbn',
         type: ClassType<String>(),
         symbol: #isbn,
         isRequired: true,
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'title',
         type: ClassType<String>(),
         symbol: #title,
@@ -103,7 +103,7 @@ class CatalogClientImpl implements CatalogClient {
         ProxyMethod(
           'find',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'isbn',
               type: ClassType<String>(),
               isRequired: true,
@@ -119,19 +119,19 @@ class CatalogClientImpl implements CatalogClient {
         ProxyMethod(
           'search',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'query',
               type: ClassType<String>(),
               isRequired: true,
               annotations: [RequestParam('q')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'page',
               type: ClassType<int>(nullable: true),
               symbol: #page,
               annotations: [RequestParam('page')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'trace',
               type: ClassType<String>(nullable: true),
               symbol: #trace,
@@ -150,7 +150,7 @@ class CatalogClientImpl implements CatalogClient {
         ProxyMethod(
           'create',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'book',
               type: ClassType<Book>(),
               isRequired: true,
@@ -168,7 +168,7 @@ class CatalogClientImpl implements CatalogClient {
         ProxyMethod(
           'delete',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'id',
               type: ClassType<String>(),
               isRequired: true,
@@ -185,7 +185,7 @@ class CatalogClientImpl implements CatalogClient {
         ProxyMethod(
           'maybe',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'isbn',
               type: ClassType<String>(),
               isRequired: true,
@@ -295,7 +295,7 @@ class BrokenClientImpl implements BrokenClient {
         ProxyMethod(
           'find',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'isbn',
               type: ClassType<String>(),
               isRequired: true,

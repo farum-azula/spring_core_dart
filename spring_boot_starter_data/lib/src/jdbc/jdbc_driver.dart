@@ -1,7 +1,7 @@
 import 'dart:async';
 
+import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/jdbc/sql_dialect.dart';
-import 'package:spring_boot_starter_data/src/log_values.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart';
 
 /// A database driver, as the starter sees it: opens connections for the
@@ -84,7 +84,7 @@ final class ConnectionSettings {
         final equals = part.indexOf('=');
         final name = equals < 0 ? part : part.substring(0, equals);
         if (equals >= 0 && _looksSecret(name)) {
-          parts.add('$name=${LogValues.masked}');
+          parts.add('$name=${SecretNames.masked}');
           masked = true;
         } else {
           parts.add(part);
@@ -99,9 +99,9 @@ final class ConnectionSettings {
 
   static bool _looksSecret(String encodedName) {
     try {
-      return LogValues.looksSecret(Uri.decodeQueryComponent(encodedName));
+      return SecretNames.looksSecret(Uri.decodeQueryComponent(encodedName));
     } on FormatException {
-      return LogValues.looksSecret(encodedName);
+      return SecretNames.looksSecret(encodedName);
     }
   }
 

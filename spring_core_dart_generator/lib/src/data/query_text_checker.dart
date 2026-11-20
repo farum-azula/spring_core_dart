@@ -1,4 +1,4 @@
-import 'package:spring_core_dart_generator/src/core/did_you_mean.dart';
+import 'package:spring_core_dart_generator/src/core/builder/closest_name.dart';
 import 'package:spring_core_dart_generator/src/data/data_schema.dart';
 import 'package:spring_core_dart_generator/src/data/sql_lexer.dart';
 

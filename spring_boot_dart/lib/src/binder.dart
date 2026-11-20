@@ -53,22 +53,22 @@ final class Binder {
   /// A binder that reads [environment].
   ///
   /// [introspector] describes nested objects (default
-  /// `BeanIntrospector.shared`, which knows every `@Introspected` class of
+  /// `Introspector.shared`, which knows every `@Introspected` class of
   /// the generated code); [conversionService] converts values (default:
   /// the environment's). Creating a binder is cheap; it holds no state
   /// between [bind] calls.
   Binder(
     this.environment, {
-    BeanIntrospector? introspector,
+    Introspector? introspector,
     ConversionService? conversionService,
-  }) : introspector = introspector ?? BeanIntrospector.shared,
+  }) : introspector = introspector ?? Introspector.shared,
        conversionService = conversionService ?? environment.conversionService;
 
   /// A binder that reads [environment], with the environment's conversion
   /// service; the same as the constructor, under Spring Boot's name.
   static Binder get(
     ConfigurableEnvironment environment, {
-    BeanIntrospector? introspector,
+    Introspector? introspector,
   }) => Binder(environment, introspector: introspector);
 
   /// The environment whose property sources are read, in their order of
@@ -77,7 +77,7 @@ final class Binder {
 
   /// Describes the classes of nested objects: their setters or
   /// constructor parameters.
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   /// Converts property values (strings, mostly) to the target types.
   final ConversionService conversionService;
@@ -388,7 +388,7 @@ final class BindContext {
   /// filled in place; an unmodifiable one is left as it is.
   bool bindProperties(
     Object bean,
-    BeanIntrospection<Object> introspection,
+    Introspection<Object> introspection,
     ConfigurationPropertyName name, {
     List<BindSource>? only,
   }) {
@@ -487,12 +487,12 @@ final class BindContext {
   /// other class is bound through its setters, into [existing] when there
   /// is one, else into a new instance.
   Object? bindDataObject(
-    BeanIntrospection<Object> introspection,
+    Introspection<Object> introspection,
     ConfigurationPropertyName name,
     Object? existing,
     List<BindSource> scope,
   ) {
-    final type = introspection.beanType;
+    final type = introspection.type;
     if (!_mayHaveDescendants(name, scope, recursive: _binding.contains(type))) {
       return unbound;
     }
@@ -521,7 +521,7 @@ final class BindContext {
   /// Whether [introspection]'s class is bound through its constructor:
   /// true when the constructor has parameters (Spring Boot's value
   /// objects).
-  static bool isValueObject(BeanIntrospection<Object> introspection) =>
+  static bool isValueObject(Introspection<Object> introspection) =>
       introspection.constructor?.parameters.isNotEmpty ?? false;
 
   /// Creates an instance of [introspection]'s class through its
@@ -539,7 +539,7 @@ final class BindContext {
   /// nested object none of whose keys is set stays `null`, as with Spring
   /// Boot's `ValueObjectBinder`.
   Object? bindConstructor(
-    BeanIntrospection<Object> introspection,
+    Introspection<Object> introspection,
     ConfigurationPropertyName name,
     List<BindSource> scope, {
     required bool requireAny,
@@ -593,7 +593,7 @@ final class BindContext {
             final error =
                 '$parameterName: no value bound for the required '
                 "constructor parameter '${parameter.name}' of "
-                '${introspection.beanType} (set the property, give the '
+                '${introspection.type} (set the property, give the '
                 'parameter a @DefaultValue or a default, or make it '
                 'nullable)';
             if (handler.onFailure(parameterName, error)) {
@@ -633,7 +633,7 @@ final class BindContext {
     try {
       return constructor.newInstance(positional, named);
     } on Object catch (error) {
-      _error(name, 'could not create ${introspection.beanType}: $error');
+      _error(name, 'could not create ${introspection.type}: $error');
       return unbound;
     }
   }
@@ -1184,7 +1184,7 @@ enum _Kind { scalar, collection, nested }
 final class _KindVisitor implements TypeInfoVisitor<_Kind> {
   const _KindVisitor(this.introspector);
 
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   @override
   _Kind visitClass<T>(ClassType<T> type) =>

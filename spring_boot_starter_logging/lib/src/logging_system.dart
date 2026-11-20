@@ -309,7 +309,7 @@ final class LoggingSystem {
 
   // The introspections of the classes `configure` binds: this starter's
   // and `spring.application.name` of Boot's.
-  static final _introspector = BeanIntrospector(
+  static final _introspector = Introspector(
     introspections: [
       ...loggingConfigBeans.introspections,
       ...bootPropertiesBeans.introspections,

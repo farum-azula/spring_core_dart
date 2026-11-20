@@ -28,6 +28,6 @@ T _bound<T extends Object>(Environment environment, String beanName) {
   ConfigurationPropertySources.attach(environment);
   return ConfigurationPropertiesBinder(
     environment,
-    BeanIntrospector(introspections: flutterSecurityConfigBeans.introspections),
+    Introspector(introspections: flutterSecurityConfigBeans.introspections),
   ).bindOrCreate<T>(beanName);
 }

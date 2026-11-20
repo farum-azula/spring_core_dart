@@ -252,7 +252,7 @@ void main() {
       'an enum the property does not describe is found in the introspector',
       () {
         final withEnum = EntityConverter(
-          introspector: BeanIntrospector()
+          introspector: Introspector()
             ..registerEnum(const EnumType<Genre>(Genre.values)),
         );
         expect(

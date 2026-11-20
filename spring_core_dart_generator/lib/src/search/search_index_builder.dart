@@ -5,9 +5,9 @@ import 'dart:io' as io;
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
 import 'package:spring_core_dart/core.dart';
-import 'package:spring_core_dart_generator/src/core/build_environment.dart';
-import 'package:spring_core_dart_generator/src/core/package_directory.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/builder/build_environment.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
 
 /// Makes the index files from a request (the pages and the
 /// `spring.search.*` settings); by language, `null` when it failed.

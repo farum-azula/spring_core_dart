@@ -190,7 +190,7 @@ void main() {
     );
     final unknown = BeanWrapper(
       Person()..address = null,
-      introspector: BeanIntrospector(introspections: [personIntrospection]),
+      introspector: Introspector(introspections: [personIntrospection]),
       autoGrowNestedPaths: true,
     );
     expect(
@@ -227,7 +227,7 @@ void main() {
     test('metadata and registry', () {
       final registry = introspector();
       final metadata = registry.getIntrospection(person);
-      expect(metadata.beanType, Person);
+      expect(metadata.type, Person);
       expect(metadata.isInstantiable, isTrue);
       expect(metadata.instantiate(), isA<Person>());
       expect(metadata.properties, hasLength(10));
@@ -243,7 +243,7 @@ void main() {
       expect(metadata.methods.single.toString(), contains('hello'));
       expect(metadata.getProperty('name').toString(), contains('name: String'));
       expect(metadata.getProperty('score').toString(), contains('double?'));
-      expect(metadata.toString(), 'BeanIntrospection<Person>');
+      expect(metadata.toString(), 'Introspection<Person>');
       expect(
         metadata.getProperty('name')!.annotationsOf<Size>().single.max,
         10,
@@ -251,16 +251,16 @@ void main() {
       expect(registry.forType(Address), same(addressIntrospection));
       expect(registry.findIntrospection(Object()), isNull);
       expect(() => registry.getIntrospection(Object()), throwsArgumentError);
-      final child = BeanIntrospector(parent: registry);
+      final child = Introspector(parent: registry);
       expect(child.forType(Person), same(personIntrospection));
       expect(child.findIntrospection(Address()), same(addressIntrospection));
-      const noCtor = BeanIntrospection<Object>();
+      const noCtor = Introspection<Object>();
       expect(noCtor.isInstantiable, isFalse);
       expect(noCtor.instantiate, throwsStateError);
     });
 
     test('subtypes find the supertype introspection', () {
-      final registry = BeanIntrospector()..registerAll([addressIntrospection]);
+      final registry = Introspector()..registerAll([addressIntrospection]);
       expect(
         registry.findIntrospection(_FancyAddress()),
         same(addressIntrospection),

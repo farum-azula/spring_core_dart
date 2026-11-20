@@ -34,16 +34,16 @@ class AppProperties {
   final List<String> readOnlyTags = [];
 }
 
-final serverIntrospection = BeanIntrospection<Server>(
+final serverIntrospection = Introspection<Server>(
   properties: [
-    BeanProperty<Server>(
+    IntrospectedProperty<Server>(
       'host',
       type: String,
       typeInfo: const ClassType<String>(),
       get: (b) => b.host,
       set: (b, v) => b.host = v! as String,
     ),
-    BeanProperty<Server>(
+    IntrospectedProperty<Server>(
       'port',
       type: int,
       typeInfo: const ClassType<int>(),
@@ -54,37 +54,37 @@ final serverIntrospection = BeanIntrospection<Server>(
   instantiate: Server.new,
 );
 
-final backendIntrospection = BeanIntrospection<Backend>(
+final backendIntrospection = Introspection<Backend>(
   properties: [
-    BeanProperty<Backend>(
+    IntrospectedProperty<Backend>(
       'url',
       type: String,
       typeInfo: const ClassType<String>(),
       get: (b) => b.url,
     ),
-    BeanProperty<Backend>(
+    IntrospectedProperty<Backend>(
       'weight',
       type: int,
       typeInfo: const ClassType<int>(),
       get: (b) => b.weight,
     ),
   ],
-  constructor: BeanConstructor<Backend>(
+  constructor: IntrospectedConstructor<Backend>(
     parameters: const [
-      BeanParameter('url', type: ClassType<String>(), isRequired: true),
-      BeanParameter('weight', type: ClassType<int>(), symbol: #weight),
+      IntrospectedParameter('url', type: ClassType<String>(), isRequired: true),
+      IntrospectedParameter('weight', type: ClassType<int>(), symbol: #weight),
     ],
     create: (positional, named) =>
         Function.apply(Backend.new, positional, named) as Backend,
   ),
 );
 
-BeanProperty<AppProperties> _app<T>(
+IntrospectedProperty<AppProperties> _app<T>(
   String name,
   TypeInfo<T> typeInfo,
   Object? Function(AppProperties) get, [
   void Function(AppProperties, T)? set,
-]) => BeanProperty<AppProperties>(
+]) => IntrospectedProperty<AppProperties>(
   name,
   type: typeInfo.type,
   typeInfo: typeInfo,
@@ -92,7 +92,7 @@ BeanProperty<AppProperties> _app<T>(
   set: set == null ? null : (b, v) => set(b, v as T),
 );
 
-final appIntrospection = BeanIntrospection<AppProperties>(
+final appIntrospection = Introspection<AppProperties>(
   annotations: const [ConfigurationProperties('app')],
   properties: [
     _app(
@@ -195,42 +195,42 @@ class Endpoint {
   final int port;
 }
 
-final endpointIntrospection = BeanIntrospection<Endpoint>(
+final endpointIntrospection = Introspection<Endpoint>(
   properties: [
-    BeanProperty<Endpoint>(
+    IntrospectedProperty<Endpoint>(
       'host',
       type: String,
       typeInfo: const ClassType<String>(),
       get: (b) => b.host,
     ),
-    BeanProperty<Endpoint>(
+    IntrospectedProperty<Endpoint>(
       'port',
       type: int,
       typeInfo: const ClassType<int>(),
       get: (b) => b.port,
     ),
   ],
-  constructor: BeanConstructor<Endpoint>(
+  constructor: IntrospectedConstructor<Endpoint>(
     parameters: const [
-      BeanParameter('host', type: ClassType<String>(), symbol: #host),
-      BeanParameter('port', type: ClassType<int>(), symbol: #port),
+      IntrospectedParameter('host', type: ClassType<String>(), symbol: #host),
+      IntrospectedParameter('port', type: ClassType<int>(), symbol: #port),
     ],
     create: (positional, named) =>
         Function.apply(Endpoint.new, positional, named) as Endpoint,
   ),
 );
 
-final poolIntrospection = BeanIntrospection<PoolProperties>(
+final poolIntrospection = Introspection<PoolProperties>(
   annotations: const [ConfigurationProperties('pool'), Validated()],
   properties: [
-    BeanProperty<PoolProperties>(
+    IntrospectedProperty<PoolProperties>(
       'url',
       type: String,
       typeInfo: const ClassType<String>(),
       get: (b) => b.url,
       annotations: const [NotBlank()],
     ),
-    BeanProperty<PoolProperties>(
+    IntrospectedProperty<PoolProperties>(
       'maxSize',
       type: int,
       typeInfo: const ClassType<int>(),
@@ -238,17 +238,17 @@ final poolIntrospection = BeanIntrospection<PoolProperties>(
       annotations: const [Max(100)],
     ),
   ],
-  constructor: BeanConstructor<PoolProperties>(
+  constructor: IntrospectedConstructor<PoolProperties>(
     parameters: const [
-      BeanParameter('url', type: ClassType<String>(), isRequired: true),
-      BeanParameter(
+      IntrospectedParameter('url', type: ClassType<String>(), isRequired: true),
+      IntrospectedParameter(
         'maxSize',
         type: ClassType<int>(),
         symbol: #maxSize,
         isRequired: true,
         annotations: [DefaultValue('10')],
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'tags',
         type: ListType<String>(ClassType<String>()),
         symbol: #tags,
@@ -257,19 +257,23 @@ final poolIntrospection = BeanIntrospection<PoolProperties>(
           DefaultValue(['a', 'b']),
         ],
       ),
-      BeanParameter('timeout', type: ClassType<Duration>(), symbol: #timeout),
-      BeanParameter(
+      IntrospectedParameter(
+        'timeout',
+        type: ClassType<Duration>(),
+        symbol: #timeout,
+      ),
+      IntrospectedParameter(
         'owner',
         type: ClassType<String>(nullable: true),
         symbol: #owner,
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'endpoint',
         type: ClassType<Endpoint>(),
         symbol: #endpoint,
         isRequired: true,
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'replicas',
         type: ListType<Endpoint>(ClassType<Endpoint>()),
         symbol: #replicas,
@@ -316,33 +320,37 @@ class Remote {
   final String? other;
 }
 
-final credentialsIntrospection = BeanIntrospection<Credentials>(
+final credentialsIntrospection = Introspection<Credentials>(
   properties: [
-    BeanProperty<Credentials>(
+    IntrospectedProperty<Credentials>(
       'user',
       type: String,
       typeInfo: const ClassType<String>(),
       get: (b) => b.user,
     ),
   ],
-  constructor: BeanConstructor<Credentials>(
+  constructor: IntrospectedConstructor<Credentials>(
     parameters: const [
-      BeanParameter('user', type: ClassType<String>(), isRequired: true),
+      IntrospectedParameter(
+        'user',
+        type: ClassType<String>(),
+        isRequired: true,
+      ),
     ],
     create: (positional, named) => Credentials(positional[0]! as String),
   ),
 );
 
-final remoteIntrospection = BeanIntrospection<Remote>(
+final remoteIntrospection = Introspection<Remote>(
   properties: const [],
-  constructor: BeanConstructor<Remote>(
+  constructor: IntrospectedConstructor<Remote>(
     parameters: const [
-      BeanParameter(
+      IntrospectedParameter(
         'credentials',
         type: ClassType<Credentials>(nullable: true),
         symbol: #credentials,
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'other',
         type: ClassType<String>(nullable: true),
         symbol: #other,
@@ -663,7 +671,7 @@ app:
     Binder binder(Map<String, Object> properties) => Binder(
       StandardEnvironment(systemEnvironment: {})
         ..propertySources.addFirst(MapPropertySource('test', properties)),
-      introspector: BeanIntrospector()
+      introspector: Introspector()
         ..registerAll([credentialsIntrospection, remoteIntrospection]),
     );
 

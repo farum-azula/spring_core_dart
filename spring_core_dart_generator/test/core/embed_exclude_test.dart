@@ -1,10 +1,13 @@
 // spring.resources.embed.exclude: the files it names are left out of the
 // module's resources, the configuration never; a file left out that is no
 // Flutter asset is reported with the lines for pubspec.yaml.
+import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _main = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -22,7 +25,7 @@ Future<(String, List<String>)> _module(String pubspec) async {
   await readerWriter.testing.loadIsolateSources();
   final logs = <String>[];
   final result = await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     {
       'pkg|pubspec.yaml': pubspec,
       'pkg|lib/main.dart': _main,
@@ -44,11 +47,7 @@ spring:
   );
   expect(result.errors, isEmpty);
   return (
-    result.readerWriter.testing.readString(
-      result.outputs.singleWhere(
-        (o) => o.path == 'lib/spring_gen/main.spring.dart',
-      ),
-    ),
+    moduleText(result, AssetId('pkg', 'lib/spring_gen/main.spring.dart')),
     logs,
   );
 }

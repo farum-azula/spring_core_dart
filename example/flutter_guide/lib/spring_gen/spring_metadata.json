@@ -518,7 +518,7 @@
         },
         {
           "parameter": "_introspector",
-          "type": "BeanIntrospector",
+          "type": "Introspector",
           "qualifier": null
         }
       ],

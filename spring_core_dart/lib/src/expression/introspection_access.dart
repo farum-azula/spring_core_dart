@@ -9,9 +9,9 @@ import 'package:spring_core_dart/src/expression/spel_type.dart';
 /// for them.
 ///
 /// It is how expressions see your own classes without reflection: the
-/// generator describes each `@Introspected` class in a
-/// [BeanIntrospection], registered in a [BeanIntrospector]. Both contexts
-/// already have one over `BeanIntrospector.shared`, and an application
+/// generator describes each `@Introspected` class in an
+/// [Introspection], registered in an [Introspector]. Both contexts
+/// already have one over `Introspector.shared`, and an application
 /// context adds one over its own introspector for `@Value('#{...}')`.
 /// Create one yourself only for another introspector. A written value
 /// that is not of the property type is converted with the context's type
@@ -40,9 +40,9 @@ final class IntrospectionPropertyAccessor implements PropertyAccessor {
   const IntrospectionPropertyAccessor(this.introspector);
 
   /// The registry the descriptions of the targets' classes come from.
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
-  BeanProperty<Object>? _property(Object target, String name) =>
+  IntrospectedProperty<Object>? _property(Object target, String name) =>
       introspector.findIntrospection(target)?.getProperty(name);
 
   @override
@@ -103,7 +103,7 @@ final class IntrospectionPropertyAccessor implements PropertyAccessor {
 /// using the metadata the code generator wrote for them.
 ///
 /// Like [IntrospectionPropertyAccessor], it replaces Java's reflection: a
-/// `StandardEvaluationContext` has one over `BeanIntrospector.shared`, a
+/// `StandardEvaluationContext` has one over `Introspector.shared`, a
 /// `SimpleEvaluationContext` after `withInstanceMethods()`, and an
 /// application context adds one over its own introspector for
 /// `@Value('#{...}')`.
@@ -136,7 +136,7 @@ final class IntrospectionMethodResolver implements MethodResolver {
   const IntrospectionMethodResolver(this.introspector);
 
   /// The registry the descriptions of the targets' classes come from.
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   @override
   MethodExecutor? resolve(
@@ -164,7 +164,7 @@ final class IntrospectionMethodResolver implements MethodResolver {
           return found;
         }
       }
-      final type = introspection.beanType;
+      final type = introspection.type;
       final types = arguments.map((a) => a == null ? 'null' : a.runtimeType);
       final reason =
           '$type, which is described without its methods: if it has '
@@ -223,7 +223,7 @@ Object? _convert(
 final class _NewValue implements TypeInfoVisitor<Object?> {
   const _NewValue(this.introspector);
 
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   @override
   Object? visitClass<T>(ClassType<T> type) {

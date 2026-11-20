@@ -91,7 +91,7 @@ class ContractClientImpl implements ContractClient {
         ProxyMethod(
           'filter',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'filters',
               type: MapType<String, Object?>(
                 ClassType<String>(),
@@ -100,7 +100,7 @@ class ContractClientImpl implements ContractClient {
               isRequired: true,
               annotations: [RequestParam()],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'page',
               type: ClassType<int>(nullable: true),
               symbol: #page,
@@ -118,7 +118,7 @@ class ContractClientImpl implements ContractClient {
         ProxyMethod(
           'headers',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'all',
               type: MapType<String, Object?>(
                 ClassType<String>(),
@@ -138,7 +138,7 @@ class ContractClientImpl implements ContractClient {
         ProxyMethod(
           'file',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'path',
               type: ClassType<String>(),
               isRequired: true,
@@ -154,13 +154,13 @@ class ContractClientImpl implements ContractClient {
         ProxyMethod(
           'cart',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'session',
               type: ClassType<String>(),
               isRequired: true,
               annotations: [CookieValue('SESSION')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'theme',
               type: ClassType<String>(nullable: true),
               annotations: [CookieValue()],
@@ -196,7 +196,7 @@ class ContractClientImpl implements ContractClient {
         ProxyMethod(
           'delete',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'isbn',
               type: ClassType<String>(),
               isRequired: true,
@@ -213,7 +213,7 @@ class ContractClientImpl implements ContractClient {
         ProxyMethod(
           'find',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'isbn',
               type: ClassType<String>(),
               isRequired: true,
@@ -229,7 +229,7 @@ class ContractClientImpl implements ContractClient {
         ProxyMethod(
           'search',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'query',
               type: DynamicType(),
               isRequired: true,
@@ -300,7 +300,7 @@ class InvalidClientImpl implements InvalidClient {
         ProxyMethod(
           'byBook',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'book',
               type: ClassType<Book>(),
               isRequired: true,
@@ -316,7 +316,7 @@ class InvalidClientImpl implements InvalidClient {
         ProxyMethod(
           'byBooks',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'books',
               type: ListType<Book>(ClassType<Book>()),
               isRequired: true,
@@ -332,7 +332,7 @@ class InvalidClientImpl implements InvalidClient {
         ProxyMethod(
           'byMap',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'books',
               type: MapType<String, Book>(
                 ClassType<String>(),
@@ -352,7 +352,7 @@ class InvalidClientImpl implements InvalidClient {
         ProxyMethod(
           'byPathMap',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'id',
               type: MapType<String, String>(
                 ClassType<String>(),

@@ -41,7 +41,7 @@ class FormClientImpl implements FormClient {
         ProxyMethod(
           'login',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'form',
               type: MapType<String, Object?>(
                 ClassType<String>(),
@@ -66,7 +66,7 @@ class FormClientImpl implements FormClient {
         ProxyMethod(
           'book',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'book',
               type: ClassType<Book>(),
               isRequired: true,
@@ -87,7 +87,7 @@ class FormClientImpl implements FormClient {
         ProxyMethod(
           'header',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'form',
               type: MapType<String, Object?>(
                 ClassType<String>(),
@@ -112,7 +112,7 @@ class FormClientImpl implements FormClient {
         ProxyMethod(
           'delete',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'isbn',
               type: ClassType<String>(),
               isRequired: true,

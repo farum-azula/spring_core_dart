@@ -309,7 +309,7 @@ final class BeanDefinition<T extends Object> {
     List<Dependency> dependencies = const [],
     List<Condition> conditions = const [],
     List<EventListenerMethod<T>> eventListeners = const [],
-    List<BeanMethod<T>> annotatedMethods = const [],
+    List<IntrospectedMethod<T>> annotatedMethods = const [],
     List<Object> annotations = const [],
     List<Type>? factoryObjectTypes,
     this.aopProxy,
@@ -445,7 +445,7 @@ final class BeanDefinition<T extends Object> {
   ///   }
   /// }
   /// ```
-  final List<BeanMethod<T>> annotatedMethods;
+  final List<IntrospectedMethod<T>> annotatedMethods;
 
   /// The annotations of the bean class (for a `@Bean` method: of the method,
   /// then of the returned class), written by the generator for

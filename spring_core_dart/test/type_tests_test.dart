@@ -7,7 +7,7 @@ class Sub extends Base {}
 
 void main() {
   test('a registered test matches subtypes', () {
-    final introspector = BeanIntrospector()
+    final introspector = Introspector()
       ..registerTypeTests({Base: (value) => value is Base});
     expect(introspector.isInstanceOf(Base, Sub()), isTrue);
     expect(introspector.isInstanceOf(Base, Base()), isTrue);
@@ -16,16 +16,16 @@ void main() {
   });
 
   test('without a test, only the exact runtime type matches', () {
-    final introspector = BeanIntrospector();
+    final introspector = Introspector();
     expect(introspector.isInstanceOf(Base, Base()), isTrue);
     expect(introspector.isInstanceOf(Base, Sub()), isFalse);
   });
 
   test('tests of the parent are used', () {
-    final parent = BeanIntrospector()
+    final parent = Introspector()
       ..registerTypeTests({Base: (value) => value is Base});
     expect(
-      BeanIntrospector(parent: parent).isInstanceOf(Base, Sub()),
+      Introspector(parent: parent).isInstanceOf(Base, Sub()),
       isTrue,
     );
   });
@@ -36,15 +36,14 @@ void main() {
     ]);
     addTearDown(context.close);
     expect(
-      context.getBean<BeanIntrospector>().isInstanceOf(Base, Sub()),
+      context.getBean<Introspector>().isInstanceOf(Base, Sub()),
       isTrue,
     );
   });
 
   test('depths are registered, found through the parent, and from modules', () {
-    final parent = BeanIntrospector()..registerTypeDepths({Base: 2});
-    final child = BeanIntrospector(parent: parent)
-      ..registerTypeDepths({Sub: 3});
+    final parent = Introspector()..registerTypeDepths({Base: 2});
+    final child = Introspector(parent: parent)..registerTypeDepths({Sub: 3});
     expect(child.typeDepth(Base), 2);
     expect(child.typeDepth(Sub), 3);
     expect(parent.typeDepth(Sub), isNull);
@@ -52,6 +51,6 @@ void main() {
       BeanModule('m', const [], typeDepths: {Base: 2}),
     ]);
     addTearDown(context.close);
-    expect(context.getBean<BeanIntrospector>().typeDepth(Base), 2);
+    expect(context.getBean<Introspector>().typeDepth(Base), 2);
   });
 }

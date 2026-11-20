@@ -50,22 +50,22 @@ class Order {
 
 const _schemaLocation = 'resources:schemas/order.json';
 
-final _itemIntrospection = BeanIntrospection<Item>(
+final _itemIntrospection = Introspection<Item>(
   annotations: const [JsonSchemaSource('resources:schemas/item.json')],
   properties: [
-    BeanProperty<Item>(
+    IntrospectedProperty<Item>(
       'sku',
       typeInfo: const ClassType<String>(),
       get: (b) => b.sku,
       annotations: const [NotBlank(), Matches('[A-Z]+-[0-9]+')],
     ),
-    BeanProperty<Item>(
+    IntrospectedProperty<Item>(
       'quantity',
       typeInfo: const ClassType<int>(),
       get: (b) => b.quantity,
       annotations: const [Min(1), Max(99)],
     ),
-    BeanProperty<Item>(
+    IntrospectedProperty<Item>(
       'price',
       typeInfo: const ClassType<double>(nullable: true),
       nullable: true,
@@ -73,21 +73,21 @@ final _itemIntrospection = BeanIntrospection<Item>(
       annotations: const [DecimalMin('0', inclusive: false)],
     ),
   ],
-  constructor: BeanConstructor<Item>(
+  constructor: IntrospectedConstructor<Item>(
     parameters: const [
-      BeanParameter(
+      IntrospectedParameter(
         'sku',
         type: ClassType<String>(),
         symbol: #sku,
         isRequired: true,
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'quantity',
         type: ClassType<int>(),
         symbol: #quantity,
         isRequired: true,
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'price',
         type: ClassType<double>(nullable: true),
         symbol: #price,
@@ -98,16 +98,16 @@ final _itemIntrospection = BeanIntrospection<Item>(
   ),
 );
 
-final _orderIntrospection = BeanIntrospection<Order>(
+final _orderIntrospection = Introspection<Order>(
   annotations: const [JsonSchemaSource(_schemaLocation)],
   properties: [
-    BeanProperty<Order>(
+    IntrospectedProperty<Order>(
       'id',
       typeInfo: const ClassType<String>(),
       get: (b) => b.id,
       annotations: const [Size(min: 2, max: 10)],
     ),
-    BeanProperty<Order>(
+    IntrospectedProperty<Order>(
       'items',
       typeInfo: const ListType<Item>(ClassType<Item>()),
       get: (b) => b.items,
@@ -116,12 +116,12 @@ final _orderIntrospection = BeanIntrospection<Order>(
         JsonProperty('lines'),
       ],
     ),
-    BeanProperty<Order>(
+    IntrospectedProperty<Order>(
       'status',
       typeInfo: const EnumType<Status>(Status.values),
       get: (b) => b.status,
     ),
-    BeanProperty<Order>(
+    IntrospectedProperty<Order>(
       'level',
       typeInfo: EnumType<Level>(
         Level.values,
@@ -131,14 +131,14 @@ final _orderIntrospection = BeanIntrospection<Order>(
       nullable: true,
       get: (b) => b.level,
     ),
-    BeanProperty<Order>(
+    IntrospectedProperty<Order>(
       'note',
       typeInfo: const ClassType<String>(nullable: true),
       nullable: true,
       get: (b) => b.note,
       annotations: const [NotNull()],
     ),
-    BeanProperty<Order>(
+    IntrospectedProperty<Order>(
       'tags',
       typeInfo: const MapType<String, int>(
         ClassType<String>(),
@@ -149,7 +149,7 @@ final _orderIntrospection = BeanIntrospection<Order>(
         Each([PositiveOrZero()]),
       ],
     ),
-    BeanProperty<Order>(
+    IntrospectedProperty<Order>(
       'labels',
       typeInfo: const SetType<String>(ClassType<String>()),
       get: (b) => b.labels,
@@ -157,19 +157,19 @@ final _orderIntrospection = BeanIntrospection<Order>(
         Each([Email()]),
       ],
     ),
-    BeanProperty<Order>(
+    IntrospectedProperty<Order>(
       'createdAt',
       typeInfo: const ClassType<DateTime>(nullable: true),
       nullable: true,
       get: (b) => b.createdAt,
     ),
-    BeanProperty<Order>(
+    IntrospectedProperty<Order>(
       'parent',
       typeInfo: const ClassType<Order>(nullable: true),
       nullable: true,
       get: (b) => b.parent,
     ),
-    BeanProperty<Order>(
+    IntrospectedProperty<Order>(
       'password',
       typeInfo: const ClassType<String>(nullable: true),
       nullable: true,
@@ -178,18 +178,18 @@ final _orderIntrospection = BeanIntrospection<Order>(
         JsonProperty('password', access: JsonPropertyAccess.writeOnly),
       ],
     ),
-    BeanProperty<Order>(
+    IntrospectedProperty<Order>(
       'total',
       typeInfo: const ClassType<String>(),
       get: (b) => b.total,
     ),
-    BeanProperty<Order>(
+    IntrospectedProperty<Order>(
       'secret',
       typeInfo: const ClassType<String>(),
       get: (b) => b.secret,
       annotations: const [JsonIgnore()],
     ),
-    BeanProperty<Order>(
+    IntrospectedProperty<Order>(
       'count',
       typeInfo: const ClassType<int>(),
       get: (b) => b.count,
@@ -199,28 +199,28 @@ final _orderIntrospection = BeanIntrospection<Order>(
       ],
     ),
   ],
-  constructor: BeanConstructor<Order>(
+  constructor: IntrospectedConstructor<Order>(
     parameters: [
-      const BeanParameter(
+      const IntrospectedParameter(
         'id',
         type: ClassType<String>(),
         symbol: #id,
         isRequired: true,
       ),
-      const BeanParameter(
+      const IntrospectedParameter(
         'items',
         type: ListType<Item>(ClassType<Item>()),
         symbol: #items,
         isRequired: true,
       ),
-      const BeanParameter(
+      const IntrospectedParameter(
         'status',
         type: EnumType<Status>(Status.values),
         symbol: #status,
         hasDefaultValue: true,
         defaultValue: Status.open,
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'level',
         type: EnumType<Level>(
           Level.values,
@@ -229,36 +229,36 @@ final _orderIntrospection = BeanIntrospection<Order>(
         ),
         symbol: #level,
       ),
-      const BeanParameter(
+      const IntrospectedParameter(
         'note',
         type: ClassType<String>(nullable: true),
         symbol: #note,
       ),
-      const BeanParameter(
+      const IntrospectedParameter(
         'tags',
         type: MapType<String, int>(ClassType<String>(), ClassType<int>()),
         symbol: #tags,
         hasDefaultValue: true,
         defaultValue: <String, int>{},
       ),
-      const BeanParameter(
+      const IntrospectedParameter(
         'labels',
         type: SetType<String>(ClassType<String>()),
         symbol: #labels,
         hasDefaultValue: true,
         defaultValue: <String>{},
       ),
-      const BeanParameter(
+      const IntrospectedParameter(
         'createdAt',
         type: ClassType<DateTime>(nullable: true),
         symbol: #createdAt,
       ),
-      const BeanParameter(
+      const IntrospectedParameter(
         'parent',
         type: ClassType<Order>(nullable: true),
         symbol: #parent,
       ),
-      const BeanParameter(
+      const IntrospectedParameter(
         'password',
         type: ClassType<String>(nullable: true),
         symbol: #password,
@@ -269,8 +269,8 @@ final _orderIntrospection = BeanIntrospection<Order>(
   ),
 );
 
-BeanIntrospector _introspector() =>
-    BeanIntrospector(introspections: [_itemIntrospection, _orderIntrospection]);
+Introspector _introspector() =>
+    Introspector(introspections: [_itemIntrospection, _orderIntrospection]);
 
 Map<String, Object?> _object(Object? value) => value! as Map<String, Object?>;
 

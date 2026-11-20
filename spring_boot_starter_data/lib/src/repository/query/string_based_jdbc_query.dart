@@ -124,7 +124,7 @@ final class StringBasedJdbcQuery {
   final QueryResultMapper _result;
 
   final String _table;
-  final BeanIntrospector _introspector;
+  final Introspector _introspector;
   final QueryExpressionContext _expressionContext;
   final BeanFactory? _beanFactory;
 
@@ -176,7 +176,7 @@ final class StringBasedJdbcQuery {
     required List<String> problems,
     Environment? environment,
     BeanFactory? beanFactory,
-    BeanIntrospector? introspector,
+    Introspector? introspector,
     RelationalMappingContext? mappingContext,
   }) {
     final where = '$typeName.${method.name}';

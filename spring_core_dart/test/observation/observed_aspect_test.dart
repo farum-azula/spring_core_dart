@@ -87,30 +87,36 @@ class _$OrdersProxy implements Orders {
 
   @override
   Future<String> place(String item) =>
-      this._invoker.invoke(this, this._target, 0, [
-            item,
-          ], (args) => this._target.place(args[0]! as String))!
+      this._invoker.invoke(
+            proxy: this,
+            target: this._target,
+            methodIndex: 0,
+            arguments: [
+              item,
+            ],
+            original: (args) => this._target.place(args[0]! as String),
+          )!
           as Future<String>;
 
   @override
   int count() =>
       this._invoker.invoke(
-            this,
-            this._target,
-            1,
-            const [],
-            (args) => this._target.count(),
+            proxy: this,
+            target: this._target,
+            methodIndex: 1,
+            arguments: const [],
+            original: (args) => this._target.count(),
           )!
           as int;
 
   @override
   String get label =>
       this._invoker.invoke(
-            this,
-            this._target,
-            2,
-            const [],
-            (args) => this._target.label,
+            proxy: this,
+            target: this._target,
+            methodIndex: 2,
+            arguments: const [],
+            original: (args) => this._target.label,
           )!
           as String;
 }

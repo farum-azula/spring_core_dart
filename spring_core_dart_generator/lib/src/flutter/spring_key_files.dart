@@ -4,9 +4,8 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart' hide Resource;
 import 'package:glob/glob.dart';
-import 'package:path/path.dart' as p;
 import 'package:spring_core_dart/core.dart';
-import 'package:spring_core_dart_generator/src/core/generated_path.dart';
+import 'package:spring_core_dart_generator/src/core/builder/generated_path.dart';
 import 'package:spring_core_dart_generator/src/flutter/theme_references.dart';
 import 'package:spring_core_dart_generator/src/flutter/typed_message_keys.dart';
 import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart';
@@ -16,15 +15,12 @@ import 'package:yaml/yaml.dart';
 /// `part of`: `null` for a file that is not written.
 typedef KeyParts = ({String? theme, String? messages});
 
-/// A `.dart` file with a `@ComponentScan` or `@SpringBootApplication`, and
-/// whether it has the second.
-typedef ScanLibrary = ({AssetId id, bool boot});
-
 /// What the two builders agree on about the typed key files
-/// (`lib/spring_gen/theme.spring.keys.dart`, `lib/spring_gen/messages.spring.keys.dart`): which of them
-/// exist for the resources of a package, and which library is their
-/// parent, so the main builder writes the `part` directives of exactly the
-/// files the keys builder writes.
+/// (`lib/spring_gen/theme.spring.keys.dart`,
+/// `lib/spring_gen/messages.spring.keys.dart`): which of them exist for the
+/// resources of a package (they are parts of the generated library of
+/// `PartsOwnerLibrary.find`), so the main builder writes the `part`
+/// directives of exactly the files the keys builder writes.
 abstract final class SpringKeyFiles {
   /// The part with `context.theme`.
   static const themeFile = 'lib/spring_gen/theme.spring.keys.dart';
@@ -185,96 +181,6 @@ extension SpringMessageKeys on BuildContext {
       return const [];
     }
   }
-
-  /// The `.dart` files of `lib/` with a `@ComponentScan` or a
-  /// `@SpringBootApplication` (the two annotations that make the main
-  /// builder write a `.spring.dart`), sorted by path; `boot`
-  /// tells the second. `parentLibrary` picks the parent of the key files.
-  static Future<List<ScanLibrary>> scanLibraries(BuildStep buildStep) async {
-    final package = buildStep.inputId.package;
-    final scan = RegExp(
-      r'^\s*@(ComponentScan|SpringBootApplication)\b',
-      multiLine: true,
-    );
-    final boot = RegExp(r'^\s*@SpringBootApplication\b', multiLine: true);
-    final result = <ScanLibrary>[];
-    final assets = await buildStep
-        .findAssets(Glob('lib/**.dart'))
-        .where((asset) => asset.package == package)
-        .where((asset) => !isGeneratedSource(asset.path))
-        .toList();
-    assets.sort((a, b) => a.path.compareTo(b.path));
-    for (final asset in assets) {
-      final text = await buildStep.readAsString(asset);
-      if (scan.hasMatch(text)) {
-        result.add((id: asset, boot: boot.hasMatch(text)));
-      }
-    }
-    return result;
-  }
-
-  /// The library whose `.spring.dart` the key files are part of: the
-  /// `@SpringBootApplication` library if there is one, else the outermost
-  /// `@ComponentScan` (the one whose directory holds the others, as nested
-  /// scans are supported). Unrelated roots (two applications, or scans in
-  /// sibling directories) give an `error` and no parent; no library gives
-  /// neither.
-  static ({AssetId? parent, String? error}) parentLibrary(
-    List<ScanLibrary> scans,
-  ) {
-    if (scans.isEmpty) {
-      return (parent: null, error: null);
-    }
-    String names(Iterable<ScanLibrary> list) =>
-        list.map((s) => s.id.path).join(' and ');
-    final boots = scans.where((s) => s.boot).toList();
-    if (boots.length > 1) {
-      return (
-        parent: null,
-        error:
-            'A package has one @SpringBootApplication library for the typed '
-            'keys, found ${names(boots)}: remove one, or move it into its '
-            'own package.',
-      );
-    }
-    if (boots.length == 1) {
-      return (parent: boots.single.id, error: null);
-    }
-    String dir(ScanLibrary s) => p.url.dirname(s.id.path);
-    for (final candidate in scans) {
-      if (scans.every(
-        (other) =>
-            other == candidate || p.url.isWithin(dir(candidate), other.id.path),
-      )) {
-        // Same directory is not "within": two scans there are unrelated.
-        if (scans.where((s) => dir(s) == dir(candidate)).length == 1) {
-          return (parent: candidate.id, error: null);
-        }
-      }
-    }
-    return (
-      parent: null,
-      error:
-          'A package has one outermost @ComponentScan library for the typed '
-          'keys, found unrelated ${names(scans)}: nest one scan inside the '
-          "other's directory, or move one into its own package.",
-    );
-  }
-
-  /// The generated parent of a scan library: `lib/main.dart` is
-  /// `lib/spring_gen/main.spring.dart`.
-  static String parentOf(AssetId scanLibrary) =>
-      generatedPath(scanLibrary.path);
-
-  /// The path of [file] (below the package) seen from [parent], for a
-  /// `part` directive.
-  static String partPath(String parent, String file) =>
-      p.url.relative(file, from: p.url.dirname(parent));
-
-  /// The path of [parent] seen from the key files (in `lib/spring_gen/`),
-  /// for `part of`.
-  static String parentPath(String parent) =>
-      p.url.relative(parent, from: 'lib/$generatedFolder');
 
   /// Whether the package of [buildStep] depends on the Flutter starter.
   static Future<bool> usesFlutterStarter(BuildStep buildStep) async {

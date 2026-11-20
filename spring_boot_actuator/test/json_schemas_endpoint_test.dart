@@ -10,32 +10,32 @@ class Book {
   final int? pages;
 }
 
-final _introspector = BeanIntrospector(
+final _introspector = Introspector(
   introspections: [
-    BeanIntrospection<Book>(
+    Introspection<Book>(
       className: 'Book',
       properties: [
-        BeanProperty<Book>(
+        IntrospectedProperty<Book>(
           'title',
           typeInfo: const ClassType<String>(),
           get: (b) => b.title,
         ),
-        BeanProperty<Book>(
+        IntrospectedProperty<Book>(
           'pages',
           typeInfo: const ClassType<int>(nullable: true),
           nullable: true,
           get: (b) => b.pages,
         ),
       ],
-      constructor: BeanConstructor<Book>(
+      constructor: IntrospectedConstructor<Book>(
         parameters: const [
-          BeanParameter(
+          IntrospectedParameter(
             'title',
             type: ClassType<String>(),
             symbol: #title,
             isRequired: true,
           ),
-          BeanParameter(
+          IntrospectedParameter(
             'pages',
             type: ClassType<int>(nullable: true),
             symbol: #pages,

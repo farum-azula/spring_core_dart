@@ -47,7 +47,7 @@ final class Proxy {
   Proxy(this.manager)
     : interceptor = TransactionInterceptor(
         transactionManager: manager,
-        introspector: BeanIntrospector()
+        introspector: Introspector()
           ..registerTypeTests({
             Boom: (v) => v is Boom,
             Soft: (v) => v is Soft,

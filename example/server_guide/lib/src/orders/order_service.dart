@@ -3,6 +3,7 @@
 // (chapter 8), log fields for everything logged while placing an order
 // (chapter 11).
 import 'package:neon_books_server/spring_gen/src/app.spring.dart';
+import 'package:neon_books_server/spring_gen/src/app.spring.introspection.dart';
 import 'package:neon_books_server/src/orders/basket_service.dart';
 import 'package:neon_books_server/src/orders/order.dart';
 import 'package:neon_books_server/src/orders/order_repository.dart';
@@ -62,16 +63,7 @@ class OrderService {
         total: priced.total,
         placedAt: _clock.now(),
       );
-      order = _orders.save(
-        CustomerOrder(
-          id: order.id,
-          customer: order.customer,
-          lines: order.lines,
-          total: order.total,
-          placedAt: order.placedAt,
-          payment: checkout.pay(order),
-        ),
-      );
+      order = _orders.save(order.copyWith(payment: checkout.pay(order)));
       log.info('order placed: ${priced.count} books, ${order.total} EUR');
       _events.publishEvent(OrderPlaced(order));
       _scheduler.scheduleAt(
@@ -102,7 +94,9 @@ class OrderService {
     if (order == null || order.status == OrderStatus.shipped) {
       return;
     }
-    final shipped = _orders.save(order.withStatus(OrderStatus.shipped));
+    final shipped = _orders.save(
+      order.copyWith(status: OrderStatus.shipped),
+    );
     log.info('order $id shipped', fields: {'customer': order.customer});
     _events.publishEvent(OrderShipped(this, shipped));
   }

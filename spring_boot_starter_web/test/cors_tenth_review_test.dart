@@ -47,7 +47,7 @@ final _api = BeanDefinition<_Api>(
   types: const [_Api],
   create: (_) => _Api(),
   annotatedMethods: [
-    BeanMethod<_Api>(
+    IntrospectedMethod<_Api>(
       'x',
       returnTypeInfo: const ClassType<String>(),
       invoke: (bean, arguments) => Function.apply(bean.x, arguments),

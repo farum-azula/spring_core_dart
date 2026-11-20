@@ -4,8 +4,8 @@ import 'dart:isolate';
 
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
 
 import '../support/real_sources.dart';
@@ -80,7 +80,7 @@ $service
     'spring_boot_starter_cache|lib/src/annotations.dart': _cacheAnnotations,
   });
   return await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     own,
     rootPackage: 'pkg',
     readerWriter: readerWriter,

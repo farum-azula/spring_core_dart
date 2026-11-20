@@ -74,15 +74,16 @@ abstract interface class CatalogClient {
       expect(
         output,
         hasCode(
-          "BeanParameter(r'isbn', type: const ClassType<String>(), isRequired: "
-          'true, '
+          "IntrospectedParameter(r'isbn', type: const ClassType<String>(), "
+          'isRequired: true, '
           "annotations: const [Tag(r'isbn')])",
         ),
       );
       expect(
         output,
         hasCode(
-          "BeanParameter(r'page', type: const ClassType<int>(), symbol: #page)",
+          "IntrospectedParameter(r'page', type: const ClassType<int>(), "
+          'symbol: #page)',
         ),
       );
       expect(
@@ -151,7 +152,7 @@ abstract interface class CatalogClient {
       );
       expect(output, hasCode(r'create: (r) => _$CatalogClientImpl.$create(r)'));
       // Book, used by the interface, is introspected for JSON.
-      expect(output, hasCode('BeanIntrospection<Book>('));
+      expect(output, hasCode('Introspection<Book>('));
     });
 
     test('the generated code compiles', () async {

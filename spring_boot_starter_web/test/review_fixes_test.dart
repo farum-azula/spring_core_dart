@@ -164,7 +164,7 @@ void main() {
               CrossOrigin(allowCredentials: true),
             ],
             annotatedMethods: [
-              BeanMethod<_Open>(
+              IntrospectedMethod<_Open>(
                 'get',
                 invoke: (bean, arguments) => 'open',
                 annotations: const [GetMapping('/open')],
@@ -325,7 +325,7 @@ void main() {
               ),
             ],
             annotatedMethods: [
-              BeanMethod<_Open>(
+              IntrospectedMethod<_Open>(
                 'get',
                 invoke: (bean, arguments) => 'open',
                 annotations: const [GetMapping('/open')],

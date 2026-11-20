@@ -11,9 +11,11 @@ import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -218,7 +220,7 @@ Future<TestBuilderResult> _buildSources(Map<String, Object> sources) async {
   );
   await readerWriter.testing.loadIsolateSources();
   return await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     {...sources, ..._stubs},
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -240,21 +242,17 @@ Future<String> _generate(String beans) async {
   final result = await _build(beans);
   expect(result.errors, isEmpty);
   const path = 'lib/spring_gen/src/beans.spring.dart';
-  final output = result.readerWriter.testing.readString(
-    result.outputs.singleWhere((o) => o.path == path),
-  );
+  final output = moduleText(result, AssetId('pkg', path));
   final errors = await resolveSources<List<String>>(
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/app.dart': '$_header$beans',
-      'pkg|$path': output,
+      ...moduleSources(output),
       ..._stubs,
     },
     (resolver) async {
       final library = await resolver.libraryFor(AssetId('pkg', path));
-      final errors = await library.session.getErrors(
-        library.firstFragment.source.fullName,
-      );
+      final errors = await moduleErrors(library);
       return [
         if (errors case ErrorsResult(:final diagnostics))
           for (final diagnostic in diagnostics)
@@ -295,10 +293,9 @@ class FogLoader extends ThemeLoaderWidget<LoaderValues> {
 }
 ''');
       expect(result.errors, isEmpty);
-      final output = result.readerWriter.testing.readString(
-        result.outputs.singleWhere(
-          (o) => o.path == 'lib/spring_gen/src/beans.spring.dart',
-        ),
+      final output = moduleText(
+        result,
+        AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
       );
       final code = _normalize(output);
       expect(
@@ -369,10 +366,9 @@ class DoorsLoader extends ThemeLoaderPainter<LoaderValues> {
       expect(plain.errors, isEmpty);
       expect(
         _normalize(
-          plain.readerWriter.testing.readString(
-            plain.outputs.singleWhere(
-              (o) => o.path == 'lib/spring_gen/src/loaders/loaders.spring.dart',
-            ),
+          moduleText(
+            plain,
+            AssetId('pkg', 'lib/spring_gen/src/loaders/loaders.spring.dart'),
           ),
         ),
         _has(
@@ -635,7 +631,7 @@ class Basket {}
     );
     await readerWriter.testing.loadIsolateSources();
     final result = await testBuilder(
-      SpringBuilder(generations: starterGenerations),
+      SpringBuilder(generations: packageGenerations),
       {
         'pkg|lib/main.dart': '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -666,11 +662,7 @@ class Badge extends SpringStatelessWidget<(Basket,)> {
     );
     expect(result.errors, isEmpty);
     final output = _normalize(
-      result.readerWriter.testing.readString(
-        result.outputs.singleWhere(
-          (o) => o.path == 'lib/spring_gen/main.spring.dart',
-        ),
-      ),
+      moduleText(result, AssetId('pkg', 'lib/spring_gen/main.spring.dart')),
     );
     expect(output, _has("name: r'flutterSpringWidgetBindings#application'"));
     // Its type is the definition's type argument, no `types:` (0.7.0).
@@ -678,7 +670,7 @@ class Badge extends SpringStatelessWidget<(Basket,)> {
     expect(output, isNot(_has('types: const [SpringWidgetBindings]')));
     expect(
       output.indexOf('extensionSpringBeansonBuildContext'),
-      greaterThan(output.indexOf('reloadApplicationAsync(')),
+      greaterThan(output.indexOf('runApplicationAsync(')),
     );
   });
 

@@ -20,16 +20,16 @@ class Person {
   String hello(String other) => 'hello $other from $name';
 }
 
-final addressIntrospection = BeanIntrospection<Address>(
+final addressIntrospection = Introspection<Address>(
   properties: [
-    BeanProperty<Address>(
+    IntrospectedProperty<Address>(
       'city',
       type: String,
       get: (b) => b.city,
       set: (b, v) => b.city = v! as String,
       annotations: const [NotBlank()],
     ),
-    BeanProperty<Address>(
+    IntrospectedProperty<Address>(
       'zip',
       type: String,
       nullable: true,
@@ -53,17 +53,17 @@ class Adult extends Constraint {
 
 abstract final class Strict {}
 
-final personIntrospection = BeanIntrospection<Person>(
+final personIntrospection = Introspection<Person>(
   annotations: const [Adult()],
   properties: [
-    BeanProperty<Person>(
+    IntrospectedProperty<Person>(
       'name',
       type: String,
       get: (b) => b.name,
       set: (b, v) => b.name = v! as String,
       annotations: const [NotBlank(), Size(min: 2, max: 10)],
     ),
-    BeanProperty<Person>(
+    IntrospectedProperty<Person>(
       'age',
       type: int,
       get: (b) => b.age,
@@ -73,14 +73,14 @@ final personIntrospection = BeanIntrospection<Person>(
         Max(150, groups: [Strict]),
       ],
     ),
-    BeanProperty<Person>(
+    IntrospectedProperty<Person>(
       'score',
       type: double,
       nullable: true,
       get: (b) => b.score,
       set: (b, v) => b.score = v as double?,
     ),
-    BeanProperty<Person>(
+    IntrospectedProperty<Person>(
       'address',
       type: Address,
       nullable: true,
@@ -88,35 +88,35 @@ final personIntrospection = BeanIntrospection<Person>(
       set: (b, v) => b.address = v as Address?,
       annotations: const [Valid()],
     ),
-    BeanProperty<Person>(
+    IntrospectedProperty<Person>(
       'previous',
       type: List<Address>,
       get: (b) => b.previous,
       set: (b, v) => b.previous = v! as List<Address>,
       annotations: const [Valid()],
     ),
-    BeanProperty<Person>(
+    IntrospectedProperty<Person>(
       'byLabel',
       type: Map<String, Address>,
       get: (b) => b.byLabel,
       annotations: const [Valid()],
     ),
-    BeanProperty<Person>(
+    IntrospectedProperty<Person>(
       'tags',
       type: List<String>,
       get: (b) => b.tags,
       set: (b, v) => b.tags = v! as List<String>,
     ),
-    BeanProperty<Person>(
+    IntrospectedProperty<Person>(
       'counts',
       type: Map<String, int>,
       get: (b) => b.counts,
     ),
-    BeanProperty<Person>('lucky', type: Set<int>, get: (b) => b.lucky),
-    BeanProperty<Person>('id', type: String, get: (b) => b.id),
+    IntrospectedProperty<Person>('lucky', type: Set<int>, get: (b) => b.lucky),
+    IntrospectedProperty<Person>('id', type: String, get: (b) => b.id),
   ],
   methods: [
-    BeanMethod<Person>(
+    IntrospectedMethod<Person>(
       'hello',
       returnType: String,
       parameterTypes: const [String],
@@ -126,6 +126,6 @@ final personIntrospection = BeanIntrospection<Person>(
   instantiate: Person.new,
 );
 
-BeanIntrospector introspector() => BeanIntrospector(
+Introspector introspector() => Introspector(
   introspections: [personIntrospection, addressIntrospection],
 );

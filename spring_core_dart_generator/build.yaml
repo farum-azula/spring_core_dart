@@ -2,11 +2,16 @@ builders:
   spring_core_dart:
     import: "package:spring_core_dart_generator/builder.dart"
     builder_factories: ["springCoreDartBuilder"]
+    # A module's library and, beside it, its descriptions (a library), the
+    # binding of its @ConfigurationProperties classes (a library), its
+    # proxies (a part of the module's library) and, for an application, what
+    # only debug and profile builds use (a part the library refers to under
+    # !dart.vm.product), each only when it has some.
     build_extensions:
-      "^lib/{{}}.dart": ["lib/spring_gen/{{}}.spring.dart"]
-      "^bin/{{}}.dart": ["bin/spring_gen/{{}}.spring.dart"]
-      "^test/{{}}.dart": ["test/spring_gen/{{}}.spring.dart"]
-      "^example/{{}}.dart": ["example/spring_gen/{{}}.spring.dart"]
+      "^lib/{{}}.dart": ["lib/spring_gen/{{}}.spring.dart", "lib/spring_gen/{{}}.spring.introspection.dart", "lib/spring_gen/{{}}.spring.properties.dart", "lib/spring_gen/{{}}.spring.proxies.dart", "lib/spring_gen/{{}}.spring.debug.dart", "lib/spring_gen/{{}}.spring.env.dart"]
+      "^bin/{{}}.dart": ["bin/spring_gen/{{}}.spring.dart", "bin/spring_gen/{{}}.spring.introspection.dart", "bin/spring_gen/{{}}.spring.properties.dart", "bin/spring_gen/{{}}.spring.proxies.dart", "bin/spring_gen/{{}}.spring.debug.dart", "bin/spring_gen/{{}}.spring.env.dart"]
+      "^test/{{}}.dart": ["test/spring_gen/{{}}.spring.dart", "test/spring_gen/{{}}.spring.introspection.dart", "test/spring_gen/{{}}.spring.properties.dart", "test/spring_gen/{{}}.spring.proxies.dart", "test/spring_gen/{{}}.spring.debug.dart", "test/spring_gen/{{}}.spring.env.dart"]
+      "^example/{{}}.dart": ["example/spring_gen/{{}}.spring.dart", "example/spring_gen/{{}}.spring.introspection.dart", "example/spring_gen/{{}}.spring.properties.dart", "example/spring_gen/{{}}.spring.proxies.dart", "example/spring_gen/{{}}.spring.debug.dart", "example/spring_gen/{{}}.spring.env.dart"]
     auto_apply: dependents
     build_to: source
   # The same builder for lib/ only, in a phase of its own before the main one.
@@ -17,7 +22,7 @@ builders:
     import: "package:spring_core_dart_generator/builder.dart"
     builder_factories: ["springPropertiesBuilder"]
     build_extensions:
-      "^lib/{{}}.dart": ["lib/spring_gen/{{}}.spring.dart"]
+      "^lib/{{}}.dart": ["lib/spring_gen/{{}}.spring.dart", "lib/spring_gen/{{}}.spring.introspection.dart", "lib/spring_gen/{{}}.spring.properties.dart", "lib/spring_gen/{{}}.spring.proxies.dart", "lib/spring_gen/{{}}.spring.debug.dart", "lib/spring_gen/{{}}.spring.env.dart"]
     auto_apply: none
     build_to: source
     runs_before: ["spring_core_dart_generator:spring_core_dart"]

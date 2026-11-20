@@ -7,11 +7,22 @@
 ///
 /// - A library with a `@ComponentScan()` variable gets a sibling
 ///   `*.spring.dart` file with a `BeanModule`: one `BeanDefinition` per bean
-///   found in its directory, plus the generated AOP proxy classes,
-///   introspection metadata and `@Configurable` configurers.
+///   found in its directory, plus the `@Configurable` configurers; beside it,
+///   each when the module has some, `*.spring.introspection.dart` (the
+///   descriptions of the classes it uses), `*.spring.properties.dart` (the
+///   binding of its `@ConfigurationProperties` classes) and
+///   `*.spring.proxies.dart` (its AOP proxy classes, a part of the module's
+///   library).
 /// - A `main` annotated with `@SpringBootApplication()` (from
 ///   `spring_boot_dart`) gets the same for the whole package, plus
-///   `springApplication` and `runApplication(args)`.
+///   `springApplication` and `runApplication(args)`, and
+///   `*.spring.debug.dart`: what only debug and profile builds use (the
+///   fingerprint of the generated code and `reloadApplication`, for hot
+///   reload), a part the library refers to only under `!dart.vm.product`,
+///   so a release build leaves it out; and `*.spring.env.dart`, a part with
+///   the constant map of the `--dart-define`s it may read
+///   (`String.fromEnvironment` of each property and environment variable),
+///   which `springApplication` passes as `dartDefines`.
 /// - A test file with `@SpringBootTest` classes gets a
 ///   `test/spring_gen/<name>.test.spring.dart` file with `runSpringTests()`.
 /// - A Flutter app with `spring.flutter.theme.*` properties or message
@@ -65,22 +76,23 @@
 library;
 
 import 'package:build/build.dart';
-import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/core/spring_metadata_builder.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/introspection/json_schemas/json_schema_classes.dart';
+import 'package:spring_core_dart_generator/src/core/metadata/spring_metadata_builder.dart';
 import 'package:spring_core_dart_generator/src/flutter/flutter_keys_builder.dart';
 import 'package:spring_core_dart_generator/src/flutter/web_dev_config_builder.dart';
 import 'package:spring_core_dart_generator/src/flutter/web_page_loader_builder.dart';
-import 'package:spring_core_dart_generator/src/json_schemas/json_schema_classes.dart';
 import 'package:spring_core_dart_generator/src/navigation/deep_links_builder.dart';
 import 'package:spring_core_dart_generator/src/navigation/seo_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:spring_core_dart_generator/src/search/prefetch_builder.dart';
 import 'package:spring_core_dart_generator/src/search/search_index_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:spring_core_dart_generator/src/test/test_builder.dart';
 
 /// Creates the main builder ([SpringBuilder]), which writes the
-/// `*.spring.dart` files; `build.yaml` names it in `builder_factories`.
+/// `*.spring.dart` files and the files beside them; `build.yaml` names it
+/// in `builder_factories`.
 ///
 /// Two options tune it, set in the `build.yaml` of the application's
 /// package. They only change how much code is generated: a bean without
@@ -143,7 +155,7 @@ Builder springCoreDartBuilder(BuilderOptions options) {
     throw ArgumentError.value(defer, 'aop_defer', 'Expected true or false');
   }
   return SpringBuilder(
-    generations: starterGenerations,
+    generations: packageGenerations,
     pruneProxies: prune,
     deferProxies: defer,
     dartDefinesExclude: _dartDefinesExclude(
@@ -359,7 +371,7 @@ Builder springJsonSchemasBuilder(BuilderOptions options) =>
 /// }
 /// ```
 Builder springMetadataBuilder(BuilderOptions options) =>
-    SpringMetadataBuilder(generations: starterGenerations);
+    SpringMetadataBuilder(generations: packageGenerations);
 
 /// Creates the builder of the search index ([SearchIndexBuilder]),
 /// registered in `build.yaml` as `spring_search_index`: a file per language

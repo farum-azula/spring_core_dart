@@ -25,13 +25,13 @@ enum Level {
 
 final _stock = EnumType<Stock>(Stock.values, jsonValue: (s) => s.json);
 
-BeanProperty<T> _p<T extends Object>(
+IntrospectedProperty<T> _p<T extends Object>(
   String name,
   Object? Function(T bean) get,
   TypeInfo<Object?> info, {
   void Function(T bean, Object? value)? set,
   List<Object> annotations = const [],
-}) => BeanProperty<T>(
+}) => IntrospectedProperty<T>(
   name,
   type: info.type,
   nullable: info.nullable,
@@ -41,10 +41,10 @@ BeanProperty<T> _p<T extends Object>(
   annotations: annotations,
 );
 
-BeanConstructor<T> _ctor<T extends Object>(
+IntrospectedConstructor<T> _ctor<T extends Object>(
   Function constructor,
-  List<BeanParameter> parameters,
-) => BeanConstructor<T>(
+  List<IntrospectedParameter> parameters,
+) => IntrospectedConstructor<T>(
   parameters: parameters,
   create: (positional, named) =>
       Function.apply(constructor, positional, named) as T,
@@ -68,10 +68,10 @@ class Page<T> {
   final int total;
 }
 
-BeanIntrospection<Page<T>> _pageOf<T>(
+Introspection<Page<T>> _pageOf<T>(
   TypeInfo<T> element, {
-  BeanIntrospection<Object> Function(List<TypeInfo<Object?>>)? specialize,
-}) => BeanIntrospection<Page<T>>(
+  Introspection<Object> Function(List<TypeInfo<Object?>>)? specialize,
+}) => Introspection<Page<T>>(
   className: 'Page',
   specialize: specialize,
   properties: [
@@ -80,10 +80,18 @@ BeanIntrospection<Page<T>> _pageOf<T>(
   ],
   // A direct call, like the generator writes for generic classes (dart2js
   // cannot Function.apply named arguments to `Page<T>.new`).
-  constructor: BeanConstructor<Page<T>>(
+  constructor: IntrospectedConstructor<Page<T>>(
     parameters: [
-      BeanParameter('content', type: ListType<T>(element), isRequired: true),
-      const BeanParameter('total', type: ClassType<int>(), symbol: #total),
+      IntrospectedParameter(
+        'content',
+        type: ListType<T>(element),
+        isRequired: true,
+      ),
+      const IntrospectedParameter(
+        'total',
+        type: ClassType<int>(),
+        symbol: #total,
+      ),
     ],
     create: (positional, named) => Page<T>(
       positional[0]! as List<T>,
@@ -234,8 +242,8 @@ class Score {
   String? memo;
 }
 
-final _introspections = <BeanIntrospection<Object>>[
-  BeanIntrospection<Holder>(
+final _introspections = <Introspection<Object>>[
+  Introspection<Holder>(
     instantiate: Holder.new,
     properties: [
       _p<Holder>(
@@ -264,10 +272,14 @@ final _introspections = <BeanIntrospection<Object>>[
       ),
     ],
   ),
-  BeanIntrospection<Author>(
+  Introspection<Author>(
     properties: [_p<Author>('name', (b) => b.name, const ClassType<String>())],
     constructor: _ctor<Author>(Author.new, [
-      const BeanParameter('name', type: ClassType<String>(), isRequired: true),
+      const IntrospectedParameter(
+        'name',
+        type: ClassType<String>(),
+        isRequired: true,
+      ),
     ]),
   ),
   _pageOf<Object?>(
@@ -275,7 +287,7 @@ final _introspections = <BeanIntrospection<Object>>[
     specialize: (arguments) =>
         arguments[0].capture(<T>() => _pageOf<T>(arguments[0] as TypeInfo<T>)),
   ),
-  BeanIntrospection<Shelf>(
+  Introspection<Shelf>(
     properties: [
       _p<Shelf>(
         'page',
@@ -284,14 +296,14 @@ final _introspections = <BeanIntrospection<Object>>[
       ),
     ],
     constructor: _ctor<Shelf>(Shelf.new, [
-      const BeanParameter(
+      const IntrospectedParameter(
         'page',
         type: GenericType<Page<Author>>([ClassType<Author>()]),
         isRequired: true,
       ),
     ]),
   ),
-  BeanIntrospection<Animal>(
+  Introspection<Animal>(
     className: 'Animal',
     annotations: const [
       JsonTypeInfo(property: 'kind'),
@@ -302,18 +314,26 @@ final _introspections = <BeanIntrospection<Object>>[
     ],
     properties: [_p<Animal>('name', (b) => b.name, const ClassType<String>())],
   ),
-  BeanIntrospection<Dog>(
+  Introspection<Dog>(
     className: 'Dog',
     properties: [
       _p<Dog>('bark', (b) => b.bark, const ClassType<bool>()),
       _p<Dog>('name', (b) => b.name, const ClassType<String>()),
     ],
     constructor: _ctor<Dog>(Dog.new, [
-      const BeanParameter('name', type: ClassType<String>(), isRequired: true),
-      const BeanParameter('bark', type: ClassType<bool>(), symbol: #bark),
+      const IntrospectedParameter(
+        'name',
+        type: ClassType<String>(),
+        isRequired: true,
+      ),
+      const IntrospectedParameter(
+        'bark',
+        type: ClassType<bool>(),
+        symbol: #bark,
+      ),
     ]),
   ),
-  BeanIntrospection<Cat>(
+  Introspection<Cat>(
     className: 'Cat',
     annotations: const [JsonTypeName('kitty')],
     properties: [
@@ -321,61 +341,93 @@ final _introspections = <BeanIntrospection<Object>>[
       _p<Cat>('name', (b) => b.name, const ClassType<String>()),
     ],
     constructor: _ctor<Cat>(Cat.new, [
-      const BeanParameter('name', type: ClassType<String>(), isRequired: true),
-      const BeanParameter('lives', type: ClassType<int>(), symbol: #lives),
+      const IntrospectedParameter(
+        'name',
+        type: ClassType<String>(),
+        isRequired: true,
+      ),
+      const IntrospectedParameter(
+        'lives',
+        type: ClassType<int>(),
+        symbol: #lives,
+      ),
     ]),
   ),
-  const BeanIntrospection<Shape>(
+  const Introspection<Shape>(
     annotations: [
       JsonTypeInfo(include: JsonTypeInclusion.wrapperObject),
       JsonSubTypes([JsonSubType(Circle, name: 'circle')]),
     ],
   ),
-  BeanIntrospection<Circle>(
+  Introspection<Circle>(
     properties: [_p<Circle>('r', (b) => b.r, const ClassType<int>())],
     constructor: _ctor<Circle>(Circle.new, [
-      const BeanParameter('r', type: ClassType<int>(), isRequired: true),
+      const IntrospectedParameter(
+        'r',
+        type: ClassType<int>(),
+        isRequired: true,
+      ),
     ]),
   ),
-  const BeanIntrospection<Item>(
+  const Introspection<Item>(
     annotations: [
       JsonTypeInfo(include: JsonTypeInclusion.wrapperArray),
       JsonSubTypes([JsonSubType(Thing, name: 'thing')]),
     ],
   ),
-  BeanIntrospection<Thing>(
+  Introspection<Thing>(
     properties: [_p<Thing>('id', (b) => b.id, const ClassType<int>())],
     constructor: _ctor<Thing>(Thing.new, [
-      const BeanParameter('id', type: ClassType<int>(), isRequired: true),
+      const IntrospectedParameter(
+        'id',
+        type: ClassType<int>(),
+        isRequired: true,
+      ),
     ]),
   ),
-  const BeanIntrospection<Vehicle>(
+  const Introspection<Vehicle>(
     annotations: [
       JsonTypeInfo(use: JsonTypeId.deduction),
       JsonSubTypes([JsonSubType(Car), JsonSubType(Bike)]),
     ],
   ),
-  BeanIntrospection<Car>(
+  Introspection<Car>(
     properties: [
       _p<Car>('wheels', (b) => b.wheels, const ClassType<int>()),
       _p<Car>('doors', (b) => b.doors, const ClassType<int>()),
     ],
     constructor: _ctor<Car>(Car.new, [
-      const BeanParameter('wheels', type: ClassType<int>(), isRequired: true),
-      const BeanParameter('doors', type: ClassType<int>(), isRequired: true),
+      const IntrospectedParameter(
+        'wheels',
+        type: ClassType<int>(),
+        isRequired: true,
+      ),
+      const IntrospectedParameter(
+        'doors',
+        type: ClassType<int>(),
+        isRequired: true,
+      ),
     ]),
   ),
-  BeanIntrospection<Bike>(
+  Introspection<Bike>(
     properties: [
       _p<Bike>('wheels', (b) => b.wheels, const ClassType<int>()),
       _p<Bike>('gears', (b) => b.gears, const ClassType<int>()),
     ],
     constructor: _ctor<Bike>(Bike.new, [
-      const BeanParameter('wheels', type: ClassType<int>(), isRequired: true),
-      const BeanParameter('gears', type: ClassType<int>(), isRequired: true),
+      const IntrospectedParameter(
+        'wheels',
+        type: ClassType<int>(),
+        isRequired: true,
+      ),
+      const IntrospectedParameter(
+        'gears',
+        type: ClassType<int>(),
+        isRequired: true,
+      ),
     ]),
   ),
-  BeanIntrospection<Message>(
+  Introspection<Message>(
     annotations: const [
       JsonTypeInfo(
         include: JsonTypeInclusion.existingProperty,
@@ -396,7 +448,7 @@ final _introspections = <BeanIntrospection<Object>>[
       ),
     ],
   ),
-  BeanIntrospection<TextMessage>(
+  Introspection<TextMessage>(
     properties: [
       _p<TextMessage>(
         'type',
@@ -406,15 +458,19 @@ final _introspections = <BeanIntrospection<Object>>[
       _p<TextMessage>('body', (b) => b.body, const ClassType<String>()),
     ],
     constructor: _ctor<TextMessage>(TextMessage.new, [
-      const BeanParameter(
+      const IntrospectedParameter(
         'type',
         type: ClassType<String>(nullable: true),
         isRequired: true,
       ),
-      const BeanParameter('body', type: ClassType<String>(), isRequired: true),
+      const IntrospectedParameter(
+        'body',
+        type: ClassType<String>(),
+        isRequired: true,
+      ),
     ]),
   ),
-  BeanIntrospection<ImageMessage>(
+  Introspection<ImageMessage>(
     properties: [
       _p<ImageMessage>(
         'type',
@@ -424,18 +480,22 @@ final _introspections = <BeanIntrospection<Object>>[
       _p<ImageMessage>('url', (b) => b.url, const ClassType<String>()),
     ],
     constructor: _ctor<ImageMessage>(ImageMessage.new, [
-      const BeanParameter(
+      const IntrospectedParameter(
         'type',
         type: ClassType<String>(nullable: true),
         isRequired: true,
       ),
-      const BeanParameter('url', type: ClassType<String>(), isRequired: true),
+      const IntrospectedParameter(
+        'url',
+        type: ClassType<String>(),
+        isRequired: true,
+      ),
     ]),
   ),
-  BeanIntrospection<Contact>(
+  Introspection<Contact>(
     properties: [_p<Contact>('name', (b) => b.name, const ClassType<String>())],
     constructor: _ctor<Contact>(Contact.new, [
-      const BeanParameter(
+      const IntrospectedParameter(
         'name',
         type: ClassType<String>(),
         symbol: #name,
@@ -446,7 +506,7 @@ final _introspections = <BeanIntrospection<Object>>[
       ),
     ]),
   ),
-  BeanIntrospection<Event>(
+  Introspection<Event>(
     instantiate: Event.new,
     properties: [
       _p<Event>(
@@ -488,18 +548,26 @@ final _introspections = <BeanIntrospection<Object>>[
       ),
     ],
   ),
-  BeanIntrospection<Point>(
+  Introspection<Point>(
     annotations: const [JsonFormat(shape: JsonFormatShape.array)],
     properties: [
       _p<Point>('x', (b) => b.x, const ClassType<int>()),
       _p<Point>('y', (b) => b.y, const ClassType<int>()),
     ],
     constructor: _ctor<Point>(Point.new, [
-      const BeanParameter('x', type: ClassType<int>(), isRequired: true),
-      const BeanParameter('y', type: ClassType<int>(), isRequired: true),
+      const IntrospectedParameter(
+        'x',
+        type: ClassType<int>(),
+        isRequired: true,
+      ),
+      const IntrospectedParameter(
+        'y',
+        type: ClassType<int>(),
+        isRequired: true,
+      ),
     ]),
   ),
-  BeanIntrospection<Bag>(
+  Introspection<Bag>(
     instantiate: Bag.new,
     properties: [
       _p<Bag>(
@@ -517,7 +585,7 @@ final _introspections = <BeanIntrospection<Object>>[
       ),
     ],
   ),
-  BeanIntrospection<Props>(
+  Introspection<Props>(
     properties: [
       _p<Props>('id', (b) => b.id, const ClassType<String>()),
       _p<Props>(
@@ -528,54 +596,54 @@ final _introspections = <BeanIntrospection<Object>>[
       ),
     ],
     constructor: _ctor<Props>(Props.new, [
-      const BeanParameter(
+      const IntrospectedParameter(
         'id',
         type: ClassType<String>(),
         symbol: #id,
         isRequired: true,
       ),
-      const BeanParameter(
+      const IntrospectedParameter(
         'rest',
         type: MapType<String, int>(ClassType<String>(), ClassType<int>()),
         symbol: #rest,
       ),
     ]),
   ),
-  BeanIntrospection<MethodBag>(
+  Introspection<MethodBag>(
     instantiate: MethodBag.new,
     methods: [
-      BeanMethod<MethodBag>(
+      IntrospectedMethod<MethodBag>(
         'put',
         invoke: (b, a) => b.put(a[0]! as String, a[1]),
         annotations: const [JsonAnySetter()],
       ),
-      BeanMethod<MethodBag>(
+      IntrospectedMethod<MethodBag>(
         'all',
         invoke: (b, a) => b.all(),
         annotations: const [JsonAnyGetter()],
       ),
     ],
   ),
-  BeanIntrospection<Address>(
+  Introspection<Address>(
     properties: [
       _p<Address>('city', (b) => b.city, const ClassType<String>()),
       _p<Address>('zip', (b) => b.zip, const ClassType<String>(nullable: true)),
     ],
     constructor: _ctor<Address>(Address.new, [
-      const BeanParameter(
+      const IntrospectedParameter(
         'city',
         type: ClassType<String>(),
         symbol: #city,
         isRequired: true,
       ),
-      const BeanParameter(
+      const IntrospectedParameter(
         'zip',
         type: ClassType<String>(nullable: true),
         symbol: #zip,
       ),
     ]),
   ),
-  BeanIntrospection<Person>(
+  Introspection<Person>(
     properties: [
       _p<Person>('name', (b) => b.name, const ClassType<String>()),
       _p<Person>(
@@ -586,15 +654,19 @@ final _introspections = <BeanIntrospection<Object>>[
       ),
     ],
     constructor: _ctor<Person>(Person.new, [
-      const BeanParameter('name', type: ClassType<String>(), isRequired: true),
-      const BeanParameter(
+      const IntrospectedParameter(
+        'name',
+        type: ClassType<String>(),
+        isRequired: true,
+      ),
+      const IntrospectedParameter(
         'address',
         type: ClassType<Address>(nullable: true),
         isRequired: true,
       ),
     ]),
   ),
-  BeanIntrospection<Row>(
+  Introspection<Row>(
     instantiate: Row.new,
     annotations: const [JsonNaming(PropertyNamingStrategy.snakeCase)],
     properties: [
@@ -613,9 +685,9 @@ final _introspections = <BeanIntrospection<Object>>[
       ),
     ],
   ),
-  const BeanIntrospection<Public>(instantiate: Public.new),
-  const BeanIntrospection<Internal>(instantiate: Internal.new),
-  BeanIntrospection<User>(
+  const Introspection<Public>(instantiate: Public.new),
+  const Introspection<Internal>(instantiate: Internal.new),
+  Introspection<User>(
     instantiate: User.new,
     properties: [
       _p<User>(
@@ -644,7 +716,7 @@ final _introspections = <BeanIntrospection<Object>>[
       ),
     ],
   ),
-  BeanIntrospection<Counter>(
+  Introspection<Counter>(
     instantiate: Counter.new,
     annotations: const [JsonInclude(JsonInclusion.nonDefault)],
     properties: [
@@ -662,7 +734,7 @@ final _introspections = <BeanIntrospection<Object>>[
       ),
     ],
   ),
-  BeanIntrospection<Score>(
+  Introspection<Score>(
     instantiate: Score.new,
     properties: [
       _p<Score>(
@@ -692,7 +764,7 @@ Matcher _mappingError(String text) => throwsA(
 );
 
 void main() {
-  final introspector = BeanIntrospector(introspections: _introspections);
+  final introspector = Introspector(introspections: _introspections);
   final mapper = ObjectMapper(introspector: introspector);
 
   group('timestamps like Jackson 3', () {
@@ -1375,9 +1447,9 @@ void main() {
 }
 
 ObjectMapper _patternMapper(String pattern, String zone) => ObjectMapper(
-  introspector: BeanIntrospector(
+  introspector: Introspector(
     introspections: [
-      BeanIntrospection<_At>(
+      Introspection<_At>(
         properties: [
           _p<_At>(
             'at',
@@ -1387,7 +1459,7 @@ ObjectMapper _patternMapper(String pattern, String zone) => ObjectMapper(
           ),
         ],
         constructor: _ctor<_At>(_At.new, [
-          const BeanParameter(
+          const IntrospectedParameter(
             'at',
             type: ClassType<DateTime>(),
             isRequired: true,

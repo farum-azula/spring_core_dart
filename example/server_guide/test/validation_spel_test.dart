@@ -59,7 +59,7 @@ void main() {
           DataBinder(
               ShopProperties(),
               objectName: 'shop',
-              introspector: app.getBean<BeanIntrospector>(),
+              introspector: app.getBean<Introspector>(),
             )
             ..validators.add(validator())
             ..bind({'opensAt': '22', 'closesAt': '20'})

@@ -144,18 +144,18 @@ class DataBinder {
   /// [target] is `null`; [objectName] names it in error codes and the
   /// model.
   ///
-  /// [introspector] (default `BeanIntrospector.shared`; inside an
+  /// [introspector] (default `Introspector.shared`; inside an
   /// application pass the context's), [conversionService] (default: the
   /// shared `DefaultConversionService`) and [messageCodesResolver] change
   /// property access, value conversion and error codes.
   DataBinder(
     Object? target, {
     this.objectName = defaultObjectName,
-    BeanIntrospector? introspector,
+    Introspector? introspector,
     ConversionService? conversionService,
     this.messageCodesResolver = const DefaultMessageCodesResolver(),
   }) : _target = target,
-       introspector = introspector ?? BeanIntrospector.shared,
+       introspector = introspector ?? Introspector.shared,
        conversionService =
            conversionService ?? DefaultConversionService.sharedInstance;
 
@@ -178,7 +178,7 @@ class DataBinder {
 
   /// Describes the properties and constructors of the target's class and
   /// of nested classes.
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   /// Converts input values, usually strings, to the property types.
   final ConversionService conversionService;
@@ -431,7 +431,7 @@ class DataBinder {
   }
 
   Object? _createObject(
-    BeanIntrospection<Object> introspection,
+    Introspection<Object> introspection,
     String nestedPath,
     ValueResolver resolver,
   ) {
@@ -448,10 +448,10 @@ class DataBinder {
         'the form is bound to an instance of it',
       );
       throw StateError(
-        '${introspection.beanType} has no public constructor to bind',
+        '${introspection.type} has no public constructor to bind',
       );
     }
-    final positional = <(BeanParameter, Object?, bool)>[];
+    final positional = <(IntrospectedParameter, Object?, bool)>[];
     final named = <Symbol, Object?>{};
     final resolved = <String, (Type, Object?)>{};
     final failed = <String>{};

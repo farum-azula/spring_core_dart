@@ -28,7 +28,7 @@ T bindWebSettings<T extends Object>(
   ConfigurationPropertySources.attach(environment);
   return ConfigurationPropertiesBinder(
     environment,
-    BeanIntrospector(introspections: webConfigBeans.introspections),
+    Introspector(introspections: webConfigBeans.introspections),
   ).postProcessBeforeInitialization(target, beanName) as T;
 }
 

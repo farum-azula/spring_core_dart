@@ -1723,8 +1723,9 @@ would be missing and a changed one would keep its old dependencies.
 `SpringApplicationWidget` takes care of it, as Spring Boot DevTools'
 *restart* does; it is on by default and needs no setup. Flutter calls the
 root widget's `reassemble()` on every hot reload. There the widget
-compares the fingerprint of the generated code (`lib/spring_gen/main.spring.dart`)
-with the one the running context was built from.
+compares the fingerprint of the generated code (in
+`lib/spring_gen/main.spring.debug.dart`, which only debug and profile
+builds compile) with the one the running context was built from.
 
 **Only method bodies changed: the context stays.** The fingerprint is the
 same, so nothing restarts. Dart already runs the new method bodies, and

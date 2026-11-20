@@ -55,11 +55,11 @@ class Config {
       expect(
         output,
         hasCode(
-          "annotatedMethods: [const BeanMethod<Poller>(r'check', "
+          "annotatedMethods: [const IntrospectedMethod<Poller>(r'check', "
           'parameterTypes: [int, String], '
-          "parameters: [BeanParameter(r'attempt', type: "
+          "parameters: [IntrospectedParameter(r'attempt', type: "
           'ClassType<int>(), isRequired: true), '
-          "BeanParameter(r'label', type: ClassType<String>(nullable: "
+          "IntrospectedParameter(r'label', type: ClassType<String>(nullable: "
           'true))], '
           'isFuture: true, isVoid: true, invoke: ',
         ),
@@ -88,7 +88,7 @@ class Config {
         output,
         matches(
           RegExp(
-            r"BeanMethod<Poller>\(r'tick',isVoid:true,invoke:_\$invoke\d+,"
+            r"IntrospectedMethod<Poller>\(r'tick',isVoid:true,invoke:_\$invoke\d+,"
             r'annotations:\[Every\(Duration\(minutes:1\)\)\]\)',
           ),
         ),
@@ -106,7 +106,7 @@ class Config {
         output,
         matches(
           RegExp(
-            r"annotatedMethods:\[constBeanMethod<Report>\(r'hourly',"
+            r"annotatedMethods:\[constIntrospectedMethod<Report>\(r'hourly',"
             r'isVoid:true,invoke:_\$invoke\d+,'
             r'annotations:\[Every\(Duration\(hours:1\)\)\]\)\]',
           ),
@@ -146,12 +146,12 @@ class Api {
         expect(
           output,
           hasCode(
-            "parameters: [BeanParameter(r'query', type: "
+            "parameters: [IntrospectedParameter(r'query', type: "
             'ClassType<String>(), '
             "isRequired: true, annotations: [Param(r'q')]), "
-            "BeanParameter(r'page', type: ClassType<int>(), symbol: "
+            "IntrospectedParameter(r'page', type: ClassType<int>(), symbol: "
             '#page, isRequired: true), '
-            "BeanParameter(r'size', type: ClassType<int>(), symbol: "
+            "IntrospectedParameter(r'size', type: ClassType<int>(), symbol: "
             '#size)], '
             'returnTypeInfo: ListType<Item>(ClassType<Item>()), '
             'isFuture: true, ',
@@ -175,7 +175,7 @@ class Api {
           ),
         );
         // The result type of the bean's package is introspected.
-        expect(output, contains('BeanIntrospection<Item>'));
+        expect(output, contains('Introspection<Item>'));
       },
     );
 

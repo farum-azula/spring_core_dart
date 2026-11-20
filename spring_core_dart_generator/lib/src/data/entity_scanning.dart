@@ -3,7 +3,7 @@ part of 'data_scanner.dart';
 // The classes of spring_boot_starter_data's data layer: the entities
 // (`@Table`) and the DTOs its `@Query` methods return. Each gets an
 // `EntityIntrospection` (see `EntityModel`) in place of the generic
-// `BeanIntrospection`: its properties, and the calls that read, create and
+// `Introspection`: its properties, and the calls that read, create and
 // set an instance, and nothing else. Matched by URL, so the generator does
 // not depend on the starter.
 //
@@ -221,10 +221,10 @@ extension _EntityScanning on DataScanner {
       }
       if (annotations.any((a) => _dataJson.isExactlyType(a.type!))) {
         // The mapper writes the value into the column and reads it back.
-        scan.introspectUsed(
+        scan.introspection.need(
           _fieldType(element, field),
           element,
-          need: IntrospectionNeed.read | IntrospectionNeed.write,
+          IntrospectionNeed.read | IntrospectionNeed.write,
         );
       }
       final initial = scan.initialValueOf(field);

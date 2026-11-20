@@ -4,8 +4,7 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/core/bean_model.dart';
-import 'package:spring_core_dart_generator/src/core/starter_generation.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_generation.dart';
 
 // The WebSocket annotations and methods, matched by URL (the generator
 // does not depend on the starter).
@@ -40,7 +39,7 @@ const _events = [
 /// // Question: read in (constructor and setters); Reply: written out.
 /// session.sendJson(Score(3)); // Score: written out
 /// ```
-final class WebSocketGeneration extends StarterGeneration {
+final class WebSocketGeneration extends PackageGeneration {
   /// The part; it keeps no state of a build.
   const WebSocketGeneration();
 

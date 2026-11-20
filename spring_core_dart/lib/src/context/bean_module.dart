@@ -145,7 +145,7 @@ final class ImportDeclaration {
 /// environment, then registers each definition whose conditions match and
 /// runs its [registrars]. [configurers] let `autowireBean` inject
 /// `@Configurable` classes, [introspections] go to the context's
-/// `BeanIntrospector`, and [resources] become `resources:` files.
+/// `Introspector`, and [resources] become `resources:` files.
 ///
 /// ```dart
 /// @ComponentScan()
@@ -186,7 +186,7 @@ final class BeanModule {
     Map<Type, BeanConfigurer> configurers = const {},
     Map<Type, void Function(Object bean)> configurablePostConstruct = const {},
     Map<Type, void Function(Object bean)> configurablePreDestroy = const {},
-    List<BeanIntrospection<Object>> introspections = const [],
+    List<Introspection<Object>> introspections = const [],
     Map<String, EmbeddedResource> resources = const {},
     Map<Type, bool Function(Object? value)> typeTests = const {},
     Map<Type, int> typeDepths = const {},
@@ -218,7 +218,7 @@ final class BeanModule {
   /// module's classes (`@Transactional(noRollbackFor: [OutOfStock])`),
   /// keyed by the type: without reflection, a `Type` value alone cannot
   /// tell whether an object is of a subtype. Registered in the context's
-  /// introspector ([BeanIntrospector.isInstanceOf]).
+  /// introspector ([Introspector.isInstanceOf]).
   final Map<Type, bool Function(Object? value)> typeTests;
 
   /// For each type of [typeTests], the length of the longest chain of
@@ -227,7 +227,7 @@ final class BeanModule {
   /// closer. Without reflection a `Type` value alone cannot tell which of
   /// two types is the subtype; the generator reads it from the analyzer.
   /// Registered in the context's introspector
-  /// ([BeanIntrospector.typeDepth]).
+  /// ([Introspector.typeDepth]).
   final Map<Type, int> typeDepths;
 
   /// The module name, by convention the name of the annotated variable;
@@ -270,7 +270,7 @@ final class BeanModule {
   /// The generated descriptions of the `@Introspected` classes (their
   /// properties and methods), used by data binding, validation and SpEL
   /// instead of reflection.
-  final List<BeanIntrospection<Object>> introspections;
+  final List<Introspection<Object>> introspections;
 
   /// The proxy factories of beans of library packages whose own modules
   /// left them out (`AopProxyFactory.deferred`), keyed by the definition's

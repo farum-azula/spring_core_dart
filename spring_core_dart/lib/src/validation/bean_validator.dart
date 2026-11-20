@@ -245,8 +245,8 @@ final class ResolvableAttribute implements MessageSourceResolvable {
 /// ```
 class BeanValidator implements SmartValidator {
   /// A validator that reads the constraints through [introspector], by
-  /// default `BeanIntrospector.shared`; inside an application pass the
-  /// context's `BeanIntrospector`, which knows the application's classes.
+  /// default `Introspector.shared`; inside an application pass the
+  /// context's `Introspector`, which knows the application's classes.
   ///
   /// [validationMessageSource] resolves `{key}` placeholders in messages
   /// (Spring's `setValidationMessageSource`); [clockProvider] gives "now"
@@ -266,16 +266,16 @@ class BeanValidator implements SmartValidator {
   ///     .validateObject(form, groups: [Complete]);
   /// ```
   BeanValidator({
-    BeanIntrospector? introspector,
+    Introspector? introspector,
     this.validationMessageSource,
     this.clockProvider = const DefaultClockProvider(),
     Map<Type, List<Type>> groupSequences = const {},
-  }) : introspector = introspector ?? BeanIntrospector.shared,
+  }) : introspector = introspector ?? Introspector.shared,
        groupSequences = Map.unmodifiable(groupSequences);
 
   /// Describes the classes: where the constraints are and how to read the
   /// property values.
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   /// Resolves `{key}` placeholders in constraint messages, such as
   /// `@NotBlank(message: '{signup.name.missing}')`, and may replace a
@@ -440,7 +440,7 @@ class BeanValidator implements SmartValidator {
     final violations = <ConstraintViolation>[];
     if (!beanProperty.isReadable) {
       throw IntrospectionPartError(
-        introspection.beanType,
+        introspection.type,
         IntrospectionPart.read,
         "the validator reads property '$property'",
       );
@@ -664,7 +664,7 @@ class BeanValidator implements SmartValidator {
   // The class's `@GroupSequence` (its redefined Default group), checked
   // like Hibernate Validator's BeanMetaDataImpl.
   static GroupSequence? _defaultSequence(
-    BeanIntrospection<Object>? introspection,
+    Introspection<Object>? introspection,
   ) {
     if (introspection == null) {
       return null;
@@ -675,7 +675,7 @@ class BeanValidator implements SmartValidator {
     if (sequence == null) {
       return null;
     }
-    final type = introspection.beanType;
+    final type = introspection.type;
     if (sequence.value.contains(Default)) {
       throw GroupDefinitionException(
         'Default cannot appear in the default group sequence of $type.',
@@ -695,7 +695,7 @@ class BeanValidator implements SmartValidator {
   // Default constraints and the sequence stops at the first group with a
   // violation.
   void _ownGroups(
-    BeanIntrospection<Object>? introspection,
+    Introspection<Object>? introspection,
     List<Type> groups,
     List<ConstraintViolation> violations,
     void Function(bool Function(Constraint) applies) check,
@@ -705,7 +705,7 @@ class BeanValidator implements SmartValidator {
       check((constraint) => constraint.appliesTo(groups));
       return;
     }
-    final type = introspection!.beanType;
+    final type = introspection!.type;
     final others = [
       for (final group in groups)
         if (group != Default) group,
@@ -828,8 +828,8 @@ class BeanValidator implements SmartValidator {
   // validated class with the getters of the properties that have
   // constraints or `@Valid()`, and no more.
   Object? _valueOf(
-    BeanIntrospection<Object> introspection,
-    BeanProperty<Object> property,
+    Introspection<Object> introspection,
+    IntrospectedProperty<Object> property,
     Object target,
   ) {
     if (property.isReadable) {
@@ -839,7 +839,7 @@ class BeanValidator implements SmartValidator {
       (a) => a is Constraint || a is Valid || a is Each || a is EachKey,
     )) {
       throw IntrospectionPartError(
-        introspection.beanType,
+        introspection.type,
         IntrospectionPart.read,
         "the validator reads property '${property.name}', which has "
         'constraints',

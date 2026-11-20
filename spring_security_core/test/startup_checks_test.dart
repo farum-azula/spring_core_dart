@@ -54,7 +54,7 @@ void main() {
               name: 'service',
               create: (_) => _Service(),
               annotatedMethods: [
-                BeanMethod<_Service>(
+                IntrospectedMethod<_Service>(
                   'delete',
                   invoke: (bean, _) => bean.delete(),
                   annotations: const [broken],
@@ -86,7 +86,7 @@ void main() {
               name: 'service',
               create: (_) => _Service(),
               annotatedMethods: [
-                BeanMethod<_Service>(
+                IntrospectedMethod<_Service>(
                   'delete',
                   invoke: (bean, _) => bean.delete(),
                   annotations: const [

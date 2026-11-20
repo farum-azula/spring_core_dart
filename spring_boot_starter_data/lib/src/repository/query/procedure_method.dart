@@ -120,7 +120,7 @@ final class FunctionQuery {
     required EntityConverter converter,
     required DataAccessException Function(Object error) translateError,
     required List<String> problems,
-    BeanIntrospector? introspector,
+    Introspector? introspector,
     RelationalMappingContext? mappingContext,
     NamingStrategy? naming,
   }) {

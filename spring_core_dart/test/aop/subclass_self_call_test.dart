@@ -37,7 +37,14 @@ class _$NestedProxy extends Nested {
     final i = _$invoker;
     return i == null
         ? super.outer()
-        : i.invoke(this, this, 0, const [], (args) => super.outer())! as String;
+        : i.invoke(
+                proxy: this,
+                target: this,
+                methodIndex: 0,
+                arguments: const [],
+                original: (args) => super.outer(),
+              )!
+              as String;
   }
 
   @override
@@ -45,7 +52,14 @@ class _$NestedProxy extends Nested {
     final i = _$invoker;
     return i == null
         ? super.inner()
-        : i.invoke(this, this, 1, const [], (args) => super.inner())! as String;
+        : i.invoke(
+                proxy: this,
+                target: this,
+                methodIndex: 1,
+                arguments: const [],
+                original: (args) => super.inner(),
+              )!
+              as String;
   }
 
   @override
@@ -53,7 +67,13 @@ class _$NestedProxy extends Nested {
     final i = _$invoker;
     return i == null
         ? super.viaProxy()
-        : i.invoke(this, this, 2, const [], (args) => super.viaProxy())!
+        : i.invoke(
+                proxy: this,
+                target: this,
+                methodIndex: 2,
+                arguments: const [],
+                original: (args) => super.viaProxy(),
+              )!
               as String;
   }
 
@@ -63,11 +83,11 @@ class _$NestedProxy extends Nested {
     return i == null
         ? super.outerLater()
         : i.invokeAsync<String>(
-            this,
-            this,
-            3,
-            const [],
-            (args) => super.outerLater(),
+            proxy: this,
+            target: this,
+            methodIndex: 3,
+            arguments: const [],
+            original: (args) => super.outerLater(),
           );
   }
 
@@ -77,11 +97,11 @@ class _$NestedProxy extends Nested {
     return i == null
         ? super.innerLater()
         : i.invokeAsync<String>(
-            this,
-            this,
-            4,
-            const [],
-            (args) => super.innerLater(),
+            proxy: this,
+            target: this,
+            methodIndex: 4,
+            arguments: const [],
+            original: (args) => super.innerLater(),
           );
   }
 }

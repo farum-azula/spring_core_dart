@@ -15,15 +15,15 @@ class Account {
   }
 }
 
-final accountIntrospection = BeanIntrospection<Account>(
+final accountIntrospection = Introspection<Account>(
   properties: [
-    BeanProperty<Account>(
+    IntrospectedProperty<Account>(
       'owner',
       type: String,
       get: (b) => b.owner,
       set: (b, v) => b.owner = v! as String,
     ),
-    BeanProperty<Account>(
+    IntrospectedProperty<Account>(
       'iban',
       type: String,
       get: (b) => b.iban,
@@ -37,9 +37,9 @@ class Code {
   String value = '';
 }
 
-final codeIntrospection = BeanIntrospection<Code>(
+final codeIntrospection = Introspection<Code>(
   properties: [
-    BeanProperty<Code>(
+    IntrospectedProperty<Code>(
       'value',
       type: String,
       get: (b) => b.value,
@@ -54,7 +54,7 @@ final codeIntrospection = BeanIntrospection<Code>(
 );
 
 void main() {
-  final introspector = BeanIntrospector(
+  final introspector = Introspector(
     introspections: [
       personIntrospection,
       addressIntrospection,
@@ -147,7 +147,7 @@ void main() {
     DataBinder binder(Object target) => DataBinder(
       target,
       objectName: 'form',
-      introspector: BeanIntrospector(
+      introspector: Introspector(
         introspections: [
           personIntrospection,
           addressIntrospection,
@@ -197,7 +197,7 @@ void main() {
     test('BeanWrapper wraps setter errors in MethodInvocationException', () {
       final wrapper = BeanWrapper(
         Account(),
-        introspector: BeanIntrospector(introspections: [accountIntrospection]),
+        introspector: Introspector(introspections: [accountIntrospection]),
       );
       expect(
         () => wrapper.setPropertyValue('iban', 'DE00'),

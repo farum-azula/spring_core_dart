@@ -295,7 +295,8 @@ List<String> docFiles() {
             ((entity.path.endsWith('.md') &&
                     !entity.path.endsWith('CHANGELOG.md')) ||
                 (entity.path.endsWith('.dart') &&
-                    !entity.path.endsWith('.spring.dart'))))
+                    !entity.path.endsWith('.spring.dart') &&
+                    !entity.path.contains('/spring_gen/'))))
           entity.path,
   ];
   return files..sort();

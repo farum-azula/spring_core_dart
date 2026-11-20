@@ -4,8 +4,8 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
-import 'package:spring_core_dart_generator/src/core/module_emitter.dart';
-import 'package:spring_core_dart_generator/src/core/spel_compiler.dart';
+import 'package:spring_core_dart_generator/src/core/beans/module_emitter.dart';
+import 'package:spring_core_dart_generator/src/core/spel/spel_compiler.dart';
 import 'package:spring_core_dart_generator/src/data/data_model.dart';
 import 'package:spring_core_dart_generator/src/data/part_tree.dart';
 import 'package:spring_core_dart_generator/src/data/query_expressions.dart';

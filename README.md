@@ -556,7 +556,7 @@ class SignupForm {
 }
 
 // The generated descriptions of the @Introspected classes.
-final introspector = context.getBean<BeanIntrospector>();
+final introspector = context.getBean<Introspector>();
 
 final binder =
     DataBinder(SignupForm(), objectName: 'signup', introspector: introspector)

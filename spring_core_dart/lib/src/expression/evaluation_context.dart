@@ -792,7 +792,7 @@ final class StandardOperatorOverloader implements OperatorOverloader {
 /// one to use for expressions you or your application wrote.
 ///
 /// It reads maps ([MapAccessor]), the properties and methods of
-/// `@Introspected` classes registered in `BeanIntrospector.shared`
+/// `@Introspected` classes registered in `Introspector.shared`
 /// (`IntrospectionPropertyAccessor` and `IntrospectionMethodResolver`,
 /// which replace Java's reflection), and the common properties and
 /// methods of core Dart types. It supports variables, functions, `T(...)`
@@ -830,7 +830,7 @@ final class StandardOperatorOverloader implements OperatorOverloader {
 /// ```
 ///
 /// Spring reads `name` reflectively; in Dart the class must be
-/// `@Introspected` (registered in `BeanIntrospector.shared`) or have an
+/// `@Introspected` (registered in `Introspector.shared`) or have an
 /// accessor.
 class StandardEvaluationContext implements EvaluationContext {
   /// Creates a context whose `#root` is [rootObject] (none when omitted;
@@ -841,10 +841,10 @@ class StandardEvaluationContext implements EvaluationContext {
   Object? rootObject;
 
   final _introspectionAccessor = IntrospectionPropertyAccessor(
-    BeanIntrospector.shared,
+    Introspector.shared,
   );
   final _introspectionResolver = IntrospectionMethodResolver(
-    BeanIntrospector.shared,
+    Introspector.shared,
   );
 
   @override
@@ -1134,7 +1134,7 @@ final class SimpleEvaluationContextBuilder {
            [
              const MapAccessor(),
              // Spring's DataBindingPropertyAccessor: public properties.
-             IntrospectionPropertyAccessor(BeanIntrospector.shared),
+             IntrospectionPropertyAccessor(Introspector.shared),
              const BuiltinPropertyAccessor(),
            ];
 
@@ -1147,7 +1147,7 @@ final class SimpleEvaluationContextBuilder {
   Object? _root;
 
   /// Lets expressions call instance methods: those of `@Introspected`
-  /// classes in `BeanIntrospector.shared` (Spring's
+  /// classes in `Introspector.shared` (Spring's
   /// `DataBindingMethodResolver`) and the built-in ones of core Dart
   /// types, such as `name.toUpperCase()`. Off by default.
   ///
@@ -1216,7 +1216,7 @@ final class SimpleEvaluationContextBuilder {
     List.unmodifiable([
       ..._resolvers,
       if (_instanceMethods) ...[
-        IntrospectionMethodResolver(BeanIntrospector.shared),
+        IntrospectionMethodResolver(Introspector.shared),
         const BuiltinMethodResolver(),
       ],
     ]),

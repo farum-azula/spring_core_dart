@@ -12,9 +12,9 @@ import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
 import 'package:spring_core_dart_generator/builder.dart';
-import 'package:spring_core_dart_generator/src/core/dart_define_keys.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/properties/dart_define_keys.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
 
 const _main = r'''
@@ -105,7 +105,7 @@ class Mailer {
   );
   await readerWriter.testing.loadIsolateSources();
   final result = await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -366,13 +366,18 @@ void main() {
     });
   });
 
-  test('springApplication lists the keys as const fromEnvironment', () async {
-    final (_, output) = await _build();
-    expect(output, contains('dartDefines: {'));
-    final flat = output.replaceAll(RegExp(r'\s'), '');
+  test('the env part lists the keys in a constant of fromEnvironment, '
+      'which springApplication passes on', () async {
+    final (sources, output) = await _build();
+    expect(output, contains("part 'main.spring.env.dart';"));
+    expect(output, contains(r'dartDefines: _$dartDefines,'));
+    final environment = sources['bin/spring_gen/main.spring.env.dart']!;
+    expect(environment, contains("part of 'main.spring.dart';"));
+    expect(environment, contains(r'const Map<String, String> _$dartDefines'));
+    final flat = environment.replaceAll(RegExp(r'\s'), '');
     String entry(String key) =>
-        "if(constbool.hasEnvironment('$key'))"
-        "'$key':constString.fromEnvironment('$key'";
+        "if(bool.hasEnvironment('$key'))"
+        "'$key':String.fromEnvironment('$key'";
     for (final key in [
       'API_URL', // @Value placeholder
       'api.fallback-url', // nested default + config file key
@@ -392,7 +397,7 @@ void main() {
     ]) {
       expect(flat, contains(entry(key)), reason: key);
     }
-    expect(output, isNot(contains("'not.read'")));
+    expect(environment, isNot(contains("'not.read'")));
   });
 
   test('defines reach the running application (dart -D)', () async {

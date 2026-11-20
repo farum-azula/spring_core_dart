@@ -10,20 +10,20 @@ class Server {
   int port = 80;
 }
 
-BeanIntrospection<Server> describe(Set<IntrospectionPart> parts) {
+Introspection<Server> describe(Set<IntrospectionPart> parts) {
   final read = parts.contains(IntrospectionPart.read);
   final write = parts.contains(IntrospectionPart.write);
-  return BeanIntrospection<Server>(
+  return Introspection<Server>(
     parts: parts,
     properties: [
-      BeanProperty<Server>(
+      IntrospectedProperty<Server>(
         'host',
         type: String,
         typeInfo: const ClassType<String>(),
         get: read ? (b) => b.host : null,
         set: write ? (b, v) => b.host = v! as String : null,
       ),
-      BeanProperty<Server>(
+      IntrospectedProperty<Server>(
         'port',
         type: int,
         typeInfo: const ClassType<int>(),
@@ -45,7 +45,7 @@ void main() {
 
   Binder binder(Set<IntrospectionPart> parts) => Binder(
     environment({'app.host': 'example.org', 'app.port': '8443'}),
-    introspector: BeanIntrospector()..register(describe(parts)),
+    introspector: Introspector()..register(describe(parts)),
   );
 
   test('a class described with getters and setters is bound', () {

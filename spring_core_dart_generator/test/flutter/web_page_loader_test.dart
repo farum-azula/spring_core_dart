@@ -6,16 +6,15 @@
 library;
 
 import 'dart:convert';
-
 import 'dart:io';
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:crypto/crypto.dart';
+import 'package:spring_core_dart_generator/src/core/builder/build_download.dart';
 import 'package:spring_core_dart_generator/src/flutter/spring_key_files.dart';
 import 'package:spring_core_dart_generator/src/flutter/theme_references.dart';
 import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart';
-import 'package:spring_core_dart_generator/src/flutter/web_loader_download.dart';
 import 'package:spring_core_dart_generator/src/flutter/web_page_head.dart';
 import 'package:spring_core_dart_generator/src/flutter/web_page_loader.dart';
 import 'package:spring_core_dart_generator/src/flutter/web_page_loader_builder.dart';
@@ -540,7 +539,7 @@ spring.flutter.theme:
       Map<String, String> web = const {},
       String pubspec =
           'name: app\ndependencies:\n  spring_boot_starter_flutter: any\n',
-      WebLoaderFetch? fetch,
+      BuildFetch? fetch,
     }) async {
       final files = _Files({
         'web/index.html': ?page,

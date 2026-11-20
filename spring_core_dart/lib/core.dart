@@ -20,7 +20,10 @@
 ///   locations; `AntPathMatcher` for wildcards.
 /// - `Ordered`, `Order` and `OrderComparator`: the order of beans run or
 ///   injected in turn.
-/// - `SpringLog` and `@Log()`: logging for the framework and applications.
+/// - `SpringLog` and `@Log()`: logging for the framework and applications;
+///   `SecretNames`, the rule for names whose values are masked.
+/// - `deepEquals` and `deepHash`: equality and hash of collections by
+///   content.
 ///
 /// ```dart
 /// // A tool that reads the application's configuration without a
@@ -52,6 +55,7 @@ export 'package:spring_core_dart/src/core/convert/default_conversion_service.dar
 export 'package:spring_core_dart/src/core/convert/duration_style.dart';
 export 'package:spring_core_dart/src/core/convert/generic_conversion_service.dart';
 export 'package:spring_core_dart/src/core/crypto/sha256.dart';
+export 'package:spring_core_dart/src/core/deep_equality.dart';
 export 'package:spring_core_dart/src/core/env/brace_placeholders.dart';
 export 'package:spring_core_dart/src/core/env/cloud_platform.dart';
 export 'package:spring_core_dart/src/core/env/command_line_property_source.dart';
@@ -93,3 +97,4 @@ export 'package:spring_core_dart/src/core/log_format.dart';
 export 'package:spring_core_dart/src/core/metrics/application_startup.dart';
 export 'package:spring_core_dart/src/core/order.dart';
 export 'package:spring_core_dart/src/core/principal.dart';
+export 'package:spring_core_dart/src/core/secret_names.dart';

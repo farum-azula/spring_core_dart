@@ -47,7 +47,7 @@ extension _EntityEmitter on DataEmitter {
   // closures that read one, call the constructor with them and set one.
   Expression _entityIntrospection(EntityModel model) {
     final element = model.element;
-    final beanType = emission.type(model.type, element);
+    final entityType = emission.type(model.type, element);
     final infos = [
       for (final property in model.properties)
         emission.typeInfo(property.type, element),
@@ -102,7 +102,7 @@ extension _EntityEmitter on DataEmitter {
         ),
         'create': emission.closure(
           ['v'],
-          beanType
+          entityType
               .newInstance(
                 [
                   for (final argument in model.arguments)
@@ -136,7 +136,7 @@ extension _EntityEmitter on DataEmitter {
             lambda: true,
           ),
       },
-      [beanType],
+      [entityType],
     );
   }
 

@@ -5,9 +5,11 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -26,7 +28,7 @@ Future<TestBuilderResult> _build(String models) async {
   );
   await readerWriter.testing.loadIsolateSources();
   return await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/models.dart': '$_header$models',
@@ -41,20 +43,18 @@ Future<TestBuilderResult> _build(String models) async {
 Future<(String, List<String>)> _generate(String models) async {
   final result = await _build(models);
   expect(result.errors, isEmpty);
-  final output = result.readerWriter.testing.readString(result.outputs.single);
+  final output = moduleText(result);
   final errors = await resolveSources<List<String>>(
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/models.dart': '$_header$models',
-      'pkg|lib/spring_gen/src/beans.spring.dart': output,
+      ...moduleSources(output),
     },
     (resolver) async {
       final library = await resolver.libraryFor(
         AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
       );
-      final result = await library.session.getErrors(
-        library.firstFragment.source.fullName,
-      );
+      final result = await moduleErrors(library);
       return [
         if (result case ErrorsResult(:final diagnostics))
           for (final diagnostic in diagnostics)
@@ -65,7 +65,7 @@ Future<(String, List<String>)> _generate(String models) async {
     resolverFor: 'pkg|lib/spring_gen/src/beans.spring.dart',
     readAllSourcesFromFilesystem: true,
   );
-  return (_normalize(output), errors);
+  return (_normalize(moduleText(result)), errors);
 }
 
 Future<String> _errors(String models) async {
@@ -165,10 +165,10 @@ void main() {
     '@JsonValue on class properties and methods is kept for the runtime',
     () {
       // Constant descriptions: the type comes from typeInfo.
-      expect(output, _has("BeanProperty<Isbn>(r'value', typeInfo:"));
+      expect(output, _has("IntrospectedProperty<Isbn>(r'value', typeInfo:"));
       expect(output, _has('annotations: [JsonValue()]'));
-      expect(output, _has("BeanProperty<Code>(r'text', typeInfo:"));
-      expect(output, _has("BeanMethod<Label>(r'render',"));
+      expect(output, _has("IntrospectedProperty<Code>(r'text', typeInfo:"));
+      expect(output, _has("IntrospectedMethod<Label>(r'render',"));
       expect(
         output,
         _has("JsonProperty(r'pwd', access: JsonPropertyAccess.writeOnly)"),

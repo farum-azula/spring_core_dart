@@ -9,13 +9,14 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/core/metadata_locations.dart';
-import 'package:spring_core_dart_generator/src/core/module_emitter.dart';
-import 'package:spring_core_dart_generator/src/core/package_directory.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/core/spring_metadata.dart';
-import 'package:spring_core_dart_generator/src/core/spring_metadata_builder.dart';
-import 'package:spring_core_dart_generator/src/core/starter_generation.dart';
+import 'package:spring_core_dart_generator/src/core/beans/module_emitter.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_generation.dart';
+import 'package:spring_core_dart_generator/src/core/builder/parts_owner_library.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/metadata/metadata_locations.dart';
+import 'package:spring_core_dart_generator/src/core/metadata/spring_metadata.dart';
+import 'package:spring_core_dart_generator/src/core/metadata/spring_metadata_builder.dart';
 import 'package:spring_core_dart_generator/src/flutter/asset_check.dart';
 import 'package:spring_core_dart_generator/src/flutter/flutter_emitter.dart';
 import 'package:spring_core_dart_generator/src/flutter/flutter_scanning.dart';
@@ -54,7 +55,7 @@ import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart';
 ///   Basket get basket => SpringScope.beanOf<Basket>(this, ...);
 /// }
 /// ```
-final class FlutterGeneration extends StarterGeneration {
+final class FlutterGeneration extends PackageGeneration {
   /// The part; it keeps no state of a build.
   const FlutterGeneration();
 
@@ -99,7 +100,7 @@ final class FlutterGeneration extends StarterGeneration {
   /// Checks that the props class of every `@ThemeLoaderKind` of the module
   /// that takes one (`DoorsLoaderProps`) is a class the module can name:
   /// the keys builder writes it into `theme.spring.keys.dart`, a part of
-  /// the output of [SpringKeyFiles.parentLibrary] only, for the kinds
+  /// the output of [PartsOwnerLibrary.find] only, for the kinds
   /// [SpringKeyFiles.loaderKinds] finds in the source text. A kind in
   /// another module (a nested `@ComponentScan`, a `bin/` application), or
   /// one the text does not show (a name that is no string literal), is a
@@ -114,26 +115,26 @@ final class FlutterGeneration extends StarterGeneration {
     }
     final buildStep = build.buildStep;
     final input = buildStep.inputId;
-    final choice = SpringKeyFiles.parentLibrary(
-      await SpringKeyFiles.scanLibraries(buildStep),
-    );
+    final scanLibraries = await PartsOwnerLibrary.scanLibrariesOf(buildStep);
+    final owner = PartsOwnerLibrary.find(scanLibraries);
+    final noOwnerReason = PartsOwnerLibrary.whyNotFound(scanLibraries);
     final known = (await SpringKeyFiles.loaderKinds(buildStep)).own;
     for (final kind in typed) {
       final props = LoaderKinds.propsClass(kind.name);
       final what =
           "@ThemeLoaderKind('${kind.name}') on ${kind.element.name ?? '?'}";
       build.collectErrors(() {
-        if (choice.parent != input) {
-          final where = switch (choice.parent) {
-            final parent? =>
-              'a part of the generated library of ${parent.path}, which '
-                  'the module of ${input.path} cannot use: move the class '
-                  'into the module of ${parent.path}',
+        if (owner?.source != input) {
+          final where = switch (owner) {
+            final owner? =>
+              'a part of the generated library of ${owner.source.path}, '
+                  'which the module of ${input.path} cannot use: move the '
+                  'class into the module of ${owner.source.path}',
             null =>
               'a part of the generated library of the '
                   "package's @SpringBootApplication in lib/ (else of its "
                   'outermost @ComponentScan there), and there is none '
-                  '(${choice.error ?? 'no library of lib/ has either'}): '
+                  '(${noOwnerReason ?? 'no library of lib/ has either'}): '
                   'declare one over the class',
           };
           throw InvalidGenerationSource(
@@ -158,19 +159,21 @@ final class FlutterGeneration extends StarterGeneration {
   /// The generated key files (`theme.spring.keys.dart`,
   /// `messages.spring.keys.dart`) that are `part of` the output of the
   /// input: when the package uses the Flutter starter, the input is the
-  /// parent library ([SpringKeyFiles.parentLibrary]), and the keys builder
+  /// owner of the parts ([PartsOwnerLibrary.find]), and the keys builder
   /// writes them (it decides with the same [SpringKeyFiles.generate]).
   @override
   Future<ModuleParts> moduleParts(BuildStep buildStep) async {
     if (!await SpringKeyFiles.usesFlutterStarter(buildStep)) {
       return ModuleParts.none;
     }
-    final scans = await SpringKeyFiles.scanLibraries(buildStep);
+    final owner = PartsOwnerLibrary.find(
+      await PartsOwnerLibrary.scanLibrariesOf(buildStep),
+    );
     // The same choice as the keys builder. That builder may be disabled,
     // and a part cannot be probed with canRead: the keys builder writes to
     // source in its own phase, so the file is not readable from this one.
     // The parts are therefore decided by the shared computation.
-    if (SpringKeyFiles.parentLibrary(scans).parent != buildStep.inputId) {
+    if (owner == null || owner.source != buildStep.inputId) {
       return ModuleParts.none;
     }
     // Read as the keys builder reads them, whatever the entry point.
@@ -184,12 +187,11 @@ final class FlutterGeneration extends StarterGeneration {
       KeysDiagnostics(),
       loaderKinds: await SpringKeyFiles.loaderKinds(buildStep),
     );
-    final parent = SpringKeyFiles.parentOf(buildStep.inputId);
     final paths = [
       if (parts.theme != null)
-        SpringKeyFiles.partPath(parent, SpringKeyFiles.themeFile),
+        owner.partDirectivePath(SpringKeyFiles.themeFile),
       if (parts.messages != null)
-        SpringKeyFiles.partPath(parent, SpringKeyFiles.messagesFile),
+        owner.partDirectivePath(SpringKeyFiles.messagesFile),
     ];
     return paths.isEmpty
         ? ModuleParts.none

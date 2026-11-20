@@ -11,7 +11,7 @@ const _source = 'package:spring_boot_dart#ValidationAutoConfiguration';
 ///
 /// - `defaultValidator`, a [BeanValidator] that checks constraint
 ///   annotations such as `@NotBlank()`, using the context's
-///   [BeanIntrospector]. Inject `Validator` to validate objects by hand.
+///   [Introspector]. Inject `Validator` to validate objects by hand.
 ///   It is left out when the application declares its own [BeanValidator];
 ///   a bean that only implements the plain `Validator` interface does not
 ///   replace it (as in Spring Boot, where only a
@@ -37,8 +37,7 @@ final validationAutoConfiguration = <BeanDefinition<Object>>[
     // Method-level conditions (Boot's @Bean @ConditionalOnMissingBean),
     // so not a ConditionGroup shared by both beans.
     conditions: const [ConditionalOnMissingBean(BeanValidator)],
-    create: (r) =>
-        BeanValidator(introspector: r.dependency<BeanIntrospector>()),
+    create: (r) => BeanValidator(introspector: r.dependency<Introspector>()),
   ),
   BeanDefinition<MethodValidationPostProcessor>(
     name: 'methodValidationPostProcessor',
@@ -54,7 +53,7 @@ final validationAutoConfiguration = <BeanDefinition<Object>>[
     conditions: const [ConditionalOnMissingBean(MethodValidationPostProcessor)],
     create: (r) => MethodValidationPostProcessor(
       r.provider<BeanValidator>(name: 'validator').getIfUnique() ??
-          BeanValidator(introspector: r.dependency<BeanIntrospector>()),
+          BeanValidator(introspector: r.dependency<Introspector>()),
       [_isConfigurationProperties],
     ),
   ),

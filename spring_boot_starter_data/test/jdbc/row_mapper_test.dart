@@ -125,7 +125,7 @@ void main() {
     });
 
     test('a class that is not introspected is refused with advice', () {
-      final m = DataClassRowMapper<Person>(introspector: BeanIntrospector());
+      final m = DataClassRowMapper<Person>(introspector: Introspector());
       expect(
         () => m(row(['first_name'], ['A'])),
         throwsA(

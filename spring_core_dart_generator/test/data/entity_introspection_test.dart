@@ -2,7 +2,7 @@
 // data layer: an `EntityIntrospection` for each `@Table` class and each
 // DTO a `@Query` returns (properties, and the closures that read, create
 // and set an instance), registered as one `EntityIntrospections` bean per
-// module, and no `BeanIntrospection` unless something else asks for one.
+// module, and no `Introspection` unless something else asks for one.
 //
 // The sources use the real starter, so the generated code is checked
 // against the real runtime API.
@@ -10,10 +10,12 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -33,7 +35,7 @@ Future<TestBuilderResult> _build(Map<String, Object> sources) async {
   );
   await readerWriter.testing.loadIsolateSources();
   return await testBuilder(
-    SpringBuilder(generations: starterGenerations, proxyMode: ProxyMode.none),
+    SpringBuilder(generations: packageGenerations, proxyMode: ProxyMode.none),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -55,7 +57,8 @@ Future<String> _generate(String model) async {
     'lib/src/model.dart': '$_header$model',
   });
   expect(result.errors, isEmpty);
-  return result.readerWriter.testing.readString(
+  return moduleText(
+    result,
     AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
   );
 }
@@ -66,15 +69,13 @@ Future<List<String>> _compileErrors(String model, String generated) =>
       {
         'pkg|lib/src/beans.dart': _scan,
         'pkg|lib/src/model.dart': '$_header$model',
-        'pkg|lib/spring_gen/src/beans.spring.dart': generated,
+        ...moduleSources(generated),
       },
       (resolver) async {
         final library = await resolver.libraryFor(
           AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
         );
-        final result = await library.session.getErrors(
-          library.firstFragment.source.fullName,
-        );
+        final result = await moduleErrors(library);
         return [
           if (result case ErrorsResult(:final diagnostics))
             for (final diagnostic in diagnostics)
@@ -266,6 +267,12 @@ abstract interface class OtherRepository
   Future<List<BookCard>> cards();
 }
 ''';
+
+// The core's description of a class, `Introspection` followed by [code]
+// (`<Book>(`) in the flattened output, and not the data starter's
+// `EntityIntrospection<Book>`.
+Matcher _introspection(String code) =>
+    matches(RegExp('(?<!Entity)Introspection${RegExp.escape(code)}'));
 
 void main() {
   late String raw;
@@ -573,8 +580,8 @@ EntityIntrospection<BookCard>(
     }
   });
 
-  test('a @Table class gets no BeanIntrospection', () {
-    expect(output, isNot(contains('BeanIntrospection')));
+  test('a @Table class gets no Introspection', () {
+    expect(output, isNot(_introspection('<')));
     expect(output, isNot(contains('introspections:')));
     // Not the generic one of AggregateReference either.
     expect(output, isNot(contains('AggregateReference<dynamic')));
@@ -586,7 +593,7 @@ EntityIntrospection<BookCard>(
 
   group('beside other introspection', () {
     test(
-      'an explicit @Introspected still gets its BeanIntrospection',
+      'an explicit @Introspected still gets its Introspection',
       () async {
         final output = _normalize(
           await _generate('''
@@ -598,7 +605,7 @@ class Book {
 }
 '''),
         );
-        expect(output, _has('BeanIntrospection<Book>('));
+        expect(output, _introspection('<Book>('));
         expect(output, _has('EntityIntrospection<Book>('));
       },
     );
@@ -612,7 +619,7 @@ class Plain {
 }
 '''),
       );
-      expect(output, _has('BeanIntrospection<Plain>('));
+      expect(output, _introspection('<Plain>('));
       expect(output, isNot(contains('Entity')));
     });
   });
@@ -659,12 +666,12 @@ class Account {
         'nested ones too, with no @Introspected', () async {
       final raw = await _generate(model);
       final output = _normalize(raw);
-      expect(output, _has('BeanIntrospection<Settings>('));
-      expect(output, _has('BeanIntrospection<Layout>('));
-      expect(output, _has('BeanIntrospection<Address>('));
+      expect(output, _introspection('<Settings>('));
+      expect(output, _introspection('<Layout>('));
+      expect(output, _introspection('<Address>('));
       // What no @Json property holds is not, and neither is the entity.
-      expect(output, isNot(_has('BeanIntrospection<Plain>')));
-      expect(output, isNot(_has('BeanIntrospection<Account>')));
+      expect(output, isNot(_introspection('<Plain>')));
+      expect(output, isNot(_introspection('<Account>')));
       expect(
         output,
         _has('''
@@ -679,7 +686,7 @@ class Account {
       final output = _normalize(
         await _generate(model.replaceAll(RegExp(r'@Json\([^)]*\)'), '')),
       );
-      expect(output, isNot(contains('BeanIntrospection')));
+      expect(output, isNot(_introspection('<')));
     });
   });
 
@@ -716,7 +723,7 @@ abstract interface class FilterRepository
       'a compiled expression needs no description of its arguments',
       () async {
         final output = _normalize(await _generate(repository));
-        expect(output, isNot(_has('BeanIntrospection<Filter>')));
+        expect(output, isNot(_introspection('<Filter>')));
         expect(
           output,
           _has(
@@ -729,9 +736,9 @@ abstract interface class FilterRepository
 
     test('an interpreted one describes the types of the arguments', () async {
       final output = _normalize(await _generate(repository));
-      expect(output, _has('BeanIntrospection<Picked>('));
+      expect(output, _introspection('<Picked>('));
       // `#{#entityName}` reads no argument.
-      expect(output, isNot(_has('BeanIntrospection<Other>')));
+      expect(output, isNot(_introspection('<Other>')));
     });
 
     test('without an expression nothing is introspected', () async {
@@ -742,7 +749,7 @@ abstract interface class FilterRepository
               .replaceAll(':#{T(String).valueOf(#picked.name)}', ':picked'),
         ),
       );
-      expect(output, isNot(contains('BeanIntrospection')));
+      expect(output, isNot(_introspection('<')));
     });
   });
 
@@ -769,10 +776,12 @@ void main(List<String> args) => runApplication(args);
             'class Author { Author({required this.name}); String name; }\n',
       });
       expect(result.errors, isEmpty);
-      final application = result.readerWriter.testing.readString(
+      final application = moduleText(
+        result,
         AssetId('pkg', 'lib/spring_gen/main.spring.dart'),
       );
-      final library = result.readerWriter.testing.readString(
+      final library = moduleText(
+        result,
         AssetId('pkg', 'lib/spring_gen/library/scan.spring.dart'),
       );
       expect(application, contains("r'entityIntrospections#application'"));

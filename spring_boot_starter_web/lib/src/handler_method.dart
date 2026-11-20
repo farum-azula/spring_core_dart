@@ -58,7 +58,7 @@ final class HandlerMethod {
 
   /// The method as the generator described it: its name, parameters,
   /// annotations and result type, and a way to invoke it.
-  final BeanMethod<Object> method;
+  final IntrospectedMethod<Object> method;
 
   /// The annotations on the controller class, such as its
   /// `@RequestMapping` or `@CrossOrigin`.
@@ -126,7 +126,7 @@ final class MethodParameter {
 
   /// The generator's description of the parameter, with whether it is
   /// named and whether it is required.
-  final BeanParameter parameter;
+  final IntrospectedParameter parameter;
 
   /// The parameter's name in the source code.
   String get name => parameter.name;

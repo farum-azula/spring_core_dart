@@ -72,31 +72,31 @@ class UploadClientImpl implements UploadClient {
         ProxyMethod(
           'upload',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'isbn',
               type: ClassType<String>(),
               isRequired: true,
               annotations: [PathVariable()],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'file',
               type: ClassType<MultipartFile>(),
               isRequired: true,
               annotations: [RequestPart('file')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'meta',
               type: ClassType<Book>(),
               isRequired: true,
               annotations: [RequestPart('meta')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'note',
               type: ClassType<String>(),
               isRequired: true,
               annotations: [RequestPart('note')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'draft',
               type: ClassType<bool>(),
               isRequired: true,
@@ -122,49 +122,49 @@ class UploadClientImpl implements UploadClient {
         ProxyMethod(
           'kinds',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'files',
               type: ListType<MultipartFile>(ClassType<MultipartFile>()),
               isRequired: true,
               annotations: [RequestPart('files')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'raw',
               type: ClassType<Uint8List>(),
               isRequired: true,
               annotations: [RequestPart('raw')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'ints',
               type: ListType<int>(ClassType<int>()),
               isRequired: true,
               annotations: [RequestPart('ints')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'count',
               type: ClassType<int>(),
               isRequired: true,
               annotations: [RequestPart('count')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'shelf',
               type: EnumType<Shelf>(Shelf.values),
               isRequired: true,
               annotations: [RequestPart('shelf')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'at',
               type: ClassType<DateTime>(),
               isRequired: true,
               annotations: [RequestPart('at')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'tags',
               type: ListType<String>(ClassType<String>()),
               isRequired: true,
               annotations: [RequestPart('tags')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'labels',
               type: MapType<String, Object?>(
                 ClassType<String>(),
@@ -173,7 +173,7 @@ class UploadClientImpl implements UploadClient {
               isRequired: true,
               annotations: [RequestPart('labels')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'books',
               type: ListType<Book>(ClassType<Book>()),
               isRequired: true,
@@ -198,19 +198,19 @@ class UploadClientImpl implements UploadClient {
         ProxyMethod(
           'optional',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'file',
               type: ClassType<MultipartFile>(),
               isRequired: true,
               annotations: [RequestPart('file')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'note',
               type: ClassType<String>(nullable: true),
               symbol: #note,
               annotations: [RequestPart('note')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'cover',
               type: ClassType<MultipartFile>(nullable: true),
               symbol: #cover,
@@ -293,13 +293,13 @@ class BadUploadClientImpl implements BadUploadClient {
         ProxyMethod(
           'both',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'file',
               type: ClassType<MultipartFile>(),
               isRequired: true,
               annotations: [RequestPart('file')],
             ),
-            BeanParameter(
+            IntrospectedParameter(
               'book',
               type: ClassType<Book>(),
               isRequired: true,
@@ -317,7 +317,7 @@ class BadUploadClientImpl implements BadUploadClient {
         ProxyMethod(
           'json',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'file',
               type: ClassType<MultipartFile>(),
               isRequired: true,
@@ -335,7 +335,7 @@ class BadUploadClientImpl implements BadUploadClient {
         ProxyMethod(
           'roles',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'a',
               type: ClassType<String>(),
               isRequired: true,

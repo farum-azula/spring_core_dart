@@ -1,10 +1,13 @@
 // @Observed and the build: without spring.observations.annotations.enabled
 // the advisor's module is left out and the bean marked @Observed gets no
 // proxy class; with it, the bean gets one and the module is in the app.
+import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _main = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -32,7 +35,7 @@ Future<String> _module(String config) async {
   );
   await readerWriter.testing.loadIsolateSources();
   final result = await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     {
       'pkg|lib/main.dart': _main,
       'pkg|lib/resources/application.yml': config,
@@ -42,11 +45,7 @@ Future<String> _module(String config) async {
     flattenOutput: true,
   );
   expect(result.errors, isEmpty);
-  return result.readerWriter.testing.readString(
-    result.outputs.singleWhere(
-      (o) => o.path == 'lib/spring_gen/main.spring.dart',
-    ),
-  );
+  return moduleText(result, AssetId('pkg', 'lib/spring_gen/main.spring.dart'));
 }
 
 void main() {

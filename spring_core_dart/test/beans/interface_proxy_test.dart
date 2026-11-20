@@ -24,8 +24,12 @@ class _GreeterImpl implements Greeter {
         ProxyMethod(
           'greet',
           parameters: const [
-            BeanParameter('name', type: ClassType<String>(), isRequired: true),
-            BeanParameter(
+            IntrospectedParameter(
+              'name',
+              type: ClassType<String>(),
+              isRequired: true,
+            ),
+            IntrospectedParameter(
               'greeting',
               type: ClassType<String>(),
               symbol: #greeting,

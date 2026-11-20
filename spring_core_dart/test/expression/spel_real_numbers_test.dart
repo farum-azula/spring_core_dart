@@ -11,15 +11,15 @@ class _Price {
   String label(String prefix) => '$prefix$count';
 }
 
-final _priceIntrospection = BeanIntrospection<_Price>(
+final _priceIntrospection = Introspection<_Price>(
   properties: [
-    BeanProperty<_Price>(
+    IntrospectedProperty<_Price>(
       'amount',
       type: double,
       get: (p) => p.amount,
       set: (p, v) => p.amount = v! as double,
     ),
-    BeanProperty<_Price>(
+    IntrospectedProperty<_Price>(
       'count',
       type: int,
       get: (p) => p.count,
@@ -27,7 +27,7 @@ final _priceIntrospection = BeanIntrospection<_Price>(
     ),
   ],
   methods: [
-    BeanMethod<_Price>(
+    IntrospectedMethod<_Price>(
       'label',
       invoke: (p, a) => p.label(a[0]! as String),
       parameterTypes: [String],
@@ -40,7 +40,7 @@ void main() {
   Object? eval(String text, [Object? root]) =>
       parser.parseExpression(text).getValue(StandardEvaluationContext(root));
 
-  setUpAll(() => BeanIntrospector.shared.register(_priceIntrospection));
+  setUpAll(() => Introspector.shared.register(_priceIntrospection));
 
   group('real numbers keep their kind (also on the web)', () {
     test('through selection', () {

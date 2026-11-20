@@ -52,7 +52,7 @@ final supabaseRealtimeAutoConfiguration = <BeanDefinition<Object>>[
       templates: r.dependency<CallTemplates>(),
       mapper:
           r.optionalDependency<ObjectMapper>() ??
-          ObjectMapper(introspector: r.dependency<BeanIntrospector>()),
+          ObjectMapper(introspector: r.dependency<Introspector>()),
       operations:
           r.optionalDependencyList<RealtimeChannelOperation>() ??
           const <RealtimeChannelOperation>[],

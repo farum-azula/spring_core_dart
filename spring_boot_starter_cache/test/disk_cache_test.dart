@@ -36,9 +36,9 @@ final class _Resources implements ResourceLoader {
 }
 
 void main() {
-  final introspector = BeanIntrospector()
+  final introspector = Introspector()
     ..register(
-      BeanIntrospection<Hero>(
+      Introspection<Hero>(
         fromJson: Hero.fromJson,
         toJson: (hero) => hero.toJson(),
         className: 'Hero',

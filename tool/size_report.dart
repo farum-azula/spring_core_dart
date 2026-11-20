@@ -206,7 +206,7 @@ InstructionReport aggregateInstructions(
     total += size;
     final group = groupOf(library, repoRoot: repoRoot);
     groups[group] = (groups[group] ?? 0) + size;
-    if (library.contains('.spring.dart')) {
+    if (isGeneratedLibrary(library)) {
       final name = displayLibrary(library, repoRoot: repoRoot);
       generated[name] = (generated[name] ?? 0) + size;
       final className = entry['c'] as String?;
@@ -502,7 +502,20 @@ Future<void> main(List<String> args) async {
   }
 }
 
-/// Reads every `*.spring.dart` under [root] (outside [skippedDirectories]).
+/// Whether [path] (a file or a library URI) is generated code of a module:
+/// a `*.spring.dart`, or one of the files beside it (its descriptions, the
+/// binding of its `@ConfigurationProperties` classes, its proxies, an
+/// application's debug part and the part of its `--dart-define` values).
+bool isGeneratedLibrary(String path) =>
+    path.contains('.spring.dart') ||
+    path.endsWith('.spring.introspection.dart') ||
+    path.endsWith('.spring.properties.dart') ||
+    path.endsWith('.spring.proxies.dart') ||
+    path.endsWith('.spring.debug.dart') ||
+    path.endsWith('.spring.env.dart');
+
+/// Reads every generated module file (`*.spring.dart` and the files beside
+/// it, [isGeneratedLibrary]) under [root] (outside [skippedDirectories]).
 SourceReport _scanSources(String root) {
   final files = <String, List<int>>{};
   final packageDirs = <String>{};
@@ -517,7 +530,7 @@ SourceReport _scanSources(String root) {
           walk(entity);
         }
       } else if (entity is File) {
-        if (name.endsWith('.spring.dart')) {
+        if (isGeneratedLibrary(relative)) {
           files[relative] = entity.readAsBytesSync();
         } else if (name == 'pubspec.yaml') {
           packageDirs.add(p.posix.dirname(relative));

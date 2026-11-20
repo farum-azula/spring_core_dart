@@ -12,11 +12,11 @@ List<String> _messages(
   MessageSource? source,
 }) => [
   for (final violation in BeanValidator(
-    introspector: BeanIntrospector(
+    introspector: Introspector(
       introspections: [
-        BeanIntrospection<Box>(
+        Introspection<Box>(
           properties: [
-            BeanProperty<Box>(
+            IntrospectedProperty<Box>(
               'value',
               type: Object,
               nullable: true,

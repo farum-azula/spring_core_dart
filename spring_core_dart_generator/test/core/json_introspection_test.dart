@@ -2,9 +2,11 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 // The introspection the generator writes for JSON: generic classes
 // (`Page<T>`), class names, and the classes JSON annotations name.
@@ -84,26 +86,24 @@ Future<(String, List<String>)> _generate(String source) async {
   );
   await readerWriter.testing.loadIsolateSources();
   final result = await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
     readerWriter: readerWriter,
     flattenOutput: true,
   );
   expect(result.errors, isEmpty);
-  final output = result.readerWriter.testing.readString(result.outputs.single);
+  final output = moduleText(result);
   final errors = await resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
-      'pkg|lib/spring_gen/src/beans.spring.dart': output,
+      ...moduleSources(output),
     },
     (resolver) async {
       final library = await resolver.libraryFor(
         AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
       );
-      final result = await library.session.getErrors(
-        library.firstFragment.source.fullName,
-      );
+      final result = await moduleErrors(library);
       return [
         if (result case ErrorsResult(:final diagnostics))
           for (final diagnostic in diagnostics)
@@ -114,7 +114,7 @@ Future<(String, List<String>)> _generate(String source) async {
     resolverFor: 'pkg|lib/spring_gen/src/beans.spring.dart',
     readAllSourcesFromFilesystem: true,
   );
-  return (_normalize(output), errors);
+  return (_normalize(moduleText(result)), errors);
 }
 
 String _normalize(String code) => code
@@ -140,20 +140,20 @@ void main() {
     // Raw: type parameters are dynamic.
     expect(
       output,
-      _has("BeanIntrospection<Page<dynamic>>(className: r'Page',"),
+      _has("Introspection<Page<dynamic>>(className: r'Page',"),
     );
     expect(
       output,
       _has(
-        "BeanProperty<Page<dynamic>>(r'content', type: List<dynamic>, "
+        "IntrospectedProperty<Page<dynamic>>(r'content', type: List<dynamic>, "
         'typeInfo: const ListType<dynamic>(DynamicType()),',
       ),
     );
     expect(
       output,
       _has(
-        "BeanProperty<Page<dynamic>>(r'first', type: dynamic, nullable: true, "
-        'typeInfo: const DynamicType(),',
+        "IntrospectedProperty<Page<dynamic>>(r'first', type: dynamic, "
+        'nullable: true, typeInfo: const DynamicType(),',
       ),
     );
     // Specialized: the TypeInfo of each type argument.
@@ -161,20 +161,20 @@ void main() {
       output,
       _has(
         'specialize: (arguments) => arguments[0].capture(<T>() => '
-        "BeanIntrospection<Page<T>>(className: r'Page',",
+        "Introspection<Page<T>>(className: r'Page',",
       ),
     );
     expect(
       output,
       _has(
-        "BeanProperty<Page<T>>(r'content', type: List<T>, "
+        "IntrospectedProperty<Page<T>>(r'content', type: List<T>, "
         'typeInfo: ListType<T>((arguments[0] as TypeInfo<T>)),',
       ),
     );
     expect(
       output,
       _has(
-        "BeanParameter(r'first', type: (arguments[0] as "
+        "IntrospectedParameter(r'first', type: (arguments[0] as "
         'TypeInfo<T>).asNullable(), '
         'symbol: #first)',
       ),
@@ -192,7 +192,10 @@ void main() {
     );
     expect(output, isNot(contains('Function.apply(Page')));
     // Method types that use T are not const.
-    expect(output, _has("BeanMethod<Page<T>>(r'pick', parameterTypes: [int],"));
+    expect(
+      output,
+      _has("IntrospectedMethod<Page<T>>(r'pick', parameterTypes: [int],"),
+    );
   });
 
   test('two type parameters are captured in order', () {
@@ -200,7 +203,7 @@ void main() {
       output,
       _has(
         'specialize: (arguments) => arguments[0].capture(<K>() => '
-        'arguments[1].capture(<V>() => BeanIntrospection<Pair<K, V>>(',
+        'arguments[1].capture(<V>() => Introspection<Pair<K, V>>(',
       ),
     );
     expect(output, _has('typeInfo: (arguments[1] as TypeInfo<V>)'));
@@ -210,27 +213,27 @@ void main() {
     expect(
       output,
       _has(
-        "BeanIntrospection<Bounded<Base>>(className: r'Bounded', "
-        "properties: [BeanProperty<Bounded<Base>>(r'items', type: List<Base>, "
-        'typeInfo: const ListType<Base>(ClassType<Base>()),',
+        "Introspection<Bounded<Base>>(className: r'Bounded', "
+        "properties: [IntrospectedProperty<Bounded<Base>>(r'items', "
+        'type: List<Base>, typeInfo: const ListType<Base>(ClassType<Base>()),',
       ),
     );
-    expect(output, isNot(contains('BeanIntrospection<Bounded<T>>')));
+    expect(output, isNot(contains('Introspection<Bounded<T>>')));
   });
 
   test('a generic property type is described with its arguments', () {
     expect(
       output,
       _has(
-        "BeanProperty<Shelf>(r'page', "
+        "IntrospectedProperty<Shelf>(r'page', "
         'typeInfo: GenericType<Page<Book>>([ClassType<Book>()]),',
       ),
     );
   });
 
   test('classes named by @JsonSubTypes, defaultImpl and @JsonView', () {
-    expect(output, _has("BeanIntrospection<Dog>(className: r'Dog',"));
-    expect(output, _has("BeanIntrospection<Public>(className: r'Public',"));
+    expect(output, _has("Introspection<Dog>(className: r'Dog',"));
+    expect(output, _has("Introspection<Public>(className: r'Public',"));
     expect(
       output,
       _has(

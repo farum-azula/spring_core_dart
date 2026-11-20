@@ -45,15 +45,15 @@ final class MoneyDeserializer extends JsonDeserializer<Money> {
       Money(int.parse((json as String).replaceAll('c', '')));
 }
 
-final _orderIntrospection = BeanIntrospection<Order>(
+final _orderIntrospection = Introspection<Order>(
   properties: [
-    BeanProperty<Order>(
+    IntrospectedProperty<Order>(
       'orderId',
       type: int,
       typeInfo: const ClassType<int>(),
       get: (b) => b.orderId,
     ),
-    BeanProperty<Order>(
+    IntrospectedProperty<Order>(
       'note',
       type: String,
       nullable: true,
@@ -61,15 +61,15 @@ final _orderIntrospection = BeanIntrospection<Order>(
       get: (b) => b.note,
     ),
   ],
-  constructor: BeanConstructor<Order>(
+  constructor: IntrospectedConstructor<Order>(
     parameters: const [
-      BeanParameter(
+      IntrospectedParameter(
         'orderId',
         type: ClassType<int>(),
         symbol: #orderId,
         isRequired: true,
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'note',
         type: ClassType<String>(nullable: true),
         symbol: #note,

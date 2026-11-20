@@ -68,7 +68,7 @@ final class DiskCacheManager implements CacheManager {
   final ObjectMapper mapper;
 
   /// The descriptions of the classes values are read back as.
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   /// What reads a `Resource` back from its address.
   final ResourceLoader? resources;
@@ -337,7 +337,7 @@ final class DiskCache implements AsyncCache {
 String canonicalCacheKey(
   Object? key,
   ObjectMapper mapper,
-  BeanIntrospector introspector,
+  Introspector introspector,
 ) {
   String of(Object? key) => switch (key) {
     null => 'null',
@@ -391,7 +391,7 @@ final class _ValueCodec {
   _ValueCodec(this.mapper, this.introspector, this.resources);
 
   final ObjectMapper mapper;
-  final BeanIntrospector introspector;
+  final Introspector introspector;
   final ResourceLoader? resources;
 
   Object? encode(Object? value) {

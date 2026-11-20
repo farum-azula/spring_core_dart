@@ -19,13 +19,13 @@ enum Lonely { a, b }
 
 final _stock = EnumType<Stock>(Stock.values, jsonValue: (s) => s.json);
 
-BeanProperty<T> _p<T extends Object>(
+IntrospectedProperty<T> _p<T extends Object>(
   String name,
   Object? Function(T bean) get,
   TypeInfo<Object?> info, {
   void Function(T bean, Object? value)? set,
   List<Object> annotations = const [],
-}) => BeanProperty<T>(
+}) => IntrospectedProperty<T>(
   name,
   type: info.type,
   nullable: info.nullable,
@@ -89,9 +89,9 @@ class Range<T extends num> {
   final T low;
 }
 
-final _introspector = BeanIntrospector(
+final _introspector = Introspector(
   introspections: [
-    BeanIntrospection<Palette>(
+    Introspection<Palette>(
       properties: [
         _p<Palette>(
           'color',
@@ -114,24 +114,28 @@ final _introspector = BeanIntrospector(
       ],
       instantiate: Palette.new,
     ),
-    const BeanIntrospection<Note>(
+    const Introspection<Note>(
       annotations: [
         JsonTypeInfo(property: 'kind', defaultImpl: TextNote),
         JsonSubTypes([JsonSubType(TextNote, name: 'text')]),
       ],
     ),
-    BeanIntrospection<TextNote>(
+    Introspection<TextNote>(
       properties: [
         _p<TextNote>('text', (b) => b.text, const ClassType<String>()),
       ],
-      constructor: BeanConstructor<TextNote>(
+      constructor: IntrospectedConstructor<TextNote>(
         parameters: const [
-          BeanParameter('text', type: ClassType<String>(), isRequired: true),
+          IntrospectedParameter(
+            'text',
+            type: ClassType<String>(),
+            isRequired: true,
+          ),
         ],
         create: (positional, named) => TextNote(positional[0]! as String),
       ),
     ),
-    BeanIntrospection<Isbn>(
+    Introspection<Isbn>(
       properties: [
         _p<Isbn>(
           'value',
@@ -140,25 +144,33 @@ final _introspector = BeanIntrospector(
           annotations: const [JsonValue()],
         ),
       ],
-      constructor: BeanConstructor<Isbn>(
+      constructor: IntrospectedConstructor<Isbn>(
         parameters: const [
-          BeanParameter('value', type: ClassType<String>(), isRequired: true),
+          IntrospectedParameter(
+            'value',
+            type: ClassType<String>(),
+            isRequired: true,
+          ),
         ],
         create: (positional, named) => Isbn(positional[0]! as String),
       ),
     ),
-    BeanIntrospection<Shelf>(
+    Introspection<Shelf>(
       properties: [_p<Shelf>('isbn', (b) => b.isbn, const ClassType<Isbn>())],
-      constructor: BeanConstructor<Shelf>(
+      constructor: IntrospectedConstructor<Shelf>(
         parameters: const [
-          BeanParameter('isbn', type: ClassType<Isbn>(), isRequired: true),
+          IntrospectedParameter(
+            'isbn',
+            type: ClassType<Isbn>(),
+            isRequired: true,
+          ),
         ],
         create: (positional, named) => Shelf(positional[0]! as Isbn),
       ),
     ),
-    BeanIntrospection<Label>(
+    Introspection<Label>(
       methods: [
-        BeanMethod<Label>(
+        IntrospectedMethod<Label>(
           'code',
           invoke: (b, a) => b.code(),
           returnType: String,
@@ -167,7 +179,7 @@ final _introspector = BeanIntrospector(
       ],
       instantiate: Label.new,
     ),
-    BeanIntrospection<Account>(
+    Introspection<Account>(
       properties: [
         _p<Account>('id', (b) => b.id, const ClassType<String>()),
         _p<Account>(
@@ -194,10 +206,14 @@ final _introspector = BeanIntrospector(
           ],
         ),
       ],
-      constructor: BeanConstructor<Account>(
+      constructor: IntrospectedConstructor<Account>(
         parameters: const [
-          BeanParameter('id', type: ClassType<String>(), isRequired: true),
-          BeanParameter(
+          IntrospectedParameter(
+            'id',
+            type: ClassType<String>(),
+            isRequired: true,
+          ),
+          IntrospectedParameter(
             'nickname',
             type: ClassType<String>(nullable: true),
             symbol: #nickname,
@@ -209,7 +225,7 @@ final _introspector = BeanIntrospector(
         ),
       ),
     ),
-    BeanIntrospection<Ticket>(
+    Introspection<Ticket>(
       properties: [
         _p<Ticket>(
           'code',
@@ -220,14 +236,18 @@ final _introspector = BeanIntrospector(
           ],
         ),
       ],
-      constructor: BeanConstructor<Ticket>(
+      constructor: IntrospectedConstructor<Ticket>(
         parameters: const [
-          BeanParameter('code', type: ClassType<String>(), isRequired: true),
+          IntrospectedParameter(
+            'code',
+            type: ClassType<String>(),
+            isRequired: true,
+          ),
         ],
         create: (positional, named) => Ticket(positional[0]! as String),
       ),
     ),
-    BeanIntrospection<Counter>(
+    Introspection<Counter>(
       properties: [
         _p<Counter>('count', (b) => b.count, const ClassType<int>()),
         _p<Counter>('enabled', (b) => b.enabled, const ClassType<bool>()),
@@ -245,11 +265,23 @@ final _introspector = BeanIntrospector(
           set: (b, v) => b.total = v! as int,
         ),
       ],
-      constructor: BeanConstructor<Counter>(
+      constructor: IntrospectedConstructor<Counter>(
         parameters: const [
-          BeanParameter('count', type: ClassType<int>(), isRequired: true),
-          BeanParameter('enabled', type: ClassType<bool>(), isRequired: true),
-          BeanParameter('ratio', type: ClassType<double>(), symbol: #ratio),
+          IntrospectedParameter(
+            'count',
+            type: ClassType<int>(),
+            isRequired: true,
+          ),
+          IntrospectedParameter(
+            'enabled',
+            type: ClassType<bool>(),
+            isRequired: true,
+          ),
+          IntrospectedParameter(
+            'ratio',
+            type: ClassType<double>(),
+            symbol: #ratio,
+          ),
         ],
         create: (positional, named) => Counter(
           positional[0]! as int,
@@ -259,7 +291,7 @@ final _introspector = BeanIntrospector(
       ),
     ),
     // A bounded generic class: raw only (what the generator writes).
-    BeanIntrospection<Range<num>>(
+    Introspection<Range<num>>(
       className: 'Range',
       properties: [_p<Range<num>>('low', (b) => b.low, const ClassType<num>())],
     ),
@@ -318,7 +350,7 @@ void main() {
         mapper.readValue('"b"', const EnumType<Lonely>(Lonely.values)),
         Lonely.b,
       );
-      final introspector = BeanIntrospector()
+      final introspector = Introspector()
         ..registerEnum(const EnumType<Lonely>(Lonely.values));
       expect(
         ObjectMapper(introspector: introspector).readValue<Lonely>('"a"'),

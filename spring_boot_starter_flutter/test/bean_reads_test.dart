@@ -57,10 +57,16 @@ class _$CounterProxy extends Counter with ChangeNotifier implements Advised {
     if (i == null) {
       super.increment();
     } else {
-      i.invoke(this, this, 0, const [], (_) {
-        super.increment();
-        return null;
-      });
+      i.invoke(
+        proxy: this,
+        target: this,
+        methodIndex: 0,
+        arguments: const [],
+        original: (_) {
+          super.increment();
+          return null;
+        },
+      );
     }
   }
 
@@ -69,7 +75,13 @@ class _$CounterProxy extends Counter with ChangeNotifier implements Advised {
     final i = _$invoker;
     return i == null
         ? super.value
-        : i.invoke(this, this, 1, const [], (_) => super.value) as int;
+        : i.invoke(
+            proxy: this,
+            target: this,
+            methodIndex: 1,
+            arguments: const [],
+            original: (_) => super.value,
+          ) as int;
   }
 
   @override
@@ -78,10 +90,16 @@ class _$CounterProxy extends Counter with ChangeNotifier implements Advised {
     if (i == null) {
       super.incrementBelow(max);
     } else {
-      i.invoke(this, this, 2, [max], (args) {
-        super.incrementBelow(args[0] as int);
-        return null;
-      });
+      i.invoke(
+        proxy: this,
+        target: this,
+        methodIndex: 2,
+        arguments: [max],
+        original: (args) {
+          super.incrementBelow(args[0] as int);
+          return null;
+        },
+      );
     }
   }
 }

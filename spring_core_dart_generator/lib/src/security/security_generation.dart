@@ -5,8 +5,7 @@ import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/core/bean_model.dart';
-import 'package:spring_core_dart_generator/src/core/starter_generation.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_generation.dart';
 
 // The method annotations, matched by URL (the generator does not depend on
 // the security starter).
@@ -36,7 +35,7 @@ const List<TypeChecker> _expressions = [
 /// Future<void> cancel(Order order) => ...
 /// // Order: described so the expression reads `owner`.
 /// ```
-final class SecurityGeneration extends StarterGeneration {
+final class SecurityGeneration extends PackageGeneration {
   /// The part; it keeps no state of a build.
   const SecurityGeneration();
 

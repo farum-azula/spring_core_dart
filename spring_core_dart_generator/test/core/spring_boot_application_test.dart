@@ -44,9 +44,9 @@ class DbProps { String url = ''; }
         });
         expect(result.errors, isEmpty);
         final output = normalize(
-          result.readerWriter.testing.readString(result.outputs.single),
+          moduleText(result),
         );
-        expect(result.outputs.single.path, 'bin/spring_gen/main.spring.dart');
+        expect(moduleOutput(result).path, 'bin/spring_gen/main.spring.dart');
         // lib/spring_auto_configuration.dart of the dependencies is
         // discovered, listed by package (SpringApplication sorts them).
         expect(
@@ -74,7 +74,7 @@ class DbProps { String url = ''; }
         expect(output, hasCode("name: r'deep'"));
         // @ConfigurationProperties: a bean plus introspection metadata.
         expect(output, hasCode("name: r'dbProps'"));
-        expect(output, hasCode('BeanIntrospection<'));
+        expect(output, hasCode('Introspection<'));
         expect(output, contains("ConfigurationProperties(r'db')"));
         // Getters, so a hot reload sees the beans of the new code.
         expect(
@@ -82,7 +82,21 @@ class DbProps { String url = ''; }
           hasCode(r"BeanModule get $application => BeanModule(r'application'"),
         );
         expect(output, hasCode('SpringApplication get springApplication =>'));
-        expect(output, matches(RegExp("fingerprint:'[0-9a-f]{8}'")));
+        // The fingerprint and the reload functions, in the debug part, for
+        // debug and profile builds only.
+        expect(
+          output,
+          hasCode(
+            "fingerprint: !const bool.fromEnvironment('dart.vm.product') "
+            r'? _$fingerprint : null',
+          ),
+        );
+        expect(output, hasCode("part 'main.spring.debug.dart';"));
+        expect(output, matches(RegExp(r"const_\$fingerprint='[0-9a-f]{8}';")));
+        expect(
+          moduleFiles(result).map((id) => id.path),
+          contains('bin/spring_gen/main.spring.debug.dart'),
+        );
         expect(
           output,
           hasCode(
@@ -124,12 +138,10 @@ void main(List<String> args) => runApplication(args);
               'app.tenant=00000000-0000-0000-0000-000000000000\n',
         });
         expect(result.errors, isEmpty);
-        final output = result.readerWriter.testing.readString(
-          result.outputs.single,
-        );
+        final output = moduleText(result);
         expect(output, contains('00000000-0000-0000-0000-000000000000'));
-        expect(output, isNot(contains("fingerprint: '00000000'")));
-        expect(output, matches(RegExp("fingerprint: '[0-9a-f]{8}'")));
+        expect(output, isNot(contains(r"_$fingerprint = '00000000'")));
+        expect(output, matches(RegExp(r"_\$fingerprint = '[0-9a-f]{8}'")));
       },
     );
 
@@ -146,9 +158,9 @@ void main(List<String> args) => runApplication(args);
           'lib/beans.dart': '$coreImport$beans',
         });
         expect(result.errors, isEmpty);
-        return RegExp("fingerprint: '([0-9a-f]{8})'")
+        return RegExp(r"_\$fingerprint = '([0-9a-f]{8})'")
             .firstMatch(
-              result.readerWriter.testing.readString(result.outputs.single),
+              moduleText(result),
             )!
             .group(1)!;
       }

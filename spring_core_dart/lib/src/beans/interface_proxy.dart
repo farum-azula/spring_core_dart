@@ -60,8 +60,8 @@ class InterfaceProxy {
 /// ProxyMethod(
 ///   'find',
 ///   parameters: const [
-///     BeanParameter('isbn', type: ClassType<String>(), isRequired: true,
-///         annotations: [PathVariable()]),
+///     IntrospectedParameter('isbn', type: ClassType<String>(),
+///         isRequired: true, annotations: [PathVariable()]),
 ///   ],
 ///   returnType: const ClassType<Book>(),
 ///   isFuture: true,
@@ -81,7 +81,7 @@ final class ProxyMethod {
     this.name, {
     required this.returnType,
     this._call,
-    List<BeanParameter> parameters = const [],
+    List<IntrospectedParameter> parameters = const [],
     this.isFuture = false,
     this.isVoid = false,
     List<Object> annotations = const [],
@@ -93,7 +93,7 @@ final class ProxyMethod {
 
   /// Its parameters (positional first, then named), in the order of the
   /// `arguments` passed to [InvocationHandler.invoke].
-  final List<BeanParameter> parameters;
+  final List<IntrospectedParameter> parameters;
 
   /// The result type; for `Future<T>` the type of `T`.
   final TypeInfo<Object?> returnType;

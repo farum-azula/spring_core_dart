@@ -5,11 +5,14 @@
 // failed; a missing Flutter asset directory is warned about; the main
 // builder never embeds them. (What the files hold, and that the search reads
 // them: spring_search_dart's tests.)
+import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:spring_core_dart_generator/src/search/search_index_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _main = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -165,16 +168,15 @@ void main() {
     );
     await readerWriter.testing.loadIsolateSources();
     final result = await testBuilder(
-      SpringBuilder(generations: starterGenerations),
+      SpringBuilder(generations: packageGenerations),
       {..._sources(), 'pkg|$_en': '{"format": 1}'},
       rootPackage: 'pkg',
       readerWriter: readerWriter,
       flattenOutput: true,
     );
-    final module = result.readerWriter.testing.readString(
-      result.outputs.singleWhere(
-        (o) => o.path == 'lib/spring_gen/main.spring.dart',
-      ),
+    final module = moduleText(
+      result,
+      AssetId('pkg', 'lib/spring_gen/main.spring.dart'),
     );
     expect(module, contains("r'docs/beans.md'"));
     expect(module, isNot(contains('spring_gen/search')));

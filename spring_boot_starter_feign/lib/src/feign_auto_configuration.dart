@@ -49,7 +49,7 @@ final feignAutoConfiguration = <BeanDefinition<Object>>[
       properties: r.dependency<FeignProperties>(),
       mapper:
           r.optionalDependency<ObjectMapper>() ??
-          ObjectMapper(introspector: r.dependency<BeanIntrospector>()),
+          ObjectMapper(introspector: r.dependency<Introspector>()),
       transport: r.dependency<HttpTransport>(),
     ),
   ),

@@ -1,3 +1,4 @@
+import 'package:spring_core_dart/src/beans/object_methods.dart';
 import 'package:spring_core_dart/src/beans/type_info.dart';
 
 /// Marks a class whose properties, constructor and methods the generator
@@ -20,7 +21,8 @@ import 'package:spring_core_dart/src/beans/type_info.dart';
 ///   String? zip;
 /// }
 ///
-/// // The generated BeanIntrospection is registered by the module, so:
+/// // The generated Introspection of Address is registered by the module,
+/// // so:
 /// BeanWrapper(Address()).setPropertyValue('city', 'Lyon');
 /// ```
 ///
@@ -53,7 +55,7 @@ class Introspected {
   final List<Type> classes;
 }
 
-/// A part of an introspected class that a [BeanIntrospection] may leave
+/// A part of an introspected class that its [Introspection] may leave
 /// out.
 ///
 /// The generator writes only what the application uses of a class, as the
@@ -108,17 +110,17 @@ enum IntrospectionPart {
 ///
 /// Spring (Java): no counterpart; Java reflection always sees everything.
 final class IntrospectionPartError extends StateError {
-  /// [beanType] is described without [part]; [use] says what needs it, a
+  /// [type] is described without [part]; [use] says what needs it, a
   /// clause that follows "but" (`it is written out as JSON`).
-  IntrospectionPartError(this.beanType, this.part, String use)
+  IntrospectionPartError(this.type, this.part, String use)
     : super(
-        '$beanType is described without ${part.description}, but $use. The '
+        '$type is described without ${part.description}, but $use. The '
         'build described only what it saw used, and did not see that: add '
-        '@Introspected() to $beanType.',
+        '@Introspected() to $type.',
       );
 
   /// The class whose description lacks [part].
-  final Type beanType;
+  final Type type;
 
   /// The part that is needed.
   final IntrospectionPart part;
@@ -129,7 +131,7 @@ final class IntrospectionPartError extends StateError {
 ///
 /// The generator writes these for `@Introspected` classes; `BeanWrapper`,
 /// validation and SpEL use them to reach a field by name. You write one by
-/// hand only in a hand-written [BeanIntrospection].
+/// hand only in a hand-written [Introspection].
 ///
 /// Both closures are optional: the generator writes only the ones the
 /// application uses (see [IntrospectionPart]), so a property that is only
@@ -137,11 +139,11 @@ final class IntrospectionPartError extends StateError {
 ///
 /// ```dart
 /// // A property of Address, written by hand.
-/// final city = BeanProperty<Address>(
+/// final city = IntrospectedProperty<Address>(
 ///   'city',
 ///   type: String,
-///   get: (b) => b.city,
-///   set: (b, v) => b.city = v! as String,
+///   get: (address) => address.city,
+///   set: (address, value) => address.city = value! as String,
 ///   annotations: const [NotBlank()],
 /// );
 /// city.setValue(address, 'Lyon');
@@ -154,7 +156,7 @@ final class IntrospectionPartError extends StateError {
 ///     BeanUtils.getPropertyDescriptor(Address.class, "city");
 /// city.getWriteMethod().invoke(address, "Lyon");
 /// ```
-final class BeanProperty<T extends Object> {
+final class IntrospectedProperty<T extends Object> {
   /// Describes the property [name] of [T] with the declared [type]; omit
   /// `set` for a read-only property and `get` for a write-only one.
   ///
@@ -162,7 +164,7 @@ final class BeanProperty<T extends Object> {
   /// [typeInfo] describes. The generator writes it only when they differ,
   /// and writes the closures as top-level functions, so its descriptions
   /// are constants.
-  const BeanProperty(
+  const IntrospectedProperty(
     this.name, {
     Type? type,
     this._get,
@@ -175,7 +177,7 @@ final class BeanProperty<T extends Object> {
   }) : _type = type,
        assert(
          type != null || typeInfo != null,
-         'A BeanProperty needs a type or a typeInfo',
+         'An IntrospectedProperty needs a type or a typeInfo',
        );
 
   /// The name of the field or getter.
@@ -215,8 +217,8 @@ final class BeanProperty<T extends Object> {
   /// `int` initializer (`double rate = 1`) gives the `double`.
   final Object? initialValue;
 
-  final Object? Function(T bean)? _get;
-  final void Function(T bean, Object? value)? _set;
+  final Object? Function(T object)? _get;
+  final void Function(T object, Object? value)? _set;
 
   /// Whether the property can be read; `false` when the description has no
   /// getter for it (the build saw nothing read the class).
@@ -226,10 +228,10 @@ final class BeanProperty<T extends Object> {
   /// getter without a setter.
   bool get isWritable => _set != null;
 
-  /// The value of the property in [bean], which must be a [T]. Throws an
+  /// The value of the property in [object], which must be a [T]. Throws an
   /// [IntrospectionPartError] when the property has no getter
   /// ([isReadable]).
-  Object? getValue(Object bean) {
+  Object? getValue(Object object) {
     final getter = _get;
     if (getter == null) {
       throw IntrospectionPartError(
@@ -238,27 +240,27 @@ final class BeanProperty<T extends Object> {
         "the value of property '$name' is read",
       );
     }
-    return getter(bean as T);
+    return getter(object as T);
   }
 
-  /// Writes [value] into the property of [bean]. The value must already
+  /// Writes [value] into the property of [object]. The value must already
   /// have the property's type (`BeanWrapper` converts first). Throws
   /// `StateError` for a read-only property.
-  void setValue(Object bean, Object? value) {
+  void setValue(Object object, Object? value) {
     final setter = _set;
     if (setter == null) {
       throw StateError("Property '$name' of $T is read-only");
     }
-    setter(bean as T, value);
+    setter(object as T, value);
   }
 
   // This property with what [earlier], the description of the same property
   // registered before it, has and this one lacks: its getter or setter.
-  BeanProperty<T> _withEarlier(BeanProperty<T> earlier) {
+  IntrospectedProperty<T> _withEarlier(IntrospectedProperty<T> earlier) {
     if (_get != null && _set != null) {
       return this;
     }
-    return BeanProperty<T>(
+    return IntrospectedProperty<T>(
       name,
       type: _type ?? earlier._type ?? type,
       get: _get ?? earlier._get,
@@ -275,11 +277,13 @@ final class BeanProperty<T extends Object> {
   Iterable<A> annotationsOf<A>() => annotations.whereType<A>();
 
   @override
-  String toString() => 'BeanProperty<$T>($name: $type${nullable ? '?' : ''})';
+  String toString() =>
+      'IntrospectedProperty<$T>($name: $type${nullable ? '?' : ''})';
 }
 
-/// The description of one public instance method of an introspected class
-/// or bean, with a closure that calls it.
+/// The description of one public instance method of a class, with a
+/// closure that calls it: of an introspected class (in its
+/// [Introspection]), or an annotated method of a bean.
 ///
 /// SpEL uses it to call methods on introspected objects, and frameworks
 /// use the ones in `BeanDefinition.annotatedMethods` to call annotated
@@ -288,11 +292,11 @@ final class BeanProperty<T extends Object> {
 ///
 /// ```dart
 /// // Person.hello(String name), called by name from an expression.
-/// final hello = BeanMethod<Person>(
+/// final hello = IntrospectedMethod<Person>(
 ///   'hello',
 ///   returnType: String,
 ///   parameterTypes: const [String],
-///   invoke: (b, args) => b.hello(args.first! as String),
+///   invoke: (person, args) => person.hello(args.first! as String),
 /// );
 /// hello.invoke(person, ['Ann']);
 /// ```
@@ -302,10 +306,10 @@ final class BeanProperty<T extends Object> {
 /// Method hello = Person.class.getMethod("hello", String.class);
 /// hello.invoke(person, "Ann");
 /// ```
-final class BeanMethod<T extends Object> {
+final class IntrospectedMethod<T extends Object> {
   /// Describes the method [name] of [T], called through `invoke` (and
   /// `invokeNamed` when it has named parameters).
-  const BeanMethod(
+  const IntrospectedMethod(
     this.name, {
     required this._invoke,
     this._invokeNamed,
@@ -331,7 +335,7 @@ final class BeanMethod<T extends Object> {
   /// annotations. Written by the generator for the methods of
   /// `BeanDefinition.annotatedMethods` (what a request handler needs to
   /// bind its arguments); empty in other descriptions.
-  final List<BeanParameter> parameters;
+  final List<IntrospectedParameter> parameters;
 
   /// The full result type, for a `Future<T>` the type `T` (what a request
   /// handler's answer is converted from). Written by the generator for
@@ -349,26 +353,27 @@ final class BeanMethod<T extends Object> {
 
   /// The const annotations on the method.
   final List<Object> annotations;
-  final Object? Function(T bean, List<Object?> arguments) _invoke;
+  final Object? Function(T object, List<Object?> arguments) _invoke;
   final Object? Function(
-    T bean,
+    T object,
     List<Object?> positional,
     Map<Symbol, Object?> named,
   )?
   _invokeNamed;
 
-  /// Calls the method on [bean] with positional [arguments] (already of
-  /// the parameter types) and [namedArguments] (by [BeanParameter.symbol];
-  /// an omitted optional one keeps its default value); returns its result
-  /// (`null` for `void`). Throws `ArgumentError` when named arguments are
-  /// given to a method described without them.
+  /// Calls the method on [object] with positional [arguments] (already of
+  /// the parameter types) and [namedArguments] (by
+  /// [IntrospectedParameter.symbol]; an omitted optional one keeps its
+  /// default value); returns its result (`null` for `void`). Throws
+  /// `ArgumentError` when named arguments are given to a method described
+  /// without them.
   Object? invoke(
-    Object bean,
+    Object object,
     List<Object?> arguments, [
     Map<Symbol, Object?> namedArguments = const {},
   ]) {
     if (namedArguments.isEmpty) {
-      return _invoke(bean as T, arguments);
+      return _invoke(object as T, arguments);
     }
     final invokeNamed = _invokeNamed;
     if (invokeNamed == null) {
@@ -378,43 +383,44 @@ final class BeanMethod<T extends Object> {
         '$T.$name takes no named parameters',
       );
     }
-    return invokeNamed(bean as T, arguments, namedArguments);
+    return invokeNamed(object as T, arguments, namedArguments);
   }
 
   /// The first annotation of type [A] on the method, or `null`.
   A? annotation<A>() => annotations.whereType<A>().firstOrNull;
 
-  /// Whether [bean] can be passed to [invoke]: an instance of `T`. A proxy
-  /// that implements only the bean's interfaces (`aop_proxies: interfaces`)
-  /// is not; call the method on `AopUtils.getTarget(bean)` then.
-  bool appliesTo(Object bean) => bean is T;
+  /// Whether [object] can be passed to [invoke]: an instance of `T`. A
+  /// proxy that implements only the bean's interfaces (`aop_proxies:
+  /// interfaces`) is not; call the method on `AopUtils.getTarget(object)`
+  /// then.
+  bool appliesTo(Object object) => object is T;
 
   @override
-  String toString() => 'BeanMethod<$T>($name)';
+  String toString() => 'IntrospectedMethod<$T>($name)';
 }
 
 /// The description of one parameter of a constructor or method: its name,
 /// full type, whether it is named or required, and its annotations.
 ///
-/// `ObjectMapper` reads those of a [BeanConstructor] to know which JSON
-/// fields to pass; request binding reads those of a [BeanMethod] to know
-/// what to bind (`@PathVariable()`, `@RequestParam()`). Written by the
-/// generator.
+/// `ObjectMapper` reads those of an [IntrospectedConstructor] to know which
+/// JSON fields to pass; request binding reads those of an
+/// [IntrospectedMethod] to know what to bind (`@PathVariable()`,
+/// `@RequestParam()`). Written by the generator.
 ///
 /// ```dart
 /// // Book({required this.isbn, this.tags = const []})
-/// const isbn = BeanParameter('isbn', type: ClassType<String>(),
+/// const isbn = IntrospectedParameter('isbn', type: ClassType<String>(),
 ///     symbol: #isbn, isRequired: true);
-/// const tags = BeanParameter('tags',
+/// const tags = IntrospectedParameter('tags',
 ///     type: ListType<String>(ClassType<String>()), symbol: #tags,
 ///     hasDefaultValue: true, defaultValue: <String>[]);
 /// ```
 ///
 /// Spring (Java): `java.lang.reflect.Parameter` (with `-parameters`).
-final class BeanParameter {
+final class IntrospectedParameter {
   /// Describes the parameter [name] of [type]. A named parameter carries
   /// its [symbol] (a const symbol literal, safe in minified builds).
-  const BeanParameter(
+  const IntrospectedParameter(
     this.name, {
     required this.type,
     this.symbol,
@@ -446,7 +452,7 @@ final class BeanParameter {
   /// parameter without a default (a required one, or an optional one that
   /// defaults to `null` implicitly) and for a default it cannot write
   /// (one that refers to a private constant). Written by the generator for
-  /// the parameters of a [BeanConstructor]; `false` elsewhere.
+  /// the parameters of an [IntrospectedConstructor]; `false` elsewhere.
   final bool hasDefaultValue;
 
   /// The default value when [hasDefaultValue] is `true` (`null` for an
@@ -463,12 +469,13 @@ final class BeanParameter {
   bool get isNamed => symbol != null;
 
   @override
-  String toString() => 'BeanParameter($name: $type)';
+  String toString() => 'IntrospectedParameter($name: $type)';
 }
 
-/// How generated code reads an optional named argument from the map of a
-/// [BeanConstructor] or [BeanMethod] call, as `Function.apply` passes it:
-/// the value when the map has it, else the parameter's default.
+/// How generated code reads an optional named argument from the map of an
+/// [IntrospectedConstructor] or [IntrospectedMethod] call, as
+/// `Function.apply` passes it: the value when the map has it, else the
+/// parameter's default.
 ///
 /// ```dart
 /// // Generated: Book(total: named.argumentOr(#total, 0))
@@ -480,9 +487,9 @@ extension NamedArguments on Map<Symbol, Object?> {
 }
 
 /// How generated code reads an optional positional argument from the list
-/// of a [BeanConstructor] or [BeanMethod] call, as `Function.apply`
-/// passes it: the value when the list is long enough, else the
-/// parameter's default.
+/// of an [IntrospectedConstructor] or [IntrospectedMethod] call, as
+/// `Function.apply` passes it: the value when the list is long enough,
+/// else the parameter's default.
 ///
 /// ```dart
 /// // Generated: greet(arguments[0] as String, arguments.argumentOr(1, 1))
@@ -502,9 +509,9 @@ extension PositionalArguments on List<Object?> {
 /// by the generator.
 ///
 /// ```dart
-/// final constructor = BeanConstructor<Book>(
+/// final constructor = IntrospectedConstructor<Book>(
 ///   parameters: const [
-///     BeanParameter('isbn', type: ClassType<String>(), symbol: #isbn,
+///     IntrospectedParameter('isbn', type: ClassType<String>(), symbol: #isbn,
 ///         isRequired: true),
 ///   ],
 ///   create: (positional, named) =>
@@ -517,16 +524,16 @@ extension PositionalArguments on List<Object?> {
 /// ```java
 /// Book book = Book.class.getConstructor(String.class).newInstance("978-0");
 /// ```
-final class BeanConstructor<T extends Object> {
+final class IntrospectedConstructor<T extends Object> {
   /// A constructor with [parameters], called through `create` with the
   /// positional and named arguments.
-  const BeanConstructor({
+  const IntrospectedConstructor({
     required this.parameters,
     required this._create,
   });
 
   /// The parameters, in declaration order.
-  final List<BeanParameter> parameters;
+  final List<IntrospectedParameter> parameters;
 
   final T Function(List<Object?> positional, Map<Symbol, Object?> named)
   _create;
@@ -539,7 +546,7 @@ final class BeanConstructor<T extends Object> {
   ]) => _create(positional, named);
 
   @override
-  String toString() => 'BeanConstructor<$T>(${parameters.join(', ')})';
+  String toString() => 'IntrospectedConstructor<$T>(${parameters.join(', ')})';
 }
 
 /// Everything the generator knows about an introspected class: its
@@ -548,19 +555,21 @@ final class BeanConstructor<T extends Object> {
 ///
 /// It replaces reflection: `BeanWrapper`, data binding, validation, SpEL
 /// and `ObjectMapper` read and create objects through it. The generator
-/// writes one per `@Introspected` class and the module registers it in a
-/// [BeanIntrospector]; you write one by hand only for a class the
-/// generator cannot see. Micronaut's `BeanIntrospection` is the same idea.
+/// writes one per `@Introspected` class (and per class the build finds in
+/// use, see [IntrospectionPart]) and the module registers it in an
+/// [Introspector]; you write one by hand only for a class the generator
+/// cannot see. It describes a class, not a bean: the container's beans are
+/// `BeanDefinition`s. Micronaut's `BeanIntrospection` is the same idea.
 ///
 /// ```dart
 /// // A hand-written introspection of Address, then used by name.
-/// final addressIntrospection = BeanIntrospection<Address>(
+/// final addressIntrospection = Introspection<Address>(
 ///   properties: [
-///     BeanProperty<Address>(
+///     IntrospectedProperty<Address>(
 ///       'city',
 ///       type: String,
-///       get: (b) => b.city,
-///       set: (b, v) => b.city = v! as String,
+///       get: (address) => address.city,
+///       set: (address, value) => address.city = value! as String,
 ///     ),
 ///   ],
 ///   instantiate: Address.new,
@@ -576,7 +585,7 @@ final class BeanConstructor<T extends Object> {
 /// BeanInfo info = Introspector.getBeanInfo(Address.class);
 /// Address address = BeanUtils.instantiateClass(Address.class);
 /// ```
-final class BeanIntrospection<T extends Object> {
+final class Introspection<T extends Object> {
   /// The description of [T]. `instantiate` calls the no-argument
   /// constructor, if there is one; the other closures are written by the
   /// generator. [parts] lists what the description holds (the generator
@@ -586,9 +595,9 @@ final class BeanIntrospection<T extends Object> {
   /// The generator writes it as a constant when it can (a class without
   /// type parameters, closures as top-level functions); the lookups by
   /// name are then indexed on first use.
-  const BeanIntrospection({
-    List<BeanProperty<T>> properties = const [],
-    List<BeanMethod<T>> methods = const [],
+  const Introspection({
+    List<IntrospectedProperty<T>> properties = const [],
+    List<IntrospectedMethod<T>> methods = const [],
     this.annotations = const [],
     this.parts = const {
       IntrospectionPart.read,
@@ -601,37 +610,38 @@ final class BeanIntrospection<T extends Object> {
     this._toJson,
     this._className,
     this._specialize,
+    this.objectMethods,
   }) : _propertyList = properties,
        _methodList = methods;
 
-  final List<BeanProperty<T>> _propertyList;
-  final List<BeanMethod<T>> _methodList;
+  final List<IntrospectedProperty<T>> _propertyList;
+  final List<IntrospectedMethod<T>> _methodList;
 
   // The lookups by name, built on first use (a constant cannot hold them).
   static final _propertyIndex = Expando<Map<String, Object>>(
-    'BeanIntrospection.properties',
+    'Introspection.properties',
   );
   static final _methodIndex = Expando<Map<String, Object>>(
-    'BeanIntrospection.methods',
+    'Introspection.methods',
   );
 
   // Later entries with the same name win, as in a map literal.
-  Map<String, BeanProperty<T>> get _properties =>
-      (_propertyIndex[this] ??= <String, BeanProperty<T>>{
+  Map<String, IntrospectedProperty<T>> get _properties =>
+      (_propertyIndex[this] ??= <String, IntrospectedProperty<T>>{
             for (final p in _propertyList) p.name: p,
           })
-          as Map<String, BeanProperty<T>>;
+          as Map<String, IntrospectedProperty<T>>;
 
-  Map<String, BeanMethod<T>> get _methods =>
-      (_methodIndex[this] ??= <String, BeanMethod<T>>{
+  Map<String, IntrospectedMethod<T>> get _methods =>
+      (_methodIndex[this] ??= <String, IntrospectedMethod<T>>{
             for (final m in _methodList) m.name: m,
           })
-          as Map<String, BeanMethod<T>>;
+          as Map<String, IntrospectedMethod<T>>;
   final T Function()? _instantiate;
   final T Function(Object? json)? _fromJson;
-  final Object? Function(T bean)? _toJson;
+  final Object? Function(T object)? _toJson;
   final String? _className;
-  final BeanIntrospection<Object> Function(List<TypeInfo<Object?>> arguments)?
+  final Introspection<Object> Function(List<TypeInfo<Object?>> arguments)?
   _specialize;
 
   /// What this description holds of the class; the generator leaves out
@@ -666,7 +676,7 @@ final class BeanIntrospection<T extends Object> {
   /// The introspection of this generic class with the type [arguments]
   /// (`Page<Book>` for `[ClassType<Book>()]`): constructor parameters and
   /// properties typed with them. Throws `StateError` when not [isGeneric].
-  BeanIntrospection<Object> specialize(List<TypeInfo<Object?>> arguments) =>
+  Introspection<Object> specialize(List<TypeInfo<Object?>> arguments) =>
       (_specialize ?? (throw StateError('$T is not generic')))(arguments);
 
   /// Whether [S] is a parameterization of the class this describes
@@ -675,7 +685,12 @@ final class BeanIntrospection<T extends Object> {
 
   /// The constructor to create instances from data (`ObjectMapper`), when
   /// the class has a usable one.
-  final BeanConstructor<T>? constructor;
+  final IntrospectedConstructor<T>? constructor;
+
+  /// The `==`, `hashCode` and `toString()` the generator wrote for the
+  /// class's `@EqualsAndHashCode` and `@ToString`, which
+  /// [IntrospectedObject] calls; `null` without those annotations.
+  final ObjectMethods<T>? objectMethods;
 
   /// Whether the class has its own `fromJson` constructor (e.g. from
   /// `json_serializable` or `freezed`), which `ObjectMapper` then uses.
@@ -688,9 +703,9 @@ final class BeanIntrospection<T extends Object> {
   T fromJson(Object? json) =>
       (_fromJson ?? (throw StateError('$T has no fromJson constructor')))(json);
 
-  /// Calls the class's own `toJson()` on [bean].
-  Object? toJson(Object bean) =>
-      (_toJson ?? (throw StateError('$T has no toJson method')))(bean as T);
+  /// Calls the class's own `toJson()` on [object].
+  Object? toJson(Object object) =>
+      (_toJson ?? (throw StateError('$T has no toJson method')))(object as T);
 
   /// Whether [S] is [T] or `T?`.
   bool describes<S>() => S == T || (<S>[] is List<T?> && <T?>[] is List<S>);
@@ -699,7 +714,7 @@ final class BeanIntrospection<T extends Object> {
   final List<Object> annotations;
 
   /// The introspected class.
-  Type get beanType => T;
+  Type get type => T;
 
   /// The [TypeInfo] of the class, to read a JSON tree as one when only this
   /// description is at hand (a value kept on disk by the name of its type).
@@ -724,22 +739,21 @@ final class BeanIntrospection<T extends Object> {
   bool isInstance(Object? value) => value is T;
 
   /// Whether [T] is a subtype of the class [other] describes.
-  bool isSubtypeOf(BeanIntrospection<Object> other) =>
-      other._isSupertypeOf<T>();
+  bool isSubtypeOf(Introspection<Object> other) => other._isSupertypeOf<T>();
 
   bool _isSupertypeOf<S>() => <S>[] is List<T>;
 
   /// All properties, in declaration order.
-  Iterable<BeanProperty<T>> get properties => _properties.values;
+  Iterable<IntrospectedProperty<T>> get properties => _properties.values;
 
   /// All public instance methods, in declaration order.
-  Iterable<BeanMethod<T>> get methods => _methods.values;
+  Iterable<IntrospectedMethod<T>> get methods => _methods.values;
 
   /// The property named [name], or `null`.
-  BeanProperty<T>? getProperty(String name) => _properties[name];
+  IntrospectedProperty<T>? getProperty(String name) => _properties[name];
 
   /// The method named [name], or `null` (Dart has no overloads).
-  BeanMethod<T>? getMethod(String name) => _methods[name];
+  IntrospectedMethod<T>? getMethod(String name) => _methods[name];
 
   /// Whether [instantiate] is available (a no-argument constructor).
   bool get isInstantiable => _instantiate != null;
@@ -762,9 +776,9 @@ final class BeanIntrospection<T extends Object> {
   // use of the class (a read-only DTO in one, a request body in another), and
   // the class is used by both. Whatever this one has wins; what it leaves
   // out is taken from [earlier]. The parts are the union.
-  BeanIntrospection<T> _withEarlier(BeanIntrospection<Object> earlier) {
-    final before = earlier as BeanIntrospection<T>;
-    final properties = <String, BeanProperty<T>>{
+  Introspection<T> _withEarlier(Introspection<Object> earlier) {
+    final before = earlier as Introspection<T>;
+    final properties = <String, IntrospectedProperty<T>>{
       for (final MapEntry(:key, :value) in before._properties.entries)
         key: _properties[key]?._withEarlier(value) ?? value,
       for (final MapEntry(:key, :value) in _properties.entries)
@@ -772,7 +786,7 @@ final class BeanIntrospection<T extends Object> {
     };
     final specialize = _specialize;
     final earlierSpecialize = before._specialize;
-    return BeanIntrospection<T>(
+    return Introspection<T>(
       properties: properties.values.toList(),
       methods: [...before._methods.values, ..._methods.values],
       annotations: [
@@ -786,6 +800,7 @@ final class BeanIntrospection<T extends Object> {
       fromJson: _fromJson ?? before._fromJson,
       toJson: _toJson ?? before._toJson,
       className: _className ?? before._className,
+      objectMethods: objectMethods ?? before.objectMethods,
       specialize: specialize == null
           ? earlierSpecialize
           : earlierSpecialize == null
@@ -797,21 +812,21 @@ final class BeanIntrospection<T extends Object> {
   }
 
   @override
-  String toString() => 'BeanIntrospection<$T>';
+  String toString() => 'Introspection<$T>';
 }
 
-/// The registry that finds the [BeanIntrospection] of a class or object.
+/// The registry that finds the [Introspection] of a class or object.
 ///
 /// Code that reads objects without reflection asks it for their
 /// description. Each application context has its own introspector (the
-/// bean `beanIntrospector`), filled from its modules, with [shared] as
+/// bean `introspector`), filled from its modules, with [shared] as
 /// parent; lookups that fail here go to the [parent]. Applications rarely
 /// use it directly; `BeanWrapper` and `ObjectMapper` do. Micronaut's
 /// `BeanIntrospector` is the same idea.
 ///
 /// ```dart
 /// // List the property names of any introspected object.
-/// final introspector = BeanIntrospector(
+/// final introspector = Introspector(
 ///   introspections: [personIntrospection, addressIntrospection],
 /// );
 /// final meta = introspector.getIntrospection(person);
@@ -823,11 +838,11 @@ final class BeanIntrospection<T extends Object> {
 /// ```java
 /// PropertyDescriptor[] props = BeanUtils.getPropertyDescriptors(Person.class);
 /// ```
-class BeanIntrospector {
+class Introspector {
   /// Creates a registry holding [introspections], delegating misses to
   /// [parent].
-  BeanIntrospector({
-    Iterable<BeanIntrospection<Object>> introspections = const [],
+  Introspector({
+    Iterable<Introspection<Object>> introspections = const [],
     this.parent,
   }) {
     introspections.forEach(register);
@@ -835,17 +850,17 @@ class BeanIntrospector {
 
   /// The process-wide registry, the default of `BeanWrapper`; each context
   /// uses a child of it.
-  static final BeanIntrospector shared = BeanIntrospector();
+  static final Introspector shared = Introspector();
 
   /// The registry consulted when this one has no match.
-  final BeanIntrospector? parent;
-  final _byType = <Type, BeanIntrospection<Object>>{};
+  final Introspector? parent;
+  final _byType = <Type, Introspection<Object>>{};
   final _enums = <Type, EnumType<Enum>>{};
 
   /// The description of the class named `name` in its source
-  /// ([BeanIntrospection.className], the same in a minified build), here or
+  /// ([Introspection.className], the same in a minified build), here or
   /// in [parent]; `null` when none is registered.
-  BeanIntrospection<Object>? byClassName(String name) {
+  Introspection<Object>? byClassName(String name) {
     for (final introspection in _byType.values) {
       if (introspection.className == name) {
         return introspection;
@@ -865,21 +880,25 @@ class BeanIntrospector {
   /// for both, whichever module loads last. Where both have a getter, a
   /// setter, a method or the constructor, the new one is kept; the parts
   /// are the union.
-  void register(BeanIntrospection<Object> introspection) {
-    final existing = _byType[introspection.beanType];
-    _byType[introspection.beanType] =
+  void register(Introspection<Object> introspection) {
+    final existing = _byType[introspection.type];
+    _byType[introspection.type] =
         existing == null ||
             identical(existing, introspection) ||
             introspection.parts.containsAll(existing.parts)
         ? introspection
         : introspection._withEarlier(existing);
     _specialized.clear();
-    final registered = _byType[introspection.beanType]!;
+    final registered = _byType[introspection.type]!;
+    if (registered.objectMethods case final methods?) {
+      _registerObjectMethods(registered.type, methods);
+    }
     for (final property in registered.properties) {
       _collectEnums(property.typeInfo);
     }
     for (final parameter
-        in registered.constructor?.parameters ?? const <BeanParameter>[]) {
+        in registered.constructor?.parameters ??
+            const <IntrospectedParameter>[]) {
       _collectEnums(parameter.type);
     }
   }
@@ -910,7 +929,7 @@ class BeanIntrospector {
   /// registered automatically; the first registration of an enum wins.
   ///
   /// ```dart
-  /// BeanIntrospector.shared.registerEnum(EnumType<Color>(Color.values));
+  /// Introspector.shared.registerEnum(EnumType<Color>(Color.values));
   /// ```
   void registerEnum(EnumType<Enum> type) =>
       _enums.putIfAbsent(type.type, () => type);
@@ -937,26 +956,26 @@ class BeanIntrospector {
 
   /// Every registered introspection, this registry's first, then the
   /// [parent]'s.
-  Iterable<BeanIntrospection<Object>> get introspections sync* {
+  Iterable<Introspection<Object>> get introspections sync* {
     yield* _byType.values;
     if (parent case final parent?) {
       yield* parent.introspections;
     }
   }
 
-  final _specialized = <Type, BeanIntrospection<Object>?>{};
+  final _specialized = <Type, Introspection<Object>?>{};
 
   /// The introspection of the generic type [T] (`Page<Book>`): the generic
   /// introspection of its class specialized with the type [arguments];
   /// `null` when its class is not introspected (or not generic). Cached per
   /// type.
-  BeanIntrospection<Object>? forGenericType<T>(
+  Introspection<Object>? forGenericType<T>(
     List<TypeInfo<Object?>> arguments,
   ) {
     if (_specialized.containsKey(T)) {
       return _specialized[T];
     }
-    BeanIntrospection<Object>? found;
+    Introspection<Object>? found;
     for (final introspection in introspections) {
       if (introspection.isGeneric && introspection.isRawTypeOf<T>()) {
         final specialized = introspection.specialize(arguments);
@@ -969,8 +988,25 @@ class BeanIntrospector {
     return _specialized[T] = found;
   }
 
-  /// Adds every one of [introspections] (see [register]).
-  void registerAll(Iterable<BeanIntrospection<Object>> introspections) =>
+  /// Adds every one of [introspections] (see [register]): for instance the
+  /// descriptions a module's generated `<library>.spring.introspection.dart`
+  /// lists, so a unit test reads and writes the application's classes without
+  /// starting a context.
+  ///
+  /// ```dart
+  /// import 'package:shop/spring_gen/src/app.spring.introspection.dart';
+  ///
+  /// void main() {
+  ///   setUpAll(
+  ///     () => Introspector.shared.registerAll($appBeansIntrospections),
+  ///   );
+  ///   test('reads a book', () {
+  ///     expect(ObjectMapper().readValue<Book>('{"title":"Dune"}').title,
+  ///         'Dune');
+  ///   });
+  /// }
+  /// ```
+  void registerAll(Iterable<Introspection<Object>> introspections) =>
       introspections.forEach(register);
 
   final _typeTests = <Type, bool Function(Object? value)>{};
@@ -1012,12 +1048,12 @@ class BeanIntrospector {
 
   /// The introspection registered for exactly [type], here or in the
   /// [parent]; `null` when there is none.
-  BeanIntrospection<Object>? forType(Type type) =>
+  Introspection<Object>? forType(Type type) =>
       _byType[type] ?? parent?.forType(type);
 
   /// The introspection of [T] (also when [T] is a nullable `Book?`), here
   /// or in the [parent]; `null` when there is none.
-  BeanIntrospection<Object>? forTypeArgument<T>() {
+  Introspection<Object>? forTypeArgument<T>() {
     final exact = _byType[T];
     if (exact != null) {
       return exact;
@@ -1030,38 +1066,115 @@ class BeanIntrospector {
     return parent?.forTypeArgument<T>();
   }
 
-  /// The introspection for [bean]: its exact runtime type (here or in a
+  /// The introspection for [object]: its exact runtime type (here or in a
   /// parent), else the most specific registered supertype (here, then in
   /// the parent).
-  BeanIntrospection<Object>? findIntrospection(Object bean) =>
-      _exact(bean.runtimeType) ?? _mostSpecific(bean);
+  Introspection<Object>? findIntrospection(Object object) =>
+      _exact(object.runtimeType) ?? _mostSpecific(object);
 
-  BeanIntrospection<Object>? _exact(Type type) =>
+  Introspection<Object>? _exact(Type type) =>
       _byType[type] ?? parent?._exact(type);
 
   // A linear scan with `is` checks, so subclasses of introspected classes
   // are handled too: the most specific match wins (a `Manager extends
   // Employee extends Person` instance uses Employee's metadata, not
   // Person's).
-  BeanIntrospection<Object>? _mostSpecific(Object bean) {
-    BeanIntrospection<Object>? best;
+  Introspection<Object>? _mostSpecific(Object object) {
+    Introspection<Object>? best;
     for (final introspection in _byType.values) {
-      if (introspection.isInstance(bean) &&
+      if (introspection.isInstance(object) &&
           (best == null || introspection.isSubtypeOf(best))) {
         best = introspection;
       }
     }
-    return best ?? parent?._mostSpecific(bean);
+    return best ?? parent?._mostSpecific(object);
   }
 
-  /// Like [findIntrospection], but throws `ArgumentError` when [bean]'s
+  // The object methods of the descriptions any introspector registered,
+  // by the described type. `==` has no context at hand, so they are known
+  // to the whole isolate: a class's functions are the same in every
+  // context.
+  static final _registeredObjectMethods = <Type, ObjectMethods<Object>>{};
+
+  // The object methods by runtime type: the registered ones, and those a
+  // lookup found for a subclass or a parameterization of a generic class
+  // (their types in [_foundObjectMethods], forgotten at a registration).
+  static final _objectMethods = <Type, ObjectMethods<Object>>{};
+  static final _foundObjectMethods = <Type>{};
+
+  // The last lookup: a loop, a set or a sort compares objects of one class.
+  static Type? _lastType;
+  static ObjectMethods<Object>? _lastMethods;
+
+  static void _registerObjectMethods(
+    Type type,
+    ObjectMethods<Object> methods,
+  ) {
+    _registeredObjectMethods[type] = methods;
+    _foundObjectMethods
+      ..forEach(_objectMethods.remove)
+      ..clear();
+    _objectMethods[type] = methods;
+    _lastType = null;
+    _lastMethods = null;
+  }
+
+  /// The `==`, `hashCode` and `toString()` generated for [object]'s class
+  /// (`@EqualsAndHashCode`, `@ToString`), which [IntrospectedObject] calls:
+  /// those of its runtime type's description, else of its closest described
+  /// supertype (a subclass the build did not annotate, `Page<Book>` of a
+  /// generic `Page`), whichever introspector registered it (a context's,
+  /// or [shared]). Cached per runtime type.
+  ///
+  /// Throws a `StateError` that says how to register them when no
+  /// description of the class is registered.
+  static ObjectMethods<Object> objectMethodsOf(Object object) {
+    final type = object.runtimeType;
+    if (identical(type, _lastType)) {
+      return _lastMethods!;
+    }
+    final methods = _objectMethods[type] ?? _findObjectMethods(object, type);
+    _lastType = type;
+    _lastMethods = methods;
+    return methods;
+  }
+
+  /// The object methods registered for exactly [type] (a class's
+  /// description, see [objectMethodsOf]); `null` when there are none.
+  static ObjectMethods<Object>? objectMethodsForType(Type type) =>
+      _registeredObjectMethods[type];
+
+  static ObjectMethods<Object> _findObjectMethods(Object object, Type type) {
+    ObjectMethods<Object>? best;
+    for (final methods in _registeredObjectMethods.values) {
+      if (methods.isInstance(object) &&
+          (best == null || methods.isSubtypeOf(best))) {
+        best = methods;
+      }
+    }
+    if (best == null) {
+      throw StateError(
+        'No description of $type is registered, so its ==, hashCode and '
+        'toString() (IntrospectedObject, generated for @EqualsAndHashCode '
+        "and @ToString) cannot run. Start the application (or the test's "
+        'context) first, or register the generated descriptions in a unit '
+        r'test: Introspector.shared.registerAll($<module>Introspections), '
+        "the getter of the module's "
+        'lib/spring_gen/<library>.spring.introspection.dart.',
+      );
+    }
+    _foundObjectMethods.add(type);
+    return _objectMethods[type] = best;
+  }
+
+  /// Like [findIntrospection], but throws `ArgumentError` when [object]'s
   /// class is not introspected (or its module is not registered).
-  BeanIntrospection<Object> getIntrospection(Object bean) =>
-      findIntrospection(bean) ??
+  Introspection<Object> getIntrospection(Object object) =>
+      findIntrospection(object) ??
       (throw ArgumentError.value(
-        bean,
-        'bean',
-        '${bean.runtimeType} is not @Introspected (or its module is not '
+        object,
+        'object',
+        '${object.runtimeType} is not @Introspected (or its module is not '
             'registered)',
       ));
 }

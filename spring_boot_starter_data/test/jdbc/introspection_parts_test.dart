@@ -9,13 +9,13 @@ class Note {
   String title;
 }
 
-BeanIntrospection<Note> describe(Set<IntrospectionPart> parts) {
+Introspection<Note> describe(Set<IntrospectionPart> parts) {
   final read = parts.contains(IntrospectionPart.read);
   final write = parts.contains(IntrospectionPart.write);
-  return BeanIntrospection<Note>(
+  return Introspection<Note>(
     parts: parts,
     properties: [
-      BeanProperty<Note>(
+      IntrospectedProperty<Note>(
         'title',
         type: String,
         typeInfo: const ClassType<String>(),
@@ -27,8 +27,8 @@ BeanIntrospection<Note> describe(Set<IntrospectionPart> parts) {
   );
 }
 
-BeanIntrospector introspector(Set<IntrospectionPart> parts) =>
-    BeanIntrospector()..register(describe(parts));
+Introspector introspector(Set<IntrospectionPart> parts) =>
+    Introspector()..register(describe(parts));
 
 void main() {
   test('rows are mapped to a class described for writing', () {

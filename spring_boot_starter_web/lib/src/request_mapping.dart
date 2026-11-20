@@ -160,7 +160,7 @@ final class RequestMappingHandlerMapping
       '${handler.method.parameters.map((p) => _typeText(p.type)).join(', ')})';
 
   // The Dart signature: `(String isbn) -> Future<Book>`.
-  static String _descriptor(BeanMethod<Object> method) {
+  static String _descriptor(IntrospectedMethod<Object> method) {
     final parameters = [
       for (final p in method.parameters) '${_typeText(p.type)} ${p.name}',
     ].join(', ');

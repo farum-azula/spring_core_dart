@@ -4,9 +4,11 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -39,7 +41,7 @@ Future<TestBuilderResult> _build(
   );
   await readerWriter.testing.loadIsolateSources();
   return await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     _sources(app, others),
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -60,18 +62,14 @@ Future<String> _generate(
   final result = await _build(app, others: others);
   expect(result.errors, isEmpty);
   const path = 'lib/spring_gen/src/beans.spring.dart';
-  final output = result.readerWriter.testing.readString(
-    result.outputs.singleWhere((o) => o.path == path),
-  );
+  final output = moduleText(result, AssetId('pkg', path));
   final errors = await resolveSources<List<String>>(
-    {..._sources(app, others), 'pkg|$path': output},
+    {..._sources(app, others), ...moduleSources(output)},
     (resolver) async {
       final messages = <String>[];
       for (final library in ['lib/src/app.dart', ...others.keys, path]) {
         final element = await resolver.libraryFor(AssetId('pkg', library));
-        final errors = await element.session.getErrors(
-          element.firstFragment.source.fullName,
-        );
+        final errors = await moduleErrors(element);
         if (errors case ErrorsResult(:final diagnostics)) {
           messages.addAll([
             for (final diagnostic in diagnostics)

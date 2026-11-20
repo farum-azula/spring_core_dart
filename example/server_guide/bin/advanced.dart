@@ -85,7 +85,7 @@ Future<void> main(List<String> args) async {
   context.autowireCapableBeanFactory.autowireBean(printer);
   show('report', printer.print());
 
-  final introspector = context.getBean<BeanIntrospector>();
+  final introspector = context.getBean<Introspector>();
   final books = context.getBean<Catalog>().all();
   _log.info('Parent and child contexts');
   final (child, heard) = parentAndChild();

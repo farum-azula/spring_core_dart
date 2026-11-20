@@ -12,7 +12,7 @@ class BookForm {
   BookForm(this._validator, this._introspector);
 
   final BeanValidator _validator;
-  final BeanIntrospector _introspector;
+  final Introspector _introspector;
 
   /// The book, or the errors of [fields] (`isbn`, `title`, `author`,
   /// `price`).

@@ -1,3 +1,8 @@
+## Unreleased
+
+- Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.
+- `spring.main.startup-checks.enabled` is declared for the editors only: `MainStartupChecksProperties` (abstract, outside the scanned `properties/` folder) describes it in `spring_metadata.json`, and no module binds it, as only the generator reads it (`MainProperties.startupChecks` is gone). Every app loses its run-time binding: `example/flutter_guide`'s wasm 5,065,477 → 5,064,212 bytes (−1,265).
+
 ## 0.8.4
 
 - `ModulePlatform.server`: a module only on a server, the Dart VM or an AOT executable (`dart.library.io` without Flutter's `dart.library.ui`): a Flutter app on a phone or a desktop and a browser build compile it away with everything only it reaches. For code that must not ship in an app, which anyone can read (an API that needs a secret key, as the Supabase starter's admin API with the service-role key). `-DSPRING_ALL_PLATFORMS=true` keeps it, as it keeps the others.

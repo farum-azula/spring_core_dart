@@ -13,30 +13,30 @@ class Line {
   final int qty;
 }
 
-final _lineIntrospection = BeanIntrospection<Line>(
+final _lineIntrospection = Introspection<Line>(
   className: 'Line',
   annotations: const [JsonSchemaSource('resources:schemas/line.json')],
   properties: [
-    BeanProperty<Line>(
+    IntrospectedProperty<Line>(
       'sku',
       typeInfo: const ClassType<String>(),
       get: (b) => b.sku,
     ),
-    BeanProperty<Line>(
+    IntrospectedProperty<Line>(
       'qty',
       typeInfo: const ClassType<int>(),
       get: (b) => b.qty,
     ),
   ],
-  constructor: BeanConstructor<Line>(
+  constructor: IntrospectedConstructor<Line>(
     parameters: const [
-      BeanParameter(
+      IntrospectedParameter(
         'sku',
         type: ClassType<String>(),
         symbol: #sku,
         isRequired: true,
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'qty',
         type: ClassType<int>(),
         symbol: #qty,

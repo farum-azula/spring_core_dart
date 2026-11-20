@@ -358,10 +358,10 @@ extension _QueryScanning on DataScanner {
         if (expressions.any((expression) => !expression.compiled)) {
           for (final parameter in query.model.member.parameters) {
             scan.collectErrors(
-              () => scan.introspectUsed(
+              () => scan.introspection.need(
                 parameter.type,
                 check.element,
-                need: IntrospectionNeed.spel,
+                IntrospectionNeed.spel,
               ),
             );
           }
@@ -374,10 +374,10 @@ extension _QueryScanning on DataScanner {
             for (final name in _beanNamesIn(expression.text)) {
               if (beans[name] case final type?) {
                 scan.collectErrors(
-                  () => scan.introspectUsed(
+                  () => scan.introspection.need(
                     type,
                     check.element,
-                    need: IntrospectionNeed.spel,
+                    IntrospectionNeed.spel,
                   ),
                 );
               }

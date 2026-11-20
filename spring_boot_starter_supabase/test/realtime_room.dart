@@ -116,62 +116,76 @@ abstract interface class BrokenRoom {
 
 // ---- generated ----
 
-final cursorIntrospection = BeanIntrospection<Cursor>(
+final cursorIntrospection = Introspection<Cursor>(
   properties: [
-    BeanProperty<Cursor>(
+    IntrospectedProperty<Cursor>(
       'x',
       type: int,
       typeInfo: const ClassType<int>(),
       get: (cursor) => cursor.x,
     ),
-    BeanProperty<Cursor>(
+    IntrospectedProperty<Cursor>(
       'y',
       type: int,
       typeInfo: const ClassType<int>(),
       get: (cursor) => cursor.y,
     ),
   ],
-  constructor: BeanConstructor<Cursor>(
+  constructor: IntrospectedConstructor<Cursor>(
     parameters: const [
-      BeanParameter('x', type: ClassType<int>(), symbol: #x, isRequired: true),
-      BeanParameter('y', type: ClassType<int>(), symbol: #y, isRequired: true),
+      IntrospectedParameter(
+        'x',
+        type: ClassType<int>(),
+        symbol: #x,
+        isRequired: true,
+      ),
+      IntrospectedParameter(
+        'y',
+        type: ClassType<int>(),
+        symbol: #y,
+        isRequired: true,
+      ),
     ],
     create: (positional, named) =>
         Function.apply(Cursor.new, positional, named) as Cursor,
   ),
 );
 
-final memberIntrospection = BeanIntrospection<Member>(
+final memberIntrospection = Introspection<Member>(
   properties: [
-    BeanProperty<Member>(
+    IntrospectedProperty<Member>(
       'name',
       type: String,
       typeInfo: const ClassType<String>(),
       get: (member) => member.name,
     ),
-    BeanProperty<Member>(
+    IntrospectedProperty<Member>(
       'typing',
       type: bool,
       typeInfo: const ClassType<bool>(),
       get: (member) => member.typing,
     ),
   ],
-  constructor: BeanConstructor<Member>(
+  constructor: IntrospectedConstructor<Member>(
     parameters: const [
-      BeanParameter(
+      IntrospectedParameter(
         'name',
         type: ClassType<String>(),
         symbol: #name,
         isRequired: true,
       ),
-      BeanParameter('typing', type: ClassType<bool>(), symbol: #typing),
+      IntrospectedParameter('typing', type: ClassType<bool>(), symbol: #typing),
     ],
     create: (positional, named) =>
         Function.apply(Member.new, positional, named) as Member,
   ),
 );
 
-const _id = BeanParameter('id', type: ClassType<String>(), isRequired: true);
+const _id = IntrospectedParameter(
+  'id',
+  type: ClassType<String>(),
+  isRequired: true,
+);
 const _void = DynamicType();
 const _strings = GenericType<Stream<String>>([ClassType<String>()]);
 const _changes = GenericType<Stream<RealtimeRowChange>>([
@@ -205,7 +219,7 @@ class RoomImpl implements Room {
           'moveCursor',
           parameters: const [
             _id,
-            BeanParameter(
+            IntrospectedParameter(
               'cursor',
               type: ClassType<Cursor>(),
               isRequired: true,
@@ -244,7 +258,11 @@ class RoomImpl implements Room {
           'join',
           parameters: const [
             _id,
-            BeanParameter('me', type: ClassType<Member>(), isRequired: true),
+            IntrospectedParameter(
+              'me',
+              type: ClassType<Member>(),
+              isRequired: true,
+            ),
           ],
           returnType: _void,
           isFuture: true,
@@ -271,7 +289,7 @@ class RoomImpl implements Room {
           'messagesOf',
           parameters: const [
             _id,
-            BeanParameter(
+            IntrospectedParameter(
               'authors',
               type: ListType<String>(ClassType<String>()),
               isRequired: true,
@@ -362,7 +380,7 @@ class DeskImpl implements Desk {
         ProxyMethod(
           'note',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'text',
               type: ClassType<String>(),
               isRequired: true,
@@ -377,7 +395,7 @@ class DeskImpl implements Desk {
         ProxyMethod(
           'sit',
           parameters: const [
-            BeanParameter('state', type: _json, isRequired: true),
+            IntrospectedParameter('state', type: _json, isRequired: true),
           ],
           returnType: _void,
           isFuture: true,
@@ -418,8 +436,16 @@ class DeskImpl implements Desk {
 
 /// The handler of an invalid interface, which fails when it is made.
 InvocationHandler brokenRoomHandler(DependencyResolver r) {
-  const a = BeanParameter('a', type: ClassType<String>(), isRequired: true);
-  const b = BeanParameter('b', type: ClassType<String>(), isRequired: true);
+  const a = IntrospectedParameter(
+    'a',
+    type: ClassType<String>(),
+    isRequired: true,
+  );
+  const b = IntrospectedParameter(
+    'b',
+    type: ClassType<String>(),
+    isRequired: true,
+  );
   return InterfaceProxies.handlerFor(
     r,
     InterfaceMetadata<BrokenRoom>(
@@ -437,7 +463,7 @@ InvocationHandler brokenRoomHandler(DependencyResolver r) {
           'extraParameter',
           parameters: const [
             _id,
-            BeanParameter(
+            IntrospectedParameter(
               'extra',
               type: ClassType<String>(),
               isRequired: true,

@@ -10,10 +10,11 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
 
+import '../support/module_files.dart';
 import '../support/real_sources.dart';
 
 const _template =
@@ -103,14 +104,14 @@ Future<String> _build(
       ..delete(AssetId.parse(_pagingTemplate));
   }
   final result = await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     own,
     rootPackage: 'pkg',
     readerWriter: readerWriter,
     flattenOutput: true,
   );
   expect(result.errors, isEmpty);
-  return result.readerWriter.testing.readString(result.outputs.single);
+  return moduleText(result);
 }
 
 String _normalize(String code) => code.replaceAll(RegExp(r'\s'), '');
@@ -226,15 +227,13 @@ void main() {
         {
           for (final MapEntry(:key, :value) in _sources().entries)
             key: value as String,
-          'pkg|lib/spring_gen/src/beans.spring.dart': output,
+          ...moduleSources(output),
         },
         (resolver) async {
           final library = await resolver.libraryFor(
             AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
           );
-          final result = await library.session.getErrors(
-            library.firstFragment.source.fullName,
-          );
+          final result = await moduleErrors(library);
           return [
             if (result case ErrorsResult(:final diagnostics))
               for (final diagnostic in diagnostics)

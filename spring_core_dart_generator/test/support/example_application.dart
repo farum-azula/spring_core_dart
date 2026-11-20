@@ -8,9 +8,11 @@ import 'package:build/build.dart';
 
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import 'module_files.dart';
 
 const _main = '''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -70,7 +72,7 @@ Future<String> generateEntryPoint(String entry, {String? pubspec}) async {
     }
   }
   final result = await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     {
       'pkg|$entry': _main,
       'pkg|lib/spring_auto_configuration.dart': _ownAutoConfiguration,
@@ -87,9 +89,12 @@ Future<String> generateEntryPoint(String entry, {String? pubspec}) async {
     flattenOutput: true,
   );
   expect(result.errors, isEmpty);
-  return readerWriter.testing.readString(
+  return moduleText(
+    result,
     result.outputs.singleWhere(
-      (id) => id.path.startsWith(entry.split('/').first),
+      (id) =>
+          id.path.startsWith(entry.split('/').first) &&
+          id.path.endsWith('.spring.dart'),
     ),
   );
 }

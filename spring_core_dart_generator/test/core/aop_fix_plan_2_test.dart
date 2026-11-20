@@ -11,10 +11,12 @@ import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -59,7 +61,7 @@ Future<TestBuilderResult> _build(
     ]);
   }
   return await testBuilder(
-    SpringBuilder(generations: starterGenerations, proxyMode: proxyMode),
+    SpringBuilder(generations: packageGenerations, proxyMode: proxyMode),
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
       for (final MapEntry(:key, :value) in starter.entries)
@@ -79,10 +81,8 @@ String _normalize(String code) => code
 
 Matcher _has(String code) => contains(_normalize(code));
 
-String _output(TestBuilderResult result, String path) => result
-    .readerWriter
-    .testing
-    .readString(result.outputs.singleWhere((o) => o.path == path));
+String _output(TestBuilderResult result, String path) =>
+    moduleText(result, AssetId('pkg', path));
 
 /// The generated module of a `@ComponentScan` of [beans].
 Future<String> _generate(String beans) async {
@@ -124,13 +124,11 @@ Future<List<String>> _diagnostics(
   return await resolveSources<List<String>>(
     {
       for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value,
-      'pkg|$path': output,
+      ...moduleSources(output),
     },
     (resolver) async {
       final library = await resolver.libraryFor(AssetId('pkg', path));
-      final errors = await library.session.getErrors(
-        library.firstFragment.source.fullName,
-      );
+      final errors = await moduleErrors(library);
       return [
         if (errors case ErrorsResult(:final diagnostics))
           for (final d in diagnostics)
@@ -595,26 +593,45 @@ class Audit {
 }
 ''';
       final output = await _generate(source);
-      expect(output, contains('invokeFutureOr<int>(this,this._target,'));
-      expect(output, contains('invokeAsync<String>(this,this._target,'));
-      expect(output, contains('invokeFutureOr<String>(this,this._target,'));
-      expect(output, contains(r'_$i.invokeFutureOr<int>(this,this,'));
-      expect(output, contains(r'_$i.invokeAsync<int>(this,this,'));
+      expect(
+        output,
+        contains('invokeFutureOr<int>(proxy:this,target:this._target,'),
+      );
+      expect(
+        output,
+        contains('invokeAsync<String>(proxy:this,target:this._target,'),
+      );
+      expect(
+        output,
+        contains('invokeFutureOr<String>(proxy:this,target:this._target,'),
+      );
+      expect(
+        output,
+        contains(r'_$invoker.invokeFutureOr<int>(proxy:this,target:this,'),
+      );
+      expect(
+        output,
+        contains(r'_$invoker.invokeAsync<int>(proxy:this,target:this,'),
+      );
       // `Future<T>?` stays an ordinary value.
-      expect(output, isNot(contains('invokeAsync<int>(this,this._target,')));
+      expect(
+        output,
+        isNot(contains('invokeAsync<int>(proxy:this,target:this._target,')),
+      );
       expect(await _diagnostics({'lib/src/service.dart': source}), isEmpty);
     },
   );
 
   test(
-    r'a parameter named _$i does not clash with the generated local',
+    r'a parameter named _$invoker does not clash with the generated local',
     () async {
       const source = r'''
 @Service()
 class Orders {
   int _placed = 0;
 
-  int place(int _$i, [int _$i$ = 0]) => _placed += _$i + _$i$;
+  int place(int _$invoker, [int _$invoker$ = 0]) =>
+      _placed += _$invoker + _$invoker$;
 }
 
 @Aspect()
@@ -625,7 +642,7 @@ class Audit {
 }
 ''';
       final output = await _generate(source);
-      expect(output, contains(r'final_$i$$=this.aopInvoker;'));
+      expect(output, contains(r'final_$invoker$$=this.aopInvoker;'));
       expect(await _diagnostics({'lib/src/service.dart': source}), isEmpty);
     },
   );

@@ -114,27 +114,51 @@ class ServiceProxy implements Service, Advised {
 
   @override
   int price(int amount) =>
-      _invoker.invoke(this, _target, 0, [
-            amount,
-          ], (args) => _target.price(args[0]! as int))!
+      _invoker.invoke(
+            proxy: this,
+            target: _target,
+            methodIndex: 0,
+            arguments: [
+              amount,
+            ],
+            original: (args) => _target.price(args[0]! as int),
+          )!
           as int;
 
   @override
-  Future<int> fetch(int id) => _invoker.invokeAsync<int>(this, _target, 1, [
-    id,
-  ], (args) => _target.fetch(args[0]! as int));
+  Future<int> fetch(int id) => _invoker.invokeAsync<int>(
+    proxy: this,
+    target: _target,
+    methodIndex: 1,
+    arguments: [
+      id,
+    ],
+    original: (args) => _target.fetch(args[0]! as int),
+  );
 
   @override
   void reset() {
-    _invoker.invoke(this, _target, 2, const [], (args) {
-      _target.reset();
-      return null;
-    });
+    _invoker.invoke(
+      proxy: this,
+      target: _target,
+      methodIndex: 2,
+      arguments: const [],
+      original: (args) {
+        _target.reset();
+        return null;
+      },
+    );
   }
 
   @override
   String get name =>
-      _invoker.invoke(this, _target, 3, const [], (_) => _target.name)!
+      _invoker.invoke(
+            proxy: this,
+            target: _target,
+            methodIndex: 3,
+            arguments: const [],
+            original: (_) => _target.name,
+          )!
           as String;
 }
 

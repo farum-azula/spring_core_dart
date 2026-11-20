@@ -1,4 +1,4 @@
-import 'package:spring_core_dart_generator/src/core/did_you_mean.dart';
+import 'package:spring_core_dart_generator/src/core/builder/closest_name.dart';
 import 'package:spring_core_dart_generator/src/data/part_tree.dart';
 
 /// A repository method that is no valid query: its name is not one, or it

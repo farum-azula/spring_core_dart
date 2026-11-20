@@ -1,3 +1,7 @@
+## Unreleased
+
+- Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.
+
 ## 0.8.4
 
 - `spring.resources.prefetch` with `stage: app`: the wait before the download ends when the context starts to close (`ContextClosedEvent`, which comes before any bean is destroyed), not only when its bean is destroyed. A bean whose destruction waits for the network (a Realtime connection of the Supabase starter) could hold the wait back, and a widget test that closed the app found the timer still pending.

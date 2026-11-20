@@ -3,8 +3,8 @@
 // of each screen (`extension BookPageRoute on BookPage`).
 import 'package:code_builder/code_builder.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/core/dart_names.dart';
-import 'package:spring_core_dart_generator/src/core/module_emitter.dart';
+import 'package:spring_core_dart_generator/src/core/beans/module_emitter.dart';
+import 'package:spring_core_dart_generator/src/core/properties/dart_names.dart';
 import 'package:spring_core_dart_generator/src/navigation/navigation_scanning.dart';
 
 const _navigationUrl =

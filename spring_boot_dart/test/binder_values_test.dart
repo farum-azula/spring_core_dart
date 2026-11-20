@@ -53,14 +53,14 @@ class Holder {
   Switch toggle = Switch.standby;
 }
 
-BeanProperty<T> _read<T extends Object>(
+IntrospectedProperty<T> _read<T extends Object>(
   String name,
   TypeInfo<Object?>? info,
   Type type,
   Object? Function(T) get, [
   void Function(T, Object?)? set,
   List<Object> annotations = const [],
-]) => BeanProperty<T>(
+]) => IntrospectedProperty<T>(
   name,
   type: type,
   typeInfo: info,
@@ -69,25 +69,29 @@ BeanProperty<T> _read<T extends Object>(
   annotations: annotations,
 );
 
-final innerIntrospection = BeanIntrospection<Inner>(
+final innerIntrospection = Introspection<Inner>(
   properties: [
     _read<Inner>('count', const ClassType<int>(), int, (b) => b.count),
   ],
-  constructor: BeanConstructor<Inner>(
-    parameters: const [BeanParameter('count', type: ClassType<int>())],
+  constructor: IntrospectedConstructor<Inner>(
+    parameters: const [IntrospectedParameter('count', type: ClassType<int>())],
     create: (positional, named) =>
         Function.apply(Inner.new, positional, named) as Inner,
   ),
 );
 
-final poolIntrospection = BeanIntrospection<Pool>(
+final poolIntrospection = Introspection<Pool>(
   properties: [
     _read<Pool>('name', const ClassType<String>(), String, (b) => b.name),
   ],
-  constructor: BeanConstructor<Pool>(
+  constructor: IntrospectedConstructor<Pool>(
     parameters: const [
-      BeanParameter('name', type: ClassType<String>(), isRequired: true),
-      BeanParameter(
+      IntrospectedParameter(
+        'name',
+        type: ClassType<String>(),
+        isRequired: true,
+      ),
+      IntrospectedParameter(
         'tags',
         type: ListType<String>(ClassType<String>()),
         isRequired: true,
@@ -95,37 +99,37 @@ final poolIntrospection = BeanIntrospection<Pool>(
           DefaultValue(['a', 'b']),
         ],
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'ids',
         type: SetType<int>(ClassType<int>()),
         isRequired: true,
         annotations: [DefaultValue('1,2')],
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'level',
         type: EnumType<Level>(Level.values),
         isRequired: true,
         annotations: [DefaultValue('high')],
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'timeout',
         type: ClassType<Duration>(),
         isRequired: true,
         annotations: [DefaultValue('5s')],
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'extra',
         type: DynamicType(),
         isRequired: true,
         annotations: [DefaultValue('x')],
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'headers',
         type: MapType<String, String>(ClassType<String>(), ClassType<String>()),
         isRequired: true,
         annotations: [DefaultValue()],
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'inner',
         type: ClassType<Inner>(),
         isRequired: true,
@@ -145,19 +149,23 @@ final poolIntrospection = BeanIntrospection<Pool>(
   ),
 );
 
-final needyIntrospection = BeanIntrospection<Needy>(
+final needyIntrospection = Introspection<Needy>(
   properties: [
     _read<Needy>('name', const ClassType<String>(), String, (b) => b.name),
   ],
-  constructor: BeanConstructor<Needy>(
+  constructor: IntrospectedConstructor<Needy>(
     parameters: const [
-      BeanParameter('name', type: ClassType<String>(), isRequired: true),
-      BeanParameter(
+      IntrospectedParameter(
+        'name',
+        type: ClassType<String>(),
+        isRequired: true,
+      ),
+      IntrospectedParameter(
         'names',
         type: ListType<String>(ClassType<String>()),
         isRequired: true,
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'level',
         type: EnumType<Level>(Level.values),
         isRequired: true,
@@ -168,7 +176,7 @@ final needyIntrospection = BeanIntrospection<Needy>(
   ),
 );
 
-final holderIntrospection = BeanIntrospection<Holder>(
+final holderIntrospection = Introspection<Holder>(
   properties: [
     _read<Holder>(
       'ids',
@@ -233,7 +241,7 @@ void main() {
   Binder binder(Map<String, Object> properties) => Binder(
     StandardEnvironment(systemEnvironment: {})
       ..propertySources.addFirst(MapPropertySource('test', properties)),
-    introspector: BeanIntrospector()
+    introspector: Introspector()
       ..registerAll([
         innerIntrospection,
         poolIntrospection,

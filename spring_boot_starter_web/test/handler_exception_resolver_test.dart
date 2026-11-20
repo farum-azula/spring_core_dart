@@ -124,14 +124,14 @@ final class _FailingFilter implements WebFilter {
   }
 }
 
-BeanMethod<T> _method<T extends Object>(
+IntrospectedMethod<T> _method<T extends Object>(
   String name,
   Function Function(T bean) method,
   List<Object> annotations, {
   List<Type> parameterTypes = const [],
-  List<BeanParameter> parameters = const [],
+  List<IntrospectedParameter> parameters = const [],
   TypeInfo<Object?> returns = const ClassType<String>(),
-}) => BeanMethod<T>(
+}) => IntrospectedMethod<T>(
   name,
   parameterTypes: parameterTypes,
   parameters: parameters,
@@ -140,15 +140,15 @@ BeanMethod<T> _method<T extends Object>(
   annotations: annotations,
 );
 
-BeanMethod<_Api> _route(String path, Exception Function() error) =>
-    BeanMethod<_Api>(
+IntrospectedMethod<_Api> _route(String path, Exception Function() error) =>
+    IntrospectedMethod<_Api>(
       path,
       returnTypeInfo: const ClassType<String>(),
       invoke: (bean, arguments) => bean.fail(error()),
       annotations: [GetMapping('/api/$path')],
     );
 
-BeanMethod<B> _handler<B extends Object, E extends Exception>(
+IntrospectedMethod<B> _handler<B extends Object, E extends Exception>(
   String name,
   Function Function(B bean) method,
 ) => _method<B>(
@@ -157,7 +157,7 @@ BeanMethod<B> _handler<B extends Object, E extends Exception>(
   const [ExceptionHandler()],
   parameterTypes: [E],
   parameters: [
-    BeanParameter('error', type: ClassType<E>(), isRequired: true),
+    IntrospectedParameter('error', type: ClassType<E>(), isRequired: true),
   ],
   returns: const GenericType<ResponseEntity<String>>([ClassType<String>()]),
 );

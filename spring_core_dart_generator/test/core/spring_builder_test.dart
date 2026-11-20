@@ -1,23 +1,64 @@
 // The main builder's module: beans, injection points, conditions, the
 // container's metadata, inherited members, registrars and listeners.
+import 'dart:io';
+import 'dart:isolate';
+
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:spring_core_dart_generator/builder.dart';
-import 'package:spring_core_dart_generator/src/core/bean_scanner.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
 import 'package:test/test.dart';
+import 'package:yaml/yaml.dart';
 
 import '../support/spring_builder.dart';
 
 void main() {
   test('builder factory', () {
     expect(springCoreDartBuilder(BuilderOptions.empty), isA<SpringBuilder>());
+    // A module's library, and beside it its descriptions, the binding of
+    // its @ConfigurationProperties classes, its proxies, an application's
+    // debug part and the part of its --dart-define values.
+    List<String> module(String root) => [
+      '$root/spring_gen/{{}}.spring.dart',
+      '$root/spring_gen/{{}}.spring.introspection.dart',
+      '$root/spring_gen/{{}}.spring.properties.dart',
+      '$root/spring_gen/{{}}.spring.proxies.dart',
+      '$root/spring_gen/{{}}.spring.debug.dart',
+      '$root/spring_gen/{{}}.spring.env.dart',
+    ];
     expect(SpringBuilder().buildExtensions, {
-      '^lib/{{}}.dart': ['lib/spring_gen/{{}}.spring.dart'],
-      '^bin/{{}}.dart': ['bin/spring_gen/{{}}.spring.dart'],
-      '^test/{{}}.dart': ['test/spring_gen/{{}}.spring.dart'],
-      '^example/{{}}.dart': ['example/spring_gen/{{}}.spring.dart'],
+      '^lib/{{}}.dart': module('lib'),
+      '^bin/{{}}.dart': module('bin'),
+      '^test/{{}}.dart': module('test'),
+      '^example/{{}}.dart': module('example'),
     });
+    expect(SpringPropertiesBuilder().buildExtensions, {
+      '^lib/{{}}.dart': module('lib'),
+    });
+  });
+
+  test('build.yaml declares the outputs the builders write', () {
+    final builders =
+        (loadYaml(
+              File.fromUri(
+                Isolate.resolvePackageUriSync(
+                  Uri.parse('package:spring_core_dart_generator/'),
+                )!.resolve('../build.yaml'),
+              ).readAsStringSync(),
+            ) as YamlMap)['builders']
+            as YamlMap;
+    Map<String, List<String>> declared(String builder) => {
+      for (final MapEntry(:key, :value)
+          in ((builders[builder] as YamlMap)['build_extensions'] as YamlMap)
+              .entries)
+        key as String: (value as YamlList).cast<String>(),
+    };
+    expect(declared('spring_core_dart'), SpringBuilder().buildExtensions);
+    expect(
+      declared('spring_properties'),
+      SpringPropertiesBuilder().buildExtensions,
+    );
   });
 
   test('primary constructors: the dependencies and a const bean', () async {
@@ -94,9 +135,7 @@ class DraftRepo implements Repo<_Draft> {}
           key: '$coreImport$value',
       });
       expect(result.errors, isEmpty);
-      final source = result.readerWriter.testing.readString(
-        result.outputs.single,
-      );
+      final source = moduleText(result);
       expect(source, contains("import 'dart:io' as"));
       expect(source, isNot(contains('dart:_')));
       final output = normalize(source);
@@ -790,31 +829,31 @@ class NoCtor {
   final int x;
 }
 ''');
-      // A constant: `const BeanIntrospection<Form>(`, the closures are
+      // A constant: `const Introspection<Form>(`, the closures are
       // top-level functions and each type comes from its typeInfo.
-      expect(output, hasCode('const BeanIntrospection<Form>('));
+      expect(output, hasCode('const Introspection<Form>('));
       expect(
         output,
         matches(
           RegExp(
-            r"BeanProperty<Form>\(r'nick',nullable:true,"
+            r"IntrospectedProperty<Form>\(r'nick',nullable:true,"
             r'typeInfo:ClassType<String>\(nullable:true\),get:_\$get\d+,'
             r'set:_\$set\d+,annotations:\[Size\(max:3\)\]\)',
           ),
         ),
       );
-      expect(output, hasCode('(Form bean) => bean.nick;'));
+      expect(output, hasCode('(Form object) => object.nick;'));
       expect(
         output,
         hasCode(
-          '(Form bean, Object? value) => bean.nick = (value as String?);',
+          '(Form object, Object? value) => object.nick = (value as String?);',
         ),
       );
       expect(
         output,
         matches(
           RegExp(
-            r"BeanProperty<Form>\(r'id',typeInfo:ClassType<int>\(\),"
+            r"IntrospectedProperty<Form>\(r'id',typeInfo:ClassType<int>\(\),"
             r'hasInitialValue:true,initialValue:1,get:_\$get\d+\)',
           ),
         ),
@@ -831,7 +870,7 @@ class NoCtor {
       expect(
         output,
         hasCode(
-          '(Form bean, Object? value) => bean.computed = (value as int);',
+          '(Form object, Object? value) => object.computed = (value as int);',
         ),
       );
       expect(output, hasCode('annotations: [Marker()]'));
@@ -842,7 +881,7 @@ class NoCtor {
         output,
         matches(
           RegExp(
-            r"BeanMethod<Form>\(r'greet',returnType:String,parameterTypes:"
+            r"IntrospectedMethod<Form>\(r'greet',returnType:String,parameterTypes:"
             r'\[String,int\],invoke:_\$invoke\d+\)',
           ),
         ),
@@ -850,21 +889,21 @@ class NoCtor {
       expect(
         output,
         hasCode(
-          '(Form bean, List<Object?> arguments) => '
-          'Function.apply(bean.greet, arguments);',
+          '(Form object, List<Object?> arguments) => '
+          'Function.apply(object.greet, arguments);',
         ),
       );
-      expect(output, hasCode("BeanMethod<Form>(r'baseMethod',"));
+      expect(output, hasCode("IntrospectedMethod<Form>(r'baseMethod',"));
       expect(
         output,
-        hasCode("BeanMethod<Form>(r'later', returnType: Future<void>,"),
+        hasCode("IntrospectedMethod<Form>(r'later', returnType: Future<void>,"),
       );
       for (final skipped in ["r'configure'", "r'typed'", "r'util'"]) {
         expect(output, isNot(contains(skipped)));
       }
       expect(output, hasCode('instantiate: Form.new'));
       final noCtor = output.substring(
-        output.indexOf('BeanIntrospection<NoCtor>'),
+        output.indexOf('Introspection<NoCtor>'),
       );
       expect(noCtor, isNot(contains('instantiate')));
     });
@@ -891,9 +930,7 @@ class B {}
         'lib/src/inside/a.dart': '$coreImport@Component() class Inside {}',
         'lib/outside.dart': '$coreImport@Component() class Outside {}',
       });
-      final output = result.readerWriter.testing.readString(
-        result.outputs.single,
-      );
+      final output = moduleText(result);
       expect(output, contains('Inside'));
       expect(output, isNot(contains('Outside')));
     });
@@ -912,9 +949,7 @@ class TestOnly {}
 ''',
       });
       expect(result.errors, isEmpty);
-      final output = result.readerWriter.testing.readString(
-        result.outputs.single,
-      );
+      final output = moduleText(result);
       expect(output, contains("import '../../fixtures/beans.dart' as _i2;"));
     });
 
@@ -1018,20 +1053,20 @@ class Form(var String email, {var int age = 0});
         output,
         matches(
           RegExp(
-            r"BeanProperty<Form>\(r'email',typeInfo:ClassType<String>\(\),"
+            r"IntrospectedProperty<Form>\(r'email',typeInfo:ClassType<String>\(\),"
             r'get:_\$get\d+,set:_\$set\d+\)',
           ),
         ),
       );
       expect(output, hasCode(r'Object? _$get'));
-      expect(output, hasCode('(Form bean) => bean.email;'));
+      expect(output, hasCode('(Form object) => object.email;'));
       expect(
         output,
         hasCode(
-          '(Form bean, Object? value) => bean.email = (value as String);',
+          '(Form object, Object? value) => object.email = (value as String);',
         ),
       );
-      expect(output, hasCode("BeanProperty<Form>(r'age', typeInfo:"));
+      expect(output, hasCode("IntrospectedProperty<Form>(r'age', typeInfo:"));
     });
   });
 
@@ -1642,7 +1677,7 @@ final BeanModule pkgBeans = \$pkgBeans;
       final result = await build(options);
       expect(result.errors, isEmpty);
       return normalize(
-        result.readerWriter.testing.readString(result.outputs.single),
+        moduleText(result),
       );
     }
 

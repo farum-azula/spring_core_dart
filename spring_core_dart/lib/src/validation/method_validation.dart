@@ -90,7 +90,7 @@ class Validated {
 /// ```
 final class MethodValidationInterceptor implements MethodInterceptor {
   /// An interceptor that checks with [validator]; by default a new
-  /// [BeanValidator] on `BeanIntrospector.shared`.
+  /// [BeanValidator] on `Introspector.shared`.
   MethodValidationInterceptor([BeanValidator? validator])
     : validator = validator ?? BeanValidator();
 
@@ -166,7 +166,7 @@ final class MethodValidationInterceptor implements MethodInterceptor {
 /// class ValidationConfig {
 ///   @Bean()
 ///   MethodValidationPostProcessor methodValidationPostProcessor(
-///     BeanIntrospector introspector,
+///     Introspector introspector,
 ///   ) => MethodValidationPostProcessor(
 ///       BeanValidator(introspector: introspector));
 /// }
@@ -181,7 +181,7 @@ final class MethodValidationInterceptor implements MethodInterceptor {
 /// ```
 final class MethodValidationPostProcessor implements PointcutAdvisor, Ordered {
   /// An advisor that checks with [validator] (by default a new
-  /// [BeanValidator] on `BeanIntrospector.shared`).
+  /// [BeanValidator] on `Introspector.shared`).
   ///
   /// Beans whose class annotations make one of [excludeFilters] return
   /// `true` are left alone; Spring Boot passes one that excludes

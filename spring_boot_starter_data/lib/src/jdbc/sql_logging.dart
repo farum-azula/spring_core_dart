@@ -96,8 +96,8 @@ final class StatementLogger {
       final named = names != null && i < names.length;
       final name = named ? names[i] : '?${i + 1}';
       final hidden =
-          LogValues.looksSecret(name) || (!named && settings.showParameters);
-      final shown = hidden ? LogValues.masked : LogValues.value(name, value);
+          SecretNames.looksSecret(name) || (!named && settings.showParameters);
+      final shown = hidden ? SecretNames.masked : LogValues.value(name, value);
       final type = hidden || value == null ? '' : ' (${value.runtimeType})';
       _valuesLog.log(_valuesLevel, '[$label]   $name = $shown$type');
     }

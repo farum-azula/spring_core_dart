@@ -13,9 +13,11 @@ import 'dart:isolate';
 import 'package:build/build.dart' show AssetId;
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _main = r'''
 import 'dart:convert';
@@ -84,7 +86,7 @@ Future<(Map<String, String>, String)> _build({
   }
   final workspace = await loadPackageConfigUri((await Isolate.packageConfig)!);
   final result = await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -100,10 +102,9 @@ Future<(Map<String, String>, String)> _build({
           ]),
   );
   expect(result.errors, isEmpty);
-  final output = readerWriter.testing.readString(
-    result.outputs.singleWhere(
-      (o) => o.path == 'bin/spring_gen/main.spring.dart',
-    ),
+  final output = moduleText(
+    result,
+    AssetId('pkg', 'bin/spring_gen/main.spring.dart'),
   );
   return (sources, output);
 }
@@ -306,7 +307,7 @@ class SettingsAudit {
         );
         await readerWriter.testing.loadIsolateSources();
         final result = await testBuilder(
-          SpringBuilder(generations: starterGenerations, deferProxies: defer),
+          SpringBuilder(generations: packageGenerations, deferProxies: defer),
           {
             'pkg|lib/src/settings.dart': r'''
 import 'package:spring_boot_dart/spring_boot_dart.dart';
@@ -326,10 +327,9 @@ class Settings {
           flattenOutput: true,
         );
         expect(result.errors, isEmpty);
-        final output = readerWriter.testing.readString(
-          result.outputs.singleWhere(
-            (o) => o.path == 'lib/spring_gen/src/settings.spring.dart',
-          ),
+        final output = moduleText(
+          result,
+          AssetId('pkg', 'lib/spring_gen/src/settings.spring.dart'),
         );
         expect(output.contains('AopProxyFactory.deferred('), defer);
         expect(output.contains(r'class _$SettingsProxy'), !defer);
@@ -425,7 +425,7 @@ class Guards {
       );
       await readerWriter.testing.loadIsolateSources();
       final result = await testBuilder(
-        SpringBuilder(generations: starterGenerations),
+        SpringBuilder(generations: packageGenerations),
         {
           // Imports the modules, as a starter's does: the build of one
           // does not read the module being built.
@@ -477,10 +477,9 @@ class SettingsAudit {
         flattenOutput: true,
       );
       expect(result.errors, isEmpty);
-      return readerWriter.testing.readString(
-        result.outputs.singleWhere(
-          (o) => o.path == 'lib/spring_gen/src/settings/settings.spring.dart',
-        ),
+      return moduleText(
+        result,
+        AssetId('pkg', 'lib/spring_gen/src/settings/settings.spring.dart'),
       );
     }
 
@@ -503,7 +502,11 @@ class SettingsAudit {
     final (sources, output) = await _build();
     final directory = await Directory.systemTemp.createTemp('spring_proxy_');
     addTearDown(() => directory.delete(recursive: true));
-    final files = {...sources, 'bin/spring_gen/main.spring.dart': output};
+    final files = {
+      ...sources,
+      for (final MapEntry(:key, :value) in moduleSources(output).entries)
+        AssetId.parse(key).path: value,
+    };
     for (final MapEntry(:key, :value) in files.entries) {
       final file = File('${directory.path}/$key');
       await file.parent.create(recursive: true);

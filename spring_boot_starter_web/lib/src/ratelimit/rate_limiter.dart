@@ -245,7 +245,7 @@ final class RequestRateLimiter {
     this.storeFailureRetryAfter = const Duration(seconds: 5),
     this.headers = true,
     String? hashSecret,
-    BeanIntrospector? introspector,
+    Introspector? introspector,
   }) : _hashKey = hashSecret == null ? null : utf8.encode(hashSecret),
        keyResolvers = List.unmodifiable([
          ...keyResolvers,

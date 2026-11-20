@@ -1,5 +1,5 @@
-import 'package:spring_core_dart_generator/src/core/dart_names.dart';
-import 'package:spring_core_dart_generator/src/core/did_you_mean.dart';
+import 'package:spring_core_dart_generator/src/core/builder/closest_name.dart';
+import 'package:spring_core_dart_generator/src/core/properties/dart_names.dart';
 import 'package:spring_core_dart_generator/src/flutter/theme_references.dart';
 
 /// The keys of a `loaders.<name>` that every kind has (canonical): they are

@@ -193,7 +193,7 @@
         {
           "name": "introspector",
           "kind": "field",
-          "type": "BeanIntrospector?"
+          "type": "Introspector?"
         },
         {
           "name": "parse",

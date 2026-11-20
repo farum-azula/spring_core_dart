@@ -99,7 +99,7 @@ class ConfigurationPropertiesBinder extends BeanPostProcessor {
 
   /// Describes the properties classes: their fields, setters, constructor
   /// and annotations.
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   /// Turns validation errors into the text of the error lines.
   final MessageSource messageSource;
@@ -311,7 +311,7 @@ abstract final class ConstructorBound {
     String beanName,
   ) => ConfigurationPropertiesBinder(
     resolver.dependency<ConfigurableEnvironment>(),
-    resolver.dependency<BeanIntrospector>(),
+    resolver.dependency<Introspector>(),
     beanFactory: resolver.dependency<ConfigurableListableBeanFactory>(),
   ).bindOrCreate<T>(beanName);
 }

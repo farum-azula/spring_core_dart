@@ -369,7 +369,8 @@ starter's warning list). The generator reads
 `spring.main.startup-checks.enabled` when it writes the application:
 `true` keeps those checks in every build, `false` in none, not set in
 debug and profile builds only, so a release build ships none of their
-code and a mistake fails at the first call instead of the start.
+code and a mistake fails at the first call instead of the start. The key is declared for the editors only
+(`spring_metadata.json`); no bean binds it at run time.
 
 **Measuring the start.** `SpringApplication(applicationStartup:
 BufferingApplicationStartup())` records the steps of the start
@@ -951,8 +952,9 @@ environment variables (`API_URL` answers `api.url`,
 On the web and in AOT builds, `String.fromEnvironment` works only as a
 `const` with a literal key, so a define must be known at build time. The
 generator therefore lists every key the application can read, each also
-in its environment form (`SPRING_PROFILES_ACTIVE`), as
-`SpringApplication(dartDefines: ...)`:
+in its environment form (`SPRING_PROFILES_ACTIVE`), in a constant map of
+its own file, `spring_gen/main.spring.env.dart`, which `springApplication`
+passes as `SpringApplication(dartDefines: _$dartDefines)`:
 
 - the `${...}` placeholders of annotations;
 - the `@ConditionalOnProperty` names;
@@ -976,7 +978,11 @@ properties to the JVM.
 A hot reload does not run `main` again, so the running context would
 keep the old beans. The generator writes `springApplication` and the
 bean module as getters, plus a fingerprint of the generated code, and
-the generated `reloadApplication(context)` decides what to do:
+the generated `reloadApplication(context)` decides what to do. The
+fingerprint and `reloadApplication` are in the part
+`spring_gen/main.spring.debug.dart`, which the application refers to only
+under `!const bool.fromEnvironment('dart.vm.product')`: debug and profile
+builds have them, a release build compiles none of it.
 
 - only method bodies changed (same fingerprint): the context is kept;
   the beans keep their state and already run the new code;

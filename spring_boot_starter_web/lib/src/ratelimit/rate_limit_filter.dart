@@ -106,7 +106,8 @@ final class RateLimiterInterceptor
   /// Resolves `${...}` in the limits.
   final Environment environment;
 
-  final _byMethod = Map<BeanMethod<Object>, List<RateLimitRule>>.identity();
+  final _byMethod =
+      Map<IntrospectedMethod<Object>, List<RateLimitRule>>.identity();
 
   @override
   void afterSingletonsInstantiated() {
@@ -160,7 +161,7 @@ final class RateLimiterInterceptor
 Iterable<
   ({
     String type,
-    BeanMethod<Object> method,
+    IntrospectedMethod<Object> method,
     List<(RateLimiter, bool)> annotations,
   })
 >

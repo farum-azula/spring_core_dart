@@ -38,7 +38,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// ```
 ///
 /// Hibernate: the metamodel's `EntityType`; Micronaut Data: the entity's
-/// `BeanIntrospection`.
+/// `Introspection`.
 final class EntityIntrospection<T extends Object> {
   /// The description of class [className] with [properties].
   EntityIntrospection(

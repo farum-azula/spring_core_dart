@@ -193,12 +193,12 @@ final class UserRateLimitKeyResolver implements RateLimitKeyResolver {
 final class ExpressionRateLimitKeyResolver implements RateLimitKeyResolver {
   /// A resolver whose expressions read `@Introspected` classes through
   /// [introspector].
-  ExpressionRateLimitKeyResolver({BeanIntrospector? introspector})
-    : _introspector = introspector ?? BeanIntrospector.shared;
+  ExpressionRateLimitKeyResolver({Introspector? introspector})
+    : _introspector = introspector ?? Introspector.shared;
 
   static const _log = SpringLog('spring.web.ratelimit');
 
-  final BeanIntrospector _introspector;
+  final Introspector _introspector;
   final _parser = SpelExpressionParser();
   final _expressions = <String, Expression>{};
 

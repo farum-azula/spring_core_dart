@@ -4,7 +4,7 @@
 // `@BuildContextAccess` beans.
 import 'package:analyzer/dart/element/element.dart';
 import 'package:code_builder/code_builder.dart';
-import 'package:spring_core_dart_generator/src/core/module_emitter.dart';
+import 'package:spring_core_dart_generator/src/core/beans/module_emitter.dart';
 import 'package:spring_core_dart_generator/src/flutter/flutter_scanning.dart';
 import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart'
     show LoaderKinds;

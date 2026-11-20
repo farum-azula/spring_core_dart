@@ -7,9 +7,11 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
+
+import '../support/module_files.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -84,7 +86,7 @@ Future<TestBuilderResult> _build() async {
   );
   await readerWriter.testing.loadIsolateSources();
   return await testBuilder(
-    SpringBuilder(generations: starterGenerations),
+    SpringBuilder(generations: packageGenerations),
     _sources,
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -99,6 +101,12 @@ String _normalize(String code) => code
 
 Matcher _has(String code) => contains(_normalize(code));
 
+// The core's description of a class, `Introspection` followed by [code]
+// (`<Book>(`) in the flattened output, and not the data starter's
+// `EntityIntrospection<Book>`.
+Matcher _introspection(String code) =>
+    matches(RegExp('(?<!Entity)Introspection${RegExp.escape(code)}'));
+
 void main() {
   late String output;
   late String raw;
@@ -106,9 +114,7 @@ void main() {
   setUpAll(() async {
     final result = await _build();
     expect(result.errors, isEmpty);
-    raw = result.readerWriter.testing.readString(
-      result.outputs.single,
-    );
+    raw = moduleText(result);
     output = _normalize(raw);
   });
 
@@ -159,7 +165,7 @@ class _$AuthorRepositoryImpl extends SimpleRepository<Author, String>
   test('the types of repository signatures are not introspected', () {
     // Book has no @Table here: being returned by a repository describes
     // nothing (only a Feign client's bodies are described that way).
-    expect(output, isNot(contains('BeanIntrospection<Book>')));
+    expect(output, isNot(_introspection('<Book>')));
   });
 
   test('the starter makes the operations, with the entity and id types', () {
@@ -210,15 +216,13 @@ class _$AuthorRepositoryImpl extends SimpleRepository<Author, String>
       {
         for (final MapEntry(:key, :value) in _sources.entries)
           key: value as String,
-        'pkg|lib/spring_gen/src/beans.spring.dart': raw,
+        ...moduleSources(raw),
       },
       (resolver) async {
         final library = await resolver.libraryFor(
           AssetId('pkg', 'lib/spring_gen/src/beans.spring.dart'),
         );
-        final result = await library.session.getErrors(
-          library.firstFragment.source.fullName,
-        );
+        final result = await moduleErrors(library);
         return [
           if (result case ErrorsResult(:final diagnostics))
             for (final diagnostic in diagnostics)

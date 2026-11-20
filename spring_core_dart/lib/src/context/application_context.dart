@@ -622,14 +622,14 @@ class AnnotationConfigApplicationContext
   static const defaultTaskExecutorBeanName = 'taskExecutor';
 
   /// The bean name under which the context registers its [introspector].
-  static const beanIntrospectorBeanName = 'beanIntrospector';
+  static const introspectorBeanName = 'introspector';
 
   /// The generated descriptions of the `@Introspected` classes of this
   /// context's modules: their properties and methods, which data binding,
   /// validation and SpEL use instead of reflection. Classes it does not
-  /// know are looked up in [BeanIntrospector.shared].
-  final BeanIntrospector introspector = BeanIntrospector(
-    parent: BeanIntrospector.shared,
+  /// know are looked up in [Introspector.shared].
+  final Introspector introspector = Introspector(
+    parent: Introspector.shared,
   );
 
   final String? _explicitId;
@@ -978,9 +978,9 @@ class AnnotationConfigApplicationContext
       ..registerResolvableDependency(ResourceLoader, this)
       ..registerResolvableDependency(ResourcePatternResolver, this)
       ..registerSingleton(
-        beanIntrospectorBeanName,
+        introspectorBeanName,
         introspector,
-        types: [BeanIntrospector],
+        types: [Introspector],
       )
       ..registerSingleton(
         environmentBeanName,

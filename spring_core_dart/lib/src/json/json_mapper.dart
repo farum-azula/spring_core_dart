@@ -187,7 +187,7 @@ class JsonMapper extends ObjectMapper {
 ///     .build();
 /// ```
 final class JsonMapperBuilder {
-  BeanIntrospector? _introspector;
+  Introspector? _introspector;
   PropertyNamingStrategy _naming = PropertyNamingStrategy.lowerCamelCase;
   JsonInclusion _inclusion = JsonInclusion.always;
   String? _timeZone;
@@ -197,8 +197,8 @@ final class JsonMapperBuilder {
   JsonSchemaResolver? _schemaResolver;
 
   /// Reads class metadata from [introspector] instead of
-  /// `BeanIntrospector.shared`, for example the context's.
-  JsonMapperBuilder introspector(BeanIntrospector introspector) {
+  /// `Introspector.shared`, for example the context's.
+  JsonMapperBuilder introspector(Introspector introspector) {
     _introspector = introspector;
     return this;
   }

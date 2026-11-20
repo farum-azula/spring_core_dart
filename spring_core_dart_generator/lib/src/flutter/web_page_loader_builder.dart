@@ -8,14 +8,14 @@ import 'package:spring_core_dart/core.dart'
         RemoteAddress,
         RemoteAddressPolicy,
         RemoteAddresses;
-import 'package:spring_core_dart_generator/src/core/build_environment.dart';
-import 'package:spring_core_dart_generator/src/core/package_directory.dart';
-import 'package:spring_core_dart_generator/src/core/spring_builder.dart';
+import 'package:spring_core_dart_generator/src/core/builder/build_download.dart';
+import 'package:spring_core_dart_generator/src/core/builder/build_environment.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/flutter/spring_key_files.dart';
 import 'package:spring_core_dart_generator/src/flutter/theme_references.dart';
 import 'package:spring_core_dart_generator/src/flutter/typed_theme_keys.dart';
 import 'package:spring_core_dart_generator/src/flutter/web_cache_headers.dart';
-import 'package:spring_core_dart_generator/src/flutter/web_loader_download.dart';
 import 'package:spring_core_dart_generator/src/flutter/web_page_head.dart';
 import 'package:spring_core_dart_generator/src/flutter/web_page_loader.dart';
 import 'package:spring_core_dart_generator/src/flutter/web_wasm_allow_list.dart';
@@ -140,7 +140,7 @@ final class WebPageLoaderBuilder implements Builder {
   final WebPageFiles _files;
 
   /// Downloads a loader's `web:` address; the network when `null`.
-  final WebLoaderFetch? fetch;
+  final BuildFetch? fetch;
 
   /// The page the block goes into.
   static const pagePath = 'web/index.html';
@@ -218,7 +218,7 @@ final class WebPageLoaderBuilder implements Builder {
             log.severe('The page loader: $error');
             continue;
           }
-          final (:text, :problem) = await WebLoaderDownload(
+          final (:text, :problem) = await BuildDownload(
             cache: Directory(_cacheFolder(package)),
             fetch: fetch,
             allowInsecure: policy.allowInsecure,

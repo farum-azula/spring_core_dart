@@ -49,30 +49,30 @@ abstract interface class BrokenSocket {
 
 // ---- generated ----
 
-final chatMessageIntrospection = BeanIntrospection<ChatMessage>(
+final chatMessageIntrospection = Introspection<ChatMessage>(
   properties: [
-    BeanProperty<ChatMessage>(
+    IntrospectedProperty<ChatMessage>(
       'from',
       type: String,
       typeInfo: const ClassType<String>(),
       get: (m) => m.from,
     ),
-    BeanProperty<ChatMessage>(
+    IntrospectedProperty<ChatMessage>(
       'text',
       type: String,
       typeInfo: const ClassType<String>(),
       get: (m) => m.text,
     ),
   ],
-  constructor: BeanConstructor<ChatMessage>(
+  constructor: IntrospectedConstructor<ChatMessage>(
     parameters: const [
-      BeanParameter(
+      IntrospectedParameter(
         'from',
         type: ClassType<String>(),
         symbol: #from,
         isRequired: true,
       ),
-      BeanParameter(
+      IntrospectedParameter(
         'text',
         type: ClassType<String>(),
         symbol: #text,
@@ -119,7 +119,7 @@ class ChatSocketImpl implements ChatSocket {
         ProxyMethod(
           'send',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'message',
               type: ClassType<ChatMessage>(),
               isRequired: true,
@@ -135,7 +135,11 @@ class ChatSocketImpl implements ChatSocket {
         ProxyMethod(
           'sendText',
           parameters: const [
-            BeanParameter('text', type: ClassType<String>(), isRequired: true),
+            IntrospectedParameter(
+              'text',
+              type: ClassType<String>(),
+              isRequired: true,
+            ),
           ],
           returnType: const DynamicType(),
           isFuture: true,
@@ -147,7 +151,7 @@ class ChatSocketImpl implements ChatSocket {
         ProxyMethod(
           'sendBytes',
           parameters: const [
-            BeanParameter(
+            IntrospectedParameter(
               'bytes',
               type: ClassType<Uint8List>(),
               isRequired: true,
@@ -233,8 +237,16 @@ class BrokenSocketImpl implements BrokenSocket {
         ProxyMethod(
           'two',
           parameters: const [
-            BeanParameter('a', type: ClassType<String>(), isRequired: true),
-            BeanParameter('b', type: ClassType<String>(), isRequired: true),
+            IntrospectedParameter(
+              'a',
+              type: ClassType<String>(),
+              isRequired: true,
+            ),
+            IntrospectedParameter(
+              'b',
+              type: ClassType<String>(),
+              isRequired: true,
+            ),
           ],
           returnType: const DynamicType(),
           isFuture: true,

@@ -68,7 +68,7 @@ CacheManager cacheManagerFromProperties(
   List<CacheManagerCustomizer> customizers = const [],
   CacheStore? store,
   ObjectMapper? mapper,
-  BeanIntrospector? introspector,
+  Introspector? introspector,
   ResourceLoader? resources,
 }) {
   final manager = properties.type == CacheType.disk
@@ -76,7 +76,7 @@ CacheManager cacheManagerFromProperties(
           properties,
           store: store,
           mapper: mapper,
-          introspector: introspector ?? BeanIntrospector.shared,
+          introspector: introspector ?? Introspector.shared,
           resources: resources,
         )
       : _cacheManager(properties, environment, caches);
@@ -92,7 +92,7 @@ CacheManager _diskCacheManager(
   CacheProperties properties, {
   required CacheStore? store,
   required ObjectMapper? mapper,
-  required BeanIntrospector introspector,
+  required Introspector introspector,
   required ResourceLoader? resources,
 }) {
   final disk = properties.disk;
@@ -352,7 +352,7 @@ final cacheAutoConfiguration = <BeanDefinition<Object>>[
           r.optionalDependencyList<CacheManagerCustomizer>() ?? const [],
       store: r.optionalDependency<CacheStore>(),
       mapper: r.optionalDependency<ObjectMapper>(),
-      introspector: r.optionalDependency<BeanIntrospector>(),
+      introspector: r.optionalDependency<Introspector>(),
       resources: r.optionalDependency<ResourceLoader>(),
     ),
   ),
@@ -362,7 +362,7 @@ final cacheAutoConfiguration = <BeanDefinition<Object>>[
     source: _source,
     create: (r) => CacheInterceptor(
       beanFactory: r.dependency<BeanFactory>(),
-      introspector: r.dependency<BeanIntrospector>(),
+      introspector: r.dependency<Introspector>(),
       resourceVersion: r.dependency<CacheProperties>().resourceVersion,
     ),
   ),

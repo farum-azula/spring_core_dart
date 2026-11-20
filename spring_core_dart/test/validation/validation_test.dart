@@ -464,7 +464,7 @@ void main() {
       expect(dataBinder.bindingResult.hasErrors, isFalse);
       final failing = DataBinder(
         _Failing(),
-        introspector: BeanIntrospector(introspections: [_failingIntrospection]),
+        introspector: Introspector(introspections: [_failingIntrospection]),
       )..bind({'value': 'x'});
       expect(
         failing.bindingResult.fieldError('value')!.codes.first,
@@ -512,9 +512,9 @@ class _Failing {
   String value = '';
 }
 
-final _failingIntrospection = BeanIntrospection<_Failing>(
+final _failingIntrospection = Introspection<_Failing>(
   properties: [
-    BeanProperty<_Failing>(
+    IntrospectedProperty<_Failing>(
       'value',
       type: String,
       get: (b) => b.value,

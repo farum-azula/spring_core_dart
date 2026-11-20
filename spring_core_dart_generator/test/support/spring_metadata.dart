@@ -5,9 +5,9 @@ import 'dart:convert';
 
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
-import 'package:spring_core_dart_generator/src/core/package_directory.dart';
-import 'package:spring_core_dart_generator/src/core/spring_metadata_builder.dart';
-import 'package:spring_core_dart_generator/src/starters.dart';
+import 'package:spring_core_dart_generator/src/core/builder/package_directory.dart';
+import 'package:spring_core_dart_generator/src/core/metadata/spring_metadata_builder.dart';
+import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
 
 /// The imports a source of the metadata tests starts with.
@@ -36,7 +36,7 @@ Future<MetadataRun> runMetadataBuilder(
   await readerWriter.testing.loadIsolateSources();
   final result = await testBuilder(
     SpringMetadataBuilder(
-      generations: starterGenerations,
+      generations: packageGenerations,
       packageDirectories: PackageDirectories(),
     ),
     {for (final e in sources.entries) '$package|${e.key}': e.value},

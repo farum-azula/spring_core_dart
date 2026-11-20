@@ -18,7 +18,7 @@ T boundProperties<T extends Object>(Environment environment, String beanName) {
   ConfigurationPropertySources.attach(environment);
   return ConfigurationPropertiesBinder(
     environment,
-    BeanIntrospector(introspections: flutterConfigBeans.introspections),
+    Introspector(introspections: flutterConfigBeans.introspections),
   ).bindOrCreate<T>(beanName);
 }
 

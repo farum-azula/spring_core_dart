@@ -208,7 +208,7 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
 
   /// Lets SpEL read the properties of `@Introspected` arguments and maps
   /// the DTOs of a `@Query` that are `@Introspected`; null for the store's.
-  final BeanIntrospector? introspector;
+  final Introspector? introspector;
 
   /// Describes the DTOs a `@Query` returns (the classes the build described
   /// as projections); null for none.

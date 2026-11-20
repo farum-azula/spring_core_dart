@@ -24,7 +24,7 @@ void expectAdvisedPropertiesDelegate(BeanModule module) {
         '${definition.name}: advice on a class that cannot be proxied fails',
         () {
           final target = module.introspections
-              .where((i) => i.beanType == definition.types.first)
+              .where((i) => i.type == definition.types.first)
               .firstOrNull
               ?.instantiate();
           if (target == null) return;
@@ -36,7 +36,7 @@ void expectAdvisedPropertiesDelegate(BeanModule module) {
     }
     final type = definition.types.first;
     final introspection = module.introspections
-        .where((i) => i.beanType == type && i.isInstantiable)
+        .where((i) => i.type == type && i.isInstantiable)
         .firstOrNull;
     if (introspection == null) continue;
     test('${definition.name}: an advised bean reads and writes its target', () {

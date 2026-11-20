@@ -72,7 +72,7 @@ final class QueryResultMapper {
     required TypeInfo<Object?>? element,
     required PersistentEntity<Object> entity,
     required EntityConverter converter,
-    required BeanIntrospector introspector,
+    required Introspector introspector,
     required List<String> problems,
     ColumnValueReader? reader,
     RelationalMappingContext? mappingContext,
@@ -110,7 +110,7 @@ final class QueryResultMapper {
   final EntityConverter converter;
 
   /// Describes the `@Introspected` classes.
-  final BeanIntrospector introspector;
+  final Introspector introspector;
 
   /// Converts the values as the store gives them, or null for none.
   final ColumnValueReader? reader;
@@ -126,7 +126,7 @@ final class QueryResultMapper {
     TypeInfo<Object?> element,
     PersistentEntity<Object> entity,
     EntityIntrospection<Object>? described,
-    BeanIntrospector introspector,
+    Introspector introspector,
     String where,
     List<String> problems,
   ) {
