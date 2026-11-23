@@ -450,6 +450,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i5.ConfigurationProperties(r'spring.flutter.app')],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterAppProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterAppProperties>(
@@ -503,6 +504,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i5.ConfigurationProperties(r'spring.flutter')],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterProperties>(
@@ -569,6 +571,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i5.ConfigurationProperties(r'spring.flutter.debug')],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterDebugProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterDebugProperties>(
@@ -634,6 +637,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
         get: _$get17,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterDebugFeatureProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterDebugFeatureProperties>(
@@ -664,6 +668,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
         get: _$get20,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterDebugTimelineProperties.new,
     constructor:
@@ -709,6 +714,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
         get: _$get24,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterDebugIsolatesProperties.new,
     constructor:
@@ -765,6 +771,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
         get: _$get29,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterDebugOverlaysProperties.new,
     constructor:
@@ -828,6 +835,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
         get: _$get34,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterDebugOverlaysMargin.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterDebugOverlaysMargin>(
@@ -880,6 +888,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
         get: _$get37,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterDebugOverlaysDrag.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterDebugOverlaysDrag>(
@@ -912,6 +921,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i5.ConfigurationProperties(r'spring.flutter.markdown')],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterMarkdownProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterMarkdownProperties>(
@@ -949,6 +959,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i5.ConfigurationProperties(r'spring.flutter.frame-meter')],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterFrameMeterProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterFrameMeterProperties>(
@@ -1011,6 +1022,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i5.ConfigurationProperties(r'spring.flutter.web.page')],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterWebPageProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterWebPageProperties>(
@@ -1057,6 +1069,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i5.ConfigurationProperties(r'spring.flutter.lifecycle')],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterLifecycleProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterLifecycleProperties>(
@@ -1098,6 +1111,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i5.ConfigurationProperties(r'spring.flutter.fonts')],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterFontsProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterFontsProperties>(
@@ -1142,6 +1156,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
         get: _$get57,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FontFamilyProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FontFamilyProperties>(
@@ -1201,6 +1216,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
     annotations: [
       _i5.ConfigurationProperties(r'spring.flutter.desktop.window'),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.DesktopWindowProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.DesktopWindowProperties>(
@@ -1394,6 +1410,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
     annotations: [
       _i5.ConfigurationProperties(r'spring.flutter.web.dev-server'),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterWebProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterWebProperties>(
@@ -1470,6 +1487,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
         get: _$get76,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterWebHttps.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterWebHttps>(
@@ -1516,6 +1534,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
         get: _$get81,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterWebProxyRule.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterWebProxyRule>(
@@ -1637,6 +1656,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i5.ConfigurationProperties(r'spring.flutter.web.seo')],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterWebSeoProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterWebSeoProperties>(
@@ -1763,6 +1783,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
         get: _$get101,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterWebSeoContent.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterWebSeoContent>(
@@ -1822,6 +1843,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
         get: _$get107,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterWebSeoPage.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterWebSeoPage>(
@@ -1928,6 +1950,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
     annotations: [
       _i5.ConfigurationProperties(r'spring.web.resources.cache.cachecontrol'),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterWebCacheControlProperties.new,
     constructor:
@@ -2002,6 +2025,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i5.ConfigurationProperties(r'spring.devtools.restart')],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterRestartProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterRestartProperties>(
@@ -2033,6 +2057,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i5.ConfigurationProperties(r'spring.datasource')],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterDataSourceProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterDataSourceProperties>(
@@ -2062,6 +2087,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
         get: _$get126,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterSqliteProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterSqliteProperties>(
@@ -2092,6 +2118,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i5.ConfigurationProperties(r'spring')],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterDataSourcesProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.FlutterDataSourcesProperties>(
@@ -2145,6 +2172,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
     annotations: [
       _i5.ConfigurationProperties(r'spring.flutter.resources.cache'),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterResourcesCacheProperties.new,
     constructor:
@@ -2199,6 +2227,7 @@ get $flutterConfigBeansPropertiesIntrospections => [
     annotations: [
       _i5.ConfigurationProperties(r'spring.flutter.resources.view'),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.FlutterResourcesViewProperties.new,
     constructor:

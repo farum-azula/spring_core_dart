@@ -15,6 +15,8 @@ final class PropertyReference {
     required this.nameEnd,
     this.fallback,
     this.derived = false,
+    this.nested = false,
+    this.subtree = false,
   });
 
   /// The key read.
@@ -33,6 +35,16 @@ final class PropertyReference {
   /// `shop.max-basket-size`) rather than written as text.
   final bool derived;
 
+  /// Whether the reference is a placeholder in the default of another
+  /// (`b` of `${a:${b}}`): a key the code reads, whose value is part of the
+  /// outer placeholder's rather than shown on its own.
+  final bool nested;
+
+  /// Whether the reference binds the keys below [key] too (a `Map` or a
+  /// `List` field of a `@ConfigurationProperties` class: `shop.tags.x`,
+  /// `shop.tags[0]`).
+  final bool subtree;
+
   /// The offset just after the reference: where its value is shown.
   final int end;
 
@@ -42,18 +54,19 @@ final class PropertyReference {
 }
 
 /// The placeholders of the template string whose contents start at
-/// [contentStart] of a file and read [contents]: the outermost ones only
-/// (one in the default of another, `${a:${b}}`, is part of its value).
+/// [contentStart] of a file and read [contents]; one in the default of
+/// another (`b` of `${a:${b}}`) is [PropertyReference.nested], as Spring
+/// resolves it too.
 Iterable<PropertyReference> placeholderReferences(
   String contents,
   int contentStart,
 ) sync* {
   var outerEnd = -1;
   for (final part in scanTemplate(contents)) {
-    if (part.start < outerEnd) {
-      continue;
+    final nested = part.start < outerEnd;
+    if (!nested) {
+      outerEnd = part.end;
     }
-    outerEnd = part.end;
     if (part.kind != TemplatePartKind.placeholder || part.unclosed) {
       continue;
     }
@@ -73,37 +86,102 @@ Iterable<PropertyReference> placeholderReferences(
       nameStart: nameStart,
       nameEnd: nameStart + key.length,
       fallback: part.fallback(contents),
+      nested: nested,
     );
   }
 }
 
-/// The fields the `@ConfigurationProperties` classes of [unit] bind: for
-/// `@ConfigurationProperties('shop') class Shop { final int maxBasketSize; }`
-/// the key `shop.max-basket-size`, at the end of the field's name, with the
-/// field's literal initializer as its default. Static fields and fields of
-/// a class type (a nested group) are left out.
-Iterable<PropertyReference> configurationPropertiesFields(
-  CompilationUnit unit,
-) sync* {
-  for (final declaration in unit.declarations.whereType<ClassDeclaration>()) {
-    final prefix = _prefixOf(declaration);
-    if (prefix == null) {
-      continue;
+/// The groups of properties the `@ConfigurationProperties` classes bind,
+/// by class name: `shop` for `@ConfigurationProperties('shop') class Shop`,
+/// and `shop.address` for the class `Address` of its field
+/// `final Address address;` (a nested group, as Boot binds it), followed
+/// through the classes of the workspace.
+final class ConfigurationPropertiesGroups {
+  /// The groups of [classes], every class of the workspace.
+  ConfigurationPropertiesGroups(Iterable<ClassDeclaration> classes) {
+    final byName = <String, List<ClassDeclaration>>{};
+    for (final declaration in classes) {
+      (byName[declaration.namePart.typeName.lexeme] ??= []).add(declaration);
     }
-    for (final member
-        in declaration.body.members.whereType<FieldDeclaration>()) {
-      if (member.isStatic || !_isScalar(member.fields.type)) {
+    _classes = byName.keys.toSet();
+    final pending = <(ClassDeclaration, String, int)>[
+      for (final declaration in classes)
+        if (_prefixOf(declaration) case final prefix?) (declaration, prefix, 0),
+    ];
+    while (pending.isNotEmpty) {
+      final (declaration, prefix, depth) = pending.removeLast();
+      final prefixes = _prefixes[declaration.namePart.typeName.lexeme] ??= {};
+      if (!prefixes.add(prefix) || depth >= _maxDepth) {
         continue;
       }
+      for (final (name, type, _) in _fields(declaration)) {
+        if (type case final type? when _classes.contains(type)) {
+          for (final nested in byName[type]!) {
+            pending.add((nested, _join(prefix, name), depth + 1));
+          }
+        }
+      }
+    }
+  }
+
+  static const _maxDepth = 8;
+
+  late final Set<String> _classes;
+  final _prefixes = <String, Set<String>>{};
+
+  /// The fields the groups' classes of [unit] bind: for
+  /// `@ConfigurationProperties('shop') class Shop { final int maxBasketSize; }`
+  /// the key `shop.max-basket-size`, at the end of the field's name, with
+  /// the field's literal initializer as its default. Every type binds (an
+  /// enum, a `DataSize`, a type of a dependency) but a class of the
+  /// workspace, which is a nested group whose own fields are listed; a
+  /// `Map`, `List`, `Set` or `Iterable` binds the keys below it too.
+  /// Static fields are left out.
+  Iterable<PropertyReference> fieldsOf(CompilationUnit unit) sync* {
+    for (final declaration in unit.declarations.whereType<ClassDeclaration>()) {
+      final prefixes = _prefixes[declaration.namePart.typeName.lexeme];
+      if (prefixes == null) {
+        continue;
+      }
+      for (final prefix in prefixes) {
+        for (final (name, type, variable) in _fields(declaration)) {
+          if (type != null && _classes.contains(type)) {
+            continue;
+          }
+          yield PropertyReference(
+            _join(prefix, name),
+            variable.name.end,
+            nameStart: variable.name.offset,
+            nameEnd: variable.name.end,
+            fallback: literalValue(variable.initializer),
+            derived: true,
+            subtree: const {'Map', 'List', 'Set', 'Iterable'}.contains(type),
+          );
+        }
+      }
+    }
+  }
+
+  static String _join(String prefix, String name) =>
+      prefix.isEmpty ? kebabCase(name) : '$prefix.${kebabCase(name)}';
+
+  /// The instance fields of [declaration]: each one's name (leading `_`
+  /// dropped), the simple name of its type (null without a named type),
+  /// and its declaration.
+  static Iterable<(String, String?, VariableDeclaration)> _fields(
+    ClassDeclaration declaration,
+  ) sync* {
+    for (final member
+        in declaration.body.members.whereType<FieldDeclaration>()) {
+      if (member.isStatic) {
+        continue;
+      }
+      final type = member.fields.type;
       for (final variable in member.fields.variables) {
-        final name = variable.name.lexeme.replaceFirst(RegExp('^_+'), '');
-        yield PropertyReference(
-          prefix.isEmpty ? kebabCase(name) : '$prefix.${kebabCase(name)}',
-          variable.name.end,
-          nameStart: variable.name.offset,
-          nameEnd: variable.name.end,
-          fallback: literalValue(variable.initializer),
-          derived: true,
+        yield (
+          variable.name.lexeme.replaceFirst(RegExp('^_+'), ''),
+          type is NamedType ? type.name.lexeme : null,
+          variable,
         );
       }
     }
@@ -148,28 +226,6 @@ String? _prefixOf(ClassDeclaration declaration) {
     return '';
   }
   return null;
-}
-
-/// Whether a field of [type] holds one value (a number, a string, a list
-/// of them, ...) rather than a nested group of properties.
-bool _isScalar(TypeAnnotation? type) {
-  if (type is! NamedType) {
-    return type == null;
-  }
-  return const {
-    'String',
-    'int',
-    'double',
-    'num',
-    'bool',
-    'Duration',
-    'Uri',
-    'DateTime',
-    'List',
-    'Set',
-    'Object',
-    'dynamic',
-  }.contains(type.name.lexeme);
 }
 
 /// The profiles of the first `@ActiveProfiles(...)` on a class of [unit]

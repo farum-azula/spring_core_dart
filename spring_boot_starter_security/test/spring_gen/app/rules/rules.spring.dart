@@ -145,6 +145,7 @@ _i1.BeanModule get $rulesSecurityBeans =>
         ],
         factoryBeanName: r'rulesSecurityConfig',
         factoryMethodName: r'users',
+        factoryMethodReturnType: _i5.UserDetailsService,
         dependencies: const [
           _i1.Dependency(
             _i8.RulesSecurityConfig,
@@ -223,6 +224,7 @@ _i1.BeanModule get $rulesSecurityBeans =>
         ],
         factoryBeanName: r'rulesSecurityConfig',
         factoryMethodName: r'corsConfigurationSource',
+        factoryMethodReturnType: _i7.CorsConfigurationSource,
         dependencies: const [
           _i1.Dependency(
             _i8.RulesSecurityConfig,

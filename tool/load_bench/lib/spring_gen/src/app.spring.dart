@@ -518,6 +518,7 @@ _i3.BeanModule get $appBeans => _i3.BeanModule(
       types: const [_i7.NimbusJwtDecoder, _i7.JwtDecoder],
       factoryBeanName: r'securityConfig',
       factoryMethodName: r'jwtDecoder',
+      factoryMethodReturnType: _i7.JwtDecoder,
       dependencies: const [
         _i3.Dependency(_i4.SecurityConfig, qualifier: r'securityConfig'),
         _i3.Dependency(_i8.BenchProperties, name: r'properties'),
@@ -1076,16 +1077,19 @@ final class _$PagingArgumentResolver
     final defaults = parameter.annotations
         .whereType<_i1.SortDefault>()
         .toList();
+    final allowed = parameter.annotation<_i1.AllowedSortProperties>();
     return parameter.type.type == _i1.Pageable
         ? _paging.pageable(
             request.queryParameters,
             pageableDefault: parameter.annotation<_i1.PageableDefault>(),
             sortDefaults: defaults,
+            allowed: allowed,
             qualifier: qualifier,
           )
         : _paging.sort(
             request.queryParameters,
             sortDefaults: defaults,
+            allowed: allowed,
             qualifier: qualifier,
           );
   }

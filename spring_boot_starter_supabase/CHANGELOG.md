@@ -1,3 +1,7 @@
+## Unreleased
+
+- A request's sort the REST API cannot run is a 400, not a 500: an unknown property is a `PropertyReferenceException`, an order that ignores case an `InvalidDataArgumentException`.
+
 ## 0.9.0
 
 - Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.

@@ -803,7 +803,7 @@ class Base {
 @Marker()
 class Form extends Base {
   @Size(max: 3)
-  @Autowired()
+  @Value('nick')
   String? nick;
 
   final int id = 1;
@@ -1514,7 +1514,7 @@ class Config {
   @Bean(name: 'x') @Profile(['dev']) Object b() => 1;
   @Bean(name: 'x') Object c() => 1;
 }
-''', "Bean name 'x' is used by both a and c.");
+''', "Bean name 'x' is used by both the @Bean method Config.a");
     });
   });
 

@@ -23,6 +23,21 @@ final class PropertyReferenceFinder {
   /// parse unless [keep] is false (a search over every file of a package).
   List<PropertyReference> referencesOf(DartFile file, {bool keep = true}) => [
     ...model.roles.references(DartFileFacts.read(file, keep: keep).strings),
-    ...configurationPropertiesFields(file.unit),
+    ..._groups().fieldsOf(file.unit),
   ];
+
+  ConfigurationPropertiesGroups _groups() {
+    final classes = model.classes;
+    final cached = _cache[model];
+    if (cached != null && cached.$1 == classes.generation) {
+      return cached.$2;
+    }
+    final groups = ConfigurationPropertiesGroups([
+      for (final info in classes.allClasses) info.declaration,
+    ]);
+    _cache[model] = (classes.generation, groups);
+    return groups;
+  }
+
+  static final _cache = Expando<(int, ConfigurationPropertiesGroups)>();
 }

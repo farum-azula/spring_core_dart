@@ -196,6 +196,7 @@ final edgeStartupChecks = <BeanDefinition<Object>>[
     conditions: const [
       ConditionGroup('$_source.edgeWarnings', [
         _function,
+        startupChecksEnabled,
         ConditionalOnProperty(
           'spring.edge.warnings',
           havingValue: 'true',

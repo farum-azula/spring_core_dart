@@ -135,6 +135,7 @@ List<_i2.Introspection<Object>> get $securityConfigBeansIntrospections => [
         set: _$set5,
       ),
     ],
+    library: r'package:spring_boot_starter_security/src/properties/security_properties.dart',
     instantiate: _i1.SecurityUserProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SecurityUserProperties>(
       parameters: [],
@@ -153,6 +154,7 @@ List<_i2.Introspection<Object>> get $securityConfigBeansIntrospections => [
         set: _$set8,
       ),
     ],
+    library: r'package:spring_boot_starter_security/src/properties/security_properties.dart',
     instantiate: _i1.SecurityFilterProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SecurityFilterProperties>(
       parameters: [],
@@ -179,6 +181,7 @@ List<_i2.Introspection<Object>> get $securityConfigBeansIntrospections => [
         set: _$set13,
       ),
     ],
+    library: r'package:spring_boot_starter_security/src/properties/security_properties.dart',
     instantiate: _i1.SecuritySessionProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SecuritySessionProperties>(
       parameters: [],
@@ -196,6 +199,7 @@ List<_i2.Introspection<Object>> get $securityConfigBeansIntrospections => [
         set: _$set16,
       ),
     ],
+    library: r'package:spring_boot_starter_security/src/properties/security_properties.dart',
     instantiate: _i1.SecurityCookieProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SecurityCookieProperties>(
       parameters: [],
@@ -212,6 +216,7 @@ List<_i2.Introspection<Object>> get $securityConfigBeansIntrospections => [
         set: _$set19,
       ),
     ],
+    library: r'package:spring_boot_starter_security/src/properties/security_properties.dart',
     instantiate: _i1.SecurityOAuth2Properties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SecurityOAuth2Properties>(
       parameters: [],
@@ -228,6 +233,7 @@ List<_i2.Introspection<Object>> get $securityConfigBeansIntrospections => [
         set: _$set22,
       ),
     ],
+    library: r'package:spring_boot_starter_security/src/properties/security_properties.dart',
     instantiate: _i1.SecurityResourceServerProperties.new,
     constructor:
         _i2.IntrospectedConstructor<_i1.SecurityResourceServerProperties>(
@@ -336,6 +342,7 @@ List<_i2.Introspection<Object>> get $securityConfigBeansIntrospections => [
         set: _$set45,
       ),
     ],
+    library: r'package:spring_boot_starter_security/src/properties/security_properties.dart',
     instantiate: _i1.SecurityJwtProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SecurityJwtProperties>(
       parameters: [],

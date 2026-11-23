@@ -10,7 +10,9 @@ name: 'Release'
 #
 #   prepare: CI must not have failed on the commit; the bump, kept as a patch
 #   tests:   the tests with the new version, in four parts (one machine each)
-#   tag:     the same patch committed, tagged and pushed
+#   language-server: its binaries built from that patch, with their SHA-256
+#   tag:     the same patch and the hashes committed, tagged and pushed; the
+#            same binaries attached to the release
 #
 # No release branch and no merges: main is the only branch, a release is a
 # commit and a tag on it. Pushes to main only run CI. The push uses
@@ -152,9 +154,84 @@ jobs:
           PART: ${{ matrix.part }}
         run: dart run tool/test_all.dart --packages --job "$PART/4"
 
+  # Built before the tag, because the Zed extension of a version carries the
+  # hashes of that version's binaries (extensions/zed/dart_spring/server.sha256)
+  # and runs no other.
+  language-server:
+    name: Build ${{ matrix.asset }}
+    needs: prepare
+    if: needs.prepare.outputs.version != ''
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - runner: macos-15
+            asset: dart_spring_lsp-macos-arm64.tar.gz
+            target: ''
+          - runner: ubuntu-26.04
+            asset: dart_spring_lsp-linux-x64.tar.gz
+            target: ''
+          - runner: ubuntu-26.04
+            asset: dart_spring_lsp-linux-arm64.tar.gz
+            target: --target-os=linux --target-arch=arm64
+          - runner: windows-latest
+            asset: dart_spring_lsp-windows-x64.zip
+            target: ''
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-patch
+          path: ${{ runner.temp }}
+
+      - shell: bash
+        run: git apply "$RUNNER_TEMP/release.patch"
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - run: dart pub get
+
+      # The hash is of the executable: what the extension finds on disk once
+      # Zed has unpacked the archive.
+      - name: Compile, hash and archive
+        shell: bash
+        env:
+          ASSET: ${{ matrix.asset }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          mkdir -p out lsp
+          name=dart_spring_lsp
+          if [[ "$ASSET" == *.zip ]]; then name=dart_spring_lsp.exe; fi
+          dart compile exe $TARGET \
+            extensions/language_server/bin/dart_spring_lsp.dart -o "out/$name"
+          if command -v sha256sum >/dev/null; then
+            hash=$(sha256sum "out/$name" | cut -d' ' -f1)
+          else
+            hash=$(shasum -a 256 "out/$name" | cut -d' ' -f1)
+          fi
+          hash=${hash#\\}
+          echo "$hash  $ASSET" > "lsp/$ASSET.sha256"
+          cd out
+          if [[ "$ASSET" == *.zip ]]; then
+            7z a "../lsp/$ASSET" "$name"
+          else
+            tar -czf "../lsp/$ASSET" "$name"
+          fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: lsp-${{ matrix.asset }}
+          path: lsp/*
+          if-no-files-found: error
+
   tag:
     name: Commit, tag and push
-    needs: [prepare, tests]
+    needs: [prepare, tests, language-server]
     if: needs.prepare.outputs.version != ''
     runs-on: ubuntu-26.04
     permissions:
@@ -171,6 +248,12 @@ jobs:
           name: release-patch
           path: ${{ runner.temp }}
 
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: lsp-*
+          path: ${{ runner.temp }}/lsp
+          merge-multiple: true
+
       # Atomic: the commit and the tag land together or not at all (e.g. when
       # main moved meanwhile; then run the workflow again).
       - name: Commit, tag and push
@@ -178,11 +261,26 @@ jobs:
           VERSION: ${{ needs.prepare.outputs.version }}
         run: |
           git apply "$RUNNER_TEMP/release.patch"
+          cat "$RUNNER_TEMP"/lsp/*.sha256 | sort -k2 > extensions/zed/dart_spring/server.sha256
+          test "$(wc -l < extensions/zed/dart_spring/server.sha256)" -eq 4
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -am "chore(release): v$VERSION"
           git tag "v$VERSION"
           git push --atomic origin HEAD:main "v$VERSION"
+
+      - name: Attach the language server to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ needs.prepare.outputs.version }}
+        run: |
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag \
+              --title "$TAG" \
+              --notes "Packages: https://pub.dev/packages/spring_core_dart — language server binaries for the dart_spring editor extensions are attached."
+          fi
+          gh release upload "$TAG" "$RUNNER_TEMP"/lsp/dart_spring_lsp-*.tar.gz "$RUNNER_TEMP"/lsp/dart_spring_lsp-*.zip \
+            --repo "$GITHUB_REPOSITORY" --clobber
 
       - name: Summary
         env:

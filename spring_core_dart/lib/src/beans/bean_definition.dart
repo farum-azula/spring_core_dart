@@ -301,6 +301,7 @@ final class BeanDefinition<T extends Object> {
     this.source,
     this.factoryBeanName,
     this.factoryMethodName,
+    this.factoryMethodReturnType,
     this.initMethodName,
     this.destroyMethodName,
     Set<String> qualifiers = const {},
@@ -396,6 +397,15 @@ final class BeanDefinition<T extends Object> {
   /// `getFactoryMethodName()`. Its presence also means [order] came from
   /// the method.
   final String? factoryMethodName;
+
+  /// For a `@Bean` method: the type it is declared to return (`Clock` for
+  /// `Clock clock() => SystemClock()`), when that is not [T]; `null` when
+  /// it is [T]. A bare `@ConditionalOnMissingBean()` or `@ConditionalOnBean()`
+  /// looks for beans of this type, as Spring Boot's `OnBeanCondition`
+  /// deduces the type from the method's return type, so an application's own
+  /// `Clock` makes the auto-configured one back off. Spring's
+  /// `getFactoryMethodReturnType()`.
+  final Type? factoryMethodReturnType;
 
   /// Name of the custom init method (`@Bean(initMethod:)`); an init method
   /// named `afterPropertiesSet` is not called again for an

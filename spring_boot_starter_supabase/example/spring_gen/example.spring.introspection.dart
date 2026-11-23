@@ -57,6 +57,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
       ),
     ],
     annotations: [_i3.Table(r'todos')],
+    library: r'asset:spring_boot_starter_supabase/example/example.dart',
     constructor: _i2.IntrospectedConstructor<_i1.Todo>(
       parameters: [
         _i2.IntrospectedParameter(

@@ -1,4 +1,3 @@
-import 'package:dart_spring_language_server/src/diagnostics/fix.dart';
 import 'package:dart_spring_language_server/src/features/diagnostics.dart';
 import 'package:dart_spring_language_server/src/features/session.dart';
 import 'package:dart_spring_language_server/src/protocol/language_server.dart';
@@ -36,23 +35,11 @@ final class CodeActions extends ServerFeature {
                 'kind': 'quickfix',
                 'diagnostics': [diagnosticJson(problem)],
                 'isPreferred': index == 0,
-                'edit': {'changes': _changes(fix)},
+                'edit': session.workspaceEdit(fix.edits),
               },
       ];
     },
   };
-
-  /// The edits of [fix] by the URI of their file.
-  static Map<String, List<Map<String, Object?>>> _changes(Fix fix) {
-    final changes = <String, List<Map<String, Object?>>>{};
-    for (final edit in fix.edits) {
-      changes.putIfAbsent(uriOf(edit.range.path), () => []).add({
-        'range': rangeJson(edit.range),
-        'newText': edit.newText,
-      });
-    }
-    return changes;
-  }
 
   /// Whether [range] and the protocol range [asked] share a position.
   static bool _overlaps(SourceRange range, Map<Object?, Object?> asked) {

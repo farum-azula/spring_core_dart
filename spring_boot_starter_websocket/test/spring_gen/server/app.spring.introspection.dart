@@ -49,6 +49,7 @@ List<_i2.Introspection<Object>> get $wsServerBeansIntrospections => [
         get: _$get1,
       ),
     ],
+    library: r'asset:spring_boot_starter_websocket/test/server/chat.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     constructor: _i2.IntrospectedConstructor<_i1.ChatMessage>(
       parameters: [
@@ -82,6 +83,7 @@ List<_i2.Introspection<Object>> get $wsServerBeansIntrospections => [
         get: _$get4,
       ),
     ],
+    library: r'asset:spring_boot_starter_websocket/test/server/chat.dart',
     parts: {_i2.IntrospectionPart.read},
   ),
   const _i2.Introspection<_i3.ServerWebSocketSession>(
@@ -120,6 +122,7 @@ List<_i2.Introspection<Object>> get $wsServerBeansIntrospections => [
         typeInfo: _i2.GenericType<_i5.Stream<Object>>([_i2.DynamicType()]),
       ),
     ],
+    library: r'package:spring_boot_starter_websocket/src/server/web_socket_handler.dart',
     parts: {_i2.IntrospectionPart.write},
   ),
 ];

@@ -1274,7 +1274,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_data/src/data_startup_checks.dart",
-      "line": 37,
+      "line": 38,
       "injects": [],
       "members": [
         {

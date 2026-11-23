@@ -4,9 +4,11 @@ import 'package:spring_boot_starter_flutter/src/debug/debug_panel.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_style.dart';
 
 /// The configuration: the active profiles and every property with the
-/// source that sets it, the first source winning. A value whose key names
-/// a secret (`password`, `secret`, `token`, `key`, `credential`) shows as
-/// `******`, as Spring Boot's actuator does.
+/// source that sets it, the first source winning. A value whose key looks
+/// secret (the family's rule, `SecretNames.looksSecret`: `password`,
+/// `pwd`, `passphrase`, `token`, `apiKey`...) shows as `******`, and the
+/// password and secret query parameters of a URL value are masked
+/// (`postgres://ada:******@db/shop`), as Spring Boot's actuator does.
 final class DebugConfigurationSection implements DebugPanelSection, Ordered {
   /// The section of [environment].
   const DebugConfigurationSection(this.environment);
@@ -20,11 +22,6 @@ final class DebugConfigurationSection implements DebugPanelSection, Ordered {
   @override
   int get order => 20;
 
-  static final _secret = RegExp(
-    'password|secret|token|key|credential',
-    caseSensitive: false,
-  );
-
   /// The properties, each once, from the source that wins.
   List<(String, String, String)> properties() {
     final seen = <String>{};
@@ -35,9 +32,11 @@ final class DebugConfigurationSection implements DebugPanelSection, Ordered {
             if (seen.add(name))
               (
                 name,
-                _secret.hasMatch(name)
-                    ? '******'
-                    : '${source.getProperty(name) ?? ''}',
+                SecretNames.looksSecret(name)
+                    ? SecretNames.masked
+                    : SecretNames.maskedUrl(
+                        '${source.getProperty(name) ?? ''}',
+                      ),
                 source.name,
               ),
     ]..sort((a, b) => a.$1.compareTo(b.$1));

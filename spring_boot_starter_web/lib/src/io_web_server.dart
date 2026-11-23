@@ -5,6 +5,7 @@ import 'dart:io' as io;
 import 'dart:typed_data';
 
 import 'package:spring_boot_dart/spring_boot_dart.dart';
+import 'package:spring_boot_starter_web/src/io_request_heads.dart';
 import 'package:spring_boot_starter_web/src/io_web_socket.dart';
 import 'package:spring_boot_starter_web/src/request_target.dart';
 import 'package:spring_boot_starter_web/src/web_server.dart';
@@ -60,6 +61,8 @@ final class IoWebServerFactory implements ConfigurableWebServerFactory {
 ///
 /// - a method that `HttpMethod` does not list: 501;
 /// - with `server.ssl.client-auth=need`, no client certificate: 403;
+/// - two `Host` headers: 400, and the connection closes, as Tomcat
+///   answers (RFC 9112 §3.2);
 /// - a malformed `Host` header, an HTTP/1.1 request without one, or an
 ///   absolute target (`GET http://a.example/ HTTP/1.1`) whose host is not
 ///   the `Host` header's: 400, as Tomcat answers;
@@ -72,10 +75,13 @@ final class IoWebServerFactory implements ConfigurableWebServerFactory {
 /// - a `%` escape in the path or the query that is malformed or not
 ///   UTF-8 (`/%FF`, `/%C0%AF`, `?id=%FF`): 400, as Tomcat answers.
 ///
-/// `dart:io` keeps only the last of two `Host` headers, so a request with
-/// two is served for the last one (Tomcat answers 400). It also parses
-/// the request target before the server sees it, and keeps no raw form:
-/// a raw `\` becomes `/`, so `..\` segments are resolved
+/// `dart:io` keeps only the last of two `Host` headers, so the server
+/// counts them itself in the bytes of each connection, plain or TLS, as
+/// they go to `dart:io` ([RequestHeadScanner]): it reads the request heads
+/// only, skips bodies by their length and stops at an upgrade.
+///
+/// `dart:io` parses the request target before the server sees it, and
+/// keeps no raw form: a raw `\` becomes `/`, so `..\` segments are resolved
 /// (`/files/..\..\secret` arrives as `/secret`), and raw bytes past
 /// ASCII are read as Latin-1 (Tomcat answers 400 to both). The router
 /// and the security rules see the same path, but a proxy in front that
@@ -148,8 +154,8 @@ final class IoWebServer implements WebServer, WebServerActivity {
 
   io.HttpServer? _server;
 
-  // The listening socket of a server without TLS (dart:io keeps the one
-  // of a TLS server to itself).
+  // The listening socket, this server's own: its connections are read for
+  // their request heads, and a stop without TLS can end accepting first.
   _Accepting? _accepting;
 
   // Stopping gracefully: every answer closes its connection.
@@ -227,26 +233,26 @@ final class IoWebServer implements WebServer, WebServerActivity {
     final address = await _address(settings.address);
     final ssl = settings.ssl;
     try {
-      _server = ssl == null
-          // The socket is this server's own, so that a stop can end
-          // accepting first and let the open connections finish
-          // ([_Accepting]); dart:io's bind does the same two steps.
-          ? io.HttpServer.listenOn(
-              _accepting = _Accepting(
+      // dart:io's bind and bindSecure do the same two steps.
+      _server = io.HttpServer.listenOn(
+        _accepting = ssl == null
+            ? _Accepting.plain(
                 await io.ServerSocket.bind(
                   address,
                   settings.port,
                   shared: settings.shared,
                 ),
+              )
+            : _Accepting.secure(
+                await io.SecureServerSocket.bind(
+                  address,
+                  settings.port,
+                  _securityContext(ssl),
+                  requestClientCertificate: ssl.clientAuth != ClientAuth.none,
+                  shared: settings.shared,
+                ),
               ),
-            )
-          : await io.HttpServer.bindSecure(
-              address,
-              settings.port,
-              _securityContext(ssl),
-              requestClientCertificate: ssl.clientAuth != ClientAuth.none,
-              shared: settings.shared,
-            );
+      );
     } on io.SocketException catch (error) {
       if (_isAddressInUse(error)) {
         throw PortInUseException(settings.port, error);
@@ -302,7 +308,7 @@ final class IoWebServer implements WebServer, WebServerActivity {
     final accepting = _accepting;
     _accepting = null;
     final graceful = settings.shutdown == Shutdown.graceful;
-    if (graceful && accepting != null) {
+    if (graceful && accepting != null && settings.ssl == null) {
       // No new connections, while the open ones still work: closing the
       // server at once would end every idle connection, and with it the
       // request a client has just sent on one (a keep-alive connection
@@ -391,6 +397,8 @@ final class IoWebServer implements WebServer, WebServerActivity {
   }
 
   Future<void> _serve(io.HttpRequest ioRequest) async {
+    // Every request takes its verdict, in order, whatever it is answered.
+    final verdict = requestHeadVerdict(ioRequest);
     final exchange = _Exchange(this, ioRequest);
     _exchanges.add(exchange);
     _requests++;
@@ -399,6 +407,14 @@ final class IoWebServer implements WebServer, WebServerActivity {
       ioRequest.response.persistentConnection = false;
     }
     try {
+      if (verdict.problem case final problem?) {
+        // Before anything else, so that only the first such request of a
+        // connection has to be remembered: the connection ends with it.
+        exchange.response.headers.set('Connection', 'close');
+        ioRequest.response.persistentConnection = false;
+        await exchange.response.problem(HttpStatus.badRequest, problem);
+        return;
+      }
       final server = _server;
       if (server != null) {
         if (_full(server) case (final reason, :final close)?) {
@@ -1585,18 +1601,34 @@ final class _Aborted implements Exception {
   String toString() => 'The response was aborted after an error';
 }
 
-/// The listening socket of a server, which can stop accepting without
-/// closing: dart:io's `HttpServer.close()` ends every idle connection with
-/// the socket, and a keep-alive connection is idle until its next request
-/// is read. [refuse] ends the accepting only; the stream never ends by
-/// itself, since the HTTP server stops delivering requests when it does.
+/// The listening socket of a server, plain or TLS, which hands on each
+/// connection as [_wrap] makes it and can stop accepting without closing:
+/// dart:io's `HttpServer.close()` ends every idle connection with the
+/// socket, and a keep-alive connection is idle until its next request is
+/// read. [refuse] ends the accepting only; the stream never ends by itself,
+/// since the HTTP server stops delivering requests when it does. A failed
+/// TLS handshake arrives as an error, which the HTTP server ignores.
 final class _Accepting extends Stream<io.Socket> implements io.ServerSocket {
-  _Accepting(this._socket);
+  _Accepting.plain(io.ServerSocket socket)
+    : _incoming = socket,
+      port = socket.port,
+      address = socket.address,
+      _closeSocket = socket.close,
+      _wrap = HeadScannedSocket.new;
 
-  final io.ServerSocket _socket;
+  _Accepting.secure(io.SecureServerSocket socket)
+    : _incoming = socket,
+      port = socket.port,
+      address = socket.address,
+      _closeSocket = socket.close,
+      _wrap = SecureHeadScannedSocket.new;
+
+  final Stream<io.Socket> _incoming;
+  final Future<Object?> Function() _closeSocket;
+  final io.Socket Function(io.Socket socket) _wrap;
   late final StreamController<io.Socket> _sockets = StreamController(
-    onListen: () => _accepted = _socket.listen(
-      _sockets.add,
+    onListen: () => _accepted = _incoming.listen(
+      (socket) => _sockets.add(_wrap(socket)),
       onError: _sockets.addError,
     ),
     onPause: () => _accepted?.pause(),
@@ -1607,15 +1639,15 @@ final class _Accepting extends Stream<io.Socket> implements io.ServerSocket {
   Future<void>? _refused;
 
   @override
-  int get port => _socket.port;
+  final int port;
 
   @override
-  io.InternetAddress get address => _socket.address;
+  final io.InternetAddress address;
 
   /// Accepts no connection more; those accepted go on.
   Future<void> refuse() => _refused ??= () async {
     await _accepted?.cancel();
-    await _socket.close();
+    await _closeSocket();
   }();
 
   @override

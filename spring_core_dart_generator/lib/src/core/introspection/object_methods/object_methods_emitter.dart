@@ -142,7 +142,10 @@ final class ObjectMethodsEmitter {
       Code.scope((allocate) {
         final terms = [
           for (final field in equalsAndHashCode.fields)
-            if (field.comparedByContent)
+            if (field.comparedAsDouble)
+              '${allocate(_springCoreDart('doubleEquals'))}(a.${field.name}, '
+                  'b.${field.name})'
+            else if (field.comparedByContent)
               '${allocate(_springCoreDart('deepEquals'))}(a.${field.name}, '
                   'b.${field.name})'
             else
@@ -158,14 +161,19 @@ final class ObjectMethodsEmitter {
         final fields = equalsAndHashCode.fields;
         final terms = [
           for (final field in fields)
-            if (field.comparedByContent)
+            if (field.comparedAsDouble)
+              '${allocate(_springCoreDart('doubleHash'))}(object.${field.name})'
+            else if (field.comparedByContent)
               '${allocate(_springCoreDart('deepHash'))}(object.${field.name})'
             else
               'object.${field.name}',
         ];
         return switch (terms.length) {
           0 => '0',
-          1 when fields.single.comparedByContent => terms.single,
+          1
+              when fields.single.comparedByContent ||
+                  fields.single.comparedAsDouble =>
+            terms.single,
           1 => '${terms.single}.hashCode',
           <= 20 => 'Object.hash(${terms.join(', ')})',
           _ => 'Object.hashAll([${terms.join(', ')}])',
@@ -192,6 +200,30 @@ final class ObjectMethodsEmitter {
     );
   }
 
+  // The library at [uri] as a part of a name: its path below `lib/` (and
+  // `src/`) without the extension, each part capitalized
+  // (`package:app/src/shop/book.dart` -> `ShopBook`).
+  static String _librarySuffix(Uri uri) {
+    final segments = [...uri.pathSegments];
+    if (uri.scheme == 'package' && segments.isNotEmpty) {
+      segments.removeAt(0);
+    }
+    if (segments.firstOrNull == 'lib') {
+      segments.removeAt(0);
+    }
+    if (segments.firstOrNull == 'src') {
+      segments.removeAt(0);
+    }
+    return [
+      for (final segment in segments)
+        for (final word
+            in segment
+                .replaceFirst(RegExp(r'\.dart$'), '')
+                .split(RegExp('[^A-Za-z0-9]+')))
+          if (word.isNotEmpty) '${word[0].toUpperCase()}${word.substring(1)}',
+    ].join();
+  }
+
   // [text] inside a single-quoted literal: `$` and `\` escaped (a class or
   // field may be named `a$b`).
   static String _escapedForLiteral(String text) =>
@@ -203,8 +235,10 @@ final class ObjectMethodsEmitter {
   /// extension; then the marker of `copyWith`'s defaults when a class has
   /// one.
   ///
-  /// The names nobody writes (the `copyWith` type and the extension) get a
-  /// number when one is taken.
+  /// Two classes of one name (in two libraries) get names that say the
+  /// library of each (`BookCopyWithShopBook`, from `lib/src/shop/book.dart`),
+  /// so a name stays the same whatever order the build reads them in; a
+  /// number is added only when those are taken too.
   List<Spec> declarations(List<ObjectMethodsModel> models) {
     final usedNames = <String>{};
     String uniqueName(String name) {
@@ -215,11 +249,20 @@ final class ObjectMethodsEmitter {
       return candidate;
     }
 
+    final sameName = <String, int>{};
+    for (final model in models) {
+      if (model.copyWithModel != null) {
+        sameName.update(model.name, (count) => count + 1, ifAbsent: () => 1);
+      }
+    }
     final specs = <Spec>[];
     for (final model in models) {
       if (model.copyWithModel case final copyWith?) {
-        final typedefName = uniqueName('${model.name}CopyWith');
-        final extensionName = uniqueName('\$${model.name}');
+        final suffix = sameName[model.name]! > 1
+            ? _librarySuffix(model.element.library.uri)
+            : '';
+        final typedefName = uniqueName('${model.name}CopyWith$suffix');
+        final extensionName = uniqueName('\$${model.name}$suffix');
         specs
           ..add(_copyWithTypedef(model, copyWith, typedefName))
           ..add(

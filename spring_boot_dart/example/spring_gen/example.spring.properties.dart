@@ -49,6 +49,7 @@ List<_i2.Introspection<Object>> get $applicationPropertiesIntrospections => [
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'greeting')],
+    library: r'asset:spring_boot_dart/example/example.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.GreetingProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.GreetingProperties>(

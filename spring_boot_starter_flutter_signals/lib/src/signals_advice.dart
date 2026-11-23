@@ -107,6 +107,13 @@ final class SignalsInterceptor implements SelfCallInterceptor {
     }
     final name = signature.name;
     if (computed) {
+      if (invocation.isSelfCall && state.members[name] is! ComputedMember) {
+        // A self-call's invocation has only the advice that sees
+        // self-calls: kept to recompute with, every later outside read
+        // would lose the rest (transactions, caching) for the bean's
+        // life. Computed without keeping it, until an outside read.
+        return invocation.proceed();
+      }
       return _computed(state, name, invocation).read();
     }
     if (signature.kind == MemberKind.setter) {
@@ -169,8 +176,11 @@ final class SignalsInterceptor implements SelfCallInterceptor {
     }
     final label = '${state.label}.$name';
     // The rest of the chain and the bean's own code, called again each
-    // time the value is computed.
-    Object? compute() => invocation.proceed();
+    // time the value is computed: that of an outside call, with all of its
+    // advice, run as no bean's code (what made it stale may be a field
+    // assignment in the bean's own body), as Spring advises every call
+    // through the proxy.
+    Object? compute() => runOutsideProxyBodies(invocation.proceed);
     final returns = invocation.signature.returnType;
     // The type's name comes without its arguments.
     final member = returns == 'Future' || returns == 'Stream'

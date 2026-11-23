@@ -947,12 +947,22 @@ backend URL of a release build. The generator lists every key the
 application can read (placeholders, `@ConfigurationProperties` fields,
 `@ConditionalOnProperty` names, keys of `lib/resources/application*`). That
 is needed because AOT and web builds only see defines whose names are
-known at compile time.
+known at compile time. The properties of the starters the application
+reaches are listed too, from their `spring_metadata.json`, and so are the
+keys of `config/` files. A map key such as `logging.level.<logger>` is
+listed only when a config file names it.
 
 ```bash
 flutter run --dart-define=SPRING_PROFILES_ACTIVE=prod --dart-define=SHOP_URL=https://neon.books
 flutter build apk --dart-define-from-file=config/prod.json
 ```
+
+A define the generated code names is compiled into the app, where anyone
+can read it, so a Flutter build leaves out names that look like a secret
+(`SHOP_PASSWORD`, `spring.datasource.password`) and warns about the
+application's own. The starters' public settings stay. To offer another
+name, such as a public key, list its prefix under the builder option
+`dart_defines_secrets`; `dart_defines_exclude` leaves out any other names.
 
 A client app cannot keep secrets. `--dart-define` values, config files
 and assets all end up inside the APK, the IPA or `main.dart.js`.
@@ -1463,7 +1473,7 @@ debug=false
 | `spring.main.register-shutdown-hook` | bool | `false` (Spring Boot: `true`) | Closes the context on SIGINT or SIGTERM, so `@PreDestroy` methods run (VM only). Off by default because listening for signals keeps a Dart program alive |
 | `spring.main.allow-bean-definition-overriding` | bool | `false` | A second bean with the same name replaces the first instead of failing the start |
 | `spring.main.cloud-platform` | platform name or `none` | detected | Forces the [cloud platform](#documents-for-some-profiles-or-platforms) |
-| `spring.main.startup-checks.enabled` | `true` / `false` | not set | Read by the generator when it writes the application, in `application.yml` or `application.properties` without a profile: whether the starters' startup checks are in the build (the data starter's `transactionValidator` and `dataFailureAnalyzer`, the cache starter's `cacheOperationValidator`, the edge starter's warning list). `true`: in every build. `false`: in none, no code at all. Not set: in debug and profile builds only, so a release build compiles them away and a mistake they would have found fails at the first call instead of the start |
+| `spring.main.startup-checks.enabled` | `true` / `false` | not set | Read by the generator when it writes the application, in `application.yml` or `application.properties` without a profile: whether the starters' startup checks are in the build (the data starter's `transactionValidator` and `dataFailureAnalyzer`, the cache starter's `cacheOperationValidator`, the edge starter's warning list). `true`: in every build. `false`: in none, no code at all. Not set: in debug and profile builds only, so a release build compiles them away and a mistake they would have found fails at the first call instead of the start. At run time (command line, environment, a profile), `false` turns off the checks the build kept. `dart compile js` and `wasm` define no `dart.vm.product`, so for the build switches they are debug builds; the edge starter's build adds `-Ddart.vm.product=true` |
 | `spring.autoconfigure.exclude` | list | — | Auto-configurations not to apply, by class or module name |
 | `debug` | any | — | Any value but `false` (for example `--debug`) logs the condition evaluation report: which auto-configured beans were created, and why the others were not |
 | `trace` | any | — | Any value but `false` (`--trace`) turns the framework's loggers (`spring_core_dart`, `spring_boot_dart`, `spring.web.server`) to `trace`; `debug` sets them to `debug`. Levels in `logging.level.*` win |

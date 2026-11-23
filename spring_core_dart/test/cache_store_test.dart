@@ -31,16 +31,23 @@ void main() {
     expect(await store.read('nothing'), isNull);
   });
 
-  test('a class found by its name in the source, here or in the parent', () {
+  test('a class found by its qualified name, here or in the parent', () {
     final parent = Introspector()
-      ..register(const Introspection<_Hero>(className: 'Hero'));
+      ..register(
+        const Introspection<_Hero>(
+          className: 'Hero',
+          library: 'package:game/hero.dart',
+        ),
+      );
     final child = Introspector(parent: parent);
-    final hero = child.byClassName('Hero')!;
+    final hero = child.byQualifiedName('package:game/hero.dart#Hero')!;
     expect(hero.type, _Hero);
     expect(hero.classType, isA<ClassType<_Hero>>());
     expect(hero.listOf([_Hero('Lina')]), isA<List<_Hero>>());
     expect(hero.setOf([_Hero('Doom')]), isA<Set<_Hero>>());
     expect(hero.mapOf({'mid': _Hero('Lina')}), isA<Map<String, _Hero>>());
-    expect(child.byClassName('Villain'), isNull);
+    expect(hero.qualifiedName, 'package:game/hero.dart#Hero');
+    expect(child.byQualifiedName('Hero'), isNull);
+    expect(child.byQualifiedName('Villain'), isNull);
   });
 }

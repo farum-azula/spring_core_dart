@@ -187,6 +187,7 @@ _i1.BeanModule get $securedTestBeans => _i1.BeanModule(r'securedTestBeans', [
     ],
     factoryBeanName: r'actuatorSecurity',
     factoryMethodName: r'users',
+    factoryMethodReturnType: _i5.UserDetailsService,
     dependencies: const [
       _i1.Dependency(_i6.ActuatorSecurity, qualifier: r'actuatorSecurity'),
     ],

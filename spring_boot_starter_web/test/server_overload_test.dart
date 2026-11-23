@@ -41,11 +41,14 @@ void main() {
               as WebServerActivity;
       final watch = Stopwatch()..start();
       final refusedAfter = <Duration>[];
+      final answeredAfter = <Duration>[];
       final replies = await Future.wait([
         for (var i = 0; i < 5; i++)
           client.get('/isolate/slow?ms=400').then((reply) {
             if (reply.status == 503) {
               refusedAfter.add(watch.elapsed);
+            } else {
+              answeredAfter.add(watch.elapsed);
             }
             return reply;
           }),
@@ -53,11 +56,9 @@ void main() {
       expect(replies.where((r) => r.status == 200), hasLength(2));
       final refused = replies.where((r) => r.status == 503).toList();
       expect(refused, hasLength(3));
-      // Refused while the two were still being answered.
-      expect(
-        refusedAfter,
-        everyElement(lessThan(const Duration(milliseconds: 300))),
-      );
+      // Refused while the two were still being answered, however slow the
+      // machine: before either of them came back.
+      expect(refusedAfter, everyElement(lessThan(answeredAfter.first)));
       expect(refused.first.headers.value('retry-after'), '3');
       // The connection stays for the next try.
       expect(refused.first.headers.value('connection'), isNot('close'));

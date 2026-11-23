@@ -71,7 +71,11 @@ final class PlaceholderCheck implements ConfigKeyCheck {
         fixes: MissingPropertyFixes(model).of(
           pass.path,
           name,
-          pass.document.range(config.line, keyEnd, keyEnd),
+          pass.document.range(
+            config.line,
+            config.valueStart + part.trimmedKeyEnd(config.value!),
+            config.valueStart + part.trimmedKeyEnd(config.value!),
+          ),
         ),
       ),
     );

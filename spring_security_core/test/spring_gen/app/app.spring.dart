@@ -699,6 +699,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
       types: const [_i6.RoleHierarchyImpl, _i6.RoleHierarchy],
       factoryBeanName: r'hierarchyConfig',
       factoryMethodName: r'roleHierarchy',
+      factoryMethodReturnType: _i6.RoleHierarchy,
       dependencies: const [
         _i1.Dependency(_i2.HierarchyConfig, qualifier: r'hierarchyConfig'),
       ],

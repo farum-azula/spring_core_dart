@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:signals_core/signals_core.dart' as signals;
-import 'package:spring_boot_dart/spring_boot_dart.dart' show TypeCapture;
+import 'package:spring_boot_dart/spring_boot_dart.dart'
+    show SecretNames, TypeCapture;
 import 'package:spring_boot_starter_flutter_signals/src/async_value.dart';
 import 'package:spring_boot_starter_flutter_signals/src/follow_keeper.dart';
 import 'package:spring_boot_starter_flutter_signals/src/followed_collections.dart';
@@ -32,6 +33,11 @@ sealed class SignalMember {
   /// The bean's name and the member's: `basket.items`.
   final String name;
 
+  /// Whether the member's own name looks like it holds a secret
+  /// (`SecretNames.looksSecret`: `accessToken`, `password`): its value
+  /// is kept out of the debug tab and the log, as `hidden: true` keeps it.
+  bool get secret => SecretNames.looksSecret(name.split('.').last);
+
   /// Stops following; reads after it go to the bean's own field.
   void dispose();
 }
@@ -56,9 +62,10 @@ final class ValueMember extends SignalMember {
     Object? initial, {
     List<TypeCapture<Object?>> arguments = const [],
     String? type,
-    this.hidden = false,
+    bool hidden = false,
     // ignore: prefer_initializing_formals, named parameters cannot be private
-  }) : _arguments = type == null || _followedTypes.contains(type)
+  }) : _hidden = hidden,
+       _arguments = type == null || _followedTypes.contains(type)
            ? arguments
            : const [],
        _signal = signals.signal<Object?>(
@@ -75,9 +82,10 @@ final class ValueMember extends SignalMember {
     super.name, {
     List<TypeCapture<Object?>> arguments = const [],
     String? type,
-    this.hidden = false,
+    bool hidden = false,
     // ignore: prefer_initializing_formals, named parameters cannot be private
-  }) : _arguments = type == null || _followedTypes.contains(type)
+  }) : _hidden = hidden,
+       _arguments = type == null || _followedTypes.contains(type)
            ? arguments
            : const [],
        _unset = true,
@@ -110,8 +118,11 @@ final class ValueMember extends SignalMember {
   // The same function each time, not one made for each read.
   late final void Function() _refollow = _follow;
 
-  /// Whether the value is kept out of the debug tab and the log.
-  final bool hidden;
+  /// Whether the value is kept out of the debug tab and the log:
+  /// `@Signal(hidden: true)`, or a field whose name looks secret ([secret]).
+  late final bool hidden = _hidden || secret;
+
+  final bool _hidden;
 
   /// How often the field was assigned a new value.
   int changes = 0;

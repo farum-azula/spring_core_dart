@@ -158,16 +158,19 @@ final class _$PagingArgumentResolver
     final defaults = parameter.annotations
         .whereType<_i7.SortDefault>()
         .toList();
+    final allowed = parameter.annotation<_i7.AllowedSortProperties>();
     return parameter.type.type == _i7.Pageable
         ? _paging.pageable(
             request.queryParameters,
             pageableDefault: parameter.annotation<_i7.PageableDefault>(),
             sortDefaults: defaults,
+            allowed: allowed,
             qualifier: qualifier,
           )
         : _paging.sort(
             request.queryParameters,
             sortDefaults: defaults,
+            allowed: allowed,
             qualifier: qualifier,
           );
   }

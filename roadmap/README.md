@@ -292,6 +292,7 @@ What comes next, in order:
 | [release_0_6.md](release_0_6.md) | all packages | the checklist of the 0.6.0 release: what was verified, what remains before the Release button |
 | [spring_boot_starter_supabase.md](spring_boot_starter_supabase.md) | `spring_boot_starter_supabase` | planned after the generator's split by starter: our own client, Spring Data (SQL by `db.url`, else PostgREST), Spring Security front and back, Realtime as streams, `StorageTemplate`, Edge Functions; nothing about Supabase in the generator |
 | [spring_boot_starter_retry.md](spring_boot_starter_retry.md) | `spring_boot_starter_retry` | planned: `@Retryable`, `@Recover` |
+| [review_0_10.md](review_0_10.md) | all packages | the review after 0.9.0 (November 2026): bugs, Spring parity, security, every annotation where it does not belong; what stayed open |
 | [review_0_5.md](review_0_5.md) | all packages | planned: the review before 0.5.0 (bugs and differences from Spring, security, vulnerabilities), then the minor release |
 | [serverless.md](serverless.md) | `spring_boot_starter_edge` | built (November 2026): Spring Boot for Dart applications on Supabase Edge Functions, Cloudflare Workers, AWS Lambda, Deno Deploy, Netlify and Vercel, as JavaScript or WebAssembly, with a deploy workflow; not yet: more Cloudflare bindings, Azure and Google Cloud Functions |
 | [rest_client.md](rest_client.md) | `spring_web_dart`, `spring_boot_dart` | planned: `RestClient`, `RestTemplate` (no package of its own), later `@HttpExchange` |

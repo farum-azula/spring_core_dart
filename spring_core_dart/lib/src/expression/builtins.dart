@@ -294,6 +294,15 @@ final class BuiltinPropertyAccessor implements PropertyAccessor {
 /// method itself (`RangeError` for `'abc'.charAt(9)`) propagate
 /// unchanged, like Java exceptions from Spring's reflective calls.
 ///
+/// Dart's collections know their element type at run time, Java's do not.
+/// `union` makes a new set, so it takes any set: the result keeps the
+/// element type when every element fits, else it is a `Set<Object?>`. A
+/// method that stores into the collection (`add`, `addAll`, `set`, `put`,
+/// ...) takes a value of the element type, whatever the static type of its
+/// container (`#ints.addAll({1, 2})`), and refuses another with
+/// `SpelMessage.exceptionDuringMethodInvocation`, leaving the collection
+/// as it was.
+///
 /// ```dart
 /// final parser = SpelExpressionParser();
 /// parser.parseExpression("'abc'.toUpperCase()").getValue(); // 'ABC'
@@ -424,7 +433,7 @@ final class BuiltinMethodResolver implements MethodResolver {
     'get' || 'elementAt' => (int index) => l[index],
     'set' => (int index, Object? item) {
       final previous = l[index];
-      l[index] = item;
+      _storing(l, () => l[index] = item);
       return previous;
     },
     'getFirst' => () => l.first,
@@ -435,15 +444,19 @@ final class BuiltinMethodResolver implements MethodResolver {
     // add(e) like both; add(index, e) like Java's List.add.
     'add' => (Object? first, [Object? second = _none]) {
       if (identical(second, _none)) {
-        l.add(first);
+        _storing(l, () => l.add(first));
         return true;
       }
-      l.insert(first! as int, second);
+      final index = first! as int;
+      _storing(l, () => l.insert(index, second));
       return null;
     },
-    'insert' => (int index, Object? item) => l.insert(index, item),
+    'insert' => (int index, Object? item) => _storing(
+      l,
+      () => l.insert(index, item),
+    ),
     'addAll' => (Iterable<Object?> items) {
-      l.addAll(items);
+      _storing(l, () => l.addAll(_fitting(l, items)));
       return items.isNotEmpty;
     },
     'remove' => (Object? item) => l.remove(item),
@@ -473,19 +486,60 @@ final class BuiltinMethodResolver implements MethodResolver {
   };
 
   static Function? _set(Set<Object?> s, String name) => switch (name) {
-    'add' => (Object? item) => s.add(item),
+    'add' => (Object? item) => _storing(s, () => s.add(item)),
     'addAll' => (Iterable<Object?> items) {
       final before = s.length;
-      s.addAll(items);
+      _storing(s, () => s.addAll(_fitting(s, items)));
       return s.length != before;
     },
     'remove' => (Object? item) => s.remove(item),
     'clear' => s.clear,
-    'union' => (Set<Object?> other) => s.union(other),
+    'union' => (Set<Object?> other) => _union(s, other),
     'intersection' => (Set<Object?> other) => s.intersection(other),
     'difference' => (Set<Object?> other) => s.difference(other),
     _ => null,
   };
+
+  // Java's generics are erased, so a Set<Integer> takes the elements of a
+  // Set<Object> there. A new set can do the same safely: it keeps the
+  // receiver's element type when every element fits, else it is wider. The
+  // receiver is not changed. A set that cannot compare the elements (a
+  // sorted one, like Java's TreeSet) still refuses them.
+  static Set<Object?> _union(Set<Object?> s, Set<Object?> other) {
+    try {
+      return s.toSet()..addAll(_fitting(s, other));
+    } on TypeError {
+      return _storing(s, () => s.cast<Object?>().union(other));
+    }
+  }
+
+  // [items] in a list of [like]'s element type: checked before anything is
+  // stored, so a call that fails leaves the collection as it was.
+  static List<Object?> _fitting(
+    Iterable<Object?> like,
+    Iterable<Object?> items,
+  ) {
+    final fitting = like.take(0).toList();
+    // Not a tear-off: `fitting.add` would be refused for its reified type.
+    // ignore: prefer_foreach
+    for (final item in items) {
+      fitting.add(item);
+    }
+    return fitting;
+  }
+
+  // A collection's reified element type refuses a value: the method exists,
+  // so this is not EL1004E (Java's erasure has no such failure).
+  static T _storing<T>(Object collection, T Function() store) {
+    try {
+      return store();
+    } on TypeError catch (error) {
+      throw AccessException(
+        'a ${collection.runtimeType} cannot hold this value: $error',
+        error,
+      );
+    }
+  }
 
   static Function? _iterable(Iterable<Object?> i, String name) =>
       switch (name) {
@@ -522,7 +576,7 @@ final class BuiltinMethodResolver implements MethodResolver {
     'entrySet' || 'entries' => () => m.entries.toList(),
     'put' => (Object? key, Object? value) {
       final previous = m[key];
-      m[key] = value;
+      _storing(m, () => m[key] = value);
       return previous;
     },
     // Java's putIfAbsent(key, value): the existing value, or null after
@@ -532,10 +586,16 @@ final class BuiltinMethodResolver implements MethodResolver {
       if (existing != null) {
         return existing;
       }
-      m[key] = value;
+      _storing(m, () => m[key] = value);
       return null;
     },
-    'putAll' || 'addAll' => (Map<Object?, Object?> other) => m.addAll(other),
+    'putAll' || 'addAll' => (Map<Object?, Object?> other) => _storing(m, () {
+      final keys = _fitting(m.keys, other.keys);
+      final values = _fitting(m.values, other.values);
+      for (var i = 0; i < keys.length; i++) {
+        m[keys[i]] = values[i];
+      }
+    }),
     'remove' => (Object? key) => m.remove(key),
     'clear' => m.clear,
     _ => null,

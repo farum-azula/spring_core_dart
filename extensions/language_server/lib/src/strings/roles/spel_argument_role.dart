@@ -1,8 +1,11 @@
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:dart_spring_language_server/src/completion.dart';
 import 'package:dart_spring_language_server/src/dart_index.dart';
 import 'package:dart_spring_language_server/src/diagnostics/problem.dart';
 import 'package:dart_spring_language_server/src/handled.dart';
 import 'package:dart_spring_language_server/src/project_model.dart';
+import 'package:dart_spring_language_server/src/strings/roles/spel_scopes.dart';
+import 'package:dart_spring_language_server/src/strings/spel_paths.dart';
 import 'package:dart_spring_language_server/src/strings/string_context.dart';
 import 'package:dart_spring_language_server/src/strings/string_role.dart';
 import 'package:dart_spring_language_server/src/symbols/target.dart';
@@ -60,14 +63,48 @@ final class SpelArgumentRole extends StringRole {
     return spelArguments[callee]?.contains(named.name.lexeme) ?? false;
   }
 
-  // The parameters of the method [node] annotates.
-  static List<FormalParameter> _parametersOf(AstNode node) =>
-      node
-          .thisOrAncestorOfType<MethodDeclaration>()
-          ?.parameters
-          ?.parameters
-          .toList() ??
-      const [];
+  // The method the string's annotation is on: `null` on a class, in a
+  // composed annotation, or for a `Cacheable(...)` value in plain code,
+  // whose parameters are not known here.
+  static MethodDeclaration? _methodOf(StringContext string) =>
+      switch (string.annotation?.parent) {
+        final MethodDeclaration method => method,
+        _ => null,
+      };
+
+  static List<FormalParameter> _parametersOf(StringContext string) =>
+      _methodOf(string)?.parameters?.parameters.toList() ?? const [];
+
+  SpelEnv _env(StringContext string) => spelEnvOf(
+    SpelMethod(
+      model.dartTypes,
+      string.file,
+      string.literal,
+      _methodOf(string),
+      string.annotation,
+    ),
+    rootValues: cacheRootValues,
+    variables: cacheVariables,
+  );
+
+  @override
+  Handled<CompletionResult>? complete(
+    StringContext string,
+    CompletionRequest request,
+  ) {
+    if (!_claims(string)) {
+      return null;
+    }
+    final found = model.spelPaths.complete(request.before, _env(string));
+    return found == null
+        ? null
+        : Handled(
+            CompletionResult(
+              request.rangeFrom(string.contentStart + found.$1),
+              found.$2,
+            ),
+          );
+  }
 
   @override
   Handled<Target>? target(StringContext string, int offset) {
@@ -82,6 +119,10 @@ final class SpelArgumentRole extends StringRole {
     } on Object {
       return const Handled(null);
     }
+    final member = model.spelPaths.target(expression, at, _env(string));
+    if (member != null) {
+      return Handled(member);
+    }
     for (var i = 1; i < tokens.length; i++) {
       final token = tokens[i];
       if (token.kind != TokenKind.identifier ||
@@ -93,7 +134,7 @@ final class SpelArgumentRole extends StringRole {
       final name = expression.substring(token.start, token.end);
       return Handled(
         DeclarationTarget('Parameter `$name`', [
-          for (final parameter in _parametersOf(string.literal))
+          for (final parameter in _parametersOf(string))
             if (parameter.name?.lexeme == name)
               DeclarationSite(
                 string.path,
@@ -142,10 +183,11 @@ final class SpelArgumentRole extends StringRole {
       return;
     }
     final parameters = {
-      for (final parameter in _parametersOf(string.literal))
-        ?parameter.name?.lexeme,
+      for (final parameter in _parametersOf(string)) ?parameter.name?.lexeme,
     };
-    final tokens = Tokenizer(expression).process();
+    final tokens = _methodOf(string) == null
+        ? const <Token>[]
+        : Tokenizer(expression).process();
     for (var i = 1; i < tokens.length; i++) {
       final token = tokens[i];
       if (token.kind != TokenKind.identifier ||
@@ -167,6 +209,20 @@ final class SpelArgumentRole extends StringRole {
             start + token.end,
           ),
           "Unknown variable '#$name'$known",
+        ),
+      );
+    }
+    for (final issue in model.spelPaths.issues(expression, _env(string))) {
+      final range = model.locations.rangeOf(
+        string.file,
+        start + issue.start,
+        start + issue.end,
+      );
+      problems.add(
+        Problem(
+          range,
+          issue.message,
+          fixes: Fix.suggesting(range, issue.guess),
         ),
       );
     }

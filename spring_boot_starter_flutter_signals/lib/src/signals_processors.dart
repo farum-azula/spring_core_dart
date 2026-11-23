@@ -131,12 +131,18 @@ final class SignalEffects extends DestructionAwareBeanPostProcessor
           () => signals.effect(() {
             state.effectRuns[method.name] = state.effectRuns[method.name]! + 1;
             _log.debug(() => 'effect $name runs');
+            // Nobody's call but the framework's: through the proxy with all
+            // of its advice (`@PreAuthorize` too), also when the assignment
+            // that re-runs it was made in the bean's own body.
+            Object? run() => runOutsideProxyBodies(
+              () => method.invoke(bean, const []),
+            );
             if (!made) {
-              keeper.run(() => method.invoke(bean, const []));
+              keeper.run(run);
               return;
             }
             try {
-              keeper.run(() => method.invoke(bean, const []));
+              keeper.run(run);
             } on Object catch (error, stackTrace) {
               _report(name, error, stackTrace);
             }

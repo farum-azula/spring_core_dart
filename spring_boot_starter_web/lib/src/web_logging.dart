@@ -19,22 +19,12 @@ final class _Unquoted {
 }
 
 /// The value shown in a log for the header [name]: always `masked` for the
-/// ones that carry credentials.
+/// ones that carry credentials ([HttpSecrets.isSensitiveHeader], the rule
+/// the Feign client's logs share).
 String logHeaderValue(String name, List<String> values) =>
-    _isSensitiveHeader(name)
+    HttpSecrets.isSensitiveHeader(name)
     ? 'masked'
     : logSafe(values.join(','), maxLength: 100);
-
-bool _isSensitiveHeader(String name) {
-  final lower = name.toLowerCase();
-  return lower == 'authorization' ||
-      lower == 'proxy-authorization' ||
-      lower == 'cookie' ||
-      lower == 'set-cookie' ||
-      const ['token', 'secret', 'key', 'password', 'session'].any(
-        lower.contains,
-      );
-}
 
 /// The headers of a request as the trace line shows them, sensitive
 /// values masked.
@@ -49,15 +39,16 @@ String logHeaders(HttpHeaders headers) {
 }
 
 /// The parameters of a request as the debug line shows them: `masked`,
-/// or with [details] the values too (those of a name that looks like a
-/// credential, such as `password`, stay masked).
+/// or with [details] the values too (those of a name that carries a
+/// credential, such as `password` or OAuth's `code`, stay masked:
+/// [HttpSecrets.isSensitiveParameter]).
 String logParameters(Map<String, List<String>> parameters, bool details) {
   if (!details) {
     return parameters.isEmpty ? '{}' : '{masked}';
   }
   final out = <String>[];
   parameters.forEach((name, values) {
-    final shown = _isSensitiveHeader(name)
+    final shown = HttpSecrets.isSensitiveParameter(name)
         ? 'masked'
         : values.map((v) => logSafe(v, maxLength: 100)).join(', ');
     out.add('${logSafe(name, maxLength: 60)}=[$shown]');

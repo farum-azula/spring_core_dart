@@ -939,6 +939,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       types: const [_i27.KeycloakRolesMapper, _i28.GrantedAuthoritiesMapper],
       factoryBeanName: r'keycloakConfig',
       factoryMethodName: r'keycloakRoles',
+      factoryMethodReturnType: _i28.GrantedAuthoritiesMapper,
       conditions: [
         _i3.ConditionGroup(
           r'package:neon_books_app/src/account/keycloak.dart#KeycloakConfig',
@@ -995,6 +996,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       types: const [_i28.OAuth2AccessTokenErrorDecoder, _i30.ErrorDecoder],
       factoryBeanName: r'keycloakConfig',
       factoryMethodName: r'errorDecoder',
+      factoryMethodReturnType: _i30.ErrorDecoder,
       conditions: [
         _i3.ConditionGroup(
           r'package:neon_books_app/src/account/keycloak.dart#KeycloakConfig',
@@ -1351,6 +1353,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       primary: true,
       factoryBeanName: r'apiConfig',
       factoryMethodName: r'sessionTransport',
+      factoryMethodReturnType: _i5.HttpTransport,
       conditions: [
         const _i3.ProfileCondition([r'!web']),
       ],
@@ -1389,6 +1392,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
       types: const [_i34.DefaultRetryer, _i34.Retryer],
       factoryBeanName: r'apiConfig',
       factoryMethodName: r'retryer',
+      factoryMethodReturnType: _i34.Retryer,
       dependencies: const [
         _i3.Dependency(_i31.ApiConfig, qualifier: r'apiConfig'),
       ],

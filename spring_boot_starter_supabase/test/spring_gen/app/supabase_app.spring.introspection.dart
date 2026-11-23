@@ -105,6 +105,7 @@ List<_i3.Introspection<Object>> get $applicationIntrospections => [
         get: _$get1,
       ),
     ],
+    library: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart',
     constructor: _i3.IntrospectedConstructor<_i1.Settings>(
       parameters: [
         _i3.IntrospectedParameter(
@@ -133,6 +134,7 @@ List<_i3.Introspection<Object>> get $applicationIntrospections => [
         get: _$get3,
       ),
     ],
+    library: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart',
     constructor: _i3.IntrospectedConstructor<_i1.Invite>(
       parameters: [
         _i3.IntrospectedParameter(
@@ -154,6 +156,7 @@ List<_i3.Introspection<Object>> get $applicationIntrospections => [
         get: _$get5,
       ),
     ],
+    library: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart',
     constructor: _i3.IntrospectedConstructor<_i1.InviteResult>(
       parameters: [
         _i3.IntrospectedParameter(
@@ -189,6 +192,7 @@ List<_i3.Introspection<Object>> get $applicationIntrospections => [
         set: _$set12,
       ),
     ],
+    library: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     constructor: _i3.IntrospectedConstructor<_i1.Packaging>(
       parameters: [
@@ -230,6 +234,7 @@ List<_i3.Introspection<Object>> get $applicationIntrospections => [
         set: _$set17,
       ),
     ],
+    library: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     constructor: _i3.IntrospectedConstructor<_i1.BoxSize>(
       parameters: [
@@ -266,6 +271,7 @@ List<_i3.Introspection<Object>> get $applicationIntrospections => [
         set: _$set22,
       ),
     ],
+    library: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     constructor: _i3.IntrospectedConstructor<_i1.Stop>(
       parameters: [
@@ -298,6 +304,7 @@ List<_i3.Introspection<Object>> get $applicationIntrospections => [
         get: _$get25,
       ),
     ],
+    library: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart',
     constructor: _i3.IntrospectedConstructor<_i1.Cursor>(
       parameters: [
         _i3.IntrospectedParameter(
@@ -330,6 +337,7 @@ List<_i3.Introspection<Object>> get $applicationIntrospections => [
         get: _$get28,
       ),
     ],
+    library: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart',
     constructor: _i3.IntrospectedConstructor<_i1.Member>(
       parameters: [
         _i3.IntrospectedParameter(
@@ -399,6 +407,7 @@ List<_i3.Introspection<Object>> get $applicationIntrospections => [
         typeInfo: _i3.ListType<String>(_i3.ClassType<String>()),
       ),
     ],
+    library: r'package:spring_boot_starter_supabase/src/realtime/realtime_model.dart',
     parts: {_i3.IntrospectionPart.write},
     constructor: _i3.IntrospectedConstructor<_i2.RealtimeRowChange>(
       parameters: [

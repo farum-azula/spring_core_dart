@@ -1,3 +1,8 @@
+## Unreleased
+
+- **Breaking:** `FeignClientConfig.alwaysSensitiveHeaders` is gone: the logs mask the headers of `HttpSecrets.isSensitiveHeader` (spring_web_dart's rule, shared with the web starter: also names that look secret, such as `X-Api-Key`) and those of `sensitive-headers`.
+- A redirect to another origin drops every credential header, the `sensitive-headers` ones too (`HttpRequest.sensitiveHeaders`); one from `https` to `http` is not followed.
+
 ## 0.9.0
 
 - Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.

@@ -52,6 +52,7 @@ List<_i2.Introspection<Object>> get $actuatorWebPropertiesIntrospections => [
         set: _$set3,
       ),
     ],
+    library: r'package:spring_boot_starter_actuator/src/config/web_endpoint_properties.dart',
     instantiate: _i1.WebEndpointExposure.new,
     constructor: _i2.IntrospectedConstructor<_i1.WebEndpointExposure>(
       parameters: [],
@@ -70,6 +71,7 @@ List<_i2.Introspection<Object>> get $actuatorWebPropertiesIntrospections => [
         set: _$set6,
       ),
     ],
+    library: r'package:spring_boot_starter_actuator/src/config/web_endpoint_properties.dart',
     instantiate: _i1.WebEndpointDiscovery.new,
     constructor: _i2.IntrospectedConstructor<_i1.WebEndpointDiscovery>(
       parameters: [],

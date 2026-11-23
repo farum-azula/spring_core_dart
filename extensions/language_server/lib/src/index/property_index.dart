@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dart_spring_language_server/src/config/config_format.dart';
+import 'package:dart_spring_language_server/src/index/confined_files.dart';
 import 'package:dart_spring_language_server/src/index/message_index.dart';
 import 'package:dart_spring_language_server/src/index/package_layout.dart';
 import 'package:dart_spring_language_server/src/index/project_files.dart';
@@ -77,7 +78,7 @@ final class PropertyIndex {
   /// The metadata of the packages.
   final MetadataStore metadata;
 
-  final _dependencyFiles = <String, (DateTime, List<PropertyEntry>)>{};
+  final _dependencyFiles = <String, _DependencyConfig>{};
 
   /// The definitions of the property [key] for a value read in [from]: the
   /// properties a test sets for its own context first (when [from] is a
@@ -211,37 +212,51 @@ final class PropertyIndex {
     return result;
   }
 
-  // The config files under `lib/resources` of a dependency, re-listed at
-  // most every few seconds.
+  // The config files under `lib/resources` of a dependency (only inside
+  // the dependency, links not followed), checked for changes at most every
+  // few seconds: listed again when a directory changed, a file read again
+  // when it changed.
   List<PropertyEntry> _dependencyConfig(String root) {
-    final cached = _dependencyFiles[root];
+    final cached = _dependencyFiles[root] ??= _DependencyConfig(
+      ConfinedFiles(
+        root,
+        '$root${Platform.pathSeparator}lib'
+        '${Platform.pathSeparator}resources',
+      ),
+    );
     final now = DateTime.now();
-    if (cached != null && now.difference(cached.$1).inSeconds < 5) {
-      return cached.$2;
+    if (cached.checked case final checked?
+        when now.difference(checked).inSeconds < 5) {
+      return cached.entries;
     }
-    final entries = <PropertyEntry>[];
-    final directory = Directory('$root/lib/resources');
-    if (directory.existsSync()) {
+    cached.checked = now;
+    final byFile = <String, List<PropertyEntry>>{};
+    for (final file in cached.listing.files()) {
+      if (!ConfigFormat.isConfigFile(file.path)) {
+        continue;
+      }
+      if (files.configFiles[file.path] case final known?) {
+        byFile[file.path] = known;
+        continue;
+      }
+      final previous = cached.byFile[file.path];
+      final changed = cached.listing.changed(file);
+      if (previous != null && !changed) {
+        byFile[file.path] = previous;
+        continue;
+      }
       try {
-        for (final entity in directory.listSync(recursive: true)) {
-          if (entity is! File || !ConfigFormat.isConfigFile(entity.path)) {
-            continue;
-          }
-          if (files.configFiles[entity.path] case final known?) {
-            entries.addAll(known);
-            continue;
-          }
-          final text = entity.readAsStringSync();
-          entries.addAll(
-            ConfigFormat.of(entity.path).entries(entity.path, text),
-          );
-        }
+        byFile[file.path] = ConfigFormat.of(
+          file.path,
+        ).entries(file.path, file.readAsStringSync());
       } on FileSystemException {
-        // A directory being rewritten: next time.
+        // A file being rewritten: next time.
       }
     }
-    _dependencyFiles[root] = (now, entries);
-    return entries;
+    cached
+      ..byFile = byFile
+      ..entries = [for (final entries in byFile.values) ...entries];
+    return cached.entries;
   }
 
   /// The profile names known to the package of [path]: those the metadata
@@ -278,4 +293,14 @@ final class PropertyIndex {
     }
     return result;
   }
+}
+
+/// The config files of a dependency, as last read.
+final class _DependencyConfig {
+  _DependencyConfig(this.listing);
+
+  final ConfinedFiles listing;
+  DateTime? checked;
+  Map<String, List<PropertyEntry>> byFile = {};
+  List<PropertyEntry> entries = [];
 }

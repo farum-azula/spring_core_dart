@@ -1,3 +1,11 @@
+## Unreleased
+
+- A sync `@Transactional` method (a release build has no `TransactionValidator`) fails with a `StateError` before its body runs or a transaction begins; it ran and committed after failing its caller.
+- A `LIKE` pattern matched in Dart (the in-memory store, the change streams) takes linear time (`LikePattern`; no backtracking regular expression) and is at most 50000 characters, SQLite's limit.
+- `@AllowedSortProperties(['title', 'year'])` on a controller's `Pageable` or `Sort` parameter: another sort property from the request is a `PropertyReferenceException` (a 400). A request may sort by at most 16 properties (`WebPagingProperties.maxSortOrders`, an `InvalidPagingRequestException`), and a property named twice keeps its first order. The README no longer says there is no resolver.
+- The build warns about a controller's `Pageable` or `Sort` parameter without `@AllowedSortProperties`: a client could order by a property a DTO leaves out of the answer, and the order of the rows would show it.
+- The startup checks are left out when `spring.main.startup-checks.enabled=false` at run time.
+
 ## 0.9.0
 
 - Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.

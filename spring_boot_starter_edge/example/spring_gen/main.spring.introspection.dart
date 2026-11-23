@@ -39,6 +39,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         annotations: [_i2.NotBlank()],
       ),
     ],
+    library: r'asset:spring_boot_starter_edge/example/books.dart',
     constructor: _i2.IntrospectedConstructor<_i1.Book>(
       parameters: [
         _i2.IntrospectedParameter(

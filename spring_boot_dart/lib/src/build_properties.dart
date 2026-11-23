@@ -8,11 +8,13 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 
 /// The starters' startup checks: `spring.main.startup-checks.*`.
 ///
-/// Nothing reads it at run time: the generator reads the key from
-/// `application.yml` or `application.properties` (without a profile) when
-/// it writes the application, and leaves the startup checks' modules in or
-/// out of the build. The class describes the key for editors; it is
-/// abstract, so it is no bean either.
+/// The generator reads the key from `application.yml` or
+/// `application.properties` (without a profile) when it writes the
+/// application, and leaves the startup checks' modules in or out of the
+/// build. At run time, `false` (on the command line, in the environment,
+/// in a profile) turns off the checks the build kept
+/// (`startupChecksEnabled`). The class describes the key for editors; it
+/// is abstract, so it is no bean either.
 @ConfigurationProperties('spring.main.startup-checks')
 abstract final class MainStartupChecksProperties {
   /// Whether the starters' startup checks are in the build (the

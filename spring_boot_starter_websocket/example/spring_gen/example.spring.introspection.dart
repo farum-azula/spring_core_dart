@@ -42,6 +42,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get1,
       ),
     ],
+    library: r'asset:spring_boot_starter_websocket/example/example.dart',
     constructor: _i2.IntrospectedConstructor<_i1.ChatMessage>(
       parameters: [
         _i2.IntrospectedParameter(

@@ -39,6 +39,13 @@ final class NavigationGeneration extends PackageGeneration {
   List<String> get markers => const ['@ScreenRoute', '@RouteShell'];
 
   @override
+  List<AnnotationPlacement> get placements => const [
+    ClassPlacement([screenRouteChecker, routeShellChecker]),
+    _RouteInfoPlacement(),
+    _ScreenGuardPlacement(),
+  ];
+
+  @override
   void scanClass(ClassElement element, ModuleScan scan) => scan.collectErrors(
     () => scanNavigation(element, NavigationModuleModel.of(scan.module)),
   );
@@ -80,4 +87,32 @@ final class NavigationGeneration extends PackageGeneration {
       if (shells.isNotEmpty) 'shells': SpringMetadata.byName(shells, 'class'),
     };
   }
+}
+
+// `@RouteInfo`: a `@ScreenRoute` widget, whose page it describes.
+final class _RouteInfoPlacement extends ClassPlacement {
+  const _RouteInfoPlacement() : super(const [routeInfoChecker]);
+
+  @override
+  String? problem(AnnotationSite site) =>
+      super.problem(site) ??
+      (site.has(const [screenRouteChecker])
+          ? null
+          : '@RouteInfo on ${site.subject}: it describes the page of a '
+                '@ScreenRoute widget, and ${site.element.displayName} has no '
+                '@ScreenRoute, so it would do nothing. Add @ScreenRoute.');
+}
+
+// `@PreAuthorize` on a screen or a shell guards it (the navigation reads
+// it); elsewhere the security part decides.
+final class _ScreenGuardPlacement extends CheckedPlacement {
+  const _ScreenGuardPlacement() : super(const [preAuthorizeChecker]);
+
+  @override
+  bool claims(AnnotationSite site) =>
+      site.kind == PlaceKind.classDeclaration &&
+      site.has(const [screenRouteChecker, routeShellChecker]);
+
+  @override
+  String? problem(AnnotationSite site) => null;
 }

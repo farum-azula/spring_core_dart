@@ -51,6 +51,66 @@ final class DartDefineKeys {
     'logging.level.root',
   ];
 
+  /// The placeholders in the values of the properties under [prefixes],
+  /// in the config file at [path] with [text]: `SUPABASE_ANON_KEY` of
+  /// `spring.supabase.anon-key: ${SUPABASE_ANON_KEY}`. Such a name holds
+  /// what the property holds, so it is as public as the property.
+  static Set<String> placeholdersUnder(
+    String path,
+    String text,
+    List<String> prefixes,
+  ) {
+    final found = <String>{};
+    void value(String key, String written) {
+      if (without([key], prefixes).isEmpty) {
+        for (final match in _placeholderName.allMatches(written)) {
+          found.add(match[1]!.trim());
+        }
+      }
+    }
+
+    void node(Object? current, String key) {
+      switch (current) {
+        case final Map<Object?, Object?> map:
+          for (final MapEntry(key: name, value: child) in map.entries) {
+            node(child, key.isEmpty ? '$name' : '$key.$name');
+          }
+        case final List<Object?> list:
+          for (final (index, child) in list.indexed) {
+            node(child, '$key[$index]');
+          }
+        case final String written:
+          value(key, written);
+      }
+    }
+
+    if (path.endsWith('.properties')) {
+      for (final line in text.split(RegExp(r'\r\n|\r|\n'))) {
+        final separator = line.indexOf(RegExp('[=:]'));
+        if (separator > 0 && !line.trimLeft().startsWith('#')) {
+          value(line.substring(0, separator).trim(), line.substring(separator));
+        }
+      }
+    } else if (path.endsWith('.yml') || path.endsWith('.yaml')) {
+      try {
+        for (final document in loadYamlStream(text)) {
+          node(document.value, '');
+        }
+      } on YamlException {
+        return found;
+      }
+    }
+    return found;
+  }
+
+  static final _placeholderName = RegExp(r'\$\{([^:}]+)');
+
+  /// The names collected, as given (without their environment forms).
+  List<String> get names => [..._names];
+
+  /// Adds every one of [names] ([addName]).
+  void addAll(Iterable<String> names) => names.forEach(addName);
+
   /// The keys to generate, sorted: each collected name and its
   /// environment form.
   ///
@@ -236,13 +296,15 @@ final class DartDefineKeys {
   /// Adds the keys and the placeholder keys of a config file of
   /// `lib/resources/` ([path] relative to it, [text] its content).
   ///
-  /// Only `application*.properties`, `.yml` and `.yaml` files are read.
+  /// Only `application*.properties`, `.yml` and `.yaml` files are read,
+  /// and the `.properties`, `.yml` and `.yaml` files below `config/`, where
+  /// `spring.config.import` reads them from.
   /// YAML keys are flattened (`server.port`, `app.hosts[0]`); a YAML file
   /// that does not parse is skipped, as the application reports it when it
   /// reads the file.
   void addConfigFile(String path, String text) {
     final file = path.split('/').last;
-    if (!file.startsWith('application')) {
+    if (!file.startsWith('application') && !path.startsWith('config/')) {
       return;
     }
     if (file.endsWith('.properties')) {

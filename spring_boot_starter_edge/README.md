@@ -42,8 +42,14 @@ server on `server.port`: that is how a function is developed and debugged.
 ## Building
 
 `dart run spring_boot_starter_edge:build` compiles the application
-(`dart compile js -O2 -DSPRING_ALL_PLATFORMS=true`) and writes the entry
-file of the platform next to it. Nothing of it is written by hand, and
+(`dart compile js -O2 -DSPRING_ALL_PLATFORMS=true -Ddart.vm.product=true`)
+and writes the entry file of the platform next to it. The last definition
+makes it a release build for the build switches, as `dart compile exe`
+and `flutter build --release` are: the debug part of the application (the
+startup checks, the statement logging a profile could turn on, the
+hot-reload entry points) is left out. `--debug` keeps it. A plain
+`dart compile js` or `wasm` defines no `dart.vm.product`: for the build
+switches it is a debug build. Nothing of it is written by hand, and
 nothing of it is committed.
 
 | `--platform` | Written to | Files | Deploy |
@@ -65,6 +71,7 @@ nothing of it is committed.
 | `--dart` | The `dart` that compiles; `dart` on the PATH by default. WebAssembly for Supabase needs that of Dart 3.13 |
 | `--streaming` | AWS: a response-streaming handler (see below) |
 | `--path` | Netlify: the paths the function answers, `/*` by default |
+| `--debug` | Keeps the debug part of the application (no `-Ddart.vm.product=true`): the startup checks and the other modules a release build leaves out |
 | `-D<name>=<value>` | A definition for the compiler |
 
 A function with the web and security starters is about 1.8 MB of
@@ -315,9 +322,10 @@ are in a module of their own
 (`springBootStarterEdgeStartupChecksAutoConfiguration`), which the
 generator puts into the build by `spring.main.startup-checks.enabled`:
 `true` in every build, `false` in none (no code, so no list), not set in
-debug and profile builds only. `dart compile js` and `wasm` do not define
-`dart.vm.product`, so a function keeps the list unless the key is
-`false`; `spring.edge.warnings` turns it off where it is in the build.
+debug and profile builds only. The build is a release build unless
+`--debug`, so a function has no list unless the key is `true`;
+`spring.edge.warnings` (or `spring.main.startup-checks.enabled: false` at
+run time) turns it off where it is in the build.
 
 ### The rate limiter
 

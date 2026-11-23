@@ -75,6 +75,7 @@ get $actuatorWebPropertiesPropertiesIntrospections => [
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'management.endpoints.web')],
+    library: r'package:spring_boot_starter_actuator/src/config/web_endpoint_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.WebEndpointProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.WebEndpointProperties>(

@@ -66,6 +66,7 @@ get $oauth2ClientConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.feign.oauth2')],
+    library: r'package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FeignOAuth2Properties.new,
     constructor: _i3.IntrospectedConstructor<_i1.FeignOAuth2Properties>(
@@ -96,6 +97,7 @@ get $oauth2ClientConfigBeansPropertiesIntrospections => [
     annotations: [
       _i3.ConfigurationProperties(r'spring.security.oauth2.client'),
     ],
+    library: r'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i2.OAuth2ClientProperties.new,
     constructor: _i3.IntrospectedConstructor<_i2.OAuth2ClientProperties>(

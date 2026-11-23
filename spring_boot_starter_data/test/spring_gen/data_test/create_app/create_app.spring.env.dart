@@ -14,8 +14,291 @@ part of 'create_app.spring.dart';
 /// (`SpringApplication.dartDefines`).
 const Map<String, String> _$dartDefines = {
   if (bool.hasEnvironment('DEBUG')) 'DEBUG': String.fromEnvironment('DEBUG'),
+  if (bool.hasEnvironment('LOGGING_BUFFER_CAPACITY'))
+    'LOGGING_BUFFER_CAPACITY': String.fromEnvironment(
+      'LOGGING_BUFFER_CAPACITY',
+    ),
+  if (bool.hasEnvironment('LOGGING_BUFFER_ENABLED'))
+    'LOGGING_BUFFER_ENABLED': String.fromEnvironment('LOGGING_BUFFER_ENABLED'),
+  if (bool.hasEnvironment('LOGGING_CHARSET_CONSOLE'))
+    'LOGGING_CHARSET_CONSOLE': String.fromEnvironment(
+      'LOGGING_CHARSET_CONSOLE',
+    ),
+  if (bool.hasEnvironment('LOGGING_CHARSET_FILE'))
+    'LOGGING_CHARSET_FILE': String.fromEnvironment('LOGGING_CHARSET_FILE'),
+  if (bool.hasEnvironment('LOGGING_CONSOLE_ENABLED'))
+    'LOGGING_CONSOLE_ENABLED': String.fromEnvironment(
+      'LOGGING_CONSOLE_ENABLED',
+    ),
+  if (bool.hasEnvironment('LOGGING_CONSOLE_TARGET'))
+    'LOGGING_CONSOLE_TARGET': String.fromEnvironment('LOGGING_CONSOLE_TARGET'),
+  if (bool.hasEnvironment('LOGGING_ENABLED'))
+    'LOGGING_ENABLED': String.fromEnvironment('LOGGING_ENABLED'),
+  if (bool.hasEnvironment('LOGGING_EXCEPTIONCONVERSIONWORD'))
+    'LOGGING_EXCEPTIONCONVERSIONWORD': String.fromEnvironment(
+      'LOGGING_EXCEPTIONCONVERSIONWORD',
+    ),
+  if (bool.hasEnvironment('LOGGING_FILE_NAME'))
+    'LOGGING_FILE_NAME': String.fromEnvironment('LOGGING_FILE_NAME'),
+  if (bool.hasEnvironment('LOGGING_FILE_PATH'))
+    'LOGGING_FILE_PATH': String.fromEnvironment('LOGGING_FILE_PATH'),
+  if (bool.hasEnvironment('LOGGING_FILE_ROLLINGPOLICY_CLEANHISTORYONSTART'))
+    'LOGGING_FILE_ROLLINGPOLICY_CLEANHISTORYONSTART': String.fromEnvironment(
+      'LOGGING_FILE_ROLLINGPOLICY_CLEANHISTORYONSTART',
+    ),
+  if (bool.hasEnvironment('LOGGING_FILE_ROLLINGPOLICY_MAXFILESIZE'))
+    'LOGGING_FILE_ROLLINGPOLICY_MAXFILESIZE': String.fromEnvironment(
+      'LOGGING_FILE_ROLLINGPOLICY_MAXFILESIZE',
+    ),
+  if (bool.hasEnvironment('LOGGING_FILE_ROLLINGPOLICY_MAXHISTORY'))
+    'LOGGING_FILE_ROLLINGPOLICY_MAXHISTORY': String.fromEnvironment(
+      'LOGGING_FILE_ROLLINGPOLICY_MAXHISTORY',
+    ),
+  if (bool.hasEnvironment('LOGGING_FILE_ROLLINGPOLICY_TOTALSIZECAP'))
+    'LOGGING_FILE_ROLLINGPOLICY_TOTALSIZECAP': String.fromEnvironment(
+      'LOGGING_FILE_ROLLINGPOLICY_TOTALSIZECAP',
+    ),
+  if (bool.hasEnvironment('LOGGING_INCLUDEAPPLICATIONGROUP'))
+    'LOGGING_INCLUDEAPPLICATIONGROUP': String.fromEnvironment(
+      'LOGGING_INCLUDEAPPLICATIONGROUP',
+    ),
+  if (bool.hasEnvironment('LOGGING_INCLUDEAPPLICATIONNAME'))
+    'LOGGING_INCLUDEAPPLICATIONNAME': String.fromEnvironment(
+      'LOGGING_INCLUDEAPPLICATIONNAME',
+    ),
   if (bool.hasEnvironment('LOGGING_LEVEL_ROOT'))
     'LOGGING_LEVEL_ROOT': String.fromEnvironment('LOGGING_LEVEL_ROOT'),
+  if (bool.hasEnvironment('LOGGING_PATTERN_CONSOLE'))
+    'LOGGING_PATTERN_CONSOLE': String.fromEnvironment(
+      'LOGGING_PATTERN_CONSOLE',
+    ),
+  if (bool.hasEnvironment('LOGGING_PATTERN_CORRELATION'))
+    'LOGGING_PATTERN_CORRELATION': String.fromEnvironment(
+      'LOGGING_PATTERN_CORRELATION',
+    ),
+  if (bool.hasEnvironment('LOGGING_PATTERN_DATEFORMAT'))
+    'LOGGING_PATTERN_DATEFORMAT': String.fromEnvironment(
+      'LOGGING_PATTERN_DATEFORMAT',
+    ),
+  if (bool.hasEnvironment('LOGGING_PATTERN_FILE'))
+    'LOGGING_PATTERN_FILE': String.fromEnvironment('LOGGING_PATTERN_FILE'),
+  if (bool.hasEnvironment('LOGGING_PATTERN_LEVEL'))
+    'LOGGING_PATTERN_LEVEL': String.fromEnvironment('LOGGING_PATTERN_LEVEL'),
+  if (bool.hasEnvironment('LOGGING_THRESHOLD_BUFFER'))
+    'LOGGING_THRESHOLD_BUFFER': String.fromEnvironment(
+      'LOGGING_THRESHOLD_BUFFER',
+    ),
+  if (bool.hasEnvironment('LOGGING_THRESHOLD_CONSOLE'))
+    'LOGGING_THRESHOLD_CONSOLE': String.fromEnvironment(
+      'LOGGING_THRESHOLD_CONSOLE',
+    ),
+  if (bool.hasEnvironment('LOGGING_THRESHOLD_FILE'))
+    'LOGGING_THRESHOLD_FILE': String.fromEnvironment('LOGGING_THRESHOLD_FILE'),
+  if (bool.hasEnvironment('MANAGEMENT_ENDPOINTS_ACCESS_DEFAULT'))
+    'MANAGEMENT_ENDPOINTS_ACCESS_DEFAULT': String.fromEnvironment(
+      'MANAGEMENT_ENDPOINTS_ACCESS_DEFAULT',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_ENDPOINTS_ENABLEDBYDEFAULT'))
+    'MANAGEMENT_ENDPOINTS_ENABLEDBYDEFAULT': String.fromEnvironment(
+      'MANAGEMENT_ENDPOINTS_ENABLEDBYDEFAULT',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_ENDPOINT_HEALTH_ACCESS'))
+    'MANAGEMENT_ENDPOINT_HEALTH_ACCESS': String.fromEnvironment(
+      'MANAGEMENT_ENDPOINT_HEALTH_ACCESS',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_ENDPOINT_HEALTH_ENABLED'))
+    'MANAGEMENT_ENDPOINT_HEALTH_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_ENDPOINT_HEALTH_ENABLED',
+    ),
+  if (bool.hasEnvironment(
+    'MANAGEMENT_ENDPOINT_HEALTH_LOGGING_SLOWINDICATORTHRESHOLD',
+  ))
+    'MANAGEMENT_ENDPOINT_HEALTH_LOGGING_SLOWINDICATORTHRESHOLD':
+        String.fromEnvironment(
+          'MANAGEMENT_ENDPOINT_HEALTH_LOGGING_SLOWINDICATORTHRESHOLD',
+        ),
+  if (bool.hasEnvironment(
+    'MANAGEMENT_ENDPOINT_HEALTH_PROBES_ADDADDITIONALPATHS',
+  ))
+    'MANAGEMENT_ENDPOINT_HEALTH_PROBES_ADDADDITIONALPATHS':
+        String.fromEnvironment(
+          'MANAGEMENT_ENDPOINT_HEALTH_PROBES_ADDADDITIONALPATHS',
+        ),
+  if (bool.hasEnvironment('MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED'))
+    'MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_ENDPOINT_HEALTH_ROLES'))
+    'MANAGEMENT_ENDPOINT_HEALTH_ROLES': String.fromEnvironment(
+      'MANAGEMENT_ENDPOINT_HEALTH_ROLES',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_ENDPOINT_HEALTH_SHOWCOMPONENTS'))
+    'MANAGEMENT_ENDPOINT_HEALTH_SHOWCOMPONENTS': String.fromEnvironment(
+      'MANAGEMENT_ENDPOINT_HEALTH_SHOWCOMPONENTS',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_ENDPOINT_HEALTH_SHOWDETAILS'))
+    'MANAGEMENT_ENDPOINT_HEALTH_SHOWDETAILS': String.fromEnvironment(
+      'MANAGEMENT_ENDPOINT_HEALTH_SHOWDETAILS',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_ENDPOINT_HEALTH_STATUS_ORDER'))
+    'MANAGEMENT_ENDPOINT_HEALTH_STATUS_ORDER': String.fromEnvironment(
+      'MANAGEMENT_ENDPOINT_HEALTH_STATUS_ORDER',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_ENDPOINT_HEALTH_VALIDATEGROUPMEMBERSHIP'))
+    'MANAGEMENT_ENDPOINT_HEALTH_VALIDATEGROUPMEMBERSHIP':
+        String.fromEnvironment(
+          'MANAGEMENT_ENDPOINT_HEALTH_VALIDATEGROUPMEMBERSHIP',
+        ),
+  if (bool.hasEnvironment('MANAGEMENT_ENDPOINT_INFO_ACCESS'))
+    'MANAGEMENT_ENDPOINT_INFO_ACCESS': String.fromEnvironment(
+      'MANAGEMENT_ENDPOINT_INFO_ACCESS',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_ENDPOINT_INFO_ENABLED'))
+    'MANAGEMENT_ENDPOINT_INFO_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_ENDPOINT_INFO_ENABLED',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_ENDPOINT_MAPPINGS_ACCESS'))
+    'MANAGEMENT_ENDPOINT_MAPPINGS_ACCESS': String.fromEnvironment(
+      'MANAGEMENT_ENDPOINT_MAPPINGS_ACCESS',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_ENDPOINT_MAPPINGS_ENABLED'))
+    'MANAGEMENT_ENDPOINT_MAPPINGS_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_ENDPOINT_MAPPINGS_ENABLED',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_HEALTH_DB_ENABLED'))
+    'MANAGEMENT_HEALTH_DB_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_HEALTH_DB_ENABLED',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_HEALTH_DEFAULTS_ENABLED'))
+    'MANAGEMENT_HEALTH_DEFAULTS_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_HEALTH_DEFAULTS_ENABLED',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_HEALTH_DISKSPACE_ENABLED'))
+    'MANAGEMENT_HEALTH_DISKSPACE_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_HEALTH_DISKSPACE_ENABLED',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_HEALTH_DISKSPACE_PATH'))
+    'MANAGEMENT_HEALTH_DISKSPACE_PATH': String.fromEnvironment(
+      'MANAGEMENT_HEALTH_DISKSPACE_PATH',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_HEALTH_DISKSPACE_THRESHOLD'))
+    'MANAGEMENT_HEALTH_DISKSPACE_THRESHOLD': String.fromEnvironment(
+      'MANAGEMENT_HEALTH_DISKSPACE_THRESHOLD',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_HEALTH_LIVENESSSTATE_ENABLED'))
+    'MANAGEMENT_HEALTH_LIVENESSSTATE_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_HEALTH_LIVENESSSTATE_ENABLED',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_HEALTH_PING_ENABLED'))
+    'MANAGEMENT_HEALTH_PING_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_HEALTH_PING_ENABLED',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_HEALTH_READINESSSTATE_ENABLED'))
+    'MANAGEMENT_HEALTH_READINESSSTATE_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_HEALTH_READINESSSTATE_ENABLED',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_INFO_BUILD_ENABLED'))
+    'MANAGEMENT_INFO_BUILD_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_INFO_BUILD_ENABLED',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_INFO_DART_ENABLED'))
+    'MANAGEMENT_INFO_DART_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_INFO_DART_ENABLED',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_INFO_DEFAULTS_ENABLED'))
+    'MANAGEMENT_INFO_DEFAULTS_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_INFO_DEFAULTS_ENABLED',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_INFO_ENV_ENABLED'))
+    'MANAGEMENT_INFO_ENV_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_INFO_ENV_ENABLED',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_INFO_GIT_ENABLED'))
+    'MANAGEMENT_INFO_GIT_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_INFO_GIT_ENABLED',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_INFO_GIT_MODE'))
+    'MANAGEMENT_INFO_GIT_MODE': String.fromEnvironment(
+      'MANAGEMENT_INFO_GIT_MODE',
+    ),
+  if (bool.hasEnvironment('MANAGEMENT_INFO_OS_ENABLED'))
+    'MANAGEMENT_INFO_OS_ENABLED': String.fromEnvironment(
+      'MANAGEMENT_INFO_OS_ENABLED',
+    ),
+  if (bool.hasEnvironment('SPRING_APPLICATION_GROUP'))
+    'SPRING_APPLICATION_GROUP': String.fromEnvironment(
+      'SPRING_APPLICATION_GROUP',
+    ),
+  if (bool.hasEnvironment('SPRING_APPLICATION_JSON'))
+    'SPRING_APPLICATION_JSON': String.fromEnvironment(
+      'SPRING_APPLICATION_JSON',
+    ),
+  if (bool.hasEnvironment('SPRING_APPLICATION_NAME'))
+    'SPRING_APPLICATION_NAME': String.fromEnvironment(
+      'SPRING_APPLICATION_NAME',
+    ),
+  if (bool.hasEnvironment('SPRING_AUTOCONFIGURE_EXCLUDE'))
+    'SPRING_AUTOCONFIGURE_EXCLUDE': String.fromEnvironment(
+      'SPRING_AUTOCONFIGURE_EXCLUDE',
+    ),
+  if (bool.hasEnvironment('SPRING_BANNER_LOCATION'))
+    'SPRING_BANNER_LOCATION': String.fromEnvironment('SPRING_BANNER_LOCATION'),
+  if (bool.hasEnvironment('SPRING_CACHE_CACHENAMES'))
+    'SPRING_CACHE_CACHENAMES': String.fromEnvironment(
+      'SPRING_CACHE_CACHENAMES',
+    ),
+  if (bool.hasEnvironment('SPRING_CACHE_DISK_DIRECTORY'))
+    'SPRING_CACHE_DISK_DIRECTORY': String.fromEnvironment(
+      'SPRING_CACHE_DISK_DIRECTORY',
+    ),
+  if (bool.hasEnvironment('SPRING_CACHE_DISK_MAXSIZE'))
+    'SPRING_CACHE_DISK_MAXSIZE': String.fromEnvironment(
+      'SPRING_CACHE_DISK_MAXSIZE',
+    ),
+  if (bool.hasEnvironment('SPRING_CACHE_DISK_TIMETOLIVE'))
+    'SPRING_CACHE_DISK_TIMETOLIVE': String.fromEnvironment(
+      'SPRING_CACHE_DISK_TIMETOLIVE',
+    ),
+  if (bool.hasEnvironment('SPRING_CACHE_DISK_VERSION'))
+    'SPRING_CACHE_DISK_VERSION': String.fromEnvironment(
+      'SPRING_CACHE_DISK_VERSION',
+    ),
+  if (bool.hasEnvironment('SPRING_CACHE_RESOURCEVERSION'))
+    'SPRING_CACHE_RESOURCEVERSION': String.fromEnvironment(
+      'SPRING_CACHE_RESOURCEVERSION',
+    ),
+  if (bool.hasEnvironment('SPRING_CACHE_SIMPLE_MAXSIZE'))
+    'SPRING_CACHE_SIMPLE_MAXSIZE': String.fromEnvironment(
+      'SPRING_CACHE_SIMPLE_MAXSIZE',
+    ),
+  if (bool.hasEnvironment('SPRING_CACHE_SIMPLE_TIMETOLIVE'))
+    'SPRING_CACHE_SIMPLE_TIMETOLIVE': String.fromEnvironment(
+      'SPRING_CACHE_SIMPLE_TIMETOLIVE',
+    ),
+  if (bool.hasEnvironment('SPRING_CACHE_TYPE'))
+    'SPRING_CACHE_TYPE': String.fromEnvironment('SPRING_CACHE_TYPE'),
+  if (bool.hasEnvironment('SPRING_CONFIG_ACTIVATE_ONCLOUDPLATFORM'))
+    'SPRING_CONFIG_ACTIVATE_ONCLOUDPLATFORM': String.fromEnvironment(
+      'SPRING_CONFIG_ACTIVATE_ONCLOUDPLATFORM',
+    ),
+  if (bool.hasEnvironment('SPRING_CONFIG_ACTIVATE_ONPROFILE'))
+    'SPRING_CONFIG_ACTIVATE_ONPROFILE': String.fromEnvironment(
+      'SPRING_CONFIG_ACTIVATE_ONPROFILE',
+    ),
+  if (bool.hasEnvironment('SPRING_CONFIG_ADDITIONALLOCATION'))
+    'SPRING_CONFIG_ADDITIONALLOCATION': String.fromEnvironment(
+      'SPRING_CONFIG_ADDITIONALLOCATION',
+    ),
+  if (bool.hasEnvironment('SPRING_CONFIG_IMPORT'))
+    'SPRING_CONFIG_IMPORT': String.fromEnvironment('SPRING_CONFIG_IMPORT'),
+  if (bool.hasEnvironment('SPRING_CONFIG_LOCATION'))
+    'SPRING_CONFIG_LOCATION': String.fromEnvironment('SPRING_CONFIG_LOCATION'),
+  if (bool.hasEnvironment('SPRING_CONFIG_NAME'))
+    'SPRING_CONFIG_NAME': String.fromEnvironment('SPRING_CONFIG_NAME'),
+  if (bool.hasEnvironment('SPRING_CONFIG_ONNOTFOUND'))
+    'SPRING_CONFIG_ONNOTFOUND': String.fromEnvironment(
+      'SPRING_CONFIG_ONNOTFOUND',
+    ),
   if (bool.hasEnvironment('SPRING_DATASOURCES'))
     'SPRING_DATASOURCES': String.fromEnvironment('SPRING_DATASOURCES'),
   if (bool.hasEnvironment('SPRING_DATASOURCE_DRIVER'))
@@ -180,9 +463,29 @@ const Map<String, String> _$dartDefines = {
     'SPRING_DATA_WEB_SORT_SORTPARAMETER': String.fromEnvironment(
       'SPRING_DATA_WEB_SORT_SORTPARAMETER',
     ),
+  if (bool.hasEnvironment('SPRING_DEVTOOLS_RESTART_ENABLED'))
+    'SPRING_DEVTOOLS_RESTART_ENABLED': String.fromEnvironment(
+      'SPRING_DEVTOOLS_RESTART_ENABLED',
+    ),
   if (bool.hasEnvironment('SPRING_FLUTTER_SCANOSENVIRONMENT'))
     'SPRING_FLUTTER_SCANOSENVIRONMENT': String.fromEnvironment(
       'SPRING_FLUTTER_SCANOSENVIRONMENT',
+    ),
+  if (bool.hasEnvironment('SPRING_INFO_BUILD_ENCODING'))
+    'SPRING_INFO_BUILD_ENCODING': String.fromEnvironment(
+      'SPRING_INFO_BUILD_ENCODING',
+    ),
+  if (bool.hasEnvironment('SPRING_INFO_BUILD_LOCATION'))
+    'SPRING_INFO_BUILD_LOCATION': String.fromEnvironment(
+      'SPRING_INFO_BUILD_LOCATION',
+    ),
+  if (bool.hasEnvironment('SPRING_INFO_GIT_ENCODING'))
+    'SPRING_INFO_GIT_ENCODING': String.fromEnvironment(
+      'SPRING_INFO_GIT_ENCODING',
+    ),
+  if (bool.hasEnvironment('SPRING_INFO_GIT_LOCATION'))
+    'SPRING_INFO_GIT_LOCATION': String.fromEnvironment(
+      'SPRING_INFO_GIT_LOCATION',
     ),
   if (bool.hasEnvironment('SPRING_JDBC_TEMPLATE'))
     'SPRING_JDBC_TEMPLATE': String.fromEnvironment('SPRING_JDBC_TEMPLATE'),
@@ -190,22 +493,667 @@ const Map<String, String> _$dartDefines = {
     'SPRING_JDBC_TEMPLATE_QUERYTIMEOUT': String.fromEnvironment(
       'SPRING_JDBC_TEMPLATE_QUERYTIMEOUT',
     ),
+  if (bool.hasEnvironment(
+    'SPRING_JSON_DATATYPE_DATETIME_READDATETIMESTAMPSASNANOSECONDS',
+  ))
+    'SPRING_JSON_DATATYPE_DATETIME_READDATETIMESTAMPSASNANOSECONDS':
+        String.fromEnvironment(
+          'SPRING_JSON_DATATYPE_DATETIME_READDATETIMESTAMPSASNANOSECONDS',
+        ),
+  if (bool.hasEnvironment(
+    'SPRING_JSON_DATATYPE_DATETIME_WRITEDATESASTIMESTAMPS',
+  ))
+    'SPRING_JSON_DATATYPE_DATETIME_WRITEDATESASTIMESTAMPS':
+        String.fromEnvironment(
+          'SPRING_JSON_DATATYPE_DATETIME_WRITEDATESASTIMESTAMPS',
+        ),
+  if (bool.hasEnvironment(
+    'SPRING_JSON_DATATYPE_DATETIME_WRITEDATETIMESTAMPSASNANOSECONDS',
+  ))
+    'SPRING_JSON_DATATYPE_DATETIME_WRITEDATETIMESTAMPSASNANOSECONDS':
+        String.fromEnvironment(
+          'SPRING_JSON_DATATYPE_DATETIME_WRITEDATETIMESTAMPSASNANOSECONDS',
+        ),
+  if (bool.hasEnvironment(
+    'SPRING_JSON_DATATYPE_DATETIME_WRITEDURATIONSASTIMESTAMPS',
+  ))
+    'SPRING_JSON_DATATYPE_DATETIME_WRITEDURATIONSASTIMESTAMPS':
+        String.fromEnvironment(
+          'SPRING_JSON_DATATYPE_DATETIME_WRITEDURATIONSASTIMESTAMPS',
+        ),
+  if (bool.hasEnvironment('SPRING_JSON_DEFAULTPROPERTYINCLUSION'))
+    'SPRING_JSON_DEFAULTPROPERTYINCLUSION': String.fromEnvironment(
+      'SPRING_JSON_DEFAULTPROPERTYINCLUSION',
+    ),
+  if (bool.hasEnvironment('SPRING_JSON_DESERIALIZATION_ACCEPTFLOATASINT'))
+    'SPRING_JSON_DESERIALIZATION_ACCEPTFLOATASINT': String.fromEnvironment(
+      'SPRING_JSON_DESERIALIZATION_ACCEPTFLOATASINT',
+    ),
+  if (bool.hasEnvironment(
+    'SPRING_JSON_DESERIALIZATION_FAILONNULLFORPRIMITIVES',
+  ))
+    'SPRING_JSON_DESERIALIZATION_FAILONNULLFORPRIMITIVES':
+        String.fromEnvironment(
+          'SPRING_JSON_DESERIALIZATION_FAILONNULLFORPRIMITIVES',
+        ),
+  if (bool.hasEnvironment(
+    'SPRING_JSON_DESERIALIZATION_FAILONUNKNOWNPROPERTIES',
+  ))
+    'SPRING_JSON_DESERIALIZATION_FAILONUNKNOWNPROPERTIES':
+        String.fromEnvironment(
+          'SPRING_JSON_DESERIALIZATION_FAILONUNKNOWNPROPERTIES',
+        ),
+  if (bool.hasEnvironment(
+    'SPRING_JSON_DESERIALIZATION_READDATETIMESTAMPSASNANOSECONDS',
+  ))
+    'SPRING_JSON_DESERIALIZATION_READDATETIMESTAMPSASNANOSECONDS':
+        String.fromEnvironment(
+          'SPRING_JSON_DESERIALIZATION_READDATETIMESTAMPSASNANOSECONDS',
+        ),
+  if (bool.hasEnvironment('SPRING_JSON_MAPPER_DEFAULTVIEWINCLUSION'))
+    'SPRING_JSON_MAPPER_DEFAULTVIEWINCLUSION': String.fromEnvironment(
+      'SPRING_JSON_MAPPER_DEFAULTVIEWINCLUSION',
+    ),
+  if (bool.hasEnvironment('SPRING_JSON_MAPPER_SORTPROPERTIESALPHABETICALLY'))
+    'SPRING_JSON_MAPPER_SORTPROPERTIESALPHABETICALLY': String.fromEnvironment(
+      'SPRING_JSON_MAPPER_SORTPROPERTIESALPHABETICALLY',
+    ),
+  if (bool.hasEnvironment('SPRING_JSON_PROPERTYNAMINGSTRATEGY'))
+    'SPRING_JSON_PROPERTYNAMINGSTRATEGY': String.fromEnvironment(
+      'SPRING_JSON_PROPERTYNAMINGSTRATEGY',
+    ),
+  if (bool.hasEnvironment('SPRING_JSON_SCHEMASREGISTRY_PROPERTIES'))
+    'SPRING_JSON_SCHEMASREGISTRY_PROPERTIES': String.fromEnvironment(
+      'SPRING_JSON_SCHEMASREGISTRY_PROPERTIES',
+    ),
+  if (bool.hasEnvironment('SPRING_JSON_SERIALIZATION_INDENTOUTPUT'))
+    'SPRING_JSON_SERIALIZATION_INDENTOUTPUT': String.fromEnvironment(
+      'SPRING_JSON_SERIALIZATION_INDENTOUTPUT',
+    ),
+  if (bool.hasEnvironment('SPRING_JSON_SERIALIZATION_WRITEDATESASTIMESTAMPS'))
+    'SPRING_JSON_SERIALIZATION_WRITEDATESASTIMESTAMPS': String.fromEnvironment(
+      'SPRING_JSON_SERIALIZATION_WRITEDATESASTIMESTAMPS',
+    ),
+  if (bool.hasEnvironment(
+    'SPRING_JSON_SERIALIZATION_WRITEDATETIMESTAMPSASNANOSECONDS',
+  ))
+    'SPRING_JSON_SERIALIZATION_WRITEDATETIMESTAMPSASNANOSECONDS':
+        String.fromEnvironment(
+          'SPRING_JSON_SERIALIZATION_WRITEDATETIMESTAMPSASNANOSECONDS',
+        ),
+  if (bool.hasEnvironment(
+    'SPRING_JSON_SERIALIZATION_WRITEDURATIONSASTIMESTAMPS',
+  ))
+    'SPRING_JSON_SERIALIZATION_WRITEDURATIONSASTIMESTAMPS':
+        String.fromEnvironment(
+          'SPRING_JSON_SERIALIZATION_WRITEDURATIONSASTIMESTAMPS',
+        ),
+  if (bool.hasEnvironment('SPRING_JSON_TIMEZONE'))
+    'SPRING_JSON_TIMEZONE': String.fromEnvironment('SPRING_JSON_TIMEZONE'),
+  if (bool.hasEnvironment('SPRING_LIFECYCLE_TIMEOUTPERSHUTDOWNPHASE'))
+    'SPRING_LIFECYCLE_TIMEOUTPERSHUTDOWNPHASE': String.fromEnvironment(
+      'SPRING_LIFECYCLE_TIMEOUTPERSHUTDOWNPHASE',
+    ),
+  if (bool.hasEnvironment('SPRING_MAIN_ALLOWBEANDEFINITIONOVERRIDING'))
+    'SPRING_MAIN_ALLOWBEANDEFINITIONOVERRIDING': String.fromEnvironment(
+      'SPRING_MAIN_ALLOWBEANDEFINITIONOVERRIDING',
+    ),
   if (bool.hasEnvironment('SPRING_MAIN_BANNERMODE'))
     'SPRING_MAIN_BANNERMODE': String.fromEnvironment('SPRING_MAIN_BANNERMODE'),
+  if (bool.hasEnvironment('SPRING_MAIN_CLOUDPLATFORM'))
+    'SPRING_MAIN_CLOUDPLATFORM': String.fromEnvironment(
+      'SPRING_MAIN_CLOUDPLATFORM',
+    ),
+  if (bool.hasEnvironment('SPRING_MAIN_LAZYINITIALIZATION'))
+    'SPRING_MAIN_LAZYINITIALIZATION': String.fromEnvironment(
+      'SPRING_MAIN_LAZYINITIALIZATION',
+    ),
+  if (bool.hasEnvironment('SPRING_MAIN_LOGSTARTUPINFO'))
+    'SPRING_MAIN_LOGSTARTUPINFO': String.fromEnvironment(
+      'SPRING_MAIN_LOGSTARTUPINFO',
+    ),
+  if (bool.hasEnvironment('SPRING_MAIN_REGISTERSHUTDOWNHOOK'))
+    'SPRING_MAIN_REGISTERSHUTDOWNHOOK': String.fromEnvironment(
+      'SPRING_MAIN_REGISTERSHUTDOWNHOOK',
+    ),
+  if (bool.hasEnvironment('SPRING_MAIN_STARTUPCHECKS_ENABLED'))
+    'SPRING_MAIN_STARTUPCHECKS_ENABLED': String.fromEnvironment(
+      'SPRING_MAIN_STARTUPCHECKS_ENABLED',
+    ),
+  if (bool.hasEnvironment('SPRING_MESSAGES_ALWAYSUSEMESSAGEFORMAT'))
+    'SPRING_MESSAGES_ALWAYSUSEMESSAGEFORMAT': String.fromEnvironment(
+      'SPRING_MESSAGES_ALWAYSUSEMESSAGEFORMAT',
+    ),
+  if (bool.hasEnvironment('SPRING_MESSAGES_BASENAME'))
+    'SPRING_MESSAGES_BASENAME': String.fromEnvironment(
+      'SPRING_MESSAGES_BASENAME',
+    ),
+  if (bool.hasEnvironment('SPRING_MESSAGES_CACHEDURATION'))
+    'SPRING_MESSAGES_CACHEDURATION': String.fromEnvironment(
+      'SPRING_MESSAGES_CACHEDURATION',
+    ),
+  if (bool.hasEnvironment('SPRING_MESSAGES_COMMONMESSAGES'))
+    'SPRING_MESSAGES_COMMONMESSAGES': String.fromEnvironment(
+      'SPRING_MESSAGES_COMMONMESSAGES',
+    ),
+  if (bool.hasEnvironment('SPRING_MESSAGES_DEFAULTLOCALE'))
+    'SPRING_MESSAGES_DEFAULTLOCALE': String.fromEnvironment(
+      'SPRING_MESSAGES_DEFAULTLOCALE',
+    ),
+  if (bool.hasEnvironment('SPRING_MESSAGES_ENCODING'))
+    'SPRING_MESSAGES_ENCODING': String.fromEnvironment(
+      'SPRING_MESSAGES_ENCODING',
+    ),
+  if (bool.hasEnvironment('SPRING_MESSAGES_FALLBACKTOSYSTEMLOCALE'))
+    'SPRING_MESSAGES_FALLBACKTOSYSTEMLOCALE': String.fromEnvironment(
+      'SPRING_MESSAGES_FALLBACKTOSYSTEMLOCALE',
+    ),
+  if (bool.hasEnvironment('SPRING_MESSAGES_USECODEASDEFAULTMESSAGE'))
+    'SPRING_MESSAGES_USECODEASDEFAULTMESSAGE': String.fromEnvironment(
+      'SPRING_MESSAGES_USECODEASDEFAULTMESSAGE',
+    ),
+  if (bool.hasEnvironment('SPRING_OBSERVATIONS_ANNOTATIONS_ENABLED'))
+    'SPRING_OBSERVATIONS_ANNOTATIONS_ENABLED': String.fromEnvironment(
+      'SPRING_OBSERVATIONS_ANNOTATIONS_ENABLED',
+    ),
+  if (bool.hasEnvironment('SPRING_OUTPUT_ANSI_ENABLED'))
+    'SPRING_OUTPUT_ANSI_ENABLED': String.fromEnvironment(
+      'SPRING_OUTPUT_ANSI_ENABLED',
+    ),
   if (bool.hasEnvironment('SPRING_PROFILES_ACTIVE'))
     'SPRING_PROFILES_ACTIVE': String.fromEnvironment('SPRING_PROFILES_ACTIVE'),
+  if (bool.hasEnvironment('SPRING_PROFILES_DEFAULT'))
+    'SPRING_PROFILES_DEFAULT': String.fromEnvironment(
+      'SPRING_PROFILES_DEFAULT',
+    ),
   if (bool.hasEnvironment('SPRING_PROFILES_INCLUDE'))
     'SPRING_PROFILES_INCLUDE': String.fromEnvironment(
       'SPRING_PROFILES_INCLUDE',
     ),
+  if (bool.hasEnvironment('SPRING_PROFILES_VALIDATE'))
+    'SPRING_PROFILES_VALIDATE': String.fromEnvironment(
+      'SPRING_PROFILES_VALIDATE',
+    ),
+  if (bool.hasEnvironment('SPRING_REMOTE_ALLOWINSECURE'))
+    'SPRING_REMOTE_ALLOWINSECURE': String.fromEnvironment(
+      'SPRING_REMOTE_ALLOWINSECURE',
+    ),
+  if (bool.hasEnvironment('SPRING_RESOURCES_EMBED_EXCLUDE'))
+    'SPRING_RESOURCES_EMBED_EXCLUDE': String.fromEnvironment(
+      'SPRING_RESOURCES_EMBED_EXCLUDE',
+    ),
+  if (bool.hasEnvironment('SPRING_RESOURCES_PREFETCH_DELAY'))
+    'SPRING_RESOURCES_PREFETCH_DELAY': String.fromEnvironment(
+      'SPRING_RESOURCES_PREFETCH_DELAY',
+    ),
+  if (bool.hasEnvironment('SPRING_RESOURCES_PREFETCH_LOCATIONS'))
+    'SPRING_RESOURCES_PREFETCH_LOCATIONS': String.fromEnvironment(
+      'SPRING_RESOURCES_PREFETCH_LOCATIONS',
+    ),
+  if (bool.hasEnvironment('SPRING_RESOURCES_PREFETCH_STAGE'))
+    'SPRING_RESOURCES_PREFETCH_STAGE': String.fromEnvironment(
+      'SPRING_RESOURCES_PREFETCH_STAGE',
+    ),
   if (bool.hasEnvironment('SPRING_SQL_INIT'))
     'SPRING_SQL_INIT': String.fromEnvironment('SPRING_SQL_INIT'),
+  if (bool.hasEnvironment('SPRING_SQL_INIT_CONTINUEONERROR'))
+    'SPRING_SQL_INIT_CONTINUEONERROR': String.fromEnvironment(
+      'SPRING_SQL_INIT_CONTINUEONERROR',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_INIT_DATALOCATIONS'))
+    'SPRING_SQL_INIT_DATALOCATIONS': String.fromEnvironment(
+      'SPRING_SQL_INIT_DATALOCATIONS',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_INIT_ENCODING'))
+    'SPRING_SQL_INIT_ENCODING': String.fromEnvironment(
+      'SPRING_SQL_INIT_ENCODING',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_INIT_MODE'))
+    'SPRING_SQL_INIT_MODE': String.fromEnvironment('SPRING_SQL_INIT_MODE'),
+  if (bool.hasEnvironment('SPRING_SQL_INIT_PLATFORM'))
+    'SPRING_SQL_INIT_PLATFORM': String.fromEnvironment(
+      'SPRING_SQL_INIT_PLATFORM',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_INIT_SCHEMALOCATIONS'))
+    'SPRING_SQL_INIT_SCHEMALOCATIONS': String.fromEnvironment(
+      'SPRING_SQL_INIT_SCHEMALOCATIONS',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_INIT_SEPARATOR'))
+    'SPRING_SQL_INIT_SEPARATOR': String.fromEnvironment(
+      'SPRING_SQL_INIT_SEPARATOR',
+    ),
   if (bool.hasEnvironment('SPRING_SQL_MIGRATION'))
     'SPRING_SQL_MIGRATION': String.fromEnvironment('SPRING_SQL_MIGRATION'),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_BASELINEDESCRIPTION'))
+    'SPRING_SQL_MIGRATION_BASELINEDESCRIPTION': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_BASELINEDESCRIPTION',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_BASELINEONMIGRATE'))
+    'SPRING_SQL_MIGRATION_BASELINEONMIGRATE': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_BASELINEONMIGRATE',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_BASELINEVERSION'))
+    'SPRING_SQL_MIGRATION_BASELINEVERSION': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_BASELINEVERSION',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_CONNECTRETRIES'))
+    'SPRING_SQL_MIGRATION_CONNECTRETRIES': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_CONNECTRETRIES',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_CONNECTRETRIESINTERVAL'))
+    'SPRING_SQL_MIGRATION_CONNECTRETRIESINTERVAL': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_CONNECTRETRIESINTERVAL',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_ENABLED'))
+    'SPRING_SQL_MIGRATION_ENABLED': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_ENABLED',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_GROUP'))
+    'SPRING_SQL_MIGRATION_GROUP': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_GROUP',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_IGNOREMIGRATIONPATTERNS'))
+    'SPRING_SQL_MIGRATION_IGNOREMIGRATIONPATTERNS': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_IGNOREMIGRATIONPATTERNS',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_LOCATIONS'))
+    'SPRING_SQL_MIGRATION_LOCATIONS': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_LOCATIONS',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_LOCKTIMEOUT'))
+    'SPRING_SQL_MIGRATION_LOCKTIMEOUT': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_LOCKTIMEOUT',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_OUTOFORDER'))
+    'SPRING_SQL_MIGRATION_OUTOFORDER': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_OUTOFORDER',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_PLACEHOLDERPREFIX'))
+    'SPRING_SQL_MIGRATION_PLACEHOLDERPREFIX': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_PLACEHOLDERPREFIX',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_PLACEHOLDERREPLACEMENT'))
+    'SPRING_SQL_MIGRATION_PLACEHOLDERREPLACEMENT': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_PLACEHOLDERREPLACEMENT',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_PLACEHOLDERSUFFIX'))
+    'SPRING_SQL_MIGRATION_PLACEHOLDERSUFFIX': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_PLACEHOLDERSUFFIX',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_TABLE'))
+    'SPRING_SQL_MIGRATION_TABLE': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_TABLE',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_TARGET'))
+    'SPRING_SQL_MIGRATION_TARGET': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_TARGET',
+    ),
+  if (bool.hasEnvironment('SPRING_SQL_MIGRATION_VALIDATEONMIGRATE'))
+    'SPRING_SQL_MIGRATION_VALIDATEONMIGRATE': String.fromEnvironment(
+      'SPRING_SQL_MIGRATION_VALIDATEONMIGRATE',
+    ),
+  if (bool.hasEnvironment('SPRING_TASK_EXECUTION_ISOLATES_ALLOWCORETIMEOUT'))
+    'SPRING_TASK_EXECUTION_ISOLATES_ALLOWCORETIMEOUT': String.fromEnvironment(
+      'SPRING_TASK_EXECUTION_ISOLATES_ALLOWCORETIMEOUT',
+    ),
+  if (bool.hasEnvironment('SPRING_TASK_EXECUTION_ISOLATES_CORESIZE'))
+    'SPRING_TASK_EXECUTION_ISOLATES_CORESIZE': String.fromEnvironment(
+      'SPRING_TASK_EXECUTION_ISOLATES_CORESIZE',
+    ),
+  if (bool.hasEnvironment('SPRING_TASK_EXECUTION_ISOLATES_KEEPALIVE'))
+    'SPRING_TASK_EXECUTION_ISOLATES_KEEPALIVE': String.fromEnvironment(
+      'SPRING_TASK_EXECUTION_ISOLATES_KEEPALIVE',
+    ),
+  if (bool.hasEnvironment('SPRING_TASK_EXECUTION_ISOLATES_MAXSIZE'))
+    'SPRING_TASK_EXECUTION_ISOLATES_MAXSIZE': String.fromEnvironment(
+      'SPRING_TASK_EXECUTION_ISOLATES_MAXSIZE',
+    ),
+  if (bool.hasEnvironment('SPRING_TASK_EXECUTION_ISOLATES_NAMEPREFIX'))
+    'SPRING_TASK_EXECUTION_ISOLATES_NAMEPREFIX': String.fromEnvironment(
+      'SPRING_TASK_EXECUTION_ISOLATES_NAMEPREFIX',
+    ),
+  if (bool.hasEnvironment('SPRING_TASK_EXECUTION_ISOLATES_QUEUECAPACITY'))
+    'SPRING_TASK_EXECUTION_ISOLATES_QUEUECAPACITY': String.fromEnvironment(
+      'SPRING_TASK_EXECUTION_ISOLATES_QUEUECAPACITY',
+    ),
+  if (bool.hasEnvironment('SPRING_WEB_RATELIMIT_CLIENTADDRESSHEADER'))
+    'SPRING_WEB_RATELIMIT_CLIENTADDRESSHEADER': String.fromEnvironment(
+      'SPRING_WEB_RATELIMIT_CLIENTADDRESSHEADER',
+    ),
+  if (bool.hasEnvironment('SPRING_WEB_RATELIMIT_ENABLED'))
+    'SPRING_WEB_RATELIMIT_ENABLED': String.fromEnvironment(
+      'SPRING_WEB_RATELIMIT_ENABLED',
+    ),
+  if (bool.hasEnvironment('SPRING_WEB_RATELIMIT_HASHADDRESSES'))
+    'SPRING_WEB_RATELIMIT_HASHADDRESSES': String.fromEnvironment(
+      'SPRING_WEB_RATELIMIT_HASHADDRESSES',
+    ),
+  if (bool.hasEnvironment('SPRING_WEB_RATELIMIT_HASHSECRET'))
+    'SPRING_WEB_RATELIMIT_HASHSECRET': String.fromEnvironment(
+      'SPRING_WEB_RATELIMIT_HASHSECRET',
+    ),
+  if (bool.hasEnvironment('SPRING_WEB_RATELIMIT_HEADERS'))
+    'SPRING_WEB_RATELIMIT_HEADERS': String.fromEnvironment(
+      'SPRING_WEB_RATELIMIT_HEADERS',
+    ),
+  if (bool.hasEnvironment('SPRING_WEB_RATELIMIT_IPV6PREFIXLENGTH'))
+    'SPRING_WEB_RATELIMIT_IPV6PREFIXLENGTH': String.fromEnvironment(
+      'SPRING_WEB_RATELIMIT_IPV6PREFIXLENGTH',
+    ),
+  if (bool.hasEnvironment('SPRING_WEB_RATELIMIT_MEMORY_MAXENTRIES'))
+    'SPRING_WEB_RATELIMIT_MEMORY_MAXENTRIES': String.fromEnvironment(
+      'SPRING_WEB_RATELIMIT_MEMORY_MAXENTRIES',
+    ),
+  if (bool.hasEnvironment('SPRING_WEB_RATELIMIT_ONSTOREFAILURE'))
+    'SPRING_WEB_RATELIMIT_ONSTOREFAILURE': String.fromEnvironment(
+      'SPRING_WEB_RATELIMIT_ONSTOREFAILURE',
+    ),
+  if (bool.hasEnvironment('SPRING_WEB_RATELIMIT_STORE'))
+    'SPRING_WEB_RATELIMIT_STORE': String.fromEnvironment(
+      'SPRING_WEB_RATELIMIT_STORE',
+    ),
+  if (bool.hasEnvironment('SPRING_WEB_RATELIMIT_STOREFAILURERETRYAFTER'))
+    'SPRING_WEB_RATELIMIT_STOREFAILURERETRYAFTER': String.fromEnvironment(
+      'SPRING_WEB_RATELIMIT_STOREFAILURERETRYAFTER',
+    ),
+  if (bool.hasEnvironment('SPRING_WEB_RATELIMIT_TRUSTEDPROXIES'))
+    'SPRING_WEB_RATELIMIT_TRUSTEDPROXIES': String.fromEnvironment(
+      'SPRING_WEB_RATELIMIT_TRUSTEDPROXIES',
+    ),
+  if (bool.hasEnvironment('SPRING_WEB_RATELIMIT_VERIFYSTORE'))
+    'SPRING_WEB_RATELIMIT_VERIFYSTORE': String.fromEnvironment(
+      'SPRING_WEB_RATELIMIT_VERIFYSTORE',
+    ),
   if (bool.hasEnvironment('TRACE')) 'TRACE': String.fromEnvironment('TRACE'),
   if (bool.hasEnvironment('debug')) 'debug': String.fromEnvironment('debug'),
+  if (bool.hasEnvironment('logging.buffer.capacity'))
+    'logging.buffer.capacity': String.fromEnvironment(
+      'logging.buffer.capacity',
+    ),
+  if (bool.hasEnvironment('logging.buffer.enabled'))
+    'logging.buffer.enabled': String.fromEnvironment('logging.buffer.enabled'),
+  if (bool.hasEnvironment('logging.charset.console'))
+    'logging.charset.console': String.fromEnvironment(
+      'logging.charset.console',
+    ),
+  if (bool.hasEnvironment('logging.charset.file'))
+    'logging.charset.file': String.fromEnvironment('logging.charset.file'),
+  if (bool.hasEnvironment('logging.console.enabled'))
+    'logging.console.enabled': String.fromEnvironment(
+      'logging.console.enabled',
+    ),
+  if (bool.hasEnvironment('logging.console.target'))
+    'logging.console.target': String.fromEnvironment('logging.console.target'),
+  if (bool.hasEnvironment('logging.enabled'))
+    'logging.enabled': String.fromEnvironment('logging.enabled'),
+  if (bool.hasEnvironment('logging.exception-conversion-word'))
+    'logging.exception-conversion-word': String.fromEnvironment(
+      'logging.exception-conversion-word',
+    ),
+  if (bool.hasEnvironment('logging.file.name'))
+    'logging.file.name': String.fromEnvironment('logging.file.name'),
+  if (bool.hasEnvironment('logging.file.path'))
+    'logging.file.path': String.fromEnvironment('logging.file.path'),
+  if (bool.hasEnvironment('logging.file.rolling-policy.clean-history-on-start'))
+    'logging.file.rolling-policy.clean-history-on-start':
+        String.fromEnvironment(
+          'logging.file.rolling-policy.clean-history-on-start',
+        ),
+  if (bool.hasEnvironment('logging.file.rolling-policy.max-file-size'))
+    'logging.file.rolling-policy.max-file-size': String.fromEnvironment(
+      'logging.file.rolling-policy.max-file-size',
+    ),
+  if (bool.hasEnvironment('logging.file.rolling-policy.max-history'))
+    'logging.file.rolling-policy.max-history': String.fromEnvironment(
+      'logging.file.rolling-policy.max-history',
+    ),
+  if (bool.hasEnvironment('logging.file.rolling-policy.total-size-cap'))
+    'logging.file.rolling-policy.total-size-cap': String.fromEnvironment(
+      'logging.file.rolling-policy.total-size-cap',
+    ),
+  if (bool.hasEnvironment('logging.include-application-group'))
+    'logging.include-application-group': String.fromEnvironment(
+      'logging.include-application-group',
+    ),
+  if (bool.hasEnvironment('logging.include-application-name'))
+    'logging.include-application-name': String.fromEnvironment(
+      'logging.include-application-name',
+    ),
   if (bool.hasEnvironment('logging.level.root'))
     'logging.level.root': String.fromEnvironment('logging.level.root'),
+  if (bool.hasEnvironment('logging.pattern.console'))
+    'logging.pattern.console': String.fromEnvironment(
+      'logging.pattern.console',
+    ),
+  if (bool.hasEnvironment('logging.pattern.correlation'))
+    'logging.pattern.correlation': String.fromEnvironment(
+      'logging.pattern.correlation',
+    ),
+  if (bool.hasEnvironment('logging.pattern.dateformat'))
+    'logging.pattern.dateformat': String.fromEnvironment(
+      'logging.pattern.dateformat',
+    ),
+  if (bool.hasEnvironment('logging.pattern.file'))
+    'logging.pattern.file': String.fromEnvironment('logging.pattern.file'),
+  if (bool.hasEnvironment('logging.pattern.level'))
+    'logging.pattern.level': String.fromEnvironment('logging.pattern.level'),
+  if (bool.hasEnvironment('logging.threshold.buffer'))
+    'logging.threshold.buffer': String.fromEnvironment(
+      'logging.threshold.buffer',
+    ),
+  if (bool.hasEnvironment('logging.threshold.console'))
+    'logging.threshold.console': String.fromEnvironment(
+      'logging.threshold.console',
+    ),
+  if (bool.hasEnvironment('logging.threshold.file'))
+    'logging.threshold.file': String.fromEnvironment('logging.threshold.file'),
+  if (bool.hasEnvironment('management.endpoint.health.access'))
+    'management.endpoint.health.access': String.fromEnvironment(
+      'management.endpoint.health.access',
+    ),
+  if (bool.hasEnvironment('management.endpoint.health.enabled'))
+    'management.endpoint.health.enabled': String.fromEnvironment(
+      'management.endpoint.health.enabled',
+    ),
+  if (bool.hasEnvironment(
+    'management.endpoint.health.logging.slow-indicator-threshold',
+  ))
+    'management.endpoint.health.logging.slow-indicator-threshold':
+        String.fromEnvironment(
+          'management.endpoint.health.logging.slow-indicator-threshold',
+        ),
+  if (bool.hasEnvironment(
+    'management.endpoint.health.probes.add-additional-paths',
+  ))
+    'management.endpoint.health.probes.add-additional-paths':
+        String.fromEnvironment(
+          'management.endpoint.health.probes.add-additional-paths',
+        ),
+  if (bool.hasEnvironment('management.endpoint.health.probes.enabled'))
+    'management.endpoint.health.probes.enabled': String.fromEnvironment(
+      'management.endpoint.health.probes.enabled',
+    ),
+  if (bool.hasEnvironment('management.endpoint.health.roles'))
+    'management.endpoint.health.roles': String.fromEnvironment(
+      'management.endpoint.health.roles',
+    ),
+  if (bool.hasEnvironment('management.endpoint.health.show-components'))
+    'management.endpoint.health.show-components': String.fromEnvironment(
+      'management.endpoint.health.show-components',
+    ),
+  if (bool.hasEnvironment('management.endpoint.health.show-details'))
+    'management.endpoint.health.show-details': String.fromEnvironment(
+      'management.endpoint.health.show-details',
+    ),
+  if (bool.hasEnvironment('management.endpoint.health.status.order'))
+    'management.endpoint.health.status.order': String.fromEnvironment(
+      'management.endpoint.health.status.order',
+    ),
+  if (bool.hasEnvironment(
+    'management.endpoint.health.validate-group-membership',
+  ))
+    'management.endpoint.health.validate-group-membership':
+        String.fromEnvironment(
+          'management.endpoint.health.validate-group-membership',
+        ),
+  if (bool.hasEnvironment('management.endpoint.info.access'))
+    'management.endpoint.info.access': String.fromEnvironment(
+      'management.endpoint.info.access',
+    ),
+  if (bool.hasEnvironment('management.endpoint.info.enabled'))
+    'management.endpoint.info.enabled': String.fromEnvironment(
+      'management.endpoint.info.enabled',
+    ),
+  if (bool.hasEnvironment('management.endpoint.mappings.access'))
+    'management.endpoint.mappings.access': String.fromEnvironment(
+      'management.endpoint.mappings.access',
+    ),
+  if (bool.hasEnvironment('management.endpoint.mappings.enabled'))
+    'management.endpoint.mappings.enabled': String.fromEnvironment(
+      'management.endpoint.mappings.enabled',
+    ),
+  if (bool.hasEnvironment('management.endpoints.access.default'))
+    'management.endpoints.access.default': String.fromEnvironment(
+      'management.endpoints.access.default',
+    ),
+  if (bool.hasEnvironment('management.endpoints.enabled-by-default'))
+    'management.endpoints.enabled-by-default': String.fromEnvironment(
+      'management.endpoints.enabled-by-default',
+    ),
+  if (bool.hasEnvironment('management.health.db.enabled'))
+    'management.health.db.enabled': String.fromEnvironment(
+      'management.health.db.enabled',
+    ),
+  if (bool.hasEnvironment('management.health.defaults.enabled'))
+    'management.health.defaults.enabled': String.fromEnvironment(
+      'management.health.defaults.enabled',
+    ),
+  if (bool.hasEnvironment('management.health.diskspace.enabled'))
+    'management.health.diskspace.enabled': String.fromEnvironment(
+      'management.health.diskspace.enabled',
+    ),
+  if (bool.hasEnvironment('management.health.diskspace.path'))
+    'management.health.diskspace.path': String.fromEnvironment(
+      'management.health.diskspace.path',
+    ),
+  if (bool.hasEnvironment('management.health.diskspace.threshold'))
+    'management.health.diskspace.threshold': String.fromEnvironment(
+      'management.health.diskspace.threshold',
+    ),
+  if (bool.hasEnvironment('management.health.livenessstate.enabled'))
+    'management.health.livenessstate.enabled': String.fromEnvironment(
+      'management.health.livenessstate.enabled',
+    ),
+  if (bool.hasEnvironment('management.health.ping.enabled'))
+    'management.health.ping.enabled': String.fromEnvironment(
+      'management.health.ping.enabled',
+    ),
+  if (bool.hasEnvironment('management.health.readinessstate.enabled'))
+    'management.health.readinessstate.enabled': String.fromEnvironment(
+      'management.health.readinessstate.enabled',
+    ),
+  if (bool.hasEnvironment('management.info.build.enabled'))
+    'management.info.build.enabled': String.fromEnvironment(
+      'management.info.build.enabled',
+    ),
+  if (bool.hasEnvironment('management.info.dart.enabled'))
+    'management.info.dart.enabled': String.fromEnvironment(
+      'management.info.dart.enabled',
+    ),
+  if (bool.hasEnvironment('management.info.defaults.enabled'))
+    'management.info.defaults.enabled': String.fromEnvironment(
+      'management.info.defaults.enabled',
+    ),
+  if (bool.hasEnvironment('management.info.env.enabled'))
+    'management.info.env.enabled': String.fromEnvironment(
+      'management.info.env.enabled',
+    ),
+  if (bool.hasEnvironment('management.info.git.enabled'))
+    'management.info.git.enabled': String.fromEnvironment(
+      'management.info.git.enabled',
+    ),
+  if (bool.hasEnvironment('management.info.git.mode'))
+    'management.info.git.mode': String.fromEnvironment(
+      'management.info.git.mode',
+    ),
+  if (bool.hasEnvironment('management.info.os.enabled'))
+    'management.info.os.enabled': String.fromEnvironment(
+      'management.info.os.enabled',
+    ),
+  if (bool.hasEnvironment('spring.application.group'))
+    'spring.application.group': String.fromEnvironment(
+      'spring.application.group',
+    ),
+  if (bool.hasEnvironment('spring.application.json'))
+    'spring.application.json': String.fromEnvironment(
+      'spring.application.json',
+    ),
+  if (bool.hasEnvironment('spring.application.name'))
+    'spring.application.name': String.fromEnvironment(
+      'spring.application.name',
+    ),
+  if (bool.hasEnvironment('spring.autoconfigure.exclude'))
+    'spring.autoconfigure.exclude': String.fromEnvironment(
+      'spring.autoconfigure.exclude',
+    ),
+  if (bool.hasEnvironment('spring.banner.location'))
+    'spring.banner.location': String.fromEnvironment('spring.banner.location'),
+  if (bool.hasEnvironment('spring.cache.cache-names'))
+    'spring.cache.cache-names': String.fromEnvironment(
+      'spring.cache.cache-names',
+    ),
+  if (bool.hasEnvironment('spring.cache.disk.directory'))
+    'spring.cache.disk.directory': String.fromEnvironment(
+      'spring.cache.disk.directory',
+    ),
+  if (bool.hasEnvironment('spring.cache.disk.max-size'))
+    'spring.cache.disk.max-size': String.fromEnvironment(
+      'spring.cache.disk.max-size',
+    ),
+  if (bool.hasEnvironment('spring.cache.disk.time-to-live'))
+    'spring.cache.disk.time-to-live': String.fromEnvironment(
+      'spring.cache.disk.time-to-live',
+    ),
+  if (bool.hasEnvironment('spring.cache.disk.version'))
+    'spring.cache.disk.version': String.fromEnvironment(
+      'spring.cache.disk.version',
+    ),
+  if (bool.hasEnvironment('spring.cache.resource-version'))
+    'spring.cache.resource-version': String.fromEnvironment(
+      'spring.cache.resource-version',
+    ),
+  if (bool.hasEnvironment('spring.cache.simple.max-size'))
+    'spring.cache.simple.max-size': String.fromEnvironment(
+      'spring.cache.simple.max-size',
+    ),
+  if (bool.hasEnvironment('spring.cache.simple.time-to-live'))
+    'spring.cache.simple.time-to-live': String.fromEnvironment(
+      'spring.cache.simple.time-to-live',
+    ),
+  if (bool.hasEnvironment('spring.cache.type'))
+    'spring.cache.type': String.fromEnvironment('spring.cache.type'),
+  if (bool.hasEnvironment('spring.config.activate.on-cloud-platform'))
+    'spring.config.activate.on-cloud-platform': String.fromEnvironment(
+      'spring.config.activate.on-cloud-platform',
+    ),
+  if (bool.hasEnvironment('spring.config.activate.on-profile'))
+    'spring.config.activate.on-profile': String.fromEnvironment(
+      'spring.config.activate.on-profile',
+    ),
+  if (bool.hasEnvironment('spring.config.additional-location'))
+    'spring.config.additional-location': String.fromEnvironment(
+      'spring.config.additional-location',
+    ),
+  if (bool.hasEnvironment('spring.config.import'))
+    'spring.config.import': String.fromEnvironment('spring.config.import'),
+  if (bool.hasEnvironment('spring.config.location'))
+    'spring.config.location': String.fromEnvironment('spring.config.location'),
+  if (bool.hasEnvironment('spring.config.name'))
+    'spring.config.name': String.fromEnvironment('spring.config.name'),
+  if (bool.hasEnvironment('spring.config.on-not-found'))
+    'spring.config.on-not-found': String.fromEnvironment(
+      'spring.config.on-not-found',
+    ),
   if (bool.hasEnvironment('spring.data.jdbc'))
     'spring.data.jdbc': String.fromEnvironment('spring.data.jdbc'),
   if (bool.hasEnvironment('spring.data.jdbc.format-sql'))
@@ -370,9 +1318,29 @@ const Map<String, String> _$dartDefines = {
     ),
   if (bool.hasEnvironment('spring.datasources'))
     'spring.datasources': String.fromEnvironment('spring.datasources'),
+  if (bool.hasEnvironment('spring.devtools.restart.enabled'))
+    'spring.devtools.restart.enabled': String.fromEnvironment(
+      'spring.devtools.restart.enabled',
+    ),
   if (bool.hasEnvironment('spring.flutter.scan-os-environment'))
     'spring.flutter.scan-os-environment': String.fromEnvironment(
       'spring.flutter.scan-os-environment',
+    ),
+  if (bool.hasEnvironment('spring.info.build.encoding'))
+    'spring.info.build.encoding': String.fromEnvironment(
+      'spring.info.build.encoding',
+    ),
+  if (bool.hasEnvironment('spring.info.build.location'))
+    'spring.info.build.location': String.fromEnvironment(
+      'spring.info.build.location',
+    ),
+  if (bool.hasEnvironment('spring.info.git.encoding'))
+    'spring.info.git.encoding': String.fromEnvironment(
+      'spring.info.git.encoding',
+    ),
+  if (bool.hasEnvironment('spring.info.git.location'))
+    'spring.info.git.location': String.fromEnvironment(
+      'spring.info.git.location',
     ),
   if (bool.hasEnvironment('spring.jdbc.template'))
     'spring.jdbc.template': String.fromEnvironment('spring.jdbc.template'),
@@ -380,19 +1348,381 @@ const Map<String, String> _$dartDefines = {
     'spring.jdbc.template.query-timeout': String.fromEnvironment(
       'spring.jdbc.template.query-timeout',
     ),
+  if (bool.hasEnvironment(
+    'spring.json.datatype.datetime.read-date-timestamps-as-nanoseconds',
+  ))
+    'spring.json.datatype.datetime.read-date-timestamps-as-nanoseconds':
+        String.fromEnvironment(
+          'spring.json.datatype.datetime.read-date-timestamps-as-nanoseconds',
+        ),
+  if (bool.hasEnvironment(
+    'spring.json.datatype.datetime.write-date-timestamps-as-nanoseconds',
+  ))
+    'spring.json.datatype.datetime.write-date-timestamps-as-nanoseconds':
+        String.fromEnvironment(
+          'spring.json.datatype.datetime.write-date-timestamps-as-nanoseconds',
+        ),
+  if (bool.hasEnvironment(
+    'spring.json.datatype.datetime.write-dates-as-timestamps',
+  ))
+    'spring.json.datatype.datetime.write-dates-as-timestamps':
+        String.fromEnvironment(
+          'spring.json.datatype.datetime.write-dates-as-timestamps',
+        ),
+  if (bool.hasEnvironment(
+    'spring.json.datatype.datetime.write-durations-as-timestamps',
+  ))
+    'spring.json.datatype.datetime.write-durations-as-timestamps':
+        String.fromEnvironment(
+          'spring.json.datatype.datetime.write-durations-as-timestamps',
+        ),
+  if (bool.hasEnvironment('spring.json.default-property-inclusion'))
+    'spring.json.default-property-inclusion': String.fromEnvironment(
+      'spring.json.default-property-inclusion',
+    ),
+  if (bool.hasEnvironment('spring.json.deserialization.accept-float-as-int'))
+    'spring.json.deserialization.accept-float-as-int': String.fromEnvironment(
+      'spring.json.deserialization.accept-float-as-int',
+    ),
+  if (bool.hasEnvironment(
+    'spring.json.deserialization.fail-on-null-for-primitives',
+  ))
+    'spring.json.deserialization.fail-on-null-for-primitives':
+        String.fromEnvironment(
+          'spring.json.deserialization.fail-on-null-for-primitives',
+        ),
+  if (bool.hasEnvironment(
+    'spring.json.deserialization.fail-on-unknown-properties',
+  ))
+    'spring.json.deserialization.fail-on-unknown-properties':
+        String.fromEnvironment(
+          'spring.json.deserialization.fail-on-unknown-properties',
+        ),
+  if (bool.hasEnvironment(
+    'spring.json.deserialization.read-date-timestamps-as-nanoseconds',
+  ))
+    'spring.json.deserialization.read-date-timestamps-as-nanoseconds':
+        String.fromEnvironment(
+          'spring.json.deserialization.read-date-timestamps-as-nanoseconds',
+        ),
+  if (bool.hasEnvironment('spring.json.mapper.default-view-inclusion'))
+    'spring.json.mapper.default-view-inclusion': String.fromEnvironment(
+      'spring.json.mapper.default-view-inclusion',
+    ),
+  if (bool.hasEnvironment('spring.json.mapper.sort-properties-alphabetically'))
+    'spring.json.mapper.sort-properties-alphabetically': String.fromEnvironment(
+      'spring.json.mapper.sort-properties-alphabetically',
+    ),
+  if (bool.hasEnvironment('spring.json.property-naming-strategy'))
+    'spring.json.property-naming-strategy': String.fromEnvironment(
+      'spring.json.property-naming-strategy',
+    ),
+  if (bool.hasEnvironment('spring.json.schemas-registry.properties'))
+    'spring.json.schemas-registry.properties': String.fromEnvironment(
+      'spring.json.schemas-registry.properties',
+    ),
+  if (bool.hasEnvironment('spring.json.serialization.indent-output'))
+    'spring.json.serialization.indent-output': String.fromEnvironment(
+      'spring.json.serialization.indent-output',
+    ),
+  if (bool.hasEnvironment(
+    'spring.json.serialization.write-date-timestamps-as-nanoseconds',
+  ))
+    'spring.json.serialization.write-date-timestamps-as-nanoseconds':
+        String.fromEnvironment(
+          'spring.json.serialization.write-date-timestamps-as-nanoseconds',
+        ),
+  if (bool.hasEnvironment(
+    'spring.json.serialization.write-dates-as-timestamps',
+  ))
+    'spring.json.serialization.write-dates-as-timestamps':
+        String.fromEnvironment(
+          'spring.json.serialization.write-dates-as-timestamps',
+        ),
+  if (bool.hasEnvironment(
+    'spring.json.serialization.write-durations-as-timestamps',
+  ))
+    'spring.json.serialization.write-durations-as-timestamps':
+        String.fromEnvironment(
+          'spring.json.serialization.write-durations-as-timestamps',
+        ),
+  if (bool.hasEnvironment('spring.json.time-zone'))
+    'spring.json.time-zone': String.fromEnvironment('spring.json.time-zone'),
+  if (bool.hasEnvironment('spring.lifecycle.timeout-per-shutdown-phase'))
+    'spring.lifecycle.timeout-per-shutdown-phase': String.fromEnvironment(
+      'spring.lifecycle.timeout-per-shutdown-phase',
+    ),
+  if (bool.hasEnvironment('spring.main.allow-bean-definition-overriding'))
+    'spring.main.allow-bean-definition-overriding': String.fromEnvironment(
+      'spring.main.allow-bean-definition-overriding',
+    ),
   if (bool.hasEnvironment('spring.main.banner-mode'))
     'spring.main.banner-mode': String.fromEnvironment(
       'spring.main.banner-mode',
     ),
+  if (bool.hasEnvironment('spring.main.cloud-platform'))
+    'spring.main.cloud-platform': String.fromEnvironment(
+      'spring.main.cloud-platform',
+    ),
+  if (bool.hasEnvironment('spring.main.lazy-initialization'))
+    'spring.main.lazy-initialization': String.fromEnvironment(
+      'spring.main.lazy-initialization',
+    ),
+  if (bool.hasEnvironment('spring.main.log-startup-info'))
+    'spring.main.log-startup-info': String.fromEnvironment(
+      'spring.main.log-startup-info',
+    ),
+  if (bool.hasEnvironment('spring.main.register-shutdown-hook'))
+    'spring.main.register-shutdown-hook': String.fromEnvironment(
+      'spring.main.register-shutdown-hook',
+    ),
+  if (bool.hasEnvironment('spring.main.startup-checks.enabled'))
+    'spring.main.startup-checks.enabled': String.fromEnvironment(
+      'spring.main.startup-checks.enabled',
+    ),
+  if (bool.hasEnvironment('spring.messages.always-use-message-format'))
+    'spring.messages.always-use-message-format': String.fromEnvironment(
+      'spring.messages.always-use-message-format',
+    ),
+  if (bool.hasEnvironment('spring.messages.basename'))
+    'spring.messages.basename': String.fromEnvironment(
+      'spring.messages.basename',
+    ),
+  if (bool.hasEnvironment('spring.messages.cache-duration'))
+    'spring.messages.cache-duration': String.fromEnvironment(
+      'spring.messages.cache-duration',
+    ),
+  if (bool.hasEnvironment('spring.messages.common-messages'))
+    'spring.messages.common-messages': String.fromEnvironment(
+      'spring.messages.common-messages',
+    ),
+  if (bool.hasEnvironment('spring.messages.default-locale'))
+    'spring.messages.default-locale': String.fromEnvironment(
+      'spring.messages.default-locale',
+    ),
+  if (bool.hasEnvironment('spring.messages.encoding'))
+    'spring.messages.encoding': String.fromEnvironment(
+      'spring.messages.encoding',
+    ),
+  if (bool.hasEnvironment('spring.messages.fallback-to-system-locale'))
+    'spring.messages.fallback-to-system-locale': String.fromEnvironment(
+      'spring.messages.fallback-to-system-locale',
+    ),
+  if (bool.hasEnvironment('spring.messages.use-code-as-default-message'))
+    'spring.messages.use-code-as-default-message': String.fromEnvironment(
+      'spring.messages.use-code-as-default-message',
+    ),
+  if (bool.hasEnvironment('spring.observations.annotations.enabled'))
+    'spring.observations.annotations.enabled': String.fromEnvironment(
+      'spring.observations.annotations.enabled',
+    ),
+  if (bool.hasEnvironment('spring.output.ansi.enabled'))
+    'spring.output.ansi.enabled': String.fromEnvironment(
+      'spring.output.ansi.enabled',
+    ),
   if (bool.hasEnvironment('spring.profiles.active'))
     'spring.profiles.active': String.fromEnvironment('spring.profiles.active'),
+  if (bool.hasEnvironment('spring.profiles.default'))
+    'spring.profiles.default': String.fromEnvironment(
+      'spring.profiles.default',
+    ),
   if (bool.hasEnvironment('spring.profiles.include'))
     'spring.profiles.include': String.fromEnvironment(
       'spring.profiles.include',
     ),
+  if (bool.hasEnvironment('spring.profiles.validate'))
+    'spring.profiles.validate': String.fromEnvironment(
+      'spring.profiles.validate',
+    ),
+  if (bool.hasEnvironment('spring.remote.allow-insecure'))
+    'spring.remote.allow-insecure': String.fromEnvironment(
+      'spring.remote.allow-insecure',
+    ),
+  if (bool.hasEnvironment('spring.resources.embed.exclude'))
+    'spring.resources.embed.exclude': String.fromEnvironment(
+      'spring.resources.embed.exclude',
+    ),
+  if (bool.hasEnvironment('spring.resources.prefetch.delay'))
+    'spring.resources.prefetch.delay': String.fromEnvironment(
+      'spring.resources.prefetch.delay',
+    ),
+  if (bool.hasEnvironment('spring.resources.prefetch.locations'))
+    'spring.resources.prefetch.locations': String.fromEnvironment(
+      'spring.resources.prefetch.locations',
+    ),
+  if (bool.hasEnvironment('spring.resources.prefetch.stage'))
+    'spring.resources.prefetch.stage': String.fromEnvironment(
+      'spring.resources.prefetch.stage',
+    ),
   if (bool.hasEnvironment('spring.sql.init'))
     'spring.sql.init': String.fromEnvironment('spring.sql.init'),
+  if (bool.hasEnvironment('spring.sql.init.continue-on-error'))
+    'spring.sql.init.continue-on-error': String.fromEnvironment(
+      'spring.sql.init.continue-on-error',
+    ),
+  if (bool.hasEnvironment('spring.sql.init.data-locations'))
+    'spring.sql.init.data-locations': String.fromEnvironment(
+      'spring.sql.init.data-locations',
+    ),
+  if (bool.hasEnvironment('spring.sql.init.encoding'))
+    'spring.sql.init.encoding': String.fromEnvironment(
+      'spring.sql.init.encoding',
+    ),
+  if (bool.hasEnvironment('spring.sql.init.mode'))
+    'spring.sql.init.mode': String.fromEnvironment('spring.sql.init.mode'),
+  if (bool.hasEnvironment('spring.sql.init.platform'))
+    'spring.sql.init.platform': String.fromEnvironment(
+      'spring.sql.init.platform',
+    ),
+  if (bool.hasEnvironment('spring.sql.init.schema-locations'))
+    'spring.sql.init.schema-locations': String.fromEnvironment(
+      'spring.sql.init.schema-locations',
+    ),
+  if (bool.hasEnvironment('spring.sql.init.separator'))
+    'spring.sql.init.separator': String.fromEnvironment(
+      'spring.sql.init.separator',
+    ),
   if (bool.hasEnvironment('spring.sql.migration'))
     'spring.sql.migration': String.fromEnvironment('spring.sql.migration'),
+  if (bool.hasEnvironment('spring.sql.migration.baseline-description'))
+    'spring.sql.migration.baseline-description': String.fromEnvironment(
+      'spring.sql.migration.baseline-description',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.baseline-on-migrate'))
+    'spring.sql.migration.baseline-on-migrate': String.fromEnvironment(
+      'spring.sql.migration.baseline-on-migrate',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.baseline-version'))
+    'spring.sql.migration.baseline-version': String.fromEnvironment(
+      'spring.sql.migration.baseline-version',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.connect-retries'))
+    'spring.sql.migration.connect-retries': String.fromEnvironment(
+      'spring.sql.migration.connect-retries',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.connect-retries-interval'))
+    'spring.sql.migration.connect-retries-interval': String.fromEnvironment(
+      'spring.sql.migration.connect-retries-interval',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.enabled'))
+    'spring.sql.migration.enabled': String.fromEnvironment(
+      'spring.sql.migration.enabled',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.group'))
+    'spring.sql.migration.group': String.fromEnvironment(
+      'spring.sql.migration.group',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.ignore-migration-patterns'))
+    'spring.sql.migration.ignore-migration-patterns': String.fromEnvironment(
+      'spring.sql.migration.ignore-migration-patterns',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.locations'))
+    'spring.sql.migration.locations': String.fromEnvironment(
+      'spring.sql.migration.locations',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.lock-timeout'))
+    'spring.sql.migration.lock-timeout': String.fromEnvironment(
+      'spring.sql.migration.lock-timeout',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.out-of-order'))
+    'spring.sql.migration.out-of-order': String.fromEnvironment(
+      'spring.sql.migration.out-of-order',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.placeholder-prefix'))
+    'spring.sql.migration.placeholder-prefix': String.fromEnvironment(
+      'spring.sql.migration.placeholder-prefix',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.placeholder-replacement'))
+    'spring.sql.migration.placeholder-replacement': String.fromEnvironment(
+      'spring.sql.migration.placeholder-replacement',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.placeholder-suffix'))
+    'spring.sql.migration.placeholder-suffix': String.fromEnvironment(
+      'spring.sql.migration.placeholder-suffix',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.table'))
+    'spring.sql.migration.table': String.fromEnvironment(
+      'spring.sql.migration.table',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.target'))
+    'spring.sql.migration.target': String.fromEnvironment(
+      'spring.sql.migration.target',
+    ),
+  if (bool.hasEnvironment('spring.sql.migration.validate-on-migrate'))
+    'spring.sql.migration.validate-on-migrate': String.fromEnvironment(
+      'spring.sql.migration.validate-on-migrate',
+    ),
+  if (bool.hasEnvironment('spring.task.execution.isolates.allow-core-timeout'))
+    'spring.task.execution.isolates.allow-core-timeout': String.fromEnvironment(
+      'spring.task.execution.isolates.allow-core-timeout',
+    ),
+  if (bool.hasEnvironment('spring.task.execution.isolates.core-size'))
+    'spring.task.execution.isolates.core-size': String.fromEnvironment(
+      'spring.task.execution.isolates.core-size',
+    ),
+  if (bool.hasEnvironment('spring.task.execution.isolates.keep-alive'))
+    'spring.task.execution.isolates.keep-alive': String.fromEnvironment(
+      'spring.task.execution.isolates.keep-alive',
+    ),
+  if (bool.hasEnvironment('spring.task.execution.isolates.max-size'))
+    'spring.task.execution.isolates.max-size': String.fromEnvironment(
+      'spring.task.execution.isolates.max-size',
+    ),
+  if (bool.hasEnvironment('spring.task.execution.isolates.name-prefix'))
+    'spring.task.execution.isolates.name-prefix': String.fromEnvironment(
+      'spring.task.execution.isolates.name-prefix',
+    ),
+  if (bool.hasEnvironment('spring.task.execution.isolates.queue-capacity'))
+    'spring.task.execution.isolates.queue-capacity': String.fromEnvironment(
+      'spring.task.execution.isolates.queue-capacity',
+    ),
+  if (bool.hasEnvironment('spring.web.rate-limit.client-address-header'))
+    'spring.web.rate-limit.client-address-header': String.fromEnvironment(
+      'spring.web.rate-limit.client-address-header',
+    ),
+  if (bool.hasEnvironment('spring.web.rate-limit.enabled'))
+    'spring.web.rate-limit.enabled': String.fromEnvironment(
+      'spring.web.rate-limit.enabled',
+    ),
+  if (bool.hasEnvironment('spring.web.rate-limit.hash-addresses'))
+    'spring.web.rate-limit.hash-addresses': String.fromEnvironment(
+      'spring.web.rate-limit.hash-addresses',
+    ),
+  if (bool.hasEnvironment('spring.web.rate-limit.hash-secret'))
+    'spring.web.rate-limit.hash-secret': String.fromEnvironment(
+      'spring.web.rate-limit.hash-secret',
+    ),
+  if (bool.hasEnvironment('spring.web.rate-limit.headers'))
+    'spring.web.rate-limit.headers': String.fromEnvironment(
+      'spring.web.rate-limit.headers',
+    ),
+  if (bool.hasEnvironment('spring.web.rate-limit.ipv6-prefix-length'))
+    'spring.web.rate-limit.ipv6-prefix-length': String.fromEnvironment(
+      'spring.web.rate-limit.ipv6-prefix-length',
+    ),
+  if (bool.hasEnvironment('spring.web.rate-limit.memory.max-entries'))
+    'spring.web.rate-limit.memory.max-entries': String.fromEnvironment(
+      'spring.web.rate-limit.memory.max-entries',
+    ),
+  if (bool.hasEnvironment('spring.web.rate-limit.on-store-failure'))
+    'spring.web.rate-limit.on-store-failure': String.fromEnvironment(
+      'spring.web.rate-limit.on-store-failure',
+    ),
+  if (bool.hasEnvironment('spring.web.rate-limit.store'))
+    'spring.web.rate-limit.store': String.fromEnvironment(
+      'spring.web.rate-limit.store',
+    ),
+  if (bool.hasEnvironment('spring.web.rate-limit.store-failure-retry-after'))
+    'spring.web.rate-limit.store-failure-retry-after': String.fromEnvironment(
+      'spring.web.rate-limit.store-failure-retry-after',
+    ),
+  if (bool.hasEnvironment('spring.web.rate-limit.trusted-proxies'))
+    'spring.web.rate-limit.trusted-proxies': String.fromEnvironment(
+      'spring.web.rate-limit.trusted-proxies',
+    ),
+  if (bool.hasEnvironment('spring.web.rate-limit.verify-store'))
+    'spring.web.rate-limit.verify-store': String.fromEnvironment(
+      'spring.web.rate-limit.verify-store',
+    ),
   if (bool.hasEnvironment('trace')) 'trace': String.fromEnvironment('trace'),
 };

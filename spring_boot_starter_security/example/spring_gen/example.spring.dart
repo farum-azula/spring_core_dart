@@ -291,6 +291,7 @@ _i2.BeanModule get $application => _i2.BeanModule(r'application', [
     ],
     factoryBeanName: r'securityConfig',
     factoryMethodName: r'users',
+    factoryMethodReturnType: _i6.UserDetailsService,
     dependencies: const [
       _i2.Dependency(_i1.SecurityConfig, qualifier: r'securityConfig'),
     ],

@@ -734,9 +734,12 @@ class ModuleEmitter {
           :final ownerName,
           :final methodName,
           :final isStatic,
+          :final declaredType,
         )) ...{
           if (!isStatic) 'factoryBeanName': _str(ownerName),
           'factoryMethodName': _str(methodName),
+          if (declaredType != null)
+            'factoryMethodReturnType': _typeValue(declaredType, element),
         },
         if (bean.order case final order?) 'order': literalNum(order),
         if (bean.description case final description?)
@@ -2505,6 +2508,14 @@ class ModuleEmitter {
           ]),
         TypeConditionModel(:final type) => _type(type, element).newInstance([]),
         AnnotationConditionModel(:final value) => _constant(value, element),
+        DeclaredTypeConditionModel(:final value, :final declaredType) =>
+          _type(value.type!, element).constInstanceNamed('where', [], {
+            'types': literalConstList([_type(declaredType, element)]),
+            if (value.getField('ignored') case final ignored?)
+              'ignored': _constant(ignored, element),
+            if (value.getField('search') case final search?)
+              'search': _constant(search, element),
+          }),
         GroupConditionModel(:final key, :final conditions) =>
           _spring('ConditionGroup').newInstance([
             _str(key),

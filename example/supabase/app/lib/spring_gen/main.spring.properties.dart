@@ -37,6 +37,7 @@ List<_i2.Introspection<Object>> get $applicationPropertiesIntrospections => [
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'todos')],
+    library: r'package:supabase_example_app/src/todos/todo_list.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.TodoProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.TodoProperties>(

@@ -212,6 +212,11 @@ final class SpelEditor {
         );
         continue;
       }
+      // Several packages may have a bean of this name, each with its own
+      // members: which one this expression reaches is not known here.
+      if (model.beans.beansNamed(chain.bean).length > 1) {
+        continue;
+      }
       for (var i = 0; i < chain.members.length; i++) {
         final scope = _scopeOf(chain, i);
         if (scope == null) {

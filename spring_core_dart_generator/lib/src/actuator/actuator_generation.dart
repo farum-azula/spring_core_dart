@@ -1,6 +1,8 @@
 // spring_boot_actuator's part of the module build: the application's
 // `build-info.properties`, which the `info` endpoint shows.
+import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
+import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/core/builder/package_generation.dart';
 import 'package:yaml/yaml.dart';
 
@@ -21,12 +23,62 @@ import 'package:yaml/yaml.dart';
 /// build.name=shop
 /// build.version=1.2.0
 /// ```
+// The endpoint annotations, matched by URL (the generator does not depend
+// on the actuator).
+const _annotations =
+    'package:spring_boot_actuator/src/endpoint/annotations.dart';
+const _endpoint = TypeChecker.fromUrl('$_annotations#Endpoint');
+const _webExtension = TypeChecker.fromUrl('$_annotations#EndpointWebExtension');
+const _readOperation = TypeChecker.fromUrl('$_annotations#ReadOperation');
+
+// `@Endpoint`: a class with an operation (its own or inherited); without
+// one the endpoint answers nothing.
+final class _EndpointPlacement extends ClassPlacement {
+  const _EndpointPlacement() : super(const [_endpoint]);
+
+  @override
+  String? problem(AnnotationSite site) {
+    if (super.problem(site) case final problem?) {
+      return problem;
+    }
+    final element = site.element;
+    if (element is! ClassElement) {
+      return null;
+    }
+    final classes = [element, ...element.allSupertypes.map((t) => t.element)];
+    return classes.any(
+          (current) => current.methods.any(_readOperation.hasAnnotationOf),
+        )
+        ? null
+        : '@Endpoint on ${site.subject}: it has no operation, so it would '
+              'answer nothing. Add a method with @ReadOperation().';
+  }
+}
+
 final class ActuatorGeneration extends PackageGeneration {
   /// The part; it keeps no state of a build.
   const ActuatorGeneration();
 
   @override
   String get package => 'spring_boot_actuator';
+
+  // An operation of an endpoint, and its selectors.
+  @override
+  List<AnnotationPlacement> get placements => const [
+    MethodPlacement(
+      [_readOperation],
+      does: 'the endpoint answers with it',
+      methodOwner: AnnotatedOwner([_endpoint, _webExtension]),
+      ownerNoun: '@Endpoint (or @EndpointWebExtension)',
+      ownerFix: "@Endpoint('...')",
+    ),
+    ParameterPlacement(
+      [TypeChecker.fromUrl('$_annotations#Selector')],
+      methodsWith: [_readOperation],
+      methodNoun: 'an endpoint operation (@ReadOperation)',
+    ),
+    _EndpointPlacement(),
+  ];
 
   @override
   Future<Map<String, String>> applicationResources(BuildStep buildStep) async {

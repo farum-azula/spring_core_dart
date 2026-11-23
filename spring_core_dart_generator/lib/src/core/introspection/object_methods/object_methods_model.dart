@@ -39,6 +39,11 @@ final class ObjectField {
   /// parameter).
   final bool comparedByContent;
 
+  /// Whether `==` and `hashCode` use `doubleEquals` and `doubleHash`: a
+  /// `double`, where `NaN` equals `NaN` and `0.0` is not `-0.0`, as Lombok
+  /// compares with `Double.compare`.
+  bool get comparedAsDouble => element.type.isDartCoreDouble;
+
   /// Whether `toString()` writes `******` (a secret-looking name, or
   /// `mask:`); its value is never read.
   final bool masked;

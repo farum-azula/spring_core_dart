@@ -27,35 +27,37 @@ _i1.FeignProperties _$create4(
 /// The binding of the `@ConfigurationProperties` classes of the module
 /// `feignConfigBeans`: the descriptions only its binder uses. The module hands
 /// them to the context.
-List<_i2.Introspection<Object>> get $feignConfigBeansPropertiesIntrospections =>
-    [
-      const _i2.Introspection<_i1.FeignProperties>(
-        className: r'FeignProperties',
-        properties: [
-          _i2.IntrospectedProperty<_i1.FeignProperties>(
-            r'decodeSlash',
-            typeInfo: _i2.ClassType<bool>(),
-            hasInitialValue: true,
-            initialValue: true,
-            get: _$get0,
-            set: _$set1,
-          ),
-          _i2.IntrospectedProperty<_i1.FeignProperties>(
-            r'config',
-            typeInfo: _i2.MapType<String, _i1.FeignClientSettings>(
-              _i2.ClassType<String>(),
-              _i2.ClassType<_i1.FeignClientSettings>(),
-            ),
-            get: _$get2,
-            set: _$set3,
-          ),
-        ],
-        annotations: [_i2.ConfigurationProperties(r'spring.feign.client')],
-        parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-        instantiate: _i1.FeignProperties.new,
-        constructor: _i2.IntrospectedConstructor<_i1.FeignProperties>(
-          parameters: [],
-          create: _$create4,
-        ),
+List<_i2.Introspection<Object>>
+get $feignConfigBeansPropertiesIntrospections => [
+  const _i2.Introspection<_i1.FeignProperties>(
+    className: r'FeignProperties',
+    properties: [
+      _i2.IntrospectedProperty<_i1.FeignProperties>(
+        r'decodeSlash',
+        typeInfo: _i2.ClassType<bool>(),
+        hasInitialValue: true,
+        initialValue: true,
+        get: _$get0,
+        set: _$set1,
       ),
-    ];
+      _i2.IntrospectedProperty<_i1.FeignProperties>(
+        r'config',
+        typeInfo: _i2.MapType<String, _i1.FeignClientSettings>(
+          _i2.ClassType<String>(),
+          _i2.ClassType<_i1.FeignClientSettings>(),
+        ),
+        get: _$get2,
+        set: _$set3,
+      ),
+    ],
+    annotations: [_i2.ConfigurationProperties(r'spring.feign.client')],
+    library:
+        r'package:spring_boot_starter_feign/src/config/feign_properties.dart',
+    parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
+    instantiate: _i1.FeignProperties.new,
+    constructor: _i2.IntrospectedConstructor<_i1.FeignProperties>(
+      parameters: [],
+      create: _$create4,
+    ),
+  ),
+];

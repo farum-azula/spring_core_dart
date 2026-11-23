@@ -3,6 +3,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
+import 'package:spring_core_dart_generator/src/core/beans/annotation_placement.dart';
 import 'package:spring_core_dart_generator/src/core/beans/bean_model.dart';
 import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/core/beans/module_emitter.dart';
@@ -10,6 +11,7 @@ import 'package:spring_core_dart_generator/src/core/builder/build_inclusion.dart
 import 'package:spring_core_dart_generator/src/core/builder/package_directory.dart';
 import 'package:spring_core_dart_generator/src/core/introspection/introspection_scanner.dart';
 
+export 'package:spring_core_dart_generator/src/core/beans/annotation_placement.dart';
 export 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart'
     show AnnotatedMethodNeeds, ModuleScan, SpelUse;
 export 'package:spring_core_dart_generator/src/core/builder/build_inclusion.dart'
@@ -107,6 +109,14 @@ abstract class PackageGeneration {
   /// ```
   PackageBuild? get build => null;
 
+  /// The property name prefixes of the part's starter that a client app
+  /// (a Flutter one) reads and that hold no secret, though their names may
+  /// look like one (`spring.flutter.theme.tokens`, `spring.supabase.anon-key`):
+  /// a client build keeps them among the names `--dart-define` may set,
+  /// where the other secret-looking names are left out (see the builder
+  /// option `dart_defines_secrets`).
+  List<String> get publicDefines => const [];
+
   /// Text whose presence in a library of `lib/` or `bin/` makes the
   /// package one with Spring code, for which `spring_metadata.json` is
   /// written (`@ScreenRoute`), besides the core's own markers.
@@ -123,6 +133,26 @@ abstract class PackageGeneration {
   Future<Map<String, String>> applicationResources(
     BuildStep buildStep,
   ) async => const {};
+
+  /// Where the part's annotations may go: for each, the declarations it is
+  /// read on (a method of a controller, a parameter of a handler, advice
+  /// on a bean's methods). The build walks every declaration of a scanned
+  /// library once and asks the first placement covering an annotation,
+  /// the parts' in their order and then the core's; one in a place where
+  /// nothing reads it fails the build with what to change, instead of
+  /// being ignored. An annotation no placement covers is not checked.
+  ///
+  /// ```dart
+  /// @override
+  /// List<AnnotationPlacement> get placements => const [
+  ///   AdvicePlacement([_timed], effect: 'the call would not be timed'),
+  /// ];
+  /// ```
+  ///
+  /// Spring (Java): an annotation's `@Target`, and the checks of the
+  /// post-processor that reads it; where Spring ignores an annotation
+  /// without a word, the build says so.
+  List<AnnotationPlacement> get placements => const [];
 
   /// Reads, before the module's libraries are scanned, what the scan and
   /// the emission need that is in no library of the module: files of the

@@ -57,6 +57,7 @@ List<_i2.Introspection<Object>> get $searchPropertiesIntrospections => [
         set: _$set5,
       ),
     ],
+    library: r'package:spring_search_dart/src/config/search_properties.dart',
     instantiate: _i1.MarkdownSearchProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.MarkdownSearchProperties>(
       parameters: [],

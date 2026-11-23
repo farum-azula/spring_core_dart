@@ -15,6 +15,8 @@ const _postAuthorize = TypeChecker.fromUrl('$_annotations#PostAuthorize');
 const _preFilter = TypeChecker.fromUrl('$_annotations#PreFilter');
 const _postFilter = TypeChecker.fromUrl('$_annotations#PostFilter');
 const _secured = TypeChecker.fromUrl('$_annotations#Secured');
+const _webArguments =
+    'package:spring_boot_starter_security/src/web/arguments.dart';
 
 const List<TypeChecker> _expressions = [
   _preAuthorize,
@@ -23,10 +25,13 @@ const List<TypeChecker> _expressions = [
   _postFilter,
 ];
 
+// `this` of the expression root, the bean; not the variable `#this`.
+final RegExp _readsBean = RegExp(r'(?<!#)\bthis\b');
+
 /// The part of `spring_security_core` in the module build: where the
 /// expressions of `@PreAuthorize`, `@PostAuthorize`, `@PreFilter` and
 /// `@PostFilter` look (the arguments by `#name`, the result by
-/// `returnObject` or `filterObject`, the bean by `target`), so the classes
+/// `returnObject` or `filterObject`, the bean by `this`), so the classes
 /// they reach can have their methods called; `@Secured` names roles only.
 /// It writes nothing of its own.
 ///
@@ -42,13 +47,35 @@ final class SecurityGeneration extends PackageGeneration {
   @override
   String get package => 'spring_security_core';
 
+  // The method security annotations are advice: where the proxy cannot
+  // run them, the method would run unchecked, for anyone. The web
+  // arguments of the security starter (by URL: it has no part) are read on
+  // handler parameters only.
+  @override
+  List<AnnotationPlacement> get placements => const [
+    AdvicePlacement([
+      _preAuthorize,
+      _postAuthorize,
+      _preFilter,
+      _postFilter,
+      _secured,
+    ], effect: 'the method would run unchecked, for anyone'),
+    ParameterPlacement(
+      [
+        TypeChecker.fromUrl('$_webArguments#AuthenticationPrincipal'),
+        TypeChecker.fromUrl('$_webArguments#CurrentSecurityContext'),
+      ],
+      methodNoun: 'a handler method (@GetMapping, @PostMapping...)',
+    ),
+  ];
+
   @override
   AnnotatedMethodNeeds? methodNeeds(
     InterfaceType annotation,
     MethodElement method,
     ModuleScan scan,
   ) {
-    if (_secured.isExactlyType(annotation)) {
+    if (_secured.isAssignableFromType(annotation)) {
       // Nothing of its types is read or written by the framework.
       return (
         result: IntrospectionNeed.none,
@@ -57,7 +84,9 @@ final class SecurityGeneration extends PackageGeneration {
         ],
       );
     }
-    if (!_expressions.any((checker) => checker.isExactlyType(annotation))) {
+    if (!_expressions.any(
+      (checker) => checker.isAssignableFromType(annotation),
+    )) {
       return null;
     }
     final spel = scan.spelUse([
@@ -75,31 +104,33 @@ final class SecurityGeneration extends PackageGeneration {
 
   // The arguments by `#name` (and `filterObject` before a `@PreFilter`),
   // the result by `returnObject` (`@PostAuthorize`) or `filterObject`
-  // (`@PostFilter`), the bean by `target`.
+  // (`@PostFilter`), the bean by `this` (`#this` is the expression's own
+  // current object, the root).
   @override
   SpelUse? expressionUse(DartObject annotation, ModuleScan scan) {
     final type = annotation.type;
     if (type == null ||
-        !_expressions.any((checker) => checker.isExactlyType(type))) {
+        !_expressions.any((checker) => checker.isAssignableFromType(type))) {
       return null;
     }
-    final text = annotation.getField('value')?.toStringValue();
+    final text = ConstantReader(annotation).peek('value')?.stringValue;
     if (text == null || text.isEmpty) {
       return (arguments: false, result: false, target: false);
     }
     bool mentions(String word) => RegExp('\\b$word\\b').hasMatch(text);
     final before =
-        _preAuthorize.isExactlyType(type) || _preFilter.isExactlyType(type);
+        _preAuthorize.isAssignableFromType(type) ||
+        _preFilter.isAssignableFromType(type);
     return (
       arguments:
           text.contains('#') ||
-          (_preFilter.isExactlyType(type) && mentions('filterObject')),
+          (_preFilter.isAssignableFromType(type) && mentions('filterObject')),
       result:
           !before &&
-          (_postAuthorize.isExactlyType(type)
+          (_postAuthorize.isAssignableFromType(type)
               ? mentions('returnObject')
               : mentions('filterObject')),
-      target: mentions('target'),
+      target: _readsBean.hasMatch(text),
     );
   }
 }

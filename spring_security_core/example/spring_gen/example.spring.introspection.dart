@@ -44,6 +44,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         invoke: _$invoke2,
       ),
     ],
+    library: r'asset:spring_security_core/example/example.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.methods},
   ),
 ];

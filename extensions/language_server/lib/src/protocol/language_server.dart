@@ -111,9 +111,23 @@ final class LanguageServer implements Editor {
 
   /// Handles [message]; the exit code when the editor asked to exit.
   int? _handle(Map<String, Object?> message) {
-    final method = message['method'] as String?;
     final id = message['id'];
-    final params = (message['params'] as Map?)?.cast<String, Object?>() ?? {};
+    final method = message['method'];
+    final params = message['params'];
+    if (method is! String?) {
+      _error(id, -32600, 'Invalid request: the method is not a string');
+      return null;
+    }
+    if (params is! Map<String, Object?>?) {
+      if (id != null) {
+        _error(id, -32602, 'Invalid params of $method: not an object');
+      }
+      return null;
+    }
+    return _dispatch(id, method, params ?? <String, Object?>{});
+  }
+
+  int? _dispatch(Object? id, String? method, Map<String, Object?> params) {
     try {
       switch (method) {
         case null:
@@ -169,7 +183,7 @@ final class LanguageServer implements Editor {
     };
   }
 
-  void _error(Object id, int code, String message) => _channel.send({
+  void _error(Object? id, int code, String message) => _channel.send({
     'id': id,
     'error': {'code': code, 'message': message},
   });

@@ -134,6 +134,7 @@ _i1.BeanModule get $basicLoginBeans => _i1.BeanModule(r'basicLoginBeans', [
     ],
     factoryBeanName: r'basicLoginConfig',
     factoryMethodName: r'users',
+    factoryMethodReturnType: _i5.UserDetailsService,
     dependencies: const [
       _i1.Dependency(_i7.BasicLoginConfig, qualifier: r'basicLoginConfig'),
     ],
@@ -476,16 +477,19 @@ final class _$PagingArgumentResolver
     final defaults = parameter.annotations
         .whereType<_i9.SortDefault>()
         .toList();
+    final allowed = parameter.annotation<_i9.AllowedSortProperties>();
     return parameter.type.type == _i9.Pageable
         ? _paging.pageable(
             request.queryParameters,
             pageableDefault: parameter.annotation<_i9.PageableDefault>(),
             sortDefaults: defaults,
+            allowed: allowed,
             qualifier: qualifier,
           )
         : _paging.sort(
             request.queryParameters,
             sortDefaults: defaults,
+            allowed: allowed,
             qualifier: qualifier,
           );
   }

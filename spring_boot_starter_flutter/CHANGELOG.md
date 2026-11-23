@@ -1,3 +1,8 @@
+## Unreleased
+
+- The debug panel's Configuration tab masks by `SecretNames` (the family's rule: `pwd`, `passwd`, `passphrase` too, and no longer `keyboard`), and the password and secret query parameters of a URL value.
+- The resource cache keeps no `Cache-Control: no-store` answer, a `private` one for the run only (not on the disk), no `http` resource unless `spring.remote.allow-insecure`, and writes the address without its query in `meta.json`, so a signed address's token is not on the disk.
+
 ## 0.9.0
 
 - Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.

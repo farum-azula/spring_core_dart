@@ -1,3 +1,16 @@
+## Unreleased
+
+- **Breaking (entries on disk):** a key's stable form is JSON (`canonicalCacheKey`), so no two keys share it; a key without one (an object the `ObjectMapper` does not read, a record, a class whose qualified name another shares) is not kept, logged once. Entries written by 0.9 are not read again. Values and keys name their class by `Introspection.qualifiedName`, so two classes `Book` of two libraries are not confused.
+- A disk-cache entry expires within the run too (`get` and `retrieve` answered from the entries this run read or wrote, without their expiry); an expired or unreadable entry is deleted when found; `invalidate()` is `true` only for entries this run knew of.
+- `spring.cache.disk.max-size`: a put no longer reads every file of the cache (sizes read once a run, then kept): 1000 puts of 4 KB in 1.4 s, was 40 s for 200.
+- A cache name is one folder segment (`users/admins` is not inside `users`; `..` stays inside the caches' folder).
+- `@Cacheable(sync: true)` on a disk cache computes once for concurrent callers, the store's read included.
+- An invalid cache annotation fails a `Future` method through its `Future` in a release build too (without the startup check).
+- `spring.cache.type: disk` without a `CacheStore` where there are no folders (a browser) fails the start.
+- `LayeredCache`: a `null` goes past a layer that keeps no `null`, to the others; the documentation says that a copy into a faster layer lives that layer's whole time to live.
+- `DirectoryCacheStore`: a folder it makes is private (`rwx------`), temporary files have names from `Random.secure` and are made exclusively, a folder that is a symbolic link is refused.
+- The startup check is left out when `spring.main.startup-checks.enabled=false` at run time.
+
 ## 0.9.0
 
 - Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.

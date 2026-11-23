@@ -35,6 +35,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get0,
       ),
     ],
+    library: r'package:supabase_example_app/src/profile/functions.dart',
     constructor: _i2.IntrospectedConstructor<_i1.Invite>(
       parameters: [
         _i2.IntrospectedParameter(
@@ -56,6 +57,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get2,
       ),
     ],
+    library: r'package:supabase_example_app/src/profile/functions.dart',
     constructor: _i2.IntrospectedConstructor<_i1.InviteResult>(
       parameters: [
         _i2.IntrospectedParameter(

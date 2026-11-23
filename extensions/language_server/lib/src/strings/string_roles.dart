@@ -13,7 +13,9 @@ import 'package:dart_spring_language_server/src/strings/roles/resource_role.dart
 import 'package:dart_spring_language_server/src/strings/roles/route_address_role.dart';
 import 'package:dart_spring_language_server/src/strings/roles/route_message_role.dart';
 import 'package:dart_spring_language_server/src/strings/roles/screen_branch_role.dart';
+import 'package:dart_spring_language_server/src/strings/roles/security_expression_role.dart';
 import 'package:dart_spring_language_server/src/strings/roles/spel_argument_role.dart';
+import 'package:dart_spring_language_server/src/strings/roles/spel_site_role.dart';
 import 'package:dart_spring_language_server/src/strings/roles/template_role.dart';
 import 'package:dart_spring_language_server/src/strings/string_context.dart';
 import 'package:dart_spring_language_server/src/strings/string_role.dart';
@@ -33,6 +35,8 @@ List<StringRole> stringRoles(ProjectModel model) => [
   RouteAddressRole(model),
   PointcutRole(model),
   SpelArgumentRole(model),
+  SecurityExpressionRole(model),
+  SpelSiteRole(model),
   BeanNameRole(model),
   ConditionalPropertyRole(model),
   ConfigurationPropertiesRole(model),
@@ -82,13 +86,28 @@ final class StringRoles {
     }
   }
 
-  /// Adds the problems every role finds in [strings], role by role.
+  /// Adds the problems every role finds in [strings], role by role. Two
+  /// roles reading one expression report one mistake once.
   void problems(Iterable<StringContext> strings, List<Problem> problems) {
+    final found = <Problem>[];
     for (final role in roles) {
       for (final string in strings) {
-        role.problems(string, problems);
+        role.problems(string, found);
       }
     }
+    final seen = <(int, int, int, int, String)>{};
+    problems.addAll(
+      found.where((problem) {
+        final range = problem.range;
+        return seen.add((
+          range.startLine,
+          range.startColumn,
+          range.endLine,
+          range.endColumn,
+          problem.message,
+        ));
+      }),
+    );
   }
 
   /// The keys [string] reads, as the first role that knows says.

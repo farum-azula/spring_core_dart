@@ -7,6 +7,8 @@ import 'package:spring_web_dart/src/client/http_response.dart';
 import 'package:spring_web_dart/src/client/http_transport.dart';
 import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
+import 'package:spring_web_dart/src/http_method.dart';
+import 'package:spring_web_dart/src/http_secrets.dart';
 
 /// The [HttpTransport] for platforms with `dart:io` (the Dart VM, Flutter
 /// on mobile and desktop), built on `dart:io`'s `HttpClient`.
@@ -23,7 +25,11 @@ import 'package:spring_web_dart/src/http_headers.dart';
 ///   from the body.
 /// - Redirects are followed when `followRedirects` is set, as far as
 ///   `HttpClient` follows them: for `GET` and `HEAD`, and a `303` after a
-///   `POST`.
+///   `POST` (then a `GET`), at most [maxRedirects]. A redirect to another
+///   origin drops the headers that carry a credential
+///   (`HttpSecrets.isSensitiveHeader` and the request's
+///   `sensitiveHeaders`), as browsers drop `Authorization`; a redirect
+///   from `https` to `http` is not followed (the `3xx` is returned).
 /// - `readTimeout` limits each wait for data (the response, then every
 ///   chunk of the body) and `timeout` the whole exchange. When one runs
 ///   out the request is aborted and an [HttpTransportException] with
@@ -155,42 +161,67 @@ class IoHttpTransport implements HttpTransport {
       }),
     );
     Future<T> exchange() async {
-      final outgoing = (pending = await _client.openUrl(
-        request.method.value,
-        request.url,
-      ))..followRedirects = request.followRedirects;
-      if (aborted) {
-        // Given up while the connection was opening: nothing is sent.
-        outgoing.abort(const _Aborted());
-        await outgoing.close();
-      }
-      // The request's headers replace HttpClient's defaults (User-Agent,
-      // Accept-Encoding); further values of the same name are added.
-      request.headers.forEach((name, values) {
-        if (name.toLowerCase() == 'content-length') {
-          return;
+      var method = request.method;
+      var url = request.url;
+      var body = request.body;
+      final headers = HttpHeaders()..addHeaders(request.headers);
+      for (var redirects = 0; ; redirects++) {
+        // Redirects are followed here, not by HttpClient: a hop to another
+        // origin must drop the credentials.
+        final outgoing = (pending = await _client.openUrl(method.value, url))
+          ..followRedirects = false;
+        if (aborted) {
+          // Given up while the connection was opening: nothing is sent.
+          outgoing.abort(const _Aborted());
+          await outgoing.close();
         }
-        outgoing.headers.set(name, values.first, preserveHeaderCase: true);
-        for (final value in values.skip(1)) {
-          outgoing.headers.add(name, value, preserveHeaderCase: true);
+        // The request's headers replace HttpClient's defaults (User-Agent,
+        // Accept-Encoding); further values of the same name are added.
+        headers.forEach((name, values) {
+          if (name.toLowerCase() == 'content-length') {
+            return;
+          }
+          outgoing.headers.set(name, values.first, preserveHeaderCase: true);
+          for (final value in values.skip(1)) {
+            outgoing.headers.add(name, value, preserveHeaderCase: true);
+          }
+        });
+        if (body != null) {
+          outgoing
+            ..contentLength = body.length
+            ..add(body);
         }
-      });
-      final body = request.body;
-      if (body != null) {
-        outgoing
-          ..contentLength = body.length
-          ..add(body);
+        final readTimeout = request.readTimeout;
+        final incoming = readTimeout == null
+            ? await outgoing.close()
+            : await outgoing.close().timeout(
+                readTimeout,
+                onTimeout: () => throw _ReadTimeout(readTimeout),
+              );
+        final next = request.followRedirects && redirects < maxRedirects
+            ? _redirect(method, url, incoming)
+            : null;
+        if (next == null) {
+          final result = await read(incoming, outgoing);
+          answered = true;
+          return result;
+        }
+        await incoming.drain<void>();
+        if (!_sameOrigin(url, next.url)) {
+          [
+            for (final name in headers.names)
+              if (HttpSecrets.isSensitiveHeader(name) ||
+                  request.sensitiveHeaders.contains(name.toLowerCase()))
+                name,
+          ].forEach(headers.remove);
+        }
+        if (next.method != method) {
+          body = null;
+          headers.remove('content-type');
+        }
+        method = next.method;
+        url = next.url;
       }
-      final readTimeout = request.readTimeout;
-      final incoming = readTimeout == null
-          ? await outgoing.close()
-          : await outgoing.close().timeout(
-              readTimeout,
-              onTimeout: () => throw _ReadTimeout(readTimeout),
-            );
-      final result = await read(incoming, outgoing);
-      answered = true;
-      return result;
     }
 
     final timeout = request.timeout;
@@ -248,6 +279,49 @@ class IoHttpTransport implements HttpTransport {
 
   @override
   void close() => _client.close(force: true);
+
+  /// The most redirects one request follows, as `HttpClient`'s default.
+  static const int maxRedirects = 5;
+
+  // Where a redirect leads, as HttpClient follows them (GET and HEAD, and a
+  // 303 after any method, which becomes a GET); null when it is not one to
+  // follow, or leads from https to http (the 3xx is then the answer).
+  static ({HttpMethod method, Uri url})? _redirect(
+    HttpMethod method,
+    Uri url,
+    io.HttpClientResponse incoming,
+  ) {
+    const redirects = {301, 302, 303, 307, 308};
+    final location = incoming.headers.value('location');
+    if (!redirects.contains(incoming.statusCode) || location == null) {
+      return null;
+    }
+    final safe = method == HttpMethod.get || method == HttpMethod.head;
+    if (!safe && incoming.statusCode != 303) {
+      return null;
+    }
+    final Uri target;
+    try {
+      target = url.resolve(location);
+    } on FormatException {
+      return null;
+    }
+    if (url.scheme == 'https' && target.scheme != 'https') {
+      return null;
+    }
+    if (target.scheme != 'http' && target.scheme != 'https') {
+      return null;
+    }
+    return (
+      method: incoming.statusCode == 303 && method != HttpMethod.head
+          ? HttpMethod.get
+          : method,
+      url: target,
+    );
+  }
+
+  static bool _sameOrigin(Uri a, Uri b) =>
+      a.scheme == b.scheme && a.host == b.host && a.port == b.port;
 }
 
 /// The caller gave the request up before the response arrived.

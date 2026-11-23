@@ -106,6 +106,35 @@ void main() {
         });
   });
 
+  test('a secured method the proxy does not advise fails the startup '
+      '(it cannot override it)', () async {
+    await _runner()
+        .withUserConfiguration(
+          BeanModule('not overridden', [
+            BeanDefinition<_Service>(
+              name: 'service',
+              create: (_) => _Service(),
+              annotatedMethods: [
+                IntrospectedMethod<_Service>(
+                  'delete',
+                  invoke: (bean, _) => bean.delete(),
+                  annotations: const [PreAuthorize("hasRole('ADMIN')")],
+                ),
+              ],
+              aopProxy: AopProxyFactory.unavailable(
+                signatures: const [],
+                reason: 'not reached: the signature check fails first',
+              ),
+            ),
+          ]),
+        )
+        .runAsync((context) async {
+          final failure = '${context.startupFailure}';
+          expect(failure, contains('the method delete has method security'));
+          expect(failure, contains('does not advise it'));
+        });
+  });
+
   test('by default the password is checked on another isolate', () async {
     final provider = DaoAuthenticationProvider(
       InMemoryUserDetailsManager([

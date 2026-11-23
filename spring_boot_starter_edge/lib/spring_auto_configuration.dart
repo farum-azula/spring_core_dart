@@ -62,10 +62,11 @@ final BeanModule springBootStarterEdgeAutoConfiguration = BeanModule(
 /// in the build.
 ///
 /// In the build by `spring.main.startup-checks.enabled`: `true` in every
-/// build, `false` in none, not set in debug and profile builds only. A
-/// function compiled by `dart compile js` or `wasm` is not a release build
-/// in that sense (it does not define `dart.vm.product`), so it keeps the
-/// list unless the key is `false`.
+/// build, `false` in none, not set in debug and profile builds only. The
+/// edge build (`dart run spring_boot_starter_edge:build`) is a release
+/// build (`-Ddart.vm.product=true`) unless `--debug`; a plain
+/// `dart compile js` or `wasm` defines no `dart.vm.product` and keeps
+/// the list unless the key is `false`.
 @AutoConfigurationModule(
   build: AutoConfigurationBuild('spring.main.startup-checks.enabled'),
 )

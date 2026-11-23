@@ -63,6 +63,10 @@ class PathVariable {
   'spring_web_dart|lib/src/controller_annotations.dart': '''
 import 'package:spring_core_dart/spring_core_dart.dart';
 
+class RestController extends Controller {
+  const RestController();
+}
+
 @BeanMethodAnnotation()
 class ExceptionHandler {
   const ExceptionHandler([this.types = const []]);
@@ -88,6 +92,11 @@ class WebSocketSessionRegistry {
 ''',
   'spring_boot_starter_websocket|lib/src/server/web_socket_endpoint.dart': '''
 import 'package:spring_core_dart/spring_core_dart.dart';
+
+class WebSocketEndpoint extends Component {
+  const WebSocketEndpoint(this.path);
+  final String path;
+}
 
 @BeanMethodAnnotation()
 class OnOpen {
@@ -271,7 +280,7 @@ class Dog extends Animal {
   void bark() {}
 }
 
-@Component()
+@RestController()
 class BookController {
   @GetMapping('/book')
   Future<BookView> book() async => BookView();
@@ -322,7 +331,7 @@ class ChatReply {
   String text = '';
 }
 
-@Component()
+@WebSocketEndpoint('/chat')
 class ChatEndpoint {
   @OnOpen()
   void open(Untouched untouched) {}

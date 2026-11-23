@@ -88,6 +88,8 @@ redirects, no `max-delay >= delay` check, wildcard parameters in full-mode
 
 ## For the next full review: annotations where they do not belong
 
+**Done in the review after 0.9.0** ([review_0_10.md](review_0_10.md)); what stayed open is listed there.
+
 Asked for by the owner (November 2026), after the signals starter: its
 `@Signal`, `@Computed` and `@Effect` did nothing, without a word, on a
 class that is no bean, an enum, an `@Aspect`, a post-processor and a

@@ -11,9 +11,11 @@ import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart'
 import 'package:spring_core_dart_generator/src/core/metadata/spring_metadata.dart';
 import 'package:spring_core_dart_generator/src/data/data_emitter.dart';
 import 'package:spring_core_dart_generator/src/data/data_model.dart';
+import 'package:spring_core_dart_generator/src/data/data_placements.dart';
 import 'package:spring_core_dart_generator/src/data/data_scanner.dart';
 import 'package:spring_core_dart_generator/src/data/data_stores.dart';
 import 'package:spring_core_dart_generator/src/data/driver_glue.dart';
+import 'package:spring_core_dart_generator/src/data/open_sort_warning.dart';
 
 /// The part of `spring_boot_starter_data` in the module build.
 ///
@@ -58,6 +60,9 @@ final class DataGeneration extends PackageGeneration {
   String get package => 'spring_boot_starter_data';
 
   @override
+  List<AnnotationPlacement> get placements => dataPlacements;
+
+  @override
   Future<void> prepareModule(ModuleBuild build) async {
     final data = DataModuleModel.of(build.module);
     final buildStep = build.buildStep;
@@ -87,6 +92,10 @@ final class DataGeneration extends PackageGeneration {
     ClassElement element,
     ModuleScan scan,
   ) => DataScanner(scan).initialValueClasses(element);
+
+  @override
+  void scanClass(ClassElement element, ModuleScan scan) =>
+      warnAboutOpenSort(element);
 
   @override
   Future<void> checkModule(ModuleBuild build) async =>

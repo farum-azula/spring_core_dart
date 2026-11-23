@@ -31,6 +31,8 @@ part 'query_scanning.dart';
 part 'repository_scanning.dart';
 part 'repository_store_scanning.dart';
 
+const _annotations = 'package:spring_boot_starter_data/src/annotations.dart';
+
 // spring_boot_starter_data's marker of repositories, matched by URL so the
 // generator does not depend on the starter.
 const TypeChecker _dataRepository = TypeChecker.fromUrl(
@@ -77,7 +79,87 @@ final class DataScanner {
   /// the data layer reads and writes it.
   void describeClass(ClassElement element) {
     if (isEntity(element)) {
+      scan.collectErrors(() => checkEntityRules(element));
       scanEntity(element);
+    }
+  }
+
+  /// The rules of the starter's mapping that the build can check, with the
+  /// texts of the start's `MappingException`: one `@Id` and one `@Version`
+  /// at most, a `@Version` that is an `int` or a `DateTime`, one audit
+  /// annotation per property, a `@CreatedDate` or `@LastModifiedDate` that
+  /// is a `DateTime`, and a `@UniqueConstraint` over properties the class
+  /// has. Checked at start only, an entity no repository uses would never
+  /// be.
+  void checkEntityRules(ClassElement element) {
+    final className = element.name!;
+    final fields = scan.describedFields(element).toList();
+    bool has(FieldElement field, String name) => [
+      field,
+      ?field.getter,
+    ].any((e) => TypeChecker.fromUrl('$_annotations#$name').hasAnnotationOf(e));
+    String typeOf(FieldElement field) =>
+        field.type.getDisplayString().replaceFirst(RegExp(r'\?$'), '');
+    for (final name in const ['Id', 'Version']) {
+      final annotated = [
+        for (final field in fields)
+          if (has(field, name)) field.name!,
+      ];
+      if (annotated.length > 1) {
+        _fail(
+          '$className has more than one @$name: ${annotated.join(', ')}',
+          element,
+        );
+      }
+    }
+    for (final field in fields) {
+      final where = '$className.${field.name}';
+      if (has(field, 'Version') &&
+          !const {'int', 'DateTime'}.contains(typeOf(field))) {
+        _fail(
+          '$where: @Version must be an int or a DateTime, not '
+          '${typeOf(field)}',
+          field,
+        );
+      }
+      final audits = [
+        for (final name in const [
+          'CreatedDate',
+          'LastModifiedDate',
+          'CreatedBy',
+          'LastModifiedBy',
+        ])
+          if (has(field, name)) name,
+      ];
+      if (audits.length > 1) {
+        _fail(
+          '$where has more than one audit annotation: ${audits.join(', ')}',
+          field,
+        );
+      }
+      if (audits case ['CreatedDate' || 'LastModifiedDate'] && final kind
+          when typeOf(field) != 'DateTime') {
+        _fail(
+          '$where: @${kind.single} must be a DateTime, not ${typeOf(field)}',
+          field,
+        );
+      }
+    }
+    final names = {for (final field in fields) field.name};
+    for (final annotation in TypeChecker.fromUrl(
+      '$_annotations#UniqueConstraint',
+    ).annotationsOf(element)) {
+      for (final property
+          in annotation.getField('properties')?.toListValue() ?? const []) {
+        final name = property.toStringValue();
+        if (name != null && !names.contains(name)) {
+          _fail(
+            '$className: @UniqueConstraint names $name, which is no '
+            'property of $className (${names.join(', ')}).',
+            element,
+          );
+        }
+      }
     }
   }
 

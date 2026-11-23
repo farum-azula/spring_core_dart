@@ -1352,6 +1352,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       ],
       factoryBeanName: r'metricsConfig',
       factoryMethodName: r'handlerMetricsAdvisor',
+      factoryMethodReturnType: _i1.PointcutAdvisor,
       dependencies: const [
         _i1.Dependency(_i31.MetricsConfig, qualifier: r'metricsConfig'),
         _i1.Dependency(_i31.HandlerMetrics, name: r'metrics'),
@@ -1994,6 +1995,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       types: const [_i32.LogMailSender, _i32.MailSender],
       factoryBeanName: r'devMailConfig',
       factoryMethodName: r'mailSender',
+      factoryMethodReturnType: _i32.MailSender,
       conditions: [
         _i1.ConditionGroup(
           r'package:neon_books_server/src/orders/mail.dart#DevMailConfig',
@@ -2039,6 +2041,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       types: const [_i32.SmtpMailSender, _i32.MailSender],
       factoryBeanName: r'prodMailConfig',
       factoryMethodName: r'mailSender',
+      factoryMethodReturnType: _i32.MailSender,
       conditions: [
         _i1.ConditionGroup(
           r'package:neon_books_server/src/orders/mail.dart#ProdMailConfig',
@@ -2594,6 +2597,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       source: r'package:neon_books_server/src/security/security_config.dart#SecurityConfig.roleHierarchy',
       types: const [_i17.RoleHierarchyImpl, _i17.RoleHierarchy],
       factoryMethodName: r'roleHierarchy',
+      factoryMethodReturnType: _i17.RoleHierarchy,
       create: (r) =>
           (_i33.SecurityConfig.roleHierarchy() as _i17.RoleHierarchyImpl),
       annotations: const [_i1.Bean()],
@@ -2610,6 +2614,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       ],
       factoryBeanName: r'securityConfig',
       factoryMethodName: r'corsConfigurationSource',
+      factoryMethodReturnType: _i37.CorsConfigurationSource,
       dependencies: const [
         _i1.Dependency(_i33.SecurityConfig, qualifier: r'securityConfig'),
         _i1.Dependency(_i33.CorsProperties, name: r'cors'),
@@ -2670,6 +2675,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       types: const [_i36.KeycloakRolesMapper, _i17.GrantedAuthoritiesMapper],
       factoryBeanName: r'ssoConfig',
       factoryMethodName: r'keycloakRoles',
+      factoryMethodReturnType: _i17.GrantedAuthoritiesMapper,
       conditions: [
         _i1.ConditionGroup(
           r'package:neon_books_server/src/security/sso_config.dart#SsoConfig',
@@ -2737,6 +2743,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       ],
       factoryBeanName: r'usersConfig',
       factoryMethodName: r'userDetailsService',
+      factoryMethodReturnType: _i17.UserDetailsService,
       dependencies: const [
         _i1.Dependency(_i38.UsersConfig, qualifier: r'usersConfig'),
         _i1.Dependency(_i38.UsersProperties, name: r'properties'),
@@ -2884,6 +2891,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       types: const [_i20.SystemClock, _i20.Clock],
       factoryBeanName: r'shopConfig',
       factoryMethodName: r'clock',
+      factoryMethodReturnType: _i20.Clock,
       conditions: [const _i8.ConditionalOnMissingBean(_i20.Clock)],
       dependencies: const [
         _i1.Dependency(_i39.ShopConfig, qualifier: r'shopConfig'),
@@ -3446,6 +3454,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       types: const [_i41.SupplierHeaders, _i42.RequestInterceptor],
       factoryBeanName: r'supplierClientConfig',
       factoryMethodName: r'supplierHeaders',
+      factoryMethodReturnType: _i42.RequestInterceptor,
       dependencies: const [
         _i1.Dependency(
           _i41.SupplierClientConfig,
@@ -3470,6 +3479,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       types: const [_i43.DefaultRetryer, _i43.Retryer],
       factoryBeanName: r'supplierClientConfig',
       factoryMethodName: r'supplierRetryer',
+      factoryMethodReturnType: _i43.Retryer,
       dependencies: const [
         _i1.Dependency(
           _i41.SupplierClientConfig,

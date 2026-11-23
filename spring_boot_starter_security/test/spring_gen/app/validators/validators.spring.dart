@@ -89,6 +89,7 @@ _i1.BeanModule get $jwtValidatorBeans => _i1.BeanModule(r'jwtValidatorBeans', [
     ],
     factoryBeanName: r'jwtValidatorConfig',
     factoryMethodName: r'verifiedEmail',
+    factoryMethodReturnType: _i3.OAuth2TokenValidator<_i4.Jwt>,
     dependencies: const [
       _i1.Dependency(_i2.JwtValidatorConfig, qualifier: r'jwtValidatorConfig'),
     ],

@@ -50,6 +50,7 @@ List<_i2.Introspection<Object>> get $securityTestBeansIntrospections => [
         invoke: _$invoke2,
       ),
     ],
+    library: r'asset:spring_security_core/test/app/orders.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.methods},
   ),
   const _i2.Introspection<_i1.Shop>(
@@ -72,6 +73,7 @@ List<_i2.Introspection<Object>> get $securityTestBeansIntrospections => [
       ),
     ],
     annotations: [_i2.Component(r'shop')],
+    library: r'asset:spring_security_core/test/app/orders.dart',
     instantiate: _i1.Shop.new,
     constructor: _i2.IntrospectedConstructor<_i1.Shop>(
       parameters: [],

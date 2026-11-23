@@ -1153,11 +1153,29 @@ class AnnotationConfigApplicationContext
       }
     }
 
+    // What a module says about classes, before any condition runs: in Java
+    // a class's metadata exists whatever the order of registration, so a
+    // condition can read a member of a bean registered before it, whichever
+    // module describes the bean's class. Only the beans keep their order.
+    final described = <BeanModule>{};
+    void describe(BeanModule module) {
+      if (!described.add(module)) {
+        return;
+      }
+      module.imports.forEach(describe);
+      introspector
+        ..registerAll(module.introspections)
+        ..registerTypeTests(module.typeTests)
+        ..registerTypeDepths(module.typeDepths);
+    }
+
     void load(BeanModule module, _ConfigurationClass? importedBy) {
       if (!seen.add(module)) {
         importAgain(module, importedBy, {});
         return;
       }
+      // A module only an ImportSelector names is known from here on.
+      describe(module);
       // The proxy factories the application's module brings for beans of
       // library packages: found by source whenever a placeholder needs one.
       _factory.registerAopProxies(module.aopProxies);
@@ -1294,12 +1312,9 @@ class AnnotationConfigApplicationContext
           preDestroy: module.configurablePreDestroy[type],
         ),
       );
-      introspector
-        ..registerAll(module.introspections)
-        ..registerTypeTests(module.typeTests)
-        ..registerTypeDepths(module.typeDepths);
     }
 
+    _components.whereType<BeanModule>().forEach(describe);
     for (final component in _components) {
       if (component is BeanModule) {
         load(component, null);

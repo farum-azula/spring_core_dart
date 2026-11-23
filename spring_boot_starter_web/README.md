@@ -1481,9 +1481,10 @@ same `spring.security.cookie.secret`.
   `Content-Length` of the `GET`.
 - **`Host`:** an HTTP/1.1 request without one, a malformed one, or an
   absolute target (`GET http://a.example/ HTTP/1.1`) whose host is not
-  the `Host` header's is a 400, as Tomcat answers. `dart:io` keeps the
-  last of two `Host` headers, so such a request is served for the last
-  one (Tomcat answers 400).
+  the `Host` header's is a 400, as Tomcat answers. So are two `Host`
+  headers, and the connection closes: `dart:io` keeps only the last, so
+  the server counts them in the bytes of the connection, plain or TLS,
+  reading request heads only.
 - **`%` escapes:** one that does not decode to UTF-8 (`/%FF`,
   `?id=%FF`) is a 400. A `%` without two hex digits after it is read as
   a plain `%` by `dart:io` (`/a%G1` is the path `/a%25G1`), where Tomcat
@@ -1800,8 +1801,8 @@ the bean as the context holds it, so AOP advice on a controller
 - **Stalled request bodies get a 408** after `server.connection-timeout`
   (60 s); with Tomcat the read fails after its `connectionTimeout` and
   Spring answers 400. There is no connection limit (Tomcat's
-  `max-connections`). Two `Host` headers and a `%` without two hex
-  digits are accepted (`dart:io`), where Tomcat answers 400.
+  `max-connections`). A `%` without two hex digits is accepted
+  (`dart:io`), where Tomcat answers 400.
 - **A raw `\` in the request target is a `/`:** `dart:io` parses the
   target before the server sees it and keeps no raw form, so
   `/files/..\..\secret` arrives as `/secret` (its `..` resolved), and

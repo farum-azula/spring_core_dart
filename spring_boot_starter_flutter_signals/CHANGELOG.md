@@ -1,3 +1,9 @@
+## Unreleased
+
+- A `@Computed` value first read by a self-call keeps no self-call's invocation: later outside reads keep their advice (transactions, caching); a recomputation runs as the framework's call.
+- An `@Effect` re-run by an assignment the bean makes (after an `await` too) is the framework's call, with all of its advice (`@PreAuthorize` too); it was taken for a self-call.
+- The debug tab and the log show no value of a `@Signal` field or `@Computed` value whose name looks secret (`SecretNames`), as `hidden: true` does.
+
 ## 0.9.0
 
 - No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.9.0.

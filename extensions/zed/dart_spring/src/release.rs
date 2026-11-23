@@ -1,21 +1,16 @@
-//! The GitHub release to download the server from: this extension's own (`v<version>`), else the
-//! latest one, with a warning (the binaries are built after the tag is pushed, so for a while a
-//! new release has none).
+//! The GitHub release to download the server from: this extension's own (`v<version>`) only. A
+//! binary of another release would not match the SHA-256 this build of the extension carries
+//! ([`crate::checksums`]), so there is no fallback to the latest release.
 
-use zed_extension_api::{
-    self as zed, Architecture, GithubRelease, GithubReleaseOptions, Os, Result,
-};
+use zed_extension_api::{self as zed, Architecture, GithubRelease, Os, Result};
 
 use crate::server_files::EXECUTABLE;
-use crate::warnings::Warnings;
 
 pub const REPOSITORY: &str = "farum-azula/spring_core_dart";
 
 /// Where releases come from.
 pub trait ReleaseSource {
     fn by_tag(&self, tag: &str) -> Result<GithubRelease>;
-    /// The latest release that has binaries.
-    fn latest(&self) -> Result<GithubRelease>;
 }
 
 /// The releases of [REPOSITORY] on GitHub.
@@ -24,16 +19,6 @@ pub struct GithubReleases;
 impl ReleaseSource for GithubReleases {
     fn by_tag(&self, tag: &str) -> Result<GithubRelease> {
         zed::github_release_by_tag_name(REPOSITORY, tag)
-    }
-
-    fn latest(&self) -> Result<GithubRelease> {
-        zed::latest_github_release(
-            REPOSITORY,
-            GithubReleaseOptions {
-                require_assets: true,
-                pre_release: false,
-            },
-        )
     }
 }
 
@@ -56,29 +41,22 @@ pub fn asset_name(os: Os, arch: Architecture) -> Result<String> {
     Ok(format!("{EXECUTABLE}-{platform}"))
 }
 
-/// The release [own_tag] when it has [asset_name], else the latest one, with a warning when that
-/// is another release.
+/// The release [own_tag] when it has [asset_name]; otherwise an error that says how to get a
+/// server meanwhile.
 pub fn release_with(
     releases: &impl ReleaseSource,
     own_tag: &str,
     asset_name: &str,
-    warnings: &mut Warnings,
 ) -> Result<GithubRelease> {
     let problem = match releases.by_tag(own_tag) {
         Ok(release) if has_asset(&release, asset_name) => return Ok(release),
-        Ok(_) => format!("release {own_tag} has no {asset_name} yet"),
+        Ok(_) => format!("release {own_tag} has no {asset_name} yet (try again later)"),
         Err(e) => format!("release {own_tag} could not be read ({e})"),
     };
-    let latest = releases
-        .latest()
-        .map_err(|e| format!("dart_spring: {problem}, nor the latest release ({e})"))?;
-    if latest.version != own_tag {
-        warnings.add(format!(
-            "{problem}: started the server of {} instead",
-            latest.version
-        ));
-    }
-    Ok(latest)
+    Err(format!(
+        "dart_spring: {problem}. Meanwhile put a dart_spring_lsp of this version on the PATH \
+         (`dart run tool/install_language_server.dart`), or set lsp.dart-spring.binary.path."
+    ))
 }
 
 pub fn has_asset(release: &GithubRelease, asset_name: &str) -> bool {
@@ -107,24 +85,16 @@ mod tests {
 
     struct FakeReleases {
         own: Result<GithubRelease>,
-        latest: Result<GithubRelease>,
     }
 
     impl ReleaseSource for FakeReleases {
         fn by_tag(&self, _tag: &str) -> Result<GithubRelease> {
             self.own.clone()
         }
-
-        fn latest(&self) -> Result<GithubRelease> {
-            self.latest.clone()
-        }
     }
 
-    fn choose(releases: FakeReleases) -> (Result<String>, Vec<String>) {
-        let mut warnings = Warnings::default();
-        let chosen =
-            release_with(&releases, "v0.8.4", ASSET, &mut warnings).map(|release| release.version);
-        (chosen, warnings.into_messages())
+    fn choose(releases: FakeReleases) -> Result<String> {
+        release_with(&releases, "v0.8.4", ASSET).map(|release| release.version)
     }
 
     #[test]
@@ -159,60 +129,37 @@ mod tests {
     }
 
     #[test]
-    fn the_own_release_comes_first() {
-        let (chosen, warnings) = choose(FakeReleases {
-            own: Ok(release("v0.8.4", &[ASSET])),
-            latest: Ok(release("v0.9.0", &[ASSET])),
-        });
-        assert_eq!(chosen, Ok("v0.8.4".into()));
-        assert!(warnings.is_empty());
+    fn the_own_release_is_taken() {
+        assert_eq!(
+            choose(FakeReleases {
+                own: Ok(release("v0.8.4", &[ASSET])),
+            }),
+            Ok("v0.8.4".into())
+        );
     }
 
     #[test]
-    fn without_its_binaries_the_latest_one_is_taken_with_a_warning() {
-        let (chosen, warnings) = choose(FakeReleases {
+    fn without_its_binaries_no_other_release_is_taken() {
+        let error = choose(FakeReleases {
             own: Ok(release("v0.8.4", &["dart_spring_lsp-linux-x64.tar.gz"])),
-            latest: Ok(release("v0.8.3", &[ASSET])),
-        });
-        assert_eq!(chosen, Ok("v0.8.3".into()));
-        assert_eq!(
-            warnings,
-            ["release v0.8.4 has no dart_spring_lsp-macos-arm64.tar.gz yet: started the server of v0.8.3 instead"]
+        })
+        .unwrap_err();
+        assert!(
+            error.contains("release v0.8.4 has no dart_spring_lsp-macos-arm64.tar.gz yet"),
+            "{error}"
         );
+        assert!(error.contains("binary.path"), "{error}");
     }
 
     #[test]
-    fn an_own_release_that_cannot_be_read_is_said_too() {
-        let (chosen, warnings) = choose(FakeReleases {
+    fn an_own_release_that_cannot_be_read_is_an_error() {
+        let error = choose(FakeReleases {
             own: Err("rate limited".into()),
-            latest: Ok(release("v0.8.3", &[ASSET])),
-        });
-        assert_eq!(chosen, Ok("v0.8.3".into()));
-        assert_eq!(
-            warnings,
-            ["release v0.8.4 could not be read (rate limited): started the server of v0.8.3 instead"]
-        );
-    }
-
-    #[test]
-    fn no_warning_when_the_latest_is_the_own_release() {
-        let (chosen, warnings) = choose(FakeReleases {
-            own: Err("timeout".into()),
-            latest: Ok(release("v0.8.4", &[ASSET])),
-        });
-        assert_eq!(chosen, Ok("v0.8.4".into()));
-        assert!(warnings.is_empty());
-    }
-
-    #[test]
-    fn neither_release_is_an_error_naming_both_problems() {
-        let (chosen, _) = choose(FakeReleases {
-            own: Ok(release("v0.8.4", &[])),
-            latest: Err("offline".into()),
-        });
-        assert_eq!(
-            chosen,
-            Err("dart_spring: release v0.8.4 has no dart_spring_lsp-macos-arm64.tar.gz yet, nor the latest release (offline)".into())
+        })
+        .unwrap_err();
+        assert!(
+            error.contains("release v0.8.4 could not be read (rate limited)"),
+            "{error}"
         );
     }
 }

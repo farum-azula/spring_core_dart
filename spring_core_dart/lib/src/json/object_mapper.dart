@@ -413,7 +413,19 @@ class ObjectMapper {
   T readValue<T>(String json, [TypeInfo<T>? type]) =>
       treeToValue<T>(_decode(json), type);
 
+  /// The deepest nesting of arrays and objects a JSON text may have, as
+  /// Jackson's `StreamReadConstraints.maxNestingDepth` (1000): a deeper
+  /// one is refused before it is decoded, as reading and writing it again
+  /// would overflow the stack.
+  static const int maxNestingDepth = 1000;
+
+  /// The most digits a JSON number may have, as Jackson's
+  /// `StreamReadConstraints.maxNumberLength` (1000): a longer one is
+  /// refused, as parsing it takes time quadratic in its length.
+  static const int maxNumberLength = 1000;
+
   static Object? _decode(String json) {
+    _checkConstraints(json);
     try {
       return jsonDecode(json);
     } on FormatException catch (error) {
@@ -421,6 +433,49 @@ class ObjectMapper {
         'invalid JSON: ${error.message}',
         cause: error,
       );
+    }
+  }
+
+  // One pass over the text, outside strings: the nesting depth and the
+  // length of number runs (Jackson's StreamReadConstraints).
+  static void _checkConstraints(String json) {
+    // Too short to break either limit: most bodies cost nothing here.
+    if (json.length <= maxNestingDepth) {
+      return;
+    }
+    var depth = 0;
+    var digits = 0;
+    var inString = false;
+    for (var i = 0; i < json.length; i++) {
+      final unit = json.codeUnitAt(i);
+      if (inString) {
+        if (unit == 0x5C) {
+          i++;
+        } else if (unit == 0x22) {
+          inString = false;
+        }
+        continue;
+      }
+      if (unit >= 0x30 && unit <= 0x39) {
+        if (++digits > maxNumberLength) {
+          throw JsonMappingException(
+            'a number of more than $maxNumberLength digits',
+          );
+        }
+        continue;
+      }
+      digits = 0;
+      if (unit == 0x22) {
+        inString = true;
+      } else if (unit == 0x5B || unit == 0x7B) {
+        if (++depth > maxNestingDepth) {
+          throw JsonMappingException(
+            'arrays and objects nested deeper than $maxNestingDepth',
+          );
+        }
+      } else if (unit == 0x5D || unit == 0x7D) {
+        depth--;
+      }
     }
   }
 
@@ -874,9 +929,9 @@ class ObjectMapper {
         final double value
             when value.isFinite && value == value.truncateToDouble() =>
           BigInt.from(value),
-        final String text when BigInt.tryParse(text) != null => BigInt.parse(
-          text,
-        ),
+        // Parsed once, and no longer than Jackson's maxNumberLength.
+        final String text when text.length <= maxNumberLength + 1 =>
+          BigInt.tryParse(text) ?? (throw _expected('an integer', json, path)),
         _ => throw _expected('an integer', json, path),
       };
     }

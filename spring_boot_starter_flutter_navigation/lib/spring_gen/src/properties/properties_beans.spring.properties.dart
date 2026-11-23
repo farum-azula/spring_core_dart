@@ -109,6 +109,7 @@ get $navigationConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'spring.flutter.navigation')],
+    library: r'package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.NavigationProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.NavigationProperties>(
@@ -166,6 +167,7 @@ get $navigationConfigBeansPropertiesIntrospections => [
         get: _$get7,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.NavigationWebProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.NavigationWebProperties>(
@@ -228,6 +230,7 @@ get $navigationConfigBeansPropertiesIntrospections => [
         get: _$get15,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.NavigationDeepLinkProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.NavigationDeepLinkProperties>(

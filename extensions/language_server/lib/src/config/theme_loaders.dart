@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dart_spring_language_server/src/config/config_key.dart';
 import 'package:dart_spring_language_server/src/config/theme_keys.dart';
 import 'package:dart_spring_language_server/src/config/theme_references.dart';
+import 'package:dart_spring_language_server/src/index/confined_files.dart';
 import 'package:dart_spring_language_server/src/project_model.dart';
 import 'package:dart_spring_language_server/src/properties/property_entry.dart';
 import 'package:dart_spring_language_server/src/schema.dart';
@@ -80,7 +81,8 @@ final class ThemeLoaders {
   }
 
   /// The file of a `web:` path: in the app's directory, else in
-  /// `lib/resources/` of a dependency (a library shipping its loader).
+  /// `lib/resources/` of a dependency (a library shipping its loader);
+  /// never one outside that directory (`../`, or a link leading out).
   String? webFile(String path, String value) {
     final view = model.metadataFor(path);
     for (final root in [
@@ -88,40 +90,45 @@ final class ThemeLoaders {
       for (final root in view.packageRoots.values) '$root/lib/resources',
     ]) {
       final file = File('$root/$value');
-      if (file.existsSync()) {
+      if (file.existsSync() && _inside(root, file)) {
         return file.path;
       }
     }
     return null;
   }
 
+  static bool _inside(String root, File file) {
+    try {
+      final base = Directory(root).resolveSymbolicLinksSync();
+      return file.resolveSymbolicLinksSync().startsWith(
+        '$base${Platform.pathSeparator}',
+      );
+    } on FileSystemException {
+      return false;
+    }
+  }
+
   /// The `.html` files below `web/` of the app and below `lib/resources/`
-  /// of its dependencies, as `web:` paths.
+  /// of its dependencies, as `web:` paths: links not followed, nothing
+  /// outside the package, at most a few thousand files listed.
   List<String> webFiles(String path) {
     final result = <String>{};
-    final root = model.packages.packageRootOf(path);
-    void scan(String base) {
-      final directory = Directory(base);
-      if (!directory.existsSync()) {
-        return;
-      }
-      for (final entity in directory.listSync(recursive: true)) {
-        if (entity is File && entity.path.endsWith('.html')) {
-          final relative = entity.path.substring(base.length + 1);
-          if (relative.startsWith('web/') ||
-              relative.startsWith(r'web\') ||
-              base != root) {
-            result.add(relative.replaceAll(r'\', '/'));
-          }
+    final separator = Platform.pathSeparator;
+    void scan(String root, String base, String prefix) {
+      for (final file in ConfinedFiles(root, base).files()) {
+        if (file.path.endsWith('.html')) {
+          final relative = file.path.substring(base.length + 1);
+          result.add('$prefix${relative.replaceAll(r'\', '/')}');
         }
       }
     }
 
-    scan(root);
+    final root = model.packages.packageRootOf(path);
+    scan(root, '$root${separator}web', 'web/');
     for (final dependency in model.metadataFor(path).packageRoots.values) {
-      scan('$dependency/lib/resources');
+      scan(dependency, '$dependency${separator}lib${separator}resources', '');
     }
-    return result.where((p) => !p.startsWith('build/')).toList()..sort();
+    return result.toList()..sort();
   }
 
   /// Where `splash.loader` / `splash.animation` ([key]) leads: the

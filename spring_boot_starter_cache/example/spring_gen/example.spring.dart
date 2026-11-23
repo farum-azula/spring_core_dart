@@ -151,6 +151,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
     types: const [_i2.MapStore, _i2.KeyValueStore],
     factoryBeanName: r'cacheSetup',
     factoryMethodName: r'store',
+    factoryMethodReturnType: _i2.KeyValueStore,
     dependencies: const [
       _i1.Dependency(_i2.CacheSetup, qualifier: r'cacheSetup'),
     ],
@@ -170,6 +171,7 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
     ],
     factoryBeanName: r'cacheSetup',
     factoryMethodName: r'cacheManager',
+    factoryMethodReturnType: _i5.CacheManager,
     dependencies: const [
       _i1.Dependency(_i2.CacheSetup, qualifier: r'cacheSetup'),
       _i1.Dependency(_i2.KeyValueStore, name: r'store'),

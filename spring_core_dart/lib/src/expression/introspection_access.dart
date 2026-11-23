@@ -36,11 +36,15 @@ import 'package:spring_core_dart/src/expression/spel_type.dart';
 /// parser.parseExpression("age").setValue(context, "7");
 /// ```
 final class IntrospectionPropertyAccessor implements PropertyAccessor {
-  /// Reads the classes described in [introspector].
-  const IntrospectionPropertyAccessor(this.introspector);
+  /// Reads the classes described in [introspector]; [checkRead], when
+  /// given, sees each value read and may refuse it by throwing.
+  const IntrospectionPropertyAccessor(this.introspector, {this.checkRead});
 
   /// The registry the descriptions of the targets' classes come from.
   final Introspector introspector;
+
+  /// Called with each value read and the property's name.
+  final void Function(Object? value, String name)? checkRead;
 
   IntrospectedProperty<Object>? _property(Object target, String name) =>
       introspector.findIntrospection(target)?.getProperty(name);
@@ -50,8 +54,11 @@ final class IntrospectionPropertyAccessor implements PropertyAccessor {
       _property(target, name) != null;
 
   @override
-  Object? read(EvaluationContext context, Object target, String name) =>
-      _property(target, name)!.getValue(target);
+  Object? read(EvaluationContext context, Object target, String name) {
+    final value = _property(target, name)!.getValue(target);
+    checkRead?.call(value, name);
+    return value;
+  }
 
   @override
   bool canWrite(EvaluationContext context, Object target, String name) =>

@@ -1,3 +1,23 @@
+## Unreleased
+
+- **Breaking: `@Target` of `package:meta` is a build error** on any annotation class of scanned code, inherited by a composed annotation without its own: `@DevBean on class Orders: it can only be used on methods.`, before any other message of that place. The places are the analyzer's (`invalid_annotation_target`); a declaration with `// ignore: invalid_annotation_target` is left alone.
+- **Breaking:** a composed annotation that supplies a framework annotation's value through a getter fails the build, naming the annotation and member and the field to write (`final List<String> value = const ['dev'];`), instead of `FormatException: Not an instance of List.` or an ignored value.
+- **Breaking:** a syntax error in `key`, `condition` or `unless` of `@Cacheable`, `@CachePut`, `@CacheEvict` (also in `@Caching` and composed) fails the build, with the runtime's parser, in every build mode.
+- **Regenerate:** a described method that returns a `Future` says so (`isFuture: true`), so a security expression refuses it without calling it: no query or request for a call about to be refused.
+- `this` in a security expression describes the bean (also a generated client), so `this.x` works without `@Introspected`; composed security and cache annotations count for what their expressions read.
+- **Breaking: an annotation where nothing reads it fails the build,** naming what to change. Each part declares where its annotations go (`PackageGeneration.placements`: `AdvicePlacement`, `MethodPlacement`, `ParameterPlacement`, `ClassPlacement`), the core likewise. This covers advice on private, static, operator, field, constructor or `@Bean` members and on beans without a proxy (a `@Configuration` class included); mappings outside a controller; request values off a handler; `@ResponseStatus` on an exception class; mapping and query annotations outside entities and repositories; a stereotype on an abstract class; `@Qualifier` without `@Autowired`; constraints without `@Validated`; test annotations outside a test class.
+- **Breaking:** advice annotations of the starters on a field are an error (Java's `@Target` forbids them); an application's own annotation on a field still advises both accessors.
+- **Breaking:** a member with advice that a subclass proxy cannot override fails the build (it was a warning, and the member ran unadvised).
+- **Breaking:** files of `lib/resources/` that look like secrets (dotfiles, keys, keystores, credentials) are not embedded; `spring.resources.embed.secrets` lists those to embed anyway.
+- **Breaking:** a Flutter app does not offer secret-looking names to `--dart-define`, except the starters' public ones (`spring.flutter`, `spring.supabase.url`, `spring.supabase.anon-key`); the new builder option `dart_defines_secrets` keeps others.
+- **Breaking:** build keys read no profile: `spring.profiles.active` and `on-profile` documents no longer decide them. Spring's `yes`/`on`/`1` and `no`/`off`/`0` are accepted.
+- **Breaking:** two `@CopyWith` classes of one name get typedef and extension names from their library (`BookCopyWithShopBook`), not a number.
+- `--dart-define` can set every property in the reachable packages' `spring_metadata.json` and in `config/` files.
+- A bare `@ConditionalOnMissingBean()` or `@ConditionalOnBean()` on a `@Bean` method uses the declared return type, as Spring Boot does; `@Order` on the returned class orders the bean, as Spring does.
+- The hot-reload fingerprint follows the beans of nested `@ComponentScan` modules.
+- Entity rules (`@Id`, `@Version`, audit types, `@UniqueConstraint`) are checked at build time.
+- Hardening: JSON Schema classes mask secret-looking fields in `toString`; schema prefixes are sanitised; SEO pages and the ledger cannot leave `web/`; factory strings are escaped.
+
 ## 0.9.0
 
 - **Everything a release build leaves out in the debug part:** the auto-configurations only debug and profile builds have (`whenMissing: notInRelease`: the Flutter starter's debug panel, frame meter, isolates, motion and timeline modules, the startup checks of cache, data and edge) are listed in `<library>.spring.debug.dart`, `_$debugAutoConfigurations` and `_$debugAutoConfigurationMetadata` (a module under a platform's condition too keeps it there), and `springApplication` spreads them in under one condition (`if (!const bool.fromEnvironment('dart.vm.product')) ..._$debugAutoConfigurations`) instead of a condition per module. A release build is unchanged (the Flutter guide's `main.dart.js` has none of them, 74 bytes smaller); the fingerprint hashes the debug part too.

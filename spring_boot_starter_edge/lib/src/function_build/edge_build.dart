@@ -98,10 +98,16 @@ final class EdgeBuildResult {
 /// ).run();
 /// ```
 ///
-/// The compile command is `dart compile js -O<n> -DSPRING_ALL_PLATFORMS=true`:
-/// the definition keeps the modules of a server (the web and the security
-/// starters), which a JavaScript build otherwise leaves out as code for a
-/// browser.
+/// The compile command is
+/// `dart compile js -O<n> -DSPRING_ALL_PLATFORMS=true -Ddart.vm.product=true`:
+/// the first definition keeps the modules of a
+/// server (the web and the security starters), which a JavaScript build
+/// otherwise leaves out as code for a browser; the second makes it a
+/// release build for the build switches, as `dart compile exe` and
+/// `flutter build --release` are (`dart compile js` and `wasm` do not
+/// define it), so the debug part (the startup checks, the statement
+/// logging of a profile, the hot-reload entry points) is left out. [debug]
+/// keeps it.
 final class EdgeBuild {
   /// A build of [entry] (from [application], the application's directory)
   /// for [platform].
@@ -115,6 +121,7 @@ final class EdgeBuild {
     this.target = EdgeTarget.js,
     this.path = '/*',
     this.defines = const {},
+    this.debug = false,
     Directory? application,
     this.dart = 'dart',
   }) : application = application ?? Directory.current;
@@ -148,6 +155,11 @@ final class EdgeBuild {
 
   /// More `-D` definitions for the compiler.
   final Map<String, String> defines;
+
+  /// Whether the function keeps the debug part of the application (no
+  /// `-Ddart.vm.product=true`): the startup checks and the other modules
+  /// a release build leaves out.
+  final bool debug;
 
   /// The application's directory.
   final Directory application;
@@ -240,6 +252,7 @@ final class EdgeBuild {
       target.name,
       '-O$optimization',
       '-DSPRING_ALL_PLATFORMS=true',
+      if (!debug) '-Ddart.vm.product=true',
       for (final MapEntry(:key, :value) in defines.entries) '-D$key=$value',
       if (target == EdgeTarget.js) '--no-source-maps',
       '-o',

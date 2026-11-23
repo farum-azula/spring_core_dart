@@ -536,4 +536,50 @@ class A extends StatelessWidget {
       },
     ]);
   });
+
+  group('a misplaced navigation annotation', () {
+    test('@ScreenRoute on an abstract widget', () async {
+      expect(
+        await _errors('''
+@ScreenRoute('/a')
+abstract class A extends StatelessWidget {
+  const A({super.key});
+}
+'''),
+        contains('@ScreenRoute on the abstract class A'),
+      );
+    });
+
+    test('@ScreenRoute on a private widget', () async {
+      expect(
+        await _errors('''
+@ScreenRoute('/a')
+class _A extends StatelessWidget {
+  const _A({super.key});
+  @override
+  Widget build(BuildContext context) => throw UnimplementedError();
+}
+'''),
+        contains('@ScreenRoute on the private class _A'),
+      );
+    });
+
+    test('@ScreenRoute on a mixin or a function', () async {
+      expect(
+        await _errors("@ScreenRoute('/a')\nmixin M {}\n"),
+        contains('@ScreenRoute on mixin M'),
+      );
+      expect(
+        await _errors("@ScreenRoute('/a')\nvoid f() {}\n"),
+        contains('@ScreenRoute on f, in the top level of'),
+      );
+    });
+
+    test('@RouteInfo without @ScreenRoute', () async {
+      expect(
+        await _errors('@RouteInfo()\nclass A {}\n'),
+        contains('@RouteInfo on class A'),
+      );
+    });
+  });
 }

@@ -135,6 +135,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get1,
       ),
     ],
+    library: r'package:neon_books_app/src/api/models.dart',
     constructor: _i2.IntrospectedConstructor<_i1.Me>(
       parameters: [
         _i2.IntrospectedParameter(
@@ -183,6 +184,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get7,
       ),
     ],
+    library: r'package:neon_books_app/src/api/models.dart',
     constructor: _i2.IntrospectedConstructor<_i1.Book>(
       parameters: [
         _i2.IntrospectedParameter(
@@ -254,6 +256,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         annotations: [_i2.Positive(), _i2.Max(1000)],
       ),
     ],
+    library: r'package:neon_books_app/src/api/models.dart',
     instantiate: _i1.NewBook.new,
     constructor: _i2.IntrospectedConstructor<_i1.NewBook>(
       parameters: [],
@@ -289,6 +292,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get22,
       ),
     ],
+    library: r'package:neon_books_app/src/api/models.dart',
     instantiate: _i1.PageOfBooks.new,
     constructor: _i2.IntrospectedConstructor<_i1.PageOfBooks>(
       parameters: [
@@ -338,6 +342,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get25,
       ),
     ],
+    library: r'package:neon_books_app/src/api/models.dart',
     constructor: _i2.IntrospectedConstructor<_i1.StockChanged>(
       parameters: [
         _i2.IntrospectedParameter(
@@ -375,6 +380,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get29,
       ),
     ],
+    library: r'package:neon_books_app/src/api/models.dart',
     constructor: _i2.IntrospectedConstructor<_i1.BasketLine>(
       parameters: [
         _i2.IntrospectedParameter(
@@ -410,6 +416,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get31,
       ),
     ],
+    library: r'package:neon_books_app/src/api/models.dart',
     instantiate: _i1.ServerBasket.new,
     constructor: _i2.IntrospectedConstructor<_i1.ServerBasket>(
       parameters: [
@@ -433,6 +440,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get33,
       ),
     ],
+    library: r'package:neon_books_app/src/api/models.dart',
     constructor: _i2.IntrospectedConstructor<_i1.Quantity>(
       parameters: [
         _i2.IntrospectedParameter(
@@ -475,6 +483,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get39,
       ),
     ],
+    library: r'package:neon_books_app/src/api/models.dart',
     constructor: _i2.IntrospectedConstructor<_i1.ShopOrder>(
       parameters: [
         _i2.IntrospectedParameter(
@@ -533,6 +542,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get43,
       ),
     ],
+    library: r'package:neon_books_app/src/api/models.dart',
     constructor: _i2.IntrospectedConstructor<_i1.ChatMessage>(
       parameters: [
         _i2.IntrospectedParameter(

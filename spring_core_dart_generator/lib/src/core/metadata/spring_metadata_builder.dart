@@ -135,6 +135,10 @@ final class SpringMetadataBuilder implements Builder {
     final profiles = <String>{};
     final defined = <Map<String, Object?>>[];
     final libraries = <AssetId, String>{};
+    scanner.checkAnnotationValues([
+      for (final asset in assets)
+        if (await resolver.isLibrary(asset)) await resolver.libraryFor(asset),
+    ]);
     for (final asset in assets) {
       if (!await resolver.isLibrary(asset)) {
         continue;

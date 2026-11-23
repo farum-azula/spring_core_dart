@@ -349,7 +349,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/build_properties.dart",
-      "line": 25,
+      "line": 27,
       "class": "MainStartupChecksProperties"
     },
     {

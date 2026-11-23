@@ -18,8 +18,11 @@ import 'dart:io';
 
 import 'package:yaml/yaml.dart';
 
-/// The lock files of the Flutter packages (outside the pub workspace).
-const _flutterLocks = [
+/// The lock files of the Flutter packages (outside the pub workspace):
+/// every `pubspec.yaml` of the repository that depends on Flutter
+/// (tool/test/check_vulnerabilities_test.dart checks that none is
+/// missing).
+const flutterLocks = [
   'spring_boot_starter_flutter/pubspec.lock',
   'spring_boot_starter_flutter_material/pubspec.lock',
   'spring_boot_starter_flutter_cupertino/pubspec.lock',
@@ -29,6 +32,7 @@ const _flutterLocks = [
   'spring_boot_starter_flutter_signals/pubspec.lock',
   'example/flutter_guide/pubspec.lock',
   'example/themes/neon/pubspec.lock',
+  'example/themes/neon_ui/pubspec.lock',
   'example/themes/material/pubspec.lock',
   'example/themes/cupertino/pubspec.lock',
   'example/static_site/app/pubspec.lock',
@@ -64,7 +68,7 @@ Future<void> main(List<String> args) async {
   Directory.current = File.fromUri(Platform.script).parent.parent;
   final locks = [
     'pubspec.lock',
-    if (args.contains('--flutter')) ..._flutterLocks,
+    if (args.contains('--flutter')) ...flutterLocks,
   ];
   final mavenFile = switch (args.indexOf('--maven')) {
     -1 => null,

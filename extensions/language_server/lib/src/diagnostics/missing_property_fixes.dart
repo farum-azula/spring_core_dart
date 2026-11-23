@@ -20,7 +20,10 @@ final class MissingPropertyFixes {
     ]),
   ];
 
-  /// `key: ` (or `key=`) on a line of its own at the end of [config].
+  /// `key: ` (or `key=`) on a line of its own at the end of the first
+  /// document of [config] (before its first `---`, or `#---` in a
+  /// properties file: a later document belongs to a profile), with the
+  /// file's own line ending.
   Fix? _addTo(String? config, String key) {
     if (config == null) {
       return null;
@@ -29,20 +32,34 @@ final class MissingPropertyFixes {
     if (text == null) {
       return null;
     }
+    final properties = config.endsWith('.properties');
+    final newline = text.contains('\r\n') ? '\r\n' : '\n';
     final lines = text.split('\n');
+    final boundary = properties
+        ? RegExp(r'^[#!]---\s*$')
+        : RegExp(r'^(---|\.\.\.)(\s.*)?$');
+    final first = lines.indexWhere(
+      (line) => boundary.hasMatch(line.replaceFirst(RegExp(r'\r$'), '')),
+    );
+    final entry = properties ? '$key=' : '$key: ';
+    final name = config.split(RegExp(r'[\\/]')).last;
+    if (first >= 0) {
+      // A line of its own just before the boundary.
+      final at = SourceRange(config, first, 0, first, 0);
+      return Fix("Add '$key' to $name", [TextEdit(at, '$entry$newline')]);
+    }
+    final last = lines.last;
     final end = SourceRange(
       config,
       lines.length - 1,
-      lines.last.length,
+      last.length,
       lines.length - 1,
-      lines.last.length,
+      last.length,
     );
-    final entry = config.endsWith('.properties') ? '$key=' : '$key: ';
-    final name = config.split(RegExp(r'[\\/]')).last;
     return Fix("Add '$key' to $name", [
       TextEdit(
         end,
-        '${text.isEmpty || text.endsWith('\n') ? '' : '\n'}$entry\n',
+        '${text.isEmpty || text.endsWith('\n') ? '' : newline}$entry$newline',
       ),
     ]);
   }

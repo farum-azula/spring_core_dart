@@ -59,6 +59,16 @@ final class TemplatePart {
   String inner(String text) =>
       text.substring(innerStart, keyEnd ?? innerEnd).trim();
 
+  /// Where the key of a placeholder ends in [text], the spaces after it
+  /// left out: where a default's `:` goes (`${ key: x }`, not `${ key :x}`).
+  int trimmedKeyEnd(String text) {
+    var end = keyEnd ?? innerEnd;
+    while (end > innerStart && text[end - 1].trim().isEmpty) {
+      end--;
+    }
+    return end;
+  }
+
   /// A placeholder's default, taken from [text] (`8080` of
   /// `${server.port:8080}`); `null` without one, and for an expression.
   String? fallback(String text) => switch (keyEnd) {

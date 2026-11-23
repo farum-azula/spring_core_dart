@@ -139,6 +139,7 @@ get $supabaseConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'spring.supabase')],
+    library: r'package:spring_boot_starter_supabase/src/config/supabase_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.SupabaseProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SupabaseProperties>(

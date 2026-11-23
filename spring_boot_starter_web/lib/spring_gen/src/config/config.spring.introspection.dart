@@ -205,6 +205,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansIntrospections => [
         set: _$set1,
       ),
     ],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     instantiate: _i1.ForwardHeadersSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.ForwardHeadersSettings>(
       parameters: [],
@@ -259,6 +260,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansIntrospections => [
         set: _$set14,
       ),
     ],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     instantiate: _i1.ServerSslSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.ServerSslSettings>(
       parameters: [],
@@ -289,6 +291,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansIntrospections => [
         set: _$set21,
       ),
     ],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     instantiate: _i1.ServerCompressionSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.ServerCompressionSettings>(
       parameters: [],
@@ -323,6 +326,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansIntrospections => [
         set: _$set30,
       ),
     ],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     instantiate: _i1.ServerWebSocketSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.ServerWebSocketSettings>(
       parameters: [],
@@ -354,6 +358,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansIntrospections => [
         set: _$set37,
       ),
     ],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     instantiate: _i1.ServerSessionSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.ServerSessionSettings>(
       parameters: [],
@@ -409,6 +414,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansIntrospections => [
         set: _$set50,
       ),
     ],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     instantiate: _i1.ServerSessionCookieSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.ServerSessionCookieSettings>(
       parameters: [],
@@ -426,6 +432,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansIntrospections => [
         set: _$set53,
       ),
     ],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     instantiate: _i1.MvcAsyncSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.MvcAsyncSettings>(
       parameters: [],
@@ -443,6 +450,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansIntrospections => [
         set: _$set56,
       ),
     ],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     instantiate: _i1.MvcSseSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.MvcSseSettings>(
       parameters: [],
@@ -475,6 +483,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansIntrospections => [
         set: _$set63,
       ),
     ],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     instantiate: _i1.WebResourcesCacheSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.WebResourcesCacheSettings>(
       parameters: [],
@@ -566,6 +575,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansIntrospections => [
         annotations: [_i4.DurationUnit(_i3.ChronoUnit.seconds)],
       ),
     ],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     instantiate: _i1.WebResourcesCacheControlSettings.new,
     constructor:
         _i3.IntrospectedConstructor<_i1.WebResourcesCacheControlSettings>(
@@ -585,6 +595,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansIntrospections => [
         set: _$set89,
       ),
     ],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     instantiate: _i1.WebResourcesChainSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.WebResourcesChainSettings>(
       parameters: [],

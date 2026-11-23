@@ -132,6 +132,14 @@ final class SeoBuilder implements Builder {
       return;
     }
     for (final MapEntry(key: path, value: content) in output.entries) {
+      if (webFilePath(path) == null) {
+        log.warning(
+          'The page $path is not written: a page is a file below web/, and '
+          'its path may not hold "..", ".", an empty part, a backslash or '
+          '"%2e". Check the route or the content file it comes from.',
+        );
+        continue;
+      }
       await _files.write(buildStep, package, path, content);
     }
     await _clean(buildStep, package, previous, output.keys.toSet());
@@ -146,7 +154,7 @@ final class SeoBuilder implements Builder {
   static String _ledger(Iterable<String> written) {
     final paths = [
       for (final path in written)
-        if (path != 'web/index.html') path,
+        if (path != 'web/index.html' && webFilePath(path) != null) path,
     ]..sort();
     return '${paths.join('\n')}\n';
   }
@@ -158,11 +166,19 @@ final class SeoBuilder implements Builder {
     Set<String> written,
   ) async {
     for (final path in LineSplitter.split(previous ?? '')) {
-      if (path.trim().isNotEmpty &&
-          path.startsWith('web/') &&
-          !written.contains(path)) {
-        await _files.delete(buildStep, package, path);
+      if (path.trim().isEmpty || written.contains(path)) {
+        continue;
       }
+      // The ledger is a file of the package anyone can edit: a line that
+      // leaves web/ is skipped, never deleted.
+      if (webFilePath(path) == null) {
+        log.warning(
+          '$ledger names $path, which is no file below web/; it is left as '
+          'it is.',
+        );
+        continue;
+      }
+      await _files.delete(buildStep, package, path);
     }
     if (written.isEmpty && previous != null) {
       await _files.delete(buildStep, package, ledger);
@@ -1476,6 +1492,25 @@ abstract interface class SeoFiles {
   Future<void> delete(BuildStep buildStep, String package, String path);
 }
 
+/// [path] when it is a file below `web/` of the package, written plainly:
+/// no `..` or `.` segment, no empty segment, no backslash and no
+/// percent-encoded dot (`%2e`); `null` otherwise. The pages' paths come
+/// from the routes and the content's files, and the ledger from a file of
+/// the package: none may write or delete outside `web/`.
+String? webFilePath(String path) {
+  if (!path.startsWith('web/') ||
+      path.contains(r'\') ||
+      path.toLowerCase().contains('%2e')) {
+    return null;
+  }
+  final segments = path.split('/');
+  if (segments.length < 2 ||
+      segments.any((s) => s.isEmpty || s == '.' || s == '..')) {
+    return null;
+  }
+  return path;
+}
+
 final class _Disk implements SeoFiles {
   const _Disk();
 
@@ -1495,6 +1530,14 @@ final class _Disk implements SeoFiles {
     String path,
     String content,
   ) async {
+    if (webFilePath(path) == null) {
+      log.warning(
+        'The page $path is not written: a page is a file below web/, and '
+        'its path may not hold "..", ".", an empty part, a backslash or '
+        '"%2e". Check the route or the content file it comes from.',
+      );
+      return;
+    }
     final file = _file(package, path);
     if (file == null) {
       log.warning(
@@ -1512,6 +1555,9 @@ final class _Disk implements SeoFiles {
 
   @override
   Future<void> delete(BuildStep buildStep, String package, String path) async {
+    if (webFilePath(path) == null) {
+      return;
+    }
     final file = _file(package, path);
     if (file != null && file.existsSync()) {
       await file.delete();

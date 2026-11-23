@@ -44,6 +44,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get1,
       ),
     ],
+    library: r'asset:spring_boot_starter_web/example/example.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     constructor: _i2.IntrospectedConstructor<_i1.Book>(
       parameters: [
@@ -79,6 +80,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         annotations: [_i2.NotBlank()],
       ),
     ],
+    library: r'asset:spring_boot_starter_web/example/example.dart',
     parts: {_i2.IntrospectionPart.write},
     constructor: _i2.IntrospectedConstructor<_i1.NewBook>(
       parameters: [

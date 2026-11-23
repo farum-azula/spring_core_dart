@@ -10,13 +10,13 @@ name: 'Release: language server binaries'
 #   dart_spring_lsp-linux-arm64.tar.gz
 #   dart_spring_lsp-windows-x64.zip
 #
-# Runs for every `vX.Y.Z` tag (pushed by the "Release" workflow), or by hand
-# (Run workflow) to rebuild the server from the selected branch and replace
-# the binaries of a release without releasing the packages again.
+# A release builds and attaches them itself (release.yml), with their hashes
+# in the release commit. This workflow is the manual way (Run workflow) to
+# replace the binaries of a release: the Zed extension of that version then
+# refuses them until extensions/zed/dart_spring/server.sha256 holds the new
+# hashes, which the run's summary lists.
 
 on:
-  push:
-    tags: ['v[0-9]+.[0-9]+.[0-9]+*']
   workflow_dispatch:
     inputs:
       tag:
@@ -71,6 +71,17 @@ jobs:
           else
             tar -czf "../${{ matrix.asset }}" dart_spring_lsp
           fi
+
+      - name: Hash
+        shell: bash
+        run: |
+          file=$(ls out/*)
+          if command -v sha256sum >/dev/null; then
+            hash=$(sha256sum "$file" | cut -d' ' -f1)
+          else
+            hash=$(shasum -a 256 "$file" | cut -d' ' -f1)
+          fi
+          echo "\`${hash#\\}  ${{ matrix.asset }}\`" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v7
         with:

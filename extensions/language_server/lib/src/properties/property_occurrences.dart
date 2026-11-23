@@ -1,3 +1,4 @@
+import 'package:dart_spring_language_server/src/config/config_format.dart';
 import 'package:dart_spring_language_server/src/project_model.dart';
 import 'package:dart_spring_language_server/src/properties/property_entry.dart';
 import 'package:dart_spring_language_server/src/properties/reference_finder.dart';
@@ -14,6 +15,7 @@ final class KeyOccurrence {
     this.name, {
     required this.definition,
     this.derived = false,
+    this.below,
   });
 
   /// The text that names the key.
@@ -30,6 +32,11 @@ final class KeyOccurrence {
   /// Whether the key is derived from a field's name here (a field of a
   /// `@ConfigurationProperties` class), not written as text.
   final bool derived;
+
+  /// The key of a `Map` or `List` field this place binds when the key
+  /// looked for lies below it (`shop.tags` for `shop.tags.x`); null when
+  /// the place names the key itself.
+  final String? below;
 }
 
 /// The places of a package that name a property key, for find references
@@ -139,7 +146,12 @@ final class PropertyOccurrences {
         continue;
       }
       for (final reference in finder.referencesOf(file, keep: false)) {
-        if (canonicalName(reference.key) == canonical) {
+        final named = canonicalName(reference.key);
+        final below =
+            reference.subtree &&
+            (canonical.startsWith('$named.') ||
+                canonical.startsWith('$named['));
+        if (named == canonical || below) {
           add(
             KeyOccurrence(
               model.locations.rangeOf(
@@ -150,6 +162,7 @@ final class PropertyOccurrences {
               file.text.substring(reference.nameStart, reference.nameEnd),
               definition: false,
               derived: reference.derived,
+              below: below ? reference.key : null,
             ),
           );
         }
@@ -159,12 +172,15 @@ final class PropertyOccurrences {
   }
 
   /// The keys of the `${key}` placeholders on [line] of the config file
-  /// [path], whose text is [text], each with its range.
+  /// [path], whose text is [line], each with its range; none in a comment
+  /// (a `#` or `!` line of a properties file, what follows an unquoted
+  /// ` #` in YAML).
   static Iterable<({String name, SourceRange range})> _placeholders(
     String path,
     int line,
-    String text,
+    String whole,
   ) sync* {
+    final text = ConfigFormat.of(path).content(whole);
     for (final part in scanTemplate(text)) {
       if (part.kind != TemplatePartKind.placeholder) {
         continue;

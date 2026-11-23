@@ -64,17 +64,21 @@ final class _$PagingArgumentResolver
     final defaults = parameter.annotations
         .whereType<{{package:spring_boot_starter_data/spring_boot_starter_data.dart#SortDefault}}>()
         .toList();
+    final allowed = parameter
+        .annotation<{{package:spring_boot_starter_data/spring_boot_starter_data.dart#AllowedSortProperties}}>();
     return parameter.type.type == {{package:spring_boot_starter_data/spring_boot_starter_data.dart#Pageable}}
         ? _paging.pageable(
             request.queryParameters,
             pageableDefault: parameter
                 .annotation<{{package:spring_boot_starter_data/spring_boot_starter_data.dart#PageableDefault}}>(),
             sortDefaults: defaults,
+            allowed: allowed,
             qualifier: qualifier,
           )
         : _paging.sort(
             request.queryParameters,
             sortDefaults: defaults,
+            allowed: allowed,
             qualifier: qualifier,
           );
   }

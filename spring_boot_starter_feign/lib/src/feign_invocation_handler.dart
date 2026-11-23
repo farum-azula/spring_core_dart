@@ -397,6 +397,8 @@ final class FeignInvocationHandler implements InvocationHandler {
           ? readTimeout
           : (readTimeout == null || left < readTimeout ? left : readTimeout),
       followRedirects: config.followRedirects,
+      // Dropped, with every credential, by a redirect to another origin.
+      sensitiveHeaders: _sensitiveHeaders,
       abort: abort,
     );
   }
@@ -618,15 +620,18 @@ final class FeignInvocationHandler implements InvocationHandler {
     _log.debug(lines.join('\n'), fields: {'client': client.name});
   }
 
-  // Credentials (tokens, cookies, the DPoP proof, the configured ones)
-  // as `***`.
+  // Credentials (HttpSecrets: tokens, cookies, the DPoP proof, names that
+  // look secret; and the configured ones) as `***`.
   late final Set<String> _sensitiveHeaders = {
-    ...FeignClientConfig.alwaysSensitiveHeaders,
     for (final name in config.sensitiveHeaders) name.trim().toLowerCase(),
   };
 
+  bool _isSensitive(String name) =>
+      HttpSecrets.isSensitiveHeader(name) ||
+      _sensitiveHeaders.contains(name.toLowerCase());
+
   void _logHeader(List<String> lines, String name, List<String> values) {
-    final masked = _sensitiveHeaders.contains(name.toLowerCase());
+    final masked = _isSensitive(name);
     for (final value in values) {
       lines.add('$name: ${masked ? '***' : value}');
     }

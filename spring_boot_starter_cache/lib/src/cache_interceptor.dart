@@ -281,18 +281,23 @@ final class CacheInterceptor implements MethodInterceptor {
 
   @override
   Object? invoke(MethodInvocation invocation) {
-    final operations = cacheOperations(invocation.signature);
-    if (operations.isEmpty) {
-      return invocation.proceed();
-    }
     if (invocation is AsyncMethodInvocation) {
       // An async member fails through its Future, not synchronously: also
-      // for an invalid SpEL key or condition, or a failing cache.
+      // for an invalid annotation (a release build has no start-up check),
+      // an invalid SpEL key or condition, or a failing cache.
       try {
+        final operations = cacheOperations(invocation.signature);
+        if (operations.isEmpty) {
+          return invocation.proceed();
+        }
         return _invoke(invocation, operations, isAsync: true);
       } on Object catch (error, stackTrace) {
         return Future<Object?>.error(error, stackTrace);
       }
+    }
+    final operations = cacheOperations(invocation.signature);
+    if (operations.isEmpty) {
+      return invocation.proceed();
     }
     return _invoke(invocation, operations, isAsync: false);
   }
@@ -320,6 +325,74 @@ final class CacheInterceptor implements MethodInterceptor {
     final keys = {
       for (final operation in cacheables) operation: call.key(operation),
     };
+    if (isAsync) {
+      // Spring's sync=true: one computation per key for concurrent callers,
+      // the store's read included (one that answers later is waited for
+      // before the method would run).
+      if (_syncKey(call, cacheables, keys) case final key?) {
+        if (_inFlight[key] case final pending?) {
+          return pending;
+        }
+        final result = _search(
+          invocation,
+          operations,
+          call,
+          cacheables,
+          keys,
+          isAsync: true,
+        );
+        if (result is Future<Object?>) {
+          _inFlight[key] = result;
+          // Block bodies: returning the removed future would adopt its error.
+          unawaited(
+            result.then<void>(
+              (_) {
+                unawaited(_inFlight.remove(key));
+              },
+              onError: (Object _) {
+                unawaited(_inFlight.remove(key));
+              },
+            ),
+          );
+        }
+        return result;
+      }
+    }
+    return _search(
+      invocation,
+      operations,
+      call,
+      cacheables,
+      keys,
+      isAsync: isAsync,
+    );
+  }
+
+  // The key of a sync=true @Cacheable as its cache keeps it: one that adds
+  // the caller to it must not hand one caller the answer another one is
+  // waiting for. `null` for any other call.
+  (String, Object?)? _syncKey(
+    _Call call,
+    List<CacheableOperation> cacheables,
+    Map<CacheableOperation, Object?> keys,
+  ) {
+    final single = cacheables.singleOrNull;
+    if (single == null || !single.sync) {
+      return null;
+    }
+    final cache = call.caches(single).first;
+    final key = keys[single];
+    return (cache.name, cache is KeyScopingCache ? cache.storedKey(key) : key);
+  }
+
+  Object? _search(
+    MethodInvocation invocation,
+    List<CacheOperation> operations,
+    _Call call,
+    List<CacheableOperation> cacheables,
+    Map<CacheableOperation, Object?> keys, {
+    required bool isAsync,
+  }) {
     // A store that answers later (AsyncCache) is waited for: only a
     // method that returns a Future can wait.
     if (isAsync &&
@@ -399,43 +472,12 @@ final class CacheInterceptor implements MethodInterceptor {
     }
 
     final missed = hit == null ? keys : const <CacheableOperation, Object?>{};
-    (String, Object?)? inFlightKey;
-    final single = cacheables.singleOrNull;
-    if (isAsync && hit == null && single != null && single.sync) {
-      // The key as the cache keeps it: one that adds the caller to it
-      // must not hand one caller the answer another one is waiting for.
-      final cache = call.caches(single).first;
-      final key = keys[single];
-      inFlightKey = (
-        cache.name,
-        cache is KeyScopingCache ? cache.storedKey(key) : key,
-      );
-      if (_inFlight[inFlightKey] case final pending?) {
-        return pending;
-      }
-    }
-
     final result = invocation.proceed();
     if (invocation is AsyncMethodInvocation && result is Future) {
-      final future = invocation.chain(
+      return invocation.chain(
         result as Future<Object?>,
         onValue: (value) => call.afterInvocation(value, missed),
       );
-      if (inFlightKey case final key?) {
-        _inFlight[key] = future;
-        // Block bodies: returning the removed future would adopt its error.
-        unawaited(
-          future.then<void>(
-            (_) {
-              unawaited(_inFlight.remove(key));
-            },
-            onError: (Object _) {
-              unawaited(_inFlight.remove(key));
-            },
-          ),
-        );
-      }
-      return future;
     }
     call.afterInvocation(result, missed);
     return result;

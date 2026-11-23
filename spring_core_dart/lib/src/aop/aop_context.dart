@@ -103,14 +103,29 @@ final _bodyZoneKey = Object();
 // that no zone carries a body, and none is looked for.
 bool _zonedBodies = false;
 
-/// Whether code of the subclass proxy [proxy] itself is running, so a
-/// call it makes on itself is a self-call and not advised, as in Spring.
+/// Whether the innermost code running is that of the subclass proxy
+/// [proxy] itself, so a call it makes on itself is a self-call and not
+/// advised, as a call on `this` in Spring.
+///
+/// Innermost, not anywhere on the stack: when the bean's code calls
+/// another advised bean, which calls back into the bean through its
+/// reference, that call is advised, as in Spring where the reference is
+/// the proxy. In the synchronous part of a call the innermost advised call
+/// decides ([enterProxyCall]); in the code a `Future` member schedules,
+/// the innermost advised `Future` call of its zone.
 ///
 /// Used by `ProxyInvoker`; not exported.
 bool isInProxyBody(Object proxy) {
-  for (var i = _bodies.length - 1; i >= 0; i--) {
-    if (identical(_bodies[i], proxy)) {
+  final current = _current;
+  if (current != null && !identical(current, proxy)) {
+    return false; // another advised call is the innermost
+  }
+  if (_bodies.isNotEmpty) {
+    if (identical(_bodies.last, proxy)) {
       return true;
+    }
+    if (current == null) {
+      return false; // another bean's body is the innermost
     }
   }
   if (!_zonedBodies) {
@@ -121,14 +136,41 @@ bool isInProxyBody(Object proxy) {
     return false;
   }
   final zoned = zone[_bodyZoneKey] as List<Object>?;
-  if (zoned != null) {
-    for (final body in zoned) {
-      if (identical(body, proxy)) {
-        return true;
-      }
-    }
+  return zoned != null &&
+      zoned.isNotEmpty &&
+      identical(zoned.last, proxy) &&
+      identical(zone[_zoneKey], proxy);
+}
+
+/// Runs [body] as code of no bean: a call it makes on a subclass proxy is
+/// advised as one through the bean's reference, also when the code that
+/// started it ran in a proxy's body (an effect a field assignment re-runs,
+/// a computed value recomputed). The framework runs what it calls on its
+/// own, not as a part of the bean's call, this way.
+///
+/// Spring (Java): no counterpart needed; there a call's receiver decides.
+T runOutsideProxyBodies<T>(T Function() body) {
+  final current = _current;
+  final through = _throughProxy;
+  final depth = _bodies.length;
+  final saved = depth == 0 ? const <Object>[] : _bodies.sublist(0);
+  _current = null;
+  _throughProxy = null;
+  _bodies.clear();
+  try {
+    return _zonedBodies
+        ? runZoned(
+            body,
+            zoneValues: {_bodyZoneKey: const <Object>[], _zoneKey: null},
+          )
+        : body();
+  } finally {
+    _bodies
+      ..clear()
+      ..addAll(saved);
+    _current = current;
+    _throughProxy = through;
   }
-  return false;
 }
 
 /// Notes that the own code of the subclass proxy [proxy] runs from now

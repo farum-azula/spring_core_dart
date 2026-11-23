@@ -158,6 +158,7 @@ List<_i7.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get3,
       ),
     ],
+    library: r'package:load_bench/src/cpu_controller.dart',
     parts: {_i7.IntrospectionPart.read, _i7.IntrospectionPart.write},
     constructor: _i7.IntrospectedConstructor<_i1.CpuWork>(
       parameters: [
@@ -194,6 +195,7 @@ List<_i7.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get5,
       ),
     ],
+    library: r'package:load_bench/src/file_controller.dart',
     parts: {_i7.IntrospectionPart.read, _i7.IntrospectionPart.write},
     constructor: _i7.IntrospectedConstructor<_i2.Uploaded>(
       parameters: [
@@ -252,6 +254,7 @@ List<_i7.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get13,
       ),
     ],
+    library: r'package:load_bench/src/isolates_controller.dart',
     parts: {_i7.IntrospectionPart.read, _i7.IntrospectionPart.write},
     constructor: _i7.IntrospectedConstructor<_i3.IsolatesState>(
       parameters: [
@@ -337,6 +340,7 @@ List<_i7.Introspection<Object>> get $appBeansIntrospections => [
       ),
     ],
     annotations: [_i8.Table(r'items')],
+    library: r'package:load_bench/src/item.dart',
     parts: {_i7.IntrospectionPart.read, _i7.IntrospectionPart.write},
     constructor: _i7.IntrospectedConstructor<_i4.Item>(
       parameters: [
@@ -389,6 +393,7 @@ List<_i7.Introspection<Object>> get $appBeansIntrospections => [
         annotations: [_i7.PositiveOrZero()],
       ),
     ],
+    library: r'package:load_bench/src/item.dart',
     parts: {_i7.IntrospectionPart.write},
     instantiate: _i4.NewItem.new,
     constructor: _i7.IntrospectedConstructor<_i4.NewItem>(
@@ -457,6 +462,7 @@ List<_i7.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get34,
       ),
     ],
+    library: r'package:load_bench/src/json_controller.dart',
     parts: {_i7.IntrospectionPart.read, _i7.IntrospectionPart.write},
     constructor: _i7.IntrospectedConstructor<_i5.Product>(
       parameters: [
@@ -540,6 +546,7 @@ List<_i7.Introspection<Object>> get $appBeansIntrospections => [
         annotations: [_i7.Size(max: 10)],
       ),
     ],
+    library: r'package:load_bench/src/json_controller.dart',
     parts: {_i7.IntrospectionPart.write},
     instantiate: _i5.NewProduct.new,
     constructor: _i7.IntrospectedConstructor<_i5.NewProduct>(
@@ -625,6 +632,7 @@ List<_i7.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get48,
       ),
     ],
+    library: r'package:load_bench/src/text_controller.dart',
     parts: {_i7.IntrospectionPart.read, _i7.IntrospectionPart.write},
     constructor: _i7.IntrospectedConstructor<_i6.BenchInfo>(
       parameters: [

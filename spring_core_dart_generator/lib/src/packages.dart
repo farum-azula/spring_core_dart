@@ -2,12 +2,14 @@ import 'package:spring_core_dart_generator/src/actuator/actuator_generation.dart
 import 'package:spring_core_dart_generator/src/cache/cache_generation.dart';
 import 'package:spring_core_dart_generator/src/core/builder/package_generation.dart';
 import 'package:spring_core_dart_generator/src/data/data_generation.dart';
+import 'package:spring_core_dart_generator/src/feign/feign_generation.dart';
 import 'package:spring_core_dart_generator/src/flutter/change_notifier_generation.dart';
 import 'package:spring_core_dart_generator/src/flutter/flutter_generation.dart';
 import 'package:spring_core_dart_generator/src/navigation/navigation_generation.dart';
 import 'package:spring_core_dart_generator/src/scheduling/scheduling_generation.dart';
 import 'package:spring_core_dart_generator/src/security/security_generation.dart';
 import 'package:spring_core_dart_generator/src/signals/signals_generation.dart';
+import 'package:spring_core_dart_generator/src/supabase/supabase_generation.dart';
 import 'package:spring_core_dart_generator/src/web/web_generation.dart';
 import 'package:spring_core_dart_generator/src/websocket/websocket_generation.dart';
 
@@ -47,5 +49,7 @@ const List<PackageGeneration> packageGenerations = [
   SecurityGeneration(),
   CacheGeneration(),
   ActuatorGeneration(),
+  SupabaseGeneration(),
+  FeignGeneration(),
   DataGeneration(),
 ];

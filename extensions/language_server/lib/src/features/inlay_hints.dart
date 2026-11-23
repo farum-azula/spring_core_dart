@@ -45,7 +45,7 @@ final class InlayHints extends ServerFeature {
       );
       return [
         for (final reference in workspace.propertyReferences(path))
-          if (reference.end >= from && reference.end <= to)
+          if (!reference.nested && reference.end >= from && reference.end <= to)
             if (values.valueOf(reference.key, fallback: reference.fallback)
                 case final value?)
               _hint(lines, reference, value, profiles),

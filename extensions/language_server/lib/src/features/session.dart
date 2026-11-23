@@ -1,3 +1,4 @@
+import 'package:dart_spring_language_server/src/diagnostics/fix.dart';
 import 'package:dart_spring_language_server/src/protocol/language_server.dart';
 import 'package:dart_spring_language_server/src/protocol/line_index.dart';
 import 'package:dart_spring_language_server/src/workspace.dart';
@@ -21,6 +22,13 @@ final class SpringSession {
             'workspace',
             'didChangeWatchedFiles',
             'dynamicRegistration',
+          ]) ==
+          true,
+      versionsEdits =
+          _capability(initialize, [
+            'workspace',
+            'workspaceEdit',
+            'documentChanges',
           ]) ==
           true;
 
@@ -63,6 +71,13 @@ final class SpringSession {
   /// The paths of the documents open in the editor.
   final openDocuments = <String>{};
 
+  /// The version the editor last gave each open document.
+  final documentVersions = <String, int>{};
+
+  /// Whether the editor takes `documentChanges` in a workspace edit, each
+  /// file's edits with the version of the document they were made for.
+  final bool versionsEdits;
+
   /// What the user set for the server in the editor.
   SessionSettings settings;
 
@@ -103,6 +118,40 @@ final class SpringSession {
         text,
       ).offsetOf(position['line']! as int, position['character']! as int),
     );
+  }
+
+  /// [edits] as a protocol `WorkspaceEdit`: `documentChanges` with the
+  /// version of each open document (null for a file that is not open), so
+  /// the editor refuses edits made for an older text; `changes` for an
+  /// editor without them.
+  Map<String, Object?> workspaceEdit(List<TextEdit> edits) {
+    final byPath = <String, List<Map<String, Object?>>>{};
+    for (final edit in edits) {
+      (byPath[edit.range.path] ??= []).add({
+        'range': rangeJson(edit.range),
+        'newText': edit.newText,
+      });
+    }
+    if (!versionsEdits) {
+      return {
+        'changes': {
+          for (final MapEntry(key: path, value: edits) in byPath.entries)
+            uriOf(path): edits,
+        },
+      };
+    }
+    return {
+      'documentChanges': [
+        for (final MapEntry(key: path, value: edits) in byPath.entries)
+          {
+            'textDocument': {
+              'uri': uriOf(path),
+              'version': documentVersions[path],
+            },
+            'edits': edits,
+          },
+      ],
+    };
   }
 
   /// The path of the `textDocument` of [params].

@@ -204,21 +204,11 @@ final class FeignClientConfig {
   final List<String> requestInterceptors;
 
   /// More headers whose values the `headers` and `full` logs show as `***`
-  /// (`sensitive-headers`, names in any case), such as an API key header:
-  /// those listed under `default`, then those of the client. The headers
-  /// of [alwaysSensitiveHeaders] always are.
+  /// (`sensitive-headers`, names in any case), such as an API key header
+  /// whose name does not look secret: those listed under `default`, then
+  /// those of the client. The headers of `HttpSecrets.isSensitiveHeader`
+  /// (the rule the web starter's logs share) always are.
   final List<String> sensitiveHeaders;
-
-  /// The headers whose values the logs always show as `***`, in lower
-  /// case: `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`
-  /// and `DPoP`.
-  static const alwaysSensitiveHeaders = {
-    'authorization',
-    'proxy-authorization',
-    'cookie',
-    'set-cookie',
-    'dpop',
-  };
 
   /// Reads the settings of the client whose configuration key is [name]
   /// from the bound [properties], with `default` for what it does not set.

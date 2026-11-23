@@ -1,12 +1,15 @@
 //! The server of this extension's release, downloaded once into the work directory (see
-//! [`crate::release`] for which release, [`crate::server_files`] for where it goes).
+//! [`crate::release`] for which release, [`crate::server_files`] for where it goes), and run only
+//! when its SHA-256 is the one this build of the extension carries ([`crate::checksums`]).
 
+use std::fs;
 use std::path::Path;
 
 use zed_extension_api::{
     self as zed, DownloadedFileType, LanguageServerId, LanguageServerInstallationStatus, Os, Result,
 };
 
+use crate::checksums;
 use crate::release::{asset_name, release_with, GithubReleases};
 use crate::server_files::{
     executable_file_name, is_file, publish_stable_copy, remove_other_versions, stable_path,
@@ -35,7 +38,7 @@ impl DownloadedServer {
         );
         let (os, arch) = zed::current_platform();
         let asset_name = asset_name(os, arch)?;
-        let release = release_with(&GithubReleases, &own_tag(), &asset_name, warnings)?;
+        let release = release_with(&GithubReleases, &own_tag(), &asset_name)?;
         let asset = release
             .assets
             .iter()
@@ -57,6 +60,14 @@ impl DownloadedServer {
             );
             zed::download_file(&asset.download_url, &directory, archive_type(os))
                 .map_err(|e| format!("dart_spring: downloading {asset_name} failed: {e}"))?;
+        }
+        // Checked on every start of the extension, not only after a download: a binary left in
+        // the work directory is run only if it is still the release's build.
+        if let Err(e) = checksums::verify(&binary, &asset_name) {
+            let _ = fs::remove_dir_all(&directory);
+            return Err(e);
+        }
+        if downloaded {
             zed::make_file_executable(&binary)?;
             for failure in remove_other_versions(Path::new("."), &directory) {
                 warnings.add(failure);

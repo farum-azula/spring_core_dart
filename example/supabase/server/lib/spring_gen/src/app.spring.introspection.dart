@@ -106,6 +106,8 @@ List<_i5.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get2,
       ),
     ],
+    library:
+        r'package:supabase_example_server/src/account/account_controller.dart',
     constructor: _i5.IntrospectedConstructor<_i1.Me>(
       parameters: [
         _i5.IntrospectedParameter(
@@ -138,6 +140,8 @@ List<_i5.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get4,
       ),
     ],
+    library:
+        r'package:supabase_example_server/src/account/account_controller.dart',
     constructor: _i5.IntrospectedConstructor<_i1.Report>(
       parameters: [
         _i5.IntrospectedParameter(
@@ -159,6 +163,8 @@ List<_i5.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get6,
       ),
     ],
+    library:
+        r'package:supabase_example_server/src/project/project_controller.dart',
     constructor: _i5.IntrospectedConstructor<_i2.AvatarLink>(
       parameters: [
         _i5.IntrospectedParameter(
@@ -216,6 +222,7 @@ List<_i5.Introspection<Object>> get $appBeansIntrospections => [
       ),
     ],
     annotations: [_i6.Table(r'todos')],
+    library: r'package:supabase_example_server/src/todos/todo.dart',
     constructor: _i5.IntrospectedConstructor<_i3.Todo>(
       parameters: [
         _i5.IntrospectedParameter(
@@ -272,6 +279,7 @@ List<_i5.Introspection<Object>> get $appBeansIntrospections => [
         annotations: [_i5.NotBlank()],
       ),
     ],
+    library: r'package:supabase_example_server/src/todos/todo_controller.dart',
     constructor: _i5.IntrospectedConstructor<_i4.NewTodo>(
       parameters: [
         _i5.IntrospectedParameter(
@@ -311,6 +319,7 @@ List<_i5.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get26,
       ),
     ],
+    library: r'package:supabase_example_server/src/todos/todo_controller.dart',
     constructor: _i5.IntrospectedConstructor<_i4.NewPair>(
       parameters: [
         _i5.IntrospectedParameter(
@@ -344,6 +353,7 @@ List<_i5.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get28,
       ),
     ],
+    library: r'package:supabase_example_server/src/todos/todo_controller.dart',
     constructor: _i5.IntrospectedConstructor<_i4.Closed>(
       parameters: [
         _i5.IntrospectedParameter(

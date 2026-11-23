@@ -1,5 +1,7 @@
 // The Maven modules tool/check_vulnerabilities.dart --maven reads from
 // what tool/gradle/build_classpath.init.gradle prints.
+import 'dart:io';
+
 import 'package:test/test.dart';
 
 import '../check_vulnerabilities.dart';
@@ -22,4 +24,33 @@ CLASSPATH not-a-module
       },
     );
   });
+
+  test('every Flutter package of the repository has its lock file checked', () {
+    final repository = Directory(
+      Directory.current.path.endsWith('/tool')
+          ? Directory.current.parent.path
+          : Directory.current.path,
+    );
+    final listed = git(repository, ['ls-files', '*pubspec.yaml']);
+    final flutter = [
+      for (final path in listed)
+        if (File('${repository.path}/$path')
+            .readAsStringSync()
+            .contains('sdk: flutter'))
+          path.replaceFirst('pubspec.yaml', 'pubspec.lock'),
+    ];
+    expect(flutterLocks.toSet(), containsAll(flutter));
+  });
+}
+
+List<String> git(Directory directory, List<String> arguments) {
+  final result = Process.runSync(
+    'git',
+    arguments,
+    workingDirectory: directory.path,
+  );
+  return [
+    for (final line in (result.stdout as String).split(RegExp(r'\r?\n')))
+      if (line.trim().isNotEmpty) line.trim(),
+  ];
 }

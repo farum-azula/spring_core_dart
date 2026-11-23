@@ -366,6 +366,7 @@ final class IntrospectionEmitter {
                     for (final t in method.parameterTypes)
                       _withoutFree(t, element),
                   ]),
+            if (method.isFuture) 'isFuture': literalTrue,
             // `Function.apply` checks the arguments an expression passes
             // (their number and types) as the method declares them.
             'invoke': function(
@@ -459,6 +460,7 @@ final class IntrospectionEmitter {
           for (final annotation in model.annotations)
             _writer.constant(annotation, element),
         ]),
+      'library': literalString('${element.library!.uri}', raw: true),
       if (!(reads && writes && calls))
         'parts': literalConstSet({
           if (reads) _spring('IntrospectionPart').property('read'),

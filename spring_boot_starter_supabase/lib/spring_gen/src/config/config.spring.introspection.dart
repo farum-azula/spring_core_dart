@@ -139,6 +139,7 @@ List<_i2.Introspection<Object>> get $supabaseConfigBeansIntrospections => [
         set: _$set7,
       ),
     ],
+    library: r'package:spring_boot_starter_supabase/src/config/supabase_properties.dart',
     instantiate: _i1.SupabaseDbProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SupabaseDbProperties>(
       parameters: [],
@@ -199,6 +200,7 @@ List<_i2.Introspection<Object>> get $supabaseConfigBeansIntrospections => [
         set: _$set22,
       ),
     ],
+    library: r'package:spring_boot_starter_supabase/src/config/supabase_properties.dart',
     instantiate: _i1.SupabaseAuthProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SupabaseAuthProperties>(
       parameters: [],
@@ -227,6 +229,7 @@ List<_i2.Introspection<Object>> get $supabaseConfigBeansIntrospections => [
         set: _$set29,
       ),
     ],
+    library: r'package:spring_boot_starter_supabase/src/config/supabase_properties.dart',
     instantiate: _i1.SupabaseRealtimeProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SupabaseRealtimeProperties>(
       parameters: [],
@@ -243,6 +246,7 @@ List<_i2.Introspection<Object>> get $supabaseConfigBeansIntrospections => [
         set: _$set32,
       ),
     ],
+    library: r'package:spring_boot_starter_supabase/src/config/supabase_properties.dart',
     instantiate: _i1.SupabaseStorageProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SupabaseStorageProperties>(
       parameters: [],
@@ -267,6 +271,7 @@ List<_i2.Introspection<Object>> get $supabaseConfigBeansIntrospections => [
         set: _$set37,
       ),
     ],
+    library: r'package:spring_boot_starter_supabase/src/config/supabase_properties.dart',
     instantiate: _i1.SupabaseFunctionsProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SupabaseFunctionsProperties>(
       parameters: [],
@@ -283,6 +288,7 @@ List<_i2.Introspection<Object>> get $supabaseConfigBeansIntrospections => [
         set: _$set40,
       ),
     ],
+    library: r'package:spring_boot_starter_supabase/src/config/supabase_properties.dart',
     instantiate: _i1.SupabaseCacheProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SupabaseCacheProperties>(
       parameters: [],
@@ -301,6 +307,7 @@ List<_i2.Introspection<Object>> get $supabaseConfigBeansIntrospections => [
         set: _$set43,
       ),
     ],
+    library: r'package:spring_boot_starter_supabase/src/config/supabase_properties.dart',
     instantiate: _i1.SupabaseRateLimitProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SupabaseRateLimitProperties>(
       parameters: [],

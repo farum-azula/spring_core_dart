@@ -713,9 +713,19 @@ class StoreConfig<T extends Item> {
       },
     );
 
-    test('an abstract @Component is skipped, not an error', () async {
+    test('a stereotype on an abstract class fails the build (Spring skips '
+        'it without a word); the base without one is fine', () async {
+      final rejected = await _build({
+        'lib/src/beans.dart': _scan,
+        'lib/src/service.dart':
+            '$_header@Component() abstract class Base { void run(); }\n'
+            '@Service() class Impl extends Base { @override void run() {} }',
+      });
+      expect(
+        rejected.errors.join('\n'),
+        contains('@Component on the abstract class Base'),
+      );
       final output = await _generate('''
-@Component()
 abstract class Base {
   void run();
 }

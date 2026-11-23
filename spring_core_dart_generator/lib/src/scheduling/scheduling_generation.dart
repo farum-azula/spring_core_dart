@@ -23,6 +23,11 @@ final class SchedulingGeneration extends PackageGeneration {
   String get package => 'spring_boot_starter_scheduling';
 
   @override
+  List<AnnotationPlacement> get placements => const [
+    MethodPlacement([_scheduled], does: 'the scheduler runs it'),
+  ];
+
+  @override
   AnnotatedMethodNeeds? methodNeeds(
     InterfaceType annotation,
     MethodElement method,

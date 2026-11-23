@@ -428,6 +428,9 @@ final class IntrospectionScanner implements IntrospectionRequests {
             for (final t in parameterTypes) _nonNullable(t),
           ],
           annotations: annotations,
+          isFuture:
+              returnType.isDartAsyncFuture &&
+              returnType.nullabilitySuffix == NullabilitySuffix.none,
           jsonNeed: _jsonMethodNeed(annotations),
         );
       }

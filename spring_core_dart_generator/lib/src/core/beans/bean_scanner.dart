@@ -20,6 +20,9 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart' show log;
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/core/beans/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/beans/annotation_target.dart';
+import 'package:spring_core_dart_generator/src/core/beans/annotation_values.dart';
+import 'package:spring_core_dart_generator/src/core/beans/core_placements.dart';
 import 'package:spring_core_dart_generator/src/core/beans/log_scanning.dart';
 import 'package:spring_core_dart_generator/src/core/builder/package_generation.dart';
 import 'package:spring_core_dart_generator/src/core/introspection/constraint_checker.dart';
@@ -482,6 +485,45 @@ class BeanScanner {
   // its readings of a class.
   late final _packageScan = ModuleScan(this);
 
+  /// Where the annotations of the parts ([PackageGeneration.placements])
+  /// and of the core may go, the parts' asked first.
+  late final placements = AnnotationPlacements([
+    _declaredTargets,
+    for (final generation in generations) ...generation.placements,
+    ...corePlacements,
+  ]);
+
+  // `@Target` of the annotation classes: asked before every other
+  // placement, and alone on what only it reads.
+  final _declaredTargets = DeclaredTargetPlacement();
+
+  /// Whether an annotation class gives a value by a getter: reading it
+  /// would crash, so no library is scanned ([checkAnnotationValues]).
+  bool get hasUnreadableValues => _hasUnreadableValues;
+  bool _hasUnreadableValues = false;
+
+  // The annotations whose class must be what their placement asks
+  // (a bean, a controller), known once every library is scanned.
+  final _ownerChecks =
+      <
+        (AnnotationSite, AnnotationPlacement, PlacementOwner, InterfaceElement)
+      >[];
+
+  /// The classes the package's public libraries (`lib/*.dart`) export: a
+  /// `@Bean` method of another package may return them.
+  final exportedClasses = <InterfaceElement>{};
+
+  // What is wrong with an annotation if the abstract class around it turns
+  // out to be a bean whose implementation the build generates.
+  final _generatedBeanChecks = <(AnnotationSite, String, ClassElement)>[];
+
+  // The classes of the scanned libraries.
+  final _scannedClasses = <ClassElement>[];
+
+  // The classes scanned as beans, also those whose scan failed (their
+  // problem is reported already).
+  final _beanClassesScanned = <ClassElement>[];
+
   /// Which beans get a [ProxyModel] (build option `aop_proxies`).
   final ProxyMode proxyMode;
 
@@ -559,8 +601,13 @@ class BeanScanner {
   /// [errors] and the next declaration is scanned, so one build reports
   /// every independent problem (see [throwErrors]).
   void scanLibrary(LibraryElement library) {
+    if (_hasUnreadableValues) {
+      return;
+    }
+    _checkPlacements(library);
     collectErrors(() => introspection.scanLibrary(library));
     for (final element in library.classes) {
+      _scannedClasses.add(element);
       if (element.isPublic) {
         module.classes.add(element);
       }
@@ -588,9 +635,18 @@ class BeanScanner {
         }
         final annotation = _component.firstAnnotationOf(element);
         // Like Spring's scan (isCandidateComponent), an abstract class is
-        // no candidate unless it has @Lookup methods: it is skipped, not
-        // an error.
+        // no candidate unless it has @Lookup methods. Spring skips it
+        // without a word; a stereotype on it is a mistake the build names.
         if (element.isAbstract && !hasLookupMethods(element)) {
+          if (annotation?.type?.element?.name case final stereotype?) {
+            _fail(
+              '@$stereotype on the ${_classKind(element)} class '
+              '${element.name}: it cannot be created, so it is no bean and '
+              'every annotation on it is lost. Make it concrete, put the '
+              'annotation on a subclass, or declare a @Lookup method.',
+              element,
+            );
+          }
           return;
         }
         if (scan.isCandidate(element, isComponent: annotation != null)) {
@@ -721,6 +777,7 @@ class BeanScanner {
   /// introspection's warnings.
   void throwErrors() {
     _checkTargetClassDeclarers();
+    _checkPlacementOwners();
     introspection.warnings.forEach(log.warning);
     switch (errors) {
       case []:
@@ -731,6 +788,12 @@ class BeanScanner {
         throw BuildErrors(errors);
     }
   }
+
+  static String _classKind(ClassElement element) => element.isSealed
+      ? 'sealed'
+      : element.isInterface
+      ? 'interface'
+      : 'abstract';
 
   // Only classes are beans: `@Component` on a mixin, enum, extension or
   // extension type, and `@Bean` on a top-level function, would otherwise be
@@ -848,6 +911,7 @@ class BeanScanner {
     if (!module.markScanned(source)) {
       return;
     }
+    _beanClassesScanned.add(element);
     if (element.isPrivate) {
       _fail(
         'Bean class $className must be public: the generated module cannot '
@@ -1340,6 +1404,7 @@ class BeanScanner {
             method,
             orDefault: methodName,
           );
+    _rejectProductDefinitionAnnotations(method, returnType);
     final scope = _scopeOf(method);
     final arguments = _arguments(method.formalParameters, creation: true);
     final factoryObjectTypes = _factoryObjectTypes(returnType);
@@ -1406,11 +1471,19 @@ class BeanScanner {
       autowireCandidate:
           annotation.peek('autowireCandidate')?.boolValue ?? true,
       defaultCandidate: annotation.peek('defaultCandidate')?.boolValue ?? true,
-      order: _orderOf(method),
+      // Like Spring's AnnotationAwareOrderComparator, which reads @Order
+      // from the instance's class when the @Bean method has none.
+      order: _orderOf(method) ?? _orderOf(returnType.element),
       description: _descriptionOf(method),
       dependsOn: _dependsOnOf(method),
       qualifiers: _qualifiersOf(method),
-      conditions: [...classConditions, ..._conditions(method)],
+      conditions: [
+        ...classConditions,
+        ..._withDeclaredType(
+          _conditions(method),
+          inferred ? declaredType : null,
+        ),
+      ],
       // Like Spring, the returned object is processed like any bean:
       // its `@Autowired`/`@Value` members, lifecycle methods and listeners
       // (declared on the return type) apply too. An init/destroy method
@@ -1993,6 +2066,123 @@ class BeanScanner {
     return (names: names, complete: complete);
   }
 
+  // The bean of an interface whose implementation is generated (an HTTP
+  // client, a repository) is a singleton the starter makes, with its
+  // `@Primary`, qualifiers and conditions; the other definition
+  // annotations would be ignored without a word.
+  void _rejectUnreadDefinitionAnnotations(ClassElement element) {
+    for (final checker in _generatedBeanIgnored) {
+      if (checker.firstAnnotationOf(element)?.type?.element?.name
+          case final name?) {
+        collectErrors(
+          () => _fail(
+            '@$name on ${element.name}: its bean is made by the starter '
+            'that generates its implementation, as a singleton with its '
+            '@Primary, qualifiers and conditions; @$name does not apply. '
+            'Remove it, or declare the bean with a @Bean method that '
+            'carries it.',
+            element,
+          ),
+        );
+      }
+    }
+  }
+
+  static final List<TypeChecker> _generatedBeanIgnored = [
+    _scope,
+    _lazy,
+    _fallback,
+    _dependsOn,
+    _description,
+    _order,
+    _import,
+    _propertySource,
+    _configurable,
+  ];
+
+  // The definition annotations of the class a `@Bean` method returns,
+  // which Spring ignores there (the method's own decide): one on a class
+  // that is no component of its own fails the build with the way out.
+  // `@Order` is read from the class, as Spring does.
+  void _rejectProductDefinitionAnnotations(
+    MethodElement method,
+    InterfaceType returnType,
+  ) {
+    final element = returnType.element;
+    if (element.library.isInSdk || _component.hasAnnotationOf(element)) {
+      return;
+    }
+    for (final checker in _productIgnored) {
+      if (checker.firstAnnotationOf(element)?.type?.element?.name
+          case final name?) {
+        _fail(
+          '@$name on ${element.name}: ${element.name} is the result of the '
+          '@Bean method ${_describe(method).replaceFirst('@Bean method ', '')}'
+          ', whose own annotations decide (Spring ignores @$name on the '
+          'class here). Put @$name on that method.',
+          element,
+        );
+      }
+    }
+  }
+
+  static final List<TypeChecker> _productIgnored = [
+    _scope,
+    _lazy,
+    _primary,
+    _fallback,
+    _dependsOn,
+    _description,
+    _profile,
+    _conditional,
+    _condition,
+  ];
+
+  // Spring Boot deduces the type of a bare `@ConditionalOnMissingBean()`
+  // (`@ConditionalOnBean()`) on a `@Bean` method from the method's return
+  // type; the definition knows only the type of the value. With
+  // [declaredType] (when it differs from the inferred one), such a
+  // condition is written with the declared type.
+  List<ConditionModel> _withDeclaredType(
+    List<ConditionModel> conditions,
+    InterfaceType? declaredType,
+  ) => declaredType == null
+      ? conditions
+      : [
+          for (final condition in conditions)
+            if (condition case AnnotationConditionModel(:final value)
+                when _deducesType(value))
+              DeclaredTypeConditionModel(value, declaredType)
+            else
+              condition,
+        ];
+
+  static final List<TypeChecker> _deducingConditions = [
+    TypeChecker.typeNamedLiterally(
+      'ConditionalOnMissingBean',
+      inPackage: 'spring_boot_dart',
+    ),
+    TypeChecker.typeNamedLiterally(
+      'ConditionalOnBean',
+      inPackage: 'spring_boot_dart',
+    ),
+  ];
+
+  static bool _deducesType(DartObject value) {
+    final type = value.type;
+    if (type == null ||
+        !_deducingConditions.any((c) => c.isExactlyType(type))) {
+      return false;
+    }
+    bool empty(String field) =>
+        value.getField(field)?.toListValue()?.isEmpty ?? true;
+    return value.getField('type')?.toTypeValue() == null &&
+        value.getField('name')?.toStringValue() == null &&
+        empty('types') &&
+        empty('names') &&
+        empty('annotations');
+  }
+
   // Aspects, configuration classes (their `@Bean` methods are called
   // directly) and infrastructure beans are never proxied, as in Spring.
   bool _isProxyCandidate(ClassElement element) =>
@@ -2304,6 +2494,7 @@ class BeanScanner {
   }
 
   void _rejectTargetClassWithoutProxy(InterfaceType type) {
+    _rejectAdviceWithoutProxy(type);
     final by = _targetClassAnnotation(type);
     if (by == null) {
       return;
@@ -2324,6 +2515,40 @@ class BeanScanner {
                 'FactoryBean): the annotation would do nothing. Move the '
                 'member into a component of its own.',
       element,
+    );
+  }
+
+  // Advice on a bean the container does not proxy would never run. Spring
+  // advises a @Configuration class (a CGLIB subclass); here its @Bean
+  // methods are called on a generated subclass that runs no advice, so it
+  // fails the build with the way out. Aspects and post-processors are not
+  // advised in Spring either ("not eligible for auto-proxying").
+  void _rejectAdviceWithoutProxy(InterfaceType type) {
+    if (proxyMode == ProxyMode.none) {
+      return;
+    }
+    final (annotation, member) = _adviceOn(type) ?? (null, null);
+    if (annotation == null || member == null) {
+      return;
+    }
+    final element = type.element;
+    final typeName = element.name;
+    final name = '@${annotation.type!.element!.name}';
+    _fail(
+      _configuration.hasAnnotationOf(element)
+          ? '$name on ${member == element ? typeName : '$typeName.${member.displayName}'}'
+                ', a @Configuration class: the container does not proxy a '
+                'configuration class, so the advice would not run (Spring '
+                'proxies it, this generator calls its @Bean methods on a '
+                'subclass that runs no advice). Move the method into a '
+                '@Service and inject that.'
+          : '$name on ${member == element ? typeName : '$typeName.${member.displayName}'}'
+                ', a bean the container does not proxy (an @Aspect, a '
+                'post-processor, an Advisor or a FactoryBean): the advice '
+                'would not run, as in Spring ("not eligible for '
+                'auto-proxying"). Move the method into a component of its '
+                'own.',
+      member,
     );
   }
 
@@ -2417,6 +2642,243 @@ class BeanScanner {
     }
   }
 
+  /// Reports each annotation class used in [libraries] that supplies a
+  /// value of a framework annotation through a getter. Call it before
+  /// [scanLibrary]: a scan reads an annotation on a class's supertypes too,
+  /// in a library it may not have checked yet, so with one of these nothing
+  /// is scanned and [throwErrors] reports them.
+  ///
+  /// ```dart
+  /// class Dev extends Component implements Profile {
+  ///   const Dev();
+  ///   @override
+  ///   List<String> get value => const ['dev']; // this build error
+  /// }
+  /// ```
+  void checkAnnotationValues(Iterable<LibraryElement> libraries) {
+    final seen = <InterfaceElement>{};
+    for (final library in libraries) {
+      for (final site in [
+        ...AnnotationPlacements.sitesOf(library),
+        ...AnnotationPlacements.targetOnlySitesOf(library),
+      ]) {
+        if (!seen.add(site.annotationType.element)) {
+          continue;
+        }
+        if (getterValueOf(site.annotationType) case final value?) {
+          _hasUnreadableValues = true;
+          collectErrors(() => _fail(value.problem(site.subject), value.getter));
+        }
+      }
+    }
+  }
+
+  // Every annotation of [library] that a placement covers, in its place:
+  // what is wrong there fails the build; what the class around it must be
+  // is checked once the module is scanned ([_checkPlacementOwners]).
+  void _checkPlacements(LibraryElement library) {
+    for (final site in AnnotationPlacements.sitesOf(library)) {
+      final type = site.annotationType;
+      if (type.element.library.isInSdk) {
+        continue;
+      }
+      final placement = placements.of(site);
+      if (placement == null) {
+        continue;
+      }
+      if (placement.problem(site) case final problem?) {
+        collectErrors(() => _fail(problem, site.location));
+        continue;
+      }
+      final ownerClass = site.kind == PlaceKind.classDeclaration
+          ? site.element
+          : site.owner;
+      if (ownerClass is ClassElement && ownerClass.isAbstract) {
+        if (placement.generatedBeanProblem(site) case final problem?) {
+          _generatedBeanChecks.add((site, problem, ownerClass));
+        }
+      }
+      final owner = placement.owner(site);
+      if (owner != null &&
+          ownerClass is InterfaceElement &&
+          _ownerIsChecked(placement, owner, ownerClass)) {
+        _ownerChecks.add((site, placement, owner, ownerClass));
+      }
+    }
+    for (final site in AnnotationPlacements.targetOnlySitesOf(library)) {
+      if (_declaredTargets.forbids(site)) {
+        collectErrors(
+          () => _fail(_declaredTargets.problem(site)!, site.location),
+        );
+      }
+    }
+  }
+
+  static bool _isBase(InterfaceElement element) => switch (element) {
+    ClassElement(:final isAbstract, :final isSealed) => isAbstract || isSealed,
+    _ => true,
+  };
+
+  // A class that can be created is always checked; a base when the owner
+  // says so, or when the placement looks at the classes extending it.
+  static bool _ownerIsChecked(
+    AnnotationPlacement placement,
+    PlacementOwner owner,
+    InterfaceElement ownerClass,
+  ) =>
+      !_isBase(ownerClass) ||
+      placement.checksBases ||
+      (ownerClass is ClassElement &&
+          (owner is BeanItselfOwner ||
+              (owner is PredicateOwner && owner.abstractToo)));
+
+  // The bean classes of the module: with [products], those a `@Bean` method
+  // returns too. A class with a stereotype counts even when a scan filter
+  // left it out.
+  bool _isBeanItself(
+    InterfaceElement element,
+    BeanItselfOwner owner,
+    Set<InterfaceElement> declared,
+    Set<InterfaceElement> returned,
+  ) =>
+      _component.hasAnnotationOf(element) ||
+      declared.contains(element) ||
+      (owner.products && returned.contains(element)) ||
+      (owner.exported && exportedClasses.contains(element));
+
+  void _checkGeneratedBeans(Set<InterfaceElement> declared) {
+    for (final (site, problem, ownerClass) in _generatedBeanChecks) {
+      if (declared.contains(ownerClass) && !hasLookupMethods(ownerClass)) {
+        collectErrors(() => _fail(problem, site.location));
+      }
+    }
+  }
+
+  // Once every library is scanned: the class around each annotation that
+  // must be a bean (or a class with some annotation) is one, or a base of
+  // one.
+  void _checkPlacementOwners() {
+    final declaredBeans = <InterfaceElement>{
+      for (final bean in module.beans)
+        if (identical(bean.element, bean.type.element)) bean.type.element,
+    };
+    final returnedBeans = <InterfaceElement>{
+      for (final bean in module.beans) bean.type.element,
+    };
+    _checkGeneratedBeans(declaredBeans);
+    if (_ownerChecks.isEmpty) {
+      return;
+    }
+    final beanClasses = <InterfaceElement>{
+      for (final bean in module.beans) ..._hierarchy(bean.type),
+      for (final element in _beanClassesScanned)
+        ..._hierarchy(element.thisType),
+      for (final element in _scannedClasses)
+        if (_configurable.hasAnnotationOf(element)) element,
+    };
+    final annotated = <TypeChecker, Set<InterfaceElement>>{};
+    Set<InterfaceElement> annotatedBy(List<TypeChecker> checkers) {
+      final result = <InterfaceElement>{};
+      for (final checker in checkers) {
+        result.addAll(
+          annotated.putIfAbsent(
+            checker,
+            () => {
+              for (final element in _scannedClasses)
+                if (checker.hasAnnotationOf(element))
+                  ..._hierarchy(element.thisType),
+            },
+          ),
+        );
+      }
+      return result;
+    }
+
+    final reported = <(Element, InterfaceType)>{};
+    for (final (site, placement, owner, ownerClass) in _ownerChecks) {
+      if (owner is BeanItselfOwner) {
+        if (!_isBeanItself(ownerClass, owner, declaredBeans, returnedBeans) &&
+            reported.add((site.element, site.annotationType))) {
+          collectErrors(
+            () => _fail(placement.ownerProblem(site), site.location),
+          );
+        }
+        continue;
+      }
+      if (_isBase(ownerClass) &&
+          placement.checksBases &&
+          !(owner is PredicateOwner && owner.abstractToo) &&
+          !_scannedClasses.any(
+            (element) =>
+                !_isBase(element) &&
+                _hierarchy(element.thisType).contains(ownerClass),
+          )) {
+        continue;
+      }
+      final owners = switch (owner) {
+        BeanItselfOwner() => const <InterfaceElement>{},
+        BeanOwner() => beanClasses,
+        AnnotatedOwner(:final checkers) => annotatedBy(checkers),
+        PredicateOwner(:final test) => {
+          for (final element in _scannedClasses)
+            if (test(element, module)) ..._hierarchy(element.thisType),
+        },
+      };
+      if (owners.contains(ownerClass) ||
+          !reported.add((site.element, site.annotationType))) {
+        continue;
+      }
+      collectErrors(() => _fail(placement.ownerProblem(site), site.location));
+    }
+  }
+
+  // The advice (`@Transactional`, `@PreAuthorize`) on [type] or its
+  // members, for a bean the container does not proxy: the first found.
+  (DartObject, Element)? _adviceOn(InterfaceType type) {
+    for (final element in _hierarchy(type)) {
+      // `@Validated` on a `@ConfigurationProperties` class checks the
+      // bound values, not calls.
+      final bound = _configurationProperties.hasAnnotationOf(element);
+      for (final annotation in element.metadata.annotations) {
+        if (annotation.computeConstantValue() case final value?
+            when placements.isAdvice(value) &&
+                !(bound && value.type?.element?.name == 'Validated')) {
+          return (value, element);
+        }
+      }
+      for (final member in <Element>[
+        ...element.fields,
+        ...element.getters,
+        ...element.setters,
+        // A `@Bean` method's advice is reported where it is.
+        ...element.methods.where((method) => !_bean.hasAnnotationOf(method)),
+      ]) {
+        for (final annotation in member.metadata.annotations) {
+          if (annotation.computeConstantValue() case final value?
+              when placements.isAdvice(value)) {
+            return (value, member);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  // Whether [member] (a declaration of a proxied type's member) or the
+  // class declaring it carries advice.
+  bool _carriesAdvice(Element member) {
+    bool advised(Element element) => element.metadata.annotations.any(
+      (annotation) => switch (annotation.computeConstantValue()) {
+        final value? => placements.isAdvice(value),
+        null => false,
+      },
+    );
+    final owner = member.enclosingElement;
+    return advised(member) ||
+        (member is PropertyAccessorElement && advised(member.variable)) ||
+        (owner != null && advised(owner));
+  }
+
   ProxyModel? _subclassProxyModel(
     InterfaceType targetType,
     String className,
@@ -2471,10 +2933,25 @@ class BeanScanner {
     final library = element.library;
     final members = <ProxyMember>[];
     final seen = <String>{};
-    void skip(String kind, String name, String reason) => log.warning(
-      'The $kind $typeName.$name is not advised: the subclass proxy of '
-      '$typeName cannot override it ($reason).',
-    );
+    // A member the proxy cannot override stays inherited and unadvised; one
+    // that carries advice (or whose class does) fails the build, since a
+    // `@PreAuthorize` that does not run is worse than none.
+    void skip(String kind, String name, String reason, Element declaration) {
+      if (_carriesAdvice(declaration)) {
+        _fail(
+          'The $kind $typeName.$name carries advice, but the subclass proxy '
+          'of $typeName cannot override it ($reason), so the advice would '
+          'not run. Remove what stops the override, or move the advised '
+          'work into a member the proxy can override.',
+          declaration,
+        );
+      }
+      log.warning(
+        'The $kind $typeName.$name is not advised: the subclass proxy of '
+        '$typeName cannot override it ($reason).',
+      );
+    }
+
     // `@nonVirtual` (package:meta) on any declaration of the member.
     final hierarchy = [targetType, ...targetType.allSupertypes];
     bool nonVirtual(
@@ -2510,7 +2987,7 @@ class BeanScanner {
           _fail(_reservedMessage(typeName, name), element);
         }
         if (nonVirtual(name, (type) => type.getMethod(name))) {
-          skip('method', name, nonVirtualReason);
+          skip('method', name, nonVirtualReason, method);
           continue;
         }
         final member = _proxyMethod(implementation, hierarchy, declaring);
@@ -2520,6 +2997,7 @@ class BeanScanner {
             name,
             'a parameter default value is not a public constant, or a '
                 'signature uses a private type',
+            method,
           );
           continue;
         }
@@ -2543,11 +3021,11 @@ class BeanScanner {
           _fail(_reservedMessage(typeName, name), element);
         }
         if (!_isEmittable(implementation.returnType)) {
-          skip('getter', name, 'its type is private');
+          skip('getter', name, 'its type is private', getter);
           continue;
         }
         if (nonVirtual(name, (type) => type.getGetter(name))) {
-          skip('getter', name, nonVirtualReason);
+          skip('getter', name, nonVirtualReason, getter);
           continue;
         }
         members.add(
@@ -2579,11 +3057,11 @@ class BeanScanner {
         }
         final parameterType = implementation.formalParameters.single.type;
         if (!_isEmittable(parameterType)) {
-          skip('setter', name, 'its type is private');
+          skip('setter', name, 'its type is private', setter);
           continue;
         }
         if (nonVirtual(name, (type) => type.getSetter(name))) {
-          skip('setter', name, nonVirtualReason);
+          skip('setter', name, nonVirtualReason, setter);
           continue;
         }
         members.add(
@@ -4579,6 +5057,7 @@ class BeanScanner {
         element,
       );
     }
+    _rejectUnreadDefinitionAnnotations(element);
     final type = element.thisType;
     final className = module.uniqueClassName('_\$${name}Impl');
     final signatures = _proxyModel(
@@ -4653,6 +5132,9 @@ class BeanScanner {
       // Feign client's bodies): the answer is read in, the arguments are
       // written out.
       final spel = _spelUse(member.annotations);
+      if (spel.target) {
+        introspection.needClass(element, IntrospectionNeed.spel);
+      }
       introspection.need(
         valueType,
         element,
@@ -4710,6 +5192,7 @@ class BeanScanner {
   // generates (see `ModuleScan.addGeneratedBean`).
   void _addGeneratedBean(ClassElement element, PackageCreation creation) {
     final name = _requireName(element);
+    _rejectUnreadDefinitionAnnotations(element);
     final source = '${element.library.uri}#$name';
     final type = element.thisType;
     final explicitName = ConstantReader(

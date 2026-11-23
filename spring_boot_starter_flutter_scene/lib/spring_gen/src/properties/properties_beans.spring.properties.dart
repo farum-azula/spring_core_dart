@@ -209,6 +209,7 @@ get $sceneConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'spring.flutter.scene')],
+    library: r'package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.SceneProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SceneProperties>(
@@ -345,6 +346,7 @@ get $sceneConfigBeansPropertiesIntrospections => [
         get: _$get18,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.SceneSlowProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SceneSlowProperties>(
@@ -393,6 +395,7 @@ get $sceneConfigBeansPropertiesIntrospections => [
         get: _$get21,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.SceneModelProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SceneModelProperties>(
@@ -433,6 +436,7 @@ get $sceneConfigBeansPropertiesIntrospections => [
         get: _$get24,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.SceneMaterialProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SceneMaterialProperties>(
@@ -475,6 +479,7 @@ get $sceneConfigBeansPropertiesIntrospections => [
         get: _$get28,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.ApplicationSceneProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.ApplicationSceneProperties>(
@@ -525,6 +530,7 @@ get $sceneConfigBeansPropertiesIntrospections => [
         get: _$get32,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.SceneCameraProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SceneCameraProperties>(
@@ -564,6 +570,7 @@ get $sceneConfigBeansPropertiesIntrospections => [
         get: _$get34,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.SceneDebugProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SceneDebugProperties>(

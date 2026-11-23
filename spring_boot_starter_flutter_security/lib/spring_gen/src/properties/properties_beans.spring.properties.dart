@@ -88,6 +88,7 @@ get $flutterSecurityConfigBeansPropertiesIntrospections => [
       _i2.Profile([r'web']),
       _i2.ConfigurationProperties(r'spring.flutter.security.web'),
     ],
+    library: r'package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.FlutterWebSecurityProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.FlutterWebSecurityProperties>(
@@ -152,6 +153,7 @@ get $flutterSecurityConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'spring.flutter.security')],
+    library: r'package:spring_boot_starter_flutter_security/src/properties/flutter_security_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.FlutterSecurityProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.FlutterSecurityProperties>(

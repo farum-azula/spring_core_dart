@@ -48,6 +48,7 @@ List<_i2.Introspection<Object>> get $schedulingPropertiesIntrospections => [
         set: _$set3,
       ),
     ],
+    library: r'package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart',
     instantiate: _i1.SchedulingShutdown.new,
     constructor: _i2.IntrospectedConstructor<_i1.SchedulingShutdown>(
       parameters: [],

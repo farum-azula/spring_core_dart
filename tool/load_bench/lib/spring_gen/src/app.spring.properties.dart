@@ -110,6 +110,7 @@ List<_i2.Introspection<Object>> get $appBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'bench')],
+    library: r'package:load_bench/src/bench_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.BenchProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.BenchProperties>(
@@ -139,6 +140,7 @@ List<_i2.Introspection<Object>> get $appBeansPropertiesIntrospections => [
         set: _$set16,
       ),
     ],
+    library: r'package:load_bench/src/bench_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.BenchFilesProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.BenchFilesProperties>(
@@ -156,6 +158,7 @@ List<_i2.Introspection<Object>> get $appBeansPropertiesIntrospections => [
         set: _$set19,
       ),
     ],
+    library: r'package:load_bench/src/bench_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.BenchUploadProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.BenchUploadProperties>(
@@ -175,6 +178,7 @@ List<_i2.Introspection<Object>> get $appBeansPropertiesIntrospections => [
         set: _$set22,
       ),
     ],
+    library: r'package:load_bench/src/bench_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.BenchJsonProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.BenchJsonProperties>(
@@ -200,6 +204,7 @@ List<_i2.Introspection<Object>> get $appBeansPropertiesIntrospections => [
         set: _$set27,
       ),
     ],
+    library: r'package:load_bench/src/bench_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.BenchSecurityProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.BenchSecurityProperties>(

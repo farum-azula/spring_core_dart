@@ -73,6 +73,7 @@ get $securityConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'spring.security')],
+    library: r'package:spring_boot_starter_security/src/properties/security_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.SecurityProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SecurityProperties>(

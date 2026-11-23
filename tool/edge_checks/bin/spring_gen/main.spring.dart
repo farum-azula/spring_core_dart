@@ -9,21 +9,22 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i11;
-import 'dart:typed_data' as _i12;
+import 'dart:async' as _i9;
+import 'dart:typed_data' as _i10;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i18;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i16;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i3;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
-    as _i4;
-import 'package:spring_boot_starter_cache/src/annotations.dart' as _i14;
-import 'package:spring_boot_starter_edge/spring_auto_configuration.dart' as _i5;
-import 'package:spring_boot_starter_edge/spring_boot_starter_edge.dart' as _i8;
+    as _i17;
+import 'package:spring_boot_starter_cache/src/annotations.dart' as _i12;
+import 'package:spring_boot_starter_edge/spring_auto_configuration.dart'
+    as _i18;
+import 'package:spring_boot_starter_edge/spring_boot_starter_edge.dart' as _i6;
 import 'package:spring_boot_starter_edge/src/cloudflare/cloudflare.dart'
-    as _i16;
-import 'package:spring_boot_starter_edge/src/edge_runtime.dart' as _i10;
-import 'package:spring_boot_starter_edge/src/edge_scheduled.dart' as _i15;
-import 'package:spring_boot_starter_edge/src/edge_warnings.dart' as _i17;
+    as _i14;
+import 'package:spring_boot_starter_edge/src/edge_runtime.dart' as _i8;
+import 'package:spring_boot_starter_edge/src/edge_scheduled.dart' as _i13;
+import 'package:spring_boot_starter_edge/src/edge_warnings.dart' as _i15;
 import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
     as _i19;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
@@ -32,14 +33,14 @@ import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart
     as _i21;
 import 'package:spring_boot_starter_scheduling/spring_auto_configuration.dart'
     as _i22;
-import 'package:spring_boot_starter_scheduling/src/scheduled.dart' as _i13;
+import 'package:spring_boot_starter_scheduling/src/scheduled.dart' as _i11;
 import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
     as _i23;
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart'
-    as _i9;
-import 'package:spring_boot_starter_security/src/config/http_security.dart'
     as _i7;
-import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i6;
+import 'package:spring_boot_starter_security/src/config/http_security.dart'
+    as _i5;
+import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i4;
 import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i24;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 import 'package:spring_security_core/spring_auto_configuration.dart' as _i25;
@@ -60,48 +61,48 @@ class _$SecurityConfigConfiguration extends _i1.SecurityConfig {
   final _$arguments = <String, List<Object?>>{};
 
   @override
-  _i6.SecurityFilterChain apiChain(_i7.HttpSecurity http) {
+  _i4.SecurityFilterChain apiChain(_i5.HttpSecurity http) {
     final _$args = <Object?>[http];
     this._$arguments[r'apiChain'] = _$args;
     try {
       return (this._$beanFactory.getBeanByName(r'apiChain')
-          as _i6.SecurityFilterChain);
+          as _i4.SecurityFilterChain);
     } finally {
       this._$arguments.remove(r'apiChain');
     }
   }
 
-  _i6.SecurityFilterChain _$apiChain(_i2.DependencyResolver r) {
+  _i4.SecurityFilterChain _$apiChain(_i2.DependencyResolver r) {
     final _$args = this._$arguments.remove(r'apiChain');
     if (_$args != null) {
-      return super.apiChain((_$args[0] as _i7.HttpSecurity));
+      return super.apiChain((_$args[0] as _i5.HttpSecurity));
     }
-    return super.apiChain(r.dependency<_i7.HttpSecurity>(name: r'http'));
+    return super.apiChain(r.dependency<_i5.HttpSecurity>(name: r'http'));
   }
 }
 
 Object? _$invoke0(_i1.PublicController bean, List<Object?> arguments) =>
-    bean.hello((arguments[0] as _i8.ServerHttpRequest));
+    bean.hello((arguments[0] as _i6.ServerHttpRequest));
 Object? _$invokeNamed1(
   _i1.PublicController bean,
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => bean.hello(
-  (positional[0] as _i8.ServerHttpRequest),
+  (positional[0] as _i6.ServerHttpRequest),
   name: named.argumentOr(#name, r'world'),
 );
 Object? _$invoke2(_i1.PublicController bean, List<Object?> arguments) => bean
     .echo((arguments[0] as Map<String, Object?>), (arguments[1] as String?));
 Object? _$invoke3(_i1.PublicController bean, List<Object?> arguments) =>
-    bean.size((arguments[0] as _i8.ServerHttpRequest));
+    bean.size((arguments[0] as _i6.ServerHttpRequest));
 Object? _$invoke4(_i1.PublicController bean, List<Object?> arguments) =>
-    bean.upload((arguments[0] as _i8.MultipartFile), (arguments[1] as String));
+    bean.upload((arguments[0] as _i6.MultipartFile), (arguments[1] as String));
 Object? _$invoke5(_i1.PublicController bean, List<Object?> arguments) =>
     bean.events();
 Object? _$invoke6(_i1.PublicController bean, List<Object?> arguments) =>
     bean.download();
 Object? _$invoke7(_i1.PublicController bean, List<Object?> arguments) =>
-    bean.cookies((arguments[0] as _i8.ServerHttpResponse));
+    bean.cookies((arguments[0] as _i6.ServerHttpResponse));
 Object? _$invoke8(_i1.PublicController bean, List<Object?> arguments) =>
     bean.nothing();
 Object? _$invoke9(_i1.PublicController bean, List<Object?> arguments) =>
@@ -109,7 +110,7 @@ Object? _$invoke9(_i1.PublicController bean, List<Object?> arguments) =>
 Object? _$invoke10(_i1.PublicController bean, List<Object?> arguments) =>
     bean.badHeader();
 Object? _$invoke11(_i1.PublicController bean, List<Object?> arguments) =>
-    bean.badHeaders((arguments[0] as _i8.ServerHttpResponse));
+    bean.badHeaders((arguments[0] as _i6.ServerHttpResponse));
 Object? _$invoke12(_i1.PublicController bean, List<Object?> arguments) =>
     bean.endless();
 Object? _$invoke13(_i1.PublicController bean, List<Object?> arguments) =>
@@ -135,7 +136,7 @@ const _$knownAdvisors18 = {
   r'package:spring_security_core',
 };
 Object? _$invoke19(_i1.AccountController bean, List<Object?> arguments) =>
-    bean.me((arguments[0] as _i9.Authentication));
+    bean.me((arguments[0] as _i7.Authentication));
 Object? _$invoke20(_i1.AccountController bean, List<Object?> arguments) =>
     bean.admin();
 Object? _$invoke21(_i1.Rates bean, List<Object?> arguments) {
@@ -173,513 +174,525 @@ const _$target31 = _i2.AopTarget(
 );
 
 /// Beans found by `@ComponentScan` in `lib/ and bin/`.
-_i2.BeanModule get $application => _i2.BeanModule(r'application', [
-  _i2.BeanDefinition<_i1.PublicController>(
-    name: r'publicController',
-    source: r'asset:edge_checks/bin/controllers.dart#PublicController',
-    dependencies: const [
-      _i2.Dependency(_i10.EdgeRuntime, name: r'runtime'),
-      _i2.Dependency(_i2.Environment, name: r'environment'),
-    ],
-    create: (r) => _i1.PublicController(
-      r.dependency<_i10.EdgeRuntime>(name: r'runtime'),
-      r.dependency<_i2.Environment>(name: r'environment'),
-    ),
-    annotatedMethods: [
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'hello',
-        parameterTypes: [_i8.ServerHttpRequest],
-        parameters: [
-          _i2.IntrospectedParameter(
-            r'request',
-            type: _i2.ClassType<_i8.ServerHttpRequest>(),
-            isRequired: true,
-          ),
-          _i2.IntrospectedParameter(
-            r'name',
-            type: _i2.ClassType<String>(),
-            symbol: #name,
-            annotations: [_i8.RequestParam()],
-          ),
-        ],
-        returnTypeInfo: _i2.MapType<String, dynamic>(
-          _i2.ClassType<String>(),
-          _i2.DynamicType(),
-        ),
-        invoke: _$invoke0,
-        invokeNamed: _$invokeNamed1,
-        annotations: [_i8.GetMapping(r'/hello')],
+_i2.BeanModule get $application => _i2.BeanModule(
+  r'application',
+  [
+    _i2.BeanDefinition<_i1.PublicController>(
+      name: r'publicController',
+      source: r'asset:edge_checks/bin/controllers.dart#PublicController',
+      dependencies: const [
+        _i2.Dependency(_i8.EdgeRuntime, name: r'runtime'),
+        _i2.Dependency(_i2.Environment, name: r'environment'),
+      ],
+      create: (r) => _i1.PublicController(
+        r.dependency<_i8.EdgeRuntime>(name: r'runtime'),
+        r.dependency<_i2.Environment>(name: r'environment'),
       ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'echo',
-        parameterTypes: [Map<String, Object?>, String],
-        parameters: [
-          _i2.IntrospectedParameter(
-            r'body',
-            type: _i2.MapType<String, dynamic>(
+      annotatedMethods: [
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'hello',
+          parameterTypes: [_i6.ServerHttpRequest],
+          parameters: [
+            _i2.IntrospectedParameter(
+              r'request',
+              type: _i2.ClassType<_i6.ServerHttpRequest>(),
+              isRequired: true,
+            ),
+            _i2.IntrospectedParameter(
+              r'name',
+              type: _i2.ClassType<String>(),
+              symbol: #name,
+              annotations: [_i6.RequestParam()],
+            ),
+          ],
+          returnTypeInfo: _i2.MapType<String, dynamic>(
+            _i2.ClassType<String>(),
+            _i2.DynamicType(),
+          ),
+          invoke: _$invoke0,
+          invokeNamed: _$invokeNamed1,
+          annotations: [_i6.GetMapping(r'/hello')],
+        ),
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'echo',
+          parameterTypes: [Map<String, Object?>, String],
+          parameters: [
+            _i2.IntrospectedParameter(
+              r'body',
+              type: _i2.MapType<String, dynamic>(
+                _i2.ClassType<String>(),
+                _i2.DynamicType(),
+              ),
+              isRequired: true,
+              annotations: [_i6.RequestBody()],
+            ),
+            _i2.IntrospectedParameter(
+              r'trace',
+              type: _i2.ClassType<String>(nullable: true),
+              isRequired: true,
+              annotations: [_i6.RequestHeader(r'x-trace')],
+            ),
+          ],
+          returnTypeInfo: _i2.MapType<String, dynamic>(
+            _i2.ClassType<String>(),
+            _i2.DynamicType(),
+          ),
+          invoke: _$invoke2,
+          annotations: [_i6.PostMapping(r'/echo')],
+        ),
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'size',
+          parameterTypes: [_i6.ServerHttpRequest],
+          parameters: [
+            _i2.IntrospectedParameter(
+              r'request',
+              type: _i2.ClassType<_i6.ServerHttpRequest>(),
+              isRequired: true,
+            ),
+          ],
+          returnTypeInfo: _i2.MapType<String, dynamic>(
+            _i2.ClassType<String>(),
+            _i2.DynamicType(),
+          ),
+          isFuture: true,
+          invoke: _$invoke3,
+          annotations: [_i6.PostMapping(r'/size')],
+        ),
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'upload',
+          parameterTypes: [_i6.MultipartFile, String],
+          parameters: [
+            _i2.IntrospectedParameter(
+              r'file',
+              type: _i2.ClassType<_i6.MultipartFile>(),
+              isRequired: true,
+              annotations: [_i6.RequestPart(r'file')],
+            ),
+            _i2.IntrospectedParameter(
+              r'title',
+              type: _i2.ClassType<String>(),
+              isRequired: true,
+              annotations: [_i6.RequestParam()],
+            ),
+          ],
+          returnTypeInfo: _i2.MapType<String, dynamic>(
+            _i2.ClassType<String>(),
+            _i2.DynamicType(),
+          ),
+          isFuture: true,
+          invoke: _$invoke4,
+          annotations: [_i6.PostMapping(r'/upload')],
+        ),
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'events',
+          returnTypeInfo: _i2.GenericType<_i9.Stream<Map<String, Object?>>>([
+            _i2.MapType<String, dynamic>(
               _i2.ClassType<String>(),
               _i2.DynamicType(),
             ),
-            isRequired: true,
-            annotations: [_i8.RequestBody()],
-          ),
-          _i2.IntrospectedParameter(
-            r'trace',
-            type: _i2.ClassType<String>(nullable: true),
-            isRequired: true,
-            annotations: [_i8.RequestHeader(r'x-trace')],
-          ),
-        ],
-        returnTypeInfo: _i2.MapType<String, dynamic>(
-          _i2.ClassType<String>(),
-          _i2.DynamicType(),
+          ]),
+          invoke: _$invoke5,
+          annotations: [_i6.GetMapping(r'/events')],
         ),
-        invoke: _$invoke2,
-        annotations: [_i8.PostMapping(r'/echo')],
-      ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'size',
-        parameterTypes: [_i8.ServerHttpRequest],
-        parameters: [
-          _i2.IntrospectedParameter(
-            r'request',
-            type: _i2.ClassType<_i8.ServerHttpRequest>(),
-            isRequired: true,
-          ),
-        ],
-        returnTypeInfo: _i2.MapType<String, dynamic>(
-          _i2.ClassType<String>(),
-          _i2.DynamicType(),
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'download',
+          returnTypeInfo: _i2.ClassType<_i10.Uint8List>(),
+          invoke: _$invoke6,
+          annotations: [_i6.GetMapping(r'/download')],
         ),
-        isFuture: true,
-        invoke: _$invoke3,
-        annotations: [_i8.PostMapping(r'/size')],
-      ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'upload',
-        parameterTypes: [_i8.MultipartFile, String],
-        parameters: [
-          _i2.IntrospectedParameter(
-            r'file',
-            type: _i2.ClassType<_i8.MultipartFile>(),
-            isRequired: true,
-            annotations: [_i8.RequestPart(r'file')],
-          ),
-          _i2.IntrospectedParameter(
-            r'title',
-            type: _i2.ClassType<String>(),
-            isRequired: true,
-            annotations: [_i8.RequestParam()],
-          ),
-        ],
-        returnTypeInfo: _i2.MapType<String, dynamic>(
-          _i2.ClassType<String>(),
-          _i2.DynamicType(),
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'cookies',
+          parameterTypes: [_i6.ServerHttpResponse],
+          parameters: [
+            _i2.IntrospectedParameter(
+              r'response',
+              type: _i2.ClassType<_i6.ServerHttpResponse>(),
+              isRequired: true,
+            ),
+          ],
+          returnTypeInfo: _i2.GenericType<_i6.ResponseEntity<String>>([
+            _i2.ClassType<String>(),
+          ]),
+          invoke: _$invoke7,
+          annotations: [_i6.GetMapping(r'/cookies')],
         ),
-        isFuture: true,
-        invoke: _$invoke4,
-        annotations: [_i8.PostMapping(r'/upload')],
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'nothing',
+          returnTypeInfo: _i2.GenericType<_i6.ResponseEntity<void>>([
+            _i2.DynamicType.forVoid(),
+          ]),
+          invoke: _$invoke8,
+          annotations: [_i6.GetMapping(r'/nothing')],
+        ),
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'boom',
+          returnTypeInfo: _i2.ClassType<String>(),
+          invoke: _$invoke9,
+          annotations: [_i6.GetMapping(r'/boom')],
+        ),
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'badHeader',
+          returnTypeInfo: _i2.GenericType<_i6.ResponseEntity<String>>([
+            _i2.ClassType<String>(),
+          ]),
+          invoke: _$invoke10,
+          annotations: [_i6.GetMapping(r'/bad-header')],
+        ),
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'badHeaders',
+          parameterTypes: [_i6.ServerHttpResponse],
+          parameters: [
+            _i2.IntrospectedParameter(
+              r'response',
+              type: _i2.ClassType<_i6.ServerHttpResponse>(),
+              isRequired: true,
+            ),
+          ],
+          returnTypeInfo: _i2.GenericType<_i6.ResponseEntity<String>>([
+            _i2.ClassType<String>(),
+          ]),
+          invoke: _$invoke11,
+          annotations: [_i6.GetMapping(r'/bad-headers')],
+        ),
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'endless',
+          returnTypeInfo: _i2.GenericType<_i9.Stream<List<int>>>([
+            _i2.ListType<int>(_i2.ClassType<int>()),
+          ]),
+          invoke: _$invoke12,
+          annotations: [_i6.GetMapping(r'/endless')],
+        ),
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'producedCount',
+          returnTypeInfo: _i2.ClassType<int>(),
+          invoke: _$invoke13,
+          annotations: [_i6.GetMapping(r'/produced')],
+        ),
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'later',
+          returnTypeInfo: _i2.ClassType<String>(),
+          invoke: _$invoke14,
+          annotations: [_i6.PostMapping(r'/later')],
+        ),
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'laterCount',
+          returnTypeInfo: _i2.ClassType<int>(),
+          invoke: _$invoke15,
+          annotations: [_i6.GetMapping(r'/later')],
+        ),
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'limited',
+          returnTypeInfo: _i2.ClassType<String>(),
+          invoke: _$invoke16,
+          annotations: [
+            _i6.GetMapping(r'/limited'),
+            _i6.RateLimiter(r'2/1m', key: "#{headers['x-client']}"),
+          ],
+        ),
+        const _i2.IntrospectedMethod<_i1.PublicController>(
+          r'file',
+          parameterTypes: [String],
+          parameters: [
+            _i2.IntrospectedParameter(
+              r'name',
+              type: _i2.ClassType<String>(),
+              isRequired: true,
+              annotations: [_i6.PathVariable()],
+            ),
+          ],
+          returnTypeInfo: _i2.ClassType<String>(),
+          invoke: _$invoke17,
+          annotations: [_i6.GetMapping(r'/files/{name}')],
+        ),
+      ],
+      annotations: const [_i6.RestController()],
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors18,
       ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'events',
-        returnTypeInfo: _i2.GenericType<_i11.Stream<Map<String, Object?>>>([
-          _i2.MapType<String, dynamic>(
+    ),
+    _i2.BeanDefinition<_i1.AccountController>(
+      name: r'accountController',
+      source: r'asset:edge_checks/bin/controllers.dart#AccountController',
+      dependencies: const [_i2.Dependency(_i1.AdminReports, name: r'reports')],
+      create: (r) => _i1.AccountController(
+        r.dependency<_i1.AdminReports>(name: r'reports'),
+      ),
+      annotatedMethods: [
+        const _i2.IntrospectedMethod<_i1.AccountController>(
+          r'me',
+          parameterTypes: [_i7.Authentication],
+          parameters: [
+            _i2.IntrospectedParameter(
+              r'authentication',
+              type: _i2.ClassType<_i7.Authentication>(),
+              isRequired: true,
+            ),
+          ],
+          returnTypeInfo: _i2.MapType<String, dynamic>(
             _i2.ClassType<String>(),
             _i2.DynamicType(),
           ),
-        ]),
-        invoke: _$invoke5,
-        annotations: [_i8.GetMapping(r'/events')],
-      ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'download',
-        returnTypeInfo: _i2.ClassType<_i12.Uint8List>(),
-        invoke: _$invoke6,
-        annotations: [_i8.GetMapping(r'/download')],
-      ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'cookies',
-        parameterTypes: [_i8.ServerHttpResponse],
-        parameters: [
-          _i2.IntrospectedParameter(
-            r'response',
-            type: _i2.ClassType<_i8.ServerHttpResponse>(),
-            isRequired: true,
-          ),
-        ],
-        returnTypeInfo: _i2.GenericType<_i8.ResponseEntity<String>>([
-          _i2.ClassType<String>(),
-        ]),
-        invoke: _$invoke7,
-        annotations: [_i8.GetMapping(r'/cookies')],
-      ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'nothing',
-        returnTypeInfo: _i2.GenericType<_i8.ResponseEntity<void>>([
-          _i2.DynamicType.forVoid(),
-        ]),
-        invoke: _$invoke8,
-        annotations: [_i8.GetMapping(r'/nothing')],
-      ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'boom',
-        returnTypeInfo: _i2.ClassType<String>(),
-        invoke: _$invoke9,
-        annotations: [_i8.GetMapping(r'/boom')],
-      ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'badHeader',
-        returnTypeInfo: _i2.GenericType<_i8.ResponseEntity<String>>([
-          _i2.ClassType<String>(),
-        ]),
-        invoke: _$invoke10,
-        annotations: [_i8.GetMapping(r'/bad-header')],
-      ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'badHeaders',
-        parameterTypes: [_i8.ServerHttpResponse],
-        parameters: [
-          _i2.IntrospectedParameter(
-            r'response',
-            type: _i2.ClassType<_i8.ServerHttpResponse>(),
-            isRequired: true,
-          ),
-        ],
-        returnTypeInfo: _i2.GenericType<_i8.ResponseEntity<String>>([
-          _i2.ClassType<String>(),
-        ]),
-        invoke: _$invoke11,
-        annotations: [_i8.GetMapping(r'/bad-headers')],
-      ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'endless',
-        returnTypeInfo: _i2.GenericType<_i11.Stream<List<int>>>([
-          _i2.ListType<int>(_i2.ClassType<int>()),
-        ]),
-        invoke: _$invoke12,
-        annotations: [_i8.GetMapping(r'/endless')],
-      ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'producedCount',
-        returnTypeInfo: _i2.ClassType<int>(),
-        invoke: _$invoke13,
-        annotations: [_i8.GetMapping(r'/produced')],
-      ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'later',
-        returnTypeInfo: _i2.ClassType<String>(),
-        invoke: _$invoke14,
-        annotations: [_i8.PostMapping(r'/later')],
-      ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'laterCount',
-        returnTypeInfo: _i2.ClassType<int>(),
-        invoke: _$invoke15,
-        annotations: [_i8.GetMapping(r'/later')],
-      ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'limited',
-        returnTypeInfo: _i2.ClassType<String>(),
-        invoke: _$invoke16,
-        annotations: [
-          _i8.GetMapping(r'/limited'),
-          _i8.RateLimiter(r'2/1m', key: "#{headers['x-client']}"),
-        ],
-      ),
-      const _i2.IntrospectedMethod<_i1.PublicController>(
-        r'file',
-        parameterTypes: [String],
-        parameters: [
-          _i2.IntrospectedParameter(
-            r'name',
-            type: _i2.ClassType<String>(),
-            isRequired: true,
-            annotations: [_i8.PathVariable()],
-          ),
-        ],
-        returnTypeInfo: _i2.ClassType<String>(),
-        invoke: _$invoke17,
-        annotations: [_i8.GetMapping(r'/files/{name}')],
-      ),
-    ],
-    annotations: const [_i8.RestController()],
-    aopProxy: const _i2.AopProxyFactory.pruned(
-      knownAdvisors: _$knownAdvisors18,
-    ),
-  ),
-  _i2.BeanDefinition<_i1.AccountController>(
-    name: r'accountController',
-    source: r'asset:edge_checks/bin/controllers.dart#AccountController',
-    dependencies: const [_i2.Dependency(_i1.AdminReports, name: r'reports')],
-    create: (r) =>
-        _i1.AccountController(r.dependency<_i1.AdminReports>(name: r'reports')),
-    annotatedMethods: [
-      const _i2.IntrospectedMethod<_i1.AccountController>(
-        r'me',
-        parameterTypes: [_i9.Authentication],
-        parameters: [
-          _i2.IntrospectedParameter(
-            r'authentication',
-            type: _i2.ClassType<_i9.Authentication>(),
-            isRequired: true,
-          ),
-        ],
-        returnTypeInfo: _i2.MapType<String, dynamic>(
-          _i2.ClassType<String>(),
-          _i2.DynamicType(),
+          invoke: _$invoke19,
+          annotations: [_i6.GetMapping(r'/me')],
         ),
-        invoke: _$invoke19,
-        annotations: [_i8.GetMapping(r'/me')],
+        const _i2.IntrospectedMethod<_i1.AccountController>(
+          r'admin',
+          returnTypeInfo: _i2.ClassType<String>(),
+          invoke: _$invoke20,
+          annotations: [_i6.GetMapping(r'/admin')],
+        ),
+      ],
+      annotations: const [_i6.RestController(), _i6.RequestMapping(r'/api')],
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors18,
       ),
-      const _i2.IntrospectedMethod<_i1.AccountController>(
-        r'admin',
-        returnTypeInfo: _i2.ClassType<String>(),
-        invoke: _$invoke20,
-        annotations: [_i8.GetMapping(r'/admin')],
-      ),
-    ],
-    annotations: const [_i8.RestController(), _i8.RequestMapping(r'/api')],
-    aopProxy: const _i2.AopProxyFactory.pruned(
-      knownAdvisors: _$knownAdvisors18,
     ),
-  ),
-  _i2.BeanDefinition<_i1.Rates>(
-    name: r'rates',
-    source: r'asset:edge_checks/bin/controllers.dart#Rates',
-    create: (r) => _$RatesProxy(),
-    annotatedMethods: [
-      const _i2.IntrospectedMethod<_i1.Rates>(
-        r'refresh',
-        isVoid: true,
-        invoke: _$invoke21,
-        annotations: [
-          _i13.Scheduled(fixedRateString: r'1h', initialDelayString: r'1h'),
+    _i2.BeanDefinition<_i1.Rates>(
+      name: r'rates',
+      source: r'asset:edge_checks/bin/controllers.dart#Rates',
+      create: (r) => _$RatesProxy(),
+      annotatedMethods: [
+        const _i2.IntrospectedMethod<_i1.Rates>(
+          r'refresh',
+          isVoid: true,
+          invoke: _$invoke21,
+          annotations: [
+            _i11.Scheduled(fixedRateString: r'1h', initialDelayString: r'1h'),
+          ],
+        ),
+      ],
+      annotations: const [_i2.Service()],
+      aopProxy: _i2.AopProxyFactory.subclass(
+        signatures: const [
+          _i2.MethodSignature.of(
+            r'rate',
+            _$target22,
+            returnType: r'int',
+            parameterTypes: [r'String'],
+            parameterNames: [r'currency'],
+            annotations: [_i12.Cacheable(r'rates')],
+            annotationTypes: [r'Cacheable'],
+          ),
         ],
+        knownAdvisors: _$knownAdvisors18,
+        advise: (bean, invoker) =>
+            bean is _$RatesProxy ? (bean..aopInvoker = invoker) : null,
       ),
-    ],
-    annotations: const [_i2.Service()],
-    aopProxy: _i2.AopProxyFactory.subclass(
-      signatures: const [
-        _i2.MethodSignature.of(
+    ),
+    _i2.BeanDefinition<_i1.RatesController>(
+      name: r'ratesController',
+      source: r'asset:edge_checks/bin/controllers.dart#RatesController',
+      dependencies: const [_i2.Dependency(_i1.Rates, name: r'rates')],
+      create: (r) =>
+          _i1.RatesController(r.dependency<_i1.Rates>(name: r'rates')),
+      annotatedMethods: [
+        const _i2.IntrospectedMethod<_i1.RatesController>(
           r'rate',
-          _$target22,
-          returnType: r'int',
-          parameterTypes: [r'String'],
-          parameterNames: [r'currency'],
-          annotations: [_i14.Cacheable(r'rates')],
-          annotationTypes: [r'Cacheable'],
+          parameterTypes: [String],
+          parameters: [
+            _i2.IntrospectedParameter(
+              r'currency',
+              type: _i2.ClassType<String>(),
+              isRequired: true,
+              annotations: [_i6.PathVariable()],
+            ),
+          ],
+          returnTypeInfo: _i2.ClassType<int>(),
+          invoke: _$invoke23,
+          annotations: [_i6.GetMapping(r'/rates/{currency}')],
         ),
       ],
-      knownAdvisors: _$knownAdvisors18,
-      advise: (bean, invoker) =>
-          bean is _$RatesProxy ? (bean..aopInvoker = invoker) : null,
+      annotations: const [_i6.RestController()],
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors18,
+      ),
     ),
-  ),
-  _i2.BeanDefinition<_i1.RatesController>(
-    name: r'ratesController',
-    source: r'asset:edge_checks/bin/controllers.dart#RatesController',
-    dependencies: const [_i2.Dependency(_i1.Rates, name: r'rates')],
-    create: (r) => _i1.RatesController(r.dependency<_i1.Rates>(name: r'rates')),
-    annotatedMethods: [
-      const _i2.IntrospectedMethod<_i1.RatesController>(
-        r'rate',
-        parameterTypes: [String],
-        parameters: [
-          _i2.IntrospectedParameter(
-            r'currency',
-            type: _i2.ClassType<String>(),
-            isRequired: true,
-            annotations: [_i8.PathVariable()],
-          ),
-        ],
-        returnTypeInfo: _i2.ClassType<int>(),
-        invoke: _$invoke23,
-        annotations: [_i8.GetMapping(r'/rates/{currency}')],
+    _i2.BeanDefinition<_i1.ScheduleLog>(
+      name: r'scheduleLog',
+      source: r'asset:edge_checks/bin/controllers.dart#ScheduleLog',
+      types: const [_i1.ScheduleLog, _i13.EdgeScheduledHandler],
+      create: (r) => _i1.ScheduleLog(),
+      annotations: const [_i2.Component()],
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors18,
       ),
-    ],
-    annotations: const [_i8.RestController()],
-    aopProxy: const _i2.AopProxyFactory.pruned(
-      knownAdvisors: _$knownAdvisors18,
     ),
-  ),
-  _i2.BeanDefinition<_i1.ScheduleLog>(
-    name: r'scheduleLog',
-    source: r'asset:edge_checks/bin/controllers.dart#ScheduleLog',
-    types: const [_i1.ScheduleLog, _i15.EdgeScheduledHandler],
-    create: (r) => _i1.ScheduleLog(),
-    annotations: const [_i2.Component()],
-    aopProxy: const _i2.AopProxyFactory.pruned(
-      knownAdvisors: _$knownAdvisors18,
-    ),
-  ),
-  _i2.BeanDefinition<_i1.BindingsController>(
-    name: r'bindingsController',
-    source: r'asset:edge_checks/bin/controllers.dart#BindingsController',
-    dependencies: const [
-      _i2.Dependency(_i1.ScheduleLog, name: r'schedule'),
-      _i2.Dependency(
-        _i16.CloudflareBindings,
-        optional: true,
-        name: r'bindings',
-      ),
-      _i2.Dependency(_i17.EdgeWarnings, optional: true, name: r'warnings'),
-    ],
-    create: (r) => _i1.BindingsController(
-      r.dependency<_i1.ScheduleLog>(name: r'schedule'),
-      r.optionalDependency<_i16.CloudflareBindings>(name: r'bindings'),
-      r.optionalDependency<_i17.EdgeWarnings>(name: r'warnings'),
-    ),
-    annotatedMethods: [
-      const _i2.IntrospectedMethod<_i1.BindingsController>(
-        r'warned',
-        returnTypeInfo: _i2.ListType<String>(_i2.ClassType<String>()),
-        invoke: _$invoke24,
-        annotations: [_i8.GetMapping(r'/warnings')],
-      ),
-      const _i2.IntrospectedMethod<_i1.BindingsController>(
-        r'scheduled',
-        returnTypeInfo: _i2.ListType<String>(_i2.ClassType<String>()),
-        invoke: _$invoke25,
-        annotations: [_i8.GetMapping(r'/scheduled')],
-      ),
-      const _i2.IntrospectedMethod<_i1.BindingsController>(
-        r'put',
-        parameterTypes: [String, String],
-        parameters: [
-          _i2.IntrospectedParameter(
-            r'key',
-            type: _i2.ClassType<String>(),
-            isRequired: true,
-            annotations: [_i8.PathVariable()],
-          ),
-          _i2.IntrospectedParameter(
-            r'value',
-            type: _i2.ClassType<String>(),
-            isRequired: true,
-            annotations: [_i8.RequestBody()],
-          ),
-        ],
-        returnTypeInfo: _i2.ListType<String>(_i2.ClassType<String>()),
-        isFuture: true,
-        invoke: _$invoke26,
-        annotations: [_i8.PutMapping(r'/kv/{key}')],
-      ),
-      const _i2.IntrospectedMethod<_i1.BindingsController>(
-        r'get',
-        parameterTypes: [String],
-        parameters: [
-          _i2.IntrospectedParameter(
-            r'key',
-            type: _i2.ClassType<String>(),
-            isRequired: true,
-            annotations: [_i8.PathVariable()],
-          ),
-        ],
-        returnTypeInfo: _i2.MapType<String, dynamic>(
-          _i2.ClassType<String>(),
-          _i2.DynamicType(),
+    _i2.BeanDefinition<_i1.BindingsController>(
+      name: r'bindingsController',
+      source: r'asset:edge_checks/bin/controllers.dart#BindingsController',
+      dependencies: const [
+        _i2.Dependency(_i1.ScheduleLog, name: r'schedule'),
+        _i2.Dependency(
+          _i14.CloudflareBindings,
+          optional: true,
+          name: r'bindings',
         ),
-        isFuture: true,
-        invoke: _$invoke27,
-        annotations: [_i8.GetMapping(r'/kv/{key}')],
+        _i2.Dependency(_i15.EdgeWarnings, optional: true, name: r'warnings'),
+      ],
+      create: (r) => _i1.BindingsController(
+        r.dependency<_i1.ScheduleLog>(name: r'schedule'),
+        r.optionalDependency<_i14.CloudflareBindings>(name: r'bindings'),
+        r.optionalDependency<_i15.EdgeWarnings>(name: r'warnings'),
       ),
-      const _i2.IntrospectedMethod<_i1.BindingsController>(
-        r'note',
-        parameterTypes: [String],
-        parameters: [
-          _i2.IntrospectedParameter(
-            r'text',
-            type: _i2.ClassType<String>(),
-            isRequired: true,
-            annotations: [_i8.RequestBody()],
-          ),
-        ],
-        returnTypeInfo: _i2.MapType<String, dynamic>(
-          _i2.ClassType<String>(),
-          _i2.DynamicType(),
+      annotatedMethods: [
+        const _i2.IntrospectedMethod<_i1.BindingsController>(
+          r'warned',
+          returnTypeInfo: _i2.ListType<String>(_i2.ClassType<String>()),
+          invoke: _$invoke24,
+          annotations: [_i6.GetMapping(r'/warnings')],
         ),
-        isFuture: true,
-        invoke: _$invoke28,
-        annotations: [_i8.PostMapping(r'/d1/notes')],
-      ),
-      const _i2.IntrospectedMethod<_i1.BindingsController>(
-        r'buckets',
-        returnTypeInfo: _i2.ListType<Map<String, Object?>>(
-          _i2.MapType<String, dynamic>(
+        const _i2.IntrospectedMethod<_i1.BindingsController>(
+          r'scheduled',
+          returnTypeInfo: _i2.ListType<String>(_i2.ClassType<String>()),
+          invoke: _$invoke25,
+          annotations: [_i6.GetMapping(r'/scheduled')],
+        ),
+        const _i2.IntrospectedMethod<_i1.BindingsController>(
+          r'put',
+          parameterTypes: [String, String],
+          parameters: [
+            _i2.IntrospectedParameter(
+              r'key',
+              type: _i2.ClassType<String>(),
+              isRequired: true,
+              annotations: [_i6.PathVariable()],
+            ),
+            _i2.IntrospectedParameter(
+              r'value',
+              type: _i2.ClassType<String>(),
+              isRequired: true,
+              annotations: [_i6.RequestBody()],
+            ),
+          ],
+          returnTypeInfo: _i2.ListType<String>(_i2.ClassType<String>()),
+          isFuture: true,
+          invoke: _$invoke26,
+          annotations: [_i6.PutMapping(r'/kv/{key}')],
+        ),
+        const _i2.IntrospectedMethod<_i1.BindingsController>(
+          r'get',
+          parameterTypes: [String],
+          parameters: [
+            _i2.IntrospectedParameter(
+              r'key',
+              type: _i2.ClassType<String>(),
+              isRequired: true,
+              annotations: [_i6.PathVariable()],
+            ),
+          ],
+          returnTypeInfo: _i2.MapType<String, dynamic>(
             _i2.ClassType<String>(),
             _i2.DynamicType(),
           ),
+          isFuture: true,
+          invoke: _$invoke27,
+          annotations: [_i6.GetMapping(r'/kv/{key}')],
         ),
-        isFuture: true,
-        invoke: _$invoke29,
-        annotations: [_i8.GetMapping(r'/d1/buckets')],
-      ),
-    ],
-    annotations: const [_i8.RestController()],
-    aopProxy: const _i2.AopProxyFactory.pruned(
-      knownAdvisors: _$knownAdvisors18,
-    ),
-  ),
-  _i2.BeanDefinition<_i1.AdminReports>(
-    name: r'adminReports',
-    source: r'asset:edge_checks/bin/controllers.dart#AdminReports',
-    create: (r) => _i1.AdminReports(),
-    annotatedMethods: [
-      const _i2.IntrospectedMethod<_i1.AdminReports>(
-        r'all',
-        returnTypeInfo: _i2.ClassType<String>(),
-        invoke: _$invoke30,
-        annotations: [_i9.PreAuthorize("hasRole('ADMIN')")],
-      ),
-    ],
-    annotations: const [_i2.Service()],
-    aopProxy: _i2.AopProxyFactory(
-      signatures: const [
-        _i2.MethodSignature.of(
-          r'all',
-          _$target31,
-          returnType: r'String',
-          annotations: [_i9.PreAuthorize("hasRole('ADMIN')")],
-          annotationTypes: [r'PreAuthorize'],
+        const _i2.IntrospectedMethod<_i1.BindingsController>(
+          r'note',
+          parameterTypes: [String],
+          parameters: [
+            _i2.IntrospectedParameter(
+              r'text',
+              type: _i2.ClassType<String>(),
+              isRequired: true,
+              annotations: [_i6.RequestBody()],
+            ),
+          ],
+          returnTypeInfo: _i2.MapType<String, dynamic>(
+            _i2.ClassType<String>(),
+            _i2.DynamicType(),
+          ),
+          isFuture: true,
+          invoke: _$invoke28,
+          annotations: [_i6.PostMapping(r'/d1/notes')],
+        ),
+        const _i2.IntrospectedMethod<_i1.BindingsController>(
+          r'buckets',
+          returnTypeInfo: _i2.ListType<Map<String, Object?>>(
+            _i2.MapType<String, dynamic>(
+              _i2.ClassType<String>(),
+              _i2.DynamicType(),
+            ),
+          ),
+          isFuture: true,
+          invoke: _$invoke29,
+          annotations: [_i6.GetMapping(r'/d1/buckets')],
         ),
       ],
-      create: (target, invoker) =>
-          _$AdminReportsProxy((target as _i1.AdminReports), invoker),
+      annotations: const [_i6.RestController()],
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors18,
+      ),
     ),
-  ),
-  _i2.BeanDefinition<_i1.SecurityConfig>(
-    name: r'securityConfig',
-    source: r'asset:edge_checks/bin/controllers.dart#SecurityConfig',
-    create: (r) => _$SecurityConfigConfiguration(r),
-    annotations: const [_i2.Configuration()],
-  ),
-  _i2.BeanDefinition<_i6.SecurityFilterChain>(
-    name: r'apiChain',
-    source: r'asset:edge_checks/bin/controllers.dart#SecurityConfig.apiChain',
-    factoryBeanName: r'securityConfig',
-    factoryMethodName: r'apiChain',
-    dependencies: const [
-      _i2.Dependency(_i1.SecurityConfig, qualifier: r'securityConfig'),
-      _i2.Dependency(_i7.HttpSecurity, name: r'http'),
-    ],
-    create: (r) => (r.dependency<_i1.SecurityConfig>(
-      qualifier: r'securityConfig',
-    ) as _$SecurityConfigConfiguration)._$apiChain(r),
-    annotations: const [_i2.Bean()],
-    aopProxy: const _i2.AopProxyFactory.pruned(
-      knownAdvisors: _$knownAdvisors18,
+    _i2.BeanDefinition<_i1.AdminReports>(
+      name: r'adminReports',
+      source: r'asset:edge_checks/bin/controllers.dart#AdminReports',
+      create: (r) => _i1.AdminReports(),
+      annotatedMethods: [
+        const _i2.IntrospectedMethod<_i1.AdminReports>(
+          r'all',
+          returnTypeInfo: _i2.ClassType<String>(),
+          invoke: _$invoke30,
+          annotations: [_i7.PreAuthorize("hasRole('ADMIN')")],
+        ),
+      ],
+      annotations: const [_i2.Service()],
+      aopProxy: _i2.AopProxyFactory(
+        signatures: const [
+          _i2.MethodSignature.of(
+            r'all',
+            _$target31,
+            returnType: r'String',
+            annotations: [_i7.PreAuthorize("hasRole('ADMIN')")],
+            annotationTypes: [r'PreAuthorize'],
+          ),
+        ],
+        create: (target, invoker) =>
+            _$AdminReportsProxy((target as _i1.AdminReports), invoker),
+      ),
     ),
-  ),
-]);
+    _i2.BeanDefinition<_i1.SecurityConfig>(
+      name: r'securityConfig',
+      source: r'asset:edge_checks/bin/controllers.dart#SecurityConfig',
+      create: (r) => _$SecurityConfigConfiguration(r),
+      annotations: const [_i2.Configuration()],
+    ),
+    _i2.BeanDefinition<_i4.SecurityFilterChain>(
+      name: r'apiChain',
+      source: r'asset:edge_checks/bin/controllers.dart#SecurityConfig.apiChain',
+      factoryBeanName: r'securityConfig',
+      factoryMethodName: r'apiChain',
+      dependencies: const [
+        _i2.Dependency(_i1.SecurityConfig, qualifier: r'securityConfig'),
+        _i2.Dependency(_i5.HttpSecurity, name: r'http'),
+      ],
+      create: (r) => (r.dependency<_i1.SecurityConfig>(
+        qualifier: r'securityConfig',
+      ) as _$SecurityConfigConfiguration)._$apiChain(r),
+      annotations: const [_i2.Bean()],
+      aopProxy: const _i2.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors18,
+      ),
+    ),
+  ],
+  resources: const {
+    r'application.properties': _i2.EmbeddedResource.text(
+      'spring.main.startup-checks.enabled=true\n',
+    ),
+  },
+);
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
 _i3.SpringApplication get springApplication => _i3.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i18.springBootAutoConfiguration,
-    _i4.springBootStarterCacheAutoConfiguration,
-    _i5.springBootStarterEdgeAutoConfiguration,
+    _i16.springBootAutoConfiguration,
+    _i17.springBootStarterCacheAutoConfiguration,
+    _i17.springBootStarterCacheStartupChecksAutoConfiguration,
+    _i18.springBootStarterEdgeAutoConfiguration,
+    _i18.springBootStarterEdgeStartupChecksAutoConfiguration,
     _i19.springBootStarterFeignAutoConfiguration,
     _i20.springBootStarterLoggingAutoConfiguration,
     _i21.springBootStarterOauth2ClientAutoConfiguration,
@@ -697,11 +710,13 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i24.springBootStarterWebRateLimitAutoConfiguration,
     _i25.springSecurityCoreAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
-      ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    _i5.springBootStarterEdgeAutoConfiguration:
+    _i17.springBootStarterCacheStartupChecksAutoConfiguration:
+        const _i3.AutoConfigurationModule(
+          after: [r'springBootStarterCacheAutoConfiguration'],
+        ),
+    _i18.springBootStarterEdgeAutoConfiguration:
         const _i3.AutoConfigurationModule(
           before: [
             r'springBootStarterWebAutoConfiguration',
@@ -731,9 +746,6 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
               r'springBootStarterSupabaseAutoConfiguration',
             ],
           ),
-    ...!const bool.fromEnvironment('dart.vm.product')
-        ? _$debugAutoConfigurationMetadata
-        : const {},
   },
   dartDefines: _$dartDefines,
   fingerprint: !const bool.fromEnvironment('dart.vm.product')

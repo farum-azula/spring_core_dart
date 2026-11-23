@@ -100,6 +100,8 @@ final class ConditionalPropertyRole extends StringRole {
     ].firstOrNull;
     return prefix == null || prefix.isEmpty
         ? string.value
+        : prefix.endsWith('.')
+        ? '$prefix${string.value}'
         : '$prefix.${string.value}';
   }
 }

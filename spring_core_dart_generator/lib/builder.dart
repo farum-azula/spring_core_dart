@@ -123,6 +123,13 @@ import 'package:spring_core_dart_generator/src/test/test_builder.dart';
 ///   `SPRING_DATASOURCE` are the same prefix).
 ///   `springApplication.dartDefines` is shorter; such properties are still
 ///   read from config files, the environment and the arguments.
+/// - `dart_defines_secrets` (a list of property name prefixes, empty by
+///   default, checked as `dart_defines_exclude`): in a Flutter app the
+///   names that look like a secret (`SecretNames.looksSecret`) are not
+///   offered to `--dart-define`, with a warning, since a define the code
+///   names is compiled into the app; those under these prefixes (and the
+///   public ones of the starters, `spring.flutter`, `spring.supabase.url`,
+///   `spring.supabase.anon-key`) are.
 ///
 /// ```yaml
 /// targets:
@@ -161,6 +168,10 @@ Builder springCoreDartBuilder(BuilderOptions options) {
     dartDefinesExclude: _dartDefinesExclude(
       options.config['dart_defines_exclude'],
     ),
+    dartDefinesSecrets: _dartDefinesExclude(
+      options.config['dart_defines_secrets'],
+      name: 'dart_defines_secrets',
+    ),
     proxyMode: ProxyMode.values.firstWhere(
       (m) => m.name == mode,
       orElse: () => throw ArgumentError.value(
@@ -177,8 +188,10 @@ Builder springCoreDartBuilder(BuilderOptions options) {
 // `spring.datasource`). A blank entry or a `*` wildcard throws, rather than
 // silently leaving out nothing (or everything): a prefix already covers
 // every name under it.
-List<String> _dartDefinesExclude(Object? option) {
-  const name = 'dart_defines_exclude';
+List<String> _dartDefinesExclude(
+  Object? option, {
+  String name = 'dart_defines_exclude',
+}) {
   if (option == null) {
     return const [];
   }
@@ -198,12 +211,11 @@ List<String> _dartDefinesExclude(Object? option) {
           'Expected a property name prefix (a string)',
         )
       else
-        _dartDefinesPrefix(entry),
+        _dartDefinesPrefix(entry, name),
   ];
 }
 
-String _dartDefinesPrefix(String entry) {
-  const name = 'dart_defines_exclude';
+String _dartDefinesPrefix(String entry, String name) {
   if (entry.contains('*')) {
     throw ArgumentError.value(
       entry,

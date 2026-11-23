@@ -1,5 +1,6 @@
 import 'package:dart_spring_language_server/src/diagnostics/fix.dart';
 import 'package:dart_spring_language_server/src/properties/property_occurrences.dart';
+import 'package:dart_spring_language_server/src/schema.dart';
 
 /// What renaming a property key changes, or why it cannot be renamed.
 sealed class KeyRenamePlan {
@@ -34,7 +35,8 @@ final class KeyRenameRefused extends KeyRenamePlan {
 /// rename is refused where it would leave a place reading the old key: a
 /// field of a `@ConfigurationProperties` class binds it (rename the
 /// field), or a place writes it in another form (`maxBasketSize` for
-/// `max-basket-size`).
+/// `max-basket-size`); and where the new key is already defined, as the
+/// two would shadow each other (a duplicate key in YAML).
 final class KeyRename {
   /// Renames over [occurrences].
   const KeyRename(this.occurrences);
@@ -53,11 +55,29 @@ final class KeyRename {
         'digits, - and _',
       );
     }
+    final existing = canonicalName(renamed) == canonicalName(key)
+        ? null
+        : occurrences.model.properties
+              .property(renamed, from: path)
+              .firstOrNull;
+    if (existing != null) {
+      return KeyRenameRefused(
+        "'$renamed' is already defined (${existing.fileName}:"
+        '${existing.line + 1}): the two keys would shadow each other',
+      );
+    }
     final edits = <TextEdit>[];
     for (final occurrence in occurrences.of(path, key)) {
       final range = occurrence.range;
       final where = '${_fileName(range.path)}:${range.startLine + 1}';
       final name = occurrence.name;
+      if (occurrence.below case final group?) {
+        return KeyRenameRefused(
+          "'$key' is an entry of '$group', which the field '$name' of a "
+          '@ConfigurationProperties class binds as a whole ($where): '
+          'rename the entry by hand',
+        );
+      }
       if (occurrence.derived) {
         return KeyRenameRefused(
           "'$key' is bound by the field '$name' of a "

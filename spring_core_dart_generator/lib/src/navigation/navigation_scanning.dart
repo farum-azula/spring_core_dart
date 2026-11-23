@@ -258,6 +258,16 @@ void scanNavigation(ClassElement element, NavigationModuleModel navigation) {
       element: element,
     );
   }
+  if (element.isAbstract || element.isPrivate) {
+    final what = element.isAbstract ? 'abstract class' : 'private class';
+    throw InvalidGenerationSource(
+      '@${screen != null ? 'ScreenRoute' : 'RouteShell'} on the $what '
+      '$className: the router creates the widget from the generated code, '
+      'so it must be a public concrete widget. Make it one, or annotate a '
+      'public subclass.',
+      element: element,
+    );
+  }
   if (screen != null && shell != null) {
     throw InvalidGenerationSource(
       '$className cannot be a screen (@ScreenRoute) and a shell '

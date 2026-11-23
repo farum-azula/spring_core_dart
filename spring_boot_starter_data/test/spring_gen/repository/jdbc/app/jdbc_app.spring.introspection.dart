@@ -84,6 +84,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get1,
       ),
     ],
+    library: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart',
     constructor: _i2.IntrospectedConstructor<_i1.AuthorWithBooks>(
       parameters: [
         _i2.IntrospectedParameter(
@@ -118,6 +119,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
       ),
     ],
     annotations: [_i2.Component()],
+    library: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart',
     instantiate: _i1.Years.new,
     constructor: _i2.IntrospectedConstructor<_i1.Years>(
       parameters: [],
@@ -147,6 +149,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         set: _$set11,
       ),
     ],
+    library: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     constructor: _i2.IntrospectedConstructor<_i1.Settings>(
       parameters: [
@@ -188,6 +191,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         set: _$set16,
       ),
     ],
+    library: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     constructor: _i2.IntrospectedConstructor<_i1.Layout>(
       parameters: [
@@ -225,6 +229,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         set: _$set21,
       ),
     ],
+    library: r'asset:spring_boot_starter_data/test/repository/jdbc/app/jdbc_app.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     constructor: _i2.IntrospectedConstructor<_i1.Address>(
       parameters: [

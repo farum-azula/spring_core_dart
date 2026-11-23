@@ -1,7 +1,7 @@
 // Flutter assets (spring_boot_starter_flutter's `asset:` resources): which
 // files `flutter: assets:` of a pubspec.yaml declares, by the generator's
 // and Flutter's rules.
-import 'package:yaml/yaml.dart';
+import 'package:dart_spring_language_server/src/config/yaml_entries.dart';
 
 /// The entries of `flutter: assets:` in the text of a `pubspec.yaml`
 /// ([pubspec]): plain strings, and the `path:` of map entries
@@ -10,8 +10,9 @@ import 'package:yaml/yaml.dart';
 List<String> flutterAssets(String pubspec) {
   final Object? yaml;
   try {
-    yaml = loadYaml(pubspec);
-  } on YamlException {
+    yaml = loadYamlBounded(pubspec);
+  } on Object {
+    // Invalid, or nested deeper than the parser's stack.
     return const [];
   }
   final assets = yaml is Map && yaml['flutter'] is Map

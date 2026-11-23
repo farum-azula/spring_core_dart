@@ -61,6 +61,7 @@ get $schedulingPropertiesPropertiesIntrospections => [
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'spring.task.scheduling')],
+    library: r'package:spring_boot_starter_scheduling/src/config/scheduling_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.SchedulingProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SchedulingProperties>(

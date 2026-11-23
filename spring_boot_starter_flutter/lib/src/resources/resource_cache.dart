@@ -46,7 +46,8 @@ abstract interface class CachedResource implements VersionedResource {
 /// The resources downloaded and kept, `spring.flutter.resources.cache.*`.
 ///
 /// Each one is a folder of the store, `spring/resources/<sha256 of the
-/// address>/`, with `data` (the bytes) and `meta.json` (the address, the
+/// address>/`, with `data` (the bytes) and `meta.json` (the address
+/// without its query, so a signed address's token is not written; the
 /// digest of the bytes, the media type, when it was fetched, `ETag` and
 /// `Last-Modified`). A kept resource is read from the disk; past its age
 /// (`max-age`, or its rule's) it is still read from the disk and asked again
@@ -55,6 +56,11 @@ abstract interface class CachedResource implements VersionedResource {
 /// are dropped and downloaded again. Past `max-size` the least recently
 /// used go first; the folder is the resources' own, nothing else in the
 /// store counts towards it.
+///
+/// Only `https` resources are kept (`http` with
+/// `spring.remote.allow-insecure`), at most `max-entry-size` each (50 MB
+/// by default). A response with `Cache-Control: no-store` is kept nowhere,
+/// one with `private` for the run only, not on the disk.
 final class ResourceCache {
   /// The cache in its folder of [store], downloading with [fetcher], by
   /// [properties]; [clock] is the time, for a test's own.
@@ -95,11 +101,31 @@ final class ResourceCache {
 
   static const _log = SpringLog('spring_boot_starter_flutter.ResourceCache');
 
-  /// Whether [uri] is kept: an `http(s)` address no rule leaves out.
+  /// Whether [uri] is kept: an `https` address no rule leaves out, an
+  /// `http` one only with `spring.remote.allow-insecure` (an answer that
+  /// anyone on the way could have changed is not kept past the network).
   bool keeps(Uri uri) =>
       properties.enabled &&
-      (uri.scheme == 'https' || uri.scheme == 'http') &&
+      (uri.scheme == 'https' ||
+          (uri.scheme == 'http' && _fetcher.allowInsecure)) &&
       (_rule(uri)?.enabled ?? true);
+
+  // What the response's Cache-Control lets this cache do (RFC 9111): keep
+  // nothing for `no-store`; keep for this run only, not on the disk, for
+  // `private` (an answer for one user, which the files of a shared device
+  // must not keep).
+  static ({bool atAll, bool onDisk}) _storable(HttpHeaders headers) {
+    final directives = [
+      for (final value in headers.getAll(HttpHeaders.cacheControlHeader))
+        for (final part in value.split(','))
+          part.split('=').first.trim().toLowerCase(),
+    ];
+    final noStore = directives.contains('no-store');
+    return (
+      atAll: !noStore,
+      onDisk: !noStore && !directives.contains('private'),
+    );
+  }
 
   /// How long a kept [uri] is used as it is.
   Duration maxAgeOf(Uri uri) => _rule(uri)?.maxAge ?? properties.maxAge;
@@ -235,8 +261,10 @@ final class ResourceCache {
           );
           return _known[address] = renewed;
         }
+        final storable = _storable(response.headers);
         final meta = _Meta(
-          source: address,
+          // Without its query and user: a signed address's token is not written.
+          source: '${uri.origin}${uri.path}',
           sha256: sha256Hex(response.bytes),
           fetchedAt: now,
           contentType: response.headers[HttpHeaders.contentTypeHeader],
@@ -245,7 +273,15 @@ final class ResourceCache {
           size: response.bytes.length,
         );
         final fresh = _Kept(response.bytes, meta);
-        if (keeps(uri)) {
+        if (!storable.onDisk) {
+          // What an earlier answer left there is not kept past this one.
+          await _files.delete(_folder(uri));
+        }
+        if (!storable.atAll) {
+          _known.remove(address);
+          return fresh;
+        }
+        if (keeps(uri) && storable.onDisk) {
           final folder = _folder(uri);
           await _files.write('$folder/data', response.bytes);
           await _files.write(

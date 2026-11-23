@@ -17,6 +17,8 @@ import 'dart:collection';
 ///   is never equal to an iterable that is no set.
 /// - Two maps are equal when they have the same keys (by the keys' own
 ///   `==`) with equal values.
+/// - Two doubles: [doubleEquals] (`NaN` equals `NaN`, `0.0` not `-0.0`, as
+///   Java's `Double.equals`).
 /// - Anything else: `a == b`, so `null` equals only `null`.
 ///
 /// A collection that contains itself is compared without end, as with
@@ -52,8 +54,35 @@ bool deepEquals(Object? a, Object? b) {
   if (a is Map<Object?, Object?>) {
     return b is Map<Object?, Object?> && _mapsEqual(a, b);
   }
+  if (a is double && b is double) {
+    return doubleEquals(a, b);
+  }
   return a == b;
 }
+
+/// Whether the doubles [a] and [b] are equal as Lombok's
+/// `@EqualsAndHashCode` compares them (`Double.compare(a, b) == 0`, which
+/// `Double.equals` and Java's collections use too): `NaN` equals `NaN`,
+/// and `0.0` does not equal `-0.0`. Dart's `==` says the opposite of
+/// both, so an object with a `NaN` field would equal no copy of itself.
+/// `null` equals only `null`.
+///
+/// ```dart
+/// doubleEquals(double.nan, double.nan); // true  (== is false)
+/// doubleEquals(0.0, -0.0);              // false (== is true)
+/// doubleEquals(1.5, 1.5);               // true
+/// ```
+bool doubleEquals(double? a, double? b) {
+  if (a == null || b == null) {
+    return a == null && b == null;
+  }
+  return a.isNaN ? b.isNaN : a == b && a.isNegative == b.isNegative;
+}
+
+/// The hash of the double [value] consistent with [doubleEquals]: one hash
+/// for every `NaN`.
+int doubleHash(double? value) =>
+    value != null && value.isNaN ? 0x7ff80000 : value.hashCode;
 
 /// A hash code of [value] by content, consistent with [deepEquals]: two
 /// values [deepEquals] calls equal have the same hash.
@@ -105,6 +134,9 @@ int deepHash(Object? value) {
           (sum + _finish(_combine(_combine(0, key.hashCode), deepHash(entry))));
     }
     return _finish(sum);
+  }
+  if (value is double) {
+    return doubleHash(value);
   }
   return value.hashCode;
 }

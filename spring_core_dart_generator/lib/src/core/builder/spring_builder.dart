@@ -20,6 +20,7 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:source_gen/source_gen.dart';
+import 'package:spring_core_dart/core.dart' show SecretNames;
 import 'package:spring_core_dart_generator/src/core/beans/bean_model.dart';
 import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/core/beans/module_emitter.dart';
@@ -155,6 +156,7 @@ class SpringBuilder implements Builder {
     this.pruneProxies = true,
     this.deferProxies = false,
     this.dartDefinesExclude = const [],
+    this.dartDefinesSecrets = const [],
     this.generations = const [],
     Future<String?> Function(AssetId output)? readExistingOutput,
     PackageDirectories? packageDirectories,
@@ -195,6 +197,18 @@ class SpringBuilder implements Builder {
   /// under them nor their environment-variable forms are written into
   /// `springApplication.dartDefines`.
   final List<String> dartDefinesExclude;
+
+  /// The property name prefixes whose secret-looking names a client build
+  /// still offers to `--dart-define` (build option `dart_defines_secrets`,
+  /// empty by default). A Flutter app's build leaves out of
+  /// `springApplication.dartDefines` every name `SecretNames.looksSecret`
+  /// flags (`spring.datasource.password`, `NEON_KEYCLOAK_SECRET`), but
+  /// those of these prefixes and the public ones the parts declare
+  /// ([PackageGeneration.publicDefines]), with a warning listing them: a
+  /// define the code names is compiled into the app, where anyone can
+  /// read it, and `--dart-define-from-file=.env` often holds a server's
+  /// secrets too.
+  final List<String> dartDefinesSecrets;
 
   final Future<String?> Function(AssetId output) _readExistingOutput;
 
@@ -568,10 +582,18 @@ class SpringBuilder implements Builder {
   /// always embedded: the start reads it at once. A file left out that is
   /// no Flutter asset of `pubspec.yaml` is reported, with the lines to add
   /// (an asset directory has its own files only, not its subdirectories').
+  ///
+  /// A file that looks like a secret (a dotfile such as `.env`, a key or
+  /// keystore: `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.jks`, `*.keystore`,
+  /// `id_rsa`, `credentials*.json`, `service-account*.json`) is left out
+  /// too, with a warning: the module is compiled into every build, a web
+  /// or mobile one included, where anyone can read it. The globs of
+  /// `spring.resources.embed.secrets` embed such files anyway.
   static Future<Map<String, ({String? text, String? base64})>> embedded(
     BuildStep buildStep,
     Map<String, ({String? text, String? base64})> resources,
   ) async {
+    resources = _withoutSecrets(resources);
     final patterns = embedExclusions(_texts(resources));
     if (patterns.isEmpty) {
       return resources;
@@ -610,9 +632,71 @@ class SpringBuilder implements Builder {
     return kept;
   }
 
-  /// The globs of `spring.resources.embed.exclude` in the configuration
-  /// [texts] (a list, or one text of comma-separated globs).
-  static List<String> embedExclusions(Map<String, String> texts) {
+  // [resources] without the files that look like secrets, unless the
+  // globs of `spring.resources.embed.secrets` name them; a warning lists
+  // those left out.
+  static Map<String, ({String? text, String? base64})> _withoutSecrets(
+    Map<String, ({String? text, String? base64})> resources,
+  ) {
+    final secret = [
+      for (final path in resources.keys)
+        if (!_isConfiguration(path) && looksLikeSecretFile(path)) path,
+    ];
+    if (secret.isEmpty) {
+      return resources;
+    }
+    final allowed = [
+      for (final pattern in embedExclusions(
+        _texts(resources),
+        key: 'spring.resources.embed.secrets',
+      ))
+        Glob(pattern),
+    ];
+    final left = [
+      for (final path in secret)
+        if (!allowed.any((glob) => glob.matches(path))) path,
+    ];
+    if (left.isEmpty) {
+      return resources;
+    }
+    log.warning(
+      '${left.length} file${left.length == 1 ? '' : 's'} of lib/resources/ '
+      'look${left.length == 1 ? 's' : ''} like a secret and '
+      '${left.length == 1 ? 'is' : 'are'} not embedded (the module is '
+      'compiled into every build, a web or mobile one too, where anyone '
+      'can read it): ${left.join(', ')}. Keep secrets out of lib/resources/ '
+      '(read them from the environment), or list the file under '
+      'spring.resources.embed.secrets to embed it anyway.',
+    );
+    return {
+      for (final MapEntry(:key, :value) in resources.entries)
+        if (!left.contains(key)) key: value,
+    };
+  }
+
+  /// Whether the resource at [path] (below `lib/resources/`) looks like a
+  /// secret: a dotfile or a file in a dot directory (`.env`, `.git/`), a
+  /// private key, a keystore or a credentials file.
+  static bool looksLikeSecretFile(String path) {
+    final segments = p.url.split(path);
+    final name = segments.last.toLowerCase();
+    return segments.any((segment) => segment.startsWith('.')) ||
+        _secretFile.hasMatch(name);
+  }
+
+  static final _secretFile = RegExp(
+    r'(\.(pem|key|p12|pfx|jks|keystore|ppk|asc|gpg)$)|'
+    r'(^id_(rsa|dsa|ecdsa|ed25519)(\..*)?$)|'
+    r'(^(credentials|secrets?|service[-_]account)[^/]*\.(json|ya?ml|properties)$)|'
+    r'(\.env$)',
+  );
+
+  /// The globs of `spring.resources.embed.exclude` (or of [key]) in the
+  /// configuration [texts] (a list, or one text of comma-separated globs).
+  static List<String> embedExclusions(
+    Map<String, String> texts, {
+    String key = 'spring.resources.embed.exclude',
+  }) {
     if (!texts.values.any((text) => text.contains('embed'))) {
       return const [];
     }
@@ -625,7 +709,6 @@ class SpringBuilder implements Builder {
     } on Object {
       return const [];
     }
-    const key = 'spring.resources.embed.exclude';
     return [
       ...?property(key)
           ?.split(',')
@@ -921,11 +1004,27 @@ class SpringBuilder implements Builder {
       for (final module in autoConfigurations)
         if (!module.conditions.contains(notInReleaseCondition)) module,
     ];
-    final defines = DartDefineKeys.without(
-      // The nested @ComponentScan modules are the application's too: a
-      // placeholder of theirs is read as much as one of the scan's own.
-      await _dartDefineKeys(buildStep, [...assets, ...nested], resources),
-      dartDefinesExclude,
+    // The nested @ComponentScan modules are the application's too: a
+    // placeholder of theirs is read as much as one of the scan's own.
+    final ownDefines = await _dartDefineKeys(
+      buildStep,
+      [...assets, ...nested],
+      resources,
+    );
+    final defines = await _clientDefines(
+      buildStep,
+      DartDefineKeys.without(
+        (DartDefineKeys()
+              ..addAll(ownDefines)
+              ..addAll(await _metadataDefineNames(buildStep)))
+            .keys,
+        dartDefinesExclude,
+      ),
+      own: ownDefines.toSet(),
+      _publicDefines([
+        for (final generation in started) ...generation.publicDefines,
+        ...dartDefinesSecrets,
+      ], resources),
     );
     final packageParts = await _moduleParts(buildStep, started);
     final coreParts = await _coreParts(buildStep);
@@ -1074,7 +1173,73 @@ class SpringBuilder implements Builder {
         ],
       },
     );
-    return _withFingerprint(sources);
+    return _withFingerprint(
+      sources,
+      nestedShapes: await _beanShapes(buildStep, nested),
+    );
+  }
+
+  // What the wiring of the nested @ComponentScan modules depends on, from
+  // their libraries ([nested]): each class's name, supertypes, annotations
+  // and those of its members, and its members' and constructors'
+  // signatures. Their generated code is another output of this builder, so
+  // the application's hash takes this in its place: a bean added, an
+  // injection or a condition changed in a nested module changes the hash
+  // (a reload restarts the context), a method body does not.
+  static Future<String> _beanShapes(
+    BuildStep buildStep,
+    List<AssetId> nested,
+  ) async {
+    if (nested.isEmpty) {
+      return '';
+    }
+    final resolver = buildStep.resolver;
+    final shapes = StringBuffer();
+    String annotations(Element element) => [
+      for (final annotation in element.metadata.annotations)
+        annotation.toSource(),
+    ].join();
+    for (final asset in nested) {
+      if (!await resolver.isLibrary(asset)) {
+        continue;
+      }
+      final library = await resolver.libraryFor(asset);
+      for (final element in [...library.classes, ...library.mixins]) {
+        shapes
+          ..write(element.name)
+          ..write(annotations(element))
+          ..write(element.allSupertypes.map((t) => t.getDisplayString()))
+          ..write('{');
+        for (final member in <Element>[
+          ...element.constructors,
+          ...element.fields,
+          ...element.getters,
+          ...element.setters,
+          ...element.methods,
+        ]) {
+          shapes
+            ..write(annotations(member))
+            ..write(switch (member) {
+              final ExecutableElement executable =>
+                '${executable.displayName}${executable.type.getDisplayString()}',
+              final FieldElement field =>
+                '${field.name}:${field.type.getDisplayString()}',
+              _ => member.displayName,
+            })
+            ..write(';');
+          if (member is ExecutableElement) {
+            for (final parameter in member.formalParameters) {
+              shapes.write(annotations(parameter));
+            }
+          }
+        }
+        shapes.write('}');
+      }
+      for (final variable in library.topLevelVariables) {
+        shapes.write(annotations(variable));
+      }
+    }
+    return '$shapes';
   }
 
   // The getters of the debug part with the auto-configurations a release
@@ -1223,9 +1388,13 @@ class SpringBuilder implements Builder {
   // auto-configuration) in place of the
   // placeholder of the debug part; same length, so the formatting is
   // unchanged.
-  static ModuleSources _withFingerprint(ModuleSources sources) {
+  static ModuleSources _withFingerprint(
+    ModuleSources sources, {
+    String nestedShapes = '',
+  }) {
     const declaration = "$_fingerprint = '$_fingerprintPlaceholder'";
     final code = [
+      nestedShapes,
       sources.module,
       ?sources.introspection,
       ?sources.properties,
@@ -1265,6 +1434,101 @@ class SpringBuilder implements Builder {
       "if (bool.hasEnvironment('$key')) "
       "'$key': String.fromEnvironment('$key'),";
 
+  // [prefixes] and the placeholders the configuration gives their
+  // properties (`anon-key: ${SUPABASE_ANON_KEY}`), as public as they are.
+  static List<String> _publicDefines(
+    List<String> prefixes,
+    Map<String, ({String? text, String? base64})> resources,
+  ) => [
+    ...prefixes,
+    for (final MapEntry(key: path, value: (:text, base64: _))
+        in resources.entries)
+      if (text != null)
+        ...DartDefineKeys.placeholdersUnder(path, text, prefixes),
+  ];
+
+  // [keys] for the application of [buildStep]: in a client app (a Flutter
+  // package) without the names that look like a secret, but those under
+  // [kept]; a warning lists the names left out.
+  static Future<List<String>> _clientDefines(
+    BuildStep buildStep,
+    List<String> keys,
+    List<String> kept, {
+    Set<String> own = const {},
+  }) async {
+    if (await flutterAssets(buildStep) == null) {
+      return keys;
+    }
+    final public = DartDefineKeys.without(keys, kept).toSet();
+    final left = [
+      for (final key in keys)
+        if (public.contains(key) && SecretNames.looksSecret(key)) key,
+    ];
+    if (left.isEmpty) {
+      return keys;
+    }
+    // Only the application's own names are worth a word: the starters'
+    // (`spring.datasource.password` of a reachable data starter) are left
+    // out quietly.
+    final named = [
+      for (final key in left)
+        if (own.contains(key)) key,
+    ];
+    final dropped = left.toSet();
+    final kept0 = [
+      for (final key in keys)
+        if (!dropped.contains(key)) key,
+    ];
+    if (named.isEmpty) {
+      return kept0;
+    }
+    left
+      ..clear()
+      ..addAll(named);
+    log.warning(
+      '${left.length} name${left.length == 1 ? '' : 's'} that look like a '
+      'secret ${left.length == 1 ? 'is' : 'are'} not offered to '
+      '--dart-define in this client app: a define the code names is '
+      'compiled into the app, where anyone can read it '
+      '(${left.take(8).join(', ')}${left.length > 8 ? ', ...' : ''}). '
+      'A client cannot keep a secret; read it on a server. To offer such '
+      'a name anyway (a public key), list its prefix under the builder '
+      'option dart_defines_secrets; dart_defines_exclude leaves out others.',
+    );
+    return kept0;
+  }
+
+  // The properties of every package the application reaches, from their
+  // `spring_metadata.json` (written for the editors): a `--dart-define`
+  // may set any of them, as an environment variable may in Spring Boot,
+  // not only those the application's own files name.
+  static Future<List<String>> _metadataDefineNames(BuildStep buildStep) async {
+    final packages = await reachablePackages(buildStep);
+    if (packages == null) {
+      return const [];
+    }
+    final names = <String>[];
+    for (final package in packages.toList()..sort()) {
+      final id = AssetId(package, 'lib/spring_gen/spring_metadata.json');
+      if (!await buildStep.canRead(id)) {
+        continue;
+      }
+      try {
+        final json = jsonDecode(await buildStep.readAsString(id));
+        if (json case {'properties': final List<Object?> properties}) {
+          for (final property in properties) {
+            if (property case {'name': final String name}) {
+              names.add(name);
+            }
+          }
+        }
+      } on FormatException {
+        continue;
+      }
+    }
+    return names;
+  }
+
   // The keys a `--dart-define` may set (see DartDefineKeys): read from the
   // scanned libraries and the application's config files.
   static Future<List<String>> _dartDefineKeys(
@@ -1285,7 +1549,7 @@ class SpringBuilder implements Builder {
         keys.addConfigFile(path, text);
       }
     }
-    return keys.keys;
+    return keys.names;
   }
 
   // Runs [visitor] over the resolved declarations of [library]; `false`
@@ -1783,11 +2047,13 @@ class SpringBuilder implements Builder {
     }
     Expression argument(DartObject value) {
       final constant = ConstantReader(value);
+      if (constant.isString) {
+        return stringLiteral(constant.stringValue);
+      }
       return constant.isNull ||
               constant.isBool ||
               constant.isInt ||
-              constant.isDouble ||
-              constant.isString
+              constant.isDouble
           ? literal(constant.literalValue)
           : _factory(value);
     }
@@ -1805,6 +2071,18 @@ class SpringBuilder implements Builder {
             type,
             library,
           ).constInstanceNamed(revivable.accessor, positional, named);
+  }
+
+  /// [value] as a Dart string literal that reads back as written: `\`,
+  /// `$` and the line breaks are escaped (a `$` would otherwise start an
+  /// interpolation in the generated code).
+  static Expression stringLiteral(String value) {
+    return literalString(
+      value
+          .replaceAll(r'\', r'\\')
+          .replaceAll(r'$', r'\$')
+          .replaceAll('\r', r'\r'),
+    );
   }
 
   static String _factoryForms(DartObject factory) =>
@@ -2167,6 +2445,22 @@ class SpringBuilder implements Builder {
         }
       }
     }
+    scanner.checkAnnotationValues([
+      for (final asset in assets)
+        if (await resolver.isLibrary(asset)) await resolver.libraryFor(asset),
+    ]);
+    if (scanner.hasUnreadableValues) {
+      scanner.throwErrors();
+    }
+    await for (final asset in buildStep.findAssets(Glob('lib/*.dart'))) {
+      if (await resolver.isLibrary(asset)) {
+        final library = await resolver.libraryFor(asset);
+        scanner.exportedClasses.addAll(
+          library.exportNamespace.definedNames2.values
+              .whereType<InterfaceElement>(),
+        );
+      }
+    }
     for (final asset in assets) {
       if (await resolver.isLibrary(asset)) {
         final library = await resolver.libraryFor(asset);
@@ -2195,7 +2489,7 @@ class SpringBuilder implements Builder {
   // conditions match, and its override check reports a real clash at
   // refresh (BeanDefinitionOverrideException).
   void _checkUniqueNames(List<BeanModel> beans) {
-    final byName = <String, Element>{};
+    final byName = <String, BeanModel>{};
     for (final bean in beans) {
       if (bean.conditions.isNotEmpty) {
         continue;
@@ -2204,14 +2498,30 @@ class SpringBuilder implements Builder {
         final previous = byName[name];
         if (previous != null) {
           throw InvalidGenerationSource(
-            "Bean name '$name' is used by both "
-            '${previous.displayName} and ${bean.element.displayName}.',
+            "Bean name '$name' is used by both ${_declaration(previous)} and "
+            '${_declaration(bean)}. Rename one (@Bean(name: ...), '
+            "@Component('...')), or give them conditions that exclude each "
+            'other.',
             element: bean.element,
           );
         }
-        byName[name] = bean.element;
+        byName[name] = bean;
       }
     }
+  }
+
+  // Where [bean] is declared, for messages: `the @Bean method
+  // ConfigA.pool of package:app/src/a.dart`, `the class Pool of ...`.
+  static String _declaration(BeanModel bean) {
+    final element = bean.element;
+    final library = element.library?.uri;
+    final where = library == null ? '' : ' of $library';
+    return switch (element) {
+      MethodElement(:final enclosingElement?) =>
+        'the @Bean method ${enclosingElement.displayName}.'
+            '${element.displayName}$where',
+      _ => 'the class ${element.displayName}$where',
+    };
   }
 }
 

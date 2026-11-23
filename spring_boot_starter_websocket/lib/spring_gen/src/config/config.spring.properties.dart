@@ -58,6 +58,7 @@ get $webSocketConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'spring.websocket.client')],
+    library: r'package:spring_boot_starter_websocket/src/config/web_socket_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.WebSocketProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.WebSocketProperties>(

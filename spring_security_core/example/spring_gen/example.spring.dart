@@ -182,6 +182,7 @@ _i2.BeanModule get $application => _i2.BeanModule(
       ],
       factoryBeanName: r'userSetup',
       factoryMethodName: r'users',
+      factoryMethodReturnType: _i5.UserDetailsService,
       dependencies: const [
         _i2.Dependency(_i1.UserSetup, qualifier: r'userSetup'),
       ],

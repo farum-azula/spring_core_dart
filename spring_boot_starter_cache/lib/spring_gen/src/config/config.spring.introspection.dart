@@ -95,6 +95,8 @@ List<_i2.Introspection<Object>> get $cacheConfigBeansIntrospections => [
         set: _$set5,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_cache/src/config/cache_properties.dart',
     instantiate: _i1.SimpleCacheProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.SimpleCacheProperties>(
       parameters: [],
@@ -119,6 +121,8 @@ List<_i2.Introspection<Object>> get $cacheConfigBeansIntrospections => [
         set: _$set10,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_cache/src/config/cache_properties.dart',
     instantiate: _i1.CacheLimits.new,
     constructor: _i2.IntrospectedConstructor<_i1.CacheLimits>(
       parameters: [],
@@ -166,6 +170,8 @@ List<_i2.Introspection<Object>> get $cacheConfigBeansIntrospections => [
         set: _$set21,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_cache/src/config/cache_properties.dart',
     instantiate: _i1.DiskCacheProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.DiskCacheProperties>(
       parameters: [],
@@ -183,6 +189,8 @@ List<_i2.Introspection<Object>> get $cacheConfigBeansIntrospections => [
         set: _$set24,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_cache/src/config/cache_properties.dart',
     instantiate: _i1.DiskCacheLimits.new,
     constructor: _i2.IntrospectedConstructor<_i1.DiskCacheLimits>(
       parameters: [],

@@ -158,6 +158,8 @@ get $actuatorPropertiesPropertiesIntrospections => [
       ),
     ],
     annotations: [_i4.ConfigurationProperties(r'management.endpoints')],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     parts: {_i4.IntrospectionPart.read, _i4.IntrospectionPart.write},
     instantiate: _i1.EndpointsProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.EndpointsProperties>(
@@ -243,6 +245,8 @@ get $actuatorPropertiesPropertiesIntrospections => [
       ),
     ],
     annotations: [_i4.ConfigurationProperties(r'management.endpoint.health')],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     parts: {_i4.IntrospectionPart.read, _i4.IntrospectionPart.write},
     instantiate: _i1.HealthEndpointProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.HealthEndpointProperties>(
@@ -272,6 +276,8 @@ get $actuatorPropertiesPropertiesIntrospections => [
       ),
     ],
     annotations: [_i4.ConfigurationProperties(r'management.endpoint.info')],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     parts: {_i4.IntrospectionPart.read, _i4.IntrospectionPart.write},
     instantiate: _i1.InfoEndpointProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.InfoEndpointProperties>(
@@ -301,6 +307,8 @@ get $actuatorPropertiesPropertiesIntrospections => [
       ),
     ],
     annotations: [_i4.ConfigurationProperties(r'management.endpoint.mappings')],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     parts: {_i4.IntrospectionPart.read, _i4.IntrospectionPart.write},
     instantiate: _i1.MappingsEndpointProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.MappingsEndpointProperties>(
@@ -349,6 +357,8 @@ get $actuatorPropertiesPropertiesIntrospections => [
       ),
     ],
     annotations: [_i4.ConfigurationProperties(r'management.health')],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     parts: {_i4.IntrospectionPart.read, _i4.IntrospectionPart.write},
     instantiate: _i1.ManagementHealthProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.ManagementHealthProperties>(
@@ -397,6 +407,8 @@ get $actuatorPropertiesPropertiesIntrospections => [
       ),
     ],
     annotations: [_i4.ConfigurationProperties(r'management.info')],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     parts: {_i4.IntrospectionPart.read, _i4.IntrospectionPart.write},
     instantiate: _i1.ManagementInfoProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.ManagementInfoProperties>(
@@ -421,6 +433,8 @@ get $actuatorPropertiesPropertiesIntrospections => [
       ),
     ],
     annotations: [_i4.ConfigurationProperties(r'spring.info')],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     parts: {_i4.IntrospectionPart.read, _i4.IntrospectionPart.write},
     instantiate: _i1.ProjectInfoProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.ProjectInfoProperties>(

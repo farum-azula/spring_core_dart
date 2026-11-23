@@ -272,6 +272,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'logging')],
+    library: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.LoggingProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.LoggingProperties>(
@@ -325,6 +326,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
         annotations: [_i3.RawValue()],
       ),
     ],
+    library: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.LoggingPatternProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.LoggingPatternProperties>(
@@ -396,6 +398,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
         ],
       ),
     ],
+    library: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.LoggingThresholdProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.LoggingThresholdProperties>(
@@ -425,6 +428,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
         set: _$set46,
       ),
     ],
+    library: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.LoggingConsoleProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.LoggingConsoleProperties>(
@@ -453,6 +457,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
         annotations: [_i2.Range(1, 1000000)],
       ),
     ],
+    library: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.LoggingBufferProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.LoggingBufferProperties>(
@@ -484,6 +489,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
         set: _$set58,
       ),
     ],
+    library: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.LoggingFileProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.LoggingFileProperties>(
@@ -524,6 +530,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
         set: _$set67,
       ),
     ],
+    library: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.LoggingRollingPolicyProperties.new,
     constructor:
@@ -550,6 +557,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
         set: _$set72,
       ),
     ],
+    library: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.LoggingCharsetProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.LoggingCharsetProperties>(
@@ -569,6 +577,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'spring.application')],
+    library: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.ApplicationGroupProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.ApplicationGroupProperties>(
@@ -591,6 +600,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'spring.output.ansi')],
+    library: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.AnsiProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.AnsiProperties>(

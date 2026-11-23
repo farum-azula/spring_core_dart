@@ -85,8 +85,10 @@ final class PostgrestQuery {
     return [
       for (final order in sort.orders)
         [
+          // A request's `sort=title,ignorecase` too: a 400, as Spring
+          // Data's resolvers answer an order the store cannot run.
           if (order.ignoreCase)
-            throw InvalidDataAccessApiUsageException(
+            throw InvalidDataArgumentException(
               'An order that ignores case (${order.property}) cannot be '
               "asked of the database's REST API: order by a column that "
               'holds the lower-case text, or use the SQL path '
@@ -111,8 +113,12 @@ final class PostgrestQuery {
   static String _column(PersistentEntity<Object> entity, String name) {
     final property = entity.property(name.split('.').first);
     if (property == null || property.isMappedCollection) {
-      throw InvalidDataAccessApiUsageException(
-        "No column for the property '$name' of ${entity.type}",
+      // A name from a request (`?sort=nope`): a 400, as the SQL stores
+      // answer it.
+      throw PropertyReferenceException(
+        name,
+        '${entity.type}',
+        hint: 'no column for it',
       );
     }
     return property.columnName;

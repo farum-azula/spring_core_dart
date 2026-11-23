@@ -185,6 +185,8 @@ List<_i4.Introspection<Object>> get $actuatorPropertiesIntrospections => [
         annotations: [_i4.Name(r'default')],
       ),
     ],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     instantiate: _i1.EndpointsAccessProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.EndpointsAccessProperties>(
       parameters: [],
@@ -210,6 +212,8 @@ List<_i4.Introspection<Object>> get $actuatorPropertiesIntrospections => [
         set: _$set6,
       ),
     ],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     instantiate: _i1.HealthStatusProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.HealthStatusProperties>(
       parameters: [],
@@ -266,6 +270,8 @@ List<_i4.Introspection<Object>> get $actuatorPropertiesIntrospections => [
         set: _$set21,
       ),
     ],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     instantiate: _i1.HealthGroupProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.HealthGroupProperties>(
       parameters: [],
@@ -291,6 +297,8 @@ List<_i4.Introspection<Object>> get $actuatorPropertiesIntrospections => [
         set: _$set26,
       ),
     ],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     instantiate: _i1.HealthProbesProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.HealthProbesProperties>(
       parameters: [],
@@ -307,6 +315,8 @@ List<_i4.Introspection<Object>> get $actuatorPropertiesIntrospections => [
         set: _$set29,
       ),
     ],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     instantiate: _i1.HealthLoggingProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.HealthLoggingProperties>(
       parameters: [],
@@ -325,6 +335,8 @@ List<_i4.Introspection<Object>> get $actuatorPropertiesIntrospections => [
         set: _$set32,
       ),
     ],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     instantiate: _i1.HealthIndicatorDefaults.new,
     constructor: _i4.IntrospectedConstructor<_i1.HealthIndicatorDefaults>(
       parameters: [],
@@ -342,6 +354,8 @@ List<_i4.Introspection<Object>> get $actuatorPropertiesIntrospections => [
         set: _$set35,
       ),
     ],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     instantiate: _i1.HealthIndicatorProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.HealthIndicatorProperties>(
       parameters: [],
@@ -373,6 +387,8 @@ List<_i4.Introspection<Object>> get $actuatorPropertiesIntrospections => [
         set: _$set42,
       ),
     ],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     instantiate: _i1.DiskSpaceHealthIndicatorProperties.new,
     constructor:
         _i4.IntrospectedConstructor<_i1.DiskSpaceHealthIndicatorProperties>(
@@ -392,6 +408,8 @@ List<_i4.Introspection<Object>> get $actuatorPropertiesIntrospections => [
         set: _$set45,
       ),
     ],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     instantiate: _i1.AvailabilityStateIndicatorProperties.new,
     constructor:
         _i4.IntrospectedConstructor<_i1.AvailabilityStateIndicatorProperties>(
@@ -411,6 +429,8 @@ List<_i4.Introspection<Object>> get $actuatorPropertiesIntrospections => [
         set: _$set48,
       ),
     ],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     instantiate: _i1.InfoContributorDefaults.new,
     constructor: _i4.IntrospectedConstructor<_i1.InfoContributorDefaults>(
       parameters: [],
@@ -428,6 +448,8 @@ List<_i4.Introspection<Object>> get $actuatorPropertiesIntrospections => [
         set: _$set51,
       ),
     ],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     instantiate: _i1.InfoContributorProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.InfoContributorProperties>(
       parameters: [],
@@ -455,6 +477,8 @@ List<_i4.Introspection<Object>> get $actuatorPropertiesIntrospections => [
         set: _$set56,
       ),
     ],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     instantiate: _i1.GitInfoContributorProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.GitInfoContributorProperties>(
       parameters: [],
@@ -473,6 +497,8 @@ List<_i4.Introspection<Object>> get $actuatorPropertiesIntrospections => [
         set: _$set59,
       ),
     ],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     instantiate: _i1.OptInInfoContributorProperties.new,
     constructor:
         _i4.IntrospectedConstructor<_i1.OptInInfoContributorProperties>(
@@ -500,6 +526,8 @@ List<_i4.Introspection<Object>> get $actuatorPropertiesIntrospections => [
         set: _$set64,
       ),
     ],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     instantiate: _i1.BuildInfoLocation.new,
     constructor: _i4.IntrospectedConstructor<_i1.BuildInfoLocation>(
       parameters: [],
@@ -526,6 +554,8 @@ List<_i4.Introspection<Object>> get $actuatorPropertiesIntrospections => [
         set: _$set69,
       ),
     ],
+    library:
+        r'package:spring_boot_actuator/src/properties/actuator_properties.dart',
     instantiate: _i1.GitInfoLocation.new,
     constructor: _i4.IntrospectedConstructor<_i1.GitInfoLocation>(
       parameters: [],

@@ -105,6 +105,16 @@ class ConditionalOnProperty implements Condition {
       '${havingValue == null ? '' : '=$havingValue'})';
 }
 
+/// The run-time switch of the starters' startup checks: a startup check
+/// that the build kept (`spring.main.startup-checks.enabled`, read by the
+/// generator) is still left out when the key is `false` on the command
+/// line, in the environment or in a profile, as a Boot `*.enabled=false`
+/// turns its feature off. Matches when the key is not set.
+const startupChecksEnabled = ConditionalOnBooleanProperty(
+  'spring.main.startup-checks.enabled',
+  matchIfMissing: true,
+);
+
 /// Registers a bean only when a `true` / `false` property has the wanted
 /// value.
 ///
@@ -725,7 +735,7 @@ final class _BeanSpec {
         "and the attempt to deduce the bean's type failed",
       );
     }
-    return definition.beanType;
+    return definition.factoryMethodReturnType ?? definition.beanType;
   }
 
   static List<ListableBeanFactory> _factories(

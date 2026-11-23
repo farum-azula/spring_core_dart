@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_data/src/exceptions.dart';
 import 'package:spring_boot_starter_data/src/mapping/entity_converter.dart';
@@ -181,12 +183,12 @@ final class CriteriaMatcher<T extends Object> {
       case PartType.like || PartType.notLike:
         final pattern = argument(0);
         final negate = part.type == PartType.notLike;
-        final regex = pattern is String ? _likeRegex(pattern) : null;
+        final like = pattern is String ? LikePattern(pattern) : null;
         return (value) {
-          if (value is! String || regex == null) {
+          if (value is! String || like == null) {
             return false;
           }
-          return regex.hasMatch(fold(value)! as String) != negate;
+          return like.matches(fold(value)! as String) != negate;
         };
       case PartType.startingWith:
         return _literal(argument(0), fold, (v, a) => v.startsWith(a));
@@ -238,25 +240,6 @@ final class CriteriaMatcher<T extends Object> {
           argument is String &&
           holds(fold(value)! as String, argument);
 
-  // `%` any text, `_` one character, `\` makes the next one literal.
-  static RegExp _likeRegex(String pattern) {
-    final out = StringBuffer('^');
-    for (var i = 0; i < pattern.length; i++) {
-      final c = pattern[i];
-      if (c == r'\' && i + 1 < pattern.length) {
-        out.write(RegExp.escape(pattern[++i]));
-      } else if (c == '%') {
-        out.write('.*');
-      } else if (c == '_') {
-        out.write('.');
-      } else {
-        out.write(RegExp.escape(c));
-      }
-    }
-    out.write(r'$');
-    return RegExp(out.toString(), dotAll: true);
-  }
-
   /// The order of two column values of one type (numbers, texts, dates,
   /// booleans, `BigInt`s), as `Comparable.compare` gives it; null when
   /// they cannot be compared (different types).
@@ -295,5 +278,77 @@ final class CriteriaMatcher<T extends Object> {
           Iterable<int>.generate(a.length).every((i) => a[i] == b[i]);
     }
     return a == b;
+  }
+}
+
+/// A SQL `LIKE` pattern matched in Dart: `%` any text, `_` one character,
+/// `\` makes the next one literal. In time linear in the pattern times the
+/// text at worst (no backtracking regular expression, so a pattern from a
+/// request cannot take exponential time), and as long a pattern as
+/// SQLite's limit (`SQLITE_MAX_LIKE_PATTERN_LENGTH`, 50000).
+final class LikePattern {
+  /// The pattern [pattern]; throws an [InvalidDataAccessApiUsageException]
+  /// for one longer than [maxLength].
+  LikePattern(String pattern) : _tokens = _compile(pattern);
+
+  /// The longest pattern, as SQLite's default.
+  static const int maxLength = 50000;
+
+  static const int _one = -1;
+  static const int _any = -2;
+
+  // A code unit to match, or [_one] or [_any]; runs of `%` are one.
+  final Int32List _tokens;
+
+  static Int32List _compile(String pattern) {
+    if (pattern.length > maxLength) {
+      throw InvalidDataAccessApiUsageException(
+        'A LIKE pattern of ${pattern.length} characters: at most $maxLength',
+      );
+    }
+    final tokens = <int>[];
+    for (var i = 0; i < pattern.length; i++) {
+      final unit = pattern.codeUnitAt(i);
+      if (unit == 0x5C && i + 1 < pattern.length) {
+        tokens.add(pattern.codeUnitAt(++i));
+      } else if (unit == 0x25) {
+        if (tokens.isEmpty || tokens.last != _any) {
+          tokens.add(_any);
+        }
+      } else if (unit == 0x5F) {
+        tokens.add(_one);
+      } else {
+        tokens.add(unit);
+      }
+    }
+    return Int32List.fromList(tokens);
+  }
+
+  /// Whether [text] matches the whole pattern.
+  bool matches(String text) {
+    final tokens = _tokens;
+    var t = 0;
+    var p = 0;
+    var anyAt = -1;
+    var resumeAt = 0;
+    while (t < text.length) {
+      if (p < tokens.length &&
+          (tokens[p] == _one || tokens[p] == text.codeUnitAt(t))) {
+        t++;
+        p++;
+      } else if (p < tokens.length && tokens[p] == _any) {
+        anyAt = p++;
+        resumeAt = t;
+      } else if (anyAt >= 0) {
+        p = anyAt + 1;
+        t = ++resumeAt;
+      } else {
+        return false;
+      }
+    }
+    while (p < tokens.length && tokens[p] == _any) {
+      p++;
+    }
+    return p == tokens.length;
   }
 }

@@ -334,6 +334,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'server')],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.ServerSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.ServerSettings>(
@@ -406,6 +407,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansPropertiesIntrospections => [
         set: _$set54,
       ),
     ],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.ServerIsolatesSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.ServerIsolatesSettings>(
@@ -459,6 +461,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.web.multipart')],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.MultipartSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.MultipartSettings>(
@@ -499,6 +502,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.mvc')],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.MvcSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.MvcSettings>(
@@ -553,6 +557,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.web.resources')],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.WebResourcesSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.WebResourcesSettings>(
@@ -571,6 +576,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.web.debug')],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.WebDebugSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.WebDebugSettings>(
@@ -596,6 +602,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansPropertiesIntrospections => [
         set: _$set97,
       ),
     ],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.WebDebugQpsSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.WebDebugQpsSettings>(
@@ -618,6 +625,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.main')],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.WebMainSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.WebMainSettings>(
@@ -645,6 +653,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.test')],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.WebTestSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.WebTestSettings>(
@@ -664,6 +673,7 @@ List<_i3.Introspection<Object>> get $webConfigBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'local.server')],
+    library: r'package:spring_boot_starter_web/src/config/web_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.LocalServerSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.LocalServerSettings>(

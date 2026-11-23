@@ -63,11 +63,56 @@ final class BuildKeys {
   /// that does not parse).
   String? property(String key) {
     _lookup ??= readPlatformEnvironment(
-      configuration,
+      baseConfiguration(configuration).files,
       profiles: const [],
     ).getProperty;
     return _lookup!(key)?.trim().toLowerCase();
   }
+
+  /// The [files] the build decides by: the configuration without any
+  /// profile. The profile files (`application-dev.yml`) and the documents
+  /// of a file that `spring.config.activate.on-profile` limits to a profile
+  /// are left out, with them what `spring.profiles.active`, `include` and
+  /// groups would activate; [profileDocuments] holds those documents by a
+  /// name for the warnings (`application.yml (on-profile dev)`).
+  static ({Map<String, String> files, Map<String, String> profileDocuments})
+  baseConfiguration(Map<String, String> files) {
+    final base = <String, String>{};
+    final profileDocuments = <String, String>{};
+    for (final MapEntry(key: path, value: text) in files.entries) {
+      final name = p.basename(path);
+      if (_profileFile.hasMatch(name)) {
+        continue;
+      }
+      final properties = name.endsWith('.properties');
+      final separator = properties
+          ? RegExp(r'^#---\s*$', multiLine: true)
+          : RegExp(r'^---\s*$', multiLine: true);
+      final documents = text.split(separator);
+      final kept = <String>[];
+      for (final document in documents) {
+        final profile = _onProfile.firstMatch(document)?[1];
+        if (profile == null) {
+          kept.add(document);
+        } else {
+          profileDocuments['$name (on-profile ${profile.trim()})'] = document;
+        }
+      }
+      base[path] = kept.join(properties ? '\n#---\n' : '\n---\n');
+    }
+    return (files: base, profileDocuments: profileDocuments);
+  }
+
+  static final _profileFile = RegExp(
+    r'^application-[^.]+\.(ya?ml|properties)$',
+  );
+
+  // `spring.config.activate.on-profile` in a document, as a property line
+  // or nested YAML (`on-profile: dev` under `activate:`).
+  static final _onProfile = RegExp(
+    r'^\s*(?:spring\.config\.activate\.)?on-profile\s*[:=]\s*(.+)$',
+    multiLine: true,
+  );
 
   /// Where the code [key] decides goes: `true` in every build, `false` in
   /// none, not set (or neither) as [whenMissing] says. [subject] names
@@ -98,10 +143,11 @@ final class BuildKeys {
             'at build time.',
       );
     }
+    // Spring's StringToBooleanConverter reads these as true and false.
     switch (value) {
-      case 'true':
+      case 'true' || 'yes' || 'on' || '1':
         return BuildInclusion.always;
-      case 'false':
+      case 'false' || 'no' || 'off' || '0':
         return BuildInclusion.never;
       case null || '':
         if (profileSetting(configuration, key) case final file?) {
@@ -150,13 +196,15 @@ final class BuildKeys {
       return false;
     }
 
-    for (final MapEntry(key: path, value: text) in files.entries) {
+    final candidates = {
+      for (final MapEntry(key: path, value: text) in files.entries)
+        if (_profileFile.hasMatch(p.basename(path))) path: text,
+      ...baseConfiguration(files).profileDocuments,
+    };
+    for (final MapEntry(key: path, value: text) in candidates.entries) {
       final name = p.basename(path);
-      if (!RegExp(r'^application-[^.]+\.(ya?ml|properties)$').hasMatch(name)) {
-        continue;
-      }
       try {
-        final set = name.endsWith('.properties')
+        final set = name.contains('.properties')
             ? LineSplitter.split(text).any(
                 (line) => RegExp(
                   '^\\s*${RegExp.escape(key)}\\s*[=:]',

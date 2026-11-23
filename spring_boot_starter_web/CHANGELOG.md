@@ -1,3 +1,9 @@
+## Unreleased
+
+- **Fixed:** a request with two `Host` headers is answered 400 and its connection closes, as Tomcat does (RFC 9112 §3.2); it was served for the last one. `dart:io` drops the first before the server sees it, so the server reads the request heads in the bytes of each connection, plain or TLS (`RequestHeadScanner`): the same chunks, unchanged and unbuffered, on the socket's own subscription; bodies are skipped by their length, also chunked ones, and an upgraded connection is not read. It costs about 2% of requests per second on a minimal handler.
+- The request logs mask by `HttpSecrets` (shared with Feign): the DPoP proof and OAuth's `code`, `state`, `code_verifier`, `client_assertion`, `id_token_hint` too.
+- A JSON request body or part is read through `ObjectMapper.readValue`, with its limits on nesting (1000) and number length (1000 digits): a deeper one is a 400, not a 500 when the answer is written.
+
 ## 0.9.0
 
 - Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.

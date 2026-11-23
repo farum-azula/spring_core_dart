@@ -1484,4 +1484,70 @@ class Inner {
       expect(source, contains("tags: ['slow']"));
     });
   });
+
+  group('a test annotation where nothing reads it', () {
+    final cases = <String, (String, String)>{
+      '@Test in a class that is no test class': (
+        '@SpringBootTest()\nclass ShopTest {}\n'
+            'class Other {\n  @Test()\n  void t() {}\n}\n',
+        '@Test on Other.t: Other is no @SpringBootTest class',
+      ),
+      '@Test in a file with no test class': (
+        'class Other {\n  @Test()\n  void t() {}\n}\n',
+        '@Test on Other.t: Other is no @SpringBootTest class',
+      ),
+      '@Test on a top-level function': (
+        '@SpringBootTest()\nclass ShopTest {}\n@Test()\nvoid t() {}\n',
+        '@Test on the top-level function t',
+      ),
+      '@Test on a getter': (
+        '@SpringBootTest()\nclass ShopTest {\n  @Test()\n'
+            '  int get t => 1;\n}\n',
+        '@Test on the getter ShopTest.t',
+      ),
+      '@Nested on a method': (
+        '@SpringBootTest()\nclass ShopTest {\n  @Nested()\n  void n() {}\n}\n',
+        '@Nested on the method ShopTest.n',
+      ),
+      '@ActiveProfiles on a field': (
+        "@SpringBootTest()\nclass ShopTest {\n  @ActiveProfiles(['a'])\n"
+            '  int f = 0;\n}\n',
+        '@ActiveProfiles on the field ShopTest.f',
+      ),
+      '@PostConstruct in a test class': (
+        '@SpringBootTest()\nclass ShopTest {\n  @PostConstruct()\n'
+            '  void p() {}\n}\n',
+        '@PostConstruct on ShopTest.p: a test class is no bean',
+      ),
+      '@SpringBootTest on a mixin': (
+        '@SpringBootTest()\nmixin ShopTest {}\n',
+        '@SpringBootTest on the mixin ShopTest',
+      ),
+      '@DirtiesContext on a method that is no test': (
+        '@SpringBootTest()\nclass ShopTest {\n  @DirtiesContext()\n'
+            '  void h() {}\n}\n',
+        '@DirtiesContext on h, which is not a @Test method',
+      ),
+      '@LocalServerPort on a String': (
+        '@SpringBootTest()\nclass ShopTest {\n  @LocalServerPort()\n'
+            '  late String port;\n}\n',
+        "@LocalServerPort field 'port' is a String",
+      ),
+      '@CapturedOutput on a String': (
+        '@SpringBootTest()\nclass ShopTest {\n  @CapturedOutput()\n'
+            '  late String out;\n}\n',
+        "@CapturedOutput field 'out' is a String",
+      ),
+      'a static @TestBean names what is wrong': (
+        '@SpringBootTest()\nclass ShopTest {\n  @TestBean()\n'
+            '  static final c = Object();\n}\n',
+        "@TestBean field 'c' is static",
+      ),
+    };
+    for (final MapEntry(key: name, value: (source, message)) in cases.entries) {
+      test(name, () async {
+        expect(await _error(source), contains(message));
+      });
+    }
+  });
 }

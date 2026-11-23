@@ -6,8 +6,14 @@
 //!    `dart run tool/install_language_server.dart`), when `dart_spring_lsp --version` is this
 //!    extension's version ([`path_server`]);
 //! 3. the binary of this extension's version, downloaded once from the GitHub release
-//!    `v<version>` of farum-azula/spring_core_dart, or from the latest release if that one has no
-//!    binaries yet ([`downloaded_server`]).
+//!    `v<version>` of farum-azula/spring_core_dart and run only when its SHA-256 is the one the
+//!    release wrote into this build ([`downloaded_server`], [`checksums`]); no other release.
+//!
+//! Trust: Zed reads `lsp.dart-spring.binary` (1.) from the worktree's `.zed/settings.json` as
+//! well as from the user's settings, and the extension API offers no way to tell them apart, so a
+//! cloned repository can name the executable that starts; the PATH of (2.) is the worktree's
+//! shell environment (direnv and the like). Open only repositories you trust, or check their
+//! `.zed/settings.json` first.
 //!
 //! What is passed over on the way (a stale server on the PATH, an older release) is shown as the
 //! server's status in Zed ([`warnings`]).
@@ -15,6 +21,7 @@
 //! It must be a native executable: `dart pub global run` prints resolution messages to stdout,
 //! which is the channel LSP uses.
 
+mod checksums;
 mod downloaded_server;
 mod path_server;
 mod release;

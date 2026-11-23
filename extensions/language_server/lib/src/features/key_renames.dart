@@ -39,14 +39,7 @@ final class KeyRenames extends ServerFeature {
         case KeyRenameRefused(:final reason):
           throw RequestFailure(reason);
         case KeyRenameEdits(:final edits):
-          final changes = <String, List<Map<String, Object?>>>{};
-          for (final edit in edits) {
-            changes.putIfAbsent(uriOf(edit.range.path), () => []).add({
-              'range': rangeJson(edit.range),
-              'newText': edit.newText,
-            });
-          }
-          return {'changes': changes};
+          return session.workspaceEdit(edits);
       }
     },
   };

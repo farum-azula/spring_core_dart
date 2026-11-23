@@ -413,10 +413,14 @@ const notifyListenersChecker = TypeChecker.fromUrl(
 );
 
 /// Recognises Flutter's `ChangeNotifier`, to tell whether a class already
-/// is one.
-const changeNotifierChecker = TypeChecker.fromUrl(
-  'package:flutter/src/foundation/change_notifier.dart#ChangeNotifier',
-);
+/// is one: declared in `package:listen` since Flutter 3.50 (which
+/// `package:flutter/foundation.dart` exports), in Flutter itself before.
+const changeNotifierChecker = TypeChecker.any([
+  TypeChecker.typeNamedLiterally('ChangeNotifier', inPackage: 'listen'),
+  TypeChecker.fromUrl(
+    'package:flutter/src/foundation/change_notifier.dart#ChangeNotifier',
+  ),
+]);
 
 /// The public members a proxy that mixes `ChangeNotifier` in gets from it.
 /// A `@ChangeNotifierComponent` class must not declare them.

@@ -923,6 +923,7 @@ final class ProxyInvoker {
           chain,
           1,
           body,
+          selfCall: own,
         ),
       );
     } finally {
@@ -967,6 +968,7 @@ final class ProxyInvoker {
           chain,
           0,
           body,
+          selfCall: own,
         ).proceed(),
       );
     });
@@ -1006,6 +1008,7 @@ final class ProxyInvoker {
         chain,
         0,
         body,
+        selfCall: own,
       ).proceed();
       return result is Future ? retypeFuture<T>(result) : result as T;
     });
@@ -1039,6 +1042,20 @@ final class _DynamicInterceptor implements MethodInterceptor {
   }
 }
 
+/// Whether a [MethodInvocation] is one of a call a bean made on itself.
+extension SelfCallInvocation on MethodInvocation {
+  /// Whether this call is one the bean made on itself (a subclass proxy
+  /// calling its own member from its own code), which only the
+  /// [SelfCallInterceptor]s see. An interceptor that keeps an invocation
+  /// to proceed with later (a computed value recomputed when what it read
+  /// changes) keeps none of these: proceeding with it would skip the
+  /// advice an outside call has.
+  bool get isSelfCall {
+    final invocation = this;
+    return invocation is _Invocation && invocation.selfCall;
+  }
+}
+
 // One step of the interceptor chain: proceeding runs interceptor
 // [_index] with a fresh invocation for the next step (so arguments passed
 // to `proceed` flow on), and the target call after the last interceptor.
@@ -1050,8 +1067,12 @@ class _Invocation implements MethodInvocation {
     this.args,
     this._chain,
     this._index,
-    this._call,
-  );
+    this._call, {
+    this.selfCall = false,
+  });
+
+  // A call the bean made on itself (its own chain, [ProxyInvoker.ownChainFor]).
+  final bool selfCall;
 
   @override
   final Object proxy;
@@ -1077,6 +1098,7 @@ class _Invocation implements MethodInvocation {
     _chain,
     _index + 1,
     _call,
+    selfCall: selfCall,
   );
 
   @override
@@ -1114,8 +1136,9 @@ final class _AsyncInvocation<T> extends _Invocation
     super.args,
     super._chain,
     super._index,
-    Future<T> Function(List<Object?> arguments) super._call,
-  );
+    Future<T> Function(List<Object?> arguments) super._call, {
+    super.selfCall,
+  });
 
   @override
   _Invocation _next(List<Object?> arguments) => _AsyncInvocation<T>(
@@ -1126,6 +1149,7 @@ final class _AsyncInvocation<T> extends _Invocation
     _chain,
     _index + 1,
     (args) => retypeFuture<T>(_call(args)),
+    selfCall: selfCall,
   );
 
   @override
@@ -1148,8 +1172,9 @@ final class _FutureOrInvocation<T> extends _Invocation
     super.args,
     super._chain,
     super._index,
-    super._call,
-  );
+    super._call, {
+    super.selfCall,
+  });
 
   @override
   _Invocation _next(List<Object?> arguments) => _FutureOrInvocation<T>(
@@ -1160,6 +1185,7 @@ final class _FutureOrInvocation<T> extends _Invocation
     _chain,
     _index + 1,
     _call,
+    selfCall: selfCall,
   );
 
   @override

@@ -106,6 +106,7 @@ List<_i7.Introspection<Object>> get $webTestBeansIntrospections => [
         get: _$get3,
       ),
     ],
+    library: r'asset:spring_boot_starter_web/test/app/models.dart',
     parts: {_i7.IntrospectionPart.read, _i7.IntrospectionPart.write},
     constructor: _i7.IntrospectedConstructor<_i1.Book>(
       parameters: [
@@ -161,6 +162,7 @@ List<_i7.Introspection<Object>> get $webTestBeansIntrospections => [
         annotations: [_i7.PositiveOrZero()],
       ),
     ],
+    library: r'asset:spring_boot_starter_web/test/app/models.dart',
     parts: {_i7.IntrospectionPart.write},
     constructor: _i7.IntrospectedConstructor<_i1.NewBook>(
       parameters: [
@@ -202,6 +204,7 @@ List<_i7.Introspection<Object>> get $webTestBeansIntrospections => [
         get: _$get10,
       ),
     ],
+    library: r'package:spring_boot_starter_web/src/sse_emitter.dart',
     parts: {_i7.IntrospectionPart.read, _i7.IntrospectionPart.write},
     instantiate: _i2.SseEmitter.new,
     constructor: _i7.IntrospectedConstructor<_i2.SseEmitter>(
@@ -224,6 +227,7 @@ List<_i7.Introspection<Object>> get $webTestBeansIntrospections => [
         get: _$get12,
       ),
     ],
+    library: r'asset:spring_boot_starter_web/test/app/echo_endpoint.dart',
     parts: {_i7.IntrospectionPart.read},
   ),
   const _i7.Introspection<_i4.Upload>(
@@ -262,6 +266,7 @@ List<_i7.Introspection<Object>> get $webTestBeansIntrospections => [
         get: _$get18,
       ),
     ],
+    library: r'asset:spring_boot_starter_web/test/app/files_controller.dart',
     parts: {_i7.IntrospectionPart.read, _i7.IntrospectionPart.write},
     constructor: _i7.IntrospectedConstructor<_i4.Upload>(
       parameters: [
@@ -325,6 +330,7 @@ List<_i7.Introspection<Object>> get $webTestBeansIntrospections => [
         get: _$get22,
       ),
     ],
+    library: r'asset:spring_boot_starter_web/test/app/files_controller.dart',
     parts: {_i7.IntrospectionPart.read, _i7.IntrospectionPart.write},
     constructor: _i7.IntrospectedConstructor<_i4.Stored>(
       parameters: [
@@ -352,6 +358,7 @@ List<_i7.Introspection<Object>> get $webTestBeansIntrospections => [
   const _i7.Introspection<_i5.StreamingResponseBody>(
     className: r'StreamingResponseBody',
     properties: [],
+    library: r'package:spring_boot_starter_web/src/response_writer.dart',
     parts: {_i7.IntrospectionPart.read, _i7.IntrospectionPart.write},
     constructor: _i7.IntrospectedConstructor<_i5.StreamingResponseBody>(
       parameters: [

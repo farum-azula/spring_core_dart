@@ -63,6 +63,8 @@ List<_i2.Introspection<Object>> get $bootPropertiesBeansIntrospections => [
         set: _$set1,
       ),
     ],
+    library:
+        r'package:spring_boot_dart/src/properties/rate_limit_properties.dart',
     instantiate: _i1.RateLimitMemoryProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.RateLimitMemoryProperties>(
       parameters: [],
@@ -125,6 +127,8 @@ List<_i2.Introspection<Object>> get $bootPropertiesBeansIntrospections => [
         set: _$set16,
       ),
     ],
+    library:
+        r'package:spring_boot_dart/src/properties/rate_limit_properties.dart',
     instantiate: _i1.RateLimitRuleProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.RateLimitRuleProperties>(
       parameters: [],

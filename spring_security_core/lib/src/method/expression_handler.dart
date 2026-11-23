@@ -315,11 +315,12 @@ final class MethodSecurityExpressionHandler {
     final context = StandardEvaluationContext(root)
       ..addPropertyAccessor(const _SecurityPropertyAccessor())
       ..addMethodResolver(const _RootMethodResolver());
-    if (introspector case final introspector?) {
-      context
-        ..addPropertyAccessor(IntrospectionPropertyAccessor(introspector))
-        ..addMethodResolver(IntrospectionMethodResolver(introspector));
-    }
+    final described = introspector ?? Introspector.shared;
+    context
+      ..addPropertyAccessor(
+        IntrospectionPropertyAccessor(described, checkRead: _refuseFuture),
+      )
+      ..addMethodResolver(IntrospectionMethodResolver(described));
     if (beanFactory case final factory?) {
       context.beanResolver = BeanFactoryResolver(factory);
     }
@@ -334,6 +335,8 @@ final class MethodSecurityExpressionHandler {
     for (final customizer in customizers) {
       customizer.customize(context);
     }
+    // First, so it also covers the resolvers the customizers added.
+    context.methodResolvers.insert(0, _SynchronousMethodResolver(described));
     return context;
   }
 
@@ -358,6 +361,56 @@ final class MethodSecurityExpressionHandler {
       );
     }
     return value;
+  }
+}
+
+// An expression runs synchronously, so a Future in it is never its value:
+// `this.isOwner(#id) != false` would hold for everyone.
+Never _futureRefused(String member) => throw AccessException(
+  "'$member' is asynchronous: a security expression cannot wait for a "
+  'Future, so the call is refused. Use a synchronous method, or check it '
+  'in the method body.',
+);
+
+void _refuseFuture(Object? value, String name) {
+  if (value is Future) {
+    _futureRefused(name);
+  }
+}
+
+// Asks the resolvers after it, and refuses a method that gives a Future: one
+// described as asynchronous is not even called (on a repository or a client
+// that would be a query or a request made for a call about to be refused).
+final class _SynchronousMethodResolver implements MethodResolver {
+  const _SynchronousMethodResolver(this.introspector);
+
+  final Introspector introspector;
+
+  @override
+  MethodExecutor? resolve(
+    EvaluationContext context,
+    Object target,
+    String name,
+    List<Object?> arguments,
+  ) {
+    if (introspector.findIntrospection(target)?.getMethod(name)?.isFuture ??
+        false) {
+      _futureRefused(name);
+    }
+    for (final later
+        in context.methodResolvers
+            .skipWhile((resolver) => !identical(resolver, this))
+            .skip(1)) {
+      if (later.resolve(context, target, name, arguments)
+          case final executor?) {
+        return (context, target, args) {
+          final value = executor(context, target, args);
+          _refuseFuture(value, name);
+          return value;
+        };
+      }
+    }
+    return null;
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart' show Environment;
+import 'package:spring_boot_starter_data/src/exceptions.dart';
 import 'package:spring_boot_starter_data/src/properties/data_properties.dart';
 import 'package:spring_boot_starter_data/src/properties_binding.dart';
 import 'package:spring_boot_starter_data/src/repository/page.dart';
@@ -69,6 +70,33 @@ class SortDefault {
   final Direction direction;
 }
 
+/// The properties a request may order a controller's `Sort` (or
+/// `Pageable`) parameter by: a `sort` parameter naming another one is
+/// refused with a `PropertyReferenceException`, which the web glue answers
+/// with a 400. The parameter's own defaults are not checked.
+///
+/// A sort is an `ORDER BY` oracle: a client that may order by a value it
+/// cannot read learns the order of that value, even when a DTO or a mapper
+/// leaves it out of the answer. The build warns about a handler's `Pageable`
+/// or `Sort` parameter without this list.
+///
+/// ```dart
+/// @GetMapping('/books')
+/// Future<Page<Book>> list(
+///   @AllowedSortProperties(['title', 'year']) Pageable pageable,
+/// ) => books.findAll(pageable);
+/// ```
+///
+/// This annotation is the framework's own: Spring Data has none (its web
+/// resolvers pass any name to the repository).
+class AllowedSortProperties {
+  /// A request may order by [properties] alone.
+  const AllowedSortProperties(this.properties);
+
+  /// The properties a request may order by.
+  final List<String> properties;
+}
+
 /// The settings of [WebPaging], from the `spring.data.web.*` properties of
 /// Spring Boot's `SpringDataWebProperties`.
 ///
@@ -83,6 +111,9 @@ class SortDefault {
 /// | `spring.data.web.pageable.qualifier-delimiter` | `_` |
 /// | `spring.data.web.sort.sort-parameter` | `sort` |
 ///
+/// [maxSortOrders] has no property: replace the bean
+/// `pagingArgumentResolvers` to change it.
+///
 /// Spring (Java): `SpringDataWebProperties`.
 final class WebPagingProperties {
   /// Settings with the given values (the defaults of Spring Boot unless
@@ -96,6 +127,7 @@ final class WebPagingProperties {
     this.prefix = '',
     this.qualifierDelimiter = '_',
     this.sortParameter = 'sort',
+    this.maxSortOrders = 16,
   });
 
   /// The settings of [environment]; a malformed number or boolean throws.
@@ -160,6 +192,11 @@ final class WebPagingProperties {
 
   /// The name of the query parameter holding the order.
   final String sortParameter;
+
+  /// The most orders (different properties) a request may ask for; more is
+  /// an `InvalidPagingRequestException` (a 400). Spring has no limit; a
+  /// database refuses an `ORDER BY` of thousands of terms with a 500.
+  final int maxSortOrders;
 }
 
 /// Turns the query parameters of a request into the `Pageable` and `Sort`
@@ -183,9 +220,14 @@ final class WebPagingProperties {
 /// - a parameter marked `@Qualifier('foo')` reads `foo_page`, `foo_size`
 ///   and `foo_sort`.
 ///
-/// A sort property the entity does not have is not checked here: the
-/// repository refuses it (`PropertyReferenceException`), which the web glue
-/// answers with a 400.
+/// A property named twice is ordered by its first order; more than
+/// [WebPagingProperties.maxSortOrders] properties is an
+/// `InvalidPagingRequestException` (a limit of this framework; Spring has
+/// none). With an [AllowedSortProperties] on the parameter, a property it
+/// does not list is a `PropertyReferenceException`; without it, a property
+/// the entity does not have is refused by the repository
+/// (`PropertyReferenceException` too). The web glue answers both with a
+/// 400.
 ///
 /// The web starter's resolvers, written into the application by the
 /// generator from this starter's template, call it: this starter does not
@@ -200,13 +242,14 @@ final class WebPaging {
   /// The settings.
   final WebPagingProperties properties;
 
-  /// The `Pageable` the [query] parameters ask for, [pageableDefault] and
-  /// [sortDefaults] being the annotations of the parameter and [qualifier]
-  /// the value of its `@Qualifier`.
+  /// The `Pageable` the [query] parameters ask for, [pageableDefault],
+  /// [sortDefaults] and [allowed] being the annotations of the parameter
+  /// and [qualifier] the value of its `@Qualifier`.
   Pageable pageable(
     Map<String, List<String>> query, {
     PageableDefault? pageableDefault,
     List<SortDefault> sortDefaults = const [],
+    AllowedSortProperties? allowed,
     String? qualifier,
   }) {
     final fallbackSize = pageableDefault?.size ?? properties.defaultPageSize;
@@ -234,6 +277,7 @@ final class WebPaging {
     final requested = sort(
       query,
       sortDefaults: sortDefaults,
+      allowed: allowed,
       qualifier: qualifier,
     );
     return PageRequest.of(
@@ -243,24 +287,47 @@ final class WebPaging {
     );
   }
 
-  /// The `Sort` the [query] parameters ask for, [sortDefaults] being the
-  /// parameter's annotations and [qualifier] the value of its
-  /// `@Qualifier`; the defaults, or unsorted, when the request has none.
+  /// The `Sort` the [query] parameters ask for, [sortDefaults] and
+  /// [allowed] being the parameter's annotations and [qualifier] the value
+  /// of its `@Qualifier`; the defaults, or unsorted, when the request has
+  /// none.
   Sort sort(
     Map<String, List<String>> query, {
     List<SortDefault> sortDefaults = const [],
+    AllowedSortProperties? allowed,
     String? qualifier,
   }) {
-    final values = query[_name(properties.sortParameter, qualifier, false)];
+    final parameter = _name(properties.sortParameter, qualifier, false);
+    final values = query[parameter];
     if (values == null ||
         (values.length == 1 && values.single.trim().isEmpty)) {
       return _defaultSort(sortDefaults);
     }
-    final orders = <SortOrder>[];
+    final orders = <String, SortOrder>{};
     for (final value in values) {
-      orders.addAll(_parse(value));
+      for (final order in _parse(value)) {
+        orders.putIfAbsent(order.property, () => order);
+        if (orders.length > properties.maxSortOrders) {
+          throw InvalidPagingRequestException(
+            values.length,
+            parameter,
+            'at most ${properties.maxSortOrders} properties to sort by',
+          );
+        }
+      }
     }
-    return Sort.byOrders(orders);
+    if (allowed != null) {
+      for (final property in orders.keys) {
+        if (!allowed.properties.contains(property)) {
+          throw PropertyReferenceException(
+            property,
+            'the sort of this request',
+            hint: 'not one of @AllowedSortProperties',
+          );
+        }
+      }
+    }
+    return Sort.byOrders(orders.values.toList());
   }
 
   Sort _defaultSort(List<SortDefault> defaults) {

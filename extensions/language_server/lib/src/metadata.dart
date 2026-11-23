@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dart_spring_language_server/src/config/yaml_entries.dart';
 import 'package:yaml/yaml.dart';
 
 /// Where a package keeps its Spring metadata, relative to its root.
@@ -801,7 +802,7 @@ final class MetadataStore {
     }
     var pubspec = const _Pubspec(null, {}, {});
     try {
-      final yaml = loadYaml(file.readAsStringSync());
+      final yaml = loadYamlBounded(file.readAsStringSync());
       if (yaml is YamlMap) {
         Set<String> names(Object? map) =>
             map is YamlMap ? {for (final key in map.keys) '$key'} : <String>{};

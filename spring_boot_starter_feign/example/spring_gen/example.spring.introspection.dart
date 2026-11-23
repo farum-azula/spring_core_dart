@@ -46,6 +46,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get1,
       ),
     ],
+    library: r'asset:spring_boot_starter_feign/example/example.dart',
     constructor: _i2.IntrospectedConstructor<_i1.Book>(
       parameters: [
         _i2.IntrospectedParameter(
@@ -78,6 +79,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
         get: _$get4,
       ),
     ],
+    library: r'asset:spring_boot_starter_feign/example/example.dart',
     constructor: _i2.IntrospectedConstructor<_i1.StockChange>(
       parameters: [
         _i2.IntrospectedParameter(

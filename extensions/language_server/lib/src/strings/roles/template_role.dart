@@ -7,6 +7,7 @@ import 'package:dart_spring_language_server/src/project_model.dart';
 import 'package:dart_spring_language_server/src/properties/property_references.dart';
 import 'package:dart_spring_language_server/src/strings/navigation_strings.dart';
 import 'package:dart_spring_language_server/src/strings/roles/spel_expression_target.dart';
+import 'package:dart_spring_language_server/src/strings/spel_paths.dart';
 import 'package:dart_spring_language_server/src/strings/string_context.dart';
 import 'package:dart_spring_language_server/src/strings/string_role.dart';
 import 'package:dart_spring_language_server/src/symbols/target.dart';
@@ -88,11 +89,11 @@ final class TemplateRole extends StringRole {
           ),
         );
       }
+      final expression = source.substring(part.innerStart, part.innerEnd);
+      final inner = relative - part.innerStart;
       return Handled(
-        SpelExpressionTarget(model).at(
-          source.substring(part.innerStart, part.innerEnd),
-          relative - part.innerStart,
-        ),
+        model.spelPaths.target(expression, inner, const SpelEnv()) ??
+            SpelExpressionTarget(model).at(expression, inner),
       );
     }
     return null;
@@ -118,7 +119,10 @@ final class TemplateRole extends StringRole {
       );
     }
     if (request.openExpression case final expression?) {
-      final result = model.spel.complete(expression.group(1)!);
+      final typed = expression.group(1)!;
+      final result =
+          model.spelPaths.complete(typed, const SpelEnv()) ??
+          model.spel.complete(typed);
       return Handled(
         result == null
             ? null
@@ -201,7 +205,11 @@ final class TemplateRole extends StringRole {
         fixes: MissingPropertyFixes(model).of(
           string.path,
           key,
-          model.locations.rangeOf(string.file, keyEnd, keyEnd),
+          model.locations.rangeOf(
+            string.file,
+            base + part.trimmedKeyEnd(source),
+            base + part.trimmedKeyEnd(source),
+          ),
         ),
       ),
     );
@@ -221,7 +229,10 @@ final class TemplateRole extends StringRole {
     final base = string.contentStart;
     try {
       SpelExpressionParser().parseExpression(expression);
-      for (final issue in model.spel.issuesIn(string.path, expression)) {
+      for (final issue in [
+        ...model.spel.issuesIn(string.path, expression),
+        ...model.spelPaths.issues(expression, const SpelEnv()),
+      ]) {
         final range = model.locations.rangeOf(
           string.file,
           base + part.innerStart + issue.start,

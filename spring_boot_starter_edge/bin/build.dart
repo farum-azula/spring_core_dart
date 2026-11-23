@@ -28,6 +28,9 @@ Builds the application as a function.
   --path           netlify: the paths the function answers (default: /*)
   --streaming      aws: a response-streaming handler (function URLs with
                    InvokeMode RESPONSE_STREAM; needed by server-sent events)
+  --debug          keep the debug part of the application (startup checks,
+                   statement logging of a profile); without it the build
+                   is a release build (-Ddart.vm.product=true)
   -D<name>=<value> a definition for the compiler
 ''';
 
@@ -35,6 +38,7 @@ Future<void> main(List<String> args) async {
   final options = <String, String>{};
   final defines = <String, String>{};
   var streaming = false;
+  var debug = false;
   const short = {
     '-p': '--platform',
     '-n': '--name',
@@ -49,6 +53,10 @@ Future<void> main(List<String> args) async {
     }
     if (arg == '--streaming') {
       streaming = true;
+      continue;
+    }
+    if (arg == '--debug') {
+      debug = true;
       continue;
     }
     if (arg.startsWith('-D') && arg.contains('=')) {
@@ -113,6 +121,7 @@ Future<void> main(List<String> args) async {
     target: target,
     path: options['path'] ?? '/*',
     defines: defines,
+    debug: debug,
     dart: options['dart'] ?? 'dart',
   );
   try {

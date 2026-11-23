@@ -50,6 +50,7 @@ get $securityCoreConfigBeansPropertiesIntrospections => [
     annotations: [
       _i2.ConfigurationProperties(r'spring.security.password-checks'),
     ],
+    library: r'package:spring_security_core/src/config/security_core_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.PasswordChecksProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.PasswordChecksProperties>(

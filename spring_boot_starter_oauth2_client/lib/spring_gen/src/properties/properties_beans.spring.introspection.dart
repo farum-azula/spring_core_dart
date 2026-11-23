@@ -204,6 +204,7 @@ List<_i2.Introspection<Object>> get $oauth2ClientConfigBeansIntrospections => [
         get: _$get11,
       ),
     ],
+    library: r'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart',
     instantiate: _i1.OAuth2ClientRegistrationProperties.new,
     constructor:
         _i2.IntrospectedConstructor<_i1.OAuth2ClientRegistrationProperties>(
@@ -321,6 +322,7 @@ List<_i2.Introspection<Object>> get $oauth2ClientConfigBeansIntrospections => [
         get: _$get19,
       ),
     ],
+    library: r'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart',
     instantiate: _i1.OAuth2ClientSecretJwtProperties.new,
     constructor:
         _i2.IntrospectedConstructor<_i1.OAuth2ClientSecretJwtProperties>(
@@ -410,6 +412,7 @@ List<_i2.Introspection<Object>> get $oauth2ClientConfigBeansIntrospections => [
         get: _$get27,
       ),
     ],
+    library: r'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart',
     instantiate: _i1.OAuth2ClientProviderProperties.new,
     constructor:
         _i2.IntrospectedConstructor<_i1.OAuth2ClientProviderProperties>(

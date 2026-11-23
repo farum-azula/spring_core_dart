@@ -59,7 +59,12 @@ final class TransactionAnnotationPointcut implements AnnotationPointcut {
 /// the annotation, the definition of its transactions, and which errors
 /// roll back.
 final class TransactionPlan {
-  TransactionPlan._(this.annotation, this.definition, this._rollbackOn);
+  TransactionPlan._(
+    this.annotation,
+    this.definition,
+    this._rollbackOn, {
+    this.refusal,
+  });
 
   /// The annotation that applies.
   final Transactional annotation;
@@ -69,6 +74,11 @@ final class TransactionPlan {
   final TransactionDefinition definition;
 
   final bool Function(Object error) _rollbackOn;
+
+  /// Why the method cannot run in a transaction (it does not return a
+  /// `Future`), or `null`. A release build has no `TransactionValidator`:
+  /// the call is then refused before any transaction begins.
+  final String? refusal;
 
   /// Whether [error], thrown by the method, rolls the transaction back.
   bool rollsBackOn(Object error) => _rollbackOn(error);
@@ -95,7 +105,9 @@ final class TransactionPlan {
 /// so it does not run in a transaction of its own (Spring's proxy rule).
 ///
 /// Use `TransactionValidator` to have mistakes (a method that is not
-/// async, an unknown manager) stop the startup.
+/// async, an unknown manager) stop the startup. Without it (a release
+/// build), a method that does not return a `Future` fails at each call
+/// with a [StateError], before its body runs or a transaction begins.
 ///
 /// Spring (Java):
 /// `org.springframework.transaction.interceptor.TransactionInterceptor`.
@@ -143,10 +155,16 @@ final class TransactionInterceptor implements MethodInterceptor {
     if (annotation == null) {
       return null;
     }
+    final member = '${signature.targetType}.${signature.name}';
+    final returnType = signature.returnType.split('<').first;
     return TransactionPlan._(
       annotation,
-      annotation.definition('${signature.targetType}.${signature.name}'),
+      annotation.definition(member),
       (error) => _rollsBackOn(annotation, error),
+      refusal: returnType == 'Future'
+          ? null
+          : '@Transactional $member returns $returnType, not a Future: the '
+                'transaction ends when the Future completes; make it async',
     );
   }
 
@@ -208,6 +226,10 @@ final class TransactionInterceptor implements MethodInterceptor {
     final plan = planOf(invocation.signature);
     if (plan == null) {
       return invocation.proceed();
+    }
+    if (plan.refusal case final refusal?) {
+      // Fails the caller with nothing run and nothing committed.
+      throw StateError(refusal);
     }
     final PlatformTransactionManager manager;
     try {

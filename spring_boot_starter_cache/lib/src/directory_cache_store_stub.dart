@@ -5,9 +5,15 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// A [CacheStore] in a folder: none where there are no folders (a browser).
 /// A Flutter app has the Flutter starter's store on its files instead; an
 /// app elsewhere declares a `CacheStore` bean.
+///
+/// Making one throws an [UnsupportedError], so `spring.cache.type: disk`
+/// without a `CacheStore` bean fails the start, as Boot fails it for a
+/// cache type it cannot set up, instead of every cached call failing later.
 final class DirectoryCacheStore implements CacheStore {
-  /// The store in the folder [path].
-  DirectoryCacheStore(this.path);
+  /// Throws: there is no folder [path] here.
+  DirectoryCacheStore(this.path) {
+    _none();
+  }
 
   /// The folder.
   final String path;

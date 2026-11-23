@@ -36,54 +36,56 @@ _i1.CacheProperties _$create10(
 /// The binding of the `@ConfigurationProperties` classes of the module
 /// `cacheConfigBeans`: the descriptions only its binder uses. The module hands
 /// them to the context.
-List<_i2.Introspection<Object>> get $cacheConfigBeansPropertiesIntrospections =>
-    [
-      const _i2.Introspection<_i1.CacheProperties>(
-        className: r'CacheProperties',
-        properties: [
-          _i2.IntrospectedProperty<_i1.CacheProperties>(
-            r'type',
-            nullable: true,
-            typeInfo: _i2.EnumType<_i1.CacheType>(
-              _i1.CacheType.values,
-              nullable: true,
-            ),
-            get: _$get0,
-            set: _$set1,
-          ),
-          _i2.IntrospectedProperty<_i1.CacheProperties>(
-            r'cacheNames',
-            typeInfo: _i2.ListType<String>(_i2.ClassType<String>()),
-            get: _$get2,
-            set: _$set3,
-          ),
-          _i2.IntrospectedProperty<_i1.CacheProperties>(
-            r'simple',
-            typeInfo: _i2.ClassType<_i1.SimpleCacheProperties>(),
-            get: _$get4,
-            set: _$set5,
-          ),
-          _i2.IntrospectedProperty<_i1.CacheProperties>(
-            r'disk',
-            typeInfo: _i2.ClassType<_i1.DiskCacheProperties>(),
-            get: _$get6,
-            set: _$set7,
-          ),
-          _i2.IntrospectedProperty<_i1.CacheProperties>(
-            r'resourceVersion',
-            typeInfo: _i2.ClassType<bool>(),
-            hasInitialValue: true,
-            initialValue: false,
-            get: _$get8,
-            set: _$set9,
-          ),
-        ],
-        annotations: [_i2.ConfigurationProperties(r'spring.cache')],
-        parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
-        instantiate: _i1.CacheProperties.new,
-        constructor: _i2.IntrospectedConstructor<_i1.CacheProperties>(
-          parameters: [],
-          create: _$create10,
+List<_i2.Introspection<Object>>
+get $cacheConfigBeansPropertiesIntrospections => [
+  const _i2.Introspection<_i1.CacheProperties>(
+    className: r'CacheProperties',
+    properties: [
+      _i2.IntrospectedProperty<_i1.CacheProperties>(
+        r'type',
+        nullable: true,
+        typeInfo: _i2.EnumType<_i1.CacheType>(
+          _i1.CacheType.values,
+          nullable: true,
         ),
+        get: _$get0,
+        set: _$set1,
       ),
-    ];
+      _i2.IntrospectedProperty<_i1.CacheProperties>(
+        r'cacheNames',
+        typeInfo: _i2.ListType<String>(_i2.ClassType<String>()),
+        get: _$get2,
+        set: _$set3,
+      ),
+      _i2.IntrospectedProperty<_i1.CacheProperties>(
+        r'simple',
+        typeInfo: _i2.ClassType<_i1.SimpleCacheProperties>(),
+        get: _$get4,
+        set: _$set5,
+      ),
+      _i2.IntrospectedProperty<_i1.CacheProperties>(
+        r'disk',
+        typeInfo: _i2.ClassType<_i1.DiskCacheProperties>(),
+        get: _$get6,
+        set: _$set7,
+      ),
+      _i2.IntrospectedProperty<_i1.CacheProperties>(
+        r'resourceVersion',
+        typeInfo: _i2.ClassType<bool>(),
+        hasInitialValue: true,
+        initialValue: false,
+        get: _$get8,
+        set: _$set9,
+      ),
+    ],
+    annotations: [_i2.ConfigurationProperties(r'spring.cache')],
+    library:
+        r'package:spring_boot_starter_cache/src/config/cache_properties.dart',
+    parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
+    instantiate: _i1.CacheProperties.new,
+    constructor: _i2.IntrospectedConstructor<_i1.CacheProperties>(
+      parameters: [],
+      create: _$create10,
+    ),
+  ),
+];

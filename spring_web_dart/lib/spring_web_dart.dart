@@ -71,6 +71,7 @@ export 'package:spring_web_dart/src/client/streamed_http_response.dart';
 export 'package:spring_web_dart/src/controller_annotations.dart';
 export 'package:spring_web_dart/src/http_headers.dart';
 export 'package:spring_web_dart/src/http_method.dart';
+export 'package:spring_web_dart/src/http_secrets.dart';
 export 'package:spring_web_dart/src/http_status.dart';
 export 'package:spring_web_dart/src/mapping_descriptions.dart';
 export 'package:spring_web_dart/src/media_type.dart';

@@ -1,3 +1,9 @@
+## Unreleased
+
+- The edge build is a release build for the build switches (`-Ddart.vm.product=true`, which `dart compile js` and `wasm` do not define): the debug part (the startup checks, the statement logging a profile could turn on, the hot-reload entry points) is left out. `--debug` (`EdgeBuild.debug`) keeps it.
+- The warning list is left out when `spring.main.startup-checks.enabled=false` at run time.
+- Tests of `SupabaseAnonKeyFilter`.
+
 ## 0.9.0
 
 - No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.9.0.

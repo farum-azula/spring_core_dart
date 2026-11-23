@@ -609,6 +609,7 @@ final class Introspection<T extends Object> {
     this._fromJson,
     this._toJson,
     this._className,
+    this.library,
     this._specialize,
     this.objectMethods,
   }) : _propertyList = properties,
@@ -668,6 +669,19 @@ final class Introspection<T extends Object> {
   /// The simple name of the class, without type arguments (written by the
   /// generator, so it survives minification; e.g. the default JSON type id).
   String get className => _className ?? '$T'.replaceFirst(RegExp('<.*'), '');
+
+  /// The URI of the library that declares the class
+  /// (`package:shop/src/book.dart`), written by the generator; `null` in a
+  /// hand-written description that does not give it.
+  final String? library;
+
+  /// The name of the class that tells it apart from another of the same
+  /// [className]: `<library>#<className>`, or the [className] alone
+  /// without a [library]. The same in every run and in a minified build:
+  /// what a value kept outside the program (a disk cache entry) names its
+  /// class by, as Jackson's default typing writes the fully qualified name.
+  String get qualifiedName =>
+      library == null ? className : '$library#$className';
 
   /// Whether this describes a generic class with its type parameters
   /// erased (`Page<Object?>` for `Page<T>`) that can be [specialize]d.
@@ -800,6 +814,7 @@ final class Introspection<T extends Object> {
       fromJson: _fromJson ?? before._fromJson,
       toJson: _toJson ?? before._toJson,
       className: _className ?? before._className,
+      library: library ?? before.library,
       objectMethods: objectMethods ?? before.objectMethods,
       specialize: specialize == null
           ? earlierSpecialize
@@ -857,17 +872,29 @@ class Introspector {
   final _byType = <Type, Introspection<Object>>{};
   final _enums = <Type, EnumType<Enum>>{};
 
-  /// The description of the class named `name` in its source
-  /// ([Introspection.className], the same in a minified build), here or
-  /// in [parent]; `null` when none is registered.
-  Introspection<Object>? byClassName(String name) {
-    for (final introspection in _byType.values) {
-      if (introspection.className == name) {
-        return introspection;
-      }
+  /// The description of the class whose [Introspection.qualifiedName] is
+  /// [name] (the same in a minified build), here or in [parent]; `null`
+  /// when none is registered, or when two classes here share the name (two
+  /// classes `Book` described without their library): which one was meant
+  /// cannot be told.
+  Introspection<Object>? byQualifiedName(String name) {
+    final byName = _byQualifiedName ??= _indexByQualifiedName();
+    if (byName.containsKey(name)) {
+      return byName[name];
     }
-    return parent?.byClassName(name);
+    return parent?.byQualifiedName(name);
   }
+
+  Map<String, Introspection<Object>?> _indexByQualifiedName() {
+    final byName = <String, Introspection<Object>?>{};
+    for (final introspection in _byType.values) {
+      final name = introspection.qualifiedName;
+      byName[name] = byName.containsKey(name) ? null : introspection;
+    }
+    return byName;
+  }
+
+  Map<String, Introspection<Object>?>? _byQualifiedName;
 
   /// Adds [introspection], replacing any for the same type. The enums its
   /// properties and constructor parameters use are registered too (see
@@ -889,6 +916,7 @@ class Introspector {
         ? introspection
         : introspection._withEarlier(existing);
     _specialized.clear();
+    _byQualifiedName = null;
     final registered = _byType[introspection.type]!;
     if (registered.objectMethods case final methods?) {
       _registerObjectMethods(registered.type, methods);

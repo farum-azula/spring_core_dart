@@ -756,8 +756,9 @@ final class RequestMappingHandlerMapping
     }
     final Object? value;
     try {
-      value = writer.mapper.treeToValue<Object?>(
-        jsonDecode(utf8.decode(bytes, allowMalformed: true)),
+      // readValue: Jackson's limits on nesting and number length.
+      value = writer.mapper.readValue<Object?>(
+        utf8.decode(bytes, allowMalformed: true),
         type,
       );
     } on Object catch (error) {
@@ -1022,8 +1023,9 @@ final class RequestMappingHandlerMapping
         );
       } else {
         try {
-          value = writer.mapper.treeToValue<Object?>(
-            jsonDecode(_decodeText(bytes, request)),
+          // readValue: Jackson's limits on nesting and number length.
+          value = writer.mapper.readValue<Object?>(
+            _decodeText(bytes, request),
             type,
           );
         } on Object catch (error) {

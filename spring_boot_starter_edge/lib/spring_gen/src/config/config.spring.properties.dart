@@ -92,6 +92,8 @@ List<_i2.Introspection<Object>> get $edgeConfigBeansPropertiesIntrospections =>
           ),
         ],
         annotations: [_i2.ConfigurationProperties(r'spring.edge')],
+        library:
+            r'package:spring_boot_starter_edge/src/config/edge_properties.dart',
         parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
         instantiate: _i1.EdgeProperties.new,
         constructor: _i2.IntrospectedConstructor<_i1.EdgeProperties>(
@@ -111,6 +113,8 @@ List<_i2.Introspection<Object>> get $edgeConfigBeansPropertiesIntrospections =>
             set: _$set10,
           ),
         ],
+        library:
+            r'package:spring_boot_starter_edge/src/config/edge_properties.dart',
         parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
         instantiate: _i1.EdgeSupabaseProperties.new,
         constructor: _i2.IntrospectedConstructor<_i1.EdgeSupabaseProperties>(
@@ -128,6 +132,8 @@ List<_i2.Introspection<Object>> get $edgeConfigBeansPropertiesIntrospections =>
             set: _$set13,
           ),
         ],
+        library:
+            r'package:spring_boot_starter_edge/src/config/edge_properties.dart',
         parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
         instantiate: _i1.EdgeCloudflareProperties.new,
         constructor: _i2.IntrospectedConstructor<_i1.EdgeCloudflareProperties>(
@@ -154,6 +160,8 @@ List<_i2.Introspection<Object>> get $edgeConfigBeansPropertiesIntrospections =>
             set: _$set18,
           ),
         ],
+        library:
+            r'package:spring_boot_starter_edge/src/config/edge_properties.dart',
         parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
         instantiate: _i1.EdgeCloudflareRateLimitProperties.new,
         constructor:

@@ -150,6 +150,7 @@ get $searchPropertiesPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.search')],
+    library: r'package:spring_search_dart/src/config/search_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.SearchProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.SearchProperties>(

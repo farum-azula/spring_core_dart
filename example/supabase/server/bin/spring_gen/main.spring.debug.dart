@@ -37,7 +37,7 @@ get _$debugAutoConfigurationMetadata => {
 
 /// The hash of the generated code, which a hot reload compares to restart
 /// the application only when its beans changed (`SpringApplication.reload`).
-const _$fingerprint = 'eb0fd6a3';
+const _$fingerprint = 'c7cb74bc';
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;

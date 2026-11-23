@@ -179,6 +179,7 @@ String _$toString2(Book object) => 'Book(title: ${object.title}, pages: ${object
 const Introspection<Book>(
   className: r'Book',
   properties: [],
+  library: r'package:pkg/src/app.dart',
   parts: {},
   objectMethods: ObjectMethods<Book>(
     equals: _$equals0,
@@ -321,10 +322,10 @@ class Book {
     );
     has('(Page<Object> a, Page<Object> b) => deepEquals(a.items, b.items)');
     has(r'extension $Page<T extends Object> on Page<T> {');
-    has('typedef BookCopyWith = Book Function({String title});');
-    has('typedef BookCopyWith2 = Book Function({String title});');
-    has(r'extension $Book on Book {');
-    has(r'extension $Book2 on Book {');
+    has('typedef BookCopyWithApp = Book Function({String title});');
+    has('typedef BookCopyWithArchiveBook = Book Function({String title});');
+    has(r'extension $BookApp on Book {');
+    has(r'extension $BookArchiveBook on Book {');
     has('typedef FilterCopyWith = Filter Function({String query, int page});');
   });
 

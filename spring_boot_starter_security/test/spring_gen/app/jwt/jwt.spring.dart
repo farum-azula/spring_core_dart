@@ -118,6 +118,7 @@ _i1.BeanModule get $jwtSecurityBeans => _i1.BeanModule(r'jwtSecurityBeans', [
     types: const [_i5.NimbusJwtDecoder, _i5.JwtDecoder],
     factoryBeanName: r'jwtSecurityConfig',
     factoryMethodName: r'jwtDecoder',
+    factoryMethodReturnType: _i5.JwtDecoder,
     dependencies: const [
       _i1.Dependency(_i8.JwtSecurityConfig, qualifier: r'jwtSecurityConfig'),
     ],

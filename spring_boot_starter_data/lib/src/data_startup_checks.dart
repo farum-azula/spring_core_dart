@@ -29,6 +29,7 @@ final dataStartupChecks = <BeanDefinition<Object>>[
     source: _dataSource,
     conditions: const [
       ConditionGroup('$_dataSource.transactionValidator', [
+        startupChecksEnabled,
         ConditionalOnBean(TransactionInterceptor),
       ]),
     ],
@@ -38,6 +39,7 @@ final dataStartupChecks = <BeanDefinition<Object>>[
     name: 'dataFailureAnalyzer',
     types: const [DataFailureAnalyzer, FailureAnalyzer],
     source: 'package:spring_boot_starter_data#DataSourceAutoConfiguration',
+    conditions: const [startupChecksEnabled],
     create: (_) => const DataFailureAnalyzer(),
   ),
 ];

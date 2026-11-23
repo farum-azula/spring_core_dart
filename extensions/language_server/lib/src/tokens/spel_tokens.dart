@@ -25,6 +25,9 @@ const _keywords = {
   'mod',
 };
 
+/// Whether [name] is a word of SpEL rather than a name.
+bool isSpelKeyword(String name) => _keywords.contains(name.toLowerCase());
+
 /// The literal tokens and their colour.
 const Map<TokenKind, TokenType> _literals = {
   TokenKind.literalInt: TokenType.number,

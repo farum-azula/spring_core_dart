@@ -986,6 +986,22 @@ class AnnotationConditionModel extends ConditionModel {
   final DartObject value;
 }
 
+/// A bare `@ConditionalOnMissingBean()` or `@ConditionalOnBean()` of a
+/// `@Bean` method whose bean is registered under the type of the value
+/// it returns: written with the method's declared return type
+/// (`ConditionalOnMissingBean.where(types: [Clock])`), the type Spring
+/// Boot deduces, so a user's `Clock` makes it back off.
+class DeclaredTypeConditionModel extends ConditionModel {
+  /// The condition [value] with [declaredType] for the deduced type.
+  DeclaredTypeConditionModel(this.value, this.declaredType);
+
+  /// The annotation as written.
+  final DartObject value;
+
+  /// The `@Bean` method's declared return type.
+  final InterfaceType declaredType;
+}
+
 /// A method of a bean that handles application events: an
 /// `@EventListener` method, or `onApplicationEvent` of an
 /// `ApplicationListener` bean.

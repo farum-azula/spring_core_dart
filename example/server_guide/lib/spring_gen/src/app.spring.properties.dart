@@ -95,6 +95,7 @@ List<_i5.Introspection<Object>> get $appBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i5.ConfigurationProperties(r'neon.cors')],
+    library: r'package:neon_books_server/src/security/security_config.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.CorsProperties.new,
     constructor: _i5.IntrospectedConstructor<_i1.CorsProperties>(
@@ -121,6 +122,7 @@ List<_i5.Introspection<Object>> get $appBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i5.ConfigurationProperties(r'neon.app'), _i5.Validated()],
+    library: r'package:neon_books_server/src/security/sso_config.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i2.AppProperties.new,
     constructor: _i5.IntrospectedConstructor<_i2.AppProperties>(
@@ -146,6 +148,7 @@ List<_i5.Introspection<Object>> get $appBeansPropertiesIntrospections => [
       _i5.ConfigurationProperties(r'neon.security'),
       _i5.Validated(),
     ],
+    library: r'package:neon_books_server/src/security/users.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i3.UsersProperties.new,
     constructor: _i5.IntrospectedConstructor<_i3.UsersProperties>(
@@ -178,6 +181,7 @@ List<_i5.Introspection<Object>> get $appBeansPropertiesIntrospections => [
         annotations: [_i5.NotEmpty()],
       ),
     ],
+    library: r'package:neon_books_server/src/security/users.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i3.UserEntry.new,
     constructor: _i5.IntrospectedConstructor<_i3.UserEntry>(
@@ -242,6 +246,7 @@ List<_i5.Introspection<Object>> get $appBeansPropertiesIntrospections => [
       _i5.Validated(),
       _i4.ValidOpeningHours(),
     ],
+    library: r'package:neon_books_server/src/shop/shop_properties.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i4.ShopProperties.new,
     constructor: _i5.IntrospectedConstructor<_i4.ShopProperties>(
@@ -270,6 +275,7 @@ List<_i5.Introspection<Object>> get $appBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i5.ConfigurationProperties(r'neon.supplier')],
+    library: r'package:neon_books_server/src/supplier/supplier_config.dart',
     parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i6.SupplierProperties.new,
     constructor: _i5.IntrospectedConstructor<_i6.SupplierProperties>(

@@ -66,6 +66,8 @@ abstract final class MetadataBeans {
     final custom = {
       for (final condition in bean.conditions)
         if (condition is AnnotationConditionModel)
+          condition.value.type?.element?.name
+        else if (condition is DeclaredTypeConditionModel)
           condition.value.type?.element?.name,
     };
     return [

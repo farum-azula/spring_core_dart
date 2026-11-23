@@ -83,6 +83,7 @@ List<_i4.Introspection<Object>> get $applicationPropertiesIntrospections => [
       ),
     ],
     annotations: [_i4.ConfigurationProperties(r'neon.sso')],
+    library: r'package:neon_books_app/src/account/sso_properties.dart',
     parts: {_i4.IntrospectionPart.read, _i4.IntrospectionPart.write},
     instantiate: _i1.SsoProperties.new,
     constructor: _i4.IntrospectedConstructor<_i1.SsoProperties>(
@@ -122,6 +123,7 @@ List<_i4.Introspection<Object>> get $applicationPropertiesIntrospections => [
       ),
     ],
     annotations: [_i4.ConfigurationProperties(r'api'), _i4.Validated()],
+    library: r'package:neon_books_app/src/api/api_properties.dart',
     parts: {_i4.IntrospectionPart.read, _i4.IntrospectionPart.write},
     instantiate: _i2.ApiProperties.new,
     constructor: _i4.IntrospectedConstructor<_i2.ApiProperties>(
@@ -151,6 +153,7 @@ List<_i4.Introspection<Object>> get $applicationPropertiesIntrospections => [
       ),
     ],
     annotations: [_i4.ConfigurationProperties(r'app'), _i4.Validated()],
+    library: r'package:neon_books_app/src/app/app_properties.dart',
     parts: {_i4.IntrospectionPart.read, _i4.IntrospectionPart.write},
     instantiate: _i3.AppProperties.new,
     constructor: _i4.IntrospectedConstructor<_i3.AppProperties>(

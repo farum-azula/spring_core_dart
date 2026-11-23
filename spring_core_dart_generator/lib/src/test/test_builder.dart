@@ -117,7 +117,11 @@ class SpringTestBuilder implements Builder {
   Future<void> build(BuildStep buildStep) async {
     final input = buildStep.inputId;
     final text = await buildStep.readAsString(input);
-    if (!text.contains('SpringBootTest') && !text.contains('DataTest')) {
+    // A file of the test starter without a test class is read too: its
+    // `@Test` would run nothing. Another file's `@Test` is not ours.
+    if (!text.contains('SpringBootTest') &&
+        !text.contains('DataTest') &&
+        !text.contains('package:spring_boot_starter_test/')) {
       return;
     }
     final parsed = parseString(
@@ -146,6 +150,7 @@ class SpringTestBuilder implements Builder {
       return;
     }
     final file = TestFile(input.path, parsed.unit, parsed.lineInfo, text);
+    checkTestPlacements(file);
     if (file.testClasses.isEmpty) {
       return;
     }
@@ -448,6 +453,168 @@ final class TestFile {
       '$path:${location.lineNumber}:${location.columnNumber}',
       message,
     );
+  }
+}
+
+// The annotations of a test class's members.
+const _memberOnly = {
+  'Test',
+  'TestBean',
+  'BeforeAll',
+  'BeforeEach',
+  'AfterEach',
+  'AfterAll',
+  'Nested',
+  'DynamicPropertySource',
+  'ContextInitializer',
+  'Container',
+  'CapturedOutput',
+  'LocalServerPort',
+  'DirtiesContext',
+  'DisplayName',
+  'Tag',
+  'Disabled',
+  'TestOptions',
+};
+
+// The container's annotations a test class does not read: it is no bean.
+const _beanOnly = {'PostConstruct', 'PreDestroy', 'EventListener'};
+
+/// Fails on a test annotation the generated file would not read: a
+/// test class's member annotation on a class that is no test class (nor a
+/// `@Nested` group or a base of one), on a top-level declaration or a
+/// getter; `@Nested` on a method; a class annotation on a field;
+/// `@SpringBootTest` on a mixin; a bean's lifecycle or listener
+/// annotation in a test class (it is no bean). Without this, nothing is
+/// generated for it and the test's import of the generated file breaks,
+/// or the annotation is ignored.
+void checkTestPlacements(TestFile file) {
+  // The classes the generated file reads: the test classes, the classes
+  // their `@Nested` fields create, and the superclasses of both.
+  final read = <String>{};
+  final pending = [
+    for (final declaration in file.testClasses)
+      declaration.namePart.typeName.lexeme,
+  ];
+  while (pending.isNotEmpty) {
+    final name = pending.removeLast();
+    if (!read.add(name)) {
+      continue;
+    }
+    final declaration = file.classNamed(name);
+    if (declaration == null) {
+      continue;
+    }
+    if (declaration.extendsClause?.superclass.name.lexeme case final base?) {
+      pending.add(base);
+    }
+    for (final member in declaration.body.members) {
+      if (member is FieldDeclaration &&
+          annotation(member.metadata, 'Nested') != null) {
+        for (final variable in member.fields.variables) {
+          final initializer = variable.initializer?.toSource() ?? '';
+          pending.addAll([
+            for (final match in RegExp(
+              r'\b([A-Z]\w*)\s*\(',
+            ).allMatches(initializer))
+              match[1]!,
+          ]);
+        }
+      }
+    }
+  }
+  String? memberAnnotation(List<Annotation> metadata) => _memberOnly
+      .where((name) => annotation(metadata, name) != null)
+      .firstOrNull;
+  for (final declaration in file.unit.declarations) {
+    switch (declaration) {
+      case MixinDeclaration(:final metadata, :final name)
+          when testContext(metadata) != null:
+        throw file.error(
+          declaration,
+          '@${_simpleName(testContext(metadata)!)} on the mixin '
+          '${name.lexeme}: a test class is a class. Declare a class (that '
+          'mixes it in).',
+        );
+      case FunctionDeclaration(:final metadata, :final name)
+          when memberAnnotation(metadata) != null:
+        throw file.error(
+          declaration,
+          '@${memberAnnotation(metadata)} on the top-level function '
+          '${name.lexeme}: it goes on a member of a @SpringBootTest class. '
+          'Move ${name.lexeme} into one.',
+        );
+      case TopLevelVariableDeclaration(:final metadata)
+          when memberAnnotation(metadata) != null:
+        throw file.error(
+          declaration,
+          '@${memberAnnotation(metadata)} on a top-level variable: it goes '
+          'on a member of a @SpringBootTest class.',
+        );
+      case ClassDeclaration(:final metadata, :final body):
+        final name = declaration.namePart.typeName.lexeme;
+        final isRead = read.contains(name);
+        for (final member in body.members) {
+          final memberMetadata = member.metadata;
+          final memberName = switch (member) {
+            MethodDeclaration(:final name) => name.lexeme,
+            FieldDeclaration(:final fields) =>
+              fields.variables.first.name.lexeme,
+            _ => '',
+          };
+          if (memberAnnotation(memberMetadata) case final found? when !isRead) {
+            throw file.error(
+              member,
+              '@$found on $name.$memberName: $name is no @SpringBootTest '
+              'class (nor a @Nested group of one, nor a base of one), so '
+              'nothing runs it. Add @SpringBootTest() to $name.',
+            );
+          }
+          if (member is MethodDeclaration) {
+            if ((member.isGetter || member.isSetter) &&
+                memberAnnotation(memberMetadata) != null) {
+              throw file.error(
+                member,
+                '@${memberAnnotation(memberMetadata)} on the '
+                '${member.isGetter ? 'getter' : 'setter'} $name.$memberName: '
+                'it goes on a method.',
+              );
+            }
+            if (annotation(memberMetadata, 'Nested') != null) {
+              throw file.error(
+                member,
+                '@Nested on the method $name.$memberName: a group is a field '
+                'holding an instance of its class: @Nested() final '
+                'withOneBook = WithOneBook();',
+              );
+            }
+            if (isRead && testContext(metadata) != null) {
+              for (final bean in _beanOnly) {
+                if (annotation(memberMetadata, bean) != null) {
+                  throw file.error(
+                    member,
+                    '@$bean on $name.$memberName: a test class is no bean, '
+                    'so the container never calls it. Use @BeforeEach or '
+                    '@BeforeAll, or move it into a bean of the application.',
+                  );
+                }
+              }
+            }
+          }
+          if (member is FieldDeclaration) {
+            for (final only in _classOnly) {
+              if (annotation(memberMetadata, only) != null) {
+                throw file.error(
+                  member,
+                  '@$only on the field $name.$memberName: it belongs to the '
+                  'test class; move it there.',
+                );
+              }
+            }
+          }
+        }
+      default:
+    }
   }
 }
 
@@ -1655,7 +1822,10 @@ String _literal(String value) {
       .replaceAll(r'\', r'\\')
       .replaceAll("'", r"\'")
       .replaceAll(r'$', r'\$')
-      .replaceAll('\n', r'\n');
+      .replaceAll('\n', r'\n')
+      .replaceAll('\r', r'\r')
+      .replaceAll('\u2028', r'\u2028')
+      .replaceAll('\u2029', r'\u2029');
   return "'$escaped'";
 }
 
@@ -1976,6 +2146,7 @@ final class _Members {
         'TestOptions',
         'Commit',
         'Rollback',
+        'DirtiesContext',
       ]) {
         if (annotation(metadata, name) != null) {
           throw file.error(
@@ -2017,6 +2188,21 @@ final class _Members {
         throw file.error(
           node,
           "@$what field '${field.name}' needs its type written.",
+        );
+      }
+      final expected = switch (what) {
+        'LocalServerPort' => const {'int', 'int?'},
+        'CapturedOutput' => const {'CapturedLogs', 'CapturedLogs?'},
+        _ => null,
+      };
+      final written = field.type!.split('.').last;
+      if (expected != null && !expected.contains(written)) {
+        throw file.error(
+          node,
+          "@$what field '${field.name}' is a ${field.type}: it receives "
+          '${expected.first == 'int' ? 'the port' : 'the captured logs'}, a '
+          '${expected.first}. Write: @$what() late ${expected.first} '
+          '${field.name};',
         );
       }
       _public(file, node, field.name);
@@ -2066,7 +2252,15 @@ final class _Members {
           'beans belong to the @SpringBootTest class (one context).',
         );
       }
-      if (node.isStatic || field.variable.initializer == null) {
+      if (node.isStatic) {
+        throw file.error(
+          node,
+          "@TestBean field '${field.name}' is static: the replacement "
+          'belongs to the test class, made for its context. Write it as an '
+          'instance field: @TestBean() final ${field.name} = FakeGateway();',
+        );
+      }
+      if (field.variable.initializer == null) {
         throw file.error(
           node,
           "@TestBean field '${field.name}' needs a value: "

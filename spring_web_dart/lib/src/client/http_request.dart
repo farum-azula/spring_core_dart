@@ -52,6 +52,7 @@ final class HttpRequest {
     this.timeout,
     this.readTimeout,
     this.followRedirects = true,
+    this.sensitiveHeaders = const {},
     this.abort,
   }) : headers = headers ?? HttpHeaders();
 
@@ -84,6 +85,12 @@ final class HttpRequest {
   /// returned (in a browser: an opaque response with status 0). Feign's
   /// `Request.Options.isFollowRedirects()`.
   final bool followRedirects;
+
+  /// More headers, in lower case, that carry a credential: a redirect to
+  /// another origin drops them, with those of
+  /// `HttpSecrets.isSensitiveHeader` (a Feign client's
+  /// `sensitive-headers`).
+  final Set<String> sensitiveHeaders;
 
   /// Completes when the caller no longer wants the response, or `null`
   /// when it always waits for it. A transport that is still waiting for

@@ -1,3 +1,8 @@
+## Unreleased
+
+- `MethodSecurityValidator` fails the start when a secured method has no signature in the bean's proxy, instead of letting it run unchecked.
+- **Security fix, breaking:** a `Future` inside a security expression fails the call. `this.isOwner(#id) != false` on a repository or `@FeignClient` compared the `Future` itself, so it held for every user and the call went through. A method described as asynchronous is no longer called from the expression, so a refused call makes no query or request.
+
 ## 0.9.0
 
 - Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.

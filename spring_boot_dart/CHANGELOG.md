@@ -1,3 +1,8 @@
+## Unreleased
+
+- `startupChecksEnabled`: `spring.main.startup-checks.enabled=false` at run time (command line, environment, a profile) turns off the startup checks the build kept, as a Boot `*.enabled=false` does.
+- A bare `@ConditionalOnMissingBean()` / `@ConditionalOnBean()` on a `@Bean` method looks for beans of the method's declared return type (`BeanDefinition.factoryMethodReturnType`), as Spring Boot's `OnBeanCondition`: `Clock clock() => SystemClock()` backs off for an application's own `Clock`.
+
 ## 0.9.0
 
 - Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.

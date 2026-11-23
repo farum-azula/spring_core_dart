@@ -50,6 +50,7 @@ List<_i2.Introspection<Object>> get $flutterConfigBeansIntrospections => [
         get: _$get2,
       ),
     ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
     instantiate: _i1.ResourceCacheLocation.new,
     constructor: _i2.IntrospectedConstructor<_i1.ResourceCacheLocation>(
       parameters: [

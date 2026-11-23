@@ -411,6 +411,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.main')],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.MainProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.MainProperties>(
@@ -430,6 +431,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.autoconfigure')],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.AutoconfigureProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.AutoconfigureProperties>(
@@ -456,6 +458,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.application')],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.ApplicationProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.ApplicationProperties>(
@@ -476,6 +479,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.banner')],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.BannerProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.BannerProperties>(
@@ -496,6 +500,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.devtools.restart')],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.DevtoolsRestartProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.DevtoolsRestartProperties>(
@@ -514,6 +519,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.lifecycle')],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.LifecycleProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.LifecycleProperties>(
@@ -540,6 +546,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'')],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.DebugProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.DebugProperties>(
@@ -564,6 +571,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.resources')],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.ResourcesProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.ResourcesProperties>(
@@ -581,6 +589,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         set: _$set39,
       ),
     ],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.ResourcesEmbedProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.ResourcesEmbedProperties>(
@@ -614,6 +623,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         set: _$set46,
       ),
     ],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.ResourcesPrefetchProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.ResourcesPrefetchProperties>(
@@ -632,6 +642,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.observations')],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.ObservationsProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.ObservationsProperties>(
@@ -651,6 +662,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         set: _$set52,
       ),
     ],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.ObservationsAnnotationsProperties.new,
     constructor:
@@ -709,6 +721,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
     annotations: [
       _i3.ConfigurationProperties(r'spring.task.execution.isolates'),
     ],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.TaskExecutionIsolatesProperties.new,
     constructor:
@@ -781,6 +794,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.messages')],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.MessagesProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.MessagesProperties>(
@@ -865,6 +879,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.json')],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.JsonProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonProperties>(
@@ -908,6 +923,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         set: _$set110,
       ),
     ],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.JsonDeserializationProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonDeserializationProperties>(
@@ -951,6 +967,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         set: _$set119,
       ),
     ],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.JsonSerializationProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonSerializationProperties>(
@@ -978,6 +995,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         set: _$set124,
       ),
     ],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.JsonMapperProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonMapperProperties>(
@@ -995,6 +1013,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         set: _$set127,
       ),
     ],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.JsonDatatypeProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonDatatypeProperties>(
@@ -1034,6 +1053,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         set: _$set136,
       ),
     ],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.JsonDatetimeProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonDatetimeProperties>(
@@ -1073,6 +1093,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         set: _$set145,
       ),
     ],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.JsonSchemaProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonSchemaProperties>(
@@ -1092,6 +1113,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         set: _$set148,
       ),
     ],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.JsonSchemasRegistryProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonSchemasRegistryProperties>(
@@ -1214,6 +1236,8 @@ get $bootPropertiesBeansPropertiesIntrospections => [
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.web.rate-limit')],
+    library:
+        r'package:spring_boot_dart/src/properties/rate_limit_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i4.RateLimitProperties.new,
     constructor: _i3.IntrospectedConstructor<_i4.RateLimitProperties>(

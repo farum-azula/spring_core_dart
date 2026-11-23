@@ -135,6 +135,7 @@ List<_i2.Introspection<Object>> get $webSocketConfigBeansIntrospections => [
         set: _$set13,
       ),
     ],
+    library: r'package:spring_boot_starter_websocket/src/config/web_socket_properties.dart',
     instantiate: _i1.WebSocketClientSettings.new,
     constructor: _i2.IntrospectedConstructor<_i1.WebSocketClientSettings>(
       parameters: [],
@@ -187,6 +188,7 @@ List<_i2.Introspection<Object>> get $webSocketConfigBeansIntrospections => [
         set: _$set26,
       ),
     ],
+    library: r'package:spring_boot_starter_websocket/src/config/web_socket_properties.dart',
     instantiate: _i1.WebSocketReconnectSettings.new,
     constructor: _i2.IntrospectedConstructor<_i1.WebSocketReconnectSettings>(
       parameters: [],
@@ -218,6 +220,7 @@ List<_i2.Introspection<Object>> get $webSocketConfigBeansIntrospections => [
         set: _$set33,
       ),
     ],
+    library: r'package:spring_boot_starter_websocket/src/config/web_socket_properties.dart',
     instantiate: _i1.WebSocketPhoenixSettings.new,
     constructor: _i2.IntrospectedConstructor<_i1.WebSocketPhoenixSettings>(
       parameters: [],

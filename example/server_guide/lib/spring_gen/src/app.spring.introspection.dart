@@ -115,17 +115,17 @@ _i3.OrderLine _$create42(
 bool _$equals43(_i3.OrderLine a, _i3.OrderLine b) =>
     a.isbn == b.isbn &&
     a.title == b.title &&
-    a.price == b.price &&
+    _i4.doubleEquals(a.price, b.price) &&
     a.quantity == b.quantity &&
     a.discount == b.discount &&
-    a.total == b.total;
+    _i4.doubleEquals(a.total, b.total);
 int _$hashCode44(_i3.OrderLine object) => Object.hash(
   object.isbn,
   object.title,
-  object.price,
+  _i4.doubleHash(object.price),
   object.quantity,
   object.discount,
-  object.total,
+  _i4.doubleHash(object.total),
 );
 String _$toString45(_i3.OrderLine object) =>
     'OrderLine(isbn: ${object.isbn}, title: ${object.title}, price: ${object.price}, quantity: ${object.quantity}, discount: ${object.discount}, total: ${object.total})';
@@ -157,7 +157,7 @@ bool _$equals56(_i3.CustomerOrder a, _i3.CustomerOrder b) =>
     a.id == b.id &&
     a.customer == b.customer &&
     _i4.deepEquals(a.lines, b.lines) &&
-    a.total == b.total &&
+    _i4.doubleEquals(a.total, b.total) &&
     a.status == b.status &&
     a.placedAt == b.placedAt &&
     a.payment == b.payment;
@@ -165,7 +165,7 @@ int _$hashCode57(_i3.CustomerOrder object) => Object.hash(
   object.id,
   object.customer,
   _i4.deepHash(object.lines),
-  object.total,
+  _i4.doubleHash(object.total),
   object.status,
   object.placedAt,
   object.payment,
@@ -273,6 +273,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get4,
       ),
     ],
+    library: r'package:neon_books_server/src/admin/log_service.dart',
     parts: {_i4.IntrospectionPart.read, _i4.IntrospectionPart.write},
     constructor: _i4.IntrospectedConstructor<_i1.LogLine>(
       parameters: [
@@ -375,6 +376,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         invoke: _$invoke15,
       ),
     ],
+    library: r'package:neon_books_server/src/catalog/book.dart',
     constructor: _i4.IntrospectedConstructor<_i2.Book>(
       parameters: [
         _i4.IntrospectedParameter(
@@ -458,6 +460,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get20,
       ),
     ],
+    library: r'package:neon_books_server/src/catalog/book.dart',
     constructor: _i4.IntrospectedConstructor<_i2.BookPage>(
       parameters: [
         _i4.IntrospectedParameter(
@@ -555,6 +558,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         invoke: _$invoke30,
       ),
     ],
+    library: r'package:neon_books_server/src/catalog/book.dart',
     instantiate: _i2.NewBook.new,
     constructor: _i4.IntrospectedConstructor<_i2.NewBook>(
       parameters: [
@@ -638,6 +642,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get34,
       ),
     ],
+    library: r'package:neon_books_server/src/orders/order.dart',
     constructor: _i4.IntrospectedConstructor<_i3.Basket>(
       parameters: [
         _i4.IntrospectedParameter(
@@ -696,6 +701,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get41,
       ),
     ],
+    library: r'package:neon_books_server/src/orders/order.dart',
     constructor: _i4.IntrospectedConstructor<_i3.OrderLine>(
       parameters: [
         _i4.IntrospectedParameter(
@@ -754,6 +760,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         annotations: [_i4.Min(0), _i4.Max(10)],
       ),
     ],
+    library: r'package:neon_books_server/src/orders/order.dart',
     instantiate: _i3.QuantityRequest.new,
     constructor: _i4.IntrospectedConstructor<_i3.QuantityRequest>(
       parameters: [
@@ -814,6 +821,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get54,
       ),
     ],
+    library: r'package:neon_books_server/src/orders/order.dart',
     constructor: _i4.IntrospectedConstructor<_i3.CustomerOrder>(
       parameters: [
         _i4.IntrospectedParameter(
@@ -897,6 +905,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get62,
       ),
     ],
+    library: r'package:neon_books_server/src/security/me_controller.dart',
     constructor: _i4.IntrospectedConstructor<_i5.Me>(
       parameters: [
         _i4.IntrospectedParameter(
@@ -940,6 +949,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get65,
       ),
     ],
+    library: r'package:neon_books_server/src/stock/stock_changed.dart',
     constructor: _i4.IntrospectedConstructor<_i6.LowStock>(
       parameters: [
         _i4.IntrospectedParameter(
@@ -970,6 +980,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get68,
       ),
     ],
+    library: r'package:neon_books_server/src/stock/stock_changed.dart',
     parts: {_i4.IntrospectionPart.read, _i4.IntrospectionPart.write},
     constructor: _i4.IntrospectedConstructor<_i6.StockChanged>(
       parameters: [
@@ -1008,6 +1019,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get72,
       ),
     ],
+    library: r'package:neon_books_server/src/supplier/supplier_models.dart',
     parts: {_i4.IntrospectionPart.read, _i4.IntrospectionPart.write},
     constructor: _i4.IntrospectedConstructor<_i7.Offer>(
       parameters: [
@@ -1053,6 +1065,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get76,
       ),
     ],
+    library: r'package:neon_books_server/src/supplier/supplier_models.dart',
     parts: {_i4.IntrospectionPart.read, _i4.IntrospectionPart.write},
     constructor: _i4.IntrospectedConstructor<_i7.Delivery>(
       parameters: [
@@ -1091,6 +1104,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get79,
       ),
     ],
+    library: r'package:neon_books_server/src/supplier/supplier_models.dart',
     parts: {_i4.IntrospectionPart.read, _i4.IntrospectionPart.write},
     constructor: _i4.IntrospectedConstructor<_i7.DeliveryRequest>(
       parameters: [
@@ -1130,6 +1144,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get83,
       ),
     ],
+    library: r'package:neon_books_server/src/support/chat_message.dart',
     constructor: _i4.IntrospectedConstructor<_i8.ChatMessage>(
       parameters: [
         _i4.IntrospectedParameter(

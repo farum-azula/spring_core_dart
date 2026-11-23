@@ -396,6 +396,7 @@ final cacheStartupChecks = <BeanDefinition<Object>>[
     source: _source,
     conditions: const [
       ConditionGroup('$_source.cacheOperationValidator', [
+        startupChecksEnabled,
         ConditionalOnBean(CacheInterceptor),
       ]),
     ],

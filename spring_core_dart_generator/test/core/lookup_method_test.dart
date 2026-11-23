@@ -295,10 +295,15 @@ class Steps {
   });
 
   test(
-    'an abstract class without @Lookup methods is still no candidate',
+    'an abstract class without @Lookup methods is no bean: a stereotype on '
+    'it fails the build, one without stays a plain base',
     () async {
+      expect(
+        await _errors('@Component() abstract class Base { void run(); }'),
+        contains('@Component on the abstract class Base'),
+      );
       final output = await _generate(
-        '@Component() abstract class Base { void run(); }',
+        'abstract class Base { void run(); }',
         proxyMode: ProxyMode.none,
       );
       expect(output, isNot(contains('Base')));

@@ -186,6 +186,8 @@ List<_i3.Introspection<Object>> get $feignConfigBeansIntrospections => [
         set: _$set27,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_feign/src/config/feign_properties.dart',
     instantiate: _i1.FeignClientSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.FeignClientSettings>(
       parameters: [],
@@ -217,6 +219,8 @@ List<_i3.Introspection<Object>> get $feignConfigBeansIntrospections => [
         set: _$set34,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_feign/src/config/feign_properties.dart',
     instantiate: _i1.FeignEventStreamSettings.new,
     constructor: _i3.IntrospectedConstructor<_i1.FeignEventStreamSettings>(
       parameters: [],

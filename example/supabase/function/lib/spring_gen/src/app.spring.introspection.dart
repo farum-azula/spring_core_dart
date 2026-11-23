@@ -76,6 +76,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         annotations: [_i4.NotBlank()],
       ),
     ],
+    library: r'package:supabase_example_function/src/project/project_controller.dart',
     constructor: _i4.IntrospectedConstructor<_i1.Invite>(
       parameters: [
         _i4.IntrospectedParameter(
@@ -97,6 +98,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get2,
       ),
     ],
+    library: r'package:supabase_example_function/src/project/project_controller.dart',
     constructor: _i4.IntrospectedConstructor<_i1.InviteResult>(
       parameters: [
         _i4.IntrospectedParameter(
@@ -155,6 +157,7 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
       ),
     ],
     annotations: [_i5.Table(r'todos')],
+    library: r'package:supabase_example_function/src/todos/todo.dart',
     constructor: _i4.IntrospectedConstructor<_i2.Todo>(
       parameters: [
         _i4.IntrospectedParameter(
@@ -211,6 +214,8 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         annotations: [_i4.NotBlank()],
       ),
     ],
+    library:
+        r'package:supabase_example_function/src/todos/todo_controller.dart',
     constructor: _i4.IntrospectedConstructor<_i3.NewTodo>(
       parameters: [
         _i4.IntrospectedParameter(
@@ -238,6 +243,8 @@ List<_i4.Introspection<Object>> get $appBeansIntrospections => [
         get: _$get20,
       ),
     ],
+    library:
+        r'package:supabase_example_function/src/todos/todo_controller.dart',
     constructor: _i4.IntrospectedConstructor<_i3.Closed>(
       parameters: [
         _i4.IntrospectedParameter(

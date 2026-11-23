@@ -675,12 +675,18 @@ log line. `PageRequest.of` refuses a negative page, a size below one, and a
 page and size whose offset would pass 2^53 - 1 (an
 `InvalidPagingRequestException`, an `ArgumentError`), so an offset never
 wraps around to another page; a `Pageable` of your own with a negative
-offset is refused by the stores. There is no `Pageable`/`Sort` argument
-resolver for controllers yet: parse `page`, `size` and `sort` yourself and
-cap `size` (a client that sends `size=1000000000` gets the whole table), and
-allow-list the properties a request may sort by (a sort is an `ORDER BY`
-oracle: a client can learn the order of values it cannot read, such as a
-password hash). Bind request bodies to DTOs, not to entities: an entity
+offset is refused by the stores. A controller's `Pageable` and `Sort`
+parameters (the resolver the generator adds with the web starter, see
+`WebPaging`) cap `size` at `spring.data.web.pageable.max-page-size`
+(2000), and refuse more than 16 properties to sort by
+(`InvalidPagingRequestException`, a 400; a limit of this framework, Spring
+has none). A sort is an `ORDER BY` oracle: a client can learn the order of
+values it cannot read, such as a salary, even when a DTO or a mapper leaves
+them out of the answer. Name the properties a request may sort by with
+`@AllowedSortProperties(['title', 'year'])` on the parameter (this
+framework's own annotation): another one is a `PropertyReferenceException`
+(a 400). The build warns about a handler's `Pageable` or `Sort` without it.
+Bind request bodies to DTOs, not to entities: an entity
 binding lets the client choose the id and the version.
 
 **In a web application.** With

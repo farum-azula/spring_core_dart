@@ -5,6 +5,7 @@ import 'package:dart_spring_language_server/src/diagnostics/dart_problems.dart';
 import 'package:dart_spring_language_server/src/index/bean_index.dart';
 import 'package:dart_spring_language_server/src/index/class_index.dart';
 import 'package:dart_spring_language_server/src/index/code_key_index.dart';
+import 'package:dart_spring_language_server/src/index/dart_types.dart';
 import 'package:dart_spring_language_server/src/index/key_resolution.dart';
 import 'package:dart_spring_language_server/src/index/message_index.dart';
 import 'package:dart_spring_language_server/src/index/package_layout.dart';
@@ -18,6 +19,7 @@ import 'package:dart_spring_language_server/src/index/source_beans.dart';
 import 'package:dart_spring_language_server/src/metadata.dart';
 import 'package:dart_spring_language_server/src/query_editor.dart';
 import 'package:dart_spring_language_server/src/spel_editor.dart';
+import 'package:dart_spring_language_server/src/strings/spel_paths.dart';
 import 'package:dart_spring_language_server/src/strings/string_roles.dart';
 import 'package:dart_spring_language_server/src/symbols/dart_symbols.dart';
 import 'package:dart_spring_language_server/src/symbols/source_locations.dart';
@@ -96,6 +98,12 @@ final class ProjectModel {
 
   /// Beans and members in SpEL.
   late final spel = SpelEditor(this);
+
+  /// The Dart types of what SpEL reads, resolved from the syntax.
+  late final dartTypes = DartTypes(this);
+
+  /// The member paths of SpEL expressions, on those types.
+  late final spelPaths = SpelPaths(this);
 
   /// The SQL of `@Query` methods.
   late final query = QueryEditor(this);

@@ -181,7 +181,7 @@ void main() {
       final entry = jsonDecode(
         utf8.decode((await store.read(path))!),
       ) as Map<String, Object?>;
-      entry['key'] = 's:another';
+      entry['key'] = 'another';
       await store.write(path, utf8.encode(jsonEncode(entry)));
       expect(await cache(manager()).retrieve('a'), isNull);
     },
@@ -216,10 +216,10 @@ void main() {
     expect(key('1'), isNot(key(1)));
     expect(key(1), isNot(key(1.0)));
     expect(key(Hero('Lina', 25)), key(Hero('Lina', 25)));
-    expect(key(SimpleKey(['a', 1])), 'k:[s:a,int:1]');
+    expect(key(SimpleKey(['a', 1])), '["k",["a",["i","1"]]]');
     expect(
       key(UrlResource(Uri.parse('https://x.test/a.png'))),
-      'r:https://x.test/a.png',
+      '["r","https://x.test/a.png"]',
     );
     expect(cacheFileHash('a'), 'af63dc4c8601ec8c', reason: 'FNV-1a, 64 bits');
     expect(cacheFileHash(''), 'cbf29ce484222325');

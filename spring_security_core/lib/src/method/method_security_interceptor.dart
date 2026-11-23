@@ -438,10 +438,30 @@ final class MethodSecurityValidator extends BeanPostProcessor
     if (definition == null || !_secured(definition)) {
       return bean;
     }
-    for (final signature
-        in definition.aopProxy?.signatures ?? const <MethodSignature>[]) {
+    final signatures =
+        definition.aopProxy?.signatures ?? const <MethodSignature>[];
+    for (final signature in signatures) {
       if (!interceptor.attributesOf(signature).isEmpty) {
         interceptor.validate(signature);
+      }
+    }
+    // A secured method the proxy has no signature for (it cannot override
+    // it: @nonVirtual, a private type, a default value that is no public
+    // constant) would run unchecked. The generator fails the build for
+    // it; a definition written by hand, or by an older generator, fails
+    // here.
+    if (definition.aopProxy != null) {
+      final proxied = {for (final signature in signatures) signature.name};
+      for (final method in definition.annotatedMethods) {
+        if (method.annotations.any(isMethodSecurityAnnotation) &&
+            !proxied.contains(method.name)) {
+          throw StateError(
+            'Bean $beanName: the method ${method.name} has method security '
+            "annotations, but the bean's proxy does not advise it (it cannot "
+            'override the method), so they would not be checked. Make the '
+            'method overridable, or move the annotations to one that is.',
+          );
+        }
       }
     }
     return bean;

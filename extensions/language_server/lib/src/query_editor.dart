@@ -4,7 +4,10 @@ import 'package:dart_spring_language_server/src/data_model.dart';
 import 'package:dart_spring_language_server/src/diagnostics/problem.dart';
 import 'package:dart_spring_language_server/src/project_model.dart';
 import 'package:dart_spring_language_server/src/repository_scan.dart';
+import 'package:dart_spring_language_server/src/strings/roles/spel_scopes.dart';
+import 'package:dart_spring_language_server/src/strings/spel_paths.dart';
 import 'package:dart_spring_language_server/src/symbols/source_range.dart';
+import 'package:dart_spring_language_server/src/symbols/target.dart';
 import 'package:dart_spring_language_server/src/tokens/semantic_tokens.dart';
 import 'package:dart_spring_language_server/src/tokens/spel_tokens.dart';
 // The SpEL tokenizer is not exported: the checks read its tokens.
@@ -346,7 +349,7 @@ final class QueryEditor {
               );
             }
           case SqlTokenKind.expression:
-            _expressionProblems(path, token, names, used, report);
+            _expressionProblems(file, method, path, token, names, used, report);
           case SqlTokenKind.entity:
             _entityProblems(path, token, report);
           case _:
@@ -436,6 +439,8 @@ final class QueryEditor {
   }
 
   void _expressionProblems(
+    DartFile file,
+    QueryMethod method,
     String path,
     SqlToken token,
     List<String> names,
@@ -448,7 +453,11 @@ final class QueryEditor {
       return; // placeholders are resolved first
     }
     final issues = model.spel.issuesIn(path, expression);
-    for (final issue in issues) {
+    for (final issue in [
+      ...issues,
+      if (!issues.any((i) => i.message.startsWith('SpEL:')))
+        ...model.spelPaths.issues(expression, _spelEnv(file, method)),
+    ]) {
       if (expression.substring(issue.start, issue.end) == '@environment' &&
           issue.message.startsWith("Unknown bean 'environment'")) {
         continue; // the environment is always there
@@ -611,6 +620,16 @@ final class QueryEditor {
         final open = token.text.indexOf('{') + 1;
         final expression = token.text.substring(open, token.text.length - 1);
         final inner = at - token.start - open;
+        final member = model.spelPaths.target(
+          expression,
+          inner,
+          _spelEnv(file, method),
+        );
+        if (member != null) {
+          return member.definitions(
+            TargetContext(model.locations, file.text, offset),
+          );
+        }
         for (final (name, start, end) in _variables(expression)) {
           if (inner >= start - 1 && inner <= end) {
             return _parameterRanges(file, method, name);
@@ -645,6 +664,17 @@ final class QueryEditor {
         return const [];
     }
   }
+
+  // The `#parameters` of a `:#{...}`, with their types.
+  SpelEnv _spelEnv(DartFile file, QueryMethod method) => spelEnvOf(
+    SpelMethod(
+      model.dartTypes,
+      file,
+      method.method,
+      method.method,
+      null,
+    ),
+  );
 
   List<SourceRange> _parameterRanges(
     DartFile file,
@@ -694,6 +724,16 @@ final class QueryEditor {
         final open = token.text.indexOf('{') + 1;
         final expression = token.text.substring(open, token.text.length - 1);
         final inner = at - token.start - open;
+        final member = model.spelPaths.target(
+          expression,
+          inner,
+          _spelEnv(file, method),
+        );
+        if (member != null) {
+          return member.hover(
+            TargetContext(model.locations, file.text, offset),
+          );
+        }
         for (final (name, start, end) in _variables(expression)) {
           if (inner >= start - 1 && inner <= end) {
             return _parameterText(method, name);
@@ -909,6 +949,10 @@ final class QueryEditor {
     final expression = RegExp(r'#\{([^}]*)$').firstMatch(before);
     if (expression != null) {
       final inner = expression.group(1)!;
+      final member = model.spelPaths.complete(inner, _spelEnv(file, method));
+      if (member != null) {
+        return result(inner.length - member.$1, member.$2);
+      }
       final variable = RegExp(r'#(\w*)$').firstMatch(inner);
       if (variable != null) {
         final typed = variable.group(1)!;

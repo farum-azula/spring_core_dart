@@ -109,10 +109,17 @@ final class DiskCacheManager implements CacheManager {
 /// A cache of a [DiskCacheManager]: an [AsyncCache], one file an entry.
 ///
 /// [get] answers from what this run already read or wrote (the last few
-/// hundred entries); [retrieve] reads the store.
+/// hundred entries, until they expire); [retrieve] reads the store.
+///
+/// A key is found again in a later run by its stable form
+/// ([canonicalCacheKey]); a key without one (an object the
+/// `ObjectMapper` does not read, a record) is not kept, and the cache logs
+/// it once: Spring's caches match keys by `equals`, which a later run
+/// cannot call.
 final class DiskCache implements AsyncCache {
   DiskCache._(this._manager, this.name)
-    : _codec = _ValueCodec(
+    : folder = '${DiskCacheManager.root}/${_segment(name)}',
+      _codec = _ValueCodec(
         _manager.mapper,
         _manager.introspector,
         _manager.resources,
@@ -124,16 +131,33 @@ final class DiskCache implements AsyncCache {
   @override
   final String name;
 
+  /// The folder of this cache in the store: the name as one path segment,
+  /// so the cache `users/admins` is not inside the cache `users`.
+  final String folder;
+
   static const _log = SpringLog('spring.cache');
   static const int _remembered = 256;
 
   // What this run read or wrote, by path: the latest last.
-  final Map<String, ValueWrapper?> _known = {};
+  final Map<String, _Remembered?> _known = {};
   Future<void> _writes = Future.value();
   bool _warned = false;
+  bool _warnedKey = false;
 
-  /// The folder of this cache in the store.
-  String get folder => '${DiskCacheManager.root}/$name';
+  // With maxSize: the size of each entry, the oldest written first, and
+  // their total; read from the store once, then kept as entries come and
+  // go, so a put does not read the whole cache.
+  Map<String, int>? _sizes;
+  int _total = 0;
+
+  // A cache name as one segment of a path: `/` escaped, and no `.`, `..`
+  // or empty segment.
+  static String _segment(String name) => switch (Uri.encodeComponent(name)) {
+    '' => '%',
+    '.' => '%2E',
+    '..' => '%2E%2E',
+    final segment => segment,
+  };
 
   Duration? get _timeToLive => _manager.timeToLives.containsKey(name)
       ? _manager.timeToLives[name]
@@ -142,10 +166,28 @@ final class DiskCache implements AsyncCache {
   @override
   bool get answersSynchronously => false;
 
-  String _path(Object? key) =>
-      '$folder/${_fnv64(canonicalCacheKey(key, _manager.mapper, _manager.introspector))}.json';
+  int get _now => _manager._clock().millisecondsSinceEpoch;
 
-  void _remember(String path, ValueWrapper? entry) {
+  // The stable form of [key], or `null` (logged once) when it has none.
+  String? _canonical(Object? key) {
+    try {
+      return canonicalCacheKey(key, _manager.mapper, _manager.introspector);
+    } on UnsupportedError catch (error) {
+      if (!_warnedKey) {
+        _warnedKey = true;
+        _log.warning(
+          () =>
+              "cache '$name' keeps nothing on disk under a key of "
+              '${key.runtimeType}: ${error.message}',
+        );
+      }
+      return null;
+    }
+  }
+
+  String _pathOf(String canonical) => '$folder/${_fnv64(canonical)}.json';
+
+  void _remember(String path, _Remembered? entry) {
     _known
       ..remove(path)
       ..[path] = entry;
@@ -154,19 +196,39 @@ final class DiskCache implements AsyncCache {
     }
   }
 
+  // What this run knows of [path]; `known: false` when it must be read.
+  ({bool known, ValueWrapper? hit}) _recall(String path) {
+    if (!_known.containsKey(path)) {
+      return (known: false, hit: null);
+    }
+    final entry = _known[path];
+    if (entry == null) {
+      return (known: true, hit: null);
+    }
+    if (entry.expired(_now)) {
+      _known.remove(path);
+      _then(() => _dropStale(path));
+      return (known: true, hit: null);
+    }
+    return (known: true, hit: entry.value);
+  }
+
   @override
-  ValueWrapper? get(Object? key) => _known[_path(key)];
+  ValueWrapper? get(Object? key) {
+    final canonical = _canonical(key);
+    return canonical == null ? null : _recall(_pathOf(canonical)).hit;
+  }
 
   @override
   Future<ValueWrapper?> retrieve(Object? key) async {
-    final canonical = canonicalCacheKey(
-      key,
-      _manager.mapper,
-      _manager.introspector,
-    );
-    final path = '$folder/${_fnv64(canonical)}.json';
-    if (_known.containsKey(path)) {
-      return _known[path];
+    final canonical = _canonical(key);
+    if (canonical == null) {
+      return null;
+    }
+    final path = _pathOf(canonical);
+    final recalled = _recall(path);
+    if (recalled.known) {
+      return recalled.hit;
     }
     await _writes;
     final bytes = await _manager.store.read(path);
@@ -177,24 +239,26 @@ final class DiskCache implements AsyncCache {
     try {
       entry = jsonDecode(utf8.decode(bytes)) as Map<String, Object?>;
     } on Object {
-      unawaited(_manager.store.delete(path));
+      _then(() => _dropStale(path));
       return null;
     }
+    if (entry['key'] != canonical) {
+      return null; // another key with the same hash
+    }
     final expires = entry['expires'];
-    if (entry['key'] != canonical ||
-        entry['version'] != _manager.version ||
-        (expires is int &&
-            _manager._clock().millisecondsSinceEpoch >= expires)) {
+    if (entry['version'] != _manager.version ||
+        (expires is int && _now >= expires)) {
+      _then(() => _dropStale(path));
       return null;
     }
     try {
       final hit = ValueWrapper(await _codec.decode(entry['value']));
-      _remember(path, hit);
+      _remember(path, _Remembered(hit, expires is int ? expires : null));
       return hit;
     } on Object catch (error) {
       // A class renamed or gone since it was written: a miss.
       _log.debug(() => "cache '$name': an entry not read back: $error");
-      unawaited(_manager.store.delete(path));
+      _then(() => _dropStale(path));
       return null;
     }
   }
@@ -205,11 +269,10 @@ final class DiskCache implements AsyncCache {
     if (ttl == Duration.zero) {
       return;
     }
-    final canonical = canonicalCacheKey(
-      key,
-      _manager.mapper,
-      _manager.introspector,
-    );
+    final canonical = _canonical(key);
+    if (canonical == null) {
+      return;
+    }
     final Object? encoded;
     try {
       encoded = _codec.encode(value);
@@ -224,21 +287,22 @@ final class DiskCache implements AsyncCache {
       }
       return;
     }
-    final path = '$folder/${_fnv64(canonical)}.json';
+    final path = _pathOf(canonical);
     final now = _manager._clock();
+    final expires = ttl == null ? null : now.add(ttl).millisecondsSinceEpoch;
     final bytes = utf8.encode(
       jsonEncode({
         'key': canonical,
         'written': now.millisecondsSinceEpoch,
-        'expires': ttl == null ? null : now.add(ttl).millisecondsSinceEpoch,
+        'expires': expires,
         'version': _manager.version,
         'value': encoded,
       }),
     );
-    _remember(path, ValueWrapper(value));
+    _remember(path, _Remembered(ValueWrapper(value), expires));
     _then(() async {
       await _manager.store.write(path, bytes);
-      await _trim();
+      await _trim(path, bytes.length);
     });
   }
 
@@ -254,9 +318,16 @@ final class DiskCache implements AsyncCache {
 
   @override
   void evict(Object? key) {
-    final path = _path(key);
+    final canonical = _canonical(key);
+    if (canonical == null) {
+      return;
+    }
+    final path = _pathOf(canonical);
     _remember(path, null);
-    _then(() => _manager.store.delete(path));
+    _then(() async {
+      await _manager.store.delete(path);
+      _forget(path);
+    });
   }
 
   @override
@@ -269,13 +340,27 @@ final class DiskCache implements AsyncCache {
   @override
   void clear() {
     _known.clear();
-    _then(() => _manager.store.delete(folder));
+    _then(() async {
+      await _manager.store.delete(folder);
+      if (_sizes != null) {
+        _sizes = {};
+        _total = 0;
+      }
+    });
   }
 
+  /// Clears the cache, as [clear]. `true` only when this run knew of an
+  /// entry that had not expired; `false` when it cannot tell, as Spring's
+  /// `Cache.invalidate()` (entries this run did not read are on disk,
+  /// unknown).
   @override
   bool invalidate() {
+    final now = _now;
+    final had = _known.values.any(
+      (entry) => entry != null && !entry.expired(now),
+    );
     clear();
-    return true;
+    return had;
   }
 
   /// Waits for the writes started so far.
@@ -289,16 +374,44 @@ final class DiskCache implements AsyncCache {
     });
   }
 
+  // Deletes an expired or unreadable entry, unless this run has put a new
+  // one there since.
+  Future<void> _dropStale(String path) async {
+    if (_known[path] case final entry? when !entry.expired(_now)) {
+      return;
+    }
+    await _manager.store.delete(path);
+    _forget(path);
+  }
+
+  void _forget(String path) {
+    if (_sizes?.remove(path) case final size?) {
+      _total -= size;
+    }
+  }
+
   // Past maxSize, the oldest written go first.
-  Future<void> _trim() async {
+  Future<void> _trim(String path, int size) async {
     final limit = _manager.maxSize;
     if (limit == null) {
       return;
     }
-    final paths = await _manager.store.list(folder);
+    final sizes = _sizes ??= await _load();
+    _forget(path);
+    sizes[path] = size;
+    _total += size;
+    while (_total > limit && sizes.isNotEmpty) {
+      final oldest = sizes.keys.first;
+      await _manager.store.delete(oldest);
+      _known.remove(oldest);
+      _forget(oldest);
+    }
+  }
+
+  // The entries in the store, the oldest written first: read once a run.
+  Future<Map<String, int>> _load() async {
     final entries = <({String path, int size, int written})>[];
-    var total = 0;
-    for (final path in paths) {
+    for (final path in await _manager.store.list(folder)) {
       final bytes = await _manager.store.read(path);
       if (bytes == null) {
         continue;
@@ -311,55 +424,90 @@ final class DiskCache implements AsyncCache {
         // unreadable: the first to go
       }
       entries.add((path: path, size: bytes.length, written: written));
-      total += bytes.length;
-    }
-    if (total <= limit) {
-      return;
     }
     entries.sort((a, b) => a.written.compareTo(b.written));
+    _total = 0;
+    final sizes = <String, int>{};
     for (final entry in entries) {
-      if (total <= limit) {
-        break;
-      }
-      await _manager.store.delete(entry.path);
-      _known.remove(entry.path);
-      total -= entry.size;
+      sizes[entry.path] = entry.size;
+      _total += entry.size;
     }
+    return sizes;
   }
 
   @override
   String toString() => 'DiskCache($name)';
 }
 
+// An entry this run read or wrote, with when it expires.
+final class _Remembered {
+  const _Remembered(this.value, this.expires);
+
+  final ValueWrapper value;
+  final int? expires;
+
+  bool expired(int now) => expires != null && now >= expires!;
+}
+
 /// The key [key] as text that is the same in every run: what an entry on
-/// disk is found by. A `Resource` is its address (and its version, when the
-/// key generator added it); an object the `ObjectMapper` reads is its JSON.
+/// disk is found by. It is JSON, so no two keys share it: a `String` is a
+/// JSON string, another value a list that starts with its kind. A
+/// `Resource` is its address (and its version, when the key generator added
+/// it); an object the `ObjectMapper` reads is its class's
+/// [Introspection.qualifiedName] and its JSON. A set and a map are in a
+/// sorted order, as they are equal in any order.
+///
+/// Throws an [UnsupportedError] for a key without such a form: an object
+/// the `ObjectMapper` does not read, a record, an object of a class whose
+/// qualified name another class shares; a later run could not tell those
+/// apart.
 String canonicalCacheKey(
   Object? key,
   ObjectMapper mapper,
   Introspector introspector,
 ) {
-  String of(Object? key) => switch (key) {
-    null => 'null',
-    String() => 's:$key',
-    bool() || int() || double() => '${key.runtimeType}:$key',
-    Enum() => 'e:${key.name}',
-    Resource() => 'r:${key.uri ?? key.description}',
-    SimpleKey() => 'k:[${key.params.map(of).join(',')}]',
-    Record() => 't:$key',
-    List() => 'l:[${key.map(of).join(',')}]',
-    Set() => 'set:[${(key.map(of).toList()..sort()).join(',')}]',
-    Map() =>
-      'm:{${[
-        for (final e in key.entries) '${of(e.key)}=${of(e.value)}',
-      ].join(',')}}',
-    _ => switch (introspector.findIntrospection(key)) {
-      final introspection? =>
-        'o:${introspection.className}:${mapper.writeValueAsString(key)}',
-      null => 'x:$key',
-    },
+  int byText(Object? a, Object? b) => jsonEncode(a).compareTo(jsonEncode(b));
+  Object? of(Object? key) => switch (key) {
+    null || String() || bool() => key,
+    int() => ['i', '$key'],
+    double() => ['d', '$key'],
+    Enum() => ['e', '${key.runtimeType}', key.name],
+    Resource() => ['r', '${key.uri ?? key.description}'],
+    SimpleKey() => ['k', key.params.map(of).toList()],
+    Record() => throw UnsupportedError(
+      'a record has no form that is the same in every run',
+    ),
+    List() => ['l', key.map(of).toList()],
+    Set() => ['set', key.map(of).toList()..sort(byText)],
+    Map() => [
+      'm',
+      [
+        for (final e in key.entries) [of(e.key), of(e.value)],
+      ]..sort(byText),
+    ],
+    _ => ['o', _uniqueName(introspector, key), mapper.valueToTree(key)],
   };
-  return of(key);
+  return jsonEncode(of(key));
+}
+
+// The qualified name of [value]'s class, which reads it back; throws an
+// UnsupportedError when it has none or shares it.
+String _uniqueName(Introspector introspector, Object value) {
+  final introspection = introspector.findIntrospection(value);
+  if (introspection == null) {
+    throw UnsupportedError(
+      'the ObjectMapper does not read ${value.runtimeType} (no '
+      '@Introspected() or JSON serializer)',
+    );
+  }
+  final name = introspection.qualifiedName;
+  if (introspector.byQualifiedName(name)?.type != introspection.type) {
+    throw UnsupportedError(
+      'another class is named $name too, which a later run could not tell '
+      'apart from it',
+    );
+  }
+  return name;
 }
 
 // FNV-1a over the UTF-8 of [text], 64 bits in hex: a file name. Two keys
@@ -428,16 +576,9 @@ final class _ValueCodec {
           },
         };
       default:
-        final introspection = introspector.findIntrospection(value);
-        if (introspection == null) {
-          throw UnsupportedError(
-            'the ObjectMapper does not read it (no @Introspected() or JSON '
-            'serializer)',
-          );
-        }
         return {
           't': 'o',
-          'c': introspection.className,
+          'c': _uniqueName(introspector, value),
           'v': mapper.valueToTree(value),
         };
     }
@@ -454,13 +595,7 @@ final class _ValueCodec {
       double() => 'double',
       bool() => 'bool',
       null => throw UnsupportedError('a collection with null in it'),
-      _ => switch (introspector.findIntrospection(item)) {
-        final introspection? => 'o:${introspection.className}',
-        null => throw UnsupportedError(
-          'a collection of ${item.runtimeType}, which the ObjectMapper does '
-          'not read',
-        ),
-      },
+      _ => 'o:${_uniqueName(introspector, item)}',
     };
     final first = tag(items.first);
     for (final item in items.skip(1)) {
@@ -500,7 +635,7 @@ final class _ValueCodec {
 
   Object _object(String className, Object? tree) {
     final introspection =
-        introspector.byClassName(className) ??
+        introspector.byQualifiedName(className) ??
         (throw StateError('no class $className to read the entry as'));
     return mapper.treeToValue(tree, introspection.classType);
   }
@@ -512,7 +647,7 @@ final class _ValueCodec {
       final raw = entry['v']! as Map<String, Object?>;
       if (element.startsWith('o:')) {
         final className = element.substring(2);
-        final introspection = introspector.byClassName(className)!;
+        final introspection = introspector.byQualifiedName(className)!;
         return introspection.mapOf({
           for (final MapEntry(:key, :value) in raw.entries)
             key: _object(className, value),
@@ -536,7 +671,7 @@ final class _ValueCodec {
     final set = kind == 'set';
     if (element.startsWith('o:')) {
       final className = element.substring(2);
-      final introspection = introspector.byClassName(className)!;
+      final introspection = introspector.byQualifiedName(className)!;
       final items = [for (final item in raw) _object(className, item)];
       return set ? introspection.setOf(items) : introspection.listOf(items);
     }

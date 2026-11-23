@@ -35,8 +35,8 @@ final class SignalsDebugSection implements DebugPanelSection, Ordered {
   Widget build(BuildContext context) => _SignalsDebugView(beans);
 
   /// What the tab says of [member]: its value and how often it changed;
-  /// nothing of a hidden one's value, and what a computed value that
-  /// fails threw.
+  /// nothing of the value of a hidden one or of one whose name looks secret
+  /// (`SecretNames`), and what a computed value that fails threw.
   @visibleForTesting
   static String describe(SignalMember member) => switch (member) {
     ValueMember(unset: true) => 'late, not assigned yet',
@@ -51,6 +51,9 @@ final class SignalsDebugSection implements DebugPanelSection, Ordered {
   };
 
   static String _computed(ComputedMember member) {
+    if (member.secret) {
+      return 'computed, hidden';
+    }
     try {
       return 'computed: ${_short(member.peek())}';
     } on Object catch (error) {

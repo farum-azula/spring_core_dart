@@ -1008,4 +1008,43 @@ class Badge extends SpringStatelessWidget<(Basket, {Clock clock})> {
       ),
     );
   });
+
+  group('a misplaced @NotifyListeners', () {
+    test('on a bean that is no ChangeNotifier', () async {
+      expect(
+        await _errors('''
+@Component()
+class Counter {
+  @NotifyListeners()
+  void add() {}
+}
+'''),
+        allOf(
+          contains('@NotifyListeners on Counter.add: Counter is no'),
+          contains('@ChangeNotifierComponent()'),
+        ),
+      );
+    });
+
+    test('on a private member of a @ChangeNotifierComponent', () async {
+      expect(
+        await _errors('''
+@ChangeNotifierComponent()
+class Counter {
+  @NotifyListeners()
+  void _add() {}
+  void add() => _add();
+}
+'''),
+        contains('@NotifyListeners on Counter._add: a private member'),
+      );
+    });
+
+    test('@BuildContextAccess on a mixin', () async {
+      expect(
+        await _errors('@BuildContextAccess()\nmixin M {}\n'),
+        contains('@BuildContextAccess on mixin M'),
+      );
+    });
+  });
 }

@@ -32,11 +32,17 @@ final class DocumentSync extends ServerFeature {
       final document = params['textDocument']! as Map;
       final path = pathOf(document['uri']! as String);
       session.openDocuments.add(path);
+      if (document['version'] case final int version) {
+        session.documentVersions[path] = version;
+      }
       session.workspace.setOverlay(path, document['text']! as String);
       session.changed();
     },
     'textDocument/didChange': (params) {
       final path = SpringSession.documentPath(params);
+      if ((params['textDocument']! as Map)['version'] case final int version) {
+        session.documentVersions[path] = version;
+      }
       var text = session.workspace.textOf(path) ?? '';
       for (final change
           in (params['contentChanges']! as List)
@@ -49,6 +55,7 @@ final class DocumentSync extends ServerFeature {
     'textDocument/didClose': (params) {
       final path = SpringSession.documentPath(params);
       session.openDocuments.remove(path);
+      session.documentVersions.remove(path);
       session.workspace.setOverlay(path, null);
       session.editor.notify('textDocument/publishDiagnostics', {
         'uri': uriOf(path),

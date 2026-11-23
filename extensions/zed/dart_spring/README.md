@@ -125,6 +125,16 @@ designators (`execution`, `within`, `@annotation`, ...), `&&`/`||`/`!`,
 types, annotations, bean patterns, method names and named pointcuts
 (needs the `semantic_tokens` setting below).
 
+**SpEL in every annotation that evaluates it:** `@PreAuthorize`,
+`@PostAuthorize`, `@PreFilter`, `@PostFilter`, the cache annotations,
+`@Value`, `@Query`, `@ConditionalOnExpression`, the Supabase storage and
+Realtime annotations (`@SignedUrl`, `@RealtimeChannel`...), `@RateLimiter`,
+`PrincipalView` and `RouteSecurity.preAuthorize`: highlighting, syntax
+errors, completion and hovers of what that annotation can read, and, after
+`#order.`, `returnObject.`, `filterObject.` or `this.`, completion, hover and
+go to definition of the fields of your classes, with a warning for an unknown
+member when the type is known.
+
 **Spring Data repositories** (`spring_boot_starter_data`), inside the
 `@Query('...')` of a repository method (adjacent string literals count as
 one text) and in derived query names:
@@ -408,9 +418,11 @@ is no palette entry for this.
 The language server is downloaded automatically the first time a Dart
 file is opened. The extension takes the native binary of its own version
 from the GitHub release `v<version>` (macOS Apple Silicon, Linux x64 and
-arm64, Windows x64), or from the latest release when that one has no
-binaries yet, and keeps it in its own folder; Zed shows the download in the
-status bar. Navigation, hover and checks work without step 2.
+arm64, Windows x64), checks that its SHA-256 is the one the release wrote
+into the extension (`server.sha256`), and keeps it in its own folder; Zed
+shows the download in the status bar. A binary of another release is never
+taken: while the release has no binaries yet, the server does not start
+(use step 2 meanwhile). Navigation, hover and checks work without step 2.
 
 The server is looked up in this order, so a local build wins during
 development:
@@ -425,8 +437,7 @@ development:
 3. the downloaded binary.
 
 What was passed over on the way (a build on the PATH of another version,
-an older release taken because the own one has no binaries yet, an old
-version's folder that could not be deleted) shows as the server's status
+an old version's folder that could not be deleted) shows as the server's status
 in Zed's status bar; a click on it shows the message.
 
 ```json
@@ -438,6 +449,13 @@ in Zed's status bar; a click on it shows the message.
   }
 }
 ```
+
+Trust: Zed reads `lsp.dart-spring.binary` from a project's
+`.zed/settings.json` as well as from your own settings, and an extension
+cannot tell the two apart, so a cloned repository can name the program that
+starts as the language server; the PATH of step 2 is the project's shell
+environment (direnv). Open only repositories you trust, or look at their
+`.zed/settings.json` first.
 
 Problems show up in Zed's log (command palette → `zed: open log`) and in
 the language server log (`dev: open language server logs`).

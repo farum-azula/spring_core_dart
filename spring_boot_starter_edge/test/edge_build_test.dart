@@ -68,6 +68,33 @@ void main() {
     testOn: 'posix',
   );
 
+  test(
+    'a release build for the build switches unless --debug (S-02)',
+    () async {
+      Future<List<String>> compiled({required bool debug}) async {
+        try {
+          await EdgeBuild(
+            platform: EdgePlatform.cloudflare,
+            application: Directory.current,
+            output: output().path,
+            debug: debug,
+            dart: fakeDart('3.13.0'),
+          ).run();
+        } on ProcessException catch (error) {
+          return error.arguments;
+        }
+        fail('the fake compiles nothing');
+      }
+
+      expect(await compiled(debug: false), contains('-Ddart.vm.product=true'));
+      expect(
+        await compiled(debug: true),
+        isNot(contains('-Ddart.vm.product=true')),
+      );
+    },
+    testOn: 'posix',
+  );
+
   test('compiled by Dart 3.13 it is built as before', () async {
     for (final version in ['3.13.0', '3.13.7', '3.12.4']) {
       // The fake does not compile: the build got past the check.

@@ -69,6 +69,16 @@ final class FlutterGeneration extends PackageGeneration {
   @override
   String get package => 'spring_boot_starter_flutter';
 
+  // The app's own settings: its theme's tokens are no secret.
+  @override
+  List<String> get publicDefines => const ['spring.flutter'];
+
+  @override
+  List<AnnotationPlacement> get placements => const [
+    ClassPlacement([contextAccessChecker], beanMethods: true),
+    ClassPlacement([themeLoaderKindChecker]),
+  ];
+
   @override
   List<String> get markers => const ['@ThemeLoaderKind'];
 

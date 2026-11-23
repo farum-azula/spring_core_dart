@@ -12,9 +12,22 @@ import 'package:yaml/yaml.dart';
 /// `${shop.currencies}` does not resolve at run time either, as in Spring.
 /// Each document is parsed on its own, so a broken one leaves the others'
 /// keys.
-List<PropertyEntry> parseYamlProperties(String path, String content) {
+///
+/// A file cannot make the server run out of time, memory or stack: aliases
+/// are expanded as the loader does, but a document stops being read once
+/// it has visited [maxNodes] nodes (an alias bomb visits billions) or is
+/// nested deeper than [maxDepth]; and whatever a document throws (a stack
+/// overflow of the parser on thousands of `[`) leaves only that document
+/// out.
+List<PropertyEntry> parseYamlProperties(
+  String path,
+  String content, {
+  int maxNodes = 100000,
+  int maxDepth = 100,
+}) {
   final entries = <PropertyEntry>[];
   var document = <PropertyEntry>[];
+  var visited = 0;
 
   void add(String key, YamlNode at, String value) {
     final span = at.span;
@@ -33,10 +46,17 @@ List<PropertyEntry> parseYamlProperties(String path, String content) {
   }
 
   // [at]: the node the entry points at (its key, or the list element).
-  void walk(YamlNode node, String path, YamlNode at) {
+  void walk(YamlNode node, String path, YamlNode at, int depth) {
+    if (++visited > maxNodes || depth > maxDepth) {
+      throw const _TooLarge();
+    }
     switch (node) {
       case YamlMap():
-        final members = _members(node);
+        final members = _members(node, () {
+          if (++visited > maxNodes) {
+            throw const _TooLarge();
+          }
+        });
         if (members.isEmpty) {
           if (path.isNotEmpty) {
             add(path, at, '');
@@ -49,7 +69,7 @@ List<PropertyEntry> parseYamlProperties(String path, String content) {
               : key.startsWith('[')
               ? '$path$key'
               : '$path.$key';
-          walk(child, name, keyNode);
+          walk(child, name, keyNode, depth + 1);
         }
       case YamlList(:final nodes):
         if (nodes.isEmpty) {
@@ -57,7 +77,12 @@ List<PropertyEntry> parseYamlProperties(String path, String content) {
         }
         for (var i = 0; i < nodes.length; i++) {
           final child = nodes[i];
-          walk(child, '$path[$i]', child is YamlScalar ? child : at);
+          walk(
+            child,
+            '$path[$i]',
+            child is YamlScalar ? child : at,
+            depth + 1,
+          );
         }
       case YamlScalar(:final value):
         if (path.isNotEmpty) {
@@ -67,15 +92,20 @@ List<PropertyEntry> parseYamlProperties(String path, String content) {
   }
 
   for (final (start, text) in _documents(content)) {
-    final YamlNode root;
-    try {
-      // Blank lines in front keep the spans' line numbers those of the file.
-      root = loadYamlNode('${'\n' * start}$text');
-    } on YamlException {
+    document = [];
+    visited = 0;
+    if (_flowDepth(text) > maxDepth) {
+      // The parser's time grows with the square of the nesting.
       continue;
     }
-    document = [];
-    walk(root, '', root);
+    try {
+      // Blank lines in front keep the spans' line numbers those of the file.
+      final root = loadYamlNode('${'\n' * start}$text');
+      walk(root, '', root, 0);
+    } on Object {
+      // Invalid, too large or too deep: the document gives no keys.
+      continue;
+    }
     final profile = _activationProfile(document);
     entries.addAll(
       profile == null
@@ -125,10 +155,14 @@ List<(int, String)> _documents(String content) {
 // The members of a mapping as the loader sees them: merge keys (`<<`)
 // applied — the mapping's own keys win, then earlier merged mappings —
 // and non-string keys written as `[key]`.
-List<(String, YamlNode, YamlNode)> _members(YamlMap map) {
+List<(String, YamlNode, YamlNode)> _members(
+  YamlMap map,
+  void Function() visit,
+) {
   final own = <String, (YamlNode, YamlNode)>{};
   final merged = <String, (YamlNode, YamlNode)>{};
   for (final MapEntry(:key, :value) in map.nodes.entries) {
+    visit();
     final keyNode = key is YamlNode ? key : value;
     final keyValue = key is YamlNode ? key.value : key;
     if (keyValue == '<<' &&
@@ -137,7 +171,7 @@ List<(String, YamlNode, YamlNode)> _members(YamlMap map) {
       final sources = value is YamlList ? value.nodes : [value];
       for (final source in sources) {
         if (source is YamlMap) {
-          for (final (name, node, child) in _members(source)) {
+          for (final (name, node, child) in _members(source, visit)) {
             merged.putIfAbsent(name, () => (node, child));
           }
         }
@@ -153,4 +187,48 @@ List<(String, YamlNode, YamlNode)> _members(YamlMap map) {
     for (final MapEntry(key: name, value: (node, child)) in own.entries)
       (name, node, child),
   ];
+}
+
+/// [loadYaml] of [text], or null when its flow collections (`[`, `{`) nest
+/// deeper than [maxDepth]: the parser's time grows with the square of the
+/// nesting (seconds for 20 000 `[`), and its stack overflows.
+Object? loadYamlBounded(String text, {int maxDepth = 100}) =>
+    _flowDepth(text) > maxDepth ? null : loadYaml(text);
+
+// How deep the flow collections (`[`, `{`) of [text] nest, quoted text and
+// comments left out.
+int _flowDepth(String text) {
+  var depth = 0;
+  var deepest = 0;
+  String? quote;
+  var comment = false;
+  for (var i = 0; i < text.length; i++) {
+    final char = text[i];
+    if (char == '\n') {
+      quote = null;
+      comment = false;
+    } else if (comment) {
+      continue;
+    } else if (quote != null) {
+      if (char == quote) {
+        quote = null;
+      }
+    } else if (char == "'" || char == '"') {
+      quote = char;
+    } else if (char == '#' && (i == 0 || text[i - 1] == ' ')) {
+      comment = true;
+    } else if (char == '[' || char == '{') {
+      if (++depth > deepest) {
+        deepest = depth;
+      }
+    } else if ((char == ']' || char == '}') && depth > 0) {
+      depth--;
+    }
+  }
+  return deepest;
+}
+
+/// Thrown when a document is too large or too deep to read.
+final class _TooLarge implements Exception {
+  const _TooLarge();
 }

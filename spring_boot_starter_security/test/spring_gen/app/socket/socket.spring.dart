@@ -185,6 +185,7 @@ _i1.BeanModule get $socketSecurityBeans =>
         ],
         factoryBeanName: r'socketSecurityConfig',
         factoryMethodName: r'users',
+        factoryMethodReturnType: _i6.UserDetailsService,
         dependencies: const [
           _i1.Dependency(
             _i2.SocketSecurityConfig,

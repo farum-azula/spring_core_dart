@@ -203,6 +203,7 @@ class IntrospectionMethodModel {
     required this.returnType,
     required this.parameterTypes,
     required this.annotations,
+    this.isFuture = false,
     this.jsonNeed = IntrospectionNeed.none,
   });
 
@@ -217,6 +218,10 @@ class IntrospectionMethodModel {
 
   /// The user annotations of the method.
   final List<DartObject> annotations;
+
+  /// Whether it returns a `Future`: a security expression refuses it
+  /// without calling it.
+  final bool isFuture;
 
   /// What `ObjectMapper` needs the method for: [IntrospectionNeed.read]
   /// for `@JsonValue` and `@JsonAnyGetter` (writing the object out),

@@ -7,7 +7,13 @@ import 'package:spring_boot_starter_cache/src/cache.dart';
 /// A cache name is a [LayeredCache] of that name in every manager that has
 /// it, in the order of [layers]. An entry is looked for layer by layer, and
 /// one found in a slower layer is copied into the faster ones in front of
-/// it; a put and an evict go to every layer.
+/// it; a put and an evict go to every layer. A layer that keeps no `null`
+/// (`allowNullValues: false`) is left out of the put of a `null`, which
+/// the other layers keep.
+///
+/// A copy into a faster layer lives that layer's whole time to live from
+/// the copy: an entry can outlive the slower layer's time by up to the
+/// faster layer's. Keep the faster layers' times short.
 ///
 /// ```dart
 /// @Bean()
@@ -97,14 +103,28 @@ final class LayeredCache implements AsyncCache {
 
   void _copyForward(int found, Object? key, ValueWrapper hit) {
     for (final layer in layers.take(found)) {
-      layer.put(key, hit.value);
+      _put(layer, key, hit.value);
     }
   }
 
   @override
   void put(Object? key, Object? value) {
     for (final layer in layers) {
+      _put(layer, key, value);
+    }
+  }
+
+  // A layer that refuses null (Spring's IllegalArgumentException of a
+  // cache that does not allow null values) is skipped for a null.
+  static void _put(Cache layer, Object? key, Object? value) {
+    if (value != null) {
       layer.put(key, value);
+      return;
+    }
+    try {
+      layer.put(key, null);
+    } on ArgumentError {
+      layer.evict(key);
     }
   }
 

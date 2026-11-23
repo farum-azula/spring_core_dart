@@ -352,6 +352,8 @@ get $dataConfigBeansPropertiesIntrospections => [
     annotations: [
       _i6.ConfigurationProperties(r'spring.data', ignoreInvalidFields: true),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.DataProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.DataProperties>(
@@ -421,6 +423,8 @@ get $dataConfigBeansPropertiesIntrospections => [
         get: _$get10,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.DataJdbcProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.DataJdbcProperties>(
@@ -484,6 +488,8 @@ get $dataConfigBeansPropertiesIntrospections => [
         get: _$get13,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.DataJdbcRateLimitProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.DataJdbcRateLimitProperties>(
@@ -513,6 +519,8 @@ get $dataConfigBeansPropertiesIntrospections => [
         get: _$get15,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.DataMemoryProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.DataMemoryProperties>(
@@ -542,6 +550,8 @@ get $dataConfigBeansPropertiesIntrospections => [
         get: _$get18,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.DataWebProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.DataWebProperties>(
@@ -603,6 +613,8 @@ get $dataConfigBeansPropertiesIntrospections => [
         get: _$get26,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.DataPageableProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.DataPageableProperties>(
@@ -669,6 +681,8 @@ get $dataConfigBeansPropertiesIntrospections => [
         get: _$get28,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.DataSortProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.DataSortProperties>(
@@ -696,6 +710,8 @@ get $dataConfigBeansPropertiesIntrospections => [
     annotations: [
       _i6.ConfigurationProperties(r'spring.jdbc', ignoreInvalidFields: true),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.JdbcProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.JdbcProperties>(
@@ -721,6 +737,8 @@ get $dataConfigBeansPropertiesIntrospections => [
         get: _$get32,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.JdbcTemplateProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.JdbcTemplateProperties>(
@@ -751,6 +769,8 @@ get $dataConfigBeansPropertiesIntrospections => [
     annotations: [
       _i6.ConfigurationProperties(r'spring.sql', ignoreInvalidFields: true),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.SqlProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.SqlProperties>(
@@ -812,6 +832,7 @@ get $dataConfigBeansPropertiesIntrospections => [
         get: _$get43,
       ),
     ],
+    library: r'package:spring_boot_starter_data/src/schema/script_database_initializer.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i3.SqlInitSettings.new,
     constructor: _i6.IntrospectedConstructor<_i3.SqlInitSettings>(
@@ -966,6 +987,7 @@ get $dataConfigBeansPropertiesIntrospections => [
         get: _$get62,
       ),
     ],
+    library: r'package:spring_boot_starter_data/src/schema/migrations/migration_settings.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i4.MigrationSettings.new,
     constructor: _i6.IntrospectedConstructor<_i4.MigrationSettings>(
@@ -1154,6 +1176,8 @@ get $dataConfigBeansPropertiesIntrospections => [
         ignoreInvalidFields: true,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.DataSourceConfigProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.DataSourceConfigProperties>(
@@ -1237,6 +1261,8 @@ get $dataConfigBeansPropertiesIntrospections => [
         get: _$get77,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.DataSourcePoolProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.DataSourcePoolProperties>(
@@ -1307,6 +1333,8 @@ get $dataConfigBeansPropertiesIntrospections => [
         get: _$get81,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.SqliteConfigProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.SqliteConfigProperties>(
@@ -1368,6 +1396,8 @@ get $dataConfigBeansPropertiesIntrospections => [
         get: _$get87,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.PostgresqlConfigProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.PostgresqlConfigProperties>(
@@ -1424,6 +1454,8 @@ get $dataConfigBeansPropertiesIntrospections => [
     annotations: [
       _i6.ConfigurationProperties(r'spring', ignoreInvalidFields: true),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.NamedDataSourcesProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.NamedDataSourcesProperties>(
@@ -1494,6 +1526,8 @@ get $dataConfigBeansPropertiesIntrospections => [
         get: _$get99,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.NamedDataSourceProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.NamedDataSourceProperties>(
@@ -1566,6 +1600,8 @@ get $dataConfigBeansPropertiesIntrospections => [
         get: _$get101,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.NamedDataProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.NamedDataProperties>(
@@ -1590,6 +1626,8 @@ get $dataConfigBeansPropertiesIntrospections => [
         get: _$get103,
       ),
     ],
+    library:
+        r'package:spring_boot_starter_data/src/properties/data_properties.dart',
     parts: {_i6.IntrospectionPart.read, _i6.IntrospectionPart.write},
     instantiate: _i1.NamedDataJdbcProperties.new,
     constructor: _i6.IntrospectedConstructor<_i1.NamedDataJdbcProperties>(

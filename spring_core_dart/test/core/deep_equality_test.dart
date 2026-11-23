@@ -118,4 +118,18 @@ void main() {
     final list = [1, 2];
     expect(deepEquals(list, list), isTrue);
   });
+
+  test('doubles as Lombok compares them: NaN equals NaN, 0.0 not -0.0 '
+      '(INT-2)', () {
+    const negativeZero = -0.0; // -0 would be the int 0
+    expect(doubleEquals(double.nan, double.nan), isTrue);
+    expect(doubleEquals(0, negativeZero), isFalse);
+    expect(doubleEquals(1.5, 1.5), isTrue);
+    expect(doubleEquals(null, null), isTrue);
+    expect(doubleEquals(null, 0), isFalse);
+    expect(doubleHash(double.nan), doubleHash(-double.nan));
+    expect(deepEquals([double.nan], [double.nan]), isTrue);
+    expect(deepHash([double.nan]), deepHash([double.nan]));
+    expect(deepEquals(<double>[0], <double>[negativeZero]), isFalse);
+  });
 }
