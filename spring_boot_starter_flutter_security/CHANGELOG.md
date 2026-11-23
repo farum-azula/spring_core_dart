@@ -1,3 +1,7 @@
+## Unreleased
+
+- **Security:** `CsrfCookieHttpTransport` keeps the request's `sensitiveHeaders`. It lost them, so with a custom `headerName` a browser could carry a Feign client's `sensitive-headers` through a redirect to another origin.
+
 ## 0.9.0
 
 - Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.

@@ -1,9 +1,14 @@
-// Where the annotations of a @FeignClient go: a method mapped by a web mapping, parameters that say how they are sent; elsewhere the build fails, naming what to change.
+// Where the annotations of a @FeignClient go: a method mapped by a web mapping,
+// parameters that say how they are sent; elsewhere the build fails, naming what
+// to change.
 import 'package:test/test.dart';
 
 import '../support/placements.dart';
 
 void main() {
+  const cannotSend =
+      'Api.p: parameter me has @AuthenticationPrincipal, which a client '
+      'cannot send';
   group('misplaced', () {
     misplacedCases({
       'a parameter annotation a client cannot send (S19)': (
@@ -11,8 +16,7 @@ void main() {
             "@PostMapping('/p') Future<String> p(@AuthenticationPrincipal() "
             'String me); }',
         [
-          'Api.p: parameter me has @AuthenticationPrincipal, which a client '
-              'cannot send',
+          cannotSend,
         ],
       ),
       "another starter's mapping": (

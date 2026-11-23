@@ -169,7 +169,7 @@ void main() {
           isA<SpelEvaluationException>().having(
             (error) => error.toString(),
             'message',
-            allOf(contains('List<int>'), contains('String')),
+            allOf(contains('<int>'), contains('String')),
           ),
         ),
       );

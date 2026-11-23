@@ -11,6 +11,9 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 @JS('testServer')
 external JSString get _testServer;
 
+@JS('testOtherOrigin')
+external JSString get _otherOrigin;
+
 @JS('globalThis')
 external JSObject get _global;
 
@@ -76,6 +79,39 @@ Future<void> main() async {
     ),
   );
   result['followed'] = '${followed.statusCode}:${followed.bodyText}';
+  // A request with credentials: fetch would keep X-Api-Key on another
+  // origin, so the transport follows the redirect itself.
+  HttpRequest withCredentials(String path, {HttpMethod? method}) => HttpRequest(
+    method: method ?? HttpMethod.get,
+    url: Uri.parse('http://$host$path'),
+    headers: HttpHeaders({
+      'Authorization': 'Bearer a',
+      'X-Api-Key': 'b',
+      'X-Grant': 'c',
+      'Cookie': 'd=e',
+      'X-Plain': 'plain',
+    }),
+    body: method == null ? null : utf8.encode('body'),
+    sensitiveHeaders: const {'x-grant'},
+  );
+  final other = Uri.encodeComponent('http://${_otherOrigin.toDart}/seen');
+  result['redirectSameOrigin'] = (await transport.send(
+    withCredentials('/hop?to=/seen'),
+  )).bodyText;
+  result['redirectOtherOrigin'] = (await transport.send(
+    withCredentials('/hop?to=$other'),
+  )).bodyText;
+  final streamed = await transport.stream(withCredentials('/hop?to=$other'));
+  result['redirectStream'] = (await streamed.read()).bodyText;
+  result['redirectPost307'] = (await transport.send(
+    withCredentials('/hop?code=307&to=$other', method: HttpMethod.post),
+  )).statusCode;
+  result['redirectPost303'] = (await transport.send(
+    withCredentials('/hop?code=303&to=$other', method: HttpMethod.post),
+  )).bodyText;
+  result['redirectLoop'] = (await transport.send(
+    withCredentials('/loop'),
+  )).statusCode;
   try {
     await transport.send(
       HttpRequest(

@@ -586,22 +586,23 @@ class SpringBuilder implements Builder {
   /// A file that looks like a secret (a dotfile such as `.env`, a key or
   /// keystore: `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.jks`, `*.keystore`,
   /// `id_rsa`, `credentials*.json`, `service-account*.json`) is left out
-  /// too, with a warning: the module is compiled into every build, a web
-  /// or mobile one included, where anyone can read it. The globs of
+  /// too, also below `config/`, with a warning: the module is compiled into
+  /// every build, a web or mobile one included, where anyone can read it.
+  /// The globs of
   /// `spring.resources.embed.secrets` embed such files anyway.
   static Future<Map<String, ({String? text, String? base64})>> embedded(
     BuildStep buildStep,
     Map<String, ({String? text, String? base64})> resources,
   ) async {
-    resources = _withoutSecrets(resources);
-    final patterns = embedExclusions(_texts(resources));
+    final withoutSecrets = _withoutSecrets(resources);
+    final patterns = embedExclusions(_texts(withoutSecrets));
     if (patterns.isEmpty) {
-      return resources;
+      return withoutSecrets;
     }
     final globs = [for (final pattern in patterns) Glob(pattern)];
     final kept = <String, ({String? text, String? base64})>{};
     final left = <String>[];
-    for (final MapEntry(key: path, :value) in resources.entries) {
+    for (final MapEntry(key: path, :value) in withoutSecrets.entries) {
       if (_isConfiguration(path) || !globs.any((g) => g.matches(path))) {
         kept[path] = value;
       } else {
@@ -640,7 +641,7 @@ class SpringBuilder implements Builder {
   ) {
     final secret = [
       for (final path in resources.keys)
-        if (!_isConfiguration(path) && looksLikeSecretFile(path)) path,
+        if (looksLikeSecretFile(path)) path,
     ];
     if (secret.isEmpty) {
       return resources;
@@ -692,7 +693,8 @@ class SpringBuilder implements Builder {
   );
 
   /// The globs of `spring.resources.embed.exclude` (or of [key]) in the
-  /// configuration [texts] (a list, or one text of comma-separated globs).
+  /// configuration [texts] without a profile, as every build key is read
+  /// (a list, or one text of comma-separated globs).
   static List<String> embedExclusions(
     Map<String, String> texts, {
     String key = 'spring.resources.embed.exclude',
@@ -703,7 +705,7 @@ class SpringBuilder implements Builder {
     final String? Function(String key) property;
     try {
       property = readPlatformEnvironment(
-        texts,
+        BuildKeys.baseConfiguration(texts).files,
         profiles: const [],
       ).getProperty;
     } on Object {
@@ -1221,7 +1223,8 @@ class SpringBuilder implements Builder {
             ..write(annotations(member))
             ..write(switch (member) {
               final ExecutableElement executable =>
-                '${executable.displayName}${executable.type.getDisplayString()}',
+                '${executable.displayName}'
+                    '${executable.type.getDisplayString()}',
               final FieldElement field =>
                 '${field.name}:${field.type.getDisplayString()}',
               _ => member.displayName,

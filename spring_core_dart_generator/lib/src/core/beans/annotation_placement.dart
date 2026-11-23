@@ -61,6 +61,8 @@ enum PlaceKind {
   library,
 }
 
+String _withoutNew(String name) => name.replaceFirst(RegExp(r'\.new$'), '');
+
 /// One annotation where the build found it: the declaration, what kind of
 /// declaration it is, and the class or mixin around it.
 final class AnnotationSite {
@@ -111,6 +113,14 @@ final class AnnotationSite {
   /// top level of ...`.
   String get subject {
     final member = '$ownerName.${element.displayName}';
+    final parameterOwner = switch (executable) {
+      final ConstructorElement constructor =>
+        'the constructor ${_withoutNew(constructor.displayName)}',
+      final ExecutableElement method
+          when method.enclosingElement is InstanceElement =>
+        '$ownerName.${method.displayName}',
+      _ => '${executable?.displayName}',
+    };
     return switch (kind) {
       PlaceKind.classDeclaration => 'class ${element.displayName}',
       PlaceKind.mixin => 'mixin ${element.displayName}',
@@ -120,7 +130,7 @@ final class AnnotationSite {
       PlaceKind.topLevel ||
       PlaceKind.foreignMember => '${element.displayName}, in $place',
       PlaceKind.constructor =>
-        'the constructor ${element.displayName.replaceFirst(RegExp(r'\.new$'), '')}',
+        'the constructor ${_withoutNew(element.displayName)}',
       PlaceKind.method => member,
       PlaceKind.operator => 'the operator $member',
       PlaceKind.getter => 'the getter $member',
@@ -128,11 +138,7 @@ final class AnnotationSite {
       PlaceKind.field => 'the field $member',
       PlaceKind.parameter =>
         'parameter ${element.displayName} of '
-            '${switch (executable) {
-              final ConstructorElement constructor => 'the constructor ${constructor.displayName.replaceFirst(RegExp(r'\.new$'), '')}',
-              final ExecutableElement method when method.enclosingElement is InstanceElement => '$ownerName.${method.displayName}',
-              _ => '${executable?.displayName}',
-            }}',
+            '$parameterOwner',
       PlaceKind.enumValue => 'the enum value $member',
       PlaceKind.typedefDeclaration => 'typedef ${element.displayName}',
       PlaceKind.typeParameter => 'type parameter ${element.displayName}',
@@ -254,7 +260,7 @@ final class AnnotatedOwner extends PlacementOwner {
 }
 
 /// Where an annotation may go. A package's part declares one for each of
-/// its annotations ([PackageGeneration.placements]), the core for its own;
+/// its annotations (`PackageGeneration.placements`), the core for its own;
 /// the build walks every declaration of a scanned library once and asks
 /// the first placement that [covers] an annotation whether its place is
 /// one ([problem]), and, once the module is scanned, whether the class
@@ -573,21 +579,21 @@ base class ClassPlacement extends CheckedPlacement {
   }
 }
 
-final TypeChecker _beanChecker = TypeChecker.typeNamedLiterally(
+const TypeChecker _beanChecker = TypeChecker.typeNamedLiterally(
   'Bean',
   inPackage: 'spring_core_dart',
 );
 
 final List<TypeChecker> _moduleVariableCheckers = [
-  TypeChecker.typeNamedLiterally(
+  const TypeChecker.typeNamedLiterally(
     'ComponentScan',
     inPackage: 'spring_core_dart',
   ),
-  TypeChecker.typeNamedLiterally(
+  const TypeChecker.typeNamedLiterally(
     'AutoConfigurationModule',
     inPackage: 'spring_boot_dart',
   ),
-  TypeChecker.typeNamedLiterally(
+  const TypeChecker.typeNamedLiterally(
     'SpringBootApplication',
     inPackage: 'spring_boot_dart',
   ),
@@ -595,7 +601,7 @@ final List<TypeChecker> _moduleVariableCheckers = [
 
 bool _isBeanMethod(Element element) => _beanChecker.hasAnnotationOf(element);
 
-final TypeChecker _beanMethodAnnotation = TypeChecker.typeNamedLiterally(
+const TypeChecker _beanMethodAnnotation = TypeChecker.typeNamedLiterally(
   'BeanMethodAnnotation',
   inPackage: 'spring_core_dart',
 );
@@ -716,7 +722,7 @@ final class AnnotationPlacements {
     for (final function in library.topLevelFunctions) {
       yield* _ofTypeParameters(function.typeParameters);
     }
-    final List<InstanceElement> instances = [
+    final instances = <InstanceElement>[
       ...library.classes,
       ...library.mixins,
       ...library.enums,

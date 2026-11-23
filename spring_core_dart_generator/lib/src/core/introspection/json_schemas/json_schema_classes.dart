@@ -124,7 +124,7 @@ abstract final class JsonSchemaClasses {
           sha256: value('spring.json.schemas[$i].sha256')?.toLowerCase(),
           // Part of class names: only what an identifier may hold.
           prefix: (value('spring.json.schemas[$i].prefix') ?? '').replaceAll(
-            RegExp(r'[^A-Za-z0-9_]'),
+            RegExp('[^A-Za-z0-9_]'),
             '',
           ),
           name: value('spring.json.schemas[$i].name'),
@@ -969,10 +969,15 @@ final class _Model {
       }
       w('  @override');
       // A secret-looking field is masked, as `@ToString` and the logs do.
-      w(
-        "  String toString() => '${c.name}("
-        "${[for (final f in c.fields) SecretNames.looksSecret(f.name) || SecretNames.looksSecret(f.json) ? '${f.name}: ******' : '${f.name}: \$${f.name}'].join(', ')})';",
-      );
+      final shown = [
+        for (final f in c.fields)
+          if (SecretNames.looksSecret(f.name) ||
+              SecretNames.looksSecret(f.json))
+            '${f.name}: ******'
+          else
+            '${f.name}: \$${f.name}',
+      ].join(', ');
+      w("  String toString() => '${c.name}($shown)';");
       w('}\n');
     }
     w(

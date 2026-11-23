@@ -38,7 +38,8 @@ final class SseReconnect {
   /// (3 seconds by default). [maxAttempts] limits the connections in a row
   /// that bring no event (`null`, the default: no limit). [retryIf] picks
   /// the errors worth another try; by default only an
-  /// [HttpTransportException], that is a network failure or a timeout.
+  /// [HttpTransportException] that [HttpTransportException.isRetryable],
+  /// that is a network failure or a timeout.
   const SseReconnect({
     this.enabled = true,
     this.delay = const Duration(seconds: 3),
@@ -71,7 +72,7 @@ final class SseReconnect {
   final bool Function(Object error) retryIf;
 
   static bool _isTransportError(Object error) =>
-      error is HttpTransportException;
+      error is HttpTransportException && error.isRetryable;
 }
 
 /// Reads server-sent events from an HTTP endpoint as one stream that

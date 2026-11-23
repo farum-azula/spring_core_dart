@@ -267,6 +267,11 @@ class ShopProps {
     });
   });
 
+  String describeEdit(Map<String, Object?> edit) {
+    final start = (edit['range']! as Map)['start']! as Map;
+    return '${start.values.join(':')} ${edit['newText']}';
+  }
+
   group('missing key fixes', () {
     List<String> fixes(String path, int line) {
       session.workspace.setOverlay(path, File(path).readAsStringSync());
@@ -285,8 +290,7 @@ class ShopProps {
           for (final MapEntry(value: edits)
               in ((action['edit']! as Map)['changes']! as Map).entries)
             for (final edit in (edits as List).cast<Map<String, Object?>>())
-              '${((edit['range']! as Map)['start']! as Map).values.join(':')} '
-                  '${edit['newText']}',
+              describeEdit(edit),
       ];
     }
 

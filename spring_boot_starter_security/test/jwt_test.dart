@@ -319,9 +319,11 @@ void main() {
 
     test('an oversized token is refused before any work', () async {
       final huge = keys.token(claims: {'pad': 'x' * (70 * 1024)});
-      final watch = Stopwatch()..start();
-      await expectLater(decoder().decode(huge), _rejected);
-      expect(watch.elapsedMilliseconds, lessThan(200));
+      expect(() => parseJws(huge), throwsA(isA<JoseException>()));
+      await expectLater(
+        decoder().decode(huge),
+        throwsA(predicate((Object e) => '$e'.contains('too long'))),
+      );
     });
 
     test('weak keys are not used: RSA under 2048 bits, EC off the curve', () {

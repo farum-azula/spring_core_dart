@@ -78,6 +78,7 @@ final class _JoinPayloadPlacement extends CheckedPlacement {
 bool _isPhoenixChannel(ClassElement element, ModuleModel module) =>
     _phoenixChannel.hasAnnotationOf(element);
 
+/// The part of `spring_boot_starter_websocket` in the module build.
 final class WebSocketGeneration extends PackageGeneration {
   /// The part; it keeps no state of a build.
   const WebSocketGeneration();

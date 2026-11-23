@@ -78,6 +78,9 @@ SpringApplication _application() => SpringApplication(
         'content/docs/core/beans.md': EmbeddedResource.text(
           '# Beans\n\n${'Text.\n\n' * 80}## Scopes\n\nSingletons.\n',
         ),
+        'content/docs/core/limits.md': EmbeddedResource.text(
+          '# Limits\n\n${'Text.\n\n' * 80}## 制限\n\nSingletons.\n',
+        ),
         'content/docs/guides/index.md': const EmbeddedResource.text(
           '# Guides\n\nStart with [routing](routing.md).\n',
         ),
@@ -189,5 +192,34 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Scopes'), findsOneWidget);
     expect(_DocsScreenState.created.single.scroll.offset, greaterThan(0));
+  });
+
+  testWidgets('an #anchor that is not ASCII scrolls to its heading', (
+    tester,
+  ) async {
+    _DocsScreenState.created.clear();
+    await tester.pumpWidget(SpringApplicationWidget(application: _application));
+    await tester.pumpAndSettle();
+    final route = SpringScope.of(
+      tester.element(find.text('Docs')),
+    ).getBean<RouteTemplate>();
+    await route.go('/docs/core/limits#制限');
+    await tester.pumpAndSettle();
+    expect(find.text('制限'), findsOneWidget);
+    expect(_DocsScreenState.created.single.scroll.offset, greaterThan(0));
+  });
+
+  testWidgets('an #anchor that is not valid encoding opens the page', (
+    tester,
+  ) async {
+    await tester.pumpWidget(SpringApplicationWidget(application: _application));
+    await tester.pumpAndSettle();
+    final route = SpringScope.of(
+      tester.element(find.text('Docs')),
+    ).getBean<RouteTemplate>();
+    await route.go('/docs/core/limits#100%');
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Limits'), findsOneWidget);
   });
 }

@@ -13,7 +13,7 @@ void main() {
     final result = await buildPackage({
       'lib/src/beans.dart': scanRoot,
       'lib/src/service.dart':
-          "${starterImports}@FeignClient('svc', url: 'http://x') "
+          "$starterImports@FeignClient('svc', url: 'http://x') "
           'abstract interface class Api { '
           "@PreAuthorize('this.ping() != null') @GetMapping('/a') "
           "Future<String> a(); @GetMapping('/p') Future<String> ping(); }",

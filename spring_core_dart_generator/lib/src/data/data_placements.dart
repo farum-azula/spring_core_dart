@@ -196,7 +196,20 @@ final class _EntityPropertyPlacement extends CheckedPlacement {
                   'stored, so it would do nothing. Annotate a field.';
       case PlaceKind.parameter:
         return null;
-      default:
+      case PlaceKind.classDeclaration ||
+          PlaceKind.mixin ||
+          PlaceKind.enumDeclaration ||
+          PlaceKind.extension ||
+          PlaceKind.extensionType ||
+          PlaceKind.topLevel ||
+          PlaceKind.foreignMember ||
+          PlaceKind.constructor ||
+          PlaceKind.method ||
+          PlaceKind.operator ||
+          PlaceKind.enumValue ||
+          PlaceKind.typedefDeclaration ||
+          PlaceKind.typeParameter ||
+          PlaceKind.library:
         return '$what: $stored; here it would do nothing.';
     }
   }

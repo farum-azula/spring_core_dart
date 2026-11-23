@@ -8,9 +8,10 @@ import 'package:spring_core_dart/core.dart' show SecretNames;
 ///
 /// A header is sensitive when it is one of [headers] (credentials, the
 /// DPoP proof, cookies) or its name looks secret to [SecretNames]
-/// (`X-Api-Key`, `X-Auth-Token`) or holds `session`. A parameter is sensitive when it is one
-/// of [parameters] (the OAuth 2.0 and OpenID Connect ones that carry a
-/// grant or a proof, signed-URL signatures) or its name looks secret.
+/// (`X-Api-Key`, `X-Auth-Token`) or holds `session`. A parameter is
+/// sensitive when it is one of [parameters] (the OAuth 2.0 and OpenID
+/// Connect ones that carry a grant or a proof, signed-URL signatures) or its
+/// name looks secret.
 ///
 /// ```dart
 /// HttpSecrets.isSensitiveHeader('Authorization');  // true

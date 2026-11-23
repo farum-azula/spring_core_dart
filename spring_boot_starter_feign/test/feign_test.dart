@@ -256,6 +256,31 @@ void main() {
     });
   });
 
+  test('a failure another try cannot change is not retried', () async {
+    server
+        .when(HttpMethod.get, '/v1/books/1')
+        .fail(HttpTransportException('redirect refused', isRetryable: false));
+    await runner
+        .withBean<Retryer>(
+          () => const DefaultRetryer(
+            period: Duration(milliseconds: 1),
+            maxAttempts: 3,
+          ),
+        )
+        .runAsync((context) async {
+          await expectLater(
+            context.getBean<CatalogClient>().find('1'),
+            throwsA(
+              allOf(
+                isA<FeignException>().having((e) => e.status, 'status', -1),
+                isNot(isA<RetryableException>()),
+              ),
+            ),
+          );
+          expect(server.requests, hasLength(1));
+        });
+  });
+
   test('a fallback bean answers when the call fails', () async {
     server.when(HttpMethod.get, '/motd').respond(500);
     await runner.runAsync((context) async {

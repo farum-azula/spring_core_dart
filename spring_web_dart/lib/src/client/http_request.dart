@@ -89,7 +89,8 @@ final class HttpRequest {
   /// More headers, in lower case, that carry a credential: a redirect to
   /// another origin drops them, with those of
   /// `HttpSecrets.isSensitiveHeader` (a Feign client's
-  /// `sensitive-headers`).
+  /// `sensitive-headers`). In a browser, which hides the target of a
+  /// redirect, a request with one of them fails on a redirect instead.
   final Set<String> sensitiveHeaders;
 
   /// Completes when the caller no longer wants the response, or `null`
@@ -117,6 +118,21 @@ final class HttpRequest {
   ///
   /// In a browser this is the `signal` of `fetch`, an `AbortSignal`.
   final Future<void>? abort;
+
+  /// This request with [headers] instead of its own, everything else kept.
+  /// A transport that wraps another and changes the headers uses it, so
+  /// that what the request says about them ([sensitiveHeaders]) stays.
+  HttpRequest withHeaders(HttpHeaders headers) => HttpRequest(
+    method: method,
+    url: url,
+    headers: headers,
+    body: body,
+    timeout: timeout,
+    readTimeout: readTimeout,
+    followRedirects: followRedirects,
+    sensitiveHeaders: sensitiveHeaders,
+    abort: abort,
+  );
 
   @override
   String toString() => '${method.value} $url';

@@ -2,13 +2,12 @@ import 'dart:async';
 import 'dart:io' as io;
 import 'dart:typed_data';
 
+import 'package:spring_web_dart/src/client/http_redirects.dart';
 import 'package:spring_web_dart/src/client/http_request.dart';
 import 'package:spring_web_dart/src/client/http_response.dart';
 import 'package:spring_web_dart/src/client/http_transport.dart';
 import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
-import 'package:spring_web_dart/src/http_method.dart';
-import 'package:spring_web_dart/src/http_secrets.dart';
 
 /// The [HttpTransport] for platforms with `dart:io` (the Dart VM, Flutter
 /// on mobile and desktop), built on `dart:io`'s `HttpClient`.
@@ -199,7 +198,12 @@ class IoHttpTransport implements HttpTransport {
                 onTimeout: () => throw _ReadTimeout(readTimeout),
               );
         final next = request.followRedirects && redirects < maxRedirects
-            ? _redirect(method, url, incoming)
+            ? HttpRedirects.next(
+                method,
+                url,
+                incoming.statusCode,
+                incoming.headers.value('location'),
+              )
             : null;
         if (next == null) {
           final result = await read(incoming, outgoing);
@@ -207,14 +211,7 @@ class IoHttpTransport implements HttpTransport {
           return result;
         }
         await incoming.drain<void>();
-        if (!_sameOrigin(url, next.url)) {
-          [
-            for (final name in headers.names)
-              if (HttpSecrets.isSensitiveHeader(name) ||
-                  request.sensitiveHeaders.contains(name.toLowerCase()))
-                name,
-          ].forEach(headers.remove);
-        }
+        HttpRedirects.applyHop(headers, request, url, next.url);
         if (next.method != method) {
           body = null;
           headers.remove('content-type');
@@ -281,47 +278,7 @@ class IoHttpTransport implements HttpTransport {
   void close() => _client.close(force: true);
 
   /// The most redirects one request follows, as `HttpClient`'s default.
-  static const int maxRedirects = 5;
-
-  // Where a redirect leads, as HttpClient follows them (GET and HEAD, and a
-  // 303 after any method, which becomes a GET); null when it is not one to
-  // follow, or leads from https to http (the 3xx is then the answer).
-  static ({HttpMethod method, Uri url})? _redirect(
-    HttpMethod method,
-    Uri url,
-    io.HttpClientResponse incoming,
-  ) {
-    const redirects = {301, 302, 303, 307, 308};
-    final location = incoming.headers.value('location');
-    if (!redirects.contains(incoming.statusCode) || location == null) {
-      return null;
-    }
-    final safe = method == HttpMethod.get || method == HttpMethod.head;
-    if (!safe && incoming.statusCode != 303) {
-      return null;
-    }
-    final Uri target;
-    try {
-      target = url.resolve(location);
-    } on FormatException {
-      return null;
-    }
-    if (url.scheme == 'https' && target.scheme != 'https') {
-      return null;
-    }
-    if (target.scheme != 'http' && target.scheme != 'https') {
-      return null;
-    }
-    return (
-      method: incoming.statusCode == 303 && method != HttpMethod.head
-          ? HttpMethod.get
-          : method,
-      url: target,
-    );
-  }
-
-  static bool _sameOrigin(Uri a, Uri b) =>
-      a.scheme == b.scheme && a.host == b.host && a.port == b.port;
+  static const int maxRedirects = HttpRedirects.maxRedirects;
 }
 
 /// The caller gave the request up before the response arrived.

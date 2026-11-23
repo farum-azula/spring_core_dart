@@ -1,4 +1,6 @@
-// Where the WebSocket annotations go: an endpoint's handlers in a @WebSocketEndpoint, a client's methods in its interface; elsewhere the build fails, naming what to change.
+// Where the WebSocket annotations go: an endpoint's handlers in a
+// @WebSocketEndpoint, a client's methods in its interface; elsewhere the build
+// fails, naming what to change.
 import 'package:test/test.dart';
 
 import '../support/placements.dart';

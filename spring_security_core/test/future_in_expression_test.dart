@@ -1,11 +1,10 @@
 // An expression runs synchronously: a Future in it is refused, and never
 // compared, so `... != false` cannot hold for everyone.
-import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_security_core/spring_security_core.dart';
 import 'package:test/test.dart';
 
 class Gate {
-  var calls = 0;
+  int calls = 0;
 
   Future<bool> get ready async => false;
 
@@ -43,7 +42,7 @@ final class _CustomResolver implements MethodResolver {
   ) => name == 'custom' ? (_, _, _) => Future<bool>.value(false) : null;
 }
 
-bool _evaluate(String text, Gate gate) {
+bool _evaluate(String text, Gate gate, {List<Object?> args = const []}) {
   final introspector = Introspector()
     ..register(
       Introspection<Gate>(
@@ -77,11 +76,11 @@ bool _evaluate(String text, Gate gate) {
     name: 'call',
     declaringType: 'Gate',
     targetType: 'Gate',
-    parameterNames: const [],
+    parameterNames: [for (var i = 0; i < args.length; i++) 'v$i'],
   );
   return handler.evaluate(
     text,
-    handler.createEvaluationContext(root, signature, const []),
+    handler.createEvaluationContext(root, signature, args),
   );
 }
 
@@ -108,8 +107,36 @@ void main() {
     expect(() => _evaluate('this.ready != false', Gate()), refused);
   });
 
-  test('a Future from a customizer\'s resolver is refused', () {
+  test("a Future from a customizer's resolver is refused", () {
     expect(() => _evaluate('this.custom() != false', Gate()), refused);
+  });
+
+  for (final (text, value) in <(String, Object?)>[
+    ('#v0 != false', Future<bool>.value(false)),
+    ('#v0 == false', Future<bool>.value(false)),
+    ('#v0 != null', Future<bool>.value(false)),
+    ('#v0[0] != false', [Future<bool>.value(false)]),
+    ("#v0['k'] != false", {'k': Future<bool>.value(false)}),
+    ('#v0 != {false}', [Future<bool>.value(false)]),
+    ('#v0.?[#this != false].size() > 0', [Future<bool>.value(false)]),
+  ]) {
+    test('an argument holding a Future is refused: $text', () {
+      expect(() => _evaluate(text, Gate(), args: [value]), refused);
+    });
+  }
+
+  test('plain arguments still compare', () {
+    expect(_evaluate('#v0 != false', Gate(), args: [true]), isTrue);
+    expect(
+      _evaluate(
+        "#v0['k'] == 1",
+        Gate(),
+        args: [
+          {'k': 1},
+        ],
+      ),
+      isTrue,
+    );
   });
 
   test('a synchronous method still answers', () {

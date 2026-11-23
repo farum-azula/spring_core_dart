@@ -3,11 +3,13 @@ import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
 import 'dart:typed_data';
 
+import 'package:spring_web_dart/src/client/http_redirects.dart';
 import 'package:spring_web_dart/src/client/http_request.dart';
 import 'package:spring_web_dart/src/client/http_response.dart';
 import 'package:spring_web_dart/src/client/http_transport.dart';
 import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
+import 'package:spring_web_dart/src/http_method.dart';
 
 /// The [HttpTransport] for code running in a browser (Flutter web, Dart
 /// compiled to JavaScript or WebAssembly), built on the browser's `fetch`
@@ -27,6 +29,16 @@ import 'package:spring_web_dart/src/http_headers.dart';
 /// - Redirects are followed unless `followRedirects` is `false`; then
 ///   `fetch` runs with `redirect: 'manual'` and the browser gives an
 ///   opaque response with status 0, without its `Location`.
+/// - A request with a credential header (`HttpSecrets.isSensitiveHeader`
+///   and its `sensitiveHeaders`) does not leave a redirect to `fetch`,
+///   which keeps custom headers across origins. In an edge runtime the
+///   transport follows it as `IoHttpTransport` does: another origin gets
+///   no credential, `https` to `http` is not followed. A browser hides the
+///   target of a redirect, so there it follows only when the browser
+///   protects every credential header itself (`Authorization`, `Cookie`,
+///   `Proxy-Authorization`); with any other, such as `X-Api-Key`, a
+///   redirect fails with an [HttpTransportException], even to the same
+///   origin, and the target gets nothing.
 /// - `timeout` (the whole exchange) and `readTimeout` (each wait for
 ///   data) abort the request through an `AbortController`, and an
 ///   [HttpTransportException] with `isTimeout` is thrown.
@@ -178,29 +190,50 @@ class FetchHttpTransport implements HttpTransport {
       }),
     );
     try {
-      final headers = JSObject();
-      request.headers.toMap().forEach(
-        (name, value) => headers.setProperty(name.toJS, value.toJS),
-      );
-      final body = request.body;
-      final redirect = (request.followRedirects ? 'follow' : 'manual').toJS;
-      final init = body == null
-          ? _RequestInit(
-              method: request.method.value.toJS,
-              headers: headers,
-              signal: controller.signal,
-              redirect: redirect,
-              credentials: credentials.value.toJS,
-            )
-          : _RequestInit(
-              method: request.method.value.toJS,
-              headers: headers,
-              body: (body is Uint8List ? body : Uint8List.fromList(body)).toJS,
-              signal: controller.signal,
-              redirect: redirect,
-              credentials: credentials.value.toJS,
-            );
-      final response = await _fetch(request.url.toString().toJS, init).toDart;
+      final followsItself = _followsItself(request);
+      var method = request.method;
+      var url = request.url;
+      var body = request.body;
+      final sent = HttpHeaders()..addHeaders(request.headers);
+      late _Response response;
+      for (var redirects = 0; ; redirects++) {
+        response = await _fetch(
+          url.toString().toJS,
+          _init(method, sent, body, controller.signal, followsItself),
+        ).toDart;
+        if (followsItself || !request.followRedirects) {
+          break;
+        }
+        if (response.type == 'opaqueredirect') {
+          throw HttpTransportException(
+            'redirect not followed: the browser hides its target, and the '
+            'request carries the credential headers '
+            '${HttpRedirects.credentialHeaders(sent, request).join(', ')}',
+            request: request,
+            isRetryable: false,
+          );
+        }
+        final next = redirects < HttpRedirects.maxRedirects
+            ? HttpRedirects.next(
+                method,
+                url,
+                response.status,
+                response.headers.get('location'),
+              )
+            : null;
+        if (next == null) {
+          break;
+        }
+        unawaited(response.body?.cancel().toDart);
+        wait.restart();
+        HttpRedirects.applyHop(sent, request, url, next.url);
+        if (next.method != method) {
+          body = null;
+          sent.remove('content-type');
+        }
+        method = next.method;
+        url = next.url;
+      }
       answered = true;
       wait.cancel();
       final responseHeaders = HttpHeaders();
@@ -211,6 +244,10 @@ class FetchHttpTransport implements HttpTransport {
         )).toJS,
       );
       return (response, responseHeaders, timer, controller);
+    } on HttpTransportException {
+      timer.cancel();
+      wait.cancel();
+      rethrow;
     } catch (error) {
       timer.cancel();
       wait.cancel();
@@ -230,12 +267,87 @@ class FetchHttpTransport implements HttpTransport {
     }
   }
 
+  // Whether `fetch` may follow the redirects of [request] by its own rules:
+  // nothing to protect, or a browser that protects all of it.
+  bool _followsItself(HttpRequest request) {
+    if (!request.followRedirects) {
+      return false;
+    }
+    final credentials = HttpRedirects.credentialHeaders(
+      request.headers,
+      request,
+    );
+    return credentials.isEmpty ||
+        (_guardsForbiddenHeaders &&
+            credentials.every(
+              (name) => _protectedByBrowser.contains(name.toLowerCase()),
+            ));
+  }
+
+  _RequestInit _init(
+    HttpMethod method,
+    HttpHeaders sent,
+    List<int>? body,
+    _AbortSignal signal,
+    bool followsItself,
+  ) {
+    final headers = JSObject();
+    sent.toMap().forEach(
+      (name, value) => headers.setProperty(name.toJS, value.toJS),
+    );
+    final redirect = (followsItself ? 'follow' : 'manual').toJS;
+    return body == null
+        ? _RequestInit(
+            method: method.value.toJS,
+            headers: headers,
+            signal: signal,
+            redirect: redirect,
+            credentials: credentials.value.toJS,
+          )
+        : _RequestInit(
+            method: method.value.toJS,
+            headers: headers,
+            body: (body is Uint8List ? body : Uint8List.fromList(body)).toJS,
+            signal: signal,
+            redirect: redirect,
+            credentials: credentials.value.toJS,
+          );
+  }
+
+  // What a browser's `fetch` removes on a redirect to another origin
+  // (`Authorization`) or never lets a page set (the other two).
+  static const Set<String> _protectedByBrowser = {
+    'authorization',
+    'cookie',
+    'proxy-authorization',
+  };
+
+  // A browser's `Request` drops the forbidden header `Cookie`; the `fetch`
+  // of a server runtime (Deno, workerd, Node) keeps it.
+  static final bool _guardsForbiddenHeaders = () {
+    try {
+      final headers = JSObject()..setProperty('cookie'.toJS, 'x'.toJS);
+      return !_Request(
+        'http://localhost/'.toJS,
+        _RequestInit(headers: headers),
+      ).headers.has('cookie'.toJS);
+    } on Object {
+      return false;
+    }
+  }();
+
   @override
   void close() {}
 }
 
 @JS('fetch')
 external JSPromise<_Response> _fetch(JSString resource, _RequestInit init);
+
+@JS('Request')
+extension type _Request._(JSObject _) implements JSObject {
+  external factory _Request(JSString url, _RequestInit init);
+  external _Headers get headers;
+}
 
 extension type _RequestInit._(JSObject _) implements JSObject {
   external factory _RequestInit({
@@ -259,6 +371,7 @@ extension type _AbortSignal._(JSObject _) implements JSObject {}
 
 extension type _Response._(JSObject _) implements JSObject {
   external int get status;
+  external String get type;
   external _Headers get headers;
   external _ReadableStream? get body;
   external JSPromise<JSArrayBuffer> arrayBuffer();
@@ -266,6 +379,7 @@ extension type _Response._(JSObject _) implements JSObject {
 
 extension type _ReadableStream._(JSObject _) implements JSObject {
   external _Reader getReader();
+  external JSPromise<JSAny?> cancel();
 }
 
 extension type _Reader._(JSObject _) implements JSObject {
@@ -309,4 +423,6 @@ final class _Deadline {
 
 extension type _Headers._(JSObject _) implements JSObject {
   external void forEach(JSFunction callback);
+  external bool has(JSString name);
+  external String? get(String name);
 }

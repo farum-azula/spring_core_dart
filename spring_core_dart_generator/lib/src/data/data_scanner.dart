@@ -146,11 +146,12 @@ final class DataScanner {
       }
     }
     final names = {for (final field in fields) field.name};
-    for (final annotation in TypeChecker.fromUrl(
+    for (final annotation in const TypeChecker.fromUrl(
       '$_annotations#UniqueConstraint',
     ).annotationsOf(element)) {
       for (final property
-          in annotation.getField('properties')?.toListValue() ?? const []) {
+          in annotation.getField('properties')?.toListValue() ??
+              const <DartObject>[]) {
         final name = property.toStringValue();
         if (name != null && !names.contains(name)) {
           _fail(

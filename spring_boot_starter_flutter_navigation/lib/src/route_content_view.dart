@@ -83,7 +83,7 @@ class RouteContentView extends StatelessWidget {
     final file = fileOf(SpringScope.of(context), navigation, content, language);
     return _FragmentScroll(
       outline: outline,
-      fragment: route.uri.fragment,
+      fragment: _decoded(route.uri.fragment),
       file: file,
       page: scrollToTop ? content : null,
       builder: (outline) => MarkdownView.resource(
@@ -199,6 +199,18 @@ class RouteContentView extends StatelessWidget {
   }
 
   static String? _fragment(Uri uri) => uri.hasFragment ? uri.fragment : null;
+
+  // A heading's id is its text (`制限`); the address has it percent-encoded.
+  // A fragment that is not valid encoding is taken as it is written.
+  static String _decoded(String fragment) {
+    try {
+      return Uri.decodeComponent(fragment);
+    } on ArgumentError {
+      return fragment;
+    } on FormatException {
+      return fragment;
+    }
+  }
 
   // [location] (`resources:content/a.md`, `asset:docs/a.md`) as a URI
   // with a path, so a relative link resolves against it.

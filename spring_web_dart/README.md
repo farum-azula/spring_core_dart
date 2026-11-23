@@ -350,6 +350,14 @@ and aborts through an `AbortController`. On the web the server must
 allow the request with CORS headers; a blocked request is an
 `HttpTransportException`.
 
+A redirect to another origin never carries a credential header
+(`HttpSecrets`, `HttpRequest.sensitiveHeaders`), and `https` to `http` is
+not followed with one. In a browser, which hides a redirect's target, a
+request with a custom credential header such as `X-Api-Key` fails on any
+redirect; `Authorization` and cookies follow the browser's own rules: it
+removes `Authorization` on another origin, and with
+`FetchCredentials.include` sends a host's cookies to its other ports too.
+
 ### Streaming responses
 
 For a large download or an endless response, `transport.stream(request)`

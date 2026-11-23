@@ -1,6 +1,6 @@
 ## Unreleased
 
-- `IntrospectionPropertyAccessor` takes an optional `checkRead`, which sees each value read and may refuse it by throwing.
+- `IntrospectionPropertyAccessor` takes an optional `checkRead`, which sees each value read and may refuse it by throwing; `StandardEvaluationContext.equalityOperandCheck` does the same for the operands of `==` and `!=`.
 - **Breaking:** `Introspector.byClassName` is gone; `Introspector.byQualifiedName` finds a class by `Introspection.qualifiedName` (`<library>#<class>`, from the new `Introspection.library` the generator writes), and gives `null` when two classes share the name, instead of the first one registered.
 - Self-calls of a subclass proxy are decided by the innermost running code: a callback another advised bean makes through the bean's reference is advised, as in Spring where the reference is the proxy (it was taken for a self-call while the bean's code was anywhere on the stack or in the zone). `runOutsideProxyBodies` runs code as no bean's (the framework's own runs: an effect, a recomputed value); `MethodInvocation.isSelfCall` tells a self-call's invocation. A call on `this` deferred past the end of a synchronous member (`scheduleMicrotask`) is still advised: only the receiver could tell, which needs the generator's proxies.
 - `ObjectMapper` applies Jackson's `StreamReadConstraints`: a JSON text nested deeper than `maxNestingDepth` (1000) or with a number of more than `maxNumberLength` (1000) digits is a `JsonMappingException` before it is decoded; a `BigInt` is parsed once.

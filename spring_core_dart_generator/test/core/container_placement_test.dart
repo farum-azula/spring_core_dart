@@ -84,23 +84,23 @@ void main() {
   group('injection points', () {
     misplacedCases({
       '@Value on a field of a class that is no bean': (
-        "class Plain { @Value(r'\${x:1}') late String x; }",
+        r"class Plain { @Value(r'${x:1}') late String x; }",
         ['@Value on the field Plain.x, and Plain is no bean'],
       ),
       '@Value on a static field': (
-        "@Component() class A { @Value(r'\${x:1}') static late String x; }",
+        r"@Component() class A { @Value(r'${x:1}') static late String x; }",
         ['@Value on the field A.x: a static member'],
       ),
       '@Value at the top level': (
-        "@Value(r'\${x:1}') late String x;",
+        r"@Value(r'${x:1}') late String x;",
         ['@Value on x, in the top level'],
       ),
       '@Value on a parameter nothing passes': (
-        "@Component() class A { void m(@Value(r'\${x:1}') String x) {} }",
+        r"@Component() class A { void m(@Value(r'${x:1}') String x) {} }",
         ['@Value on parameter x of A.m: only the parameters'],
       ),
       '@Qualifier on a parameter nothing passes': (
-        "@Component() class D {} @Component() class A "
+        '@Component() class D {} @Component() class A '
             "{ void m(@Qualifier('d') D d) {} }",
         ['@Qualifier on parameter d of A.m: only the parameters'],
       ),
@@ -232,9 +232,9 @@ class Made { Made(this.d); final Dep d; }
 ''',
   );
 
-  placedCase('@Configurable on a class the container does not create', '''
+  placedCase('@Configurable on a class the container does not create', r'''
 @Component() class Dep {}
-@Configurable() class Plain { @Autowired() late Dep dep; @Value(r'\${x:1}') late String x; }
+@Configurable() class Plain { @Autowired() late Dep dep; @Value(r'${x:1}') late String x; }
 ''');
 
   placedCase('@Value in an @Introspected class is listed metadata', '''

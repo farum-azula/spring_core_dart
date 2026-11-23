@@ -1,6 +1,6 @@
 ## Unreleased
 
-- **Breaking (entries on disk):** a key's stable form is JSON (`canonicalCacheKey`), so no two keys share it; a key without one (an object the `ObjectMapper` does not read, a record, a class whose qualified name another shares) is not kept, logged once. Entries written by 0.9 are not read again. Values and keys name their class by `Introspection.qualifiedName`, so two classes `Book` of two libraries are not confused.
+- **Breaking (entries on disk):** a key's stable form is JSON (`canonicalCacheKey`), so no two keys share it; a key without one (an object the `ObjectMapper` does not read, a record, a class whose qualified name another shares) is not kept, logged once. Entries written by 0.9 are not read again, except one under the key `null`, whose form did not change. Values and keys name their class by `Introspection.qualifiedName`, so two classes `Book` of two libraries are not confused.
 - A disk-cache entry expires within the run too (`get` and `retrieve` answered from the entries this run read or wrote, without their expiry); an expired or unreadable entry is deleted when found; `invalidate()` is `true` only for entries this run knew of.
 - `spring.cache.disk.max-size`: a put no longer reads every file of the cache (sizes read once a run, then kept): 1000 puts of 4 KB in 1.4 s, was 40 s for 200.
 - A cache name is one folder segment (`users/admins` is not inside `users`; `..` stays inside the caches' folder).

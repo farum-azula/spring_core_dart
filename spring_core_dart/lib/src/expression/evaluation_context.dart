@@ -877,6 +877,11 @@ class StandardEvaluationContext implements EvaluationContext {
   @override
   TypeComparator typeComparator = const StandardTypeComparator();
 
+  /// Sees both operands of each `==` and `!=`, and may refuse one by
+  /// throwing. Method security refuses a `Future` there: it is never equal
+  /// to what it will complete with.
+  void Function(Object? value)? equalityOperandCheck;
+
   @override
   OperatorOverloader operatorOverloader = const StandardOperatorOverloader();
 

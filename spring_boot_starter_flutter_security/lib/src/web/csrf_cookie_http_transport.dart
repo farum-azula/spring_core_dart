@@ -119,15 +119,6 @@ final class CsrfCookieHttpTransport implements HttpTransport {
     if (token == null || token.isEmpty) {
       return request;
     }
-    return HttpRequest(
-      method: request.method,
-      url: request.url,
-      headers: request.headers.copy()..set(headerName, token),
-      body: request.body,
-      timeout: request.timeout,
-      readTimeout: request.readTimeout,
-      followRedirects: request.followRedirects,
-      abort: request.abort,
-    );
+    return request.withHeaders(request.headers.copy()..set(headerName, token));
   }
 }

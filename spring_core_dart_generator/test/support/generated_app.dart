@@ -7,7 +7,6 @@ import 'dart:isolate';
 
 import 'package:build_test/build_test.dart';
 import 'package:package_config/package_config.dart';
-import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/core/builder/spring_builder.dart';
 import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
@@ -27,7 +26,7 @@ Future<Object?> runGeneratedApp(
   );
   await readerWriter.testing.loadIsolateSources();
   final result = await testBuilder(
-    SpringBuilder(generations: packageGenerations, proxyMode: ProxyMode.all),
+    SpringBuilder(generations: packageGenerations),
     {for (final MapEntry(:key, :value) in sources.entries) 'pkg|$key': value},
     rootPackage: 'pkg',
     readerWriter: readerWriter,

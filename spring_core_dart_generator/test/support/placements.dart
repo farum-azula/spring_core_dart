@@ -31,7 +31,7 @@ Future<({bool succeeded, String errors})> buildWithStarters(
   return (succeeded: result.succeeded, errors: result.errors.join('\n'));
 }
 
-/// One test per case: [source] fails the build with every message.
+/// One test per case: the source fails the build with every message.
 void misplacedCases(Map<String, (String, List<String>)> cases) {
   for (final MapEntry(key: name, value: (source, messages)) in cases.entries) {
     test(name, () async {

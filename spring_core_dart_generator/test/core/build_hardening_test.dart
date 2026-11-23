@@ -12,7 +12,6 @@ import 'package:spring_core_dart_generator/src/navigation/seo_builder.dart';
 import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
 
-import '../support/module_files.dart';
 import '../support/spring_builder.dart';
 
 const _main = '''
@@ -74,6 +73,38 @@ void main() {
       expect(module, isNot(contains("r'.env'")));
       expect(module, contains("r'banner.txt'"));
       expect(logs.join('\n'), contains('look like a secret'));
+    });
+
+    test('below config/ and in a properties file too', () async {
+      final (result, logs) = await _application({
+        'lib/resources/config/.env': 'A=ENV_SECRET',
+        'lib/resources/config/id_rsa': 'KEY_SECRET',
+        'lib/resources/secrets.properties': 'a=PROPERTIES_SECRET',
+        'lib/resources/config/application.yml': 'kept: CONFIG_KEPT',
+      });
+      final module = moduleText(
+        result,
+        AssetId('pkg', 'lib/spring_gen/main.spring.dart'),
+      );
+      expect(module, isNot(contains('ENV_SECRET')));
+      expect(module, isNot(contains('KEY_SECRET')));
+      expect(module, isNot(contains('PROPERTIES_SECRET')));
+      expect(module, contains('CONFIG_KEPT'));
+      expect(logs.join('\n'), contains('look like a secret'));
+    });
+
+    test('a profile does not decide what is embedded', () async {
+      final (result, _) = await _application({
+        'lib/resources/application.yml':
+            'spring:\n  profiles:\n    active: dev\n',
+        'lib/resources/application-dev.yml':
+            'spring:\n  resources:\n    embed:\n      secrets: [a.pem]\n',
+        'lib/resources/a.pem': 'PROFILE_SECRET',
+      });
+      expect(
+        moduleText(result, AssetId('pkg', 'lib/spring_gen/main.spring.dart')),
+        isNot(contains('PROFILE_SECRET')),
+      );
     });
 
     test('spring.resources.embed.secrets embeds one anyway', () async {
@@ -191,7 +222,7 @@ void main() {
     String written(String value) =>
         '${SpringBuilder.stringLiteral(value).accept(DartEmitter())}';
     expect(written(r'a$b'), r"'a\$b'");
-    expect(written("it's \$x"), r"'it\'s \$x'");
+    expect(written(r"it's $x"), r"'it\'s \$x'");
   });
 
   group('build keys (GEN-2)', () {

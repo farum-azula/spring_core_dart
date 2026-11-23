@@ -628,6 +628,28 @@ void main() {
       });
     });
 
+    test('a failure another try cannot change is not reconnected', () async {
+      transport = _ScriptedTransport(
+        (request, n) => throw HttpTransportException(
+          'redirect refused',
+          request: request,
+          isRetryable: false,
+        ),
+      );
+      await runner([
+        'spring.feign.client.config.default.event-stream.reconnect-delay=1ms',
+      ]).runAsync((context) async {
+        await expectLater(
+          context.getBean<OrdersClient>().events('neon').first,
+          throwsA(
+            allOf(isA<FeignException>(), isNot(isA<RetryableException>())),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        expect(transport.requests, hasLength(1));
+      });
+    });
+
     test('a stream that connected in time lives longer than the '
         'call-timeout', () async {
       final controller = StreamController<List<int>>();

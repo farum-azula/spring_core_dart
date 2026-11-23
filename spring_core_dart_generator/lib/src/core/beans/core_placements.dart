@@ -273,8 +273,8 @@ final class _InjectionPlacement extends AnnotationPlacement {
 final class _QualifierPlacement extends AnnotationPlacement {
   const _QualifierPlacement();
 
-  static final _named = _spring('Named');
-  static final _qualifier = _spring('Qualifier');
+  static final TypeChecker _named = _spring('Named');
+  static final TypeChecker _qualifier = _spring('Qualifier');
 
   @override
   bool covers(InterfaceType type) =>
@@ -295,7 +295,7 @@ final class _QualifierPlacement extends AnnotationPlacement {
 final class _LazyPlacement extends AnnotationPlacement {
   const _LazyPlacement();
 
-  static final _lazy = _spring('Lazy');
+  static final TypeChecker _lazy = _spring('Lazy');
 
   @override
   bool covers(InterfaceType type) => _lazy.isExactlyType(type);
@@ -318,7 +318,7 @@ String? _injectionPointProblem(AnnotationSite site, String does) {
     PlaceKind.classDeclaration => null,
     PlaceKind.parameter when _isInjectedParameter(site) => null,
     PlaceKind.parameter =>
-      '$what on $subject: only the parameters of a bean\'s constructor, of '
+      "$what on $subject: only the parameters of a bean's constructor, of "
           'a @Bean method and of an @Autowired method are injected, and '
           'nothing passes this one. Annotate the method, or remove $what.',
     PlaceKind.method when site.has([_bean, _autowired, _lookup]) => null,
@@ -462,7 +462,7 @@ final class _StereotypePlacement extends ClassPlacement {
   _StereotypePlacement(super.checkers)
     : super(instead: 'Annotate the class, or declare a @Bean method');
 
-  static final _configuration = _spring('Configuration');
+  static final TypeChecker _configuration = _spring('Configuration');
 
   @override
   String? problem(AnnotationSite site) => switch (site.kind) {
@@ -519,7 +519,7 @@ final class _PointcutPlacement extends CheckedPlacement {
   @override
   String ownerProblem(AnnotationSite site) =>
       '@Pointcut on ${site.subject}: ${site.ownerName} is no @Aspect class, '
-      'and only an aspect\'s advice reads a pointcut. Add @Aspect() to '
+      "and only an aspect's advice reads a pointcut. Add @Aspect() to "
       '${site.ownerName}, or move the method into one.';
 }
 
@@ -537,7 +537,7 @@ final class _ValuePlacement extends AnnotationPlacement {
     return switch (site.kind) {
       PlaceKind.parameter when _isInjectedParameter(site) => null,
       PlaceKind.parameter =>
-        '@Value on $subject: only the parameters of a bean\'s constructor, '
+        "@Value on $subject: only the parameters of a bean's constructor, "
             'of a @Bean method and of an @Autowired method get a value. '
             'Annotate the method, or remove @Value.',
       PlaceKind.field || PlaceKind.setter when site.isStatic =>
@@ -579,7 +579,7 @@ final class _ValuePlacement extends AnnotationPlacement {
 final class _OrderPlacement extends AnnotationPlacement {
   const _OrderPlacement();
 
-  static final _order = _spring('Order');
+  static final TypeChecker _order = _spring('Order');
 
   @override
   bool covers(InterfaceType type) => _order.isExactlyType(type);
@@ -664,8 +664,8 @@ final class _AspectPlacement extends AnnotationPlacement {
 final class _BeanMethodAnnotationPlacement extends AnnotationPlacement {
   const _BeanMethodAnnotationPlacement();
 
-  static final _method = MethodPlacement(
-    const [],
+  static const _method = MethodPlacement(
+    [],
     does: 'the framework calls it',
   );
 
@@ -701,7 +701,7 @@ const TypeChecker _configurationPropertiesConst =
       'ConfigurationProperties',
       inPackage: 'spring_core_dart',
     );
-final TypeChecker _configurationProperties = _configurationPropertiesConst;
+const TypeChecker _configurationProperties = _configurationPropertiesConst;
 
 // A constraint (`@NotBlank`) or `@Valid`: on a stored field of a class the
 // validator reads, on a parameter or the result of a method of a validated
@@ -721,7 +721,7 @@ final class _ConstraintPlacement extends AnnotationPlacement {
     switch (site.kind) {
       case PlaceKind.topLevel || PlaceKind.foreignMember:
         return '$what: constraints are read on the fields of a class, and '
-            'on the parameters of a validated bean\'s methods; here nothing '
+            "on the parameters of a validated bean's methods; here nothing "
             'would check it.';
       case PlaceKind.field || PlaceKind.parameter
           when _valid.isExactlyType(site.annotationType) &&
@@ -740,7 +740,22 @@ final class _ConstraintPlacement extends AnnotationPlacement {
         return '$what: the values of a @ConfigurationProperties class are '
             'checked when it has @Validated() (as in Spring Boot). Add '
             '@Validated() to ${site.ownerName}.';
-      default:
+      case PlaceKind.classDeclaration ||
+          PlaceKind.mixin ||
+          PlaceKind.enumDeclaration ||
+          PlaceKind.extension ||
+          PlaceKind.extensionType ||
+          PlaceKind.constructor ||
+          PlaceKind.method ||
+          PlaceKind.operator ||
+          PlaceKind.getter ||
+          PlaceKind.setter ||
+          PlaceKind.field ||
+          PlaceKind.parameter ||
+          PlaceKind.enumValue ||
+          PlaceKind.typedefDeclaration ||
+          PlaceKind.typeParameter ||
+          PlaceKind.library:
         return null;
     }
   }
@@ -847,7 +862,7 @@ final class _ConfigurationPropertiesPlacement extends ClassPlacement {
 final class _JsonClassPlacement extends AnnotationPlacement {
   const _JsonClassPlacement();
 
-  static final _classLevel = [
+  static final List<TypeChecker> _classLevel = [
     for (final name in const [
       'JsonNaming',
       'JsonInclude',

@@ -37,7 +37,7 @@ const _controller = TypeChecker.typeNamedLiterally(
   'Controller',
   inPackage: 'spring_core_dart',
 );
-const _handlerParameters = [
+const List<TypeChecker> _handlerParameters = [
   TypeChecker.fromUrl('$_annotations#PathVariable'),
   TypeChecker.fromUrl('$_annotations#RequestParam'),
   TypeChecker.fromUrl('$_annotations#RequestHeader'),
@@ -212,7 +212,23 @@ final class _ResponseStatusPlacement extends CheckedPlacement {
       case PlaceKind.method
           when site.has([..._requestMappings, _exceptionHandler]):
         return null;
-      default:
+      case PlaceKind.mixin ||
+          PlaceKind.enumDeclaration ||
+          PlaceKind.extension ||
+          PlaceKind.extensionType ||
+          PlaceKind.topLevel ||
+          PlaceKind.foreignMember ||
+          PlaceKind.constructor ||
+          PlaceKind.method ||
+          PlaceKind.operator ||
+          PlaceKind.getter ||
+          PlaceKind.setter ||
+          PlaceKind.field ||
+          PlaceKind.parameter ||
+          PlaceKind.enumValue ||
+          PlaceKind.typedefDeclaration ||
+          PlaceKind.typeParameter ||
+          PlaceKind.library:
         return '@ResponseStatus on $subject: it sets the status of a '
             'handler (a method with @GetMapping, @PostMapping... or '
             '@ExceptionHandler), or of a controller class; here it would '

@@ -337,6 +337,8 @@ final class MethodSecurityExpressionHandler {
     }
     // First, so it also covers the resolvers the customizers added.
     context.methodResolvers.insert(0, _SynchronousMethodResolver(described));
+    // What no resolver gave: an argument, or an element of one.
+    context.equalityOperandCheck = _refuseFutureOperand;
     return context;
   }
 
@@ -375,6 +377,25 @@ Never _futureRefused(String member) => throw AccessException(
 void _refuseFuture(Object? value, String name) {
   if (value is Future) {
     _futureRefused(name);
+  }
+}
+
+// A Future in an operand of `==` or `!=`, also inside a collection.
+void _refuseFutureOperand(Object? value) {
+  final seen = Set<Object>.identity();
+  final pending = <Object?>[value];
+  while (pending.isNotEmpty) {
+    final next = pending.removeLast();
+    if (next is Future) {
+      _futureRefused('A compared value');
+    }
+    if (next is Iterable && seen.add(next)) {
+      pending.addAll(next);
+    } else if (next is Map && seen.add(next)) {
+      pending
+        ..addAll(next.keys)
+        ..addAll(next.values);
+    }
   }
 }
 

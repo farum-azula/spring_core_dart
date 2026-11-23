@@ -185,12 +185,14 @@ enum FetchCredentials {
 class HttpTransportException implements Exception {
   /// A failure described by [message], of [request] when it is known.
   /// [cause] keeps the platform's own error; set [isTimeout] when a time
-  /// limit ran out.
+  /// limit ran out, and [isRetryable] to `false` when the same request
+  /// would fail the same way.
   HttpTransportException(
     this.message, {
     this.request,
     this.cause,
     this.isTimeout = false,
+    this.isRetryable = true,
   });
 
   /// What went wrong, for people, such as `connection failed: Connection
@@ -207,6 +209,12 @@ class HttpTransportException implements Exception {
   /// Whether a time limit ran out: the request's `timeout` or
   /// `readTimeout`, or the connection timeout of the platform.
   final bool isTimeout;
+
+  /// Whether another try can end differently; `true` for a network failure
+  /// or a timeout. It is `false` for a redirect a browser's transport
+  /// refuses to follow: the server has already handled the request, so
+  /// sending it again would repeat a `POST` and fail the same way.
+  final bool isRetryable;
 
   @override
   String toString() =>

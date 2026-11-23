@@ -2337,6 +2337,16 @@ final class BinaryOperator extends SpelNode {
     bool rightReal,
   ) {
     final context = state.context;
+    if (kind == BinaryKind.eq || kind == BinaryKind.ne) {
+      if (context case StandardEvaluationContext(
+        :final equalityOperandCheck?,
+      )) {
+        state.located(start, () {
+          equalityOperandCheck(l);
+          equalityOperandCheck(r);
+        });
+      }
+    }
     switch (kind) {
       case BinaryKind.eq:
         return equalityCheck(context, l, r);

@@ -1,4 +1,5 @@
-// Where the actuator's operations go: in an @Endpoint, their selectors on an operation's parameters; elsewhere the build fails, naming what to change.
+// Where the actuator's operations go: in an @Endpoint, their selectors on an
+// operation's parameters; elsewhere the build fails, naming what to change.
 import 'package:test/test.dart';
 
 import '../support/placements.dart';

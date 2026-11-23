@@ -55,6 +55,7 @@ final class _EndpointPlacement extends ClassPlacement {
   }
 }
 
+/// The part of `spring_boot_actuator` in the module build.
 final class ActuatorGeneration extends PackageGeneration {
   /// The part; it keeps no state of a build.
   const ActuatorGeneration();

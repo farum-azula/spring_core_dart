@@ -5,6 +5,9 @@ import 'package:test/test.dart';
 import '../support/placements.dart';
 
 void main() {
+  const noRepository =
+      '@Query on Q.all: queries are run by repositories, and Q is no '
+      'repository';
   group('misplaced', () {
     misplacedCases({
       '@Transactional on a private method': (
@@ -52,8 +55,7 @@ void main() {
         "abstract interface class Q { @Query('select 1') Future<List<int>> "
             'all(); }',
         [
-          '@Query on Q.all: queries are run by repositories, and Q is no '
-              'repository',
+          noRepository,
         ],
       ),
       '@UseStore on a component': (
@@ -81,7 +83,7 @@ void main() {
         ['@UniqueConstraint names nope, which is no property of Book'],
       ),
       '@Scope on a repository': (
-        "@Table() class Book { @Id() int? id; }\n"
+        '@Table() class Book { @Id() int? id; }\n'
             "@Scope('prototype') abstract interface class Books implements "
             'CrudRepository<Book, int> {}',
         ['@Scope on Books: its bean is made by the starter'],

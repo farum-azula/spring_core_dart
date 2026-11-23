@@ -218,7 +218,7 @@ class C implements A, B { const C(); }
       });
     }
 
-    test('the analyzer\'s ignore comment is honoured', () async {
+    test("the analyzer's ignore comment is honoured", () async {
       final result = await _build('''
 ${_only('TargetKind.field')}
 class A {

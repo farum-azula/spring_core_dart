@@ -11,7 +11,6 @@ import 'package:analyzer/dart/ast/ast.dart'
         NamedArgument,
         ReturnStatement,
         StringLiteral;
-
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
@@ -19,9 +18,9 @@ import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart' show log;
 import 'package:source_gen/source_gen.dart';
-import 'package:spring_core_dart_generator/src/core/beans/bean_model.dart';
 import 'package:spring_core_dart_generator/src/core/beans/annotation_target.dart';
 import 'package:spring_core_dart_generator/src/core/beans/annotation_values.dart';
+import 'package:spring_core_dart_generator/src/core/beans/bean_model.dart';
 import 'package:spring_core_dart_generator/src/core/beans/core_placements.dart';
 import 'package:spring_core_dart_generator/src/core/beans/log_scanning.dart';
 import 'package:spring_core_dart_generator/src/core/builder/package_generation.dart';
@@ -2158,11 +2157,11 @@ class BeanScanner {
         ];
 
   static final List<TypeChecker> _deducingConditions = [
-    TypeChecker.typeNamedLiterally(
+    const TypeChecker.typeNamedLiterally(
       'ConditionalOnMissingBean',
       inPackage: 'spring_boot_dart',
     ),
-    TypeChecker.typeNamedLiterally(
+    const TypeChecker.typeNamedLiterally(
       'ConditionalOnBean',
       inPackage: 'spring_boot_dart',
     ),
@@ -2534,15 +2533,18 @@ class BeanScanner {
     final element = type.element;
     final typeName = element.name;
     final name = '@${annotation.type!.element!.name}';
+    final site = member == element
+        ? typeName
+        : '$typeName.${member.displayName}';
     _fail(
       _configuration.hasAnnotationOf(element)
-          ? '$name on ${member == element ? typeName : '$typeName.${member.displayName}'}'
+          ? '$name on $site'
                 ', a @Configuration class: the container does not proxy a '
                 'configuration class, so the advice would not run (Spring '
                 'proxies it, this generator calls its @Bean methods on a '
                 'subclass that runs no advice). Move the method into a '
                 '@Service and inject that.'
-          : '$name on ${member == element ? typeName : '$typeName.${member.displayName}'}'
+          : '$name on $site'
                 ', a bean the container does not proxy (an @Aspect, a '
                 'post-processor, an Advisor or a FactoryBean): the advice '
                 'would not run, as in Spring ("not eligible for '

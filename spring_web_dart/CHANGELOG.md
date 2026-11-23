@@ -2,6 +2,8 @@
 
 - `HttpSecrets`: the one rule for the headers and parameters a log never shows (credentials, cookies, the DPoP proof, OAuth's `code`, `state`, `code_verifier`, `client_assertion`, signed-URL signatures, and names `SecretNames` calls secret), shared by the web starter's request logs and the Feign client's.
 - `IoHttpTransport` follows redirects itself: a redirect to another origin drops the headers that carry a credential (`HttpSecrets` and the new `HttpRequest.sensitiveHeaders`), and one from `https` to `http` is not followed (the `3xx` is returned).
+- **Security:** `FetchHttpTransport` no longer leaves a request with a credential header to `fetch`'s redirect rules, which kept `X-Api-Key` and other custom headers on another origin (seen in Chromium, WebKit, Deno, workerd and Supabase's Edge Runtime; workerd kept `Cookie` too) and followed `https` to `http`. In an edge runtime it follows such a redirect itself, by the rules of `IoHttpTransport`. A browser hides a redirect's target, so there a request with a custom credential header fails with an `HttpTransportException` on a redirect, also to the same origin, and the target gets nothing; a request whose only credentials are `Authorization` or `Cookie` is still followed, as the browser removes them itself. Differs from Spring and OpenFeign, whose clients keep custom headers on another origin.
+- `HttpTransportException.isRetryable`: `false` for a redirect the browser's transport refuses, which the server has already handled, so an event stream does not reconnect to it. `HttpRequest.withHeaders` copies a request with other headers and keeps its `sensitiveHeaders`.
 
 ## 0.9.0
 

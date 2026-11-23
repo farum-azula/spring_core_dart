@@ -1,7 +1,8 @@
 ## Unreleased
 
 - **Breaking:** `FeignClientConfig.alwaysSensitiveHeaders` is gone: the logs mask the headers of `HttpSecrets.isSensitiveHeader` (spring_web_dart's rule, shared with the web starter: also names that look secret, such as `X-Api-Key`) and those of `sensitive-headers`.
-- A redirect to another origin drops every credential header, the `sensitive-headers` ones too (`HttpRequest.sensitiveHeaders`); one from `https` to `http` is not followed.
+- On the `dart:io` transport, a redirect to another origin drops every credential header, the `sensitive-headers` ones too (`HttpRequest.sensitiveHeaders`); one from `https` to `http` is not followed. In an edge function the same rules hold. In a browser, which hides a redirect's target, a call with a custom credential header (`X-Api-Key`, the `sensitive-headers`) fails on a redirect instead of sending it on; `Authorization` and cookies stay under the browser's own rules.
+- That failure is a plain `FeignException` (status `-1`), not a `RetryableException`: a `Retryer` no longer sends a `POST` the server has already handled again, and an `EventStream` ends instead of reconnecting forever.
 
 ## 0.9.0
 

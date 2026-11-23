@@ -20,7 +20,7 @@ dependencies:
   sqlite3: any
 ''';
 
-const _library = r'''
+const _library = '''
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:spring_security_core/spring_security_core.dart';

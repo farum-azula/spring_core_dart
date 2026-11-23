@@ -1,9 +1,13 @@
-// Where @Scheduled goes: a public instance method of a bean; elsewhere the build fails, naming what to change.
+// Where @Scheduled goes: a public instance method of a bean; elsewhere the
+// build fails, naming what to change.
 import 'package:test/test.dart';
 
 import '../support/placements.dart';
 
 void main() {
+  const onGetter =
+      '@Scheduled on the getter R.run: it goes on a method, where the '
+      'scheduler runs it';
   group('misplaced', () {
     misplacedCases({
       '@Scheduled in a class that is no bean': (
@@ -15,8 +19,7 @@ void main() {
         '@Component() class R { @Scheduled(fixedRate: Duration(minutes: 1)) '
             'int get run => 1; }',
         [
-          '@Scheduled on the getter R.run: it goes on a method, where the '
-              'scheduler runs it',
+          onGetter,
         ],
       ),
     });

@@ -67,7 +67,7 @@ class SessionTransport implements HttpTransport {
         headers.set('X-XSRF-TOKEN', Uri.decodeComponent(token));
       }
     }
-    return _copy(request, headers);
+    return request.withHeaders(headers);
   }
 }
 
@@ -75,14 +75,3 @@ bool _isServer(Uri url, Uri server) =>
     url.scheme == server.scheme &&
     url.host == server.host &&
     url.port == server.port;
-
-HttpRequest _copy(HttpRequest request, HttpHeaders headers) => HttpRequest(
-  method: request.method,
-  url: request.url,
-  headers: headers,
-  body: request.body,
-  timeout: request.timeout,
-  readTimeout: request.readTimeout,
-  followRedirects: request.followRedirects,
-  abort: request.abort,
-);

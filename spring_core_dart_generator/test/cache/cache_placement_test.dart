@@ -46,13 +46,13 @@ void main() {
         ["@CacheEvict on Books.f: the key expression '('"],
       ),
       'a syntax error inside @Caching': (
-        '@Component() class Books { @Caching(evict: [CacheEvict('
-            "'k', key: '#id +')]) void f(int id) {} }",
+        '@Component() class Books { @Caching(evict: '
+            "[CacheEvict('k', key: '#id +')]) void f(int id) {} }",
         ["@CacheEvict on Books.f: the key expression '#id +'"],
       ),
       'a syntax error of a composed annotation': (
-        'class Keyed extends Cacheable { const Keyed() : super('
-            "'k', key: '#id +'); }\n"
+        'class Keyed extends Cacheable { const Keyed() : '
+            "super('k', key: '#id +'); }\n"
             '@Component() class Books { @Keyed() int f(int id) => id; }',
         ["@Keyed on Books.f: the key expression '#id +'"],
       ),

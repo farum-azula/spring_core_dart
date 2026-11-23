@@ -227,7 +227,8 @@ final class FeignInvocationHandler implements InvocationHandler {
         delay: config.eventStreamReconnectDelay,
         maxAttempts: config.eventStreamMaxAttempts,
         retryIf: (error) =>
-            error is RetryableException || error is HttpTransportException,
+            error is RetryableException ||
+            (error is HttpTransportException && error.isRetryable),
       ),
       onReconnect: (error, delay, attempt) {
         if (config.loggerLevel != FeignLoggerLevel.none) {
@@ -320,12 +321,7 @@ final class FeignInvocationHandler implements InvocationHandler {
           cause: error,
         );
       }
-      throw RetryableException(
-        -1,
-        '${error.message} executing ${request.method.value} ${request.url}',
-        request: request,
-        cause: error,
-      );
+      throw _transportFailure(error, request);
     }
     final status = response.statusCode;
     if (response.isSuccess) {
@@ -565,12 +561,7 @@ final class FeignInvocationHandler implements InvocationHandler {
       response = await transport.send(request);
     } on HttpTransportException catch (error) {
       _logError(error, watch);
-      throw RetryableException(
-        -1,
-        '${error.message} executing ${request.method.value} ${request.url}',
-        request: request,
-        cause: error,
-      );
+      throw _transportFailure(error, request);
     }
     _logResponse(response, watch.elapsed);
     final status = response.statusCode;
@@ -583,6 +574,19 @@ final class FeignInvocationHandler implements InvocationHandler {
       return response;
     }
     throw errorDecoder.decode(plan.methodKey, response);
+  }
+
+  // A failure without a response: for the Retryer unless another try
+  // would fail the same way.
+  static FeignException _transportFailure(
+    HttpTransportException error,
+    HttpRequest request,
+  ) {
+    final message =
+        '${error.message} executing ${request.method.value} ${request.url}';
+    return error.isRetryable
+        ? RetryableException(-1, message, request: request, cause: error)
+        : FeignException(-1, message, request: request, cause: error);
   }
 
   static String _phrase(int status) => switch (HttpStatus.resolve(status)) {

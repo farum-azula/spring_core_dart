@@ -17,7 +17,12 @@ const _cachePut = TypeChecker.fromUrl('$_annotations#CachePut');
 const _cacheEvict = TypeChecker.fromUrl('$_annotations#CacheEvict');
 const _caching = TypeChecker.fromUrl('$_annotations#Caching');
 const _cacheConfig = TypeChecker.fromUrl('$_annotations#CacheConfig');
-const _cacheOperations = [_cacheable, _cachePut, _cacheEvict, _caching];
+const List<TypeChecker> _cacheOperations = [
+  _cacheable,
+  _cachePut,
+  _cacheEvict,
+  _caching,
+];
 
 /// The part of `spring_boot_starter_cache` in the module build:
 ///

@@ -215,11 +215,13 @@ void main() {
           timeout: const Duration(seconds: 3),
           readTimeout: const Duration(seconds: 2),
           followRedirects: false,
+          sensitiveHeaders: const {'x-grant'},
           abort: abort,
         ),
       );
       final sent = network.requests.last;
       expect(sent.headers['X-XSRF-TOKEN'], 'token-1');
+      expect(sent.sensitiveHeaders, {'x-grant'});
       expect(sent.abort, same(abort));
       expect(sent.timeout, const Duration(seconds: 3));
       expect(sent.readTimeout, const Duration(seconds: 2));

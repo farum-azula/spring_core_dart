@@ -170,6 +170,19 @@ void main() {
       expect(seen.first, isA<HttpTransportException>());
     });
 
+    test('a failure another try cannot change ends it', () async {
+      server
+          .when(HttpMethod.get, url)
+          .fail(HttpTransportException('refused', isRetryable: false));
+      await expectLater(
+        connect(
+          reconnect: const SseReconnect(delay: Duration(milliseconds: 1)),
+        ).toList(),
+        throwsA(isA<HttpTransportException>()),
+      );
+      expect(server.requests, hasLength(1));
+    });
+
     test('never and maxAttempts stop reconnecting', () async {
       server.when(HttpMethod.get, url).respondEvents([
         const ServerSentEvent('x'),

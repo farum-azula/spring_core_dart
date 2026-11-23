@@ -6,6 +6,9 @@ import 'package:test/test.dart';
 import '../support/placements.dart';
 
 void main() {
+  const notAController =
+      '@ExceptionHandler on Svc.h: Svc is no @RestController or '
+      '@RestControllerAdvice';
   group('misplaced', () {
     misplacedCases({
       'a mapping on a @Component that is no controller': (
@@ -25,11 +28,10 @@ void main() {
         ['@PathVariable on parameter id of C.helper'],
       ),
       'an @ExceptionHandler in a service': (
-        "@Service() class Svc { @ExceptionHandler([StateError]) String "
+        '@Service() class Svc { @ExceptionHandler([StateError]) String '
             "h(StateError e) => ''; }",
         [
-          '@ExceptionHandler on Svc.h: Svc is no @RestController or '
-              '@RestControllerAdvice',
+          notAController,
         ],
       ),
       '@ResponseStatus on an exception class': (

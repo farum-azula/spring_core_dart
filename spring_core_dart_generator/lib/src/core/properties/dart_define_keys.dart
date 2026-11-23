@@ -93,8 +93,8 @@ final class DartDefineKeys {
       }
     } else if (path.endsWith('.yml') || path.endsWith('.yaml')) {
       try {
-        for (final document in loadYamlStream(text)) {
-          node(document.value, '');
+        for (final document in loadYamlDocuments(text)) {
+          node(document.contents.value, '');
         }
       } on YamlException {
         return found;

@@ -73,7 +73,7 @@ final class BuildKeys {
   /// profile. The profile files (`application-dev.yml`) and the documents
   /// of a file that `spring.config.activate.on-profile` limits to a profile
   /// are left out, with them what `spring.profiles.active`, `include` and
-  /// groups would activate; [profileDocuments] holds those documents by a
+  /// groups would activate; `profileDocuments` holds those documents by a
   /// name for the warnings (`application.yml (on-profile dev)`).
   static ({Map<String, String> files, Map<String, String> profileDocuments})
   baseConfiguration(Map<String, String> files) {

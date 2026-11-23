@@ -397,7 +397,7 @@ spring.feign.client.decode-slash=false
 | `error-decoder` | — | the client's `ErrorDecoder`, by bean name or class name |
 | `request-interceptors` | — | more `RequestInterceptor`s for the client: a list of bean names or class names, those under `default` first |
 | `follow-redirects` | `true` | whether redirects are followed; with `false`, a 3xx answer is an error status |
-| `sensitive-headers` | — | more headers whose values the `headers` and `full` logs show as `***`, such as `X-Api-Key`: a list, those under `default` first (see [Logging](#logging)) |
+| `sensitive-headers` | — | more headers that carry a credential, such as `X-Api-Key`: the `headers` and `full` logs show them as `***`, and a redirect to another origin drops them (in a browser the call fails on a redirect). A list, those under `default` first (see [Logging](#logging)) |
 | `spring.feign.client.decode-slash` | `true` | one setting for all clients: a `/` in a `@PathVariable` value stays a `/` (`false`: it is sent as `%2F`) |
 
 The `default-request-headers` and `default-query-parameters` of a client

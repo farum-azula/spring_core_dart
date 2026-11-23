@@ -1,4 +1,6 @@
-// Where the Supabase operations go: in the interface of their kind (@StorageBucket, @RealtimeChannel, @EdgeFunctions); elsewhere the build fails, naming what to change.
+// Where the Supabase operations go: in the interface of their kind
+// (@StorageBucket, @RealtimeChannel, @EdgeFunctions); elsewhere the build
+// fails, naming what to change.
 import 'package:test/test.dart';
 
 import '../support/placements.dart';
