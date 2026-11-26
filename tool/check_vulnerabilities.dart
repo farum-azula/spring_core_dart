@@ -40,6 +40,7 @@ const flutterLocks = [
   'example/scene/pubspec.lock',
   'example/bloc/pubspec.lock',
   'example/supabase/app/pubspec.lock',
+  'tool/signals_checks/pubspec.lock',
 ];
 
 /// The hosted packages of the lock file at [path]: name → version.

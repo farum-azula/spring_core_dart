@@ -748,7 +748,9 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
           ),
   },
   dartDefines: _$dartDefines,
-  fingerprint: !const bool.fromEnvironment('dart.vm.product')
+  fingerprint:
+      !const bool.fromEnvironment('dart.vm.product') &&
+          !const bool.fromEnvironment('dart.vm.profile')
       ? _$fingerprint
       : null,
 );

@@ -642,7 +642,7 @@
         "@ConditionalOnMissingBean(SignalWidgetNames)"
       ],
       "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
-      "line": 242,
+      "line": 240,
       "injects": [],
       "members": [
         {
@@ -725,7 +725,7 @@
         "@ConditionalOnProperty('spring.flutter.signals.debug.log.enabled', havingValue: 'true')"
       ],
       "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
-      "line": 332,
+      "line": 330,
       "injects": [],
       "members": [
         {
@@ -838,7 +838,7 @@
         "@ConditionalOnMissingBean(SignalsDebugRecorder)"
       ],
       "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
-      "line": 216,
+      "line": 214,
       "injects": [],
       "members": [
         {
@@ -1111,7 +1111,7 @@
         "@ConditionalOnProperty('spring.flutter.signals.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
-      "line": 317,
+      "line": 315,
       "injects": [],
       "members": [
         {
@@ -1173,7 +1173,7 @@
         "@ConditionalOnMissingBean(DebugGraphBuilders)"
       ],
       "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
-      "line": 261,
+      "line": 259,
       "injects": [],
       "members": [
         {
@@ -1198,7 +1198,7 @@
         "@ConditionalOnMissingBean(SignalsGraphLayer)"
       ],
       "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
-      "line": 280,
+      "line": 278,
       "injects": [],
       "members": [
         {
@@ -1399,7 +1399,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.console.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
-      "line": 407,
+      "line": 405,
       "injects": [],
       "members": [
         {
@@ -1556,7 +1556,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.console.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
-      "line": 372,
+      "line": 370,
       "injects": [],
       "members": [
         {
