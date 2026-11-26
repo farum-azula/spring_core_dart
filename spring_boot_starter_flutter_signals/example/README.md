@@ -15,7 +15,7 @@ A Flutter app with reactive state in its beans.
 
 ```yaml
 dependencies:
-  spring_boot_starter_flutter_signals: ^0.9.0
+  spring_boot_starter_flutter_signals: ^0.10.0
 ```
 
 The package's tests run this app as generated

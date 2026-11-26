@@ -1,4 +1,4 @@
-## Unreleased
+## 0.10.0
 
 - `SecurityCallerContext` (`CallerContexts`), `ZoneSecurityContextHolderStrategy.captureCaller` and `runAsCaller`: code captured in a scope runs later with that scope's context, code captured outside every scope with the program-wide one, even when it runs inside another user's scope.
 - **Security fix:** the current user and every method security decision are reported to `CallerBoundReads`, so what keeps a value knows whose it is; a change of the program-wide user is told.

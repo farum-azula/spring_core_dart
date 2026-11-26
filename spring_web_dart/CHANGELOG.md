@@ -1,4 +1,4 @@
-## Unreleased
+## 0.10.0
 
 - `HttpSecrets`: the one rule for the headers and parameters a log never shows (credentials, cookies, the DPoP proof, OAuth's `code`, `state`, `code_verifier`, `client_assertion`, signed-URL signatures, and names `SecretNames` calls secret), shared by the web starter's request logs and the Feign client's.
 - `IoHttpTransport` follows redirects itself: a redirect to another origin drops the headers that carry a credential (`HttpSecrets` and the new `HttpRequest.sensitiveHeaders`), and one from `https` to `http` is not followed (the `3xx` is returned).

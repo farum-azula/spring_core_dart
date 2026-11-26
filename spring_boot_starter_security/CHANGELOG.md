@@ -1,3 +1,7 @@
+## 0.10.0
+
+- No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.10.0.
+
 ## 0.9.0
 
 - No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.9.0.

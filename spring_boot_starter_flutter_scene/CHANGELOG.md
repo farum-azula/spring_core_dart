@@ -1,4 +1,4 @@
-## Unreleased
+## 0.10.0
 
 - A scene on the engine's canvas leaves it as soon as its route starts to leave (popped, or covered by the next page: its secondary transition runs; a dialog does not run it), not when the transition ends: the engine's canvas cannot fade with the page, so the leaving page's scene stood over the next page for the whole transition (Dota Passport's profile frame over the match page, about 300 ms with a 220 ms fade).
 - A scene drawn on the layer's or the engine's canvas builds its widgets under an `Offstage` keyed `PaintedElsewhere`: the debug graph's "On screen" counts them by the scene's place (a `Watch` in a scene is no longer off the screen). A const key: nothing at run time.

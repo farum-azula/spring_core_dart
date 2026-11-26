@@ -1,4 +1,4 @@
-## Unreleased
+## 0.10.0
 
 - A request's sort the REST API cannot run is a 400, not a 500: an unknown property is a `PropertyReferenceException`, an order that ignores case an `InvalidDataArgumentException`.
 

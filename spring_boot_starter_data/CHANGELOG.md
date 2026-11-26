@@ -1,4 +1,4 @@
-## Unreleased
+## 0.10.0
 
 - **Breaking:** `DataTransactionSynchronizationRegistry` (bean `transactionSynchronizationRegistry`) is `DataTransactionLifecycleRegistry` (bean `transactionLifecycleRegistry`), after core's rename; a transaction that ends without a commit, rolled back or with an unknown end, calls the listener's `afterRollbackOrUnknown`.
 - The startup checks (`spring.main.startup-checks.enabled`) and the statement logging (`spring.data.jdbc.show-sql`) are, when their key is not set, in debug builds only: a profile build has them only with `true`.

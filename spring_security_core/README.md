@@ -22,7 +22,7 @@ this package alone is enough.
 
 ```yaml
 dependencies:
-  spring_security_core: ^0.9.0
+  spring_security_core: ^0.10.0
 ```
 
 It brings and re-exports `spring_boot_dart` and the logging starter, so an

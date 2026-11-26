@@ -17,7 +17,7 @@ The model's file is an asset of the app:
 
 ```yaml
 dependencies:
-  spring_boot_starter_flutter_scene: ^0.9.0
+  spring_boot_starter_flutter_scene: ^0.10.0
 
 flutter:
   assets:

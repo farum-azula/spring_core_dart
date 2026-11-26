@@ -1,4 +1,4 @@
-## Unreleased
+## 0.10.0
 
 - **Fixed:** a request with two `Host` headers is answered 400 and its connection closes, as Tomcat does (RFC 9112 §3.2); it was served for the last one. `dart:io` drops the first before the server sees it, so the server reads the request heads in the bytes of each connection, plain or TLS (`RequestHeadScanner`): the same chunks, unchanged and unbuffered, on the socket's own subscription; bodies are skipped by their length, also chunked ones, and an upgraded connection is not read. It costs about 2% of requests per second on a minimal handler.
 - The request logs mask by `HttpSecrets` (shared with Feign): the DPoP proof and OAuth's `code`, `state`, `code_verifier`, `client_assertion`, `id_token_hint` too.

@@ -1,4 +1,4 @@
-## Unreleased
+## 0.10.0
 
 - Fixed: an `@Effect` whose first run threw (the bean was not made) stayed subscribed and ran again on the half-made bean; the bean's state now ends at once (its effects and watches stop) and the error goes on to the container.
 - Fixed: `refresh()` / `reload()` could wait for ever: when asked for again while one ran (the first now ends with the newer load), when the bean closed meanwhile, when a stream ended without an event, when the computation gave the same future again or a plain value.

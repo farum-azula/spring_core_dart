@@ -1,3 +1,7 @@
+## 0.10.0
+
+- No changes of its own; released with the family version 0.10.0.
+
 ## 0.9.0
 
 - No changes of its own; released with the family version 0.9.0.

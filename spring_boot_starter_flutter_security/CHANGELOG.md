@@ -1,4 +1,4 @@
-## Unreleased
+## 0.10.0
 
 - **Security:** `CsrfCookieHttpTransport` keeps the request's `sensitiveHeaders`. It lost them, so with a custom `headerName` a browser could carry a Feign client's `sensitive-headers` through a redirect to another origin.
 

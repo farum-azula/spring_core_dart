@@ -1,4 +1,4 @@
-## Unreleased
+## 0.10.0
 
 - **Breaking:** a module whose build switch is not set is in debug builds only (`BuildInclusion.debugOnly`, the new default of `whenMissing`): a profile build compiles it away too (`dart.vm.profile`), so a profile measures the app without the debug tools. `BuildInclusion.notInRelease` is gone.
 - `AutoConfigurationBuild(parents: [...])`: a module that only works inside another feature lists that feature's switch, and is in a build only as far as its own switch and every parent's let it in (the narrowest wins: none, else debug and profile builds only, else every build). A tab of the debug panel leaves with the panel even when its own key is not set.

@@ -1,4 +1,4 @@
-## Unreleased
+## 0.10.0
 
 - **Breaking:** `@ProxyTargetClass()` is renamed `@AccessHook()`: it marks an annotation whose members get access hooks in a generated subclass of the bean (a public field is an implicit getter and setter pair, so the bean's own `this.items` reaches the hook too). Only the annotations of `spring_boot_starter_flutter_signals` have hooks the generator writes; a member with any other annotation marked `@AccessHook()` fails the build.
 - **Breaking:** `TransactionSynchronizationRegistry` is renamed `TransactionLifecycleRegistry` (it borrowed JTA's name with another API, next to the data starter's `TransactionSynchronizationManager`), and `TransactionLifecycleListener.afterRollback` is `afterRollbackOrUnknown`: it is also called when the transaction's end is unknown (a failed commit or rollback).

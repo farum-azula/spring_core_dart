@@ -1,4 +1,4 @@
-## Unreleased
+## 0.10.0
 
 - **Debug builds only by default:** a debug tool whose build switch is not set (the panel, the frame meter, the motion switch, the Flutter tab, the task manager, the timeline, the graph and its layers, the log export) is in debug builds only; a profile build has it only with its switch `true`, so a profile measures the app without the tools. The console stays out of every build unless `spring.flutter.debug.console.enabled: true`, which puts it in every build, release included.
 - `DebugCorner` (top-left, top-right, bottom-left, bottom-right), shared by `spring.flutter.frame-meter.position`, `spring.flutter.debug.console.position` and the debug overlays; `FrameMeterPosition` and `DebugOverlayCorner` are deprecated aliases of it. `DebugLayout.phoneWidth` (600) is the phone width the console and the panel share.

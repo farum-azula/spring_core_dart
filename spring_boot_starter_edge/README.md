@@ -13,7 +13,7 @@ Function.
 
 ```yaml
 dependencies:
-  spring_boot_starter_edge: ^0.9.0   # brings and exports the web starter
+  spring_boot_starter_edge: ^0.10.0   # brings and exports the web starter
 ```
 
 ```dart

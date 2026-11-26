@@ -1,4 +1,4 @@
-## Unreleased
+## 0.10.0
 
 - **Breaking, regenerate:** a build key that is not set (`AutoConfigurationBuild`'s and `PackageBuild`'s default `whenMissing`, now `BuildInclusion.debugOnly`) puts its code in debug builds only, under `!dart.vm.product && !dart.vm.profile`: a Flutter profile build gets the debug panel, its tabs, the startup checks, `show-sql` and the other modules of that rule only with `true`. The debug part (`<library>.spring.debug.dart`) is spread in under the same constant.
 - A member with an annotation marked `@AccessHook()` (core's renamed `@ProxyTargetClass()`) that no part of the generator writes hooks for fails the build ("@AccessHook currently supports only the annotations of spring_boot_starter_flutter_signals"). `PackageGeneration.accessHooks` lists the annotations a part writes hooks for. The model `BeanSubclass` is `AccessHooks`.
