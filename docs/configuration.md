@@ -1473,7 +1473,7 @@ debug=false
 | `spring.main.register-shutdown-hook` | bool | `false` (Spring Boot: `true`) | Closes the context on SIGINT or SIGTERM, so `@PreDestroy` methods run (VM only). Off by default because listening for signals keeps a Dart program alive |
 | `spring.main.allow-bean-definition-overriding` | bool | `false` | A second bean with the same name replaces the first instead of failing the start |
 | `spring.main.cloud-platform` | platform name or `none` | detected | Forces the [cloud platform](#documents-for-some-profiles-or-platforms) |
-| `spring.main.startup-checks.enabled` | `true` / `false` | not set | Read by the generator when it writes the application, in `application.yml` or `application.properties` without a profile: whether the starters' startup checks are in the build (the data starter's `transactionValidator` and `dataFailureAnalyzer`, the cache starter's `cacheOperationValidator`, the edge starter's warning list). `true`: in every build. `false`: in none, no code at all. Not set: in debug and profile builds only, so a release build compiles them away and a mistake they would have found fails at the first call instead of the start. At run time (command line, environment, a profile), `false` turns off the checks the build kept. `dart compile js` and `wasm` define no `dart.vm.product`, so for the build switches they are debug builds; the edge starter's build adds `-Ddart.vm.product=true` |
+| `spring.main.startup-checks.enabled` | `true` / `false` | not set | Read by the generator when it writes the application, in `application.yml` or `application.properties` without a profile: whether the starters' startup checks are in the build (the data starter's `transactionValidator` and `dataFailureAnalyzer`, the cache starter's `cacheOperationValidator`, the edge starter's warning list). `true`: in every build. `false`: in none, no code at all. Not set: in debug builds only (a profile build has them only with `true`), so a profile or a release build compiles them away and a mistake they would have found fails at the first call instead of the start. At run time (command line, environment, a profile), `false` turns off the checks the build kept. `dart compile js` and `wasm` define no `dart.vm.product`, so for the build switches they are debug builds; the edge starter's build adds `-Ddart.vm.product=true` |
 | `spring.autoconfigure.exclude` | list | — | Auto-configurations not to apply, by class or module name |
 | `debug` | any | — | Any value but `false` (for example `--debug`) logs the condition evaluation report: which auto-configured beans were created, and why the others were not |
 | `trace` | any | — | Any value but `false` (`--trace`) turns the framework's loggers (`spring_core_dart`, `spring_boot_dart`, `spring.web.server`) to `trace`; `debug` sets them to `debug`. Levels in `logging.level.*` win |
@@ -1672,6 +1672,7 @@ The levels are `trace`, `debug`, `info`, `warn` (or `warning`), `error`
 | `logging.include-application-group` | bool | `true` | Puts `[spring.application.group]` into the default patterns |
 | `logging.console.enabled` | bool | `true` | The console output |
 | `logging.console.target` | `stdout` / `stderr` | `stdout` | Where the console lines go |
+| `logging.console.record-bar` | bool | `false` | Starts every line of a record (the message's lines, the stack trace, its causes) with `▌` and a space, coloured by level as `%clr` colours the level when `spring.output.ansi.enabled` allows colours, plain otherwise; applied after `logging.pattern.console`. A line the terminal wraps itself is not marked. Only with this starter: core's `printLogHandler` has no bar |
 | `logging.buffer.enabled` | bool | `true` | The in-memory `LogBuffer` |
 | `logging.buffer.capacity` | int | `1000` | How many records the buffer keeps |
 | `logging.threshold.console` / `.file` / `.buffer` | level | `trace` | The lowest level each output takes |
@@ -2125,15 +2126,16 @@ The start behind the splash (the splash's look is the theme's `splash`; see
 | `spring.flutter.splash.warm-up.text.settle` | duration | `250ms` | After a font came in, how long without another before the warm-up ends |
 | `spring.flutter.splash.warm-up.text.chunk` | number | `200` | How many characters are laid out in one frame, so the splash keeps moving on a phone |
 
-The frame meter: a small panel over the app with the frames a second it
-really draws, the average time of their build and raster, the worst frame,
-and a bar per frame (within the budget, up to twice it, over). The times are
+The frame meter: one short line over the app with the frames a second it
+really draws, in the theme's primary color, and those a 3D scene draws
+beside them (`60 (120 3D)`), over a strip with a bar per frame (within the
+budget, up to twice it, over); the debug panel's Frames tab adds the
+average time of their build and raster and the worst frame. The times are
 Flutter's own (`FrameTiming`), on every platform the web included, so it
 shows on a phone what a desktop browser cannot. A frame is late only when
 the app was waiting for it (something moves at every frame); an animation
 that asks for a frame now and then (a background drifting 15 times a
-second) shows its rate in the plain color, each frame measured by what it
-cost. The panel is drawn again at most four times a second and its own
+second) is measured by what each frame cost. The panel is drawn again at most four times a second and its own
 frames are not counted: an app that draws nothing shows `idle`. Turn it on
 in a profile you test with.
 
@@ -3633,7 +3635,8 @@ The platform profiles (`android`, `ios`, `web`, `macos`, `windows`,
 ### The debug panel
 
 A panel over the running app for whoever builds it: the logs, the frame
-meter, the configuration, the beans, the themes and the start, each a tab.
+meter, the configuration, the beans, the themes and the start, each a
+section of its menu.
 It opens with the action `debug.open`: ⌘⇧D (Ctrl+Shift+D), or four quick
 taps and a fifth held three seconds, on every platform. Other keys or taps
 are written like any [shortcut](#keyboard-shortcuts):
@@ -3642,35 +3645,89 @@ are written like any [shortcut](#keyboard-shortcuts):
 spring:
   flutter:
     debug:
-      enabled: true          # true: every build; false: none; not set: debug and profile builds only
+      enabled: true          # true: every build; false: none; not set: debug builds only
     shortcuts:
       debug.open: [primary+shift+d, taps:5+hold:2s]
 ```
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `spring.flutter.debug.enabled` | `true` / `false` | not set | Read by the generator when it writes `main.spring.dart`. `true`: the panel is in every build. `false`: it is in none; the module is not written, so the app has none of its code. Not set: it is written for debug and profile builds only, and a release build compiles it away. Set to `false` in a profile, it turns off the panel of a running app whose build has it |
+| `spring.flutter.debug.enabled` | `true` / `false` | not set | Read by the generator when it writes `main.spring.dart`. `true`: the panel is in every build. `false`: it is in none; the module is not written, so the app has none of its code. Not set: it is written for debug builds only, and a profile or a release build compiles it away; a profile build has the panel only with `true`. Set to `false` in a profile, it turns off the panel of a running app whose build has it |
 | `spring.flutter.debug.frame-meter.enabled` | `true` / `false` | not set | The same, for the frame meter, a module of its own (`springBootStarterFlutterDebugFrameMeterAutoConfiguration`, bean `debugFrameMeter` with `on` and `position`). Its action `debug.frame-meter` has the keys `primary+shift+x` and `taps:5+hold:2s` (`spring.flutter.shortcuts.debug.frame-meter`), and it starts in the corner `spring.flutter.frame-meter.position`. With `debug.enabled: false` and this `true`, a release build has the frame meter and no panel |
 | `spring.flutter.debug.motion.enabled` | `true` / `false` | not set | The same, for the motion switch, a module of its own (`springBootStarterFlutterDebugMotionAutoConfiguration`, bean `debugMotion` with `animations`). Its action `debug.motion` has the key `primary+shift+m` (`spring.flutter.shortcuts.debug.motion`) |
+| `spring.flutter.debug.flutter-tools.enabled` | `true` / `false` | not set | The same, for the panel's Flutter tab, a module of its own (`springBootStarterFlutterDebugFlutterToolsAutoConfiguration`, bean `debugFlutterTools`) whose beans need the panel: `spring.flutter.debug.enabled` is its parent switch, so a build without the panel has none of its code whatever this key says, and with the panel not set it is in debug builds only (the narrowest of the two). Flutter's own debug tools, switched live and kept while the app runs: the widget inspector (with the selected widget's type, size, position and ancestors), the performance overlay, the semantics debugger, paint size, baselines, layer borders, pointers, the repaint rainbow, inverted oversized images, slow animations (`timeDilation` 1, 2, 5, 10), and `dart devtools <address>` to copy. In profile and release the inspector and the paint flags show as off with the reason; on the web the performance overlay and the DevTools address do |
+| `spring.flutter.debug.console.enabled` | `true` / `false` | not set | The debug console, a module of its own (`springBootStarterFlutterDebugConsoleAutoConfiguration`, bean `debugConsole`): only `true` puts it in the build, and then in every build, a release build included (unlike the panel, not set does not mean debug builds); not set or `false`, the app has none of its code, nor of its segments and panes (the scene and signals starters' too), its commands, or the application's `@ConsoleSegment`, `@ConsolePane` and `@ConsoleCommand` classes. Its action `debug.console` has the keys `primary+shift+o` and `taps:8+hold:2s` (`spring.flutter.shortcuts.debug.console`). From top to bottom: a header row of segments, then the shown panes, by default the `logs` pane (the newest records colored as the console colors them, the time and `:` faint, the level green, yellow or red, the logger cyan, wrapped, by the Logs tab's filter, the `debugLogFilter` bean, live, or without the panel by `filter.*`); with no pane shown, the header alone ([below](#the-debug-console)); colors and fonts from the [debug theme](#debug-themes) |
+| `spring.flutter.debug.console.position` | `top-left`, `top-right`, `bottom-left`, `bottom-right` | `top-left` | Its corner |
+| `spring.flutter.debug.console.opacity` | 0 to 1 | `0.9` | How opaque its background is; the text stays opaque. The header's always, the panes' while they interact (unless a pane gives its own `backgroundOpacity`) |
+| `spring.flutter.debug.console.interaction` | `pass-through`, `interact` | `interact` | How the panes take the pointer at the start, every pane alike, the application's too ([below](#the-debug-console)): `pass-through`, every tap, scroll, hover and drag over them reaches the app, only the header and the handles take one; `interact`, the panes work (the records scroll and select, a row takes a tap, the graph pans, the input line types). The toggle at the right of the header switches it while the app runs (`debugConsole.interaction`), ⌥ (Alt) held on a desktop interacts while held; starting the records' selection or focusing the input line switches it to `interact`. The debug panel is not affected |
+| `spring.flutter.debug.console.pass-through-opacity` | 0 to 1 | `0.7` | How opaque the panes' background is while they pass the pointer through: the app the taps reach seen under it, the panes read; 0, none. A pane's own `backgroundOpacity` counts only while they interact. The header keeps `opacity` |
+| `spring.flutter.debug.console.slide-duration` | duration | `220ms` | How long it takes to slide in from its edge when shown and back out when hidden (`150ms`, `0.4s`), as a game's console drops down: from the top in a top corner, from the bottom in a bottom one. Pressed again while it slides out, it comes back from where it is. `0`: it shows and hides at once, with no animation in the tree |
+| `spring.flutter.debug.console.max-lines` | 1 to 200 | `12` | How many lines high the `logs` pane starts. The divider under it moves the room between it and the pane below; the lowest pane, the handle on the console's lower edge, by mouse or touch, up to the screen's height; the height dragged to stays while the app runs (not across restarts). Long records wrap; a wheel, a trackpad or a drag over them scrolls back through older ones, as far as `logging.buffer.capacity` keeps them. Scrolled up it keeps the lines read (`paused` in the console's header); at the bottom it follows the newest again |
+| `spring.flutter.debug.console.width` | 0.2 to 1 | `1` | How much of a wide screen's width it takes (inside the safe area and the dock's margins), never under 360; a screen narrower than 600, a phone's, all of it |
+| `spring.flutter.debug.console.segments` | list of names | `[fps, scene-fps, frames-lost, filter]` | The segments the build has: `fps`, `scene-fps`, `frames-lost`, `filter`, `signals`, `isolates`, `memory`, `timeline`, `net`, an application's own (`@ConsoleSegment`); `*` stands for every one. Read by the build (without a profile): a segment it does not name, without `*`, is not in the build, neither its module nor its code. Their order is the header's when `header` is not set |
+| `spring.flutter.debug.console.header` | list of names | all of `segments` | The segments the header shows at the start, in order; `*` stands for the others of `segments`. A name that `segments` does not have fails the start. The debug panel's Console tab shows and hides them (a tap) and moves them (a drag, a long press on touch) while the app runs |
+| `spring.flutter.debug.console.panes` | list of names | `[logs]` | The panes the build has: `logs` (the records, their selection and the `export` command), `commands` (the commands and their input line, with the application's `@ConsoleCommand` classes), `network` (with `debug.network.enabled`), `graph` ([the application graph](#the-application-graph), with a layer in the build), a starter's (`signals`: the application graph preset to the signals layer, from `spring_boot_starter_flutter_signals`), an application's own (`@ConsolePane`); `*` stands for every one. Read by the build (without a profile): a pane it does not name, without `*`, is not in the build, neither its module nor its code. Listed, `logs` is in only when named (or `*`); with it out, its view, selection and `export` command are no code in the app, and records still go to the log buffer (the panel's Logs tab and the `filter` segment are not affected). Empty: the header alone |
+| `spring.flutter.debug.console.shown-panes` | list of names | `[logs]` when the build has it | The panes shown at the start, under the header by their order; `*` stands for all of `panes`; empty: the header alone. Not set: `logs` when the build has it, else none. A name that `panes` does not have fails the start. The debug panel's Console tab shows and hides them while the app runs |
+| `spring.flutter.debug.console.history` | 0 to 1000 | `50` | How many lines typed into the `commands` pane up and down go back through |
+| `spring.flutter.debug.console.filter.level` | `trace`, `debug`, `info`, `warning`, `error` | `trace` | The lowest level it shows at the start; the debug panel's Logs tab starts with it too |
+| `spring.flutter.debug.console.filter.text` | text | empty | What a record's message or logger must contain, at the start |
+| `spring.flutter.debug.isolates.enabled` | `true` / `false` | not set | The same as `debug.enabled`, for the task manager of the isolates and the engine's threads (`springBootStarterFlutterDebugIsolatesAutoConfiguration`): the panel's Isolates tab ([below](#the-isolates-tab)), with the app's memory and, on the web, what the page downloaded, and the console's `isolates` and `memory` segments |
+| `spring.flutter.debug.isolates.interval` | duration | `1s` | How often it reads the loads and the memory while its tab or the `isolates` or `memory` segment shows; nothing is read, and the VM service is not connected to, while none does |
+| `spring.flutter.debug.timeline.enabled` | `true` / `false` | not set | The same as `debug.enabled`, for the timeline of the start and the observations (`springBootStarterFlutterDebugTimelineAutoConfiguration`): the panel's Timeline tab and the console's `timeline` segment |
+| `spring.flutter.debug.network.enabled` | `true` / `false` | not set | The network recorder and the panel's Network tab, a module of its own (`springBootStarterFlutterDebugNetworkAutoConfiguration`; beans `debugNetworkRecorder`, `debugNetworkJournal`, `debugNetworkSection`): only `true` puts it in the build, and only as far as the panel's switch (`spring.flutter.debug.enabled`, its parent) does, so with the panel not set it is in debug builds only and without the panel nowhere, unless the console has its `network` pane or `net` segment (modules `springBootStarterFlutterDebugConsoleNetworkPaneAutoConfiguration`, `springBootStarterFlutterDebugConsoleNetworkSegmentAutoConfiguration`, inside the console's switch instead of the panel's); not set or `false`, the app has none of its code. The recorder, a post-processor, wraps every `HttpTransport` and `WebSocketTransport` bean registered as that type alone (one injected by its own class too, such as a test's `MockHttpTransport`, is left as it is): the requests and frames pass through unchanged, and a copy goes to the journal, the `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`, `DPoP` and token headers, a Feign client's `sensitive-headers`, the secret query parameters and an address's password masked as `******`. The tab ([below](#the-network-tab)) lists them. Set to `false` in a profile, it turns the recorder off in a running app whose build has it |
+| `spring.flutter.debug.network.bodies` | `true` / `false` | `false` | Whether request and response bodies and WebSocket payloads are kept, cut at `body-limit`, the values of JSON keys that look secret (`password`, `access_token`, `apiKey`) and the secret parameters of a form masked. Off: their sizes only |
+| `spring.flutter.debug.network.body-limit` | size | `64KB` | The most bytes of a body or a payload kept; a streamed body's first bytes, the rest only counted. At most `1MB`: a larger value is taken as `1MB` |
+| `spring.flutter.debug.network.body-budget` | size | `4MB` | The most bytes of bodies and payloads kept in all, with `bodies`: past it, a new one keeps its size only, until old requests leave the journal (`max-entries`, Clear) |
+| `spring.flutter.debug.network.max-entries` | 1 to 10000 | `200` | How many requests and WebSocket connections are kept; the oldest goes first |
+| `spring.flutter.debug.network.max-frames` | 0 to 10000 | `200` | How many frames of each WebSocket connection are kept; the counts and sizes go on past it |
+| `spring.flutter.debug.logs.export.enabled` | `true` / `false` | not set | The log export ([below](#the-log-export)), two modules of their own (`springBootStarterFlutterDebugLogsExportAutoConfiguration` inside the panel's switch, `springBootStarterFlutterDebugConsoleLogsExportAutoConfiguration` inside the console's; beans `debugLogExport`, `debugFileExports`, `plainDebugLogFormat`, `jsonLinesDebugLogFormat`, `browserDebugFileExport`, `downloadsDebugFileExport`): `true` in every build, `false` in none, not set in debug builds only, and in any case only as far as the panel or the console is in the build too; without either, or `false`, the app has none of its code. With the console's `commands` pane, a third module adds the `export` command ([the debug console](#the-debug-console)). Set to `false` in a profile, it turns the export off in a running app whose build has it |
+| `spring.flutter.debug.graph.enabled` | `true` / `false` | not set | The panel's **Graph** tab, [the application graph](#the-application-graph): `true` in every build with the panel, `false` in none, not set in debug builds only; inside the panel's switch. Set to `false` in a profile, it turns the tab off in a running app whose build has it. The graph's engine comes only with a layer |
+| `spring.flutter.debug.graph.layers` | list of names | `[*]` | The layers of the application graph the build has: `widgets`, `beans` (beans `beansGraphLayer` and `debugBeanGraph`, which follows the beans created and destroyed only while a view shows it), `signals` (from `spring_boot_starter_flutter_signals`), `*` for every one. Read by the build (without a profile): a layer it does not name is not in the build, its module, its bean and its code; with none, the Graph tab, the `graph` pane and the engine are no code in the app |
+| `spring.flutter.debug.graph.hot.rebuilds` | 1 to 100000 | `3` | How many rebuilds within `hot.window` make a widget of [the widgets layer](#the-widgets-layer) hot: its node and the branch above it outlined in the debug theme's `graph-hot`, its tooltip telling why (`PageBackdrop: 14 rebuilds in 5 s`) |
+| `spring.flutter.debug.graph.hot.window` | duration | `5s` | The window those rebuilds are counted in, and a widget's rebuild count in its card |
 
-The tabs:
+The panel lists its sections in a menu. On a screen at least 600 logical
+pixels wide (the console's phone width, `DebugConsoleView.phoneWidth`) the
+menu is a side menu on the left, always open, with the section shown in
+the debug theme's accent and its content to the right; with the menu
+focused (after a tap), the up and down arrows move the selection. On a
+narrower screen, a phone's, the menu is closed: the button left of the
+title opens it as a drawer over the content, and picking a section, a tap
+on the scrim or a swipe to the left closes it (a swipe from the left edge
+opens it). The panel opens again on the section last shown, with its
+filters. The sections are listed under group headers, the groups in the
+order of their first section:
 
-| Tab | What it shows |
+| Group | Sections |
 |---|---|
-| Logs | The records of the logging system's buffer (`logBuffer`), newest first and live, by level and text |
-| Frames | The [frame meter](#the-app-widget) on or off over the app, and its corner, without a new build (the `debugFrameMeter` bean; "not in this build" when the module is left out) |
+| Logs & state | Logs; Signals (signals starter) |
+| Performance | Frames, Motion, Timeline, Isolates |
+| App | Configuration, Beans, Graph, Start; Scenes (scene starter) |
+| Tools | Overlays, Theme, Flutter |
+
+The sections:
+
+| Section | What it shows |
+|---|---|
+| Logs | The records of the logging system's buffer (`logBuffer`), newest first and live, scrolling, each colored as the console colors it (the time and `:` faint, the level green, yellow or red, the logger cyan), by level and text (the `debugLogFilter` bean, kept while the panel is closed and shared with the debug console). The text selects and copies; records are picked whole, copied and [exported](#the-log-export) |
+| Frames | The [frame meter](#the-app-widget) live with the times of build and raster, on or off over the app (compact there: one line, `60 (120 3D)`, over the strip of bars), and its corner, without a new build (the `debugFrameMeter` bean; "not in this build" when the module is left out) |
 | Motion | Every animation of the app on or off (the `debugMotion` bean; "not in this build" when the module is left out) |
 | Configuration | The active profiles and every property with the source that sets it; values of keys that name a secret (`password`, `secret`, `token`, `key`, `credential`) show as `******` |
 | Beans | Every bean of the context with its type |
-| Theme | The app's themes and `system`; a tap shows one |
+| Graph | [The application graph](#the-application-graph): every layer the build has (the signals starter's), one toolbar row (the layers' switches, the scope, Fit, `Options ▾`, `Groups ▾`, `Legend`), a card beside each node tapped; kept while the app runs; in the build only with a layer |
+| Theme | The app's themes and `system`; a tap shows one. Under them, in a row of their own, the [debug themes](#debug-themes); a tap draws the debug tools in another at once |
 | Start | When each stage of the start was reached |
+| Isolates | The app's memory on top, what the page downloaded on the web, then every isolate and engine thread with its load ([below](#the-isolates-tab)); in the build with `debug.isolates.enabled` |
 
-A tab of your own is a `DebugPanelSection` bean, in the order of the beans:
+A section of your own is a `DebugPanelSection` bean, in the order of the
+beans. Implement `GroupedDebugPanelSection` instead to list it under a
+group, one of the above or one of your own; a section without a group is
+listed under `Other`:
 
 ```dart
 @Component()
 @Order(100)
-class CartSection implements DebugPanelSection {
+class CartSection implements GroupedDebugPanelSection {
   CartSection(this.cart);
   final Cart cart;
 
@@ -3678,13 +3735,1134 @@ class CartSection implements DebugPanelSection {
   String get title => 'Cart';
 
   @override
+  String get group => 'App';
+
+  @override
   Widget build(BuildContext context) => Text('${cart.items.length} items');
 }
 ```
 
-`DebugStyle.of(context)`, `DebugChip` and `DebugFilter` give a tab the
+`DebugStyle.of(context)`, `DebugChip` and `DebugFilter` give a section the
 panel's look. `debugPanel` (`DebugPanel`) is the panel's state: `toggle()`,
 `close()`. The frame meter's state is `debugFrameMeter` (`on`, `position`), the animations' is `debugMotion` (`animations`).
+
+### The debug console
+
+One overlay for what the app does while it runs, instead of one per tool
+(`spring.flutter.debug.console.enabled: true`; not set: no code). `true`
+puts it in every build, a release build included: set it only in the
+configuration of the builds that should have it. From top to bottom:
+
+- **the header**, one line of compact segments, those of `header` at the
+  start: numbers in the theme's primary color, states green, amber or red
+  (`fps 60  3D 120  lost 0  logs all`);
+- **the shown panes**, by their order, from the second on under a
+  divider: the built-in `logs` (order 0, the records of the log buffer
+  only, by the Logs tab's filter, `max-lines` high at the start; shown by
+  default) and `commands` (order 10), a starter's (`signals` 20, `graph`
+  25, `network` 30), the application's own;
+- **the handle** on the lower edge.
+
+With no pane shown the console is a strip, the header alone, its
+background kept and no handle (nothing to stretch); a pane shown later
+from the Console tab expands it again. A pane may add to the header's
+right while it shows (`DebugConsolePane.buildHeader`: the `logs` pane's
+`paused` and `Select`).
+
+A divider moves the room between its two neighbours, the handle stretches
+the lowest pane downwards or shrinks it (up to the screen's height), by
+mouse or touch, none under its least. Every height stays while the app
+runs, a hidden pane's too (`debugConsole.paneHeight(name)`, `resize`). A hidden pane is not built at all, and the next moves up.
+
+**Pass-through and Interact.** The panes either pass the pointer through
+to the app or interact, the whole console at once, the built-in panes, a
+starter's and the application's alike, with nothing for a pane to do
+(`debugConsole.interaction`, `DebugConsoleInteraction`):
+
+- **Pass-through** (`interaction: pass-through`): every tap,
+  scroll, hover and drag over a pane reaches the app under the console.
+  Only the header (its segments, what the panes add to it: `Select`,
+  `Copy`, `Clear`) and the dividers and the lower edge's handle take one.
+  The panes' background is `pass-through-opacity` (0.7 by default), the
+  app seen under it and the panes read; the header keeps its background
+  (`opacity`), so the segments and buttons stay readable.
+- **Interact**: each pane works as it does. The `logs` pane scrolls by a
+  wheel, a trackpad or a drag (a plain tap on it still reaches the app
+  until it selects) and selects; a `network` row takes a tap; the graph
+  pans, zooms and selects; the input line types. The backgrounds are of
+  `opacity`, or a pane's own `backgroundOpacity`.
+
+The toggle at the right of the header, after what the panes add
+(`Pass-through` or `Interact`, in a box of at least 44 by 44 for a
+finger), switches it; it shows while a pane does (a strip has nothing to
+pass through). On macOS, Windows and Linux ⌥ (Alt) held makes the panes
+interact while held (`Interact ⌥`), without switching; a phone has the
+toggle alone, no gesture. Starting the records' selection (`Select`, a
+long press, a click with ⇧, ⌘ or Ctrl) or focusing the input line
+switches it to Interact, so what was started with ⌥ held stays under the
+finger after ⌥ is let go. It does not switch back when that ends: the
+panes do not change under the pointer, and the toggle is one tap away.
+A pane's `backgroundOpacity` counts in Interact only: passing through,
+the point is to see the app, and one opacity for every pane says what
+shows. The state lives on the `debugConsole` bean while the app runs and
+starts as `interaction` says. The debug panel is always interactive.
+
+**Selecting records.** The `logs` pane selects as the Logs tab does, without
+taking the app's taps: while the panes interact (or ⌥ is held), a long
+press on a record, or a click on one with ⇧, ⌘ or Ctrl, marks it and
+starts the selection; `Select` at the right of the header starts it
+without a mark, in either mode. Either switches the panes to Interact. While it lasts the records take taps
+(a tap marks or unmarks one), their text selects by a mouse drag or a
+double tap and copies with ⌘C (Ctrl+C) or its context menu, new records
+wait under the ones read, and the header's right shows `N marked · Copy ·
+.log · .jsonl · Clear`: Copy puts the marked records on the clipboard as
+the console prints them, without colours, `.log` and `.jsonl` (with the
+[log export](#the-log-export)) export the marked records, else those the
+filter shows, and Clear ends it (`logsPane.selecting`, `marks`).
+Before and after, every tap on the pane goes through to the app, and
+beside the panes always. The selection follows the pane: in the header
+only while it shows, in the build only with it.
+
+With the log export, the `logs` pane and the `commands` pane in the build, the command
+`export [log|jsonl]` (`exportCommand`, `log` by default) exports the
+marked records, else those the filter shows, and prints where the file
+went; `help` lists it. Its module
+(`springBootStarterFlutterDebugConsoleExportCommandAutoConfiguration`) is
+in the build only when `panes` names `commands` and lets `logs` in
+(inside the console's switch) and `spring.flutter.debug.logs.export.enabled`
+lets the export in.
+
+The debug panel's **Console** tab (under `Tools`) switches each segment
+and each pane the build has on and off, live, `logs` included (every pane
+hidden leaves the header alone), and moves a segment left or right in the
+header. A switch is selected exactly while its pane (segment) shows,
+whatever changed it: the start, another switch, a command calling
+`showPane`. The state lives on the `debugConsole` bean while the
+app runs (`showSegment`, `moveSegment`, `showPane`); it starts as `header`
+and `shown-panes` say. The tab is in the build only with the panel and
+the console.
+
+```yaml
+spring:
+  flutter:
+    debug:
+      console:
+        enabled: true
+        segments: [fps, scene-fps, frames-lost, filter, signals]  # built
+        header: [fps, signals]          # shown at the start
+        panes: [logs, commands]         # built; not set: [logs]
+        shown-panes: [logs]             # shown at the start; [] the header alone
+        history: 50
+        interaction: interact           # or pass-through; the toggle in the header
+        pass-through-opacity: 0.7       # the panes' background while passing through
+        slide-duration: 220ms           # its slide in and out; 0: at once
+```
+
+| Segment | Shows | From | In the build by default |
+|---|---|---|---|
+| `fps` | The frames a second Flutter draws, `idle` when none | the console | yes |
+| `scene-fps` | The frames a second the 3D scenes draw, only while one moves | the scene starter (with `spring.flutter.scene.enabled`) | yes |
+| `frames-lost` | How many frames of the last second were over the budget (`spring.flutter.frame-meter.target-rate`): green none, amber, red one over twice | the console | yes |
+| `filter` | The level and text the records show by | the console | yes |
+| `signals` | Ticks, flushes and effect runs of the last frame (`signals 3 ticks · 1 flush · 2 effects`) | the signals starter | no |
+| `isolates` | How many isolates and engine threads, and how busy the busiest is | the console; values with `debug.isolates.enabled` | no |
+| `memory` | The process's resident memory natively, the JavaScript heap on the web (`mem`), and Flutter's image cache (`img`): `mem 182 MB · img 34 MB`; read once a second only while the console shows it | the task manager; in the build only with `debug.isolates.enabled` on too (not set: debug builds only) | no |
+| `timeline` | How long the start took until the app showed | the console; values with `debug.timeline.enabled` | no |
+| `net` | The requests in flight, those that got no response (`failed`: a transport error, a timeout, an abort; red), those answered with a `4xx` or `5xx` (`errors`: a 403 is a response, not a failure; amber), a zero muted, and the last heartbeat round trip of the newest open WebSocket when it has one (`net 2 in flight · 0 failed · 1 error · 45 ms ws`) | the network recorder; in the build only with `debug.network.enabled: true` too | no |
+
+| Pane | Shows | In the build by default |
+|---|---|---|
+| `logs` (order 0) | The records of the log buffer, newest at the bottom, colored as the console colors them, wrapped, by the Logs tab's filter; scrolls back through the buffer (`paused` in the header), follows the newest at the bottom; its selection and `Select` in the header while it shows | yes (`panes` not set) |
+| `commands` (order 10) | What the commands printed, with a scroll of its own: the line typed (dim), what a command printed, an error (red), `help` in two aligned columns (the command and its arguments orange by default, then what it does); at its bottom the input line: while it has the focus it takes every key typed (nothing reaches the app), Enter runs the line, up and down go through the last `history` lines, Escape gives the focus back | no |
+| `network` (order 30) | The network recorder's requests, one line each, newest at the bottom (`GET  /api/user  200  120 ms  1.2 KB`): the method in the debug theme's `method-read` or `method-write`, the status `good`, `warning` or `bad`, a time of a second or more in `warning`; a WebSocket on one line with its uptime and last heartbeat round trip. Scrolled up it stops following and keeps the lines read (`paused` under them), back at the bottom it follows again. A tap shows the line in one line under them (the whole address, first byte, total, sizes, error; a WebSocket's handshake, uptime, heartbeat, reconnects, frames), with a hint to the panel's Network tab when the build has it | no; in the build only with `debug.network.enabled: true` too |
+| `graph` (order 25) | [The application graph](#the-application-graph) of every layer the build has, compact, on the console's own background (none while passing the pointer through): one toolbar row of short labels (full names in tooltips), the legend behind `Legend`, a card beside each node tapped; kept while the app runs, apart from the Graph tab | no; in the build only with a layer (`debug.graph.layers`) |
+| `signals` (order 20) | The application graph preset to the signals layer (from `spring_boot_starter_flutter_signals`), compact | no |
+
+| Command | Does |
+|---|---|
+| `help [command]` | Lists every command, the application's included, or tells of one |
+| `export [log\|jsonl]` | Exports the records marked in the `logs` pane, else those its filter shows (with the `logs` pane and the log export) |
+
+`help` is the one command built in; the application adds its own, and one
+of the same word replaces it.
+
+**What is not shown is not built.** Each segment and each pane, the
+framework's, a starter's and an application's, is in the build only with
+the console and when `segments` (`panes`) names it or holds `*` (`segments`
+not set names the four of its default, `panes` not set names `logs`). The
+commands, the framework's `help` and the application's `@ConsoleCommand`
+classes, come with the `commands` pane. The generator reads `segments`
+and `panes` from `application.yml` or `application.properties` without a
+profile; what they leave out has no module, no bean and no code in the
+app. `header` and `shown-panes` only say what shows at the start, and a
+name in them that the build list lacks fails the start with the two keys
+named. Each built-in segment and pane is a module of its own whose switch
+is `AutoConfigurationBuild.named('spring.flutter.debug.console.segments',
+'<name>')` (`panes`) with the console's switch as its parent.
+
+#### Segments, panes and commands of your own
+
+The segments are `DebugConsoleSegment` beans, the panes
+`DebugConsolePane` beans, the commands `DebugConsoleCommand` beans. An
+application's own is a class with `@ConsoleSegment`, `@ConsolePane` or
+`@ConsoleCommand`, injected like any bean. One rule names each: the
+annotation's name when there is one, else its `name` getter
+(`String? get name`, `null` by default), for one registered as a plain
+bean or made by hand. The class need not repeat the annotation's name; a
+getter that says another fails the build (one the build cannot read, a
+value made at run time, fails the start), and a bean with neither fails
+the build. The framework's own carry the annotation in their bean
+definitions and have no getter. A command's `usage` is only what follows
+its word (`'[command]'`; `help` prints `help [command]`).
+
+The generator registers the class only in the application's debug part
+(`main.spring.debug.dart`): a segment when the build has the console and
+`segments` names it or holds `*`, a pane when `panes` does, a command when
+the build has the `commands` pane. Otherwise nothing refers to the class
+and the compiler leaves it out. The build fails for a bean of the app that
+injects one, an extension that injects one the build leaves out, and a
+getter that disagrees with the annotation.
+
+**A pane** (`DebugConsolePane`) has:
+
+| Member | Default | What |
+|---|---|---|
+| `String? get name` | `null` | Its name when no `@ConsolePane` gives one |
+| `String get title` | (required) | What the Console tab's switch says |
+| `double get minHeight` | one line (`DebugConsoleView.lineHeight`) | The least it is high when dragged or squeezed |
+| `double get initialHeight` | six lines | How high it starts, until dragged |
+| `double? get backgroundOpacity` | `null`: the console's `opacity` | How opaque its background is, 0 to 1, while the panes interact. Passing the pointer through, every pane's is `pass-through-opacity` |
+| `void Function() start()` | does nothing | Runs when the pane shows; what it returns runs when it hides or the console does |
+| `Widget build(BuildContext, DebugConsole)` | (required) | The pane, given its height and the console's width |
+| `Widget? buildHeader(BuildContext, DebugConsole)` | `null` | What it adds at the right of the console's header while it shows (the `logs` pane's `paused` and `Select`) |
+
+`@ConsolePane('name', order: n)` places it among the shown panes, top to
+bottom (`logs` is 0, `commands` 10, `signals` 20, `graph` 25, `network` 30). The
+console's background is behind every part of it, the header and each
+shown pane with its divider and the lower edge's handle, each painting
+its own, of the console's `opacity` unless the pane gives its
+`backgroundOpacity` (while the panes interact; passing the pointer
+through, of `pass-through-opacity`). A pane has nothing to do for
+Pass-through: the console keeps every pointer from it then. Keep a hidden pane free: start listening in
+`start`, stop in what it returns, and the console builds nothing of it
+while hidden. Draw again at most once a frame (a `ListenableBuilder` over
+what notifies at most once a frame, or a frame callback), and take the
+colors and fonts from the debug theme (`DebugStyle.of(context)`: `code`,
+`foreground`, `muted`, `number`, `good`, `warning`, `bad`, `accent`).
+
+```dart
+// In the build with panes: [logs, commands, uploads] (or '*').
+@ConsolePane('uploads', order: 20)
+class UploadsPane extends DebugConsolePane {
+  UploadsPane(this.uploads);
+  final Uploads uploads;            // a ChangeNotifier
+
+  @override
+  String get title => 'Uploads';
+
+  @override
+  double get initialHeight => DebugConsoleView.lineHeight * 4;
+
+  @override
+  void Function() start() => uploads.watch();   // returns the stop
+
+  @override
+  Widget build(BuildContext context, DebugConsole console) {
+    final style = DebugStyle.of(context);
+    return ListenableBuilder(
+      listenable: uploads,
+      builder: (context, _) => ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          for (final upload in uploads.waiting)
+            Text(
+              '${upload.name}  ${upload.percent}%',
+              style: style.code.copyWith(color: style.foreground),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// In the build with segments: [fps, queue] (or '*').
+@ConsoleSegment('queue', order: 50)
+class QueueSegment extends SampledDebugConsoleSegment {
+  QueueSegment(this.uploads);
+  final Uploads uploads;
+
+  @override
+  DebugConsoleValue read() =>
+      DebugConsoleValue('${uploads.waiting.length}', label: 'queue');
+}
+
+// In the build with the commands pane.
+@ConsoleCommand('retry')
+class RetryCommand extends DebugConsoleCommand {
+  RetryCommand(this.uploads);
+  final Uploads uploads;
+
+  @override
+  String get usage => '';
+
+  @override
+  String get help => 'Sends the failed uploads again.';
+
+  @override
+  Future<List<String>> run(DebugConsoleCall call) async =>
+      ['${await uploads.retry()} sent'];
+}
+```
+
+A starter's pane is a bean definition in a module of its own, with the
+annotation in the definition and the console's switch as its parent:
+
+```dart
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild.named(
+    'spring.flutter.debug.console.panes',
+    'uploads',
+    whenMissing: BuildInclusion.never,
+    parents: [
+      AutoConfigurationBuild(
+        'spring.flutter.debug.console.enabled',
+        whenMissing: BuildInclusion.never,
+      ),
+    ],
+  ),
+)
+final BeanModule uploadsConsolePaneAutoConfiguration = BeanModule(
+  'uploadsConsolePaneAutoConfiguration',
+  [
+    BeanDefinition<UploadsPane>(
+      name: 'uploadsPane',
+      types: const [UploadsPane, DebugConsolePane],
+      annotations: const [ConsolePane('uploads', order: 20)],
+      create: (r) => UploadsPane(r.dependency<Uploads>()),
+    ),
+  ],
+);
+```
+
+A command that lists commands prints rows with
+`call.printUsage(word, usage, help)`: the rows line up in columns, as
+`help`'s do.
+
+### The log export
+
+The Logs tab selects text across its records, by mouse or touch (a double
+tap on a phone), and copies it with ⌘C (Ctrl+C) or the Copy of its context
+menu (a right click, or the menu over a selection). A long press on a
+record, or a click with ⇧, ⌘ or Ctrl, marks the whole record and starts
+the pick mode: a tap marks or unmarks another, the count of marked records
+shows over the list, Copy puts them on the clipboard as plain text in the
+console's pattern (`logging.pattern.console`) without its colours, and
+Clear selection ends the mode.
+
+With the export in the build (`spring.flutter.debug.logs.export.enabled`,
+not set: debug builds only, with the panel or the console), the tab
+has `Export .log` and `Export .jsonl`. They export the marked records, or
+every record the filter shows when none is marked, oldest first:
+
+| Format | Content |
+|---|---|
+| `.log` | Each record as the console prints it, in its pattern, no ANSI colours; the error and stack trace on the lines after when the pattern prints them |
+| `.jsonl` | One JSON object a line: `time` (ISO-8601, UTC), `level` (`INFO`, `WARN`), `logger`, `message`, `error`, `stack` (`null` when there is none) |
+
+The file is named `<app>-logs-<yyyyMMdd-HHmmss>.<ext>`, the app being
+`spring.application.name`, else `spring.flutter.app.title`, else `app`.
+It is made on the UI isolate in slices of at most 4 ms, each followed by a
+turn of the event loop, on every platform alike, the web included, so a
+full buffer never holds a frame. Not in an isolate: a record carries its
+error and stack trace, any object, which would have to become text before
+it could be sent, and that is most of the work.
+
+Where the file goes is the first `DebugFileExport` bean, by `@Order`, that
+is `available` (`debugFileExports`); one that throws hands the file to the
+next. What it returns shows in the tab for a few seconds. The built-in ones
+come last:
+
+| Exporter | Where | What the tab says |
+|---|---|---|
+| `BrowserDebugFileExport` | the web: a browser download (a `Blob` behind an `<a download>`) | `Downloaded <file>` |
+| `DownloadsDebugFileExport` | macOS, Windows, Linux: the Downloads folder (`path_provider`'s `getDownloadsDirectory`; a sandboxed macOS app writes into its container's unless it has the `com.apple.security.files.downloads.read-write` entitlement) | `Saved <path>` |
+| none | anywhere else, iOS and Android included: nothing leaves the app, the tab says what to add | `No file export here: add a DebugFileExport bean (a share sheet), or ClipboardDebugFileExport to copy the text to the clipboard` |
+
+`ClipboardDebugFileExport` (the file's text on the clipboard, `<file> copied
+to the clipboard`) is not a built-in one: other apps can read the
+clipboard, so it is there only when the app registers it as a bean.
+
+On a phone, a share sheet is a bean of the app, with `share_plus` in the
+app's own pubspec (the starter does not depend on it):
+
+```dart
+@Component()
+@Order(0)
+class ShareDebugFileExport implements DebugFileExport {
+  @override
+  bool get available => !kIsWeb && (Platform.isIOS || Platform.isAndroid);
+
+  @override
+  Future<String> export(String fileName, Uint8List bytes, String mimeType) async {
+    await SharePlus.instance.share(ShareParams(
+      files: [XFile.fromData(bytes, name: fileName, mimeType: mimeType)],
+      fileNameOverrides: [fileName],
+    ));
+    return 'Shared $fileName';
+  }
+}
+```
+
+A format of your own (a CSV) is a `DebugLogFormat` bean (`extension`,
+`mimeType`, `format(record)` ending with a line break): the tab has a
+button for it. Any button is a `DebugLogsActions` bean, whose `actions`
+get the records the tab would export. `debugLogExport.exportRecords(records,
+format)` exports from code (the console's `export` command calls it), and returns what
+to tell the user; `debugLogExport.format('jsonl')` finds a format by its
+extension.
+
+### The Isolates tab
+
+The task manager's tab (`spring.flutter.debug.isolates.enabled`, under
+Performance) scrolls as one: the memory, the size, then every isolate and
+engine thread with its load.
+
+**Memory.** A card per number, large in the debug theme's `number`
+colour, what it is measured against, a chart of the last three minutes
+(scaled so a change of a few megabytes shows) and one muted line of what
+the number is:
+
+| Card | Native (debug, profile) | Native release | Web |
+|---|---|---|---|
+| Process (RSS) | all the memory the system holds for the app | yes | — |
+| Dart heap | the UI isolate group's heap, used and capacity, from the VM service | "not available: no VM service" | — |
+| JS heap | — | — | used, total and limit (`performance.memory`); "this browser does not tell" outside Chromium. A `--wasm` build keeps its Dart objects here too |
+| Image cache | bytes of the maximum, images of the maximum, live and pending (`PaintingBinding.instance.imageCache`) | yes | yes |
+
+The VM service is connected to when the tab (or the `memory` segment)
+shows and let go of when neither does, over one WebSocket and one call
+(`getMemoryUsage`); no package is added for it. A `MemoryFigureSource`
+given to `DebugIsolates(memory: DebugMemoryWatch(sources: ...))` adds a
+card of the application's own.
+
+**Size.** On the web, what the page downloaded, from the browser's
+Resource Timing: the bytes transferred (`transferSize`, `0` from the
+cache) and decoded (`decodedBodySize`) in all, the totals by kind
+(`code`: scripts, WebAssembly, CSS, the page; `fonts`; `images`;
+`other`; the list is `pageResourceKinds`) and the ten heaviest. A download
+from another origin without `Timing-Allow-Origin` reports `0`: it is
+marked `hidden`, and their number is said above the lists. The browser
+keeps 250 entries unless raised; the block raises the buffer when it first
+shows, and says so when entries were dropped before (a debug build loads
+more scripts than that before the app starts). Read when the tab opens and
+on Refresh. Natively the block says: build size on the web only; use
+`flutter build <platform> --analyze-size`.
+
+**Cost.** Nothing is read while neither the tab nor the `memory` segment
+shows: no timer, no connection. With `debug.isolates.enabled: false`, or
+in a profile or a release build without it set, none of this is in the app.
+
+### The network tab
+
+With `spring.flutter.debug.network.enabled: true` (in a build with the
+panel), the debug panel has a Network group with one tab. It lists the
+requests of the app's `HttpTransport` beans and the connections of its
+`WebSocketTransport` beans, newest first: the Feign clients, the OAuth2
+client, Supabase, the WebSocket starter's clients and Phoenix channels,
+the themes and resources downloaded from a URL, and the app's own calls
+through those beans. No client is changed: a post-processor puts a
+recording decorator around each transport bean.
+
+```yaml
+spring:
+  flutter:
+    debug:
+      network:
+        enabled: true      # read by the build: no code without it
+        bodies: true       # off by default: sizes only
+        body-limit: 16KB
+        max-entries: 500
+```
+
+- **A row**: the method (`WS` for a WebSocket), colored as a method that
+  reads or one that writes (the debug theme's `method-read` and
+  `method-write`); the path and query; the status in the theme's `good`
+  (`1xx` to `3xx`, a WebSocket open or closed normally), `warning`
+  (`4xx`) or `bad` (`5xx`, no answer); the time (a WebSocket's uptime);
+  the bytes received. Under it, its bar in a waterfall: one time scale
+  for the rows shown, from the first request's start to the last one's
+  end, so overlapping requests overlap and a slow one stands out. The
+  wait for the first byte is muted, the rest in the accent, `warning` from
+  one second, `bad` when it failed, lighter while in flight (it grows to
+  now). A WebSocket does not stretch the scale (its bar runs past the
+  end); its row adds a line: the handshake time, the uptime, the last
+  heartbeat round trip and the reconnects. While anything is in flight
+  the tab refreshes once a second.
+- **Filters**: a chip per method (`GET`, `POST`, `PUT`, `PATCH`,
+  `DELETE`, `WS`), a chip per status class (`2xx`, `3xx`, `4xx`, `5xx`,
+  `Failed`, `Pending`), a line over the address. Pause stops recording
+  new requests (those in flight still complete), Clear empties the
+  list. The filter stays while the panel is closed.
+- **A request opened**: the whole address, the status, when it started,
+  the time to the first byte, the total, the bytes sent and received,
+  the error, a phase breakdown (each phase's length and its bar), the
+  request's and the response's headers, and with `bodies` the bodies,
+  JSON indented when it was kept whole. A WebSocket shows when it
+  started, the handshake time, when it connected, its uptime (to now, or
+  to the close), its reconnects (which connection to that address it is
+  since the start or the last Clear, a failed attempt counted), when it
+  closed, its close code and reason and which side closed it, the frames
+  and bytes each way, the channels joined, its heartbeat round trips (the
+  last 60 as bars, with the last, least, mean and most), and its last
+  `max-frames` frames: the direction, the time from the start and by the
+  clock, the size, a label (a Phoenix `join room:lobby`, `leave`,
+  `close`, `error`, `heartbeat`, `heartbeat reply 23.4 ms`) and with
+  `bodies` the payload.
+
+The timings of a request, and where they come from:
+
+| Timing | Streamed (`stream`) | Whole (`send`) |
+|---|---|---|
+| Total | measured | measured |
+| First byte (status and headers) | measured | the browser's, if available; else none |
+| Waiting, then body | measured | the browser's, if available |
+| Redirect, queued, DNS, TCP, TLS, waiting, download | the browser's, if available | the browser's, if available |
+
+`send` gives the response whole, and no transport says when its headers
+came. The recorder does not send it through `stream` to find out: their
+timeouts differ (`timeout` and `readTimeout` cover the whole exchange of
+`send`, the headers only of `stream`), and so do their errors, so the
+caller would get another result. Name lookup, connection and TLS times
+come from neither `dart:io` nor `fetch`. On the web the recorder reads the
+browser's Resource Timing entry of the request's address once the response
+is done (a `PerformanceObserver`, which sees every entry; the browser's
+own list stops at 250, which a debug build fills with its scripts before
+the app starts). "If available": a response from another origin shows its
+phases only when it sends `Timing-Allow-Origin` (else the detail says the
+browser hides them); two requests to one address at the same moment may
+get each other's. On mobile and desktop there is none.
+
+A WebSocket's heartbeat round trip is the time from a heartbeat sent to
+its reply, matched by its `ref`: Phoenix's `heartbeat` on the `phoenix`
+topic and its `phx_reply` (the WebSocket starter's channels, Supabase
+Realtime). A `WebSocketPingMatcher` in a `WebSocketTransportDecorator`
+bean finds another protocol's.
+
+What is masked before anything is kept: the headers by
+`HttpSecrets.isSensitiveHeader` (`Authorization`, `Proxy-Authorization`,
+`Cookie`, `Set-Cookie`, `DPoP`, `X-Amz-Security-Token`, a name with
+`session`, a name `SecretNames` finds secret such as `X-Api-Token` or
+`apikey`) and the request's own `sensitiveHeaders` (a Feign client's
+`sensitive-headers`); an address's password and its query parameters by
+`HttpSecrets.isSensitiveParameter` (`code`, `state`, `access_token`,
+`apikey`, `signature`...); in a body kept, the values of JSON keys that
+look secret and the secret parameters of a form. A `NetworkBodyMasker`
+bean masks a format of the app's own, before the built-in ones.
+
+A streamed response (`HttpTransport.stream`: server-sent events, a
+download) is never gathered: its body goes to the caller chunk by chunk
+as the caller reads it, paused and cancelled with it; each chunk is
+counted, and with `bodies` its first `body-limit` bytes copied. The
+request is done when the caller has read to the end, stopped reading or
+seen the body fail.
+
+The journal (`debugNetworkJournal`, a `ChangeNotifier`) tells its
+listeners at most once a frame, and only while something listens: with
+the panel closed, recording is a few fields per request.
+
+The [debug console](#the-debug-console) has a view of it too: the
+`network` pane and the `net` header segment, each in the build only when
+the console's `panes` (`segments`) names it or holds `*`, and with
+`spring.flutter.debug.network.enabled: true` (the recorder's switch, the
+panel not needed). Either makes the recorder and the journal when the
+panel's tab has not; with both, they share one. Hidden, neither listens
+nor draws.
+
+```yaml
+spring:
+  flutter:
+    debug:
+      network:
+        enabled: true
+      console:
+        enabled: true
+        segments: [fps, net]
+        panes: [network]
+        shown-panes: [network]
+```
+
+A compact view of its own
+reads its `entries`, its `summary` (in flight, the requests in flight,
+failed, bytes, open WebSockets, the last heartbeat round trip of the
+newest open one) and a `DebugNetworkFilter` of its own. A
+`WebSocketFrameLabeler` bean names the frames of a protocol of the app's
+own, a `NetworkTransportDecorator` bean records a transport of another
+kind; both are asked before the built-in ones.
+
+A transport bean is wrapped only when it is registered as the transport
+type alone (`BeanDefinition<HttpTransport>`, a `@Bean` method returning
+`HttpTransport`, the starters' own). One registered under its own class
+too (a `@Component` transport, a test's `MockHttpTransport` bean) is left
+as it is, so what asks for that class still gets it; the recorder says
+so at `debug` level.
+
+### The application graph
+
+The app as one graph, in the debug panel's **Graph** tab (under `App`) and
+the console's `graph` pane: each **layer** a bean that gives nodes and
+edges of one colour, each kind of node of a layer in a shape of its own.
+The starter gives the `widgets` layer ([below](#the-widgets-layer): the
+application's widgets as a tree, their rebuilds) and the `beans` layer
+([below](#the-beans-layer): the application's beans by module and what
+injects what), and the signals
+starter the `signals` layer (its `@Signal` fields, `@Computed` values and
+`@Effect` methods, a lane per bean, and the widgets that read them); the
+next layers draw on the same engine.
+
+```yaml
+spring:
+  flutter:
+    debug:
+      graph:
+        enabled: true          # the Graph tab; not set: debug builds only
+        layers: [beans, signals]  # the layers built in; not set: every one
+      console:
+        enabled: true
+        panes: [logs, graph]   # the graph pane (or signals: the signals layer alone)
+        shown-panes: [graph]
+```
+
+Above the graph, one toolbar row (it wraps in the panel; in the console
+the labels are short and the pointer over a button tells its full name):
+
+- the switches of the layers, each with a square of its colour (filled
+  while the layer shows), the scope (**On screen**, **All**) and **Fit**;
+- **Options ▾**, a menu of checkboxes for what is changed rarely: **Live
+  only**, `Close all cards`, and under each layer's title its own options
+  (the beans layer's `framework` and `skipped`, the widgets layer's
+  `framework widgets`, `DebugGraphLayer.options`) and single choices, a
+  radio row per value (`DebugGraphLayer.choices`, as a `Group by`);
+- **Groups ▾** (with lanes), the lanes to show, each with what touches
+  it: a search field (a part of the title, any case), `all` first, the
+  groups chosen last next, then the others, each a checkbox, built row by
+  row so hundreds scroll smoothly; the button tells the state
+  (`Groups: all`, `Groups: 3`);
+- **Legend**, which opens the legend over the graph: each layer in its
+  colour with an entry for each kind of node in its shape, its pulse
+  (what a flash means: `a signal ticked or an effect ran`, `a widget
+  built`, `an instance was created or destroyed`) and the widgets layer's
+  hot outline (`rebuilt 3+ in 5 s`; the branch above a hot widget is
+  outlined too). The entries stand in two columns where the legend has
+  room, an entry too long for half the width on a row of its own. An
+  entry is **selectable**: a tap highlights its nodes (a border and a
+  glow in the theme's accent) and dims the others, several may be
+  selected, a second tap unselects one, `Clear` all; the pointer over an
+  entry (a long press on a touch screen) tells how many of its nodes the
+  graph shows and what it is, in a line of two rows' fixed height under
+  the entries, so they never move while the pointer passes. The wheel
+  over the legend scrolls only the legend, never the graph under it.
+
+A tap on a node opens its **card** beside it, a tap on another node
+another card (several may be open): one short line closed, its title and
+the first values its layer tells (`Basket · coupon  FIVE · 2 s ago ·
+3 changes · 1 write`); a tap opens it into labelled rows, wrapped, with
+the chips that fold a repeat back, collapse a branch or a lane; `×`
+closes it, `Close all cards` (Options) closes them all. A card follows
+its node as the graph pans and zooms.
+
+**What a view keeps.** Its layers, scope, "Live only", the groups chosen,
+the lanes, branches and repeats folded or opened, where the graph is (pan
+and zoom), the legend's selection and the cards open are kept while the
+app runs on a bean (`DebugGraphMemory`), so a view opens again as it was
+left: the panel's Graph tab on `debugGraphSection.memory`, each console
+pane on its own (`debugGraphPane.memory`, `signalsPane.memory`), the
+Signals tab on `signalsGraphLayer.viewMemory`. A layer's options are on
+the layer's bean, shared by every view.
+
+- **Layout.** Left to right in columns by the longest path, the nodes
+  that only read last, ordered to cross few edges; a layer may ask for
+  another layout (`DebugGraphLayer.layout`; `TreeDebugGraphLayout` draws a
+  tree top to bottom). A group is a **lane**: a band across every column
+  with its title at the left; a tap on the title collapses the lane into
+  one node (`Basket (6)`) and back. **Repeats** (nodes of one lane with one
+  repeat key, as the widgets of one type) fold into one node,
+  `PlayerReviews ×10`, until it is tapped open; the card's chip folds
+  them back. Arrows on the edges; a tap on a node highlights everything
+  before and after it, the rest dimmed.
+- **Auto** (on by default): the graph fits its room whenever it or the
+  room changes: the first time a view opens, a pane's height (a divider,
+  the console's handle, a pane shown or hidden beside it), a window
+  resized, the "On screen" nodes changing as the app scrolls. A pan or a
+  zoom by the user turns Auto off; from then on nothing moves or zooms
+  the graph by itself (not a tap, a selection, a card, a fold, a filter,
+  layers switched, a refresh, a flash, the panel or the console opened
+  again: the view opens where it was left), until Auto is turned on
+  again. **Fit** (and ⌘⇧Z, the action `debug.graph.fit`) fits once. In
+  the panel's Graph tab and in a console pane (`graph`, `signals`) the
+  graph is as wide as its room, centred across and at the top; a small
+  graph keeps its size (`DebugGraphView.fit`: `DebugGraphFit.width`,
+  `DebugGraphFit.whole`). With Auto off, when the layout changes, the graph is shifted so that
+  the node tapped (else one with a card, else the one nearest the middle)
+  stays where it was on the screen. When a smaller room would leave the
+  graph wholly out of sight, its edge is pulled back into view, the zoom
+  kept; this changes only what is shown, not the place kept, so in a room
+  big enough again the graph is where it was. A wheel or a drag pans, ⌘
+  or Ctrl with the wheel and a pinch zoom; the wheel is the graph's
+  alone, nothing around it scrolls (the graph never sits in a scroll
+  view).
+- **Scope.** *On screen* (the default): the nodes of the widgets whose
+  box is in the app's window (not offstage, not transparent, not scrolled
+  out of a list; the debug panel over the app does not hide them), every
+  node they read up the graph, and the nodes that listen to the same
+  sources without feeding a widget (an effect). *All*: every node. **Live
+  only** (off by default) hides the nodes that did not change, run or
+  build in the last five seconds. **Groups** keeps the lanes chosen and
+  what touches them. "On screen" and "Live only" are read again three
+  times a second while the graph shows.
+- **Light.** A node that changes or runs flashes: a brighter border, a
+  glow and at most a quarter of the debug theme's `graph-flash` in its
+  fill, never a solid fill; a pulse runs along its edges to its readers,
+  fading in a second. A **hot** branch (a widget that rebuilt
+  `spring.flutter.debug.graph.hot.rebuilds` times or more within
+  `….hot.window`, 3 in 5 s by default, and the branch above it) is
+  outlined in `graph-hot`, the links between too. The pointer over a node
+  shows its tooltip, a hot one's first line telling why
+  (`PageBackdrop: 14 rebuilds in 5 s`, `above PageBackdrop: …` for the
+  branch above it).
+
+**Colours.** Each layer's nodes are in a key of the debug theme
+([below](#debug-themes)), so a node's layer reads at a glance:
+
+| Key | Default | What |
+|---|---|---|
+| `graph-beans` | `good`'s green | The beans layer's nodes |
+| `graph-widgets` | `logger`'s cyan blue | The widgets layer's nodes |
+| `graph-signals` | `command`'s orange | The signals layer's nodes |
+| `graph-hot` | terminal magenta | The outline of a hot branch; a hue no layer has, so a hot node reads apart from an orange signal and from a warning |
+| `graph-flash` | terminal yellow | What lights a node that changed or ran, and the pulse along its edges |
+| `graph-<layer id>` | a colour of the theme's palette, picked by the id | A layer of the app's (`graph-routes`); the palette keeps apart from the colours above |
+
+**What it costs.** The graph is laid out only when what it shows changes
+(a node, an edge, a filter, a fold), never for a value or a flash: 300
+signal nodes in about 4 ms and a tree of 2000 widgets in about 1 ms in a
+JIT benchmark (`spring_boot_starter_flutter/benchmark/debug_graph_benchmark_test.dart`).
+The still picture is recorded once per layout, and while something glows
+only the lit nodes and pulses are painted over it, at most once a frame.
+The layers collect only while a view shows (`start`); hidden, there is no
+timer, listener or probe. **What is not shown is not built:** the engine
+has no module of its own; each layer's module brings the Graph tab
+(`debugGraphSection`) and, with the console, the `graph` pane
+(`debugGraphPane`), so with no layer in the build none of the engine's
+code is in the app. A layer is in the build by its own switch
+(`AutoConfigurationBuild.named('spring.flutter.debug.graph.layers',
+'<id>')`), the tab inside `spring.flutter.debug.graph.enabled` and the
+panel's switch, the pane inside the console's.
+
+#### Lanes by route or by module
+
+`Group by` in the graph's `Options` picks what the lanes are: **Route**
+(the default) or **Module**. With *Route* the lanes are the navigator
+stack, top to bottom:
+
+1. **the current screen** (`/m/9102782543 · MatchScreen`, the page's name
+   and its first widget of the application): its widgets, the beans of its
+   route scope (`@Scope(NavigationScopes.route)`) and their signals;
+2. **the dialogs and sheets** over it, one lane each, while open;
+3. **the screens under it**, the nearest first, shown in *All* and hidden
+   in *On screen*;
+4. **App**: the singletons and their signals, and the widgets above the
+   navigator (a shell's, a layout's, a header).
+
+A widget is in the lane of its route, `App` above every navigator; a
+route that holds a navigator of its own (a `@RouteShell`) is no lane, its
+widgets are `App`'s and its navigator's screens take its place. A bean of
+a route scope is in the lane of the route it lives in (the topmost, when
+it lives in several), a singleton in `App`, with its edges to the widgets
+of the screens that inject it; a bean of a route scope that lives in no
+route has no lane. Signals go with their bean, a widget that read them
+with its route. The group filter lists the lanes by role,
+`Current · Dialog · Below (n) · App`. On a navigation the lanes are read
+again: the beans of the screen that closed flash in its lane as they are
+destroyed, then leave it; those of the new screen flash as they are
+created. With *Module* the lanes are the layers' own: the beans by module,
+the signals by bean, the widgets one tree.
+
+The stack is read from Flutter's own tree, so any navigator counts (the
+navigation starter's, a `MaterialApp`'s, a nested one): each entry of a
+navigator's overlay is a route's, the routes under an opaque one are
+offstage; the top page shown is the current screen (without pages, the
+lowest route shown), the routes over it dialogs, those under it below. A
+route is named through `ModalRoute.settingsOf`, a dependency that never
+rebuilds the widget. Which route a bean lives in comes from the
+`DebugGraphRouteBeans` beans: the navigation starter's
+`routeScopesGraphBeans` is one, a bean of its debug modules (no code
+without the graph), answering from the route scopes at each call.
+
+For a layer of your own, the engine's part is general: a node whose group
+has an order (`DebugGraphNode.groupOrder`) is in a lane of the graph's
+own, shared by every layer that names the group and placed by that order
+before the layers' lanes, with a role (`groupRole`:
+`DebugGraphGroupRole.current`, `dialog`, `below`, `app`) that the group
+filter reads and that hides `below` in *On screen*; `repeatScope` narrows
+its repeats inside the lane (the widgets of one type under one parent).
+`debugGraphRoutes` (`DebugGraphRoutes`) holds the choice and gives the
+lanes: `stack.routes`, `laneOf(element)`, `beanLanes()`;
+`TreeDebugGraphLayout(banded: true)` draws a tree in each lane.
+
+**What it costs.** Only while a view shows a layer that groups by route:
+the stack is read in one walk of the tree after the frames that may have
+changed it, at most every 250 ms, and the routes' beans read from their
+scopes at each collect. With *Module*, or with no view showing, nothing
+is read or kept; the route scopes keep nothing for it.
+
+#### A layer of your own
+
+A layer is a `DebugGraphLayer` bean:
+
+| Member | Default | What |
+|---|---|---|
+| `String get id` | (required) | Its name, what its nodes' ids start with |
+| `String get title` | (required) | What its switch and the legend say |
+| `int get order` | `0` | Its place among the layers (switches, lanes) |
+| `Color colorOf(DebugStyle)` | the theme's `graph-<id>`, else a palette colour | The colour of its nodes, from the debug theme (`style.graphLayer(id)`; a layer with a colour of its own passes it, `style.graphLayer(id, orElse: style.good)` for the beans layer, `style.logger` for the widgets layer, `style.command` for the signals layer) |
+| `List<DebugGraphKind> get kinds` | (required) | Its kinds of node: `DebugGraphKind(id, label, shape, description:)`, `DebugGraphShape.rounded`, `pill`, `rectangle`, `octagon`, `hexagon`, `parallelogram`, `tagged`; the `description` is what the pointer over its legend entry tells |
+| `DebugGraphLayout? get layout` | `null` (left to right) | The layout while it is the first layer shown |
+| `List<DebugGraphOption> get options` | none | Its own switches, checkboxes under its title in the graph's `Options ▾`: `DebugGraphOption(label:, value:, onChanged:)`; a tap calls `onChanged` and the graph collects again |
+| `List<DebugGraphChoice> get choices` | none | Its own single choices in the graph's `Options ▾`, a heading and a radio row per value: `DebugGraphChoice(label:, choices:, value:, onChanged:)`; a tap on another value calls `onChanged` with it and the graph collects again (the built-in layers give `Group by: Route \| Module` once, from `debugGraphRoutes.choicesOf`) |
+| `String? get flashMeaning` | `null` | What a flash of its nodes means, the label of its legend entry after a pulse (`a signal ticked or an effect ran`); `null`: no entry |
+| `String? get heatMeaning` | `null` | What its hot outline means, the label of its legend entry after an outline (`rebuilt 3+ in 5 s`); `null`: no entry |
+| `String? hotNoteOf(node)` | `null` | Why a hot node is hot, the first line of its tooltip in `graph-hot` (`PageBackdrop: 14 rebuilds in 5 s`) |
+| `void Function() start()` | does nothing | Runs while a view shows; what it returns runs when the last hides |
+| `Listenable get changes` | (required) | Notifies when its nodes or edges change (not their values), while started |
+| `DebugGraphPart collect(DebugGraphScope)` | (required) | Its nodes and edges: `DebugGraphNode` (`id`, `layer`, `kind`, `label`, `group`, `groupTitle`, `groupOrder` and `groupRole` for a lane of the graph's own ([above](#lanes-by-route-or-by-module)), `details`, `repeatKey`, `repeatScope`, `widget` for "On screen", `source`, `sink`, `dimmed` for a grey node of what is not there) and `DebugGraphEdge` (`from`, `to`, `kind`, `dashed`) |
+| `List<DebugGraphDetail> detailsOf(node)` | the node's `details` | What its tooltip and card tell, read when they show (the card's closed line: the first three values) |
+| `double heatOf(node)` | `0` | How hot a node is, 0 to 1: outlined in `graph-hot` |
+| `double glowOf(node)` | `0` | How lit a node is now, 1 to 0 over a second |
+| `bool isLive(node, window)` | `true` | Whether it changed within `window`, for "Live only" |
+| `void Function() onActivity(wake)` | does nothing | Calls `wake` when something lights up, so the view draws frames |
+
+An edge may name another layer's node by its id: it is drawn when both
+ends show, so the layer that knows a tie across layers gives it. The node
+of a widget has the id `DebugGraphWidgets.idOf(element)`
+(`widget:<identity of the element>`) in every layer that ties to it, and
+`DebugGraphWidgets.springWidgets()` lists the Spring widgets in the tree
+with their `beansType`, walking it only when called. The view's
+steps are chains too: `DebugGraphAssembler(filters: [...], folds: [...])`
+takes `DebugGraphFilter`s (the built-in scope, group and live filters) and
+`DebugGraphFold`s (a collapsed lane, repeats).
+
+```dart
+// The routes of the app as a layer: each page a node, an edge from a page
+// to the pages it opens.
+class RoutesGraphLayer extends DebugGraphLayer {
+  RoutesGraphLayer(this.routes);
+  final AppRoutes routes;                       // a ChangeNotifier
+
+  @override
+  String get id => 'routes';
+
+  @override
+  String get title => 'Routes';
+
+  // Its colour: the debug theme's `graph-routes`, else a palette colour.
+
+  @override
+  List<DebugGraphKind> get kinds => const [
+    DebugGraphKind(
+      'page',
+      'page',
+      DebugGraphShape.rounded,
+      description: 'A page of the app',
+    ),
+    DebugGraphKind('dialog', 'dialog', DebugGraphShape.pill),
+  ];
+
+  @override
+  Listenable get changes => routes;
+
+  @override
+  DebugGraphPart collect(DebugGraphScope scope) => DebugGraphPart(
+    [
+      for (final route in routes.all)
+        DebugGraphNode(
+          id: 'routes:${route.path}',
+          layer: id,
+          kind: route.dialog ? 'dialog' : 'page',
+          label: route.path,
+          group: route.section,
+        ),
+    ],
+    [
+      for (final route in routes.all)
+        for (final target in route.opens)
+          DebugGraphEdge('routes:${route.path}', 'routes:$target'),
+    ],
+  );
+}
+```
+
+Registered as a plain bean it is in every build that has its class. To
+leave it out as the built-in layers are, register it in a module of its
+own with the Graph tab's and the pane's definitions:
+
+```dart
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild.named(
+    'spring.flutter.debug.graph.layers',
+    'routes',
+    whenMissing: BuildInclusion.always,
+    parents: [
+      AutoConfigurationBuild('spring.flutter.debug.graph.enabled'),
+      AutoConfigurationBuild('spring.flutter.debug.enabled'),
+    ],
+  ),
+)
+final BeanModule routesGraphAutoConfiguration = BeanModule(
+  'routesGraphAutoConfiguration',
+  [
+    BeanDefinition<RoutesGraphLayer>(
+      name: 'routesGraphLayer',
+      types: const [RoutesGraphLayer, DebugGraphLayer],
+      create: (r) => RoutesGraphLayer(r.dependency<AppRoutes>()),
+    ),
+    ...debugGraphSectionDefinitions,   // the Graph tab, made once
+  ],
+);
+```
+
+#### The widgets layer
+
+The `widgets` layer (`widgetsGraphLayer`, from the starter) draws the
+application's widgets as a tree from top to bottom
+(`TreeDebugGraphLayout`).
+
+- **Only the application's** by default: a widget is the application's
+  when what its `build` makes is created in the application's files
+  (Flutter's creation locations, there in a debug run; the files are those
+  of the package of the widget given to `runApp`, not its dependencies'),
+  and Flutter's builders (`Builder`, `LayoutBuilder`, the `…Builder`s,
+  `KeyedSubtree`, `Visibility`, the signals starter's `Watch`) never are.
+  Flutter's wrappers (`Padding`, `Align`, `Container`, `Text`) fold into
+  the application's widget above them. A Spring widget always counts.
+  Without creation locations (a build without the tracking) only the
+  Spring widgets do. `framework widgets` (Options) shows every element.
+- **Kinds**: a route's first widget of the application's is a screen (cut
+  corners), a Spring widget (its beans injected) a pill, a stateful widget
+  rounded, a stateless one a rectangle, an element of Flutter's (with the
+  option) slanted.
+- **Folds**: widgets of one type under one parent fold into one node,
+  `ReviewTile ×10`, until it is tapped; the card's `collapse branch`
+  folds a widget and everything under it into one node (`SiteHeader ▸ 12`,
+  `DebugGraphBranchFold`), a tap opens it.
+- **Live**: a widget that builds flashes. In a debug build every rebuild
+  is heard (Flutter's `debugOnRebuildDirtyWidget`, chained after
+  DevTools'), counted once a frame for the node it is folded into, with
+  the time the widget's own `build` took; elsewhere what changed between
+  two walks of the tree. The branches built most often (three times or
+  more in five seconds by default, `spring.flutter.debug.graph.hot.*`) are
+  outlined in the theme's `graph-hot`, from the hot widget up to the root;
+  the pointer over one tells why (`PageBackdrop: 14 rebuilds in 5 s`).
+- **On screen** (the default): the widgets whose box is in the window and
+  the branch above them, worked out in one pass over the render tree; not
+  a widget scrolled out of a list, offstage, or under a `TickerMode` that
+  is off (a route under an opaque one). A widget under a `PaintedElsewhere`
+  key, as a 3D scene's widgets are (built under an `Offstage`, drawn on the
+  engine's canvas), counts by the place of the marked widget. **All**: the
+  whole mounted tree, lower routes in the navigator's stack included.
+- **Detail of a widget**: type, key, size and place on the screen, its
+  `State` class, its route (`route 2 of 2 (top)`), the beans of a Spring
+  widget by name, its rebuilds in five seconds and its build time (last,
+  mean), where it was created; and, merged in, what other layers know of it
+  (the signals it read, from the signals layer). A tap also outlines the
+  widget over the app (an entry of the app's overlay, under the debug
+  panel, so it shows with the console's pane), the outline following it
+  as it moves (read again after each frame while it shows, gone when the
+  widget leaves the tree), and selects it in Flutter's inspector (the
+  Flutter tab shows it).
+- **Properties of a widget**: after those lines the card has a
+  `properties` block, the widget's values, and a `state properties`
+  block, its `State`'s, as name and value rows. They come from sources
+  asked in turn (`WidgetProperties`, `WidgetsGraphLayer.properties`; the
+  application's own `WidgetProperties` beans first): Flutter's
+  diagnostics (`toDiagnosticsNode().getProperties()`, what
+  `debugFillProperties` adds, those not at their default value; in a
+  debug build only), then the public fields the generator reads
+  (`DebugWidgetFields`, bean `debugWidgetFields`). For each public,
+  non-generic widget class of the application's scan that does not
+  override `debugFillProperties`, and its public `State` class, the
+  generator writes into the debug part (`<library>.spring.debug.dart`) a
+  reader of each public instance field the class and its superclasses of
+  the application's package declare. **Private fields are not shown**:
+  generated code cannot read them from another library (`_count`, a
+  private `_PageState`); make the field public, or override
+  `debugFillProperties`. Getters are not read, as a getter may compute,
+  allocate or change something, nor a `late` field with an initializer,
+  which reading would run; a `late` field not set yet says `not set`. A
+  value is short: a string quoted and cut at 60 characters, a list, set
+  or map by its length (`List(6)`, `Map(2)`), another iterable as
+  `Iterable` (counting it would run it), a function as `Function`, an
+  object by its type (`PassportPlayer`, never `Instance of …`); a row
+  marked `▸` opens on a tap into the whole value (a list's first 20
+  items, the whole string, an object's `toString()`, called only then).
+  A name that looks secret (`SecretNames.looksSecret`: `password`,
+  `apiKey`, `token`) shows `******`. The values are read when a card
+  opens and again at most once per walk of the tree. The readers are a
+  lazy bean the application registers only in debug builds, and
+  only when the build has the widgets layer (its module's switches,
+  above): a profile or a release build, or one without the layer, has
+  none of them.
+
+**Widget node ids.** A widget's node is `DebugGraphWidgets.idOf(element)`
+(`widget:<identity of its element>`, stable while the element is mounted),
+the one id every layer uses for a widget: the beans layer draws its edges
+to it, the signals layer gives each widget that read state
+`DebugGraphNode.sameAs` that id, and with the widgets layer shown the
+reader is merged into the widget's node (its edges moved to it, its
+details told with it, no second node); without it the reader shows as
+its own. `widgetsGraphLayer.nodeIdOf(holder)` gives the node of any
+element, `State` or widget the layer walked past: its own, or the node it
+is folded into.
+
+**What it costs.** It walks the tree when a view starts showing it, then
+at most every 250 ms after a frame (an idle app is not walked), and hears
+rebuilds, only while a view shows it; it skips the debug tools' own
+widgets (`DebugToolSubtree`). Over a tree of 2000 elements a walk takes
+about 1 ms and "On screen" 0.5 ms (JIT benchmark). Hidden, it has no timer,
+no hook and keeps nothing. In the build when
+`spring.flutter.debug.graph.layers` names `widgets`, holds `*` or is not
+set, inside `spring.flutter.debug.graph.enabled` and the panel's switch
+(the pane: inside the console's).
+
+#### The beans layer
+
+The `beans` layer (`beansGraphLayer`, from the starter) draws the beans
+the application defined: its `@Service`, `@Repository`, `@Component`,
+`@Configuration` classes, `@Bean` methods and controllers. Each module is
+a lane: a folder of the application under `lib/src` (`shop/basket`), an
+auto-configuration for the framework's beans. Each role has its shape:
+`@Service` rounded, `@Repository` a rectangle, `@Component` a pill,
+`@Configuration` cut corners, `@Bean` a hexagon, `@Controller` a
+parallelogram, the framework's infrastructure tagged.
+
+- **Edges** run from a bean to each bean that injects it (so what a
+  widget needs is to its left): solid for a constructor or field, dashed
+  for a `@Lazy` point, an `ObjectProvider` and a `@DependsOn`. They come
+  from the injection points the generator lists and from what the
+  container saw a bean take (a hand-written definition's).
+- **Options** (`Options ▾`): `framework` adds the framework's and the auto-configurations'
+  beans; `skipped` (in *All*) adds, grey, the beans a condition left out
+  (a profile not active, a property not set, a bean already there).
+- **On screen**: the beans the Spring widgets on the screen inject
+  (`SpringStatelessWidget`, `SpringStatefulWidget`) and everything those
+  depend on. Each such bean has an edge to the widget's node of the
+  widgets layer, drawn when that layer shows.
+- **Detail of a bean**: type, role, module, scope, whether it is created
+  (a lazy one waiting for its first use, the live instances of a route's
+  bean), the advisors around it and the annotated members of its proxy
+  (`@Transactional`, `@Cacheable`, `@PreAuthorize`, `@SignalBuffer`,
+  `@Observed`), the conditions it was registered under, its creation
+  order and time (with the start's trace or the timeline), what it
+  depends on and what uses it, its `@EventListener` methods. A bean left
+  out tells the condition that did not match.
+- **Light**: a bean flashes when an instance of it is created or
+  destroyed (a route's beans open and close with their screen, a lazy
+  bean on first use). Method calls do not flash.
+
+It follows the beans only while a view shows it: then a post-processor
+(`DebugBeanLifecycleRecorder`) hears of each bean created and destroyed;
+hidden, the container has none. Its data is the `debugBeanGraph` bean
+(`DebugBeanGraph`: `snapshot` with `DebugBean`, `DebugBeanModule`,
+`DebugBeanEdge`, `DebugSkippedBean`, `closureOf`, `widgetOf`; `start`,
+`stop`, `events`). Node ids: `beans:<bean name>`, `beans:skipped:<source>`.
+
+### Debug themes
+
+Every color and font of the debug tools (the panel, the console, the
+frame meter over the app) comes from a debug theme. The built-in one,
+`default`, is the look the tools always had: the app theme's colors and
+its `code` font, the logs and the console's states in a terminal's palette
+for a dark background, or for a light one by the background's luminance
+(so the default stays readable on a light app theme), and the commands
+orange. The frame meter keeps the app theme's `frame-meter` look but for
+what a theme sets.
+
+A theme of your own is declared under `spring.flutter.debug.themes.<name>`
+and selected by `spring.flutter.debug.theme`; what it does not set is the
+built-in theme's, worked out on its own background (a light one gets the
+light palette). The debug panel's Theme tab switches them live, in a row
+under the app's themes; the choice lasts while the app runs.
+
+```yaml
+spring:
+  flutter:
+    debug:
+      theme: night
+      themes:
+        night:
+          background: '#101820'
+          text: '#F2AA4C'
+          dim: '#7A6A50'
+          command: '#FF8C42'
+          level-info: '#4EC9B0'
+          font-family: JetBrains Mono
+          font-size: 12
+```
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.flutter.debug.theme` | name | `default` | The debug theme the tools start with: `default`, one of `themes`, or a `DebugTheme` bean's name. A name no theme has fails the start, naming the property |
+| `spring.flutter.debug.themes.<name>.background` | color | the app theme's surface | The fill of the panel, the console and the frame meter (85% opaque there; the console's own `opacity` applies to it) |
+| `….text` | color | the app theme's on-surface | The text |
+| `….dim` | color | the app theme's on-surface-variant | Labels, hints, the echo of a command typed |
+| `….accent` | color | the app theme's primary | What is selected or on: a chip, the input's `>` |
+| `….number` | color | `accent` | The numbers of the console's header, the frame meter's rate |
+| `….good`, `….warning`, `….bad` | color | terminal green, amber, red | The states of the console's header, the loads of the Isolates tab, the frame meter's bars |
+| `….error` | color | terminal red | What a command reports as gone wrong |
+| `….line` | color | the app theme's outline-variant | Lines between rows, borders, the divider |
+| `….level-error`, `….level-warning`, `….level-info`, `….level-debug` | color | terminal red, yellow, green, green | A record's level (`level-debug` for debug and trace) |
+| `….time` | color | `text`, faint | A record's time and the `:` after its logger |
+| `….logger` | color | terminal cyan | A record's logger |
+| `….command` | color | orange | A command's word, in the commands pane |
+| `….argument` | color | `command`, faint | How a command's arguments are written, in `help` |
+| `….graph-flash` | color | terminal yellow | What lights a node of the [application graph](#the-application-graph) that just changed or ran: its border, its glow, at most a quarter of its fill, the pulse along its edges |
+| `….graph-beans`, `….graph-widgets`, `….graph-signals` (the `graph-<layer id>` of the built-in layers) | color | `good`'s green, `logger`'s cyan blue, `command`'s orange | The nodes of the graph's beans, widgets and signals layers, and their squares in the toolbar and the legend |
+| `….graph-hot` | color | terminal magenta | The outline of a hot branch of the graph (a widget that rebuilds often and the branch above it); a hue no layer has |
+| `….graph-<layer id>` | color | a palette colour, picked by the id | The nodes of a graph layer of the app's (`graph-routes`); any key of this form is a theme's |
+| `….method-read`, `….method-write` | color | terminal cyan, `command`'s orange | The methods in the Network tab: those that read (`GET`, `HEAD`, `OPTIONS`, `TRACE`) and those that write (`POST`, `PUT`, `PATCH`, `DELETE`); its statuses are `good`, `warning` and `bad` |
+| `….font-family` | family | the app theme's | The font of every debug tool's text |
+| `….font-size` | number | `11` | The size of the logs and the console's text |
+
+A color is `#RRGGBB`, `#AARRGGBB` or a `Colors` name. A key a theme does
+not have, or a value that is not a color, fails the start with the
+property's name.
+
+A theme built in code is a `DebugTheme` bean: a `name` and a
+`styleOf(context)` returning a `DebugStyle`, usually the built-in look with
+some values of its own (`DebugStyle.fromApp(context, background: ...)`).
+A theme declared in the configuration replaces a bean of its name; either
+replaces `default`.
+
+```dart
+@Component()
+class SolarizedDebugTheme implements DebugTheme {
+  @override
+  String get name => 'solarized';
+
+  @override
+  DebugStyle styleOf(BuildContext context) => DebugStyle.fromApp(
+    context,
+    background: const Color(0xFF002B36),
+    foreground: const Color(0xFF93A1A1),
+    command: const Color(0xFFCB4B16),
+  );
+}
+```
+
+Debug themes are part of the debug build: their beans (`debugThemes`,
+`defaultDebugTheme`, `debugThemeCustomizer`) come with the panel's module
+and with the console's, the first making them, so a build with neither
+has none of their code, and does not read these keys. `DebugStyle.of`
+then gives the built-in look.
 
 ### Keyboard shortcuts
 
@@ -4388,7 +5566,7 @@ spring.flutter.scene.app.camera.fov=45
 | `spring.flutter.scene.app.camera.position` | three numbers | `0, 0, -5` | Where the camera of the application's scene is |
 | `spring.flutter.scene.app.camera.target` | three numbers | `0, 0, 0` | What it looks at |
 | `spring.flutter.scene.app.camera.fov` | degrees | `45` | Its vertical field of view |
-| `spring.flutter.scene.debug.enabled` | `true` / `false` | not set: debug and profile builds | The "Scenes" tab of [the debug panel](#the-debug-panel): `true` in every build, `false` in none (no code) |
+| `spring.flutter.scene.debug.enabled` | `true` / `false` | not set: debug builds only | The "Scenes" tab of [the debug panel](#the-debug-panel): `true` in every build, `false` in none (no code) |
 
 A model without a `source` stops the app at startup with the key's name.
 A value for one platform goes into its profile file: `render: still` in
@@ -4398,12 +5576,29 @@ A value for one platform goes into its profile file: `render: still` in
 
 `spring_boot_starter_flutter_signals` follows state in beans (`@Signal`,
 `@Computed`, `@Effect`): see the
-[starter's README](../spring_boot_starter_flutter_signals/README.md). It
-has one property.
+[starter's README](../spring_boot_starter_flutter_signals/README.md). Its
+properties (`SignalsProperties`):
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `spring.flutter.signals.debug.enabled` | `true` / `false` | not set: debug and profile builds | The "State" tab of [the debug panel](#the-debug-panel), with every bean and member by name: `true` in every build, `false` in none (no code) |
+| `spring.flutter.signals.debug.enabled` | `true` / `false` | not set: debug builds only | The "Signals" tab of [the debug panel](#the-debug-panel), with every bean and member by name (sub-tabs Fields, Graph with the signals layer of [the application graph](#the-application-graph) when the build has it, List): `true` in every build, `false` in none (no code) |
+| `spring.flutter.signals.debug.reads` | `true` / `false` | `true` | Whether the reads are counted while a debug tool shows (they are the most frequent event) |
+| `spring.flutter.signals.debug.read-window` | duration | `5s` | The window of the read counts the Signals tab shows (`reads/5s`) |
+| `spring.flutter.signals.debug.log.enabled` | `true` / `false` | `false` | The DEBUG log of signal activity, under the logger `spring.flutter.signals.activity`; only in a build with the Signals tab |
+| `spring.flutter.signals.debug.log.reads` | `true` / `false` | `false` | That log names every read too (very many lines) |
+| `spring.flutter.signals.queue.flush` | `immediate` / `microtask` / `frame` / `interval` | not set: `microtask` | The built-in schedule on which the default queue tells the readers of what was written. A `SignalFlushSchedule` bean with the queue's `@Qualifier` is the other way; both for one queue fail the start |
+| `spring.flutter.signals.queue.interval` | duration | `100ms` | How often, for `flush: interval` |
+| `spring.flutter.signals.queue.capacity` | int | `1024` | How many fields may wait in the queue |
+| `spring.flutter.signals.queue.on-overflow` | `flush` / `drop-oldest` / `drop-newest` | `flush` | What one more field does when the queue holds `capacity`: `flush` tells what it holds and takes the write (while it is telling already, it refuses the write as `drop-newest`); `drop-oldest` drops the oldest write it holds, `drop-newest` refuses this one, each with a warning |
+| `spring.flutter.signals.queues.<name>.*` | the keys of `queue` | — | More queues, by name, for `@Signal(queue: '<name>')`: `flush`, `interval`, `capacity`, `on-overflow` |
+| `spring.flutter.signals.buffer.async-methods` | `true` / `false` | `false` | Whether every async method of a bean on signals runs in a `SignalBuffer` (`@SignalBuffer(false)` takes one out). Read by the build too |
+| `spring.flutter.signals.buffer.on-error` | `discard` / `publish` | `discard` | What happens to the writes of a buffered method that failed: dropped, or told as if it had succeeded |
+| `spring.flutter.signals.on-scope-end` | `discard` / `flush` / `defer` | `discard` | What happens to the writes not told yet when a bean's scope ends: dropped with a warning naming the bean and the fields, told at once, or kept until their queue tells them (at most `defer-timeout`) |
+| `spring.flutter.signals.defer-timeout` | duration | `5s` | How long `on-scope-end: defer` waits |
+| `spring.flutter.signals.eager` | `true` / `false` | `false` | Whether every signal is made with its bean rather than on first use |
+| `spring.flutter.signals.caller-bound` | `true` / `false` | `true` | Whether a value computed through method security or from the current user is kept for that user only. `false` lets one user's value reach another |
+| `spring.flutter.signals.allow-advice` | `true` / `false` | `false` | Whether a bean with followed state may carry advice; read by the build too: without it, such advice is a build error |
+| `spring.flutter.signals.transaction.mode` | `buffered` / `direct` | `buffered` | How a `@Signal` write in a transaction is told: held until the commit and dropped by a rollback, or written at once whatever the transaction does later |
 
 Every assignment and every run of an effect is logged at `debug` by the
 logger `spring.flutter.signals` (`logging.level.spring.flutter.signals`).
@@ -5384,7 +6579,7 @@ spring.data.jdbc.slow-query-threshold=500ms
 | `spring.sql.migration.connect-retries`, `connect-retries-interval`, `lock-timeout` | `0`, `10s`, `1m` | wait for the database, and for another instance migrating it |
 | `spring.data.jdbc.schema` | `validate` | `none`, `validate` (tables and columns of the entities must exist and fit), `create`, `create-drop` (from the entities; not with migrations or scripts) |
 | `spring.jdbc.template.query-timeout` | none | bounds each statement of the `JdbcTemplate` beans |
-| `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and masked values) at info: the value of a name that looks secret (a column or parameter name that contains `password`, `token`, `secret`, `credential`, `apikey` or `privatekey`, or has the word `key`: `sslpassword`, `apiToken`, `clientSecret`; not `keyword`) is `******`, and so is a value bound without a name (a plain list to a `JdbcTemplate`); the values also show at trace, with the same masks. The generator reads `show-sql` too, without a profile: `true` keeps the three switches in every build, `false` in none, not set in debug and profile builds only (where a profile's `show-sql: true` turns them on; the build warns that a release build has no code for it) |
+| `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and masked values) at info: the value of a name that looks secret (a column or parameter name that contains `password`, `token`, `secret`, `credential`, `apikey` or `privatekey`, or has the word `key`: `sslpassword`, `apiToken`, `clientSecret`; not `keyword`) is `******`, and so is a value bound without a name (a plain list to a `JdbcTemplate`); the values also show at trace, with the same masks. The generator reads `show-sql` too, without a profile: `true` keeps the three switches in every build, `false` in none, not set in debug builds only (where a profile's `show-sql: true` turns them on; the build warns that a profile-mode or a release build has no code for it) |
 | `spring.data.jdbc.slow-query-threshold` | none | a slower statement is logged at warn, in every build |
 | `spring.data.jdbc.rate-limit.table` | `rate_limit` | the table of the rate limiter's SQL store (`spring.web.rate-limit.store: jdbc`, the default with a primary data source): a name, or `schema.name` |
 | `spring.data.jdbc.rate-limit.create-table` | only when `spring.data.jdbc.schema` is `create` or `create-drop` | whether the store creates that table when it is not there; else it comes from a migration (the SQL is in the package: `sql/rate_limit/postgresql.sql`, `sql/rate_limit/sqlite.sql`) |

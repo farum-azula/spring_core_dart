@@ -263,7 +263,7 @@ final class SceneDebugProperties {
   const SceneDebugProperties({this.enabled});
 
   /// Whether the app has the tab: `true` in every build, `false` in none
-  /// (the build leaves its code out), not set in debug and profile builds
+  /// (the build leaves its code out), not set in debug builds
   /// only (a release build compiles it away).
   final bool? enabled;
 }

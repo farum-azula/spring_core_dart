@@ -8,7 +8,7 @@ import 'package:spring_boot_starter_flutter/src/debug/debug_style.dart';
 /// device's "reduce motion" turns it off, without a new build. Without
 /// the switch in the build (`spring.flutter.debug.motion.enabled`) it
 /// says so.
-final class DebugMotionSection implements DebugPanelSection, Ordered {
+final class DebugMotionSection implements GroupedDebugPanelSection, Ordered {
   /// The section of [motion]'s switch, `null` when the build left it out.
   const DebugMotionSection(this.motion);
 
@@ -20,6 +20,9 @@ final class DebugMotionSection implements DebugPanelSection, Ordered {
 
   @override
   int get order => 15;
+
+  @override
+  String get group => 'Performance';
 
   @override
   Widget build(BuildContext context) {

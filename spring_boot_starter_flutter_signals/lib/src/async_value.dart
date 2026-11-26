@@ -120,6 +120,25 @@ final class AsyncValue<T> {
     stackTrace: stackTrace,
   );
 
+  /// This state with its value made by [convert]. A value [convert]
+  /// refuses is not kept: the state is then that failure.
+  AsyncValue<R> mapValue<R>(R Function(T value) convert) {
+    if (!hasValue) {
+      return cast<R>();
+    }
+    try {
+      return AsyncValue<R>._(
+        isLoading: isLoading,
+        hasValue: true,
+        value: convert(_value as T),
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } on Object catch (failure, trace) {
+      return AsyncValue<R>.error(failure, trace);
+    }
+  }
+
   /// This state with a load running; the value is kept when [keep].
   AsyncValue<T> toLoading({required bool keep}) => AsyncValue<T>._(
     isLoading: true,

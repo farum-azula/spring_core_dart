@@ -73,7 +73,7 @@ final TypeChecker _propertySource = _spring('PropertySource');
 final TypeChecker _configurable = _spring('Configurable');
 final TypeChecker _eventListener = _spring('EventListener');
 final TypeChecker _beanMethodAnnotation = _spring('BeanMethodAnnotation');
-final TypeChecker _proxyTargetClass = _spring('ProxyTargetClass');
+final TypeChecker _accessHook = _spring('AccessHook');
 
 // `@ConfigurationProperties` from spring_core_dart (matched by URL, so the
 // generator does not depend on that package): constructor binding.
@@ -665,7 +665,8 @@ class BeanScanner {
       }
     }
     _rejectUnsupportedTargets(library);
-    _rejectTargetClassOutsideBeans(library);
+    _rejectAccessHooksOutsideBeans(library);
+    _rejectUnwrittenAccessHooks(library);
   }
 
   /// Adds the aspects and advisor beans of [library], a library of another
@@ -772,10 +773,10 @@ class BeanScanner {
   ///
   /// It first checks what needs the whole application: the classes that
   /// declare a member for advice that follows the bean's own calls and
-  /// are no bean (see [_checkTargetClassDeclarers]); and logs the
+  /// are no bean (see [_checkAccessHookDeclarers]); and logs the
   /// introspection's warnings.
   void throwErrors() {
-    _checkTargetClassDeclarers();
+    _checkAccessHookDeclarers();
     _checkPlacementOwners();
     introspection.warnings.forEach(log.warning);
     switch (errors) {
@@ -2213,6 +2214,7 @@ class BeanScanner {
     required bool implementSelf,
     ProxyMode? mode,
     ConstructorElement? constructor,
+    bool lazy = false,
   }) {
     final model = _proxyModelOf(
       targetType,
@@ -2220,6 +2222,7 @@ class BeanScanner {
       implementSelf: implementSelf,
       mode: mode,
       constructor: constructor,
+      lazy: lazy,
     );
     if (model != null) {
       for (final generation in generations) {
@@ -2238,8 +2241,24 @@ class BeanScanner {
     required bool implementSelf,
     ProxyMode? mode,
     ConstructorElement? constructor,
+    bool lazy = false,
   }) {
     _proxyFailure = null;
+    // A `@Lazy` reference to a bean on signals: forwards to the bean as it
+    // is handed out, like the wrapper of its advice.
+    if (lazy && _accessHookAnnotation(targetType) != null) {
+      return _withImplementations(
+        _checkedProxy(
+          _buildProxyModel(
+            targetType,
+            className,
+            implementSelf: true,
+            mode: mode,
+            implementPrivate: true,
+          ),
+        ),
+      );
+    }
     // A component class that cannot be implemented but has supertypes that
     // can: a proxy implementing only those would hide the class (advice
     // matched on it, or on its private-state members, would not run, and
@@ -2247,24 +2266,24 @@ class BeanScanner {
     // so a subclass proxy is preferred; implementing the supertypes is the
     // fallback when the class cannot be extended either.
     // A member annotated for advice that follows the bean's own calls
-    // (`@ProxyTargetClass()` on the annotation's class): only a subclass
+    // (`@AccessHook()` on the annotation's class): only a subclass
     // sees them, and it is not an advice-mode choice.
-    final targetClassBy = implementSelf && !targetType.element.library.isInSdk
-        ? _targetClassAnnotation(targetType)
+    final hookedBy = implementSelf && !targetType.element.library.isInSdk
+        ? _accessHookAnnotation(targetType)
         : null;
-    if (targetClassBy != null) {
+    if (hookedBy != null) {
       final typeName = targetType.element.name;
-      _targetClassBeans.addAll(_hierarchy(targetType));
+      _accessHookBeans.addAll(_hierarchy(targetType));
       if (constructor == null || (mode ?? proxyMode) != ProxyMode.all) {
         final element = targetType.element;
         _fail(
           element is ClassElement && element.isAbstract
-              ? '@$targetClassBy on a member of $typeName, whose '
+              ? '@$hookedBy on a member of $typeName, whose '
                     'implementation is generated (a repository, an HTTP '
                     'client): the annotation works on the members of a '
                     'component class, whose proxy extends it. Put it on a '
                     'member of a component that calls $typeName.'
-              : '@$targetClassBy on a member of $typeName needs a proxy '
+              : '@$hookedBy on a member of $typeName needs a proxy '
                     'that extends $typeName: declare $typeName as a '
                     'component class with one constructor (not as the '
                     'result of a @Bean method), and leave aop_proxies at '
@@ -2274,23 +2293,47 @@ class BeanScanner {
       }
       final subclass = _subclassProxyModel(
         targetType,
-        className,
+        '${className.replaceFirst(RegExp(r'Proxy$'), '')}Signals',
         constructor,
-        '@$targetClassBy on a member of $typeName needs a proxy that '
-        'extends $typeName.',
+        '@$hookedBy on a member of $typeName needs a class that '
+            'extends $typeName.',
         interfaceAlternative: false,
       );
       if (subclass?.subclass == null) {
         _fail(
           subclass?.unavailableReason ??
-              '@$targetClassBy on a member of $typeName needs a proxy that '
+              '@$hookedBy on a member of $typeName needs a class that '
                   'extends $typeName, which cannot be made.',
           targetType.element,
         );
       }
-      subclass!.targetClass = true;
-      _checkTargetClassMembers(targetType, subclass);
-      return _withImplementations(_checkedProxy(subclass));
+      _checkAccessHookMembers(targetType, subclass!);
+      // The bean is made as that subclass. Advice on it is an ordinary
+      // wrapper around it, as on any bean: one that private members do not
+      // stop, since it forwards only the public ones to the real object.
+      _proxyFailure = null;
+      final wrapper = _buildProxyModel(
+        targetType,
+        className,
+        implementSelf: true,
+        mode: mode,
+        implementPrivate: true,
+      );
+      final model =
+          wrapper ??
+          _signatureOnlyModel(
+            targetType,
+            className,
+            _proxyFailure ?? '$typeName cannot be wrapped by a proxy.',
+          );
+      final found = _adviceOn(targetType);
+      model.accessHooks = AccessHooks(
+        className: subclass.className,
+        subclass: subclass.subclass!,
+        members: subclass.members,
+        advice: found == null ? null : _adviceSite(found, typeName),
+      );
+      return _withImplementations(_checkedProxy(model));
     }
     if (constructor != null &&
         implementSelf &&
@@ -2328,6 +2371,15 @@ class BeanScanner {
     return _withImplementations(
       _checkedProxy(_signatureOnlyModel(targetType, className, failure)),
     );
+  }
+
+  // `@Transactional on Ledger.save`, for a message.
+  static String _adviceSite((DartObject, Element) found, String? typeName) {
+    final (annotation, member) = found;
+    final site = member is InterfaceElement
+        ? typeName
+        : '$typeName.${member.displayName}';
+    return '@${annotation.type!.element!.name} on $site';
   }
 
   // Records, per member of [model], the class whose body runs when it is
@@ -2412,11 +2464,11 @@ class BeanScanner {
   // cannot be proxied): the context fails at startup, saying what to
   // change, only if advice matches the bean.
   // The name of the first annotation on a member of [type] (or of a
-  // class it inherits from) whose class is marked `@ProxyTargetClass()`;
+  // class it inherits from) whose class is marked `@AccessHook()`;
   // `null` when there is none.
-  String? _targetClassAnnotation(InterfaceType type) {
+  String? _accessHookAnnotation(InterfaceType type) {
     for (final element in _hierarchy(type)) {
-      if (_targetClassMembers(element).firstOrNull case (final by, _)?) {
+      if (_accessHookMembers(element).firstOrNull case (final by, _)?) {
         return by;
       }
     }
@@ -2424,25 +2476,104 @@ class BeanScanner {
   }
 
   // The members that [element] itself declares with an annotation whose
-  // class is marked `@ProxyTargetClass()`, each with the annotation's name.
-  Iterable<(String, Element)> _targetClassMembers(InstanceElement element) =>
-      _targetClassAnnotated([
+  // class is marked `@AccessHook()`, each with the annotation's name.
+  Iterable<(String, Element)> _accessHookMembers(InstanceElement element) =>
+      _accessHookAnnotated([
         ...element.fields,
         ...element.getters,
         ...element.setters,
         ...element.methods,
       ]);
 
-  Iterable<(String, Element)> _targetClassAnnotated(
+  // The [members] with an annotation marked `@AccessHook()` that a started
+  // part writes the hooks of, each with the annotation's name. One that no
+  // part writes is left to [_rejectUnwrittenAccessHooks].
+  Iterable<(String, Element)> _accessHookAnnotated(
     Iterable<Element> members,
   ) sync* {
     for (final member in members) {
-      for (final annotation in member.metadata.annotations) {
-        if (annotation.computeConstantValue()?.type
-            case final InterfaceType annotationType
-            when _proxyTargetClass.hasAnnotationOf(annotationType.element)) {
-          yield (annotationType.element.name!, member);
+      for (final (annotation, written) in _accessHookAnnotations(member)) {
+        if (written) {
+          yield (annotation.name!, member);
           break;
+        }
+      }
+    }
+  }
+
+  // The classes of the annotations on [member] that are marked
+  // `@AccessHook()`, each with whether a started part writes its hooks.
+  Iterable<(InterfaceElement, bool)> _accessHookAnnotations(
+    Element member,
+  ) sync* {
+    for (final annotation in member.metadata.annotations) {
+      if (annotation.computeConstantValue()?.type
+          case InterfaceType(:final element)
+          when _accessHook.hasAnnotationOf(element)) {
+        yield (
+          element,
+          generations.any(
+            (generation) => generation.accessHooks.any(
+              (checker) => checker.isExactly(element),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  // A member of [library] with an annotation marked `@AccessHook()` that
+  // no started part writes the hooks of: the subclass would have no code
+  // for it, so the annotation would do nothing.
+  void _rejectUnwrittenAccessHooks(LibraryElement library) {
+    final places = <(String?, Iterable<Element>)>[
+      for (final InstanceElement element in [
+        ...library.classes,
+        ...library.mixins,
+        ...library.enums,
+        ...library.extensions,
+        ...library.extensionTypes,
+      ])
+        (
+          element.displayName,
+          [
+            ...element.fields,
+            ...element.getters.where((getter) => !getter.isOriginVariable),
+            ...element.setters.where((setter) => !setter.isOriginVariable),
+            ...element.methods,
+          ],
+        ),
+      (
+        null,
+        [
+          ...library.topLevelVariables,
+          ...library.getters.where((getter) => !getter.isOriginVariable),
+          ...library.setters.where((setter) => !setter.isOriginVariable),
+          ...library.topLevelFunctions,
+        ],
+      ),
+    ];
+    for (final (owner, members) in places) {
+      for (final member in members) {
+        for (final (annotation, written) in _accessHookAnnotations(member)) {
+          if (written) {
+            continue;
+          }
+          final name = annotation.displayName;
+          final site = owner == null
+              ? member.displayName
+              : '$owner.${member.displayName}';
+          collectErrors(
+            () => _fail(
+              '@$name on $site: $name is marked @AccessHook, and no part of '
+              'the generator writes code for it, so the member would not be '
+              'hooked. @AccessHook currently supports only the annotations '
+              'of spring_boot_starter_flutter_signals (@Signal, @Computed, '
+              '@Effect, @OnWatched, @OnUnwatched). Remove @AccessHook() '
+              'from $name, or use one of those.',
+              member,
+            ),
+          );
         }
       }
     }
@@ -2450,19 +2581,19 @@ class BeanScanner {
 
   // The classes and mixins of the beans whose proxy extends them for such
   // a member, and of the beans told why they get none.
-  final _targetClassBeans = <InterfaceElement>{};
+  final _accessHookBeans = <InterfaceElement>{};
 
   // The classes that declare such a member and could be created (they are
   // not abstract): each must be a bean, or a base of one.
-  final _targetClassDeclarers = <ClassElement, (String, Element)>{};
+  final _accessHookDeclarers = <ClassElement, (String, Element)>{};
 
-  // A public member annotated for a target-class proxy that the subclass
-  // could not override would be left out of the advice without a word.
-  void _checkTargetClassMembers(InterfaceType targetType, ProxyModel proxy) {
+  // A public member with an access hook that the subclass could not
+  // override would be left without its hook, and without a word.
+  void _checkAccessHookMembers(InterfaceType targetType, ProxyModel proxy) {
     final overridden = {for (final member in proxy.members) member.name};
     final typeName = targetType.element.name;
     for (final element in _hierarchy(targetType)) {
-      for (final (by, member) in _targetClassMembers(element)) {
+      for (final (by, member) in _accessHookMembers(element)) {
         final name = member.name;
         if (name == null ||
             member.isPrivate ||
@@ -2483,22 +2614,21 @@ class BeanScanner {
   }
 
   // No proxy for a bean the container does not proxy (an aspect, a
-  // post-processor), which must have no member annotated for a
-  // target-class proxy.
+  // post-processor), which must have no member with an access hook.
   ProxyModel? _withoutProxy(DartType type) {
     if (type is InterfaceType && !type.element.library.isInSdk) {
-      _rejectTargetClassWithoutProxy(type);
+      _rejectAccessHooksWithoutProxy(type);
     }
     return null;
   }
 
-  void _rejectTargetClassWithoutProxy(InterfaceType type) {
+  void _rejectAccessHooksWithoutProxy(InterfaceType type) {
     _rejectAdviceWithoutProxy(type);
-    final by = _targetClassAnnotation(type);
+    final by = _accessHookAnnotation(type);
     if (by == null) {
       return;
     }
-    _targetClassBeans.addAll(_hierarchy(type));
+    _accessHookBeans.addAll(_hierarchy(type));
     final element = type.element;
     if (_configuration.hasAnnotationOf(element)) {
       // The starter of the annotation says it in its own words.
@@ -2554,11 +2684,11 @@ class BeanScanner {
     );
   }
 
-  // `@ProxyTargetClass` annotations where no bean's proxy can follow them:
+  // `@AccessHook` annotations where no bean's proxy can follow them:
   // a member of an enum, an extension or an extension type, a top-level
   // variable or function. Like a stereotype there, they would be ignored
   // without a word.
-  void _rejectTargetClassOutsideBeans(LibraryElement library) {
+  void _rejectAccessHooksOutsideBeans(LibraryElement library) {
     final places = <(String, Iterable<Element>)>[
       for (final element in library.enums)
         (
@@ -2601,7 +2731,7 @@ class BeanScanner {
       ),
     ];
     for (final (place, members) in places) {
-      for (final (by, member) in _targetClassAnnotated(members)) {
+      for (final (by, member) in _accessHookAnnotated(members)) {
         collectErrors(
           () => _fail(
             '@$by on ${member.displayName}, in $place: it goes on a member '
@@ -2616,18 +2746,18 @@ class BeanScanner {
       if (element.isAbstract) {
         continue;
       }
-      if (_targetClassMembers(element).firstOrNull case final found?) {
-        _targetClassDeclarers[element] = found;
+      if (_accessHookMembers(element).firstOrNull case final found?) {
+        _accessHookDeclarers[element] = found;
       }
     }
   }
 
   // Once every library is scanned: a class that can be created and
   // declares such a member, and is neither a bean nor a base of one.
-  void _checkTargetClassDeclarers() {
+  void _checkAccessHookDeclarers() {
     for (final MapEntry(key: element, value: (by, member))
-        in _targetClassDeclarers.entries) {
-      if (_targetClassBeans.contains(element)) {
+        in _accessHookDeclarers.entries) {
+      if (_accessHookBeans.contains(element)) {
         continue;
       }
       collectErrors(
@@ -3219,7 +3349,10 @@ class BeanScanner {
     String className, {
     required bool implementSelf,
     ProxyMode? mode,
+    bool implementPrivate = false,
   }) {
+    bool canImplement(InterfaceType type) =>
+        _canImplement(type, implementPrivate: implementPrivate);
     final proxyMode = mode ?? this.proxyMode;
     if (proxyMode == ProxyMode.none || targetType.element.library.isInSdk) {
       return null;
@@ -3231,17 +3364,17 @@ class BeanScanner {
     final interfaces = <InterfaceType>[
       if (implementSelf &&
           proxyMode == ProxyMode.all &&
-          _canImplement(targetType))
+          canImplement(targetType))
         targetType,
       for (final supertype in targetType.allSupertypes)
         if (!supertype.isDartCoreObject &&
-            _canImplement(supertype) &&
+            canImplement(supertype) &&
             (proxyMode == ProxyMode.all || _isAbstract(supertype)))
           supertype,
     ];
     if (proxyMode == ProxyMode.interfaces &&
         _isAbstract(targetType) &&
-        _canImplement(targetType)) {
+        canImplement(targetType)) {
       interfaces.insert(0, targetType);
     }
     if (interfaces.isEmpty) {
@@ -3810,7 +3943,14 @@ class BeanScanner {
   /// Whether a class in another library can `implements` [type]: it is
   /// public, not `final`, `base` or `sealed`, and has no private members a
   /// generated class would have to implement.
-  static bool _canImplement(InterfaceType type) {
+  ///
+  /// With [implementPrivate], private members do not count: for a wrapper
+  /// around a bean made as a generated subclass, which forwards the public
+  /// members and leaves the private ones to the real object.
+  static bool _canImplement(
+    InterfaceType type, {
+    bool implementPrivate = false,
+  }) {
     final element = type.element;
     if (!element.isPublic ||
         element.library.isInSdk ||
@@ -3824,6 +3964,9 @@ class BeanScanner {
     };
     if (!implementable) {
       return false;
+    }
+    if (implementPrivate) {
+      return true;
     }
     // Private instance members cannot be implemented from another library
     // (the generated file), so any of them in the hierarchy rules the type
@@ -4451,7 +4594,10 @@ class BeanScanner {
         element,
       );
     }
-    if (type.element.library.isInSdk || !_canImplement(type)) {
+    final onSignals =
+        !type.element.library.isInSdk && _accessHookAnnotation(type) != null;
+    if (type.element.library.isInSdk ||
+        !_canImplement(type, implementPrivate: onSignals)) {
       _fail(
         '$subject: the $kind must implement '
         '$typeName, which is not possible from generated code (SDK type, '
@@ -4465,6 +4611,7 @@ class BeanScanner {
       className,
       implementSelf: true,
       mode: ProxyMode.all,
+      lazy: true,
     );
     if (proxy == null || proxy.unavailableReason != null) {
       _fail(

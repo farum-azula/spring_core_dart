@@ -2,7 +2,7 @@
 /// templates of its SQL databases, the mapping context, the entity
 /// converter, the in-memory store, the auditing handler (with
 /// `@EnableDataAuditing`) and the factory that builds the repositories;
-/// in debug and profile builds, unless the configuration says otherwise,
+/// in debug builds, unless the configuration says otherwise,
 /// its startup checks and its statement logging.
 ///
 /// The generator finds this library in every dependency that has one and
@@ -50,8 +50,8 @@ final BeanModule springBootStarterDataAutoConfiguration = BeanModule(
 /// fails the start.
 ///
 /// In the build by `spring.main.startup-checks.enabled`: `true` in every
-/// build, `false` in none, not set in debug and profile builds only, so a
-/// release build ships none of their code (a wrong `@Transactional` method
+/// build, `false` in none, not set in debug builds only, so a profile or
+/// a release build ships none of their code (a wrong `@Transactional` method
 /// then fails at its first call).
 ///
 /// Registered after the main module: without its `transactionInterceptor`
@@ -73,7 +73,7 @@ final BeanModule springBootStarterDataStartupChecksAutoConfiguration =
 ///
 /// In the build by `spring.data.jdbc.show-sql`: `true` in the
 /// configuration without a profile keeps it in every build, `false` in
-/// none, not set in debug and profile builds only (where a profile, a
+/// none, not set in debug builds only (where a profile, a
 /// `dev` one, can still turn it on when the application runs). Without it
 /// the main module's `jdbcSlowQueryLogSettings` reads the slow-query
 /// threshold alone: the slow statements are logged at warn in every build.

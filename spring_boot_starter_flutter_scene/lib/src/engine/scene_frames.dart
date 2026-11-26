@@ -16,9 +16,13 @@ import 'package:spring_boot_starter_flutter_scene/src/engine/scene_ticks.dart';
 /// or 120. The beat is a timer at the highest of their rates, and in a
 /// browser its frames (`requestAnimationFrame`), in step with the page's.
 final class SceneFrames {
+  /// The name the scenes' frames are reported by ([OutsideFrames]): what
+  /// the frame meter and the debug console's `scene-fps` show.
+  static const String source = '3D';
+
   final Map<Object, ({double rate, bool Function() beat})> _views = {};
   void Function()? _stop;
-  final OutsideFrames _frames = OutsideFrames.of('3D');
+  final OutsideFrames _frames = OutsideFrames.of(source);
   final List<void Function(Duration cost)> _drawn = [];
   final List<void Function()> _rested = [];
   double _rate = 0;

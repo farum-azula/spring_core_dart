@@ -9,14 +9,13 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i5;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i3;
+import 'package:spring_boot_starter_flutter/src/debug/debug_layout.dart' as _i2;
 import 'package:spring_boot_starter_flutter/src/debug/overlay/debug_overlay.dart'
-    as _i3;
-import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart'
-    as _i2;
+    as _i4;
 import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart'
     as _i1;
-import 'package:spring_boot_starter_flutter/src/sqlite_directories.dart' as _i4;
+import 'package:spring_boot_starter_flutter/src/sqlite_directories.dart' as _i5;
 
 Object? _$get0(_i1.FlutterAppProperties object) => object.type;
 Object? _$get1(_i1.FlutterAppProperties object) => object.title;
@@ -47,9 +46,16 @@ Object? _$get10(_i1.FlutterDebugProperties object) => object.frameMeter;
 Object? _$get11(_i1.FlutterDebugProperties object) => object.motion;
 Object? _$get12(_i1.FlutterDebugProperties object) => object.timeline;
 Object? _$get13(_i1.FlutterDebugProperties object) => object.isolates;
-Object? _$get14(_i1.FlutterDebugProperties object) => object.drag;
-Object? _$get15(_i1.FlutterDebugProperties object) => object.overlays;
-_i1.FlutterDebugProperties _$create16(
+Object? _$get14(_i1.FlutterDebugProperties object) => object.console;
+Object? _$get15(_i1.FlutterDebugProperties object) => object.drag;
+Object? _$get16(_i1.FlutterDebugProperties object) => object.overlays;
+Object? _$get17(_i1.FlutterDebugProperties object) => object.flutterTools;
+Object? _$get18(_i1.FlutterDebugProperties object) => object.network;
+Object? _$get19(_i1.FlutterDebugProperties object) => object.logs;
+Object? _$get20(_i1.FlutterDebugProperties object) => object.graph;
+Object? _$get21(_i1.FlutterDebugProperties object) => object.theme;
+Object? _$get22(_i1.FlutterDebugProperties object) => object.themes;
+_i1.FlutterDebugProperties _$create23(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterDebugProperties(
@@ -61,63 +67,129 @@ _i1.FlutterDebugProperties _$create16(
   motion: named.argumentOr(#motion, const _i1.FlutterDebugFeatureProperties()),
   timeline: named.argumentOr(
     #timeline,
-    const _i1.FlutterDebugTimelineProperties(),
+    const _i1.FlutterDebugFeatureProperties(),
   ),
   isolates: named.argumentOr(
     #isolates,
     const _i1.FlutterDebugIsolatesProperties(),
+  ),
+  console: named.argumentOr(
+    #console,
+    const _i1.FlutterDebugConsoleProperties(),
   ),
   drag: named.argumentOr(#drag, const _i1.FlutterDebugFeatureProperties()),
   overlays: named.argumentOr(
     #overlays,
     const _i1.FlutterDebugOverlaysProperties(),
   ),
+  flutterTools: named.argumentOr(
+    #flutterTools,
+    const _i1.FlutterDebugFeatureProperties(),
+  ),
+  network: named.argumentOr(
+    #network,
+    const _i1.FlutterDebugNetworkProperties(),
+  ),
+  logs: named.argumentOr(#logs, const _i1.FlutterDebugLogsProperties()),
+  graph: named.argumentOr(#graph, const _i1.FlutterDebugGraphProperties()),
+  theme: named.argumentOr(#theme, r'default'),
+  themes: named.argumentOr(
+    #themes,
+    const <String, _i1.FlutterDebugThemeProperties>{},
+  ),
 );
-Object? _$get17(_i1.FlutterDebugFeatureProperties object) => object.enabled;
-_i1.FlutterDebugFeatureProperties _$create18(
+Object? _$get24(_i1.FlutterDebugFeatureProperties object) => object.enabled;
+_i1.FlutterDebugFeatureProperties _$create25(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterDebugFeatureProperties(
   enabled: named.argumentOr(#enabled, null),
 );
-Object? _$get19(_i1.FlutterDebugTimelineProperties object) => object.enabled;
-Object? _$get20(_i1.FlutterDebugTimelineProperties object) => object.position;
-_i1.FlutterDebugTimelineProperties _$create21(
-  List<Object?> positional,
-  Map<Symbol, Object?> named,
-) => _i1.FlutterDebugTimelineProperties(
-  enabled: named.argumentOr(#enabled, null),
-  position: named.argumentOr(#position, _i2.FrameMeterPosition.bottomLeft),
-);
-Object? _$get22(_i1.FlutterDebugIsolatesProperties object) => object.enabled;
-Object? _$get23(_i1.FlutterDebugIsolatesProperties object) => object.position;
-Object? _$get24(_i1.FlutterDebugIsolatesProperties object) => object.interval;
-_i1.FlutterDebugIsolatesProperties _$create25(
+Object? _$get26(_i1.FlutterDebugIsolatesProperties object) => object.enabled;
+Object? _$get27(_i1.FlutterDebugIsolatesProperties object) => object.interval;
+_i1.FlutterDebugIsolatesProperties _$create28(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterDebugIsolatesProperties(
   enabled: named.argumentOr(#enabled, null),
-  position: named.argumentOr(#position, _i2.FrameMeterPosition.bottomRight),
   interval: named.argumentOr(#interval, const Duration(seconds: 1)),
 );
-Object? _$get26(_i1.FlutterDebugOverlaysProperties object) => object.layout;
-Object? _$get27(_i1.FlutterDebugOverlaysProperties object) => object.maxHeight;
-Object? _$get28(_i1.FlutterDebugOverlaysProperties object) => object.margin;
-Object? _$get29(_i1.FlutterDebugOverlaysProperties object) => object.drag;
-_i1.FlutterDebugOverlaysProperties _$create30(
+Object? _$get29(_i1.FlutterDebugConsoleProperties object) => object.enabled;
+Object? _$get30(_i1.FlutterDebugConsoleProperties object) => object.position;
+Object? _$get31(_i1.FlutterDebugConsoleProperties object) => object.opacity;
+Object? _$get32(_i1.FlutterDebugConsoleProperties object) => object.interaction;
+Object? _$get33(_i1.FlutterDebugConsoleProperties object) =>
+    object.passThroughOpacity;
+Object? _$get34(_i1.FlutterDebugConsoleProperties object) =>
+    object.slideDuration;
+Object? _$get35(_i1.FlutterDebugConsoleProperties object) => object.maxLines;
+Object? _$get36(_i1.FlutterDebugConsoleProperties object) => object.width;
+Object? _$get37(_i1.FlutterDebugConsoleProperties object) => object.segments;
+Object? _$get38(_i1.FlutterDebugConsoleProperties object) => object.header;
+Object? _$get39(_i1.FlutterDebugConsoleProperties object) => object.panes;
+Object? _$get40(_i1.FlutterDebugConsoleProperties object) => object.shownPanes;
+Object? _$get41(_i1.FlutterDebugConsoleProperties object) => object.history;
+Object? _$get42(_i1.FlutterDebugConsoleProperties object) => object.filter;
+_i1.FlutterDebugConsoleProperties _$create43(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.FlutterDebugConsoleProperties(
+  enabled: named.argumentOr(#enabled, null),
+  position: named.argumentOr(#position, _i2.DebugCorner.topLeft),
+  opacity: named.argumentOr(#opacity, 0.9),
+  interaction: named.argumentOr(
+    #interaction,
+    _i1.DebugConsoleInteraction.interact,
+  ),
+  passThroughOpacity: named.argumentOr(#passThroughOpacity, 0.7),
+  slideDuration: named.argumentOr(
+    #slideDuration,
+    const Duration(milliseconds: 220),
+  ),
+  maxLines: named.argumentOr(#maxLines, 12),
+  width: named.argumentOr(#width, 1.0),
+  segments: named.argumentOr(#segments, const [
+    r'fps',
+    r'scene-fps',
+    r'frames-lost',
+    r'filter',
+  ]),
+  header: named.argumentOr(#header, null),
+  panes: named.argumentOr(#panes, const [r'logs']),
+  shownPanes: named.argumentOr(#shownPanes, null),
+  history: named.argumentOr(#history, 50),
+  filter: named.argumentOr(
+    #filter,
+    const _i1.FlutterDebugLogsFilterProperties(),
+  ),
+);
+Object? _$get44(_i1.FlutterDebugLogsFilterProperties object) => object.level;
+Object? _$get45(_i1.FlutterDebugLogsFilterProperties object) => object.text;
+_i1.FlutterDebugLogsFilterProperties _$create46(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.FlutterDebugLogsFilterProperties(
+  level: named.argumentOr(#level, _i3.SpringLogLevel.trace),
+  text: named.argumentOr(#text, r''),
+);
+Object? _$get47(_i1.FlutterDebugOverlaysProperties object) => object.layout;
+Object? _$get48(_i1.FlutterDebugOverlaysProperties object) => object.maxHeight;
+Object? _$get49(_i1.FlutterDebugOverlaysProperties object) => object.margin;
+Object? _$get50(_i1.FlutterDebugOverlaysProperties object) => object.drag;
+_i1.FlutterDebugOverlaysProperties _$create51(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterDebugOverlaysProperties(
-  layout: named.argumentOr(#layout, _i3.DebugOverlayLayout.auto),
+  layout: named.argumentOr(#layout, _i4.DebugOverlayLayout.auto),
   maxHeight: named.argumentOr(#maxHeight, 0.4),
   margin: named.argumentOr(#margin, const _i1.FlutterDebugOverlaysMargin()),
   drag: named.argumentOr(#drag, const _i1.FlutterDebugOverlaysDrag()),
 );
-Object? _$get31(_i1.FlutterDebugOverlaysMargin object) => object.top;
-Object? _$get32(_i1.FlutterDebugOverlaysMargin object) => object.bottom;
-Object? _$get33(_i1.FlutterDebugOverlaysMargin object) => object.left;
-Object? _$get34(_i1.FlutterDebugOverlaysMargin object) => object.right;
-_i1.FlutterDebugOverlaysMargin _$create35(
+Object? _$get52(_i1.FlutterDebugOverlaysMargin object) => object.top;
+Object? _$get53(_i1.FlutterDebugOverlaysMargin object) => object.bottom;
+Object? _$get54(_i1.FlutterDebugOverlaysMargin object) => object.left;
+Object? _$get55(_i1.FlutterDebugOverlaysMargin object) => object.right;
+_i1.FlutterDebugOverlaysMargin _$create56(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterDebugOverlaysMargin(
@@ -126,38 +198,148 @@ _i1.FlutterDebugOverlaysMargin _$create35(
   left: named.argumentOr(#left, 0.0),
   right: named.argumentOr(#right, 0.0),
 );
-Object? _$get36(_i1.FlutterDebugOverlaysDrag object) => object.snap;
-Object? _$get37(_i1.FlutterDebugOverlaysDrag object) => object.remember;
-_i1.FlutterDebugOverlaysDrag _$create38(
+Object? _$get57(_i1.FlutterDebugOverlaysDrag object) => object.snap;
+Object? _$get58(_i1.FlutterDebugOverlaysDrag object) => object.remember;
+_i1.FlutterDebugOverlaysDrag _$create59(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterDebugOverlaysDrag(
   snap: named.argumentOr(#snap, _i1.DebugOverlaySnap.corners),
   remember: named.argumentOr(#remember, true),
 );
-Object? _$get39(_i1.FlutterMarkdownProperties object) => object.placeholders;
-_i1.FlutterMarkdownProperties _$create40(
+Object? _$get60(_i1.FlutterDebugNetworkProperties object) => object.enabled;
+Object? _$get61(_i1.FlutterDebugNetworkProperties object) => object.bodies;
+Object? _$get62(_i1.FlutterDebugNetworkProperties object) => object.bodyLimit;
+Object? _$get63(_i1.FlutterDebugNetworkProperties object) => object.bodyBudget;
+Object? _$get64(_i1.FlutterDebugNetworkProperties object) => object.maxEntries;
+Object? _$get65(_i1.FlutterDebugNetworkProperties object) => object.maxFrames;
+_i1.FlutterDebugNetworkProperties _$create66(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.FlutterDebugNetworkProperties(
+  enabled: named.argumentOr(#enabled, null),
+  bodies: named.argumentOr(#bodies, false),
+  bodyLimit: named.argumentOr(#bodyLimit, const _i3.DataSize.ofBytes(65536)),
+  bodyBudget: named.argumentOr(
+    #bodyBudget,
+    const _i3.DataSize.ofBytes(4194304),
+  ),
+  maxEntries: named.argumentOr(#maxEntries, 200),
+  maxFrames: named.argumentOr(#maxFrames, 200),
+);
+Object? _$get67(_i1.FlutterDebugLogsProperties object) => object.export;
+_i1.FlutterDebugLogsProperties _$create68(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.FlutterDebugLogsProperties(
+  export: named.argumentOr(
+    #export,
+    const _i1.FlutterDebugLogsExportProperties(),
+  ),
+);
+Object? _$get69(_i1.FlutterDebugLogsExportProperties object) => object.enabled;
+_i1.FlutterDebugLogsExportProperties _$create70(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.FlutterDebugLogsExportProperties(
+  enabled: named.argumentOr(#enabled, null),
+);
+Object? _$get71(_i1.FlutterDebugGraphProperties object) => object.enabled;
+Object? _$get72(_i1.FlutterDebugGraphProperties object) => object.layers;
+Object? _$get73(_i1.FlutterDebugGraphProperties object) => object.hot;
+_i1.FlutterDebugGraphProperties _$create74(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.FlutterDebugGraphProperties(
+  enabled: named.argumentOr(#enabled, null),
+  layers: named.argumentOr(#layers, const [r'*']),
+  hot: named.argumentOr(#hot, const _i1.FlutterDebugGraphHotProperties()),
+);
+Object? _$get75(_i1.FlutterDebugGraphHotProperties object) => object.rebuilds;
+Object? _$get76(_i1.FlutterDebugGraphHotProperties object) => object.window;
+_i1.FlutterDebugGraphHotProperties _$create77(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.FlutterDebugGraphHotProperties(
+  rebuilds: named.argumentOr(#rebuilds, 3),
+  window: named.argumentOr(#window, const Duration(seconds: 5)),
+);
+Object? _$get78(_i1.FlutterDebugThemeProperties object) => object.background;
+Object? _$get79(_i1.FlutterDebugThemeProperties object) => object.text;
+Object? _$get80(_i1.FlutterDebugThemeProperties object) => object.dim;
+Object? _$get81(_i1.FlutterDebugThemeProperties object) => object.accent;
+Object? _$get82(_i1.FlutterDebugThemeProperties object) => object.number;
+Object? _$get83(_i1.FlutterDebugThemeProperties object) => object.good;
+Object? _$get84(_i1.FlutterDebugThemeProperties object) => object.warning;
+Object? _$get85(_i1.FlutterDebugThemeProperties object) => object.bad;
+Object? _$get86(_i1.FlutterDebugThemeProperties object) => object.error;
+Object? _$get87(_i1.FlutterDebugThemeProperties object) => object.line;
+Object? _$get88(_i1.FlutterDebugThemeProperties object) => object.levelError;
+Object? _$get89(_i1.FlutterDebugThemeProperties object) => object.levelWarning;
+Object? _$get90(_i1.FlutterDebugThemeProperties object) => object.levelInfo;
+Object? _$get91(_i1.FlutterDebugThemeProperties object) => object.levelDebug;
+Object? _$get92(_i1.FlutterDebugThemeProperties object) => object.time;
+Object? _$get93(_i1.FlutterDebugThemeProperties object) => object.logger;
+Object? _$get94(_i1.FlutterDebugThemeProperties object) => object.command;
+Object? _$get95(_i1.FlutterDebugThemeProperties object) => object.argument;
+Object? _$get96(_i1.FlutterDebugThemeProperties object) => object.methodRead;
+Object? _$get97(_i1.FlutterDebugThemeProperties object) => object.methodWrite;
+Object? _$get98(_i1.FlutterDebugThemeProperties object) => object.graphFlash;
+Object? _$get99(_i1.FlutterDebugThemeProperties object) => object.graphHot;
+Object? _$get100(_i1.FlutterDebugThemeProperties object) => object.fontFamily;
+Object? _$get101(_i1.FlutterDebugThemeProperties object) => object.fontSize;
+_i1.FlutterDebugThemeProperties _$create102(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.FlutterDebugThemeProperties(
+  background: named.argumentOr(#background, null),
+  text: named.argumentOr(#text, null),
+  dim: named.argumentOr(#dim, null),
+  accent: named.argumentOr(#accent, null),
+  number: named.argumentOr(#number, null),
+  good: named.argumentOr(#good, null),
+  warning: named.argumentOr(#warning, null),
+  bad: named.argumentOr(#bad, null),
+  error: named.argumentOr(#error, null),
+  line: named.argumentOr(#line, null),
+  levelError: named.argumentOr(#levelError, null),
+  levelWarning: named.argumentOr(#levelWarning, null),
+  levelInfo: named.argumentOr(#levelInfo, null),
+  levelDebug: named.argumentOr(#levelDebug, null),
+  time: named.argumentOr(#time, null),
+  logger: named.argumentOr(#logger, null),
+  command: named.argumentOr(#command, null),
+  argument: named.argumentOr(#argument, null),
+  methodRead: named.argumentOr(#methodRead, null),
+  methodWrite: named.argumentOr(#methodWrite, null),
+  graphFlash: named.argumentOr(#graphFlash, null),
+  graphHot: named.argumentOr(#graphHot, null),
+  fontFamily: named.argumentOr(#fontFamily, null),
+  fontSize: named.argumentOr(#fontSize, null),
+);
+Object? _$get103(_i1.FlutterMarkdownProperties object) => object.placeholders;
+_i1.FlutterMarkdownProperties _$create104(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterMarkdownProperties(
   placeholders: named.argumentOr(#placeholders, false),
 );
-Object? _$get41(_i1.FlutterFrameMeterProperties object) => object.enabled;
-Object? _$get42(_i1.FlutterFrameMeterProperties object) => object.position;
-Object? _$get43(_i1.FlutterFrameMeterProperties object) => object.targetRate;
-_i1.FlutterFrameMeterProperties _$create44(
+Object? _$get105(_i1.FlutterFrameMeterProperties object) => object.enabled;
+Object? _$get106(_i1.FlutterFrameMeterProperties object) => object.position;
+Object? _$get107(_i1.FlutterFrameMeterProperties object) => object.targetRate;
+_i1.FlutterFrameMeterProperties _$create108(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterFrameMeterProperties(
   enabled: named.argumentOr(#enabled, false),
-  position: named.argumentOr(#position, _i2.FrameMeterPosition.topRight),
+  position: named.argumentOr(#position, _i2.DebugCorner.topRight),
   targetRate: named.argumentOr(#targetRate, 60),
 );
-Object? _$get45(_i1.FlutterWebPageProperties object) => object.swipeToClose;
-Object? _$get46(_i1.FlutterWebPageProperties object) => object.maxPixelRatio;
-Object? _$get47(_i1.FlutterWebPageProperties object) => object.translate;
-Object? _$get48(_i1.FlutterWebPageProperties object) => object.wasmAllowList;
-_i1.FlutterWebPageProperties _$create49(
+Object? _$get109(_i1.FlutterWebPageProperties object) => object.swipeToClose;
+Object? _$get110(_i1.FlutterWebPageProperties object) => object.maxPixelRatio;
+Object? _$get111(_i1.FlutterWebPageProperties object) => object.translate;
+Object? _$get112(_i1.FlutterWebPageProperties object) => object.wasmAllowList;
+_i1.FlutterWebPageProperties _$create113(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterWebPageProperties(
@@ -166,18 +348,18 @@ _i1.FlutterWebPageProperties _$create49(
   translate: named.argumentOr(#translate, true),
   wasmAllowList: named.argumentOr(#wasmAllowList, null),
 );
-Object? _$get50(_i1.FlutterLifecycleProperties object) =>
+Object? _$get114(_i1.FlutterLifecycleProperties object) =>
     object.pauseInBackground;
-_i1.FlutterLifecycleProperties _$create51(
+_i1.FlutterLifecycleProperties _$create115(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterLifecycleProperties(
   pauseInBackground: named.argumentOr(#pauseInBackground, true),
 );
-Object? _$get52(_i1.FlutterFontsProperties object) => object.autoLoad;
-Object? _$get53(_i1.FlutterFontsProperties object) => object.exclude;
-Object? _$get54(_i1.FlutterFontsProperties object) => object.families;
-_i1.FlutterFontsProperties _$create55(
+Object? _$get116(_i1.FlutterFontsProperties object) => object.autoLoad;
+Object? _$get117(_i1.FlutterFontsProperties object) => object.exclude;
+Object? _$get118(_i1.FlutterFontsProperties object) => object.families;
+_i1.FlutterFontsProperties _$create119(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterFontsProperties(
@@ -185,21 +367,21 @@ _i1.FlutterFontsProperties _$create55(
   exclude: named.argumentOr(#exclude, null),
   families: named.argumentOr(#families, null),
 );
-Object? _$get56(_i1.FontFamilyProperties object) => object.files;
-Object? _$get57(_i1.FontFamilyProperties object) => object.languages;
-_i1.FontFamilyProperties _$create58(
+Object? _$get120(_i1.FontFamilyProperties object) => object.files;
+Object? _$get121(_i1.FontFamilyProperties object) => object.languages;
+_i1.FontFamilyProperties _$create122(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FontFamilyProperties(
   files: named.argumentOr(#files, const <String>[]),
   languages: named.argumentOr(#languages, null),
 );
-Object? _$get59(_i1.DesktopWindowProperties object) => object.title;
-Object? _$get60(_i1.DesktopWindowProperties object) => object.titleBar;
-Object? _$get61(_i1.DesktopWindowProperties object) => object.initialSize;
-Object? _$get62(_i1.DesktopWindowProperties object) => object.minSize;
-Object? _$get63(_i1.DesktopWindowProperties object) => object.maxSize;
-_i1.DesktopWindowProperties _$create64(
+Object? _$get123(_i1.DesktopWindowProperties object) => object.title;
+Object? _$get124(_i1.DesktopWindowProperties object) => object.titleBar;
+Object? _$get125(_i1.DesktopWindowProperties object) => object.initialSize;
+Object? _$get126(_i1.DesktopWindowProperties object) => object.minSize;
+Object? _$get127(_i1.DesktopWindowProperties object) => object.maxSize;
+_i1.DesktopWindowProperties _$create128(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.DesktopWindowProperties(
@@ -209,19 +391,19 @@ _i1.DesktopWindowProperties _$create64(
   minSize: named.argumentOr(#minSize, null),
   maxSize: named.argumentOr(#maxSize, null),
 );
-Object? _$get65(_i1.FlutterWebProperties object) => object.host;
-Object? _$get66(_i1.FlutterWebProperties object) => object.port;
-Object? _$get67(_i1.FlutterWebProperties object) => object.baseHref;
-Object? _$get68(_i1.FlutterWebProperties object) => object.https;
-Object? _$get69(_i1.FlutterWebProperties object) => object.headers;
-Object? _$get70(_i1.FlutterWebProperties object) =>
+Object? _$get129(_i1.FlutterWebProperties object) => object.host;
+Object? _$get130(_i1.FlutterWebProperties object) => object.port;
+Object? _$get131(_i1.FlutterWebProperties object) => object.baseHref;
+Object? _$get132(_i1.FlutterWebProperties object) => object.https;
+Object? _$get133(_i1.FlutterWebProperties object) => object.headers;
+Object? _$get134(_i1.FlutterWebProperties object) =>
     object.contentSecurityPolicy;
-Object? _$get71(_i1.FlutterWebProperties object) =>
+Object? _$get135(_i1.FlutterWebProperties object) =>
     object.contentSecurityPolicyReportOnly;
-Object? _$get72(_i1.FlutterWebProperties object) =>
+Object? _$get136(_i1.FlutterWebProperties object) =>
     object.contentSecurityPolicyConnectSrc;
-Object? _$get73(_i1.FlutterWebProperties object) => object.proxy;
-_i1.FlutterWebProperties _$create74(
+Object? _$get137(_i1.FlutterWebProperties object) => object.proxy;
+_i1.FlutterWebProperties _$create138(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterWebProperties(
@@ -241,20 +423,20 @@ _i1.FlutterWebProperties _$create74(
   ),
   proxy: named.argumentOr(#proxy, null),
 );
-Object? _$get75(_i1.FlutterWebHttps object) => object.certPath;
-Object? _$get76(_i1.FlutterWebHttps object) => object.certKeyPath;
-_i1.FlutterWebHttps _$create77(
+Object? _$get139(_i1.FlutterWebHttps object) => object.certPath;
+Object? _$get140(_i1.FlutterWebHttps object) => object.certKeyPath;
+_i1.FlutterWebHttps _$create141(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterWebHttps(
   certPath: named.argumentOr(#certPath, null),
   certKeyPath: named.argumentOr(#certKeyPath, null),
 );
-Object? _$get78(_i1.FlutterWebProxyRule object) => object.prefix;
-Object? _$get79(_i1.FlutterWebProxyRule object) => object.regex;
-Object? _$get80(_i1.FlutterWebProxyRule object) => object.replace;
-Object? _$get81(_i1.FlutterWebProxyRule object) => object.target;
-_i1.FlutterWebProxyRule _$create82(
+Object? _$get142(_i1.FlutterWebProxyRule object) => object.prefix;
+Object? _$get143(_i1.FlutterWebProxyRule object) => object.regex;
+Object? _$get144(_i1.FlutterWebProxyRule object) => object.replace;
+Object? _$get145(_i1.FlutterWebProxyRule object) => object.target;
+_i1.FlutterWebProxyRule _$create146(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterWebProxyRule(
@@ -263,22 +445,22 @@ _i1.FlutterWebProxyRule _$create82(
   replace: named.argumentOr(#replace, null),
   target: named.argumentOr(#target, null),
 );
-Object? _$get83(_i1.FlutterWebSeoProperties object) => object.enabled;
-Object? _$get84(_i1.FlutterWebSeoProperties object) => object.siteUrl;
-Object? _$get85(_i1.FlutterWebSeoProperties object) => object.fromRoutes;
-Object? _$get86(_i1.FlutterWebSeoProperties object) => object.exclude;
-Object? _$get87(_i1.FlutterWebSeoProperties object) => object.title;
-Object? _$get88(_i1.FlutterWebSeoProperties object) => object.description;
-Object? _$get89(_i1.FlutterWebSeoProperties object) => object.image;
-Object? _$get90(_i1.FlutterWebSeoProperties object) => object.siteName;
-Object? _$get91(_i1.FlutterWebSeoProperties object) => object.content;
-Object? _$get92(_i1.FlutterWebSeoProperties object) => object.pages;
-Object? _$get93(_i1.FlutterWebSeoProperties object) => object.sitemap;
-Object? _$get94(_i1.FlutterWebSeoProperties object) => object.llms;
-Object? _$get95(_i1.FlutterWebSeoProperties object) => object.markdown;
-Object? _$get96(_i1.FlutterWebSeoProperties object) => object.lastmod;
-Object? _$get97(_i1.FlutterWebSeoProperties object) => object.pageFiles;
-_i1.FlutterWebSeoProperties _$create98(
+Object? _$get147(_i1.FlutterWebSeoProperties object) => object.enabled;
+Object? _$get148(_i1.FlutterWebSeoProperties object) => object.siteUrl;
+Object? _$get149(_i1.FlutterWebSeoProperties object) => object.fromRoutes;
+Object? _$get150(_i1.FlutterWebSeoProperties object) => object.exclude;
+Object? _$get151(_i1.FlutterWebSeoProperties object) => object.title;
+Object? _$get152(_i1.FlutterWebSeoProperties object) => object.description;
+Object? _$get153(_i1.FlutterWebSeoProperties object) => object.image;
+Object? _$get154(_i1.FlutterWebSeoProperties object) => object.siteName;
+Object? _$get155(_i1.FlutterWebSeoProperties object) => object.content;
+Object? _$get156(_i1.FlutterWebSeoProperties object) => object.pages;
+Object? _$get157(_i1.FlutterWebSeoProperties object) => object.sitemap;
+Object? _$get158(_i1.FlutterWebSeoProperties object) => object.llms;
+Object? _$get159(_i1.FlutterWebSeoProperties object) => object.markdown;
+Object? _$get160(_i1.FlutterWebSeoProperties object) => object.lastmod;
+Object? _$get161(_i1.FlutterWebSeoProperties object) => object.pageFiles;
+_i1.FlutterWebSeoProperties _$create162(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterWebSeoProperties(
@@ -298,10 +480,10 @@ _i1.FlutterWebSeoProperties _$create98(
   lastmod: named.argumentOr(#lastmod, true),
   pageFiles: named.argumentOr(#pageFiles, r'directory'),
 );
-Object? _$get99(_i1.FlutterWebSeoContent object) => object.location;
-Object? _$get100(_i1.FlutterWebSeoContent object) => object.path;
-Object? _$get101(_i1.FlutterWebSeoContent object) => object.exclude;
-_i1.FlutterWebSeoContent _$create102(
+Object? _$get163(_i1.FlutterWebSeoContent object) => object.location;
+Object? _$get164(_i1.FlutterWebSeoContent object) => object.path;
+Object? _$get165(_i1.FlutterWebSeoContent object) => object.exclude;
+_i1.FlutterWebSeoContent _$create166(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterWebSeoContent(
@@ -309,12 +491,12 @@ _i1.FlutterWebSeoContent _$create102(
   path: named.argumentOr(#path, r'/'),
   exclude: named.argumentOr(#exclude, null),
 );
-Object? _$get103(_i1.FlutterWebSeoPage object) => object.path;
-Object? _$get104(_i1.FlutterWebSeoPage object) => object.title;
-Object? _$get105(_i1.FlutterWebSeoPage object) => object.description;
-Object? _$get106(_i1.FlutterWebSeoPage object) => object.image;
-Object? _$get107(_i1.FlutterWebSeoPage object) => object.index;
-_i1.FlutterWebSeoPage _$create108(
+Object? _$get167(_i1.FlutterWebSeoPage object) => object.path;
+Object? _$get168(_i1.FlutterWebSeoPage object) => object.title;
+Object? _$get169(_i1.FlutterWebSeoPage object) => object.description;
+Object? _$get170(_i1.FlutterWebSeoPage object) => object.image;
+Object? _$get171(_i1.FlutterWebSeoPage object) => object.index;
+_i1.FlutterWebSeoPage _$create172(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterWebSeoPage(
@@ -324,25 +506,25 @@ _i1.FlutterWebSeoPage _$create108(
   image: named.argumentOr(#image, null),
   index: named.argumentOr(#index, null),
 );
-Object? _$get109(_i1.FlutterWebCacheControlProperties object) => object.maxAge;
-Object? _$get110(_i1.FlutterWebCacheControlProperties object) => object.noCache;
-Object? _$get111(_i1.FlutterWebCacheControlProperties object) => object.noStore;
-Object? _$get112(_i1.FlutterWebCacheControlProperties object) =>
+Object? _$get173(_i1.FlutterWebCacheControlProperties object) => object.maxAge;
+Object? _$get174(_i1.FlutterWebCacheControlProperties object) => object.noCache;
+Object? _$get175(_i1.FlutterWebCacheControlProperties object) => object.noStore;
+Object? _$get176(_i1.FlutterWebCacheControlProperties object) =>
     object.mustRevalidate;
-Object? _$get113(_i1.FlutterWebCacheControlProperties object) =>
+Object? _$get177(_i1.FlutterWebCacheControlProperties object) =>
     object.noTransform;
-Object? _$get114(_i1.FlutterWebCacheControlProperties object) =>
+Object? _$get178(_i1.FlutterWebCacheControlProperties object) =>
     object.cachePublic;
-Object? _$get115(_i1.FlutterWebCacheControlProperties object) =>
+Object? _$get179(_i1.FlutterWebCacheControlProperties object) =>
     object.cachePrivate;
-Object? _$get116(_i1.FlutterWebCacheControlProperties object) =>
+Object? _$get180(_i1.FlutterWebCacheControlProperties object) =>
     object.proxyRevalidate;
-Object? _$get117(_i1.FlutterWebCacheControlProperties object) =>
+Object? _$get181(_i1.FlutterWebCacheControlProperties object) =>
     object.staleWhileRevalidate;
-Object? _$get118(_i1.FlutterWebCacheControlProperties object) =>
+Object? _$get182(_i1.FlutterWebCacheControlProperties object) =>
     object.staleIfError;
-Object? _$get119(_i1.FlutterWebCacheControlProperties object) => object.sMaxAge;
-_i1.FlutterWebCacheControlProperties _$create120(
+Object? _$get183(_i1.FlutterWebCacheControlProperties object) => object.sMaxAge;
+_i1.FlutterWebCacheControlProperties _$create184(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterWebCacheControlProperties(
@@ -358,42 +540,42 @@ _i1.FlutterWebCacheControlProperties _$create120(
   staleIfError: named.argumentOr(#staleIfError, null),
   sMaxAge: named.argumentOr(#sMaxAge, null),
 );
-Object? _$get121(_i1.FlutterRestartProperties object) => object.enabled;
-_i1.FlutterRestartProperties _$create122(
+Object? _$get185(_i1.FlutterRestartProperties object) => object.enabled;
+_i1.FlutterRestartProperties _$create186(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterRestartProperties(enabled: named.argumentOr(#enabled, true));
-Object? _$get123(_i1.FlutterDataSourceProperties object) => object.url;
-Object? _$get124(_i1.FlutterDataSourceProperties object) => object.sqlite;
-_i1.FlutterDataSourceProperties _$create125(
+Object? _$get187(_i1.FlutterDataSourceProperties object) => object.url;
+Object? _$get188(_i1.FlutterDataSourceProperties object) => object.sqlite;
+_i1.FlutterDataSourceProperties _$create189(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterDataSourceProperties(
   url: named.argumentOr(#url, null),
   sqlite: named.argumentOr(#sqlite, const _i1.FlutterSqliteProperties()),
 );
-Object? _$get126(_i1.FlutterSqliteProperties object) => object.location;
-_i1.FlutterSqliteProperties _$create127(
+Object? _$get190(_i1.FlutterSqliteProperties object) => object.location;
+_i1.FlutterSqliteProperties _$create191(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterSqliteProperties(
-  location: named.argumentOr(#location, _i4.SqliteLocation.support),
+  location: named.argumentOr(#location, _i5.SqliteLocation.support),
 );
-Object? _$get128(_i1.FlutterDataSourcesProperties object) => object.datasources;
-_i1.FlutterDataSourcesProperties _$create129(
+Object? _$get192(_i1.FlutterDataSourcesProperties object) => object.datasources;
+_i1.FlutterDataSourcesProperties _$create193(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterDataSourcesProperties(
   datasources: named.argumentOr(#datasources, null),
 );
-Object? _$get130(_i1.FlutterResourcesCacheProperties object) => object.enabled;
-Object? _$get131(_i1.FlutterResourcesCacheProperties object) => object.maxAge;
-Object? _$get132(_i1.FlutterResourcesCacheProperties object) =>
+Object? _$get194(_i1.FlutterResourcesCacheProperties object) => object.enabled;
+Object? _$get195(_i1.FlutterResourcesCacheProperties object) => object.maxAge;
+Object? _$get196(_i1.FlutterResourcesCacheProperties object) =>
     object.maxEntrySize;
-Object? _$get133(_i1.FlutterResourcesCacheProperties object) => object.maxSize;
-Object? _$get134(_i1.FlutterResourcesCacheProperties object) =>
+Object? _$get197(_i1.FlutterResourcesCacheProperties object) => object.maxSize;
+Object? _$get198(_i1.FlutterResourcesCacheProperties object) =>
     object.locations;
-_i1.FlutterResourcesCacheProperties _$create135(
+_i1.FlutterResourcesCacheProperties _$create199(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterResourcesCacheProperties(
@@ -403,8 +585,8 @@ _i1.FlutterResourcesCacheProperties _$create135(
   maxSize: named.argumentOr(#maxSize, null),
   locations: named.argumentOr(#locations, const <_i1.ResourceCacheLocation>[]),
 );
-Object? _$get136(_i1.FlutterResourcesViewProperties object) => object.fade;
-_i1.FlutterResourcesViewProperties _$create137(
+Object? _$get200(_i1.FlutterResourcesViewProperties object) => object.fade;
+_i1.FlutterResourcesViewProperties _$create201(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.FlutterResourcesViewProperties(
@@ -414,113 +596,113 @@ _i1.FlutterResourcesViewProperties _$create137(
 /// The binding of the `@ConfigurationProperties` classes of the module
 /// `flutterConfigBeans`: the descriptions only its binder uses. The module
 /// hands them to the context.
-List<_i5.Introspection<Object>>
+List<_i3.Introspection<Object>>
 get $flutterConfigBeansPropertiesIntrospections => [
-  const _i5.Introspection<_i1.FlutterAppProperties>(
+  const _i3.Introspection<_i1.FlutterAppProperties>(
     className: r'FlutterAppProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterAppProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterAppProperties>(
         r'type',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
+        typeInfo: _i3.ClassType<String>(nullable: true),
         get: _$get0,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterAppProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterAppProperties>(
         r'title',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
+        typeInfo: _i3.ClassType<String>(nullable: true),
         get: _$get1,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterAppProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterAppProperties>(
         r'description',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
+        typeInfo: _i3.ClassType<String>(nullable: true),
         get: _$get2,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterAppProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterAppProperties>(
         r'debugBanner',
-        typeInfo: _i5.ClassType<bool>(),
+        typeInfo: _i3.ClassType<bool>(),
         get: _$get3,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterAppProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterAppProperties>(
         r'locales',
         nullable: true,
-        typeInfo: _i5.ListType<String>(_i5.ClassType<String>(), nullable: true),
+        typeInfo: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
         get: _$get4,
       ),
     ],
-    annotations: [_i5.ConfigurationProperties(r'spring.flutter.app')],
+    annotations: [_i3.ConfigurationProperties(r'spring.flutter.app')],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterAppProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterAppProperties>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterAppProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'type',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #type,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'title',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #title,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'description',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #description,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'debugBanner',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #debugBanner,
           hasDefaultValue: true,
           defaultValue: true,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'locales',
-          type: _i5.ListType<String>(_i5.ClassType<String>(), nullable: true),
+          type: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
           symbol: #locales,
         ),
       ],
       create: _$create5,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterProperties>(
+  const _i3.Introspection<_i1.FlutterProperties>(
     className: r'FlutterProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterProperties>(
         r'scanOsEnvironment',
-        typeInfo: _i5.ClassType<bool>(),
+        typeInfo: _i3.ClassType<bool>(),
         get: _$get6,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterProperties>(
         r'shortcuts',
-        typeInfo: _i5.MapType<String, List<String>>(
-          _i5.ClassType<String>(),
-          _i5.ListType<String>(_i5.ClassType<String>()),
+        typeInfo: _i3.MapType<String, List<String>>(
+          _i3.ClassType<String>(),
+          _i3.ListType<String>(_i3.ClassType<String>()),
         ),
         get: _$get7,
       ),
     ],
-    annotations: [_i5.ConfigurationProperties(r'spring.flutter')],
+    annotations: [_i3.ConfigurationProperties(r'spring.flutter')],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterProperties>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'scanOsEnvironment',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #scanOsEnvironment,
           hasDefaultValue: true,
           defaultValue: false,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'shortcuts',
-          type: _i5.MapType<String, List<String>>(
-            _i5.ClassType<String>(),
-            _i5.ListType<String>(_i5.ClassType<String>()),
+          type: _i3.MapType<String, List<String>>(
+            _i3.ClassType<String>(),
+            _i3.ListType<String>(_i3.ClassType<String>()),
           ),
           symbol: #shortcuts,
           hasDefaultValue: true,
@@ -530,745 +712,1499 @@ get $flutterConfigBeansPropertiesIntrospections => [
       create: _$create8,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterDebugProperties>(
+  const _i3.Introspection<_i1.FlutterDebugProperties>(
     className: r'FlutterDebugProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterDebugProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterDebugProperties>(
         r'enabled',
         nullable: true,
-        typeInfo: _i5.ClassType<bool>(nullable: true),
+        typeInfo: _i3.ClassType<bool>(nullable: true),
         get: _$get9,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterDebugProperties>(
         r'frameMeter',
-        typeInfo: _i5.ClassType<_i1.FlutterDebugFeatureProperties>(),
+        typeInfo: _i3.ClassType<_i1.FlutterDebugFeatureProperties>(),
         get: _$get10,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterDebugProperties>(
         r'motion',
-        typeInfo: _i5.ClassType<_i1.FlutterDebugFeatureProperties>(),
+        typeInfo: _i3.ClassType<_i1.FlutterDebugFeatureProperties>(),
         get: _$get11,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterDebugProperties>(
         r'timeline',
-        typeInfo: _i5.ClassType<_i1.FlutterDebugTimelineProperties>(),
+        typeInfo: _i3.ClassType<_i1.FlutterDebugFeatureProperties>(),
         get: _$get12,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterDebugProperties>(
         r'isolates',
-        typeInfo: _i5.ClassType<_i1.FlutterDebugIsolatesProperties>(),
+        typeInfo: _i3.ClassType<_i1.FlutterDebugIsolatesProperties>(),
         get: _$get13,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugProperties>(
-        r'drag',
-        typeInfo: _i5.ClassType<_i1.FlutterDebugFeatureProperties>(),
+      _i3.IntrospectedProperty<_i1.FlutterDebugProperties>(
+        r'console',
+        typeInfo: _i3.ClassType<_i1.FlutterDebugConsoleProperties>(),
         get: _$get14,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugProperties>(
-        r'overlays',
-        typeInfo: _i5.ClassType<_i1.FlutterDebugOverlaysProperties>(),
+      _i3.IntrospectedProperty<_i1.FlutterDebugProperties>(
+        r'drag',
+        typeInfo: _i3.ClassType<_i1.FlutterDebugFeatureProperties>(),
         get: _$get15,
       ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugProperties>(
+        r'overlays',
+        typeInfo: _i3.ClassType<_i1.FlutterDebugOverlaysProperties>(),
+        get: _$get16,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugProperties>(
+        r'flutterTools',
+        typeInfo: _i3.ClassType<_i1.FlutterDebugFeatureProperties>(),
+        get: _$get17,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugProperties>(
+        r'network',
+        typeInfo: _i3.ClassType<_i1.FlutterDebugNetworkProperties>(),
+        get: _$get18,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugProperties>(
+        r'logs',
+        typeInfo: _i3.ClassType<_i1.FlutterDebugLogsProperties>(),
+        get: _$get19,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugProperties>(
+        r'graph',
+        typeInfo: _i3.ClassType<_i1.FlutterDebugGraphProperties>(),
+        get: _$get20,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugProperties>(
+        r'theme',
+        typeInfo: _i3.ClassType<String>(),
+        get: _$get21,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugProperties>(
+        r'themes',
+        typeInfo: _i3.MapType<String, _i1.FlutterDebugThemeProperties>(
+          _i3.ClassType<String>(),
+          _i3.ClassType<_i1.FlutterDebugThemeProperties>(),
+        ),
+        get: _$get22,
+      ),
     ],
-    annotations: [_i5.ConfigurationProperties(r'spring.flutter.debug')],
+    annotations: [_i3.ConfigurationProperties(r'spring.flutter.debug')],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterDebugProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterDebugProperties>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterDebugProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'enabled',
-          type: _i5.ClassType<bool>(nullable: true),
+          type: _i3.ClassType<bool>(nullable: true),
           symbol: #enabled,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'frameMeter',
-          type: _i5.ClassType<_i1.FlutterDebugFeatureProperties>(),
+          type: _i3.ClassType<_i1.FlutterDebugFeatureProperties>(),
           symbol: #frameMeter,
           hasDefaultValue: true,
           defaultValue: _i1.FlutterDebugFeatureProperties(),
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'motion',
-          type: _i5.ClassType<_i1.FlutterDebugFeatureProperties>(),
+          type: _i3.ClassType<_i1.FlutterDebugFeatureProperties>(),
           symbol: #motion,
           hasDefaultValue: true,
           defaultValue: _i1.FlutterDebugFeatureProperties(),
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'timeline',
-          type: _i5.ClassType<_i1.FlutterDebugTimelineProperties>(),
+          type: _i3.ClassType<_i1.FlutterDebugFeatureProperties>(),
           symbol: #timeline,
           hasDefaultValue: true,
-          defaultValue: _i1.FlutterDebugTimelineProperties(),
+          defaultValue: _i1.FlutterDebugFeatureProperties(),
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'isolates',
-          type: _i5.ClassType<_i1.FlutterDebugIsolatesProperties>(),
+          type: _i3.ClassType<_i1.FlutterDebugIsolatesProperties>(),
           symbol: #isolates,
           hasDefaultValue: true,
           defaultValue: _i1.FlutterDebugIsolatesProperties(),
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
+          r'console',
+          type: _i3.ClassType<_i1.FlutterDebugConsoleProperties>(),
+          symbol: #console,
+          hasDefaultValue: true,
+          defaultValue: _i1.FlutterDebugConsoleProperties(),
+        ),
+        _i3.IntrospectedParameter(
           r'drag',
-          type: _i5.ClassType<_i1.FlutterDebugFeatureProperties>(),
+          type: _i3.ClassType<_i1.FlutterDebugFeatureProperties>(),
           symbol: #drag,
           hasDefaultValue: true,
           defaultValue: _i1.FlutterDebugFeatureProperties(),
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'overlays',
-          type: _i5.ClassType<_i1.FlutterDebugOverlaysProperties>(),
+          type: _i3.ClassType<_i1.FlutterDebugOverlaysProperties>(),
           symbol: #overlays,
           hasDefaultValue: true,
           defaultValue: _i1.FlutterDebugOverlaysProperties(),
         ),
+        _i3.IntrospectedParameter(
+          r'flutterTools',
+          type: _i3.ClassType<_i1.FlutterDebugFeatureProperties>(),
+          symbol: #flutterTools,
+          hasDefaultValue: true,
+          defaultValue: _i1.FlutterDebugFeatureProperties(),
+        ),
+        _i3.IntrospectedParameter(
+          r'network',
+          type: _i3.ClassType<_i1.FlutterDebugNetworkProperties>(),
+          symbol: #network,
+          hasDefaultValue: true,
+          defaultValue: _i1.FlutterDebugNetworkProperties(),
+        ),
+        _i3.IntrospectedParameter(
+          r'logs',
+          type: _i3.ClassType<_i1.FlutterDebugLogsProperties>(),
+          symbol: #logs,
+          hasDefaultValue: true,
+          defaultValue: _i1.FlutterDebugLogsProperties(),
+        ),
+        _i3.IntrospectedParameter(
+          r'graph',
+          type: _i3.ClassType<_i1.FlutterDebugGraphProperties>(),
+          symbol: #graph,
+          hasDefaultValue: true,
+          defaultValue: _i1.FlutterDebugGraphProperties(),
+        ),
+        _i3.IntrospectedParameter(
+          r'theme',
+          type: _i3.ClassType<String>(),
+          symbol: #theme,
+          hasDefaultValue: true,
+          defaultValue: r'default',
+        ),
+        _i3.IntrospectedParameter(
+          r'themes',
+          type: _i3.MapType<String, _i1.FlutterDebugThemeProperties>(
+            _i3.ClassType<String>(),
+            _i3.ClassType<_i1.FlutterDebugThemeProperties>(),
+          ),
+          symbol: #themes,
+          hasDefaultValue: true,
+          defaultValue: <String, _i1.FlutterDebugThemeProperties>{},
+        ),
       ],
-      create: _$create16,
+      create: _$create23,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterDebugFeatureProperties>(
+  const _i3.Introspection<_i1.FlutterDebugFeatureProperties>(
     className: r'FlutterDebugFeatureProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterDebugFeatureProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterDebugFeatureProperties>(
         r'enabled',
         nullable: true,
-        typeInfo: _i5.ClassType<bool>(nullable: true),
-        get: _$get17,
-      ),
-    ],
-    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
-    instantiate: _i1.FlutterDebugFeatureProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterDebugFeatureProperties>(
-      parameters: [
-        _i5.IntrospectedParameter(
-          r'enabled',
-          type: _i5.ClassType<bool>(nullable: true),
-          symbol: #enabled,
-        ),
-      ],
-      create: _$create18,
-    ),
-  ),
-  const _i5.Introspection<_i1.FlutterDebugTimelineProperties>(
-    className: r'FlutterDebugTimelineProperties',
-    properties: [
-      _i5.IntrospectedProperty<_i1.FlutterDebugTimelineProperties>(
-        r'enabled',
-        nullable: true,
-        typeInfo: _i5.ClassType<bool>(nullable: true),
-        get: _$get19,
-      ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugTimelineProperties>(
-        r'position',
-        typeInfo: _i5.EnumType<_i2.FrameMeterPosition>(
-          _i2.FrameMeterPosition.values,
-        ),
-        get: _$get20,
-      ),
-    ],
-    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
-    instantiate: _i1.FlutterDebugTimelineProperties.new,
-    constructor:
-        _i5.IntrospectedConstructor<_i1.FlutterDebugTimelineProperties>(
-          parameters: [
-            _i5.IntrospectedParameter(
-              r'enabled',
-              type: _i5.ClassType<bool>(nullable: true),
-              symbol: #enabled,
-            ),
-            _i5.IntrospectedParameter(
-              r'position',
-              type: _i5.EnumType<_i2.FrameMeterPosition>(
-                _i2.FrameMeterPosition.values,
-              ),
-              symbol: #position,
-              hasDefaultValue: true,
-              defaultValue: _i2.FrameMeterPosition.bottomLeft,
-            ),
-          ],
-          create: _$create21,
-        ),
-  ),
-  const _i5.Introspection<_i1.FlutterDebugIsolatesProperties>(
-    className: r'FlutterDebugIsolatesProperties',
-    properties: [
-      _i5.IntrospectedProperty<_i1.FlutterDebugIsolatesProperties>(
-        r'enabled',
-        nullable: true,
-        typeInfo: _i5.ClassType<bool>(nullable: true),
-        get: _$get22,
-      ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugIsolatesProperties>(
-        r'position',
-        typeInfo: _i5.EnumType<_i2.FrameMeterPosition>(
-          _i2.FrameMeterPosition.values,
-        ),
-        get: _$get23,
-      ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugIsolatesProperties>(
-        r'interval',
-        typeInfo: _i5.ClassType<Duration>(),
+        typeInfo: _i3.ClassType<bool>(nullable: true),
         get: _$get24,
       ),
     ],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+    instantiate: _i1.FlutterDebugFeatureProperties.new,
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterDebugFeatureProperties>(
+      parameters: [
+        _i3.IntrospectedParameter(
+          r'enabled',
+          type: _i3.ClassType<bool>(nullable: true),
+          symbol: #enabled,
+        ),
+      ],
+      create: _$create25,
+    ),
+  ),
+  const _i3.Introspection<_i1.FlutterDebugIsolatesProperties>(
+    className: r'FlutterDebugIsolatesProperties',
+    properties: [
+      _i3.IntrospectedProperty<_i1.FlutterDebugIsolatesProperties>(
+        r'enabled',
+        nullable: true,
+        typeInfo: _i3.ClassType<bool>(nullable: true),
+        get: _$get26,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugIsolatesProperties>(
+        r'interval',
+        typeInfo: _i3.ClassType<Duration>(),
+        get: _$get27,
+      ),
+    ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterDebugIsolatesProperties.new,
     constructor:
-        _i5.IntrospectedConstructor<_i1.FlutterDebugIsolatesProperties>(
+        _i3.IntrospectedConstructor<_i1.FlutterDebugIsolatesProperties>(
           parameters: [
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'enabled',
-              type: _i5.ClassType<bool>(nullable: true),
+              type: _i3.ClassType<bool>(nullable: true),
               symbol: #enabled,
             ),
-            _i5.IntrospectedParameter(
-              r'position',
-              type: _i5.EnumType<_i2.FrameMeterPosition>(
-                _i2.FrameMeterPosition.values,
-              ),
-              symbol: #position,
-              hasDefaultValue: true,
-              defaultValue: _i2.FrameMeterPosition.bottomRight,
-            ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'interval',
-              type: _i5.ClassType<Duration>(),
+              type: _i3.ClassType<Duration>(),
               symbol: #interval,
               hasDefaultValue: true,
               defaultValue: Duration(seconds: 1),
             ),
           ],
-          create: _$create25,
+          create: _$create28,
         ),
   ),
-  const _i5.Introspection<_i1.FlutterDebugOverlaysProperties>(
-    className: r'FlutterDebugOverlaysProperties',
+  const _i3.Introspection<_i1.FlutterDebugConsoleProperties>(
+    className: r'FlutterDebugConsoleProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterDebugOverlaysProperties>(
-        r'layout',
-        typeInfo: _i5.EnumType<_i3.DebugOverlayLayout>(
-          _i3.DebugOverlayLayout.values,
-        ),
-        get: _$get26,
-      ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugOverlaysProperties>(
-        r'maxHeight',
-        typeInfo: _i5.ClassType<double>(),
-        get: _$get27,
-      ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugOverlaysProperties>(
-        r'margin',
-        typeInfo: _i5.ClassType<_i1.FlutterDebugOverlaysMargin>(),
-        get: _$get28,
-      ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugOverlaysProperties>(
-        r'drag',
-        typeInfo: _i5.ClassType<_i1.FlutterDebugOverlaysDrag>(),
+      _i3.IntrospectedProperty<_i1.FlutterDebugConsoleProperties>(
+        r'enabled',
+        nullable: true,
+        typeInfo: _i3.ClassType<bool>(nullable: true),
         get: _$get29,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugConsoleProperties>(
+        r'position',
+        typeInfo: _i3.EnumType<_i2.DebugCorner>(_i2.DebugCorner.values),
+        get: _$get30,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugConsoleProperties>(
+        r'opacity',
+        typeInfo: _i3.ClassType<double>(),
+        get: _$get31,
+        annotations: [_i3.Range(0, 1)],
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugConsoleProperties>(
+        r'interaction',
+        typeInfo: _i3.EnumType<_i1.DebugConsoleInteraction>(
+          _i1.DebugConsoleInteraction.values,
+        ),
+        get: _$get32,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugConsoleProperties>(
+        r'passThroughOpacity',
+        typeInfo: _i3.ClassType<double>(),
+        get: _$get33,
+        annotations: [_i3.Range(0, 1)],
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugConsoleProperties>(
+        r'slideDuration',
+        typeInfo: _i3.ClassType<Duration>(),
+        get: _$get34,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugConsoleProperties>(
+        r'maxLines',
+        typeInfo: _i3.ClassType<int>(),
+        get: _$get35,
+        annotations: [_i3.Range(1, 200)],
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugConsoleProperties>(
+        r'width',
+        typeInfo: _i3.ClassType<double>(),
+        get: _$get36,
+        annotations: [_i3.Range(0.2, 1)],
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugConsoleProperties>(
+        r'segments',
+        typeInfo: _i3.ListType<String>(_i3.ClassType<String>()),
+        get: _$get37,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugConsoleProperties>(
+        r'header',
+        nullable: true,
+        typeInfo: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
+        get: _$get38,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugConsoleProperties>(
+        r'panes',
+        typeInfo: _i3.ListType<String>(_i3.ClassType<String>()),
+        get: _$get39,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugConsoleProperties>(
+        r'shownPanes',
+        nullable: true,
+        typeInfo: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
+        get: _$get40,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugConsoleProperties>(
+        r'history',
+        typeInfo: _i3.ClassType<int>(),
+        get: _$get41,
+        annotations: [_i3.Range(0, 1000)],
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugConsoleProperties>(
+        r'filter',
+        typeInfo: _i3.ClassType<_i1.FlutterDebugLogsFilterProperties>(),
+        get: _$get42,
       ),
     ],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+    instantiate: _i1.FlutterDebugConsoleProperties.new,
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterDebugConsoleProperties>(
+      parameters: [
+        _i3.IntrospectedParameter(
+          r'enabled',
+          type: _i3.ClassType<bool>(nullable: true),
+          symbol: #enabled,
+        ),
+        _i3.IntrospectedParameter(
+          r'position',
+          type: _i3.EnumType<_i2.DebugCorner>(_i2.DebugCorner.values),
+          symbol: #position,
+          hasDefaultValue: true,
+          defaultValue: _i2.DebugCorner.topLeft,
+        ),
+        _i3.IntrospectedParameter(
+          r'opacity',
+          type: _i3.ClassType<double>(),
+          symbol: #opacity,
+          hasDefaultValue: true,
+          defaultValue: 0.9,
+        ),
+        _i3.IntrospectedParameter(
+          r'interaction',
+          type: _i3.EnumType<_i1.DebugConsoleInteraction>(
+            _i1.DebugConsoleInteraction.values,
+          ),
+          symbol: #interaction,
+          hasDefaultValue: true,
+          defaultValue: _i1.DebugConsoleInteraction.interact,
+        ),
+        _i3.IntrospectedParameter(
+          r'passThroughOpacity',
+          type: _i3.ClassType<double>(),
+          symbol: #passThroughOpacity,
+          hasDefaultValue: true,
+          defaultValue: 0.7,
+        ),
+        _i3.IntrospectedParameter(
+          r'slideDuration',
+          type: _i3.ClassType<Duration>(),
+          symbol: #slideDuration,
+          hasDefaultValue: true,
+          defaultValue: Duration(milliseconds: 220),
+        ),
+        _i3.IntrospectedParameter(
+          r'maxLines',
+          type: _i3.ClassType<int>(),
+          symbol: #maxLines,
+          hasDefaultValue: true,
+          defaultValue: 12,
+        ),
+        _i3.IntrospectedParameter(
+          r'width',
+          type: _i3.ClassType<double>(),
+          symbol: #width,
+          hasDefaultValue: true,
+          defaultValue: 1.0,
+        ),
+        _i3.IntrospectedParameter(
+          r'segments',
+          type: _i3.ListType<String>(_i3.ClassType<String>()),
+          symbol: #segments,
+          hasDefaultValue: true,
+          defaultValue: [r'fps', r'scene-fps', r'frames-lost', r'filter'],
+        ),
+        _i3.IntrospectedParameter(
+          r'header',
+          type: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
+          symbol: #header,
+        ),
+        _i3.IntrospectedParameter(
+          r'panes',
+          type: _i3.ListType<String>(_i3.ClassType<String>()),
+          symbol: #panes,
+          hasDefaultValue: true,
+          defaultValue: [r'logs'],
+        ),
+        _i3.IntrospectedParameter(
+          r'shownPanes',
+          type: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
+          symbol: #shownPanes,
+        ),
+        _i3.IntrospectedParameter(
+          r'history',
+          type: _i3.ClassType<int>(),
+          symbol: #history,
+          hasDefaultValue: true,
+          defaultValue: 50,
+        ),
+        _i3.IntrospectedParameter(
+          r'filter',
+          type: _i3.ClassType<_i1.FlutterDebugLogsFilterProperties>(),
+          symbol: #filter,
+          hasDefaultValue: true,
+          defaultValue: _i1.FlutterDebugLogsFilterProperties(),
+        ),
+      ],
+      create: _$create43,
+    ),
+  ),
+  const _i3.Introspection<_i1.FlutterDebugLogsFilterProperties>(
+    className: r'FlutterDebugLogsFilterProperties',
+    properties: [
+      _i3.IntrospectedProperty<_i1.FlutterDebugLogsFilterProperties>(
+        r'level',
+        typeInfo: _i3.EnumType<_i3.SpringLogLevel>(_i3.SpringLogLevel.values),
+        get: _$get44,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugLogsFilterProperties>(
+        r'text',
+        typeInfo: _i3.ClassType<String>(),
+        get: _$get45,
+      ),
+    ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+    instantiate: _i1.FlutterDebugLogsFilterProperties.new,
+    constructor:
+        _i3.IntrospectedConstructor<_i1.FlutterDebugLogsFilterProperties>(
+          parameters: [
+            _i3.IntrospectedParameter(
+              r'level',
+              type: _i3.EnumType<_i3.SpringLogLevel>(_i3.SpringLogLevel.values),
+              symbol: #level,
+              hasDefaultValue: true,
+              defaultValue: _i3.SpringLogLevel.trace,
+            ),
+            _i3.IntrospectedParameter(
+              r'text',
+              type: _i3.ClassType<String>(),
+              symbol: #text,
+              hasDefaultValue: true,
+              defaultValue: r'',
+            ),
+          ],
+          create: _$create46,
+        ),
+  ),
+  const _i3.Introspection<_i1.FlutterDebugOverlaysProperties>(
+    className: r'FlutterDebugOverlaysProperties',
+    properties: [
+      _i3.IntrospectedProperty<_i1.FlutterDebugOverlaysProperties>(
+        r'layout',
+        typeInfo: _i3.EnumType<_i4.DebugOverlayLayout>(
+          _i4.DebugOverlayLayout.values,
+        ),
+        get: _$get47,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugOverlaysProperties>(
+        r'maxHeight',
+        typeInfo: _i3.ClassType<double>(),
+        get: _$get48,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugOverlaysProperties>(
+        r'margin',
+        typeInfo: _i3.ClassType<_i1.FlutterDebugOverlaysMargin>(),
+        get: _$get49,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugOverlaysProperties>(
+        r'drag',
+        typeInfo: _i3.ClassType<_i1.FlutterDebugOverlaysDrag>(),
+        get: _$get50,
+      ),
+    ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterDebugOverlaysProperties.new,
     constructor:
-        _i5.IntrospectedConstructor<_i1.FlutterDebugOverlaysProperties>(
+        _i3.IntrospectedConstructor<_i1.FlutterDebugOverlaysProperties>(
           parameters: [
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'layout',
-              type: _i5.EnumType<_i3.DebugOverlayLayout>(
-                _i3.DebugOverlayLayout.values,
+              type: _i3.EnumType<_i4.DebugOverlayLayout>(
+                _i4.DebugOverlayLayout.values,
               ),
               symbol: #layout,
               hasDefaultValue: true,
-              defaultValue: _i3.DebugOverlayLayout.auto,
+              defaultValue: _i4.DebugOverlayLayout.auto,
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'maxHeight',
-              type: _i5.ClassType<double>(),
+              type: _i3.ClassType<double>(),
               symbol: #maxHeight,
               hasDefaultValue: true,
               defaultValue: 0.4,
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'margin',
-              type: _i5.ClassType<_i1.FlutterDebugOverlaysMargin>(),
+              type: _i3.ClassType<_i1.FlutterDebugOverlaysMargin>(),
               symbol: #margin,
               hasDefaultValue: true,
               defaultValue: _i1.FlutterDebugOverlaysMargin(),
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'drag',
-              type: _i5.ClassType<_i1.FlutterDebugOverlaysDrag>(),
+              type: _i3.ClassType<_i1.FlutterDebugOverlaysDrag>(),
               symbol: #drag,
               hasDefaultValue: true,
               defaultValue: _i1.FlutterDebugOverlaysDrag(),
             ),
           ],
-          create: _$create30,
+          create: _$create51,
         ),
   ),
-  const _i5.Introspection<_i1.FlutterDebugOverlaysMargin>(
+  const _i3.Introspection<_i1.FlutterDebugOverlaysMargin>(
     className: r'FlutterDebugOverlaysMargin',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterDebugOverlaysMargin>(
+      _i3.IntrospectedProperty<_i1.FlutterDebugOverlaysMargin>(
         r'top',
-        typeInfo: _i5.ClassType<double>(),
-        get: _$get31,
+        typeInfo: _i3.ClassType<double>(),
+        get: _$get52,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugOverlaysMargin>(
+      _i3.IntrospectedProperty<_i1.FlutterDebugOverlaysMargin>(
         r'bottom',
-        typeInfo: _i5.ClassType<double>(),
-        get: _$get32,
+        typeInfo: _i3.ClassType<double>(),
+        get: _$get53,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugOverlaysMargin>(
+      _i3.IntrospectedProperty<_i1.FlutterDebugOverlaysMargin>(
         r'left',
-        typeInfo: _i5.ClassType<double>(),
-        get: _$get33,
+        typeInfo: _i3.ClassType<double>(),
+        get: _$get54,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugOverlaysMargin>(
+      _i3.IntrospectedProperty<_i1.FlutterDebugOverlaysMargin>(
         r'right',
-        typeInfo: _i5.ClassType<double>(),
-        get: _$get34,
+        typeInfo: _i3.ClassType<double>(),
+        get: _$get55,
       ),
     ],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterDebugOverlaysMargin.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterDebugOverlaysMargin>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterDebugOverlaysMargin>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'top',
-          type: _i5.ClassType<double>(),
+          type: _i3.ClassType<double>(),
           symbol: #top,
           hasDefaultValue: true,
           defaultValue: 0.0,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'bottom',
-          type: _i5.ClassType<double>(),
+          type: _i3.ClassType<double>(),
           symbol: #bottom,
           hasDefaultValue: true,
           defaultValue: 0.0,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'left',
-          type: _i5.ClassType<double>(),
+          type: _i3.ClassType<double>(),
           symbol: #left,
           hasDefaultValue: true,
           defaultValue: 0.0,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'right',
-          type: _i5.ClassType<double>(),
+          type: _i3.ClassType<double>(),
           symbol: #right,
           hasDefaultValue: true,
           defaultValue: 0.0,
         ),
       ],
-      create: _$create35,
+      create: _$create56,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterDebugOverlaysDrag>(
+  const _i3.Introspection<_i1.FlutterDebugOverlaysDrag>(
     className: r'FlutterDebugOverlaysDrag',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterDebugOverlaysDrag>(
+      _i3.IntrospectedProperty<_i1.FlutterDebugOverlaysDrag>(
         r'snap',
-        typeInfo: _i5.EnumType<_i1.DebugOverlaySnap>(
+        typeInfo: _i3.EnumType<_i1.DebugOverlaySnap>(
           _i1.DebugOverlaySnap.values,
         ),
-        get: _$get36,
+        get: _$get57,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterDebugOverlaysDrag>(
+      _i3.IntrospectedProperty<_i1.FlutterDebugOverlaysDrag>(
         r'remember',
-        typeInfo: _i5.ClassType<bool>(),
-        get: _$get37,
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get58,
       ),
     ],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterDebugOverlaysDrag.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterDebugOverlaysDrag>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterDebugOverlaysDrag>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'snap',
-          type: _i5.EnumType<_i1.DebugOverlaySnap>(_i1.DebugOverlaySnap.values),
+          type: _i3.EnumType<_i1.DebugOverlaySnap>(_i1.DebugOverlaySnap.values),
           symbol: #snap,
           hasDefaultValue: true,
           defaultValue: _i1.DebugOverlaySnap.corners,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'remember',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #remember,
           hasDefaultValue: true,
           defaultValue: true,
         ),
       ],
-      create: _$create38,
+      create: _$create59,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterMarkdownProperties>(
-    className: r'FlutterMarkdownProperties',
+  const _i3.Introspection<_i1.FlutterDebugNetworkProperties>(
+    className: r'FlutterDebugNetworkProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterMarkdownProperties>(
-        r'placeholders',
-        typeInfo: _i5.ClassType<bool>(),
-        get: _$get39,
+      _i3.IntrospectedProperty<_i1.FlutterDebugNetworkProperties>(
+        r'enabled',
+        nullable: true,
+        typeInfo: _i3.ClassType<bool>(nullable: true),
+        get: _$get60,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugNetworkProperties>(
+        r'bodies',
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get61,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugNetworkProperties>(
+        r'bodyLimit',
+        typeInfo: _i3.ClassType<_i3.DataSize>(),
+        get: _$get62,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugNetworkProperties>(
+        r'bodyBudget',
+        typeInfo: _i3.ClassType<_i3.DataSize>(),
+        get: _$get63,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugNetworkProperties>(
+        r'maxEntries',
+        typeInfo: _i3.ClassType<int>(),
+        get: _$get64,
+        annotations: [_i3.Range(1, 10000)],
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugNetworkProperties>(
+        r'maxFrames',
+        typeInfo: _i3.ClassType<int>(),
+        get: _$get65,
+        annotations: [_i3.Range(0, 10000)],
       ),
     ],
-    annotations: [_i5.ConfigurationProperties(r'spring.flutter.markdown')],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
-    instantiate: _i1.FlutterMarkdownProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterMarkdownProperties>(
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+    instantiate: _i1.FlutterDebugNetworkProperties.new,
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterDebugNetworkProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
+          r'enabled',
+          type: _i3.ClassType<bool>(nullable: true),
+          symbol: #enabled,
+        ),
+        _i3.IntrospectedParameter(
+          r'bodies',
+          type: _i3.ClassType<bool>(),
+          symbol: #bodies,
+          hasDefaultValue: true,
+          defaultValue: false,
+        ),
+        _i3.IntrospectedParameter(
+          r'bodyLimit',
+          type: _i3.ClassType<_i3.DataSize>(),
+          symbol: #bodyLimit,
+          hasDefaultValue: true,
+          defaultValue: _i3.DataSize.ofBytes(65536),
+        ),
+        _i3.IntrospectedParameter(
+          r'bodyBudget',
+          type: _i3.ClassType<_i3.DataSize>(),
+          symbol: #bodyBudget,
+          hasDefaultValue: true,
+          defaultValue: _i3.DataSize.ofBytes(4194304),
+        ),
+        _i3.IntrospectedParameter(
+          r'maxEntries',
+          type: _i3.ClassType<int>(),
+          symbol: #maxEntries,
+          hasDefaultValue: true,
+          defaultValue: 200,
+        ),
+        _i3.IntrospectedParameter(
+          r'maxFrames',
+          type: _i3.ClassType<int>(),
+          symbol: #maxFrames,
+          hasDefaultValue: true,
+          defaultValue: 200,
+        ),
+      ],
+      create: _$create66,
+    ),
+  ),
+  const _i3.Introspection<_i1.FlutterDebugLogsProperties>(
+    className: r'FlutterDebugLogsProperties',
+    properties: [
+      _i3.IntrospectedProperty<_i1.FlutterDebugLogsProperties>(
+        r'export',
+        typeInfo: _i3.ClassType<_i1.FlutterDebugLogsExportProperties>(),
+        get: _$get67,
+      ),
+    ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+    instantiate: _i1.FlutterDebugLogsProperties.new,
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterDebugLogsProperties>(
+      parameters: [
+        _i3.IntrospectedParameter(
+          r'export',
+          type: _i3.ClassType<_i1.FlutterDebugLogsExportProperties>(),
+          symbol: #export,
+          hasDefaultValue: true,
+          defaultValue: _i1.FlutterDebugLogsExportProperties(),
+        ),
+      ],
+      create: _$create68,
+    ),
+  ),
+  const _i3.Introspection<_i1.FlutterDebugLogsExportProperties>(
+    className: r'FlutterDebugLogsExportProperties',
+    properties: [
+      _i3.IntrospectedProperty<_i1.FlutterDebugLogsExportProperties>(
+        r'enabled',
+        nullable: true,
+        typeInfo: _i3.ClassType<bool>(nullable: true),
+        get: _$get69,
+      ),
+    ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+    instantiate: _i1.FlutterDebugLogsExportProperties.new,
+    constructor:
+        _i3.IntrospectedConstructor<_i1.FlutterDebugLogsExportProperties>(
+          parameters: [
+            _i3.IntrospectedParameter(
+              r'enabled',
+              type: _i3.ClassType<bool>(nullable: true),
+              symbol: #enabled,
+            ),
+          ],
+          create: _$create70,
+        ),
+  ),
+  const _i3.Introspection<_i1.FlutterDebugGraphProperties>(
+    className: r'FlutterDebugGraphProperties',
+    properties: [
+      _i3.IntrospectedProperty<_i1.FlutterDebugGraphProperties>(
+        r'enabled',
+        nullable: true,
+        typeInfo: _i3.ClassType<bool>(nullable: true),
+        get: _$get71,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugGraphProperties>(
+        r'layers',
+        typeInfo: _i3.ListType<String>(_i3.ClassType<String>()),
+        get: _$get72,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugGraphProperties>(
+        r'hot',
+        typeInfo: _i3.ClassType<_i1.FlutterDebugGraphHotProperties>(),
+        get: _$get73,
+      ),
+    ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+    instantiate: _i1.FlutterDebugGraphProperties.new,
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterDebugGraphProperties>(
+      parameters: [
+        _i3.IntrospectedParameter(
+          r'enabled',
+          type: _i3.ClassType<bool>(nullable: true),
+          symbol: #enabled,
+        ),
+        _i3.IntrospectedParameter(
+          r'layers',
+          type: _i3.ListType<String>(_i3.ClassType<String>()),
+          symbol: #layers,
+          hasDefaultValue: true,
+          defaultValue: [r'*'],
+        ),
+        _i3.IntrospectedParameter(
+          r'hot',
+          type: _i3.ClassType<_i1.FlutterDebugGraphHotProperties>(),
+          symbol: #hot,
+          hasDefaultValue: true,
+          defaultValue: _i1.FlutterDebugGraphHotProperties(),
+        ),
+      ],
+      create: _$create74,
+    ),
+  ),
+  const _i3.Introspection<_i1.FlutterDebugGraphHotProperties>(
+    className: r'FlutterDebugGraphHotProperties',
+    properties: [
+      _i3.IntrospectedProperty<_i1.FlutterDebugGraphHotProperties>(
+        r'rebuilds',
+        typeInfo: _i3.ClassType<int>(),
+        get: _$get75,
+        annotations: [_i3.Range(1, 100000)],
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugGraphHotProperties>(
+        r'window',
+        typeInfo: _i3.ClassType<Duration>(),
+        get: _$get76,
+      ),
+    ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+    instantiate: _i1.FlutterDebugGraphHotProperties.new,
+    constructor:
+        _i3.IntrospectedConstructor<_i1.FlutterDebugGraphHotProperties>(
+          parameters: [
+            _i3.IntrospectedParameter(
+              r'rebuilds',
+              type: _i3.ClassType<int>(),
+              symbol: #rebuilds,
+              hasDefaultValue: true,
+              defaultValue: 3,
+            ),
+            _i3.IntrospectedParameter(
+              r'window',
+              type: _i3.ClassType<Duration>(),
+              symbol: #window,
+              hasDefaultValue: true,
+              defaultValue: Duration(seconds: 5),
+            ),
+          ],
+          create: _$create77,
+        ),
+  ),
+  const _i3.Introspection<_i1.FlutterDebugThemeProperties>(
+    className: r'FlutterDebugThemeProperties',
+    properties: [
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'background',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get78,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'text',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get79,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'dim',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get80,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'accent',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get81,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'number',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get82,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'good',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get83,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'warning',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get84,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'bad',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get85,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'error',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get86,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'line',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get87,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'levelError',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get88,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'levelWarning',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get89,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'levelInfo',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get90,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'levelDebug',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get91,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'time',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get92,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'logger',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get93,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'command',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get94,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'argument',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get95,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'methodRead',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get96,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'methodWrite',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get97,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'graphFlash',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get98,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'graphHot',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get99,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'fontFamily',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get100,
+      ),
+      _i3.IntrospectedProperty<_i1.FlutterDebugThemeProperties>(
+        r'fontSize',
+        nullable: true,
+        typeInfo: _i3.ClassType<double>(nullable: true),
+        get: _$get101,
+      ),
+    ],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+    instantiate: _i1.FlutterDebugThemeProperties.new,
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterDebugThemeProperties>(
+      parameters: [
+        _i3.IntrospectedParameter(
+          r'background',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #background,
+        ),
+        _i3.IntrospectedParameter(
+          r'text',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #text,
+        ),
+        _i3.IntrospectedParameter(
+          r'dim',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #dim,
+        ),
+        _i3.IntrospectedParameter(
+          r'accent',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #accent,
+        ),
+        _i3.IntrospectedParameter(
+          r'number',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #number,
+        ),
+        _i3.IntrospectedParameter(
+          r'good',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #good,
+        ),
+        _i3.IntrospectedParameter(
+          r'warning',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #warning,
+        ),
+        _i3.IntrospectedParameter(
+          r'bad',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #bad,
+        ),
+        _i3.IntrospectedParameter(
+          r'error',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #error,
+        ),
+        _i3.IntrospectedParameter(
+          r'line',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #line,
+        ),
+        _i3.IntrospectedParameter(
+          r'levelError',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #levelError,
+        ),
+        _i3.IntrospectedParameter(
+          r'levelWarning',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #levelWarning,
+        ),
+        _i3.IntrospectedParameter(
+          r'levelInfo',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #levelInfo,
+        ),
+        _i3.IntrospectedParameter(
+          r'levelDebug',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #levelDebug,
+        ),
+        _i3.IntrospectedParameter(
+          r'time',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #time,
+        ),
+        _i3.IntrospectedParameter(
+          r'logger',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #logger,
+        ),
+        _i3.IntrospectedParameter(
+          r'command',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #command,
+        ),
+        _i3.IntrospectedParameter(
+          r'argument',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #argument,
+        ),
+        _i3.IntrospectedParameter(
+          r'methodRead',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #methodRead,
+        ),
+        _i3.IntrospectedParameter(
+          r'methodWrite',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #methodWrite,
+        ),
+        _i3.IntrospectedParameter(
+          r'graphFlash',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #graphFlash,
+        ),
+        _i3.IntrospectedParameter(
+          r'graphHot',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #graphHot,
+        ),
+        _i3.IntrospectedParameter(
+          r'fontFamily',
+          type: _i3.ClassType<String>(nullable: true),
+          symbol: #fontFamily,
+        ),
+        _i3.IntrospectedParameter(
+          r'fontSize',
+          type: _i3.ClassType<double>(nullable: true),
+          symbol: #fontSize,
+        ),
+      ],
+      create: _$create102,
+    ),
+  ),
+  const _i3.Introspection<_i1.FlutterMarkdownProperties>(
+    className: r'FlutterMarkdownProperties',
+    properties: [
+      _i3.IntrospectedProperty<_i1.FlutterMarkdownProperties>(
+        r'placeholders',
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get103,
+      ),
+    ],
+    annotations: [_i3.ConfigurationProperties(r'spring.flutter.markdown')],
+    library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+    instantiate: _i1.FlutterMarkdownProperties.new,
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterMarkdownProperties>(
+      parameters: [
+        _i3.IntrospectedParameter(
           r'placeholders',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #placeholders,
           hasDefaultValue: true,
           defaultValue: false,
         ),
       ],
-      create: _$create40,
+      create: _$create104,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterFrameMeterProperties>(
+  const _i3.Introspection<_i1.FlutterFrameMeterProperties>(
     className: r'FlutterFrameMeterProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterFrameMeterProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterFrameMeterProperties>(
         r'enabled',
-        typeInfo: _i5.ClassType<bool>(),
-        get: _$get41,
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get105,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterFrameMeterProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterFrameMeterProperties>(
         r'position',
-        typeInfo: _i5.EnumType<_i2.FrameMeterPosition>(
-          _i2.FrameMeterPosition.values,
-        ),
-        get: _$get42,
+        typeInfo: _i3.EnumType<_i2.DebugCorner>(_i2.DebugCorner.values),
+        get: _$get106,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterFrameMeterProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterFrameMeterProperties>(
         r'targetRate',
-        typeInfo: _i5.ClassType<int>(),
-        get: _$get43,
+        typeInfo: _i3.ClassType<int>(),
+        get: _$get107,
       ),
     ],
-    annotations: [_i5.ConfigurationProperties(r'spring.flutter.frame-meter')],
+    annotations: [_i3.ConfigurationProperties(r'spring.flutter.frame-meter')],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterFrameMeterProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterFrameMeterProperties>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterFrameMeterProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'enabled',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #enabled,
           hasDefaultValue: true,
           defaultValue: false,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'position',
-          type: _i5.EnumType<_i2.FrameMeterPosition>(
-            _i2.FrameMeterPosition.values,
-          ),
+          type: _i3.EnumType<_i2.DebugCorner>(_i2.DebugCorner.values),
           symbol: #position,
           hasDefaultValue: true,
-          defaultValue: _i2.FrameMeterPosition.topRight,
+          defaultValue: _i2.DebugCorner.topRight,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'targetRate',
-          type: _i5.ClassType<int>(),
+          type: _i3.ClassType<int>(),
           symbol: #targetRate,
           hasDefaultValue: true,
           defaultValue: 60,
         ),
       ],
-      create: _$create44,
+      create: _$create108,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterWebPageProperties>(
+  const _i3.Introspection<_i1.FlutterWebPageProperties>(
     className: r'FlutterWebPageProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterWebPageProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebPageProperties>(
         r'swipeToClose',
-        typeInfo: _i5.ClassType<bool>(),
-        get: _$get45,
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get109,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebPageProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebPageProperties>(
         r'maxPixelRatio',
         nullable: true,
-        typeInfo: _i5.ClassType<double>(nullable: true),
-        get: _$get46,
+        typeInfo: _i3.ClassType<double>(nullable: true),
+        get: _$get110,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebPageProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebPageProperties>(
         r'translate',
-        typeInfo: _i5.ClassType<bool>(),
-        get: _$get47,
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get111,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebPageProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebPageProperties>(
         r'wasmAllowList',
         nullable: true,
-        typeInfo: _i5.MapType<String, bool>(
-          _i5.ClassType<String>(),
-          _i5.ClassType<bool>(),
+        typeInfo: _i3.MapType<String, bool>(
+          _i3.ClassType<String>(),
+          _i3.ClassType<bool>(),
           nullable: true,
         ),
-        get: _$get48,
+        get: _$get112,
       ),
     ],
-    annotations: [_i5.ConfigurationProperties(r'spring.flutter.web.page')],
+    annotations: [_i3.ConfigurationProperties(r'spring.flutter.web.page')],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterWebPageProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterWebPageProperties>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterWebPageProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'swipeToClose',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #swipeToClose,
           hasDefaultValue: true,
           defaultValue: true,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'maxPixelRatio',
-          type: _i5.ClassType<double>(nullable: true),
+          type: _i3.ClassType<double>(nullable: true),
           symbol: #maxPixelRatio,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'translate',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #translate,
           hasDefaultValue: true,
           defaultValue: true,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'wasmAllowList',
-          type: _i5.MapType<String, bool>(
-            _i5.ClassType<String>(),
-            _i5.ClassType<bool>(),
+          type: _i3.MapType<String, bool>(
+            _i3.ClassType<String>(),
+            _i3.ClassType<bool>(),
             nullable: true,
           ),
           symbol: #wasmAllowList,
         ),
       ],
-      create: _$create49,
+      create: _$create113,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterLifecycleProperties>(
+  const _i3.Introspection<_i1.FlutterLifecycleProperties>(
     className: r'FlutterLifecycleProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterLifecycleProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterLifecycleProperties>(
         r'pauseInBackground',
-        typeInfo: _i5.ClassType<bool>(),
-        get: _$get50,
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get114,
       ),
     ],
-    annotations: [_i5.ConfigurationProperties(r'spring.flutter.lifecycle')],
+    annotations: [_i3.ConfigurationProperties(r'spring.flutter.lifecycle')],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterLifecycleProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterLifecycleProperties>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterLifecycleProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'pauseInBackground',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #pauseInBackground,
           hasDefaultValue: true,
           defaultValue: true,
         ),
       ],
-      create: _$create51,
+      create: _$create115,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterFontsProperties>(
+  const _i3.Introspection<_i1.FlutterFontsProperties>(
     className: r'FlutterFontsProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterFontsProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterFontsProperties>(
         r'autoLoad',
-        typeInfo: _i5.ClassType<bool>(),
-        get: _$get52,
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get116,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterFontsProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterFontsProperties>(
         r'exclude',
         nullable: true,
-        typeInfo: _i5.ListType<String>(_i5.ClassType<String>(), nullable: true),
-        get: _$get53,
+        typeInfo: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
+        get: _$get117,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterFontsProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterFontsProperties>(
         r'families',
         nullable: true,
-        typeInfo: _i5.MapType<String, _i1.FontFamilyProperties>(
-          _i5.ClassType<String>(),
-          _i5.ClassType<_i1.FontFamilyProperties>(),
+        typeInfo: _i3.MapType<String, _i1.FontFamilyProperties>(
+          _i3.ClassType<String>(),
+          _i3.ClassType<_i1.FontFamilyProperties>(),
           nullable: true,
         ),
-        get: _$get54,
+        get: _$get118,
       ),
     ],
-    annotations: [_i5.ConfigurationProperties(r'spring.flutter.fonts')],
+    annotations: [_i3.ConfigurationProperties(r'spring.flutter.fonts')],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterFontsProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterFontsProperties>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterFontsProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'autoLoad',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #autoLoad,
           hasDefaultValue: true,
           defaultValue: true,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'exclude',
-          type: _i5.ListType<String>(_i5.ClassType<String>(), nullable: true),
+          type: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
           symbol: #exclude,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'families',
-          type: _i5.MapType<String, _i1.FontFamilyProperties>(
-            _i5.ClassType<String>(),
-            _i5.ClassType<_i1.FontFamilyProperties>(),
+          type: _i3.MapType<String, _i1.FontFamilyProperties>(
+            _i3.ClassType<String>(),
+            _i3.ClassType<_i1.FontFamilyProperties>(),
             nullable: true,
           ),
           symbol: #families,
         ),
       ],
-      create: _$create55,
+      create: _$create119,
     ),
   ),
-  const _i5.Introspection<_i1.FontFamilyProperties>(
+  const _i3.Introspection<_i1.FontFamilyProperties>(
     className: r'FontFamilyProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FontFamilyProperties>(
+      _i3.IntrospectedProperty<_i1.FontFamilyProperties>(
         r'files',
-        typeInfo: _i5.ListType<String>(_i5.ClassType<String>()),
-        get: _$get56,
+        typeInfo: _i3.ListType<String>(_i3.ClassType<String>()),
+        get: _$get120,
       ),
-      _i5.IntrospectedProperty<_i1.FontFamilyProperties>(
+      _i3.IntrospectedProperty<_i1.FontFamilyProperties>(
         r'languages',
         nullable: true,
-        typeInfo: _i5.ListType<String>(_i5.ClassType<String>(), nullable: true),
-        get: _$get57,
+        typeInfo: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
+        get: _$get121,
       ),
     ],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FontFamilyProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FontFamilyProperties>(
+    constructor: _i3.IntrospectedConstructor<_i1.FontFamilyProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'files',
-          type: _i5.ListType<String>(_i5.ClassType<String>()),
+          type: _i3.ListType<String>(_i3.ClassType<String>()),
           symbol: #files,
           hasDefaultValue: true,
           defaultValue: <String>[],
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'languages',
-          type: _i5.ListType<String>(_i5.ClassType<String>(), nullable: true),
+          type: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
           symbol: #languages,
         ),
       ],
-      create: _$create58,
+      create: _$create122,
     ),
   ),
-  const _i5.Introspection<_i1.DesktopWindowProperties>(
+  const _i3.Introspection<_i1.DesktopWindowProperties>(
     className: r'DesktopWindowProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.DesktopWindowProperties>(
+      _i3.IntrospectedProperty<_i1.DesktopWindowProperties>(
         r'title',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get59,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get123,
       ),
-      _i5.IntrospectedProperty<_i1.DesktopWindowProperties>(
+      _i3.IntrospectedProperty<_i1.DesktopWindowProperties>(
         r'titleBar',
-        typeInfo: _i5.ClassType<String>(),
-        get: _$get60,
+        typeInfo: _i3.ClassType<String>(),
+        get: _$get124,
         annotations: [
-          _i5.PropertyValues([r'default', r'transparent', r'hidden']),
+          _i3.PropertyValues([r'default', r'transparent', r'hidden']),
         ],
       ),
-      _i5.IntrospectedProperty<_i1.DesktopWindowProperties>(
+      _i3.IntrospectedProperty<_i1.DesktopWindowProperties>(
         r'initialSize',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get61,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get125,
       ),
-      _i5.IntrospectedProperty<_i1.DesktopWindowProperties>(
+      _i3.IntrospectedProperty<_i1.DesktopWindowProperties>(
         r'minSize',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get62,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get126,
       ),
-      _i5.IntrospectedProperty<_i1.DesktopWindowProperties>(
+      _i3.IntrospectedProperty<_i1.DesktopWindowProperties>(
         r'maxSize',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get63,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get127,
       ),
     ],
     annotations: [
-      _i5.ConfigurationProperties(r'spring.flutter.desktop.window'),
+      _i3.ConfigurationProperties(r'spring.flutter.desktop.window'),
     ],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.DesktopWindowProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.DesktopWindowProperties>(
+    constructor: _i3.IntrospectedConstructor<_i1.DesktopWindowProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'title',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #title,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'titleBar',
-          type: _i5.ClassType<String>(),
+          type: _i3.ClassType<String>(),
           symbol: #titleBar,
           hasDefaultValue: true,
           defaultValue: r'default',
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'initialSize',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #initialSize,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'minSize',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #minSize,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'maxSize',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #maxSize,
         ),
       ],
-      create: _$create64,
+      create: _$create128,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterWebProperties>(
+  const _i3.Introspection<_i1.FlutterWebProperties>(
     className: r'FlutterWebProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterWebProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebProperties>(
         r'host',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get65,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get129,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebProperties>(
         r'port',
         nullable: true,
-        typeInfo: _i5.ClassType<int>(nullable: true),
-        get: _$get66,
+        typeInfo: _i3.ClassType<int>(nullable: true),
+        get: _$get130,
         annotations: [
-          _i5.Range(0, 65535),
-          _i5.WarnValues(
+          _i3.Range(0, 65535),
+          _i3.WarnValues(
             <Object>[
               1,
               7,
@@ -1357,891 +2293,891 @@ get $flutterConfigBeansPropertiesIntrospections => [
           ),
         ],
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebProperties>(
         r'baseHref',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get67,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get131,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebProperties>(
         r'https',
         nullable: true,
-        typeInfo: _i5.ClassType<_i1.FlutterWebHttps>(nullable: true),
-        get: _$get68,
+        typeInfo: _i3.ClassType<_i1.FlutterWebHttps>(nullable: true),
+        get: _$get132,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebProperties>(
         r'headers',
         nullable: true,
-        typeInfo: _i5.MapType<String, String>(
-          _i5.ClassType<String>(),
-          _i5.ClassType<String>(),
+        typeInfo: _i3.MapType<String, String>(
+          _i3.ClassType<String>(),
+          _i3.ClassType<String>(),
           nullable: true,
         ),
-        get: _$get69,
+        get: _$get133,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebProperties>(
         r'contentSecurityPolicy',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get70,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get134,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebProperties>(
         r'contentSecurityPolicyReportOnly',
         nullable: true,
-        typeInfo: _i5.ClassType<bool>(nullable: true),
-        get: _$get71,
+        typeInfo: _i3.ClassType<bool>(nullable: true),
+        get: _$get135,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebProperties>(
         r'contentSecurityPolicyConnectSrc',
         nullable: true,
-        typeInfo: _i5.ListType<String>(_i5.ClassType<String>(), nullable: true),
-        get: _$get72,
+        typeInfo: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
+        get: _$get136,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebProperties>(
         r'proxy',
         nullable: true,
-        typeInfo: _i5.ListType<_i1.FlutterWebProxyRule>(
-          _i5.ClassType<_i1.FlutterWebProxyRule>(),
+        typeInfo: _i3.ListType<_i1.FlutterWebProxyRule>(
+          _i3.ClassType<_i1.FlutterWebProxyRule>(),
           nullable: true,
         ),
-        get: _$get73,
+        get: _$get137,
       ),
     ],
     annotations: [
-      _i5.ConfigurationProperties(r'spring.flutter.web.dev-server'),
+      _i3.ConfigurationProperties(r'spring.flutter.web.dev-server'),
     ],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterWebProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterWebProperties>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterWebProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'host',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #host,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'port',
-          type: _i5.ClassType<int>(nullable: true),
+          type: _i3.ClassType<int>(nullable: true),
           symbol: #port,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'baseHref',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #baseHref,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'https',
-          type: _i5.ClassType<_i1.FlutterWebHttps>(nullable: true),
+          type: _i3.ClassType<_i1.FlutterWebHttps>(nullable: true),
           symbol: #https,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'headers',
-          type: _i5.MapType<String, String>(
-            _i5.ClassType<String>(),
-            _i5.ClassType<String>(),
+          type: _i3.MapType<String, String>(
+            _i3.ClassType<String>(),
+            _i3.ClassType<String>(),
             nullable: true,
           ),
           symbol: #headers,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'contentSecurityPolicy',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #contentSecurityPolicy,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'contentSecurityPolicyReportOnly',
-          type: _i5.ClassType<bool>(nullable: true),
+          type: _i3.ClassType<bool>(nullable: true),
           symbol: #contentSecurityPolicyReportOnly,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'contentSecurityPolicyConnectSrc',
-          type: _i5.ListType<String>(_i5.ClassType<String>(), nullable: true),
+          type: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
           symbol: #contentSecurityPolicyConnectSrc,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'proxy',
-          type: _i5.ListType<_i1.FlutterWebProxyRule>(
-            _i5.ClassType<_i1.FlutterWebProxyRule>(),
+          type: _i3.ListType<_i1.FlutterWebProxyRule>(
+            _i3.ClassType<_i1.FlutterWebProxyRule>(),
             nullable: true,
           ),
           symbol: #proxy,
         ),
       ],
-      create: _$create74,
+      create: _$create138,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterWebHttps>(
+  const _i3.Introspection<_i1.FlutterWebHttps>(
     className: r'FlutterWebHttps',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterWebHttps>(
+      _i3.IntrospectedProperty<_i1.FlutterWebHttps>(
         r'certPath',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get75,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get139,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebHttps>(
+      _i3.IntrospectedProperty<_i1.FlutterWebHttps>(
         r'certKeyPath',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get76,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get140,
       ),
     ],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterWebHttps.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterWebHttps>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterWebHttps>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'certPath',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #certPath,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'certKeyPath',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #certKeyPath,
         ),
       ],
-      create: _$create77,
+      create: _$create141,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterWebProxyRule>(
+  const _i3.Introspection<_i1.FlutterWebProxyRule>(
     className: r'FlutterWebProxyRule',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterWebProxyRule>(
+      _i3.IntrospectedProperty<_i1.FlutterWebProxyRule>(
         r'prefix',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get78,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get142,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebProxyRule>(
+      _i3.IntrospectedProperty<_i1.FlutterWebProxyRule>(
         r'regex',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get79,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get143,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebProxyRule>(
+      _i3.IntrospectedProperty<_i1.FlutterWebProxyRule>(
         r'replace',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get80,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get144,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebProxyRule>(
+      _i3.IntrospectedProperty<_i1.FlutterWebProxyRule>(
         r'target',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get81,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get145,
       ),
     ],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterWebProxyRule.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterWebProxyRule>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterWebProxyRule>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'prefix',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #prefix,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'regex',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #regex,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'replace',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #replace,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'target',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #target,
         ),
       ],
-      create: _$create82,
+      create: _$create146,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterWebSeoProperties>(
+  const _i3.Introspection<_i1.FlutterWebSeoProperties>(
     className: r'FlutterWebSeoProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
         r'enabled',
-        typeInfo: _i5.ClassType<bool>(),
-        get: _$get83,
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get147,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
         r'siteUrl',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get84,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get148,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
         r'fromRoutes',
-        typeInfo: _i5.ClassType<bool>(),
-        get: _$get85,
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get149,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
         r'exclude',
         nullable: true,
-        typeInfo: _i5.ListType<String>(_i5.ClassType<String>(), nullable: true),
-        get: _$get86,
+        typeInfo: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
+        get: _$get150,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
         r'title',
-        typeInfo: _i5.ClassType<String>(),
-        get: _$get87,
+        typeInfo: _i3.ClassType<String>(),
+        get: _$get151,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
         r'description',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get88,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get152,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
         r'image',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get89,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get153,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
         r'siteName',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get90,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get154,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
         r'content',
         nullable: true,
-        typeInfo: _i5.ListType<_i1.FlutterWebSeoContent>(
-          _i5.ClassType<_i1.FlutterWebSeoContent>(),
+        typeInfo: _i3.ListType<_i1.FlutterWebSeoContent>(
+          _i3.ClassType<_i1.FlutterWebSeoContent>(),
           nullable: true,
         ),
-        get: _$get91,
+        get: _$get155,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
         r'pages',
         nullable: true,
-        typeInfo: _i5.ListType<_i1.FlutterWebSeoPage>(
-          _i5.ClassType<_i1.FlutterWebSeoPage>(),
+        typeInfo: _i3.ListType<_i1.FlutterWebSeoPage>(
+          _i3.ClassType<_i1.FlutterWebSeoPage>(),
           nullable: true,
         ),
-        get: _$get92,
+        get: _$get156,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
         r'sitemap',
-        typeInfo: _i5.ClassType<bool>(),
-        get: _$get93,
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get157,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
         r'llms',
-        typeInfo: _i5.ClassType<bool>(),
-        get: _$get94,
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get158,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
         r'markdown',
-        typeInfo: _i5.ClassType<bool>(),
-        get: _$get95,
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get159,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
         r'lastmod',
-        typeInfo: _i5.ClassType<bool>(),
-        get: _$get96,
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get160,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoProperties>(
         r'pageFiles',
-        typeInfo: _i5.ClassType<String>(),
-        get: _$get97,
+        typeInfo: _i3.ClassType<String>(),
+        get: _$get161,
       ),
     ],
-    annotations: [_i5.ConfigurationProperties(r'spring.flutter.web.seo')],
+    annotations: [_i3.ConfigurationProperties(r'spring.flutter.web.seo')],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterWebSeoProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterWebSeoProperties>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterWebSeoProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'enabled',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #enabled,
           hasDefaultValue: true,
           defaultValue: false,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'siteUrl',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #siteUrl,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'fromRoutes',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #fromRoutes,
           hasDefaultValue: true,
           defaultValue: false,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'exclude',
-          type: _i5.ListType<String>(_i5.ClassType<String>(), nullable: true),
+          type: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
           symbol: #exclude,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'title',
-          type: _i5.ClassType<String>(),
+          type: _i3.ClassType<String>(),
           symbol: #title,
           hasDefaultValue: true,
           defaultValue: r'{title}',
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'description',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #description,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'image',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #image,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'siteName',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #siteName,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'content',
-          type: _i5.ListType<_i1.FlutterWebSeoContent>(
-            _i5.ClassType<_i1.FlutterWebSeoContent>(),
+          type: _i3.ListType<_i1.FlutterWebSeoContent>(
+            _i3.ClassType<_i1.FlutterWebSeoContent>(),
             nullable: true,
           ),
           symbol: #content,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'pages',
-          type: _i5.ListType<_i1.FlutterWebSeoPage>(
-            _i5.ClassType<_i1.FlutterWebSeoPage>(),
+          type: _i3.ListType<_i1.FlutterWebSeoPage>(
+            _i3.ClassType<_i1.FlutterWebSeoPage>(),
             nullable: true,
           ),
           symbol: #pages,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'sitemap',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #sitemap,
           hasDefaultValue: true,
           defaultValue: true,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'llms',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #llms,
           hasDefaultValue: true,
           defaultValue: true,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'markdown',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #markdown,
           hasDefaultValue: true,
           defaultValue: true,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'lastmod',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #lastmod,
           hasDefaultValue: true,
           defaultValue: true,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'pageFiles',
-          type: _i5.ClassType<String>(),
+          type: _i3.ClassType<String>(),
           symbol: #pageFiles,
           hasDefaultValue: true,
           defaultValue: r'directory',
         ),
       ],
-      create: _$create98,
+      create: _$create162,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterWebSeoContent>(
+  const _i3.Introspection<_i1.FlutterWebSeoContent>(
     className: r'FlutterWebSeoContent',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoContent>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoContent>(
         r'location',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get99,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get163,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoContent>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoContent>(
         r'path',
-        typeInfo: _i5.ClassType<String>(),
-        get: _$get100,
+        typeInfo: _i3.ClassType<String>(),
+        get: _$get164,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoContent>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoContent>(
         r'exclude',
         nullable: true,
-        typeInfo: _i5.ListType<String>(_i5.ClassType<String>(), nullable: true),
-        get: _$get101,
+        typeInfo: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
+        get: _$get165,
       ),
     ],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterWebSeoContent.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterWebSeoContent>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterWebSeoContent>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'location',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #location,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'path',
-          type: _i5.ClassType<String>(),
+          type: _i3.ClassType<String>(),
           symbol: #path,
           hasDefaultValue: true,
           defaultValue: r'/',
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'exclude',
-          type: _i5.ListType<String>(_i5.ClassType<String>(), nullable: true),
+          type: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
           symbol: #exclude,
         ),
       ],
-      create: _$create102,
+      create: _$create166,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterWebSeoPage>(
+  const _i3.Introspection<_i1.FlutterWebSeoPage>(
     className: r'FlutterWebSeoPage',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoPage>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoPage>(
         r'path',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get103,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get167,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoPage>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoPage>(
         r'title',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get104,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get168,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoPage>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoPage>(
         r'description',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get105,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get169,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoPage>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoPage>(
         r'image',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get106,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get170,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebSeoPage>(
+      _i3.IntrospectedProperty<_i1.FlutterWebSeoPage>(
         r'index',
         nullable: true,
-        typeInfo: _i5.ClassType<bool>(nullable: true),
-        get: _$get107,
+        typeInfo: _i3.ClassType<bool>(nullable: true),
+        get: _$get171,
       ),
     ],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterWebSeoPage.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterWebSeoPage>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterWebSeoPage>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'path',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #path,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'title',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #title,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'description',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #description,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'image',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #image,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'index',
-          type: _i5.ClassType<bool>(nullable: true),
+          type: _i3.ClassType<bool>(nullable: true),
           symbol: #index,
         ),
       ],
-      create: _$create108,
+      create: _$create172,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterWebCacheControlProperties>(
+  const _i3.Introspection<_i1.FlutterWebCacheControlProperties>(
     className: r'FlutterWebCacheControlProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
         r'maxAge',
         nullable: true,
-        typeInfo: _i5.ClassType<Duration>(nullable: true),
-        get: _$get109,
+        typeInfo: _i3.ClassType<Duration>(nullable: true),
+        get: _$get173,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
         r'noCache',
         nullable: true,
-        typeInfo: _i5.ClassType<bool>(nullable: true),
-        get: _$get110,
+        typeInfo: _i3.ClassType<bool>(nullable: true),
+        get: _$get174,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
         r'noStore',
         nullable: true,
-        typeInfo: _i5.ClassType<bool>(nullable: true),
-        get: _$get111,
+        typeInfo: _i3.ClassType<bool>(nullable: true),
+        get: _$get175,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
         r'mustRevalidate',
         nullable: true,
-        typeInfo: _i5.ClassType<bool>(nullable: true),
-        get: _$get112,
+        typeInfo: _i3.ClassType<bool>(nullable: true),
+        get: _$get176,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
         r'noTransform',
         nullable: true,
-        typeInfo: _i5.ClassType<bool>(nullable: true),
-        get: _$get113,
+        typeInfo: _i3.ClassType<bool>(nullable: true),
+        get: _$get177,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
         r'cachePublic',
         nullable: true,
-        typeInfo: _i5.ClassType<bool>(nullable: true),
-        get: _$get114,
+        typeInfo: _i3.ClassType<bool>(nullable: true),
+        get: _$get178,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
         r'cachePrivate',
         nullable: true,
-        typeInfo: _i5.ClassType<bool>(nullable: true),
-        get: _$get115,
+        typeInfo: _i3.ClassType<bool>(nullable: true),
+        get: _$get179,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
         r'proxyRevalidate',
         nullable: true,
-        typeInfo: _i5.ClassType<bool>(nullable: true),
-        get: _$get116,
+        typeInfo: _i3.ClassType<bool>(nullable: true),
+        get: _$get180,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
         r'staleWhileRevalidate',
         nullable: true,
-        typeInfo: _i5.ClassType<Duration>(nullable: true),
-        get: _$get117,
+        typeInfo: _i3.ClassType<Duration>(nullable: true),
+        get: _$get181,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
         r'staleIfError',
         nullable: true,
-        typeInfo: _i5.ClassType<Duration>(nullable: true),
-        get: _$get118,
+        typeInfo: _i3.ClassType<Duration>(nullable: true),
+        get: _$get182,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterWebCacheControlProperties>(
         r'sMaxAge',
         nullable: true,
-        typeInfo: _i5.ClassType<Duration>(nullable: true),
-        get: _$get119,
+        typeInfo: _i3.ClassType<Duration>(nullable: true),
+        get: _$get183,
       ),
     ],
     annotations: [
-      _i5.ConfigurationProperties(r'spring.web.resources.cache.cachecontrol'),
+      _i3.ConfigurationProperties(r'spring.web.resources.cache.cachecontrol'),
     ],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterWebCacheControlProperties.new,
     constructor:
-        _i5.IntrospectedConstructor<_i1.FlutterWebCacheControlProperties>(
+        _i3.IntrospectedConstructor<_i1.FlutterWebCacheControlProperties>(
           parameters: [
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'maxAge',
-              type: _i5.ClassType<Duration>(nullable: true),
+              type: _i3.ClassType<Duration>(nullable: true),
               symbol: #maxAge,
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'noCache',
-              type: _i5.ClassType<bool>(nullable: true),
+              type: _i3.ClassType<bool>(nullable: true),
               symbol: #noCache,
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'noStore',
-              type: _i5.ClassType<bool>(nullable: true),
+              type: _i3.ClassType<bool>(nullable: true),
               symbol: #noStore,
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'mustRevalidate',
-              type: _i5.ClassType<bool>(nullable: true),
+              type: _i3.ClassType<bool>(nullable: true),
               symbol: #mustRevalidate,
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'noTransform',
-              type: _i5.ClassType<bool>(nullable: true),
+              type: _i3.ClassType<bool>(nullable: true),
               symbol: #noTransform,
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'cachePublic',
-              type: _i5.ClassType<bool>(nullable: true),
+              type: _i3.ClassType<bool>(nullable: true),
               symbol: #cachePublic,
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'cachePrivate',
-              type: _i5.ClassType<bool>(nullable: true),
+              type: _i3.ClassType<bool>(nullable: true),
               symbol: #cachePrivate,
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'proxyRevalidate',
-              type: _i5.ClassType<bool>(nullable: true),
+              type: _i3.ClassType<bool>(nullable: true),
               symbol: #proxyRevalidate,
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'staleWhileRevalidate',
-              type: _i5.ClassType<Duration>(nullable: true),
+              type: _i3.ClassType<Duration>(nullable: true),
               symbol: #staleWhileRevalidate,
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'staleIfError',
-              type: _i5.ClassType<Duration>(nullable: true),
+              type: _i3.ClassType<Duration>(nullable: true),
               symbol: #staleIfError,
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'sMaxAge',
-              type: _i5.ClassType<Duration>(nullable: true),
+              type: _i3.ClassType<Duration>(nullable: true),
               symbol: #sMaxAge,
             ),
           ],
-          create: _$create120,
+          create: _$create184,
         ),
   ),
-  const _i5.Introspection<_i1.FlutterRestartProperties>(
+  const _i3.Introspection<_i1.FlutterRestartProperties>(
     className: r'FlutterRestartProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterRestartProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterRestartProperties>(
         r'enabled',
-        typeInfo: _i5.ClassType<bool>(),
-        get: _$get121,
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get185,
       ),
     ],
-    annotations: [_i5.ConfigurationProperties(r'spring.devtools.restart')],
+    annotations: [_i3.ConfigurationProperties(r'spring.devtools.restart')],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterRestartProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterRestartProperties>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterRestartProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'enabled',
-          type: _i5.ClassType<bool>(),
+          type: _i3.ClassType<bool>(),
           symbol: #enabled,
           hasDefaultValue: true,
           defaultValue: true,
         ),
       ],
-      create: _$create122,
+      create: _$create186,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterDataSourceProperties>(
+  const _i3.Introspection<_i1.FlutterDataSourceProperties>(
     className: r'FlutterDataSourceProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterDataSourceProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterDataSourceProperties>(
         r'url',
         nullable: true,
-        typeInfo: _i5.ClassType<String>(nullable: true),
-        get: _$get123,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get187,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterDataSourceProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterDataSourceProperties>(
         r'sqlite',
-        typeInfo: _i5.ClassType<_i1.FlutterSqliteProperties>(),
-        get: _$get124,
+        typeInfo: _i3.ClassType<_i1.FlutterSqliteProperties>(),
+        get: _$get188,
       ),
     ],
-    annotations: [_i5.ConfigurationProperties(r'spring.datasource')],
+    annotations: [_i3.ConfigurationProperties(r'spring.datasource')],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterDataSourceProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterDataSourceProperties>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterDataSourceProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'url',
-          type: _i5.ClassType<String>(nullable: true),
+          type: _i3.ClassType<String>(nullable: true),
           symbol: #url,
         ),
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'sqlite',
-          type: _i5.ClassType<_i1.FlutterSqliteProperties>(),
+          type: _i3.ClassType<_i1.FlutterSqliteProperties>(),
           symbol: #sqlite,
           hasDefaultValue: true,
           defaultValue: _i1.FlutterSqliteProperties(),
         ),
       ],
-      create: _$create125,
+      create: _$create189,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterSqliteProperties>(
+  const _i3.Introspection<_i1.FlutterSqliteProperties>(
     className: r'FlutterSqliteProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterSqliteProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterSqliteProperties>(
         r'location',
-        typeInfo: _i5.EnumType<_i4.SqliteLocation>(_i4.SqliteLocation.values),
-        get: _$get126,
+        typeInfo: _i3.EnumType<_i5.SqliteLocation>(_i5.SqliteLocation.values),
+        get: _$get190,
       ),
     ],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterSqliteProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterSqliteProperties>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterSqliteProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'location',
-          type: _i5.EnumType<_i4.SqliteLocation>(_i4.SqliteLocation.values),
+          type: _i3.EnumType<_i5.SqliteLocation>(_i5.SqliteLocation.values),
           symbol: #location,
           hasDefaultValue: true,
-          defaultValue: _i4.SqliteLocation.support,
+          defaultValue: _i5.SqliteLocation.support,
         ),
       ],
-      create: _$create127,
+      create: _$create191,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterDataSourcesProperties>(
+  const _i3.Introspection<_i1.FlutterDataSourcesProperties>(
     className: r'FlutterDataSourcesProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterDataSourcesProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterDataSourcesProperties>(
         r'datasources',
         nullable: true,
-        typeInfo: _i5.MapType<String, _i1.FlutterDataSourceProperties>(
-          _i5.ClassType<String>(),
-          _i5.ClassType<_i1.FlutterDataSourceProperties>(),
+        typeInfo: _i3.MapType<String, _i1.FlutterDataSourceProperties>(
+          _i3.ClassType<String>(),
+          _i3.ClassType<_i1.FlutterDataSourceProperties>(),
           nullable: true,
         ),
-        get: _$get128,
+        get: _$get192,
       ),
     ],
-    annotations: [_i5.ConfigurationProperties(r'spring')],
+    annotations: [_i3.ConfigurationProperties(r'spring')],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterDataSourcesProperties.new,
-    constructor: _i5.IntrospectedConstructor<_i1.FlutterDataSourcesProperties>(
+    constructor: _i3.IntrospectedConstructor<_i1.FlutterDataSourcesProperties>(
       parameters: [
-        _i5.IntrospectedParameter(
+        _i3.IntrospectedParameter(
           r'datasources',
-          type: _i5.MapType<String, _i1.FlutterDataSourceProperties>(
-            _i5.ClassType<String>(),
-            _i5.ClassType<_i1.FlutterDataSourceProperties>(),
+          type: _i3.MapType<String, _i1.FlutterDataSourceProperties>(
+            _i3.ClassType<String>(),
+            _i3.ClassType<_i1.FlutterDataSourceProperties>(),
             nullable: true,
           ),
           symbol: #datasources,
         ),
       ],
-      create: _$create129,
+      create: _$create193,
     ),
   ),
-  const _i5.Introspection<_i1.FlutterResourcesCacheProperties>(
+  const _i3.Introspection<_i1.FlutterResourcesCacheProperties>(
     className: r'FlutterResourcesCacheProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterResourcesCacheProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterResourcesCacheProperties>(
         r'enabled',
-        typeInfo: _i5.ClassType<bool>(),
-        get: _$get130,
+        typeInfo: _i3.ClassType<bool>(),
+        get: _$get194,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterResourcesCacheProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterResourcesCacheProperties>(
         r'maxAge',
-        typeInfo: _i5.ClassType<Duration>(),
-        get: _$get131,
+        typeInfo: _i3.ClassType<Duration>(),
+        get: _$get195,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterResourcesCacheProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterResourcesCacheProperties>(
         r'maxEntrySize',
         nullable: true,
-        typeInfo: _i5.ClassType<_i5.DataSize>(nullable: true),
-        get: _$get132,
+        typeInfo: _i3.ClassType<_i3.DataSize>(nullable: true),
+        get: _$get196,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterResourcesCacheProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterResourcesCacheProperties>(
         r'maxSize',
         nullable: true,
-        typeInfo: _i5.ClassType<_i5.DataSize>(nullable: true),
-        get: _$get133,
+        typeInfo: _i3.ClassType<_i3.DataSize>(nullable: true),
+        get: _$get197,
       ),
-      _i5.IntrospectedProperty<_i1.FlutterResourcesCacheProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterResourcesCacheProperties>(
         r'locations',
-        typeInfo: _i5.ListType<_i1.ResourceCacheLocation>(
-          _i5.ClassType<_i1.ResourceCacheLocation>(),
+        typeInfo: _i3.ListType<_i1.ResourceCacheLocation>(
+          _i3.ClassType<_i1.ResourceCacheLocation>(),
         ),
-        get: _$get134,
+        get: _$get198,
       ),
     ],
     annotations: [
-      _i5.ConfigurationProperties(r'spring.flutter.resources.cache'),
+      _i3.ConfigurationProperties(r'spring.flutter.resources.cache'),
     ],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterResourcesCacheProperties.new,
     constructor:
-        _i5.IntrospectedConstructor<_i1.FlutterResourcesCacheProperties>(
+        _i3.IntrospectedConstructor<_i1.FlutterResourcesCacheProperties>(
           parameters: [
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'enabled',
-              type: _i5.ClassType<bool>(),
+              type: _i3.ClassType<bool>(),
               symbol: #enabled,
               hasDefaultValue: true,
               defaultValue: true,
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'maxAge',
-              type: _i5.ClassType<Duration>(),
+              type: _i3.ClassType<Duration>(),
               symbol: #maxAge,
               hasDefaultValue: true,
               defaultValue: Duration(days: 7),
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'maxEntrySize',
-              type: _i5.ClassType<_i5.DataSize>(nullable: true),
+              type: _i3.ClassType<_i3.DataSize>(nullable: true),
               symbol: #maxEntrySize,
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'maxSize',
-              type: _i5.ClassType<_i5.DataSize>(nullable: true),
+              type: _i3.ClassType<_i3.DataSize>(nullable: true),
               symbol: #maxSize,
             ),
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'locations',
-              type: _i5.ListType<_i1.ResourceCacheLocation>(
-                _i5.ClassType<_i1.ResourceCacheLocation>(),
+              type: _i3.ListType<_i1.ResourceCacheLocation>(
+                _i3.ClassType<_i1.ResourceCacheLocation>(),
               ),
               symbol: #locations,
               hasDefaultValue: true,
               defaultValue: <_i1.ResourceCacheLocation>[],
             ),
           ],
-          create: _$create135,
+          create: _$create199,
         ),
   ),
-  const _i5.Introspection<_i1.FlutterResourcesViewProperties>(
+  const _i3.Introspection<_i1.FlutterResourcesViewProperties>(
     className: r'FlutterResourcesViewProperties',
     properties: [
-      _i5.IntrospectedProperty<_i1.FlutterResourcesViewProperties>(
+      _i3.IntrospectedProperty<_i1.FlutterResourcesViewProperties>(
         r'fade',
-        typeInfo: _i5.ClassType<Duration>(),
-        get: _$get136,
+        typeInfo: _i3.ClassType<Duration>(),
+        get: _$get200,
       ),
     ],
     annotations: [
-      _i5.ConfigurationProperties(r'spring.flutter.resources.view'),
+      _i3.ConfigurationProperties(r'spring.flutter.resources.view'),
     ],
     library: r'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart',
-    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
     instantiate: _i1.FlutterResourcesViewProperties.new,
     constructor:
-        _i5.IntrospectedConstructor<_i1.FlutterResourcesViewProperties>(
+        _i3.IntrospectedConstructor<_i1.FlutterResourcesViewProperties>(
           parameters: [
-            _i5.IntrospectedParameter(
+            _i3.IntrospectedParameter(
               r'fade',
-              type: _i5.ClassType<Duration>(),
+              type: _i3.ClassType<Duration>(),
               symbol: #fade,
               hasDefaultValue: true,
               defaultValue: Duration(milliseconds: 200),
             ),
           ],
-          create: _$create137,
+          create: _$create201,
         ),
   ),
 ];

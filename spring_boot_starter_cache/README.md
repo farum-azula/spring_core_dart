@@ -144,7 +144,7 @@ an operation without cache names (unless a cache resolver picks them),
 That check is the bean `cacheOperationValidator`, in a module of its own
 (`springBootStarterCacheStartupChecksAutoConfiguration`) that the
 generator puts into the build by `spring.main.startup-checks.enabled`:
-not set, in debug and profile builds only, so a release build ships none
+not set, in debug builds only, so a release build ships none
 of its code and a wrong annotation fails at the member's first call;
 `true` in `application.yml` or `application.properties` keeps it in every
 build, `false` in none.

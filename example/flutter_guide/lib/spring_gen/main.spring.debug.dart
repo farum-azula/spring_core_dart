@@ -9,16 +9,21 @@
 
 part of 'main.spring.dart';
 
-/// The auto-configurations only debug and profile builds have (their build key
-/// leaves them out of a release build), which `springApplication` adds
-/// to its own outside release builds.
+/// The auto-configurations only debug builds have (their build key leaves
+/// them out of a profile or a release build), which `springApplication` adds
+/// to its own in debug builds.
 List<_i16.BeanModule> get _$debugAutoConfigurations => [
   _i17.springBootStarterCacheStartupChecksAutoConfiguration,
   _i18.springBootStarterFlutterDebugAutoConfiguration,
+  _i18.springBootStarterFlutterDebugBeansGraphAutoConfiguration,
+  _i18.springBootStarterFlutterDebugFlutterToolsAutoConfiguration,
   _i18.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
   _i18.springBootStarterFlutterDebugIsolatesAutoConfiguration,
+  _i18.springBootStarterFlutterDebugLogsExportAutoConfiguration,
   _i18.springBootStarterFlutterDebugMotionAutoConfiguration,
   _i18.springBootStarterFlutterDebugTimelineAutoConfiguration,
+  _i18.springBootStarterFlutterDebugWidgetsGraphAutoConfiguration,
+  _i19.springBootStarterFlutterNavigationDebugGraphAutoConfiguration,
 ];
 
 /// The orderings of [_$debugAutoConfigurations] (`AutoConfigurationModule`).
@@ -32,7 +37,7 @@ get _$debugAutoConfigurationMetadata => {
 
 /// The hash of the generated code, which a hot reload compares to restart
 /// the application only when its beans changed (`SpringApplication.reload`).
-const _$fingerprint = '14255d78';
+const _$fingerprint = '23a542a9';
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
@@ -47,3 +52,30 @@ Future<_i16.ConfigurableApplicationContext> reloadApplicationAsync(
   _i16.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
+
+/// The public fields of the application's widgets and their states, which the
+/// cards of the debug graph show (`DebugWidgetFields`).
+List<_i3.BeanDefinition<Object>> get _$debugWidgetFields => [
+  _i3.BeanDefinition<_i20.DebugWidgetFields>(
+    name: r'debugWidgetFields',
+    source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#DebugWidgetFields',
+    lazy: true,
+    create: (r) => _i20.DebugWidgetFields({
+      _i21.HomePage: [(r'shell', (o) => (o as _i21.HomePage).shell)],
+      _i22.BookPage: [(r'isbn', (o) => (o as _i22.BookPage).isbn)],
+      _i23.BookTile: [(r'book', (o) => (o as _i23.BookTile).book)],
+      _i23.BookTilePlaceholder: [
+        (r'count', (o) => (o as _i23.BookTilePlaceholder).count),
+      ],
+      _i24.YamlBox: [
+        (r'text', (o) => (o as _i24.YamlBox).text),
+        (r'label', (o) => (o as _i24.YamlBox).label),
+      ],
+      _i25.ThemeTag: [
+        (r'label', (o) => (o as _i25.ThemeTag).label),
+        (r'selected', (o) => (o as _i25.ThemeTag).selected),
+        (r'onPressed', (o) => (o as _i25.ThemeTag).onPressed),
+      ],
+    }),
+  ),
+];

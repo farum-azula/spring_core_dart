@@ -5,7 +5,7 @@ import 'dart:ui' show Canvas, PictureRecorder;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_scene/scene.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    show SpringScope;
+    show PaintedElsewhere, SpringScope;
 import 'package:spring_boot_starter_flutter_scene/src/app/application_scene.dart';
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_availability.dart';
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_frames.dart';
@@ -13,6 +13,7 @@ import 'package:spring_boot_starter_flutter_scene/src/properties/scene_propertie
 import 'package:spring_boot_starter_flutter_scene/src/widgets/on_screen.dart';
 import 'package:spring_boot_starter_flutter_scene/src/widgets/scene_canvas_target.dart';
 import 'package:spring_boot_starter_flutter_scene/src/widgets/scene_layer.dart';
+import 'package:spring_boot_starter_flutter_scene/src/widgets/scene_route.dart';
 import 'package:spring_boot_starter_flutter_scene/src/widgets/scene_screen.dart';
 import 'package:spring_boot_starter_flutter_scene/src/widgets/scene_clock.dart';
 import 'package:spring_boot_starter_flutter_scene/src/widgets/scene_view_observer.dart';
@@ -260,6 +261,16 @@ class _SpringSceneViewState extends State<SpringSceneView> {
       _application = application?..addListener(_changed);
     }
     _observer = beans?.getBeanProvider<SceneViewObserver>().getIfAvailable();
+    // The route the view is on: its scene leaves the engine's canvas when
+    // the route starts to leave, not when its transition ends.
+    final route = ModalRoute.of(context);
+    if (!identical(route, _route)) {
+      _route?.animation?.removeStatusListener(_routeMoved);
+      _route?.secondaryAnimation?.removeStatusListener(_routeMoved);
+      _route = route;
+      route?.animation?.addStatusListener(_routeMoved);
+      route?.secondaryAnimation?.addStatusListener(_routeMoved);
+    }
     final frames =
         beans?.getBeanProvider<SceneFrames>().getIfAvailable() ??
         (_ownFrames ??= SceneFrames());
@@ -270,8 +281,15 @@ class _SpringSceneViewState extends State<SpringSceneView> {
     _start();
   }
 
+  ModalRoute<Object?>? _route;
+
+  // The route's transition turned: built again, its scene shown or hidden.
+  void _routeMoved(AnimationStatus status) => _changed();
+
   @override
   void dispose() {
+    _route?.animation?.removeStatusListener(_routeMoved);
+    _route?.secondaryAnimation?.removeStatusListener(_routeMoved);
     _frames?.leave(this);
     _ownFrames?.dispose();
     _availability?.removeListener(_changed);
@@ -475,7 +493,8 @@ class _SpringSceneViewState extends State<SpringSceneView> {
     final devicePixelRatio = View.of(context).devicePixelRatio;
     if (target is SceneScreenPlace) {
       target
-        ..visible = TickerMode.valuesOf(context).enabled
+        ..visible =
+            TickerMode.valuesOf(context).enabled && !sceneRouteLeaving(_route)
         ..ratio = devicePixelRatio
         ..screen = MediaQuery.sizeOf(context);
     }
@@ -492,7 +511,9 @@ class _SpringSceneViewState extends State<SpringSceneView> {
         return Stack(
           fit: StackFit.expand,
           children: [
-            Offstage(child: view),
+            // Built here, drawn on the layer's or the engine's canvas: the
+            // debug graph counts its widgets as on the screen.
+            Offstage(key: const PaintedElsewhere(), child: view),
             IgnorePointer(child: target.build()),
             if (!_revealed) ?widget.placeholder,
           ],

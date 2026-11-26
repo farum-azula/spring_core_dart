@@ -1,0 +1,7 @@
+targets:
+  $default:
+    builders:
+      spring_core_dart_generator:spring_core_dart:
+        generate_for: [lib/main.dart]
+      spring_core_dart_generator:spring_test:
+        enabled: false

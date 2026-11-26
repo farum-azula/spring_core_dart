@@ -1,5 +1,8 @@
 ## Unreleased
 
+- `SecurityCallerContext` (`CallerContexts`), `ZoneSecurityContextHolderStrategy.captureCaller` and `runAsCaller`: code captured in a scope runs later with that scope's context, code captured outside every scope with the program-wide one, even when it runs inside another user's scope.
+- **Security fix:** the current user and every method security decision are reported to `CallerBoundReads`, so what keeps a value knows whose it is; a change of the program-wide user is told.
+- `@PostFilter` and `@PreFilter` on a `Map` filter a typed copy in code built by the generator, and no longer edit a value someone keeps. **Differs from Spring**, which filters a `Map` in place; a hand-written signature without `MapTypes` still does.
 - `MethodSecurityValidator` fails the start when a secured method has no signature in the bean's proxy, instead of letting it run unchecked.
 - **Security fix, breaking:** a `Future` read from a bean or compared with `==` or `!=` in a security expression fails the call, also an argument or an element of a collection (`#f != false`, `#list[0] != false`). `this.isOwner(#id) != false` on a repository or `@FeignClient` compared the `Future` itself, so it held for every user and the call went through. A method described as asynchronous is no longer called from the expression, so a refused call makes no query or request.
 

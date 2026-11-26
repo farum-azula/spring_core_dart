@@ -4,12 +4,15 @@ import 'package:spring_boot_starter_flutter/src/debug/debug_panel.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_style.dart';
 
 /// The beans: every bean of the context, by name, with its type.
-final class DebugBeansSection implements DebugPanelSection, Ordered {
+final class DebugBeansSection implements GroupedDebugPanelSection, Ordered {
   /// The section of [context].
-  const DebugBeansSection(this.context);
+  DebugBeansSection(this.context);
 
   /// The application.
   final ApplicationContext context;
+
+  /// The text of its filter, kept while the panel is closed.
+  String filter = '';
 
   @override
   String get title => 'Beans';
@@ -18,13 +21,16 @@ final class DebugBeansSection implements DebugPanelSection, Ordered {
   int get order => 30;
 
   @override
-  Widget build(BuildContext context) => _Beans(this.context);
+  String get group => 'App';
+
+  @override
+  Widget build(BuildContext context) => _Beans(this);
 }
 
 class _Beans extends StatefulWidget {
-  const _Beans(this.context);
+  const _Beans(this.section);
 
-  final ApplicationContext context;
+  final DebugBeansSection section;
 
   @override
   State<_Beans> createState() => _BeansState();
@@ -32,10 +38,10 @@ class _Beans extends StatefulWidget {
 
 class _BeansState extends State<_Beans> {
   late final _all = [
-    for (final name in [...widget.context.beanDefinitionNames]..sort())
-      (name, '${widget.context.getType(name) ?? ''}'),
+    for (final name in [...widget.section.context.beanDefinitionNames]..sort())
+      (name, '${widget.section.context.getType(name) ?? ''}'),
   ];
-  String _filter = '';
+  late String _filter = widget.section.filter;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +59,11 @@ class _BeansState extends State<_Beans> {
       children: [
         Text('${_all.length} beans', style: style.text),
         const SizedBox(height: 8),
-        DebugFilter(onChanged: (text) => setState(() => _filter = text)),
+        DebugFilter(
+          initial: _filter,
+          onChanged: (text) =>
+              setState(() => _filter = widget.section.filter = text),
+        ),
         Expanded(
           child: ListView.builder(
             itemCount: shown.length,

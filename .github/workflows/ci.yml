@@ -694,6 +694,7 @@ jobs:
           (cd spring_boot_starter_flutter_navigation && flutter pub get)
           (cd spring_boot_starter_flutter_scene && flutter pub get)
           (cd spring_boot_starter_flutter_signals && flutter pub get)
+          (cd tool/signals_checks && cp overrides.template.yaml pubspec_overrides.yaml && flutter pub get)
           (cd example/flutter_guide && flutter pub get)
           (cd example/themes/neon_ui && flutter pub get)
           (cd example/themes/neon && flutter pub get)
@@ -739,7 +740,7 @@ jobs:
 
       - name: Generated code is up to date (Flutter guide, theme examples and packages)
         run: |
-          for example in example/flutter_guide example/themes/neon_ui example/themes/neon example/themes/material example/themes/cupertino example/static_site/app example/seo_site example/scene example/bloc example/supabase/app spring_boot_starter_flutter spring_boot_starter_flutter_material spring_boot_starter_flutter_cupertino spring_boot_starter_flutter_security spring_boot_starter_flutter_navigation spring_boot_starter_flutter_scene spring_boot_starter_flutter_signals; do
+          for example in example/flutter_guide example/themes/neon_ui example/themes/neon example/themes/material example/themes/cupertino example/static_site/app example/seo_site example/scene example/bloc example/supabase/app spring_boot_starter_flutter spring_boot_starter_flutter_material spring_boot_starter_flutter_cupertino spring_boot_starter_flutter_security spring_boot_starter_flutter_navigation spring_boot_starter_flutter_scene spring_boot_starter_flutter_signals tool/signals_checks; do
             (cd $example && dart run build_runner build)
             git diff --exit-code -- $example
             test -z "$(git status --porcelain -- $example)"
@@ -762,6 +763,7 @@ jobs:
           (cd spring_boot_starter_flutter_navigation && flutter analyze --fatal-infos)
           (cd spring_boot_starter_flutter_scene && flutter analyze --fatal-infos)
           (cd spring_boot_starter_flutter_signals && flutter analyze --fatal-infos)
+          (cd tool/signals_checks && flutter analyze --fatal-infos)
           (cd example/flutter_guide && flutter analyze --fatal-infos)
           (cd example/themes/neon_ui && flutter analyze --fatal-infos)
           (cd example/themes/neon && flutter analyze --fatal-infos)
@@ -848,6 +850,14 @@ jobs:
       - name: Tests of spring_boot_starter_flutter_signals
         if: needs.changes.outputs.flutter_signals == 'true'
         working-directory: spring_boot_starter_flutter_signals
+        run: flutter test
+
+      # Followed state under real method security, transactions and caches,
+      # in generated proxies: a package of its own, as the starter must not
+      # depend on those starters.
+      - name: Tests of followed state under real advice (tool/signals_checks)
+        if: needs.changes.outputs.flutter_signals == 'true' || contains(needs.changes.outputs.packages, 'spring_security_core') || contains(needs.changes.outputs.packages, 'spring_boot_starter_data') || contains(needs.changes.outputs.packages, 'spring_boot_starter_cache') || contains(needs.changes.outputs.packages, 'spring_core_dart')
+        working-directory: tool/signals_checks
         run: flutter test
 
       # The showcase as an app, its scenes as placeholders. Its device

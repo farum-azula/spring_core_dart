@@ -152,6 +152,57 @@ final class LogPattern {
     return text.endsWith('\n') ? text.substring(0, text.length - 1) : text;
   }
 
+  /// The character that starts every line of a record when
+  /// `logging.console.record-bar` is on: a left half block, which fills
+  /// the height of a terminal cell, so the lines of one record join into
+  /// one bar.
+  static const recordBar = '\u258C';
+
+  /// [text], the output of [formatLine] for a record of [level], with
+  /// every line starting with [recordBar] and a space: the first line,
+  /// the lines of a multi-line message, the stack trace and its causes.
+  /// With [ansi] the bar has the colour `%clr` gives [level] (errors red,
+  /// warnings yellow, the others green). The console applies it after the
+  /// pattern, so it works with any `logging.pattern.console`. A line the
+  /// terminal wraps itself is not marked: the bar only knows the line
+  /// breaks in the text. A colour the text sets before a line break
+  /// (`%clr(%m){red}` on a multi-line message) is set again after the
+  /// bar, so the next line keeps it.
+  ///
+  /// ```dart
+  /// LogPattern.withBar('boom\n#0 main', SpringLogLevel.error, ansi: false);
+  /// // ▌ boom
+  /// // ▌ #0 main
+  /// ```
+  static String withBar(
+    String text,
+    SpringLogLevel level, {
+    required bool ansi,
+  }) {
+    if (!ansi) {
+      return '$_plainBar${text.replaceAll('\n', '\n$_plainBar')}';
+    }
+    final bar = _colouredBars[level]!;
+    final buffer = StringBuffer(bar);
+    String? activeColour;
+    var first = true;
+    for (final line in text.split('\n')) {
+      if (!first) {
+        buffer
+          ..write('\n')
+          ..write(bar)
+          ..write(activeColour ?? '');
+      }
+      first = false;
+      buffer.write(line);
+      for (final match in _colourCode.allMatches(line)) {
+        final codes = match.group(1)!;
+        activeColour = _resetCodes.contains(codes) ? null : match.group(0);
+      }
+    }
+    return buffer.toString();
+  }
+
   /// The name `%p` prints for [level], as Logback names levels: `WARN`
   /// for [SpringLogLevel.warning], the upper-case name for the others.
   static String levelName(SpringLogLevel level) => switch (level) {
@@ -250,6 +301,25 @@ String _throwable(SpringLogRecord record, int? depth) {
   final kept = depth == null ? lines : lines.take(depth);
   return '${['$error', ...kept].join('\n')}\n';
 }
+
+// The colour `%clr` without a colour gives [level], as Spring Boot's
+// ColorConverter: errors red, warnings yellow, the others green.
+String _levelCode(SpringLogLevel level) => switch (level) {
+  SpringLogLevel.error => '31',
+  SpringLogLevel.warning => '33',
+  _ => '32',
+};
+
+// The record bar of each level, coloured and plain (see LogPattern.withBar).
+final Map<SpringLogLevel, String> _colouredBars = {
+  for (final level in SpringLogLevel.values)
+    level: '\x1B[${_levelCode(level)}m${LogPattern.recordBar}\x1B[0;39m ',
+};
+const _plainBar = '${LogPattern.recordBar} ';
+
+// An ANSI colour sequence, and the codes that end a colour.
+final _colourCode = RegExp('\x1B\\[([0-9;]*)m');
+const _resetCodes = {'', '0', '39', '0;39'};
 
 const _ansiCodes = {
   'black': '30',
@@ -863,13 +933,7 @@ final class _Parser {
       return inner;
     }
     return (record) {
-      final code =
-          fixed ??
-          switch (record.level) {
-            SpringLogLevel.error => '31',
-            SpringLogLevel.warning => '33',
-            _ => '32',
-          };
+      final code = fixed ?? _levelCode(record.level);
       return '\x1B[${code}m${inner(record)}\x1B[0;39m';
     };
   }

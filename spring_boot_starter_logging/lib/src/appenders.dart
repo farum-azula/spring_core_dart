@@ -102,6 +102,20 @@ class ConsoleAppender extends LogAppender {
   /// Receives each formatted record, without the final line break.
   void Function(String line) out;
 
+  /// Whether every line of a record starts with [LogPattern.recordBar] in
+  /// the level's colour (`logging.console.record-bar`), so a multi-line
+  /// record reads as one. Off by default; the colour follows
+  /// [LogPattern.ansi] of [pattern]. A line the terminal or the browser's
+  /// console wraps itself is not marked.
+  bool recordBar = false;
+
   @override
-  void write(SpringLogRecord record) => out(pattern.formatLine(record));
+  void write(SpringLogRecord record) {
+    final line = pattern.formatLine(record);
+    out(
+      recordBar
+          ? LogPattern.withBar(line, record.level, ansi: pattern.ansi)
+          : line,
+    );
+  }
 }

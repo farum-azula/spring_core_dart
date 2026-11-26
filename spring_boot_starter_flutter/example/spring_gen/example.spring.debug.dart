@@ -9,20 +9,24 @@
 
 part of 'example.spring.dart';
 
-/// The auto-configurations only debug and profile builds have (their build key
-/// leaves them out of a release build), which `springApplication` adds
-/// to its own outside release builds.
+/// The auto-configurations only debug builds have (their build key leaves
+/// them out of a profile or a release build), which `springApplication` adds
+/// to its own in debug builds.
 List<_i3.BeanModule> get _$debugAutoConfigurations => [
   _i4.springBootStarterFlutterDebugAutoConfiguration,
+  _i4.springBootStarterFlutterDebugBeansGraphAutoConfiguration,
+  _i4.springBootStarterFlutterDebugFlutterToolsAutoConfiguration,
   _i4.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
   _i4.springBootStarterFlutterDebugIsolatesAutoConfiguration,
+  _i4.springBootStarterFlutterDebugLogsExportAutoConfiguration,
   _i4.springBootStarterFlutterDebugMotionAutoConfiguration,
   _i4.springBootStarterFlutterDebugTimelineAutoConfiguration,
+  _i4.springBootStarterFlutterDebugWidgetsGraphAutoConfiguration,
 ];
 
 /// The hash of the generated code, which a hot reload compares to restart
 /// the application only when its beans changed (`SpringApplication.reload`).
-const _$fingerprint = '63000753';
+const _$fingerprint = 'c8087ac7';
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;

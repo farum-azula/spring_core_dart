@@ -1,9 +1,7 @@
 // A call on a subclass proxy is a self-call only when the bean's own code
 // is the innermost running (SIG-3): a callback that another advised bean
 // makes through the bean's reference is advised, as in Spring where the
-// reference is the proxy; code the framework runs on its own
-// (runOutsideProxyBodies) is no self-call (SIG-2); an invocation says
-// whether it is a self-call's (SIG-1).
+// reference is the proxy.
 import 'dart:async';
 
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -125,29 +123,15 @@ class _$RelayProxy extends Relay {
       );
 }
 
-class _FrameworkRelay extends Relay {
-  @override
-  Future<String> relayLater(String Function() call) async {
-    await Future<void>.delayed(Duration.zero);
-    return runOutsideProxyBodies<String>(call);
-  }
-}
-
 class _Record implements MethodInterceptor {
   final calls = <String>[];
-  final selfCalls = <String>[];
 
   @override
   Object? invoke(MethodInvocation invocation) {
     calls.add(invocation.signature.name);
-    if (invocation.isSelfCall) {
-      selfCalls.add(invocation.signature.name);
-    }
     return invocation.proceed();
   }
 }
-
-class _SeesSelfCalls extends _Record implements SelfCallInterceptor {}
 
 void main() {
   late _Record record;
@@ -185,29 +169,11 @@ void main() {
     expect(record.calls, ['buyLater', 'price']);
   });
 
-  test('code the framework runs on its own is no self-call (SIG-2)', () async {
-    // A plain object in the bean's zone (no advised call of its own): its
-    // call through the reference cannot be told from one on this.
+  test('a plain object in the bean’s zone is taken for the bean’s own '
+      'code', () async {
+    // It makes no advised call of its own: its call through the reference
+    // cannot be told from one on this.
     expect(await shop.buyLater(Relay()), 'price');
     expect(record.calls, ['buyLater']);
-    record.calls.clear();
-    // The framework's own run (an effect re-run by an assignment).
-    expect(await shop.buyLater(_FrameworkRelay()), 'price');
-    expect(record.calls, ['buyLater', 'price']);
-  });
-
-  test('an invocation tells a self-call’s (SIG-1)', () {
-    final sees = _SeesSelfCalls();
-    final bean = _$ShopProxy(
-      ProxyInvoker(
-        _shop,
-        [DefaultPointcutAdvisor(const TruePointcut(), sees)],
-        'bean',
-        adviseSelfCalls: true,
-      ),
-    );
-    expect(bean.buyOwn(), 'own(price)');
-    expect(sees.calls, ['buyOwn', 'price']);
-    expect(sees.selfCalls, ['price']);
   });
 }

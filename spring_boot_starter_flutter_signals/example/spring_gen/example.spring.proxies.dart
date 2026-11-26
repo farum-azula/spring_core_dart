@@ -9,274 +9,234 @@
 
 part of 'example.spring.dart';
 
-/// `Basket` as its own proxy: once advice matches it at run time, each call
-/// runs that advice (each member says what the build found for it).
-class _$BasketProxy extends _i1.Basket with _i2.AdvisedSubclass {
-  _$BasketProxy(super.p0);
+/// Wraps `MessagesProperties`: each call runs the advice that matches it at run
+/// time (each member says what the build found for it).
+class _$MessagesPropertiesProxy
+    with _i1.AdvisedWrapper
+    implements _i2.MessagesProperties {
+  _$MessagesPropertiesProxy(this._target, this.aopInvoker);
 
-  /// save: `@Effect()`
+  final _i2.MessagesProperties _target;
+
   @override
-  void save() {
-    final _$invoker = this.aopInvoker;
-    if (_$invoker == null) {
-      super.save();
-    } else {
-      _$invoker.invoke(
-        proxy: this,
-        target: this,
-        methodIndex: 0,
-        arguments: const [],
-        original: (args) {
-          super.save();
-          return null;
-        },
-      );
-    }
+  final _i1.ProxyInvoker aopInvoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  String toString() => _target.toString();
+
+  /// cacheDuration: no advice of its own found by the build
+  @override
+  Duration? get cacheDuration => (this.aopInvoker.invoke(
+    proxy: this,
+    target: this._target,
+    methodIndex: 0,
+    arguments: const [],
+    original: (_) => this._target.cacheDuration,
+  ) as Duration?);
+
+  /// cacheDuration: no advice of its own found by the build
+  @override
+  set cacheDuration(Duration? value) {
+    this.aopInvoker.invoke(
+      proxy: this,
+      target: this._target,
+      methodIndex: 1,
+      arguments: [value],
+      original: (args) {
+        this._target.cacheDuration = (args[0] as Duration?);
+        return null;
+      },
+    );
   }
 
-  /// add: no advice of its own found by the build
   @override
-  void add(_i1.Book book) {
-    final _$invoker = this.aopInvoker;
-    if (_$invoker == null) {
-      super.add(book);
-    } else {
-      _$invoker.invoke(
-        proxy: this,
-        target: this,
-        methodIndex: 1,
-        arguments: [book],
-        original: (args) {
-          super.add((args[0] as _i1.Book));
-          return null;
-        },
-      );
-    }
+  bool get alwaysUseMessageFormat => this._target.alwaysUseMessageFormat;
+
+  @override
+  List<String> get basename => this._target.basename;
+
+  @override
+  List<String>? get commonMessages => this._target.commonMessages;
+
+  @override
+  String? get defaultLocale => this._target.defaultLocale;
+
+  @override
+  String? get encoding => this._target.encoding;
+
+  @override
+  bool get fallbackToSystemLocale => this._target.fallbackToSystemLocale;
+
+  @override
+  bool get useCodeAsDefaultMessage => this._target.useCodeAsDefaultMessage;
+
+  @override
+  set alwaysUseMessageFormat(bool value) {
+    this._target.alwaysUseMessageFormat = value;
   }
 
-  /// remove: no advice of its own found by the build
   @override
-  void remove(String title) {
-    final _$invoker = this.aopInvoker;
-    if (_$invoker == null) {
-      super.remove(title);
-    } else {
-      _$invoker.invoke(
-        proxy: this,
-        target: this,
-        methodIndex: 2,
-        arguments: [title],
-        original: (args) {
-          super.remove((args[0] as String));
-          return null;
-        },
-      );
-    }
+  set basename(List<String> value) {
+    this._target.basename = value;
   }
 
-  /// clear: no advice of its own found by the build
   @override
-  void clear() {
-    final _$invoker = this.aopInvoker;
-    if (_$invoker == null) {
-      super.clear();
-    } else {
-      _$invoker.invoke(
-        proxy: this,
-        target: this,
-        methodIndex: 3,
-        arguments: const [],
-        original: (args) {
-          super.clear();
-          return null;
-        },
-      );
-    }
+  set commonMessages(List<String>? value) {
+    this._target.commonMessages = value;
   }
 
-  /// storage: no advice of its own found by the build
   @override
-  _i1.BasketStorage get storage {
-    final _$invoker = this.aopInvoker;
-    return _$invoker == null
-        ? super.storage
-        : (_$invoker.invoke(
-            proxy: this,
-            target: this,
-            methodIndex: 4,
-            arguments: const [],
-            original: (_) => super.storage,
-          ) as _i1.BasketStorage);
+  set defaultLocale(String? value) {
+    this._target.defaultLocale = value;
   }
 
-  /// items: `@Signal()`
   @override
-  List<_i1.Book> get items {
-    final _$invoker = this.aopInvoker;
-    return _$invoker == null
-        ? super.items
-        : (_$invoker.invoke(
-            proxy: this,
-            target: this,
-            methodIndex: 5,
-            arguments: const [],
-            original: (_) => super.items,
-          ) as List<_i1.Book>);
+  set encoding(String? value) {
+    this._target.encoding = value;
   }
 
-  /// coupon: `@Signal()`
   @override
-  String? get coupon {
-    final _$invoker = this.aopInvoker;
-    return _$invoker == null
-        ? super.coupon
-        : (_$invoker.invoke(
-            proxy: this,
-            target: this,
-            methodIndex: 6,
-            arguments: const [],
-            original: (_) => super.coupon,
-          ) as String?);
+  set fallbackToSystemLocale(bool value) {
+    this._target.fallbackToSystemLocale = value;
   }
 
-  /// total: `@Computed()`
   @override
-  double get total {
-    final _$invoker = this.aopInvoker;
-    return _$invoker == null
-        ? super.total
-        : (_$invoker.invoke(
-            proxy: this,
-            target: this,
-            methodIndex: 7,
-            arguments: const [],
-            original: (_) => super.total,
-          ) as double);
-  }
-
-  /// items: `@Signal()`
-  @override
-  set items(List<_i1.Book> value) {
-    final _$invoker = this.aopInvoker;
-    if (_$invoker == null) {
-      super.items = value;
-    } else {
-      _$invoker.invoke(
-        proxy: this,
-        target: this,
-        methodIndex: 8,
-        arguments: [value],
-        original: (args) {
-          super.items = (args[0] as List<_i1.Book>);
-          return null;
-        },
-      );
-    }
-  }
-
-  /// coupon: `@Signal()`
-  @override
-  set coupon(String? value) {
-    final _$invoker = this.aopInvoker;
-    if (_$invoker == null) {
-      super.coupon = value;
-    } else {
-      _$invoker.invoke(
-        proxy: this,
-        target: this,
-        methodIndex: 9,
-        arguments: [value],
-        original: (args) {
-          super.coupon = (args[0] as String?);
-          return null;
-        },
-      );
-    }
+  set useCodeAsDefaultMessage(bool value) {
+    this._target.useCodeAsDefaultMessage = value;
   }
 }
 
-/// `Catalog` as its own proxy: once advice matches it at run time, each call
-/// runs that advice (each member says what the build found for it).
-class _$CatalogProxy extends _i1.Catalog with _i2.AdvisedSubclass {
-  _$CatalogProxy(super.p0);
+/// Wraps `LoggingProperties`: each call runs the advice that matches it at run
+/// time (each member says what the build found for it).
+class _$LoggingPropertiesProxy
+    with _i1.AdvisedWrapper
+    implements _i3.LoggingProperties {
+  _$LoggingPropertiesProxy(this._target, this.aopInvoker);
 
-  /// client: no advice of its own found by the build
+  final _i3.LoggingProperties _target;
+
   @override
-  _i1.CatalogClient get client {
-    final _$invoker = this.aopInvoker;
-    return _$invoker == null
-        ? super.client
-        : (_$invoker.invoke(
-            proxy: this,
-            target: this,
-            methodIndex: 0,
-            arguments: const [],
-            original: (_) => super.client,
-          ) as _i1.CatalogClient);
+  final _i1.ProxyInvoker aopInvoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  String toString() => _target.toString();
+
+  /// exceptionConversionWord: no advice of its own found by the build
+  @override
+  String get exceptionConversionWord => (this.aopInvoker.invoke(
+    proxy: this,
+    target: this._target,
+    methodIndex: 0,
+    arguments: const [],
+    original: (_) => this._target.exceptionConversionWord,
+  ) as String);
+
+  /// exceptionConversionWord: no advice of its own found by the build
+  @override
+  set exceptionConversionWord(String value) {
+    this.aopInvoker.invoke(
+      proxy: this,
+      target: this._target,
+      methodIndex: 1,
+      arguments: [value],
+      original: (args) {
+        this._target.exceptionConversionWord = (args[0] as String);
+        return null;
+      },
+    );
   }
 
-  /// genre: `@Signal()`
   @override
-  String get genre {
-    final _$invoker = this.aopInvoker;
-    return _$invoker == null
-        ? super.genre
-        : (_$invoker.invoke(
-            proxy: this,
-            target: this,
-            methodIndex: 1,
-            arguments: const [],
-            original: (_) => super.genre,
-          ) as String);
+  bool get enabled => this._target.enabled;
+
+  @override
+  Map<String, String> get level => this._target.level;
+
+  @override
+  Map<String, List<String>> get group => this._target.group;
+
+  @override
+  bool get includeApplicationGroup => this._target.includeApplicationGroup;
+
+  @override
+  bool get includeApplicationName => this._target.includeApplicationName;
+
+  @override
+  _i3.LoggingPatternProperties get pattern => this._target.pattern;
+
+  @override
+  _i3.LoggingThresholdProperties get threshold => this._target.threshold;
+
+  @override
+  _i3.LoggingConsoleProperties get console => this._target.console;
+
+  @override
+  _i3.LoggingBufferProperties get buffer => this._target.buffer;
+
+  @override
+  _i3.LoggingFileProperties get file => this._target.file;
+
+  @override
+  _i3.LoggingCharsetProperties get charset => this._target.charset;
+
+  @override
+  set enabled(bool value) {
+    this._target.enabled = value;
   }
 
-  /// books: `@Computed()`
   @override
-  _i3.Future<List<_i1.Book>> get books {
-    final _$invoker = this.aopInvoker;
-    return _$invoker == null
-        ? super.books
-        : _$invoker.invokeAsync<List<_i1.Book>>(
-            proxy: this,
-            target: this,
-            methodIndex: 2,
-            arguments: const [],
-            original: (_) => super.books,
-          );
+  set level(Map<String, String> value) {
+    this._target.level = value;
   }
 
-  /// price: `@Computed()`
   @override
-  _i3.Stream<double> get price {
-    final _$invoker = this.aopInvoker;
-    return _$invoker == null
-        ? super.price
-        : (_$invoker.invoke(
-            proxy: this,
-            target: this,
-            methodIndex: 3,
-            arguments: const [],
-            original: (_) => super.price,
-          ) as _i3.Stream<double>);
+  set group(Map<String, List<String>> value) {
+    this._target.group = value;
   }
 
-  /// genre: `@Signal()`
   @override
-  set genre(String value) {
-    final _$invoker = this.aopInvoker;
-    if (_$invoker == null) {
-      super.genre = value;
-    } else {
-      _$invoker.invoke(
-        proxy: this,
-        target: this,
-        methodIndex: 4,
-        arguments: [value],
-        original: (args) {
-          super.genre = (args[0] as String);
-          return null;
-        },
-      );
-    }
+  set includeApplicationGroup(bool value) {
+    this._target.includeApplicationGroup = value;
+  }
+
+  @override
+  set includeApplicationName(bool value) {
+    this._target.includeApplicationName = value;
+  }
+
+  @override
+  set pattern(_i3.LoggingPatternProperties value) {
+    this._target.pattern = value;
+  }
+
+  @override
+  set threshold(_i3.LoggingThresholdProperties value) {
+    this._target.threshold = value;
+  }
+
+  @override
+  set console(_i3.LoggingConsoleProperties value) {
+    this._target.console = value;
+  }
+
+  @override
+  set buffer(_i3.LoggingBufferProperties value) {
+    this._target.buffer = value;
+  }
+
+  @override
+  set file(_i3.LoggingFileProperties value) {
+    this._target.file = value;
+  }
+
+  @override
+  set charset(_i3.LoggingCharsetProperties value) {
+    this._target.charset = value;
   }
 }

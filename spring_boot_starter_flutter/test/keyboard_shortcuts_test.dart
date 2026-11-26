@@ -409,6 +409,72 @@ void main() {
     );
   });
 
+  testWidgets('a sign or a digit with shift: matched where it lies, though '
+      'it types another character', (tester) async {
+    const notations = ShortcutNotations([KeyCombinationNotation()]);
+    ShortcutActivator keys(String text) => notations
+        .parse(text, property: 'p', platform: TargetPlatform.macOS)
+        .activator;
+    KeyDownEvent typed(PhysicalKeyboardKey place, LogicalKeyboardKey key) =>
+        KeyDownEvent(
+          physicalKey: place,
+          logicalKey: key,
+          timeStamp: Duration.zero,
+        );
+    final state = HardwareKeyboard.instance;
+    final tilde = typed(
+      PhysicalKeyboardKey.backquote,
+      LogicalKeyboardKey.tilde,
+    );
+    final bang = typed(
+      PhysicalKeyboardKey.digit1,
+      LogicalKeyboardKey.exclamation,
+    );
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    expect(keys('primary+shift+backquote').accepts(tilde, state), isTrue);
+    expect(keys('shift+1').accepts(bang, state), isFalse, reason: 'meta held');
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+    expect(keys('shift+1').accepts(bang, state), isTrue);
+    expect(keys('primary+shift+backquote').accepts(tilde, state), isFalse);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    expect(keys('shift+1').accepts(bang, state), isFalse, reason: 'no shift');
+  });
+
+  testWidgets('§ alone: the shortcut\'s, but the text\'s while a text field '
+      'has the focus', (tester) async {
+    const notations = ShortcutNotations([KeyCombinationNotation()]);
+    final section = notations
+        .parse('section', property: 'p', platform: TargetPlatform.macOS)
+        .activator;
+    final pressed = KeyDownEvent(
+      physicalKey: PhysicalKeyboardKey.intlBackslash,
+      logicalKey: const LogicalKeyboardKey(0xa7),
+      character: '§',
+      timeStamp: Duration.zero,
+    );
+    final field = FocusNode();
+    final text = TextEditingController();
+    addTearDown(field.dispose);
+    addTearDown(text.dispose);
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: EditableText(
+          controller: text,
+          focusNode: field,
+          style: const TextStyle(),
+          cursorColor: const Color(0xFF000000),
+          backgroundCursorColor: const Color(0xFF000000),
+        ),
+      ),
+    );
+    expect(section.accepts(pressed, HardwareKeyboard.instance), isTrue);
+    field.requestFocus();
+    await tester.pump();
+    expect(section.accepts(pressed, HardwareKeyboard.instance), isFalse);
+  });
+
   testWidgets('keys that are no keys stop the start, naming the property', (
     tester,
   ) async {

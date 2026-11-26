@@ -68,7 +68,7 @@ final class DataJdbcProperties {
   /// default level (Spring Boot's `spring.jpa.show-sql`). Also read by the
   /// generator: `true` without a profile keeps the statement logging (this
   /// switch, `format-sql`, `show-parameters`) in every build, `false` in
-  /// none; not set, in debug and profile builds only.
+  /// none; not set, in debug builds only.
   final bool showSql;
 
   /// Whether the SQL in the log is on several lines. Only where `show-sql`

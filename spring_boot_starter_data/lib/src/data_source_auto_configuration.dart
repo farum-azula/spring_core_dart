@@ -595,8 +595,8 @@ final dataSourceAutoConfiguration = <BeanDefinition<Object>>[
 
 /// The statement logging of the SQL templates and repositories, in the
 /// build by `spring.data.jdbc.show-sql` (`true` in the configuration
-/// without a profile: every build; `false`: none; not set: debug and
-/// profile builds, where a profile's `show-sql: true` turns it on):
+/// without a profile: every build; `false`: none; not set: debug builds,
+/// where a profile's `show-sql: true` turns it on):
 ///
 /// - `jdbcLogSettings` — `spring.data.jdbc.show-sql`, `format-sql`,
 ///   `show-parameters` and `slow-query-threshold` ([jdbcLogSettingsOf]),

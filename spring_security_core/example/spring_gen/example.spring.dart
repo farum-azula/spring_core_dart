@@ -229,16 +229,20 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     _i4.springBootStarterCacheAutoConfiguration,
     _i11.springBootStarterLoggingAutoConfiguration,
     _i12.springSecurityCoreAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
+    if (!const bool.fromEnvironment('dart.vm.product') &&
+        !const bool.fromEnvironment('dart.vm.profile'))
       ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    ...!const bool.fromEnvironment('dart.vm.product')
+    ...!const bool.fromEnvironment('dart.vm.product') &&
+            !const bool.fromEnvironment('dart.vm.profile')
         ? _$debugAutoConfigurationMetadata
         : const {},
   },
   dartDefines: _$dartDefines,
-  fingerprint: !const bool.fromEnvironment('dart.vm.product')
+  fingerprint:
+      !const bool.fromEnvironment('dart.vm.product') &&
+          !const bool.fromEnvironment('dart.vm.profile')
       ? _$fingerprint
       : null,
 );

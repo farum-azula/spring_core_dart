@@ -169,7 +169,7 @@ spring:
           target: 0, 1, 0
           fov: 45
       debug:
-        enabled: true        # the scenes' tab; not set: debug and profile builds
+        enabled: true        # the scenes' tab; not set: debug builds
 ```
 
 A value for one platform goes into its profile file, as everywhere:
@@ -235,8 +235,11 @@ Measured on an iPhone (Safari) scrolling a page with two moving scenes:
 43 frames a second on a timer of its own, 52 on the browser's frames
 (`layer`), 60 with `engine` behind the page; on a
 Mac, a beat of two scenes 12 → 1.2 ms in Firefox, 6.6 → 1.2 in Safari.
-The frame meter shows the scenes' frames on a line of their own (`3D 60
-fps · 0.9 ms`), apart from Flutter's.
+The frame meter shows the scenes' frames beside Flutter's (`60 (60 3D)`;
+the debug panel's Frames tab adds what one cost, `3D 60 fps · 0.9 ms`),
+and the debug console's `scene-fps` segment shows them while a scene
+moves (`spring.flutter.debug.console.enabled: true`; in the build while
+`spring.flutter.debug.console.segments` names it, holds `*` or is not set).
 
 `light-clustering: false` turns off the engine's clustering of lamps
 (`Scene.punctualLightClustering`): each mesh shades the lamps that reach
@@ -475,7 +478,7 @@ caught: the few lines the engine writes with `print`.
 ## The debug tab
 
 "Scenes" in the debug panel
-(`spring.flutter.scene.debug.enabled`; not set: debug and profile builds):
+(`spring.flutter.scene.debug.enabled`; not set: debug builds):
 
 - **the engine**: its state, the time of its start, whether the web page
   is cross-origin isolated, how its frames reach Flutter in a browser,

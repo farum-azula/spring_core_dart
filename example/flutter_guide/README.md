@@ -794,7 +794,7 @@ screen shows the server's own log (`GET /api/admin/logs`).
 Try: More → Logs, Debug: the Feign calls (`---> GET ...`), the screens
 opened, the cookies stored.
 
-The starter's debug panel is in the debug and profile builds (no
+The starter's debug panel is in the debug builds (no
 `spring.flutter.debug.enabled` is set, so a release build has none of
 it): ⌘⇧D / Ctrl+Shift+D, or four quick taps and a fifth held three
 seconds on a phone, opens the logs, the frame meter, the configuration,

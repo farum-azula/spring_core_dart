@@ -9,26 +9,33 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i3;
+import 'dart:async' as _i7;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i8;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i12;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
+import 'package:spring_boot_dart/src/annotations.dart' as _i11;
+import 'package:spring_boot_dart/src/properties/boot_properties.dart' as _i2;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i4;
+    as _i8;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    as _i7;
+    as _i10;
 import 'package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart'
+    as _i9;
+import 'package:spring_boot_starter_flutter_signals/spring_boot_starter_flutter_signals.dart'
     as _i5;
 import 'package:spring_boot_starter_flutter_signals/src/annotations.dart'
     as _i6;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i9;
+    as _i13;
+import 'package:spring_boot_starter_logging/src/properties/logging_properties.dart'
+    as _i3;
 
-import '../example.dart' as _i1;
+import '../example.dart' as _i4;
 
 part 'example.spring.debug.dart';
 part 'example.spring.env.dart';
 part 'example.spring.proxies.dart';
+part 'example.spring.signals.dart';
 
 const _$knownAdvisors0 = {
   r'package:spring_boot_dart',
@@ -36,223 +43,170 @@ const _$knownAdvisors0 = {
   r'package:spring_boot_starter_flutter_signals',
   r'package:spring_boot_starter_logging',
 };
-Object? _$invoke1(_i1.Basket bean, List<Object?> arguments) {
+Object? _$invoke1(_i4.Basket bean, List<Object?> arguments) {
   bean.save();
   return null;
 }
 
-const _$target2 = _i2.AopTarget(
-  r'Basket',
-  types: [r'Basket'],
-  annotations: [_i2.Component()],
-  annotationTypes: [r'Component'],
+const _$target2 = _i1.AopTarget(
+  r'MessagesProperties',
+  types: [r'MessagesProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.messages')],
+  annotationTypes: [r'ConfigurationProperties'],
 );
-const _$target3 = _i2.AopTarget(
-  r'Catalog',
-  types: [r'Catalog'],
-  annotations: [_i2.Component()],
-  annotationTypes: [r'Component'],
+const _$target3 = _i1.AopTarget(
+  r'LoggingProperties',
+  types: [r'LoggingProperties'],
+  annotations: [_i1.ConfigurationProperties(r'logging')],
+  annotationTypes: [r'ConfigurationProperties'],
 );
 
 /// [T] as a `Type` value (function and record types).
 Type _$typeOf<T>() => T;
 
 /// Beans found by `@ComponentScan` in `example/`.
-_i2.BeanModule get $application => _i2.BeanModule(r'application', [
-  _i2.BeanDefinition<_i1.BasketStorage>(
-    name: r'basketStorage',
-    source: r'asset:spring_boot_starter_flutter_signals/example/example.dart#BasketStorage',
-    create: (r) => _i1.BasketStorage(),
-    annotations: const [_i2.Service()],
-    aopProxy: const _i2.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
-  ),
-  _i2.BeanDefinition<_i1.Basket>(
-    name: r'basket',
-    source: r'asset:spring_boot_starter_flutter_signals/example/example.dart#Basket',
-    dependencies: const [_i2.Dependency(_i1.BasketStorage, name: r'storage')],
-    create: (r) =>
-        _$BasketProxy(r.dependency<_i1.BasketStorage>(name: r'storage')),
-    annotatedMethods: [
-      const _i2.IntrospectedMethod<_i1.Basket>(
-        r'save',
-        isVoid: true,
-        invoke: _$invoke1,
-        annotations: [_i6.Effect()],
+_i1.BeanModule get $application => _i1.BeanModule(
+  r'application',
+  [
+    _i1.BeanDefinition<_i4.BasketStorage>(
+      name: r'basketStorage',
+      source: r'asset:spring_boot_starter_flutter_signals/example/example.dart#BasketStorage',
+      create: (r) => _i4.BasketStorage(),
+      annotations: const [_i1.Service()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
-    ],
-    annotations: const [_i2.Component()],
-    aopProxy: _i2.AopProxyFactory.subclass(
-      signatures: const [
-        _i2.MethodSignature.of(
+    ),
+    _i1.BeanDefinition<_i4.Basket>(
+      name: r'basket',
+      source: r'asset:spring_boot_starter_flutter_signals/example/example.dart#Basket',
+      dependencies: const [_i1.Dependency(_i4.BasketStorage, name: r'storage')],
+      create: (r) =>
+          _$BasketSignals(r.dependency<_i4.BasketStorage>(name: r'storage')),
+      annotatedMethods: [
+        const _i1.IntrospectedMethod<_i4.Basket>(
           r'save',
-          _$target2,
-          returnType: r'void',
+          isVoid: true,
+          invoke: _$invoke1,
           annotations: [_i6.Effect()],
-          annotationTypes: [r'Effect'],
-        ),
-        _i2.MethodSignature.of(
-          r'add',
-          _$target2,
-          returnType: r'void',
-          parameterTypes: [r'Book'],
-          parameterNames: [r'book'],
-        ),
-        _i2.MethodSignature.of(
-          r'remove',
-          _$target2,
-          returnType: r'void',
-          parameterTypes: [r'String'],
-          parameterNames: [r'title'],
-        ),
-        _i2.MethodSignature.of(r'clear', _$target2, returnType: r'void'),
-        _i2.MethodSignature.of(
-          r'storage',
-          _$target2,
-          kind: _i2.MemberKind.getter,
-          returnType: r'BasketStorage',
-        ),
-        _i2.MethodSignature.of(
-          r'items',
-          _$target2,
-          kind: _i2.MemberKind.getter,
-          returnType: r'List',
-          returnTypeArguments: [_i2.TypeCapture<_i1.Book>()],
-          annotations: [_i6.Signal()],
-          annotationTypes: [r'Signal'],
-        ),
-        _i2.MethodSignature.of(
-          r'coupon',
-          _$target2,
-          kind: _i2.MemberKind.getter,
-          returnType: r'String',
-          annotations: [_i6.Signal()],
-          annotationTypes: [r'Signal'],
-        ),
-        _i2.MethodSignature.of(
-          r'total',
-          _$target2,
-          kind: _i2.MemberKind.getter,
-          returnType: r'double',
-          annotations: [_i6.Computed()],
-          annotationTypes: [r'Computed'],
-        ),
-        _i2.MethodSignature.of(
-          r'items',
-          _$target2,
-          kind: _i2.MemberKind.setter,
-          returnType: r'List',
-          annotations: [_i6.Signal()],
-          annotationTypes: [r'Signal'],
-        ),
-        _i2.MethodSignature.of(
-          r'coupon',
-          _$target2,
-          kind: _i2.MemberKind.setter,
-          returnType: r'String',
-          annotations: [_i6.Signal()],
-          annotationTypes: [r'Signal'],
         ),
       ],
-      adviseSelfCalls: true,
-      advise: (bean, invoker) =>
-          bean is _$BasketProxy ? (bean..aopInvoker = invoker) : null,
-    ),
-  ),
-  _i2.BeanDefinition<_i1.CatalogClient>(
-    name: r'catalogClient',
-    source: r'asset:spring_boot_starter_flutter_signals/example/example.dart#CatalogClient',
-    create: (r) => _i1.CatalogClient(),
-    annotations: const [_i2.Service()],
-    aopProxy: const _i2.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
-  ),
-  _i2.BeanDefinition<_i1.Catalog>(
-    name: r'catalog',
-    source: r'asset:spring_boot_starter_flutter_signals/example/example.dart#Catalog',
-    dependencies: const [_i2.Dependency(_i1.CatalogClient, name: r'client')],
-    create: (r) =>
-        _$CatalogProxy(r.dependency<_i1.CatalogClient>(name: r'client')),
-    annotations: const [_i2.Component()],
-    aopProxy: _i2.AopProxyFactory.subclass(
-      signatures: const [
-        _i2.MethodSignature.of(
-          r'client',
-          _$target3,
-          kind: _i2.MemberKind.getter,
-          returnType: r'CatalogClient',
-        ),
-        _i2.MethodSignature.of(
-          r'genre',
-          _$target3,
-          kind: _i2.MemberKind.getter,
-          returnType: r'String',
-          annotations: [_i6.Signal()],
-          annotationTypes: [r'Signal'],
-        ),
-        _i2.MethodSignature.of(
-          r'books',
-          _$target3,
-          kind: _i2.MemberKind.getter,
-          returnType: r'Future',
-          returnTypeArguments: [_i2.TypeCapture<List<_i1.Book>>()],
-          annotations: [_i6.Computed()],
-          annotationTypes: [r'Computed'],
-        ),
-        _i2.MethodSignature.of(
-          r'price',
-          _$target3,
-          kind: _i2.MemberKind.getter,
-          returnType: r'Stream',
-          returnTypeArguments: [_i2.TypeCapture<double>()],
-          annotations: [_i6.Computed()],
-          annotationTypes: [r'Computed'],
-        ),
-        _i2.MethodSignature.of(
-          r'genre',
-          _$target3,
-          kind: _i2.MemberKind.setter,
-          returnType: r'String',
-          annotations: [_i6.Signal()],
-          annotationTypes: [r'Signal'],
-        ),
-      ],
-      adviseSelfCalls: true,
-      advise: (bean, invoker) =>
-          bean is _$CatalogProxy ? (bean..aopInvoker = invoker) : null,
-    ),
-  ),
-  _i2.BeanDefinition<_i7.SpringWidgetBindings>(
-    name: r'flutterSpringWidgetBindings#application',
-    source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
-    autowireCandidate: false,
-    create: (r) => _i7.SpringWidgetBindings([
-      _i7.SpringWidgetBinding(
-        widget: r'asset:spring_boot_starter_flutter_signals/example/example.dart#CouponLabel',
-        beans: _$typeOf<(_i1.Basket,)>(),
-        types: const [_i1.Basket],
-        resolve: (f) => (_i7.SpringWidgetBinding.bean<_i1.Basket>(f),),
-        values: (r) {
-          final v = (r as (_i1.Basket,));
-          return [v.$1];
-        },
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
       ),
-    ]),
-  ),
-]);
+    ),
+    _i1.BeanDefinition<_i4.CatalogClient>(
+      name: r'catalogClient',
+      source: r'asset:spring_boot_starter_flutter_signals/example/example.dart#CatalogClient',
+      create: (r) => _i4.CatalogClient(),
+      annotations: const [_i1.Service()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
+    ),
+    _i1.BeanDefinition<_i4.Catalog>(
+      name: r'catalog',
+      source: r'asset:spring_boot_starter_flutter_signals/example/example.dart#Catalog',
+      dependencies: const [_i1.Dependency(_i4.CatalogClient, name: r'client')],
+      create: (r) =>
+          _$CatalogSignals(r.dependency<_i4.CatalogClient>(name: r'client')),
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
+    ),
+    _i1.BeanDefinition<_i10.SpringWidgetBindings>(
+      name: r'flutterSpringWidgetBindings#application',
+      source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
+      autowireCandidate: false,
+      create: (r) => _i10.SpringWidgetBindings([
+        _i10.SpringWidgetBinding(
+          widget: r'asset:spring_boot_starter_flutter_signals/example/example.dart#CouponLabel',
+          beans: _$typeOf<(_i4.Basket,)>(),
+          types: const [_i4.Basket],
+          resolve: (f) => (_i10.SpringWidgetBinding.bean<_i4.Basket>(f),),
+          values: (r) {
+            final v = (r as (_i4.Basket,));
+            return [v.$1];
+          },
+        ),
+      ]),
+    ),
+  ],
+  aopProxies: {
+    r'package:spring_boot_dart/src/properties/boot_properties.dart#MessagesProperties':
+        _i1.AopProxyFactory(
+          signatures: const [
+            _i1.MethodSignature.of(
+              r'cacheDuration',
+              _$target2,
+              kind: _i1.MemberKind.getter,
+              returnType: r'Duration',
+              annotations: [_i11.DurationUnit(_i1.ChronoUnit.seconds)],
+              annotationTypes: [r'DurationUnit'],
+            ),
+            _i1.MethodSignature.of(
+              r'cacheDuration',
+              _$target2,
+              kind: _i1.MemberKind.setter,
+              returnType: r'Duration',
+              annotations: [_i11.DurationUnit(_i1.ChronoUnit.seconds)],
+              annotationTypes: [r'DurationUnit'],
+            ),
+          ],
+          knownAdvisors: _$knownAdvisors0,
+          create: (target, invoker) => _$MessagesPropertiesProxy(
+            (target as _i2.MessagesProperties),
+            invoker,
+          ),
+        ),
+    r'package:spring_boot_starter_logging/src/properties/logging_properties.dart#LoggingProperties':
+        _i1.AopProxyFactory(
+          signatures: const [
+            _i1.MethodSignature.of(
+              r'exceptionConversionWord',
+              _$target3,
+              kind: _i1.MemberKind.getter,
+              returnType: r'String',
+              annotations: [_i11.RawValue()],
+              annotationTypes: [r'RawValue'],
+            ),
+            _i1.MethodSignature.of(
+              r'exceptionConversionWord',
+              _$target3,
+              kind: _i1.MemberKind.setter,
+              returnType: r'String',
+              annotations: [_i11.RawValue()],
+              annotationTypes: [r'RawValue'],
+            ),
+          ],
+          knownAdvisors: _$knownAdvisors0,
+          create: (target, invoker) => _$LoggingPropertiesProxy(
+            (target as _i3.LoggingProperties),
+            invoker,
+          ),
+        ),
+  },
+);
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i2.SpringApplication get springApplication => _i2.SpringApplication(
+_i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i8.springBootAutoConfiguration,
-    _i4.springBootStarterFlutterAutoConfiguration,
-    _i5.springBootStarterFlutterSignalsAutoConfiguration,
-    _i9.springBootStarterLoggingAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
+    _i12.springBootAutoConfiguration,
+    _i8.springBootStarterFlutterAutoConfiguration,
+    _i9.springBootStarterFlutterSignalsAutoConfiguration,
+    _i13.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product') &&
+        !const bool.fromEnvironment('dart.vm.profile'))
       ..._$debugAutoConfigurations,
   ],
   dartDefines: _$dartDefines,
-  fingerprint: !const bool.fromEnvironment('dart.vm.product')
+  fingerprint:
+      !const bool.fromEnvironment('dart.vm.product') &&
+          !const bool.fromEnvironment('dart.vm.profile')
       ? _$fingerprint
       : null,
 );
@@ -260,11 +214,11 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i2.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i1.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i2.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);

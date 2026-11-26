@@ -1369,37 +1369,54 @@ class BeanMethodAnnotation {
   const BeanMethodAnnotation();
 }
 
-/// Marks an annotation class whose members' advice must also see the calls
-/// a bean makes on itself, and every member of the bean, not only the
-/// annotated ones: reactive state, where a method of the bean assigns a
-/// field another member is computed from.
+/// Marks an annotation class whose members get access hooks: code the
+/// generator runs on every read and write of the member, the bean's own
+/// included.
 ///
-/// For a bean with a member (a field, a getter or a method) carrying such
-/// an annotation, the generator writes a proxy that **extends** the bean's
-/// class, whatever the class looks like, and keeps every member in it. A
-/// proxy that wraps the bean would not do: the bean's own code would read
-/// and write its fields past it.
+/// In Dart a public field is an implicit getter and setter pair, so a
+/// subclass can override it. For a bean with a member (a field, a getter
+/// or a method) carrying an annotation marked `@AccessHook`, the
+/// generator makes the bean as a generated subclass that overrides those
+/// members: the bean's own code (`this.items = ...`, `items.length`)
+/// calls the override as any other code does, so it reaches the hook too.
+/// The starter of the annotation says what the hook does. Advice on the
+/// bean, if any, is an ordinary proxy around that subclass, as on any
+/// bean: a call on `this` skips it.
 ///
 /// ```dart
-/// // In a library: @Tracked fields are seen from inside the bean too.
-/// @ProxyTargetClass()
-/// class Tracked {
-///   const Tracked();
+/// // In a library: @Signal fields are followed from inside the bean too.
+/// @AccessHook()
+/// class Signal {
+///   const Signal();
 /// }
 ///
+/// // In the application:
 /// @Component()
-/// class Basket {
-///   @Tracked()
-///   int count = 0;
+/// class Account {
+///   @Signal()
+///   int balance = 0;
 ///
-///   void add() => count++;   // advised, though called by nobody outside
+///   void deposit(int amount) => balance += amount; // through the hook
+/// }
+///
+/// // Generated:
+/// class _$AccountSignals extends Account {
+///   @override
+///   int get balance => _balanceSignal.read();
+///   @override
+///   set balance(int value) => _balanceSignal.write(value);
 /// }
 /// ```
+///
+/// Only the annotations of `spring_boot_starter_flutter_signals`
+/// (`@Signal`, `@Computed`, `@Effect`, `@OnWatched`, `@OnUnwatched`) have
+/// a part of the generator that writes their hooks: a member carrying any
+/// other annotation marked `@AccessHook` fails the build.
 ///
 /// The class must be one a generated class can extend (not `final`,
 /// `sealed` or generic, with a constructor that is not a factory); the
 /// build fails otherwise, naming the class. A private member cannot be
-/// overridden from another library and is not advised.
+/// overridden from another library.
 ///
 /// Such an annotation works on the members of a component class, of its
 /// base classes and of its mixins. Anywhere else the build fails rather
@@ -1410,15 +1427,9 @@ class BeanMethodAnnotation {
 /// client), of an enum or an extension, on a top-level declaration, and
 /// on a public member the subclass cannot override (an operator).
 ///
-/// The bean's own calls reach only the advice that asks for them, a
-/// `SelfCallInterceptor` (the advice of the annotation). Every other
-/// advice on the bean (a transaction, a security check) skips them, as it
-/// does in any other bean.
-///
-/// Spring (Java) proxies a class by subclassing it (CGLIB) when
-/// `proxyTargetClass` is set, which Spring Boot does by default; there a
-/// call on `this` goes past the proxy for every advice.
-class ProxyTargetClass {
+/// Spring (Java) has no counterpart: its CGLIB proxy subclasses the bean
+/// for advice only, and a call on `this` skips it.
+class AccessHook {
   /// Marks the annotation class.
-  const ProxyTargetClass();
+  const AccessHook();
 }

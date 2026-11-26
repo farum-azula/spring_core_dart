@@ -94,7 +94,8 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     _i8.springBootStarterFlutterCupertinoAutoConfiguration,
     _i9.springBootStarterFlutterMaterialAutoConfiguration,
     _i10.springBootStarterLoggingAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
+    if (!const bool.fromEnvironment('dart.vm.product') &&
+        !const bool.fromEnvironment('dart.vm.profile'))
       ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
@@ -108,7 +109,9 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
         ),
   },
   dartDefines: _$dartDefines,
-  fingerprint: !const bool.fromEnvironment('dart.vm.product')
+  fingerprint:
+      !const bool.fromEnvironment('dart.vm.product') &&
+          !const bool.fromEnvironment('dart.vm.profile')
       ? _$fingerprint
       : null,
 );

@@ -1,5 +1,8 @@
 ## Unreleased
 
+- **Breaking:** `DataTransactionSynchronizationRegistry` (bean `transactionSynchronizationRegistry`) is `DataTransactionLifecycleRegistry` (bean `transactionLifecycleRegistry`), after core's rename; a transaction that ends without a commit, rolled back or with an unknown end, calls the listener's `afterRollbackOrUnknown`.
+- The startup checks (`spring.main.startup-checks.enabled`) and the statement logging (`spring.data.jdbc.show-sql`) are, when their key is not set, in debug builds only: a profile build has them only with `true`.
+- `TransactionSynchronization.savepoint` and `savepointRollback`, as in Spring. A `transactionLifecycleRegistry` bean (`DataTransactionLifecycleRegistry`, core's `TransactionLifecycleRegistry`): what other starters learn of the running transaction, as the Flutter signals starter does for its `@Signal` writes.
 - A sync `@Transactional` method (a release build has no `TransactionValidator`) fails with a `StateError` before its body runs or a transaction begins; it ran and committed after failing its caller.
 - A `LIKE` pattern matched in Dart (the in-memory store, the change streams) takes linear time (`LikePattern`; no backtracking regular expression) and is at most 50000 characters, SQLite's limit.
 - `@AllowedSortProperties(['title', 'year'])` on a controller's `Pageable` or `Sort` parameter: another sort property from the request is a `PropertyReferenceException` (a 400). A request may sort by at most 16 properties (`WebPagingProperties.maxSortOrders`, an `InvalidPagingRequestException`), and a property named twice keeps its first order. The README no longer says there is no resolver.

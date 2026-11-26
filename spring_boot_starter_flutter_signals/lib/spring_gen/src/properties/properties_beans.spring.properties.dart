@@ -9,76 +9,475 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i5;
+import 'package:spring_boot_starter_flutter_signals/src/annotations.dart'
+    as _i2;
 import 'package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart'
     as _i1;
+import 'package:spring_boot_starter_flutter_signals/src/signal_buffer.dart'
+    as _i4;
+import 'package:spring_boot_starter_flutter_signals/src/signal_queue.dart'
+    as _i3;
 
 Object? _$get0(_i1.SignalsProperties object) => object.debug;
-_i1.SignalsProperties _$create1(
+Object? _$get1(_i1.SignalsProperties object) => object.queue;
+Object? _$get2(_i1.SignalsProperties object) => object.queues;
+Object? _$get3(_i1.SignalsProperties object) => object.buffer;
+Object? _$get4(_i1.SignalsProperties object) => object.onScopeEnd;
+Object? _$get5(_i1.SignalsProperties object) => object.deferTimeout;
+Object? _$get6(_i1.SignalsProperties object) => object.eager;
+Object? _$get7(_i1.SignalsProperties object) => object.callerBound;
+Object? _$get8(_i1.SignalsProperties object) => object.allowAdvice;
+Object? _$get9(_i1.SignalsProperties object) => object.transaction;
+_i1.SignalsProperties _$create10(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.SignalsProperties(
   debug: named.argumentOr(#debug, const _i1.SignalsDebugProperties()),
+  queue: named.argumentOr(#queue, const _i1.SignalsQueueProperties()),
+  queues: named.argumentOr(
+    #queues,
+    const <String, _i1.SignalsQueueProperties>{},
+  ),
+  buffer: named.argumentOr(#buffer, const _i1.SignalsBufferProperties()),
+  onScopeEnd: named.argumentOr(#onScopeEnd, _i2.OnScopeEnd.discard),
+  deferTimeout: named.argumentOr(#deferTimeout, const Duration(seconds: 5)),
+  eager: named.argumentOr(#eager, false),
+  callerBound: named.argumentOr(#callerBound, true),
+  allowAdvice: named.argumentOr(#allowAdvice, false),
+  transaction: named.argumentOr(
+    #transaction,
+    const _i1.SignalsTransactionProperties(),
+  ),
 );
-Object? _$get2(_i1.SignalsDebugProperties object) => object.enabled;
-_i1.SignalsDebugProperties _$create3(
+Object? _$get11(_i1.SignalsDebugProperties object) => object.enabled;
+Object? _$get12(_i1.SignalsDebugProperties object) => object.log;
+Object? _$get13(_i1.SignalsDebugProperties object) => object.readWindow;
+Object? _$get14(_i1.SignalsDebugProperties object) => object.reads;
+_i1.SignalsDebugProperties _$create15(
   List<Object?> positional,
   Map<Symbol, Object?> named,
-) => _i1.SignalsDebugProperties(enabled: named.argumentOr(#enabled, null));
+) => _i1.SignalsDebugProperties(
+  enabled: named.argumentOr(#enabled, null),
+  log: named.argumentOr(#log, const _i1.SignalsDebugLogProperties()),
+  readWindow: named.argumentOr(#readWindow, const Duration(seconds: 5)),
+  reads: named.argumentOr(#reads, true),
+);
+Object? _$get16(_i1.SignalsDebugLogProperties object) => object.enabled;
+Object? _$get17(_i1.SignalsDebugLogProperties object) => object.reads;
+_i1.SignalsDebugLogProperties _$create18(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.SignalsDebugLogProperties(
+  enabled: named.argumentOr(#enabled, false),
+  reads: named.argumentOr(#reads, false),
+);
+Object? _$get19(_i1.SignalsQueueProperties object) => object.flush;
+Object? _$get20(_i1.SignalsQueueProperties object) => object.interval;
+Object? _$get21(_i1.SignalsQueueProperties object) => object.capacity;
+Object? _$get22(_i1.SignalsQueueProperties object) => object.onOverflow;
+_i1.SignalsQueueProperties _$create23(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.SignalsQueueProperties(
+  flush: named.argumentOr(#flush, null),
+  interval: named.argumentOr(#interval, const Duration(milliseconds: 100)),
+  capacity: named.argumentOr(#capacity, 1024),
+  onOverflow: named.argumentOr(#onOverflow, _i3.SignalOverflow.flush),
+);
+Object? _$get24(_i1.SignalsBufferProperties object) => object.asyncMethods;
+Object? _$get25(_i1.SignalsBufferProperties object) => object.onError;
+_i1.SignalsBufferProperties _$create26(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.SignalsBufferProperties(
+  asyncMethods: named.argumentOr(#asyncMethods, false),
+  onError: named.argumentOr(#onError, _i1.SignalBufferOnError.discard),
+);
+Object? _$get27(_i1.SignalsTransactionProperties object) => object.mode;
+_i1.SignalsTransactionProperties _$create28(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.SignalsTransactionProperties(
+  mode: named.argumentOr(#mode, _i4.SignalTransactionMode.buffered),
+);
 
 /// The binding of the `@ConfigurationProperties` classes of the module
 /// `signalsConfigBeans`: the descriptions only its binder uses. The module
 /// hands them to the context.
-List<_i2.Introspection<Object>>
+List<_i5.Introspection<Object>>
 get $signalsConfigBeansPropertiesIntrospections => [
-  const _i2.Introspection<_i1.SignalsProperties>(
+  const _i5.Introspection<_i1.SignalsProperties>(
     className: r'SignalsProperties',
     properties: [
-      _i2.IntrospectedProperty<_i1.SignalsProperties>(
+      _i5.IntrospectedProperty<_i1.SignalsProperties>(
         r'debug',
-        typeInfo: _i2.ClassType<_i1.SignalsDebugProperties>(),
+        typeInfo: _i5.ClassType<_i1.SignalsDebugProperties>(),
         get: _$get0,
       ),
+      _i5.IntrospectedProperty<_i1.SignalsProperties>(
+        r'queue',
+        typeInfo: _i5.ClassType<_i1.SignalsQueueProperties>(),
+        get: _$get1,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsProperties>(
+        r'queues',
+        typeInfo: _i5.MapType<String, _i1.SignalsQueueProperties>(
+          _i5.ClassType<String>(),
+          _i5.ClassType<_i1.SignalsQueueProperties>(),
+        ),
+        get: _$get2,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsProperties>(
+        r'buffer',
+        typeInfo: _i5.ClassType<_i1.SignalsBufferProperties>(),
+        get: _$get3,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsProperties>(
+        r'onScopeEnd',
+        typeInfo: _i5.EnumType<_i2.OnScopeEnd>(_i2.OnScopeEnd.values),
+        get: _$get4,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsProperties>(
+        r'deferTimeout',
+        typeInfo: _i5.ClassType<Duration>(),
+        get: _$get5,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsProperties>(
+        r'eager',
+        typeInfo: _i5.ClassType<bool>(),
+        get: _$get6,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsProperties>(
+        r'callerBound',
+        typeInfo: _i5.ClassType<bool>(),
+        get: _$get7,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsProperties>(
+        r'allowAdvice',
+        typeInfo: _i5.ClassType<bool>(),
+        get: _$get8,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsProperties>(
+        r'transaction',
+        typeInfo: _i5.ClassType<_i1.SignalsTransactionProperties>(),
+        get: _$get9,
+      ),
     ],
-    annotations: [_i2.ConfigurationProperties(r'spring.flutter.signals')],
+    annotations: [_i5.ConfigurationProperties(r'spring.flutter.signals')],
     library: r'package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart',
-    parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
+    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.SignalsProperties.new,
-    constructor: _i2.IntrospectedConstructor<_i1.SignalsProperties>(
+    constructor: _i5.IntrospectedConstructor<_i1.SignalsProperties>(
       parameters: [
-        _i2.IntrospectedParameter(
+        _i5.IntrospectedParameter(
           r'debug',
-          type: _i2.ClassType<_i1.SignalsDebugProperties>(),
+          type: _i5.ClassType<_i1.SignalsDebugProperties>(),
           symbol: #debug,
           hasDefaultValue: true,
           defaultValue: _i1.SignalsDebugProperties(),
         ),
+        _i5.IntrospectedParameter(
+          r'queue',
+          type: _i5.ClassType<_i1.SignalsQueueProperties>(),
+          symbol: #queue,
+          hasDefaultValue: true,
+          defaultValue: _i1.SignalsQueueProperties(),
+        ),
+        _i5.IntrospectedParameter(
+          r'queues',
+          type: _i5.MapType<String, _i1.SignalsQueueProperties>(
+            _i5.ClassType<String>(),
+            _i5.ClassType<_i1.SignalsQueueProperties>(),
+          ),
+          symbol: #queues,
+          hasDefaultValue: true,
+          defaultValue: <String, _i1.SignalsQueueProperties>{},
+        ),
+        _i5.IntrospectedParameter(
+          r'buffer',
+          type: _i5.ClassType<_i1.SignalsBufferProperties>(),
+          symbol: #buffer,
+          hasDefaultValue: true,
+          defaultValue: _i1.SignalsBufferProperties(),
+        ),
+        _i5.IntrospectedParameter(
+          r'onScopeEnd',
+          type: _i5.EnumType<_i2.OnScopeEnd>(_i2.OnScopeEnd.values),
+          symbol: #onScopeEnd,
+          hasDefaultValue: true,
+          defaultValue: _i2.OnScopeEnd.discard,
+        ),
+        _i5.IntrospectedParameter(
+          r'deferTimeout',
+          type: _i5.ClassType<Duration>(),
+          symbol: #deferTimeout,
+          hasDefaultValue: true,
+          defaultValue: Duration(seconds: 5),
+        ),
+        _i5.IntrospectedParameter(
+          r'eager',
+          type: _i5.ClassType<bool>(),
+          symbol: #eager,
+          hasDefaultValue: true,
+          defaultValue: false,
+        ),
+        _i5.IntrospectedParameter(
+          r'callerBound',
+          type: _i5.ClassType<bool>(),
+          symbol: #callerBound,
+          hasDefaultValue: true,
+          defaultValue: true,
+        ),
+        _i5.IntrospectedParameter(
+          r'allowAdvice',
+          type: _i5.ClassType<bool>(),
+          symbol: #allowAdvice,
+          hasDefaultValue: true,
+          defaultValue: false,
+        ),
+        _i5.IntrospectedParameter(
+          r'transaction',
+          type: _i5.ClassType<_i1.SignalsTransactionProperties>(),
+          symbol: #transaction,
+          hasDefaultValue: true,
+          defaultValue: _i1.SignalsTransactionProperties(),
+        ),
       ],
-      create: _$create1,
+      create: _$create10,
     ),
   ),
-  const _i2.Introspection<_i1.SignalsDebugProperties>(
+  const _i5.Introspection<_i1.SignalsDebugProperties>(
     className: r'SignalsDebugProperties',
     properties: [
-      _i2.IntrospectedProperty<_i1.SignalsDebugProperties>(
+      _i5.IntrospectedProperty<_i1.SignalsDebugProperties>(
         r'enabled',
         nullable: true,
-        typeInfo: _i2.ClassType<bool>(nullable: true),
-        get: _$get2,
+        typeInfo: _i5.ClassType<bool>(nullable: true),
+        get: _$get11,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsDebugProperties>(
+        r'log',
+        typeInfo: _i5.ClassType<_i1.SignalsDebugLogProperties>(),
+        get: _$get12,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsDebugProperties>(
+        r'readWindow',
+        typeInfo: _i5.ClassType<Duration>(),
+        get: _$get13,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsDebugProperties>(
+        r'reads',
+        typeInfo: _i5.ClassType<bool>(),
+        get: _$get14,
       ),
     ],
     library: r'package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart',
-    parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
+    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
     instantiate: _i1.SignalsDebugProperties.new,
-    constructor: _i2.IntrospectedConstructor<_i1.SignalsDebugProperties>(
+    constructor: _i5.IntrospectedConstructor<_i1.SignalsDebugProperties>(
       parameters: [
-        _i2.IntrospectedParameter(
+        _i5.IntrospectedParameter(
           r'enabled',
-          type: _i2.ClassType<bool>(nullable: true),
+          type: _i5.ClassType<bool>(nullable: true),
           symbol: #enabled,
         ),
+        _i5.IntrospectedParameter(
+          r'log',
+          type: _i5.ClassType<_i1.SignalsDebugLogProperties>(),
+          symbol: #log,
+          hasDefaultValue: true,
+          defaultValue: _i1.SignalsDebugLogProperties(),
+        ),
+        _i5.IntrospectedParameter(
+          r'readWindow',
+          type: _i5.ClassType<Duration>(),
+          symbol: #readWindow,
+          hasDefaultValue: true,
+          defaultValue: Duration(seconds: 5),
+        ),
+        _i5.IntrospectedParameter(
+          r'reads',
+          type: _i5.ClassType<bool>(),
+          symbol: #reads,
+          hasDefaultValue: true,
+          defaultValue: true,
+        ),
       ],
-      create: _$create3,
+      create: _$create15,
+    ),
+  ),
+  const _i5.Introspection<_i1.SignalsDebugLogProperties>(
+    className: r'SignalsDebugLogProperties',
+    properties: [
+      _i5.IntrospectedProperty<_i1.SignalsDebugLogProperties>(
+        r'enabled',
+        typeInfo: _i5.ClassType<bool>(),
+        get: _$get16,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsDebugLogProperties>(
+        r'reads',
+        typeInfo: _i5.ClassType<bool>(),
+        get: _$get17,
+      ),
+    ],
+    library: r'package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart',
+    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    instantiate: _i1.SignalsDebugLogProperties.new,
+    constructor: _i5.IntrospectedConstructor<_i1.SignalsDebugLogProperties>(
+      parameters: [
+        _i5.IntrospectedParameter(
+          r'enabled',
+          type: _i5.ClassType<bool>(),
+          symbol: #enabled,
+          hasDefaultValue: true,
+          defaultValue: false,
+        ),
+        _i5.IntrospectedParameter(
+          r'reads',
+          type: _i5.ClassType<bool>(),
+          symbol: #reads,
+          hasDefaultValue: true,
+          defaultValue: false,
+        ),
+      ],
+      create: _$create18,
+    ),
+  ),
+  const _i5.Introspection<_i1.SignalsQueueProperties>(
+    className: r'SignalsQueueProperties',
+    properties: [
+      _i5.IntrospectedProperty<_i1.SignalsQueueProperties>(
+        r'flush',
+        nullable: true,
+        typeInfo: _i5.EnumType<_i3.SignalFlush>(
+          _i3.SignalFlush.values,
+          nullable: true,
+        ),
+        get: _$get19,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsQueueProperties>(
+        r'interval',
+        typeInfo: _i5.ClassType<Duration>(),
+        get: _$get20,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsQueueProperties>(
+        r'capacity',
+        typeInfo: _i5.ClassType<int>(),
+        get: _$get21,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsQueueProperties>(
+        r'onOverflow',
+        typeInfo: _i5.EnumType<_i3.SignalOverflow>(_i3.SignalOverflow.values),
+        get: _$get22,
+      ),
+    ],
+    library: r'package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart',
+    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    instantiate: _i1.SignalsQueueProperties.new,
+    constructor: _i5.IntrospectedConstructor<_i1.SignalsQueueProperties>(
+      parameters: [
+        _i5.IntrospectedParameter(
+          r'flush',
+          type: _i5.EnumType<_i3.SignalFlush>(
+            _i3.SignalFlush.values,
+            nullable: true,
+          ),
+          symbol: #flush,
+        ),
+        _i5.IntrospectedParameter(
+          r'interval',
+          type: _i5.ClassType<Duration>(),
+          symbol: #interval,
+          hasDefaultValue: true,
+          defaultValue: Duration(milliseconds: 100),
+        ),
+        _i5.IntrospectedParameter(
+          r'capacity',
+          type: _i5.ClassType<int>(),
+          symbol: #capacity,
+          hasDefaultValue: true,
+          defaultValue: 1024,
+        ),
+        _i5.IntrospectedParameter(
+          r'onOverflow',
+          type: _i5.EnumType<_i3.SignalOverflow>(_i3.SignalOverflow.values),
+          symbol: #onOverflow,
+          hasDefaultValue: true,
+          defaultValue: _i3.SignalOverflow.flush,
+        ),
+      ],
+      create: _$create23,
+    ),
+  ),
+  const _i5.Introspection<_i1.SignalsBufferProperties>(
+    className: r'SignalsBufferProperties',
+    properties: [
+      _i5.IntrospectedProperty<_i1.SignalsBufferProperties>(
+        r'asyncMethods',
+        typeInfo: _i5.ClassType<bool>(),
+        get: _$get24,
+      ),
+      _i5.IntrospectedProperty<_i1.SignalsBufferProperties>(
+        r'onError',
+        typeInfo: _i5.EnumType<_i1.SignalBufferOnError>(
+          _i1.SignalBufferOnError.values,
+        ),
+        get: _$get25,
+      ),
+    ],
+    library: r'package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart',
+    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    instantiate: _i1.SignalsBufferProperties.new,
+    constructor: _i5.IntrospectedConstructor<_i1.SignalsBufferProperties>(
+      parameters: [
+        _i5.IntrospectedParameter(
+          r'asyncMethods',
+          type: _i5.ClassType<bool>(),
+          symbol: #asyncMethods,
+          hasDefaultValue: true,
+          defaultValue: false,
+        ),
+        _i5.IntrospectedParameter(
+          r'onError',
+          type: _i5.EnumType<_i1.SignalBufferOnError>(
+            _i1.SignalBufferOnError.values,
+          ),
+          symbol: #onError,
+          hasDefaultValue: true,
+          defaultValue: _i1.SignalBufferOnError.discard,
+        ),
+      ],
+      create: _$create26,
+    ),
+  ),
+  const _i5.Introspection<_i1.SignalsTransactionProperties>(
+    className: r'SignalsTransactionProperties',
+    properties: [
+      _i5.IntrospectedProperty<_i1.SignalsTransactionProperties>(
+        r'mode',
+        typeInfo: _i5.EnumType<_i4.SignalTransactionMode>(
+          _i4.SignalTransactionMode.values,
+        ),
+        get: _$get27,
+      ),
+    ],
+    library: r'package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart',
+    parts: {_i5.IntrospectionPart.read, _i5.IntrospectionPart.write},
+    instantiate: _i1.SignalsTransactionProperties.new,
+    constructor: _i5.IntrospectedConstructor<_i1.SignalsTransactionProperties>(
+      parameters: [
+        _i5.IntrospectedParameter(
+          r'mode',
+          type: _i5.EnumType<_i4.SignalTransactionMode>(
+            _i4.SignalTransactionMode.values,
+          ),
+          symbol: #mode,
+          hasDefaultValue: true,
+          defaultValue: _i4.SignalTransactionMode.buffered,
+        ),
+      ],
+      create: _$create28,
     ),
   ),
 ];

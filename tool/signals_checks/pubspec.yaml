@@ -1,0 +1,27 @@
+name: signals_checks
+description: "Followed state under real method security, transactions and caches, on the code the generator writes: the signals starter's tests that need the other starters, which the starter itself must not depend on."
+publish_to: none
+
+environment:
+  sdk: ^3.14.0
+  flutter: '>=3.50.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  spring_boot_starter_cache: ^0.9.0
+  spring_boot_starter_data: ^0.9.0
+  spring_boot_starter_flutter_navigation: ^0.9.0
+  spring_boot_starter_flutter_signals: ^0.9.0
+  spring_boot_starter_scheduling: ^0.9.0
+  spring_security_core: ^0.9.0
+  sqlite3: ^3.8.0
+
+dev_dependencies:
+  build_runner: ^2.17.0
+  flutter_test:
+    sdk: flutter
+  lints: ^6.0.0
+  signals_core: ^7.0.0
+  spring_boot_starter_test: ^0.9.0
+  spring_core_dart_generator: ^0.9.0

@@ -2,9 +2,11 @@
 // and `@Effect` on members the bean's proxy can follow. The annotations
 // are recognised by their library's address, so the generator does not
 // depend on the starter.
+import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
+import 'package:spring_core_dart_generator/src/core/builder/closest_name.dart';
 
 const _annotations =
     'package:spring_boot_starter_flutter_signals/src/annotations.dart';
@@ -17,6 +19,24 @@ const computedChecker = TypeChecker.fromUrl('$_annotations#Computed');
 
 /// Recognises `@Effect` of `spring_boot_starter_flutter_signals`.
 const effectChecker = TypeChecker.fromUrl('$_annotations#Effect');
+
+/// Recognises `@OnWatched` of `spring_boot_starter_flutter_signals`.
+const onWatchedChecker = TypeChecker.fromUrl('$_annotations#OnWatched');
+
+/// Recognises `@SignalBuffer` of `spring_boot_starter_flutter_signals`.
+const signalBufferChecker = TypeChecker.fromUrl(
+  'package:spring_boot_starter_flutter_signals/src/signal_buffer.dart'
+  '#SignalBuffer',
+);
+
+/// Recognises `@OnUnwatched` of `spring_boot_starter_flutter_signals`.
+const onUnwatchedChecker = TypeChecker.fromUrl('$_annotations#OnUnwatched');
+
+// By address, as the signals' own: the generator depends on no starter.
+const _transactional = TypeChecker.fromUrl(
+  'package:spring_boot_starter_data/src/transaction/'
+  'transaction_definition.dart#Transactional',
+);
 
 const _configuration = TypeChecker.typeNamedLiterally(
   'Configuration',
@@ -111,6 +131,15 @@ void checkSignals(InterfaceElement element) {
     }
     any = true;
     _checkMember('@Computed', 'getter', name, getter);
+    if (_transactional.hasAnnotationOf(getter)) {
+      _fail(
+        '@Transactional on the @Computed getter $name: a transaction runs '
+        'around methods, so this one would never start. Make it a method '
+        'without parameters: @Transactional() @Computed() '
+        'Future<T> ${getter.name}() async { ... }.',
+        getter,
+      );
+    }
   }
 
   for (final setter in element.setters) {
@@ -203,6 +232,152 @@ void checkSignals(InterfaceElement element) {
     );
   }
   _checkOverrides(element, owner);
+  _checkWatches(element, owner);
+  _checkBuffers(element, owner);
+}
+
+// `@SignalBuffer`: on an async method (a `Future`, not a stream) of a
+// bean with followed state.
+void _checkBuffers(InterfaceElement element, String owner) {
+  for (final method in element.methods) {
+    if (!signalBufferChecker.hasAnnotationOfExact(method)) {
+      continue;
+    }
+    final name = '$owner.${method.name}';
+    final returns = method.returnType;
+    if (returns is InterfaceType && returns.isDartAsyncStream) {
+      _fail(
+        '@SignalBuffer on $name, which makes a stream: a buffer holds the '
+        'writes of one piece of work until it ends, and a stream does not '
+        'end as a call does. Buffer the writes of each event with '
+        'SignalBuffer.run inside it.',
+        method,
+      );
+    }
+    if (returns is! InterfaceType || !returns.isDartAsyncFuture) {
+      _fail(
+        '@SignalBuffer on $name, which is not async: a synchronous method '
+        'is told as one change by the queue anyway. Remove the annotation, '
+        'or make the method return a Future.',
+        method,
+      );
+    }
+    if (method.isStatic || method.isPrivate) {
+      _fail(
+        '@SignalBuffer on the ${method.isStatic ? 'static' : 'private'} '
+        'method $name: the generated subclass of the bean wraps it, and '
+        'can override only a public instance method.',
+        method,
+      );
+    }
+    if (_followedNames(element).isEmpty) {
+      _fail(
+        '@SignalBuffer on $name, and $owner has no @Signal field: there is '
+        'nothing to buffer. Remove it, or use SignalBuffer.run around the '
+        'writes of the fields of another bean.',
+        method,
+      );
+    }
+  }
+}
+
+// The followed members of [element], its own and inherited, by name.
+Set<String> _followedNames(InterfaceElement element) {
+  final names = <String>{};
+  for (final type in [
+    element,
+    for (final supertype in element.allSupertypes) supertype.element,
+  ]) {
+    for (final field in type.fields) {
+      if (field.name != null && signalChecker.hasAnnotationOfExact(field)) {
+        names.add(field.name!);
+      }
+    }
+    for (final getter in type.getters) {
+      if (getter.name != null && computedChecker.hasAnnotationOfExact(getter)) {
+        names.add(getter.name!);
+      }
+    }
+    for (final method in type.methods) {
+      if (method.name != null && computedChecker.hasAnnotationOfExact(method)) {
+        names.add(method.name!);
+      }
+    }
+  }
+  return names;
+}
+
+// `@OnWatched` and `@OnUnwatched`: on a public method without parameters,
+// with a list of followed members of the bean.
+void _checkWatches(InterfaceElement element, String owner) {
+  final followed = _followedNames(element);
+  void check(Element member, String shown, String label, DartObject found) {
+    if (member is! MethodElement) {
+      _fail('$label on $shown: it goes on a method.', member);
+    }
+    if (member.isStatic) {
+      _fail(
+        '$label on the static method $shown: it is called for one bean; '
+        'make it an instance method.',
+        member,
+      );
+    }
+    if (member.isPrivate) {
+      _fail(
+        '$label on the private method $shown: the container calls it from '
+        'generated code in another library. Make it public.',
+        member,
+      );
+    }
+    if (member.formalParameters.isNotEmpty) {
+      _fail(
+        '$label on $shown, which takes parameters: nothing calls it with '
+        'any. Remove them.',
+        member,
+      );
+    }
+    final names = [
+      for (final value
+          in found.getField('signals')?.toListValue() ?? const <DartObject>[])
+        ?value.toStringValue(),
+    ];
+    if (names.isEmpty) {
+      _fail(
+        '$label on $shown with an empty list: name the @Signal fields or '
+        '@Computed values it is for.',
+        member,
+      );
+    }
+    for (final name in names) {
+      if (followed.contains(name)) {
+        continue;
+      }
+      final closest = closestName(name, followed);
+      _fail(
+        "$label on $shown names '$name', which is no @Signal field or "
+        '@Computed value of $owner.'
+        '${closest == null ? '' : " Did you mean '$closest'?"}'
+        '${followed.isEmpty ? '' : ' It has: ${followed.join(', ')}.'}',
+        member,
+      );
+    }
+  }
+
+  for (final member in <Element>[
+    ...element.methods,
+    ...element.getters.where((getter) => !getter.isOriginVariable),
+    ...element.setters.where((setter) => !setter.isOriginVariable),
+    ...element.fields,
+  ]) {
+    for (final (checker, label) in [
+      (onWatchedChecker, '@OnWatched'),
+      (onUnwatchedChecker, '@OnUnwatched'),
+    ]) {
+      if (checker.firstAnnotationOfExact(member) case final found?) {
+        check(member, '$owner.${member.displayName}', label, found);
+      }
+    }
+  }
 }
 
 // A member that overrides a followed one without the annotation: the

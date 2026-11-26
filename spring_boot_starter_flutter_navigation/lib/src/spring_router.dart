@@ -173,7 +173,7 @@ final class SpringRouterDelegate extends RouterDelegate<RouteLocation>
   }
 
   _SpringPage _page(ScreenEntry screen, _PageKind kind) => _SpringPage(
-    key: ValueKey('screen ${screen.id}'),
+    key: screen.pageKey,
     name: screen.state.location.toString(),
     kind: kind,
     transition:
@@ -599,7 +599,7 @@ final class _ShellHostState extends State<_ShellHost> implements ShellState {
               pages: [
                 for (final screen in _shell.stacks[i])
                   _SpringPage(
-                    key: ValueKey('screen ${screen.id}'),
+                    key: screen.pageKey,
                     name: screen.state.location.toString(),
                     kind: widget.kind,
                     transition:

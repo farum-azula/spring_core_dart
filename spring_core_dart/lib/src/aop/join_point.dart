@@ -94,6 +94,8 @@ final class MethodSignature {
     this.superclassAnnotations = const [],
     this.isProtected = false,
     this.returnTypeArguments = const [],
+    this.resultMapTypes,
+    this.parameterMapTypes = const [],
   }) : _target = null;
 
   /// Describes the member [name] of the bean class `target` (an
@@ -127,6 +129,8 @@ final class MethodSignature {
     this.superclassAnnotations = const [],
     this.isProtected = false,
     this.returnTypeArguments = const [],
+    this.resultMapTypes,
+    this.parameterMapTypes = const [],
   }) : _targetType = null,
        _targetTypes = const [],
        _targetAnnotations = const [],
@@ -160,9 +164,18 @@ final class MethodSignature {
   /// The type arguments of the return type, kept so that code can use
   /// them as types again (`List<Book>` gives one, of `Book`; `Map<K, V>`
   /// two). The generator writes them for the getters of a bean whose
-  /// proxy follows its own calls (`@ProxyTargetClass()`); empty otherwise,
+  /// subclass hooks its members (`@AccessHook()`); empty otherwise,
   /// and for a type that has none.
   final List<TypeCapture<Object?>> returnTypeArguments;
+
+  /// The key and value types of the `Map` the member returns (directly or
+  /// in a `Future`), for advice that hands out a changed copy of it. The
+  /// generator writes them for a member with `@PostFilter`; `null` otherwise.
+  final MapTypes<Object?, Object?>? resultMapTypes;
+
+  /// The same for each parameter that is a `Map`, in the order of
+  /// [parameterNames]; written for a member with `@PreFilter`, else empty.
+  final List<MapTypes<Object?, Object?>?> parameterMapTypes;
 
   /// The return type's name without type arguments; `void` when it
   /// returns nothing, `dynamic` when unknown.
@@ -493,29 +506,28 @@ abstract interface class MethodInterceptor {
   Object? invoke(MethodInvocation invocation);
 }
 
-/// A [MethodInterceptor] that also runs for the calls a bean makes on
-/// itself, in a proxy that advises them
-/// (`AopProxyFactory.adviseSelfCalls`, a bean with a member whose
-/// annotation is marked `@ProxyTargetClass()`).
-///
-/// Only such advice sees those calls: advice that follows what the bean
-/// does to its own state. Every other advice on the same bean (a
-/// transaction, a security check, a cache) skips them, as it does in any
-/// other bean and as in Spring, where a call on `this` goes past the
-/// proxy.
+/// The key and value types of a `Map`, kept as a value: Dart cannot ask a
+/// map for them, and a copy made without them would not be a `Map<K, V>`.
 ///
 /// ```dart
-/// final class TrackedInterceptor implements SelfCallInterceptor {
-///   @override
-///   Object? invoke(MethodInvocation invocation) {
-///     note(invocation.signature.name);   // also for `this.count++`
-///     return invocation.proceed();
-///   }
-/// }
+/// const types = MapTypes<String, int>();
+/// final Map<Object?, Object?> copy =
+///     types.copyWhere(prices, (entry) => entry.value > 0);
 /// ```
-///
-/// Spring has no counterpart.
-abstract interface class SelfCallInterceptor implements MethodInterceptor {}
+final class MapTypes<K, V> {
+  /// The types of a `Map<K, V>`.
+  const MapTypes();
+
+  /// A new `Map<K, V>` with the entries of [source] that [keep] accepts,
+  /// in its order.
+  Map<K, V> copyWhere(
+    Map<Object?, Object?> source,
+    bool Function(MapEntry<Object?, Object?> entry) keep,
+  ) => <K, V>{
+    for (final entry in source.entries)
+      if (keep(entry)) entry.key as K: entry.value as V,
+  };
+}
 
 /// A type kept as a value, to be used as a type again: what a generic
 /// method needs when it is given only an object.

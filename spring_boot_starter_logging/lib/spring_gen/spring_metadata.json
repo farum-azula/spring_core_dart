@@ -9,7 +9,7 @@
       "default": 1000,
       "deprecated": null,
       "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
-      "line": 155,
+      "line": 160,
       "class": "LoggingBufferProperties"
     },
     {
@@ -19,7 +19,7 @@
       "default": true,
       "deprecated": null,
       "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
-      "line": 151,
+      "line": 156,
       "class": "LoggingBufferProperties"
     },
     {
@@ -29,7 +29,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
-      "line": 190,
+      "line": 195,
       "class": "LoggingCharsetProperties"
     },
     {
@@ -39,7 +39,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
-      "line": 193,
+      "line": 198,
       "class": "LoggingCharsetProperties"
     },
     {
@@ -50,6 +50,16 @@
       "deprecated": null,
       "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
       "line": 140,
+      "class": "LoggingConsoleProperties"
+    },
+    {
+      "name": "logging.console.record-bar",
+      "type": "bool",
+      "description": "Starts every line of a record with a bar (`▌`) in the level's colour, so a multi-line record (a stack trace) reads as one. Lines the terminal wraps itself are not marked.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
+      "line": 150,
       "class": "LoggingConsoleProperties"
     },
     {
@@ -89,7 +99,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
-      "line": 162,
+      "line": 167,
       "class": "LoggingFileProperties"
     },
     {
@@ -99,7 +109,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
-      "line": 165,
+      "line": 170,
       "class": "LoggingFileProperties"
     },
     {
@@ -109,7 +119,7 @@
       "default": false,
       "deprecated": null,
       "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
-      "line": 175,
+      "line": 180,
       "class": "LoggingRollingPolicyProperties"
     },
     {
@@ -119,7 +129,7 @@
       "default": "10MB",
       "deprecated": null,
       "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
-      "line": 178,
+      "line": 183,
       "class": "LoggingRollingPolicyProperties"
     },
     {
@@ -129,7 +139,7 @@
       "default": 7,
       "deprecated": null,
       "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
-      "line": 181,
+      "line": 186,
       "class": "LoggingRollingPolicyProperties"
     },
     {
@@ -139,7 +149,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
-      "line": 184,
+      "line": 189,
       "class": "LoggingRollingPolicyProperties"
     },
     {
@@ -269,7 +279,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
-      "line": 202,
+      "line": 207,
       "class": "ApplicationGroupProperties"
     },
     {
@@ -279,7 +289,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
-      "line": 211,
+      "line": 216,
       "class": "AnsiProperties"
     }
   ],
@@ -491,7 +501,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
-      "line": 207,
+      "line": 212,
       "injects": [],
       "members": [
         {
@@ -513,7 +523,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_logging/src/properties/logging_properties.dart",
-      "line": 199,
+      "line": 204,
       "injects": [],
       "members": [
         {

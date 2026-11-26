@@ -9,7 +9,7 @@ build time decides whether any of it is generated, as
 application has no `RuntimePropertySource`, no rebinding, no store and no
 editing in the debug panel: not switched off at run time, not there to
 switch on. The key to settle: Spring Cloud's `spring.cloud.refresh.enabled`
-(its own default is `true`); ours not set means debug and profile builds
+(its own default is `true`); ours not set means debug builds
 only (the debug window), a release build needs `true` (an app's settings
 screen), `false` means none in any build. With it, which keys may change
 (a list of prefixes, `spring.flutter.scene.*` for Dota Passport's

@@ -515,8 +515,9 @@ application declares a bean of its type):
 **What a release build leaves out.** Two modules of the starter are in the
 build by a key the generator reads in `application.yml` or
 `application.properties` without a profile: `true` keeps the module in
-every build, `false` in none, not set in debug and profile builds only
-(a release build ships none of its code).
+every build, `false` in none, not set in debug builds only (a profile or
+a release build ships none of its code; `true` puts it in a profile
+build).
 
 | Module | Key | What |
 |---|---|---|
@@ -559,9 +560,9 @@ startup, but does not hold back early queries.
 | `spring.datasources.<name>.*` | | the same keys for a named database, also `sql.init.*`, `sql.migration.*`, `data.jdbc.schema` |
 | `spring.sql.init.*`, `spring.sql.migration.*`, `spring.data.jdbc.schema` | see [the configuration reference](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#20-reference-sql-databases) | scripts, migrations, `none` / `validate` (default) / `create` / `create-drop` |
 | `spring.jdbc.template.query-timeout` | none | bounds each statement of the `JdbcTemplate` beans |
-| `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and values) at info; the values of a name that looks secret, and the values bound without a name, are masked (see "What the logs hold"). The generator reads `show-sql` too: `true` without a profile keeps the three in every build, `false` in none, not set in debug and profile builds only |
+| `spring.data.jdbc.show-sql`, `format-sql`, `show-parameters` | `false` | statements (and values) at info; the values of a name that looks secret, and the values bound without a name, are masked (see "What the logs hold"). The generator reads `show-sql` too: `true` without a profile keeps the three in every build, `false` in none, not set in debug builds only |
 | `spring.data.jdbc.slow-query-threshold` | none | a slower statement is logged at warn, in every build |
-| `spring.main.startup-checks.enabled` | debug and profile builds | read by the generator: `true` keeps `transactionValidator` and `dataFailureAnalyzer` in every build, `false` in none |
+| `spring.main.startup-checks.enabled` | debug builds | read by the generator: `true` keeps `transactionValidator` and `dataFailureAnalyzer` in every build, `false` in none |
 | `spring.data.memory.lock-timeout` | `10s` | the in-memory store's wait for a row lock |
 | `spring.data.store` | `jdbc` with a primary data source, else `memory` | the store of the repositories without `@UseStore` and `@UseDataSource`: `memory`, `jdbc` or the name of another store; the build reads it too (see "Stores") |
 

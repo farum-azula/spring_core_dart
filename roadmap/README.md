@@ -34,6 +34,15 @@ Rules every plan follows:
 
 ## Priorities
 
+**Release 1.0.0 (the owner, 26 November 2026)**, after 0.10 ships with
+its full review: [release_1_0.md](release_1_0.md) — the new HTTP client
+(`RestClient` and `@HttpExchange` service clients, no `RestTemplate`),
+Feign to maintenance or withdrawn, Redis in the data starter, Spring AI,
+a full security check and code review with the docs brought up to date,
+the site's performance and its move to the released framework, a
+database explorer in the Flutter debug tools; maybe, not decided, the
+recording of a debug session.
+
 **First, as soon as possible (the owner, November 2026): the generator,
 one module per starter** ([generator_by_starter.md](generator_by_starter.md)):
 a folder and one interface per starter in the generator, a part runs only
@@ -210,7 +219,8 @@ What comes next, in order:
    `404.html`. The way kept in mind: the site served by our own web starter,
    choosing by content negotiation like Spring MVC (`Accept:
    text/markdown` → Markdown, a crawler → HTML, a browser → the app).
-11. **RestClient and RestTemplate** ([rest_client.md](rest_client.md)) in
+11. **RestClient** ([rest_client.md](rest_client.md); no `RestTemplate`,
+   deprecated in Spring 7.1) in
    `spring_web_dart`, the `RestClient.Builder` bean in `spring_boot_dart`;
    `@HttpExchange` later.
 12. ~~**Logging like Spring's**~~ Done after 0.5.0 (October 2026,
@@ -295,7 +305,7 @@ What comes next, in order:
 | [review_0_10.md](review_0_10.md) | all packages | the review after 0.9.0 (November 2026): bugs, Spring parity, security, every annotation where it does not belong; what stayed open |
 | [review_0_5.md](review_0_5.md) | all packages | planned: the review before 0.5.0 (bugs and differences from Spring, security, vulnerabilities), then the minor release |
 | [serverless.md](serverless.md) | `spring_boot_starter_edge` | built (November 2026): Spring Boot for Dart applications on Supabase Edge Functions, Cloudflare Workers, AWS Lambda, Deno Deploy, Netlify and Vercel, as JavaScript or WebAssembly, with a deploy workflow; not yet: more Cloudflare bindings, Azure and Google Cloud Functions |
-| [rest_client.md](rest_client.md) | `spring_web_dart`, `spring_boot_dart` | planned: `RestClient`, `RestTemplate` (no package of its own), later `@HttpExchange` |
+| [rest_client.md](rest_client.md) | `spring_web_dart`, `spring_boot_dart` | planned: `RestClient` (no package of its own; no `RestTemplate`, deprecated in Spring 7.1), later `@HttpExchange` |
 | [spring_boot_starter_feign.md](spring_boot_starter_feign.md) | `spring_boot_starter_feign` | next steps: files and forms, `FallbackFactory`, circuit breaker |
 | [spring_boot_starter_websocket.md](spring_boot_starter_websocket.md) | `spring_boot_starter_websocket` | clients and server endpoints (on the web starter) done; next: STOMP, connection state |
 | [spring_boot_starter_scheduling.md](spring_boot_starter_scheduling.md) | `spring_boot_starter_scheduling` | next: `TaskExecutor` (a pool of worker isolates), `@Async` on it |
@@ -305,6 +315,7 @@ What comes next, in order:
 | [spring_boot_starter_flutter_security.md](spring_boot_starter_flutter_security.md) | `spring_boot_starter_flutter_security` | done: the app login (`OAuth2LoginService`, the login windows) moved out of the OAuth2 client, the platform code of logins and secrets out of the Flutter starter, `SecretStore` / `SecretTemplate`, display-only widgets that follow the user (`PrincipalNotifier`, `PrincipalBuilder`, `PrincipalView`), the web login in server mode (backend-for-frontend, `ServerOAuth2LoginService`) and in spa mode (the browser logs in, `SpaOAuth2LoginService`, a non-extractable WebCrypto DPoP key), DPoP keys of the apps (`PlatformDPoPKey`: Secure Enclave / Keychain, Android Keystore, `SecretStore`); login screens (`LoginForm`, `OAuth2LoginButton`, the Google, Apple, Microsoft and GitHub buttons), the hardening (October 2026); next: its runs on devices (the Windows and Linux stores' first CI run, iOS cancel, https redirects) |
 | [spring_boot_starter_flutter.md](spring_boot_starter_flutter.md) | `spring_boot_starter_flutter` | first version: `SpringApplicationWidget`, beans in widgets, lifecycle, platform profiles; the app widget and themes from properties (done; the secret store and login window moved to `spring_boot_starter_flutter_security`), the desktop window from properties (0.6.1: title, transparent or hidden title bar, initial, minimum and maximum size, `DesktopWindow`, `WindowDragArea` on macOS, Windows, Linux), next: navigation, settings |
 | [flutter_spring_signals.md](flutter_spring_signals.md) | `spring_boot_starter_flutter_signals` | the first version built, released with the family's next version: reactive state in beans (`@Signal` fields that stay plain fields, `@Computed` values also from a `Future` or a `Stream`, `@Effect` methods), collections that tell of a change in place, a method as one change, widgets built again for the fields they read, the State tab of the debug panel. Later: state kept between runs, undo, the state of a running action |
+| [flutter_debug_recorder.md](flutter_debug_recorder.md) | debug tools (a starter of their own, likely) | planned after 0.10: a Record button that records the logs, requests, signals, beans, screens, frames and memory onto one timeline in a file a tester sends; later a video of the app's canvas mapped onto it; the Flutter debug tooling moved out of `spring_boot_starter_flutter` into its own starter |
 | [flutter_spring_scene.md](flutter_spring_scene.md) | `spring_boot_starter_flutter_scene` | the first version built, released with the family's next version (a git dependency until then): Flutter Scene (3D): scene widgets that are plain widgets where scenes do not draw, a frame ceiling and a still frame, the engine's one start with the splash, models from properties, the application's scene, the start in events and words, a debug tab with every scene and model by name; `example/scene`. Later: the generator's part (the hook, the assets, the shader list), the theme section, stereotypes for materials and models, `@OnFrame`; a prototype in Dota Passport with its measurements |
 | [flutter_spring_rust.md](flutter_spring_rust.md) | `flutter_spring_rust` | planned: Rust code as beans |
 | [editor_extensions.md](editor_extensions.md) | Zed extensions, VS Code and JetBrains (planned) | next steps of `dart_spring`, the Flutter extension; VS Code and JetBrains clients of the same language server after 0.6.3 |

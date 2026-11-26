@@ -1545,20 +1545,327 @@ own (`ShortcutNotation` beans): see
 [Configuration, keyboard shortcuts](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#keyboard-shortcuts).
 
 **The debug panel.** Logs, frames, configuration (secrets masked), beans,
-themes and the start of the running app, a tab each, opened by the
+themes and the start of the running app, a section each, opened by the
 action `debug.open` (⌘⇧D / Ctrl+Shift+D, or `taps:4+hold:3s` on a
-phone). A `DebugPanelSection` bean adds a tab.
+phone). The sections are listed in a menu under group headers (`Logs &
+state`, `Performance`, `App`, `Tools`): on a screen 600 logical pixels
+wide or more a side menu always open on the left, on a phone a drawer
+opened by the button in the header. A `DebugPanelSection` bean adds a
+section; a `GroupedDebugPanelSection` puts it under a group.
 `spring.flutter.debug.enabled` is read by the generator: `true` puts the
 panel in every build, `false` in none (no code of it in the app), not set
-in debug and profile builds only.
+in debug builds only.
+
+**Memory and size.** The Isolates tab (under Performance) opens with the
+app's memory, large numbers with a chart of the last three minutes: the
+process's resident memory and the Dart heap (used of capacity, from the
+VM service in debug builds) natively, the JavaScript heap
+(used, total, limit; Chromium) on the web, and Flutter's image cache
+everywhere. On the web it shows what the page downloaded too, from
+Resource Timing: the total transferred and decoded, by kind and the ten
+heaviest. The console's `memory` segment (`mem 182 MB · img 34 MB`) is
+in the build when `spring.flutter.debug.console.segments` names it.
+Nothing is read while neither shows, and with
+`spring.flutter.debug.isolates.enabled: false` none of it is in the app.
+
+**The logs: select, pick, export.** The Logs tab's text selects across
+records by mouse or touch and copies with ⌘C / Ctrl+C or its context
+menu. A long press, or a click with ⇧ or ⌘, marks whole records: the tab
+shows how many, Copy puts them on the clipboard in the console's pattern
+without colours, Clear selection ends it. `Export .log` and `Export
+.jsonl` write the marked records, or all the filter shows, to
+`<app>-logs-<yyyyMMdd-HHmmss>.<ext>`: a browser download on the web, the
+Downloads folder on a desktop, or the first available `DebugFileExport`
+bean of the app's (a share sheet with `share_plus` in the app's pubspec;
+`ClipboardDebugFileExport` registered by the app for the clipboard). On a
+phone without one, nothing leaves the app and the tab says what to add. The file is made in 4 ms slices, so a
+full buffer holds no frame. `spring.flutter.debug.logs.export.enabled`
+is its build switch (not set: debug builds), and only with
+the panel or the console in the build. The debug console's `logs` pane
+selects the same way (a plain tap still reaches the app until a long
+press or ⇧/⌘-click starts the selection), and with the `commands` pane
+`export [log|jsonl]` exports from its input line; both come and go with
+the `logs` pane. See
+[Configuration, the log export](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#the-log-export).
+
+**Flutter's own debug tools.** The panel's Flutter tab switches them in
+the running app, since DevTools cannot be drawn inside it: the widget
+inspector (tap the app to select a widget; the tab shows its type, size,
+position and ancestors), the performance overlay, the semantics
+debugger, paint size, baselines, layer borders, pointers, the repaint
+rainbow, inverted oversized images, and slow animations (1x, 2x, 5x,
+10x). A tool stays as it was left while the app runs, the panel closed or
+not. The tab also shows `dart devtools <address>` with the VM service's
+address, to copy. What a build cannot run shows why instead of its
+switch: the inspector and the paint flags need a debug build, the web
+has no performance overlay, and an app on the web cannot know DevTools'
+address. `spring.flutter.debug.flutter-tools.enabled` is its build
+switch (the same three states as the panel's), with the panel's own
+switch as its parent: a build without the panel has none of its code,
+whatever its own key says.
+
+**The network.** With `spring.flutter.debug.network.enabled: true`, the
+panel's Network tab lists what the app sent and received, newest first:
+every request of an `HttpTransport` bean (the Feign clients, the OAuth2
+client, Supabase, the themes and resources from a URL, the app's own)
+and every WebSocket connection of a `WebSocketTransport` bean (the
+WebSocket starter, Phoenix channels), each a row with its method (read
+methods in one color, write methods in another), path, status (green,
+amber or red), time and size, over its bar in a waterfall of the rows
+shown (overlaps and slow requests at a glance); a WebSocket's row adds
+its handshake time, uptime, last heartbeat round trip and reconnects.
+Chips filter by method (one per method recorded, `WS` for the
+WebSockets) and by status class, a
+line by the address; Pause stops recording, Clear empties it. A tap
+opens a request: its headers, its timings (the time to the first byte
+of a streamed response, the total, and on the web the browser's DNS,
+connection, TLS, waiting and download phases when it gives them), its
+sizes, its error, and with `bodies: true` its bodies, JSON indented; a
+WebSocket shows its handshake, uptime, reconnects, close code, reason
+and time, its Phoenix heartbeat round trips, its frames each way with
+their times (Phoenix joins and leaves named) and the channels joined.
+A whole response (`send`) has its total only outside the browser: it
+arrives whole, and sending it as a stream to time its headers would
+change its timeouts. No client changes: a
+post-processor wraps the transport beans, so a request and its answer
+pass through as they were. Credentials never reach the list: the
+`Authorization`, `Cookie`, `Set-Cookie` and token headers, the headers a
+Feign client marks `sensitive-headers`, the secret query parameters and
+the password of an address are `******`; bodies are off by default, and
+with `bodies` on they are cut at `body-limit` (64 KB) with their secret
+JSON keys and form parameters masked. A streamed body is counted, not
+gathered: it goes to the caller chunk by chunk as it reads. The last
+`max-entries` (200) are kept. The module is in the build only with its
+key `true`, and only as far as the panel is (its parent switch): not
+set, the app has none of its code. Its colors are the debug theme's
+`method-read` and `method-write`. The debug console has a compact view
+of the same journal: the `network` pane (a line per request, newest at
+the bottom, `GET  /api/user  200  120 ms  1.2 KB`, sockets with their
+uptime and last heartbeat; scrolled up it pauses, a tap shows one line)
+and the `net` header segment (`net 2 in flight · 0 failed · 1 error ·
+45 ms ws`: `failed` only what got no response, a `4xx`/`5xx` an error),
+each in the build only when the console's `panes` (`segments`) names it
+and the recorder's key is `true`, the panel not needed.
 
 **The frame meter.** `spring.flutter.frame-meter.enabled=true` (with
-`position`, `target-rate` 60) shows a panel over the app with the frames
-a second it really draws, the build and raster times, the worst frame
-and a bar per frame, from Flutter's own timings, so a phone shows whether
-it keeps up. It is not shown or counted while the splash shows; its look
+`position`, `target-rate` 60) shows one short line over the app with the
+frames a second it really draws, in the theme's primary color, and a 3D
+scene's beside them (`60 (120 3D)`), over a strip with a bar per frame,
+from Flutter's own timings, so a phone shows whether it keeps up. The
+debug panel's Frames tab adds the build and raster times and the worst
+frame. It is not shown or counted while the splash shows; its look
 is the theme's `frame-meter`. Every key:
 [Configuration, the app widget](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#the-app-widget).
+
+**The debug console.** One overlay for what the app does while it runs,
+shown and hidden by the action `debug.console` (⌘⇧O / Ctrl+Shift+O, or
+`taps:8+hold:2s`). Top to bottom:
+
+- **the header**, a row of compact segments
+  (`fps 60  3D 120  lost 0  logs all`): numbers in the debug theme's number
+  color, states green, amber or red;
+- **the shown panes**, by their order. The built-in `logs` (order 0, in
+  the build and shown by default) is the newest log records only, colored
+  as the console colors them (the time faint, the level green, yellow or
+  red, the logger cyan), by the filter of the debug panel's Logs tab, live
+  (without the panel, by its own `filter`); long records wrap, a wheel, a
+  trackpad or a drag scrolls back through the log buffer, and at the
+  bottom it follows the newest again. The built-in `commands` (order 10)
+  is what the commands printed over an input line. `help` is the one
+  command built in and lists every command, your `@ConsoleCommand` classes
+  included; while the line has the focus nothing typed reaches the app, up
+  and down go through the last `history` lines.
+
+A divider between each two neighbours moves the room between them, the
+handle on the lower edge stretches or shrinks the lowest, by mouse or
+touch; every height stays while the app runs, a hidden pane's too. A
+hidden pane is not built at all and the next one moves up; with none
+shown the console is a strip, the header alone, without a handle. The
+debug panel's Console tab switches each segment and pane of the build on
+and off with a tap, and reorders the header's segments by dragging them
+(a long press first on touch), live.
+
+The panes **pass the pointer through** to the app or **interact**, all of
+them, yours included, with nothing for a pane to do. Passing it through
+(the default), every tap, scroll, hover and drag over a pane reaches the
+app, under a background of `pass-through-opacity` (0.7 by default: the
+app seen, the panes read); only the header (with `Select` and the rest a
+pane adds) and the handles take one. Interacting, the panes work: the records scroll and
+select, the input line types, the graph pans. The toggle at the right of
+the header (`Pass-through` / `Interact`, finger-sized) switches it; on a
+desktop ⌥ (Alt) held interacts while held. Starting the records'
+selection or focusing the input line switches to interacting, and it stays
+so until the toggle switches back. The state lives on the `debugConsole`
+bean (`interaction`); the debug panel is always interactive.
+
+Only `enabled: true` puts the console in the build. The build reads
+`segments` and `panes` too: a segment or pane they do not name (without
+`*`) is not in the app at all, neither its bean nor its code. `header` and
+`shown-panes` say what shows at the start; a name in them that the build
+list lacks fails the start.
+
+```yaml
+spring:
+  flutter:
+    debug:
+      console:
+        enabled: true        # not set or false: no code of it in the app
+        segments: [fps, scene-fps, frames-lost, filter]  # the rest: not built
+        header: [fps, filter]  # shown at the start; not set: all of segments
+        panes: [logs, commands]  # the rest: not built; default [logs]
+        shown-panes: [logs]  # shown at the start; default [logs]; [] header only
+        history: 50          # the commands pane's lines up and down go through
+        position: top-left
+        opacity: 0.9         # of its background, 0 to 1
+        interaction: interact      # or pass-through: the app takes the pointer
+        pass-through-opacity: 0.7  # the panes' background while passing through
+        slide-duration: 220ms # its slide in and out; 0: at once
+        max-lines: 12        # the logs pane's height at the start
+        width: 1             # of a wide screen, 0.2 to 1; a phone: all
+        filter:
+          level: warning     # the start of the Logs tab's filter too
+          text: http
+```
+
+Your own segment is a class with `@ConsoleSegment` that implements
+`DebugConsoleSegment` (or extends `SampledDebugConsoleSegment`), a pane
+one with `@ConsolePane` that extends `DebugConsolePane`, a command one with
+`@ConsoleCommand` that extends `DebugConsoleCommand`; all are injected like
+any bean. The name is the annotation's, else the class's optional `name`
+getter (for one registered as a plain bean or made by hand); a getter that
+disagrees with the annotation fails the build. A command's `usage` is only
+what follows its word. The generator registers them only in the debug part
+of the app (`main.spring.debug.dart`): a segment only with the console and
+when `segments` names it or holds `*`, a pane when `panes` does, a command
+only with the `commands` pane, so a build without them has none of their
+code; a bean of the app that injects one fails the build.
+
+```dart
+@ConsoleSegment('ping', order: 50)
+class PingSegment extends SampledDebugConsoleSegment {
+  PingSegment(this.api);
+  final Api api;
+
+  @override
+  DebugConsoleValue read() =>
+      DebugConsoleValue('${api.lastPing.inMilliseconds}', label: 'ping');
+}
+```
+
+A pane is built only while it shows; `start` runs while it shows and what
+it returns runs when it hides, so a hidden pane costs nothing. Draw it at
+most once a frame and take its colors and fonts from the debug theme:
+
+```dart
+@ConsolePane('cart', order: 20)   // under `commands` (10)
+class CartPane extends DebugConsolePane {
+  CartPane(this.cart);
+  final Cart cart;               // a ChangeNotifier
+
+  @override
+  String get title => 'Cart';    // the Console tab's switch
+
+  @override
+  double get initialHeight => DebugConsoleView.lineHeight * 4;
+
+  @override
+  Widget build(BuildContext context, DebugConsole console) {
+    final style = DebugStyle.of(context);
+    return ListenableBuilder(
+      listenable: cart,
+      builder: (context, _) => ListView(
+        children: [
+          for (final item in cart.items)
+            Text('${item.name} × ${item.count}', style: style.code),
+        ],
+      ),
+    );
+  }
+}
+```
+
+```yaml
+spring.flutter.debug.console:
+  enabled: true
+  panes: [logs, commands, cart]
+  shown-panes: [logs, cart]
+```
+
+Every key, segment, pane and command:
+[Configuration, the debug console](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#the-debug-console).
+
+**The application graph.** The panel's **Graph** tab (under `App`) and
+the console's `graph` pane draw the app as one graph of layers, each
+layer a `DebugGraphLayer` bean in its own colour, each kind of node of a
+layer in its own shape: the widgets layer (the application's widgets
+as a tree from top to bottom, Flutter's wrappers folded in, a flash on
+each rebuild, the hot branches outlined, a tap outlines the widget over
+the app), the beans layer, and the signals layer
+(`spring_boot_starter_flutter_signals`: fields, computed values,
+effects, a lane per bean, and the widgets that read them, merged into the
+widgets layer's nodes when it shows). Left to
+right, a group a lane across all columns with its title at the left,
+arrows on the edges; repeated nodes fold into one (`ReviewTile ×10`)
+until tapped, a lane collapses by a tap on its title. "On screen" (the
+default) keeps the widgets in the window and what they read, "All"
+everything, "Live only" hides the quiet nodes; a group filter, a Fit
+button, a legend. It fits and centres itself when it opens, when a
+filter, a layer or a fold changes and on every resize; a wheel or a drag
+pans, ⌘ or Ctrl with the wheel and a pinch zoom, and nothing around it
+scrolls. A tap highlights the chain before and after a node and tells
+it; the pointer shows a tooltip; a node that changes flashes in the
+debug theme's `graph-flash` and a pulse runs along its edges. The
+engine is in the build only with a layer, each layer by its own switch
+(`spring.flutter.debug.graph.layers`), the tab by
+`spring.flutter.debug.graph.enabled` inside the panel's, the pane by
+`console.panes: [graph]`; it lays out only when what is shown changes,
+paints at most once a frame, and a hidden graph costs nothing.
+
+```yaml
+spring:
+  flutter:
+    debug:
+      graph:
+        enabled: true          # the Graph tab (not set: debug builds)
+        layers: [signals]      # the layers built in (not set: every one)
+      console:
+        panes: [logs, graph]   # the graph pane
+```
+
+A layer of your own, its nodes, edges, kinds and switch:
+[Configuration, the application graph](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#the-application-graph).
+
+**Debug themes.** Every color and font of the panel, the console and the
+frame meter over the app comes from a debug theme. The built-in
+`default` is the app theme's colors and `code` font, the logs in a
+terminal's palette for a dark or a light background, the commands orange.
+Declare your own under `spring.flutter.debug.themes.<name>` (colors:
+`background`, `text`, `dim`, `accent`, `number`, `good`, `warning`, `bad`,
+`error`, `line`, `level-error`, `level-warning`, `level-info`,
+`level-debug`, `time`, `logger`, `command`, `argument`, `method-read`,
+`method-write`, `graph-flash`; fonts:
+`font-family`, `font-size`), select one with `spring.flutter.debug.theme`,
+or build one in code as a `DebugTheme` bean. The panel's Theme tab
+switches them live, in a row under the app's themes. An unknown key, a
+value that is not a color or a theme no one has fails the start, naming
+the property. Debug themes come only with the panel or the console: a
+build with neither has none of their code.
+
+```yaml
+spring:
+  flutter:
+    debug:
+      theme: night
+      themes:
+        night:
+          background: '#101820'
+          text: '#F2AA4C'
+          command: '#FF8C42'
+          font-family: JetBrains Mono
+```
+
+Every key:
+[Configuration, debug themes](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#debug-themes).
 
 ## Configuration at build time
 
@@ -1724,8 +2031,7 @@ would be missing and a changed one would keep its old dependencies.
 *restart* does; it is on by default and needs no setup. Flutter calls the
 root widget's `reassemble()` on every hot reload. There the widget
 compares the fingerprint of the generated code (in
-`lib/spring_gen/main.spring.debug.dart`, which only debug and profile
-builds compile) with the one the running context was built from.
+`lib/spring_gen/main.spring.debug.dart`, which only debug builds compile) with the one the running context was built from.
 
 **Only method bodies changed: the context stays.** The fingerprint is the
 same, so nothing restarts. Dart already runs the new method bodies, and

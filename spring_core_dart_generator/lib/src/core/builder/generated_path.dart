@@ -54,11 +54,17 @@ const propertiesExtension = '.spring.properties.dart';
 /// proxies.
 const proxiesExtension = '.spring.proxies.dart';
 
-/// The ending of what only debug and profile builds of an application use
+/// The ending of the beans on signals of a module
+/// (`lib/spring_gen/src/app.spring.signals.dart`): a part of its
+/// `.spring.dart` with the generated subclass each such bean is made as.
+const signalsExtension = '.spring.signals.dart';
+
+/// The ending of what only debug builds of an application use
 /// (`bin/spring_gen/main.spring.debug.dart`): a part of the
 /// `@SpringBootApplication`'s `.spring.dart` with the fingerprint of the
 /// generated code and the hot-reload functions, which the library refers to
-/// only under `!dart.vm.product`, so a release build leaves it out.
+/// only in debug builds (`debugOnlyCondition`), so a profile or a release
+/// build leaves it out.
 const debugExtension = '.spring.debug.dart';
 
 /// The ending of the values of the `--dart-define`s an application may
@@ -77,12 +83,17 @@ const List<String> applicationPartExtensions = [
   environmentExtension,
 ];
 
+/// The endings of the parts a package's part of the build fills
+/// (`PackageGeneration.partFiles`), written beside the application's.
+const List<String> packagePartExtensions = [signalsExtension];
+
 /// The endings of the files a module's library has beside it, in the
 /// order the build lists them ([moduleFileId]).
 const List<String> moduleFileExtensions = [
   introspectionExtension,
   propertiesExtension,
   proxiesExtension,
+  ...packagePartExtensions,
   ...applicationPartExtensions,
 ];
 

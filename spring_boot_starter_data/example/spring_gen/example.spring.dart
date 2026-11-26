@@ -1694,7 +1694,8 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     _i5.springBootStarterDataAutoConfiguration,
     _i5.springBootStarterDataSqlLoggingAutoConfiguration,
     _i20.springBootStarterLoggingAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
+    if (!const bool.fromEnvironment('dart.vm.product') &&
+        !const bool.fromEnvironment('dart.vm.profile'))
       ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
@@ -1702,12 +1703,15 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
         const _i1.AutoConfigurationModule(
           before: [r'springBootStarterDataAutoConfiguration'],
         ),
-    ...!const bool.fromEnvironment('dart.vm.product')
+    ...!const bool.fromEnvironment('dart.vm.product') &&
+            !const bool.fromEnvironment('dart.vm.profile')
         ? _$debugAutoConfigurationMetadata
         : const {},
   },
   dartDefines: _$dartDefines,
-  fingerprint: !const bool.fromEnvironment('dart.vm.product')
+  fingerprint:
+      !const bool.fromEnvironment('dart.vm.product') &&
+          !const bool.fromEnvironment('dart.vm.profile')
       ? _$fingerprint
       : null,
 );

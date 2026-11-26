@@ -11,20 +11,23 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:flutter/widgets.dart';
-import 'package:scene_showcase/src/backdrop.dart' as _i4;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
+import 'package:scene_showcase/src/backdrop.dart' as _i6;
+import 'package:scene_showcase/src/plate_card.dart' as _i5;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
     as _i2;
+import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
+    as _i4;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart'
-    as _i8;
+    as _i10;
 import 'package:spring_boot_starter_flutter_scene/src/app/scene_customizer.dart'
-    as _i5;
+    as _i7;
 import 'package:spring_boot_starter_flutter_scene/src/models/scene_models.dart'
-    as _i6;
+    as _i8;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i9;
+    as _i11;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
 
 part 'main.spring.debug.dart';
@@ -42,19 +45,22 @@ const _$knownAdvisors0 = {
 _i3.BeanModule get $application => _i3.BeanModule(
   r'application',
   [
-    _i3.BeanDefinition<_i4.Backdrop>(
+    _i3.BeanDefinition<_i6.Backdrop>(
       name: r'backdrop',
       source: r'package:scene_showcase/src/backdrop.dart#Backdrop',
-      types: const [_i4.Backdrop, _i5.SceneCustomizer],
+      types: const [_i6.Backdrop, _i7.SceneCustomizer],
       dependencies: const [
-        _i3.Dependency.provider(_i6.SceneModels, name: r'models'),
+        _i3.Dependency.provider(_i8.SceneModels, name: r'models'),
       ],
-      create: (r) => _i4.Backdrop(r.provider<_i6.SceneModels>(name: r'models')),
+      create: (r) => _i6.Backdrop(r.provider<_i8.SceneModels>(name: r'models')),
       annotations: const [_i3.Component()],
       aopProxy: const _i3.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
+    if (!const bool.fromEnvironment('dart.vm.product') &&
+        !const bool.fromEnvironment('dart.vm.profile'))
+      ..._$debugWidgetFields,
   ],
   resources: const {
     r'application.yml': _i3.EmbeddedResource.text(
@@ -71,17 +77,20 @@ _i3.BeanModule get $application => _i3.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i7.springBootAutoConfiguration,
+    _i9.springBootAutoConfiguration,
     _i2.springBootStarterFlutterAutoConfiguration,
     _i2.springBootStarterFlutterDebugAutoConfiguration,
-    _i8.springBootStarterFlutterSceneAutoConfiguration,
-    _i8.springBootStarterFlutterSceneDebugAutoConfiguration,
-    _i9.springBootStarterLoggingAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
+    _i10.springBootStarterFlutterSceneAutoConfiguration,
+    _i10.springBootStarterFlutterSceneDebugAutoConfiguration,
+    _i11.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product') &&
+        !const bool.fromEnvironment('dart.vm.profile'))
       ..._$debugAutoConfigurations,
   ],
   dartDefines: _$dartDefines,
-  fingerprint: !const bool.fromEnvironment('dart.vm.product')
+  fingerprint:
+      !const bool.fromEnvironment('dart.vm.product') &&
+          !const bool.fromEnvironment('dart.vm.profile')
       ? _$fingerprint
       : null,
 );

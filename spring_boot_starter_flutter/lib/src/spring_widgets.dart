@@ -233,8 +233,8 @@ abstract class SpringState<W extends SpringStatefulWidget<B>, B extends Record>
   late final _listening = BeanReads(_onBeanChanged);
 
   // What other state libraries follow of this widget's `build`
-  // (`WidgetBuildTracker` beans).
-  late final _trackings = WidgetBuildTrackings(_onBeanChanged);
+  // (`WidgetBuildTracker` beans), told which widget it is.
+  late final _trackings = WidgetBuildTrackings(_onBeanChanged, context);
 
   /// The beans named in this state's type, from the application context.
   ///
@@ -293,8 +293,8 @@ class SpringStatelessElement extends ComponentElement {
   late final _listening = BeanReads(markNeedsBuild);
 
   // What other state libraries follow of this widget's `build`
-  // (`WidgetBuildTracker` beans).
-  late final _trackings = WidgetBuildTrackings(_rebuild);
+  // (`WidgetBuildTracker` beans), told which widget it is.
+  late final _trackings = WidgetBuildTrackings(_rebuild, this);
 
   void _rebuild() {
     if (mounted) {
@@ -411,6 +411,13 @@ final class SpringWidgetBindings {
             in context.getBeansOfType<SpringWidgetBindings>().values)
           for (final binding in bindings.bindings) binding.beans: binding,
       };
+
+  /// The generated binding of the [beans] record type in [context], or
+  /// `null`: what the debug tools tell of a Spring widget's beans.
+  static SpringWidgetBinding? bindingOf(
+    ApplicationContext context,
+    Type beans,
+  ) => _of(context)[beans];
 
   /// The beans in [record] (of type [beans]) as a list, from its generated
   /// binding; empty when there is none.

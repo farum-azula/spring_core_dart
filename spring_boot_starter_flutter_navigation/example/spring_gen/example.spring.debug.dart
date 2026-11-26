@@ -9,20 +9,25 @@
 
 part of 'example.spring.dart';
 
-/// The auto-configurations only debug and profile builds have (their build key
-/// leaves them out of a release build), which `springApplication` adds
-/// to its own outside release builds.
+/// The auto-configurations only debug builds have (their build key leaves
+/// them out of a profile or a release build), which `springApplication` adds
+/// to its own in debug builds.
 List<_i1.BeanModule> get _$debugAutoConfigurations => [
   _i2.springBootStarterFlutterDebugAutoConfiguration,
+  _i2.springBootStarterFlutterDebugBeansGraphAutoConfiguration,
+  _i2.springBootStarterFlutterDebugFlutterToolsAutoConfiguration,
   _i2.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
   _i2.springBootStarterFlutterDebugIsolatesAutoConfiguration,
+  _i2.springBootStarterFlutterDebugLogsExportAutoConfiguration,
   _i2.springBootStarterFlutterDebugMotionAutoConfiguration,
   _i2.springBootStarterFlutterDebugTimelineAutoConfiguration,
+  _i2.springBootStarterFlutterDebugWidgetsGraphAutoConfiguration,
+  _i3.springBootStarterFlutterNavigationDebugGraphAutoConfiguration,
 ];
 
 /// The hash of the generated code, which a hot reload compares to restart
 /// the application only when its beans changed (`SpringApplication.reload`).
-const _$fingerprint = '1bf87be5';
+const _$fingerprint = 'f41ed468';
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
@@ -37,3 +42,16 @@ Future<_i1.ConfigurableApplicationContext> reloadApplicationAsync(
   _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
+
+/// The public fields of the application's widgets and their states, which the
+/// cards of the debug graph show (`DebugWidgetFields`).
+List<_i1.BeanDefinition<Object>> get _$debugWidgetFields => [
+  _i1.BeanDefinition<_i4.DebugWidgetFields>(
+    name: r'debugWidgetFields',
+    source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#DebugWidgetFields',
+    lazy: true,
+    create: (r) => _i4.DebugWidgetFields({
+      _i5.MainTabs: [(r'shell', (o) => (o as _i5.MainTabs).shell)],
+    }),
+  ),
+];

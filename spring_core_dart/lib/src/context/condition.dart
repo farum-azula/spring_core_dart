@@ -159,6 +159,9 @@ final class ProfileCondition implements Condition {
   @override
   bool matches(ConditionContext context) =>
       context.environment.matchesProfiles(profiles);
+
+  @override
+  String toString() => '@Profile (${profiles.join(', ')})';
 }
 
 /// A [ConditionContext] that remembers results while the modules load, so

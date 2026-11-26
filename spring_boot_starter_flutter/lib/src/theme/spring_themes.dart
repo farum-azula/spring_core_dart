@@ -168,19 +168,24 @@ final class SpringThemes extends ChangeNotifier {
   List<String> get names => _config.names;
 
   /// The themes the app's own files declare or choose (`themes.<name>`,
-  /// `active`, `system-light`, `system-dark`), in the order of [names];
-  /// not the rest of what a `source` file brings (its base themes). What
-  /// the debug panel offers to try.
+  /// `active`; `system-light` and `system-dark` while [offersSystem]),
+  /// in the order of [names]; not the rest of what a `source` file brings
+  /// (its base themes). The built-in `light` and `dark` only for an app
+  /// that declares no theme of its own: one that does may read tokens
+  /// only its themes have. What the debug panel offers to try.
   List<String> get ownNames {
-    final own = <String>{
+    final declared = <String>{
       for (final key in _files.keys)
         if (key.split('.') case [final first, final name, _, ...]
             when ThemeValues.canonical(first) == 'themes')
           ThemeValues.canonical(name),
+    };
+    final own = <String>{
+      ...declared,
+      if (declared.isEmpty) ...['light', 'dark'],
       for (final chosen in [
         _config.active,
-        _config.systemLight,
-        _config.systemDark,
+        if (offersSystem) ...[_config.systemLight, _config.systemDark],
       ])
         if (chosen != 'system') ThemeValues.canonical(chosen),
     };
@@ -189,6 +194,26 @@ final class SpringThemes extends ChangeNotifier {
         if (own.contains(ThemeValues.canonical(name))) name,
     ];
   }
+
+  /// Whether [name] is one the app offers: one of [ownNames], or `system`
+  /// while [offersSystem]. A choice kept from an earlier run is shown
+  /// only then: a built-in theme tried once may lack the app's tokens.
+  bool offers(String name) {
+    final canonical = ThemeValues.canonical(name);
+    return canonical == 'system'
+        ? offersSystem
+        : ownNames.any((own) => ThemeValues.canonical(own) == canonical);
+  }
+
+  /// Whether `system`, the device's mode picking between `system-light`
+  /// and `system-dark`, is the app's: `active` is `system`, or the app
+  /// declares no theme of its own and so has the built-in `light` and
+  /// `dark`.
+  bool get offersSystem =>
+      _config.active == 'system' ||
+      !_files.keys.any(
+        (key) => ThemeValues.canonical(key.split('.').first) == 'themes',
+      );
 
   /// The theme's name as declared, for [name] written in any case or with
   /// `-` and `_` (`Ocean-Night` gives `ocean-night`); `null` when there is
@@ -457,9 +482,10 @@ final class ThemeSelection extends ChangeNotifier {
   static const _log = SpringLog('spring_boot_starter_flutter.ThemeSelection');
 
   /// Shows [name], a choice kept from an earlier run, without keeping it
-  /// again; a name that is no theme any more is ignored.
+  /// again; a name that is no theme any more, or one the app does not
+  /// offer ([SpringThemes.offers]), is ignored.
   void restore(String name) {
-    if (!themes.config.remember) {
+    if (!themes.config.remember || !themes.offers(name)) {
       return;
     }
     final String valid;

@@ -1,8 +1,8 @@
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/debug/overlay/debug_overlay.dart'
     show DebugOverlayLayout;
-import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart'
-    show FrameMeterPosition;
+import 'package:spring_boot_starter_flutter/src/debug/debug_layout.dart'
+    show DebugCorner;
 import 'package:spring_boot_starter_flutter/src/sqlite_directories.dart'
     show SqliteLocation;
 
@@ -83,15 +83,22 @@ final class FlutterDebugProperties {
     this.enabled,
     this.frameMeter = const FlutterDebugFeatureProperties(),
     this.motion = const FlutterDebugFeatureProperties(),
-    this.timeline = const FlutterDebugTimelineProperties(),
+    this.timeline = const FlutterDebugFeatureProperties(),
     this.isolates = const FlutterDebugIsolatesProperties(),
+    this.console = const FlutterDebugConsoleProperties(),
     this.drag = const FlutterDebugFeatureProperties(),
     this.overlays = const FlutterDebugOverlaysProperties(),
+    this.flutterTools = const FlutterDebugFeatureProperties(),
+    this.network = const FlutterDebugNetworkProperties(),
+    this.logs = const FlutterDebugLogsProperties(),
+    this.graph = const FlutterDebugGraphProperties(),
+    this.theme = 'default',
+    this.themes = const {},
   });
 
   /// Whether the app has the debug panel: `true` in every build, `false`
-  /// in none (the build leaves its code out), not set in debug and
-  /// profile builds only (a release build compiles it away).
+  /// in none (the build leaves its code out), not set in debug
+  /// builds only (a release build compiles it away).
   final bool? enabled;
 
   /// The frame meter, on and off by `debug.frame-meter` (⌘⇧X, or five
@@ -103,15 +110,19 @@ final class FlutterDebugProperties {
   /// apart from the panel.
   final FlutterDebugFeatureProperties motion;
 
-  /// The timeline of the start and the observations, `debug.timeline`
-  /// (⌘⇧L, or six quick taps and a seventh held): in the build apart from
+  /// The timeline of the start and the observations, the panel's Timeline
+  /// tab and the console's `timeline` segment: in the build apart from
   /// the panel; with it, each bean's creation is measured too.
-  final FlutterDebugTimelineProperties timeline;
+  final FlutterDebugFeatureProperties timeline;
 
-  /// The task manager of the app's isolates and the engine's threads,
-  /// `debug.isolates` (⌘⇧I, or seven quick taps and an eighth held): in
-  /// the build apart from the panel.
+  /// The task manager of the app's isolates and the engine's threads, the
+  /// panel's Isolates tab and the console's `isolates` segment: in the
+  /// build apart from the panel.
   final FlutterDebugIsolatesProperties isolates;
+
+  /// The debug console over the app, `debug.console` (⌘⇧O, or eight quick
+  /// taps and a ninth held): in the build only when enabled.
+  final FlutterDebugConsoleProperties console;
 
   /// Moving the debug overlays by dragging them: in the build apart from
   /// the panel.
@@ -119,23 +130,277 @@ final class FlutterDebugProperties {
 
   /// How the debug overlays of one corner are put together.
   final FlutterDebugOverlaysProperties overlays;
+
+  /// The debug panel's Flutter tab, Flutter's own debug tools (the widget
+  /// inspector, the performance overlay, the `debugPaint*` flags): in the
+  /// build only as far as the panel is too (`spring.flutter.debug.enabled`
+  /// is its parent switch), whatever its own `enabled` says.
+  final FlutterDebugFeatureProperties flutterTools;
+
+  /// The network recorder, the panel's Network tab and the console's
+  /// `network` pane and `net` segment: every request of the app's
+  /// `HttpTransport` and `WebSocketTransport` beans (Feign, the OAuth2
+  /// client, Supabase, the WebSocket starter...), masked. In the build
+  /// only when enabled, and only with a view: the panel, or the console
+  /// with the pane or the segment.
+  final FlutterDebugNetworkProperties network;
+
+  /// What the panel's Logs tab and the console do with the records beyond
+  /// showing them.
+  final FlutterDebugLogsProperties logs;
+
+  /// The application graph: the panel's Graph tab and the console's
+  /// `graph` pane, the layers the starters give (`signals`).
+  final FlutterDebugGraphProperties graph;
+
+  /// The debug theme the debug tools start with: `default` (the built-in
+  /// one, from the app's theme), one of [themes] or a `DebugTheme` bean's
+  /// name. A name no theme has fails the start. The panel's Theme tab
+  /// switches it live. Read only in a build with the panel or the
+  /// console: with neither, debug themes are no code in the app.
+  final String theme;
+
+  /// Debug themes by name, `spring.flutter.debug.themes.<name>.*`: the
+  /// colours and the font of the debug panel, the console and the frame
+  /// meter; what a theme does not set is the built-in theme's. A key a
+  /// theme does not have, or a value that is not a colour, fails the start.
+  final Map<String, FlutterDebugThemeProperties> themes;
 }
 
-/// `spring.flutter.debug.timeline.*`.
-final class FlutterDebugTimelineProperties {
-  /// Settings with these values.
-  const FlutterDebugTimelineProperties({
-    this.enabled,
-    this.position = FrameMeterPosition.bottomLeft,
+/// A debug theme of `spring.flutter.debug.themes.<name>.*`. A colour is
+/// `#RRGGBB`, `#AARRGGBB` or a `Colors` name; one not set is the built-in
+/// theme's, which takes the app theme's colours and a terminal's palette
+/// for a dark background or a light one.
+final class FlutterDebugThemeProperties {
+  /// A theme of these values.
+  const FlutterDebugThemeProperties({
+    this.background,
+    this.text,
+    this.dim,
+    this.accent,
+    this.number,
+    this.good,
+    this.warning,
+    this.bad,
+    this.error,
+    this.line,
+    this.levelError,
+    this.levelWarning,
+    this.levelInfo,
+    this.levelDebug,
+    this.time,
+    this.logger,
+    this.command,
+    this.argument,
+    this.methodRead,
+    this.methodWrite,
+    this.graphFlash,
+    this.graphHot,
+    this.fontFamily,
+    this.fontSize,
   });
 
-  /// Whether the app has the timeline: `true` in every build, `false` in
-  /// none (the build leaves its code out), not set in debug and profile
-  /// builds only (a release build compiles it away).
+  /// The fill of the panel, the console and the frame meter.
+  final String? background;
+
+  /// The text.
+  final String? text;
+
+  /// Secondary text: labels, hints, the echo of a command typed.
+  final String? dim;
+
+  /// What is selected or on: a chip, the input's `>`.
+  final String? accent;
+
+  /// The numbers of the console's header and the frame meter's rate; the
+  /// accent by default.
+  final String? number;
+
+  /// A state that is fine (a header segment, a frame within budget).
+  final String? good;
+
+  /// A warning state.
+  final String? warning;
+
+  /// A state that is wrong.
+  final String? bad;
+
+  /// What a command reports as gone wrong.
+  final String? error;
+
+  /// Lines between rows, borders, the resize handles.
+  final String? line;
+
+  /// The level of an error record.
+  final String? levelError;
+
+  /// The level of a warning record.
+  final String? levelWarning;
+
+  /// The level of an info record.
+  final String? levelInfo;
+
+  /// The level of a debug or trace record.
+  final String? levelDebug;
+
+  /// The time of a record and the `:` after its logger.
+  final String? time;
+
+  /// The logger of a record.
+  final String? logger;
+
+  /// A command's word in the console's commands pane; orange by default.
+  final String? command;
+
+  /// How a command's arguments are written, in `help`.
+  final String? argument;
+
+  /// A method that reads (`GET`, `HEAD`, `OPTIONS`, `TRACE`) in the
+  /// Network tab; terminal cyan by default.
+  final String? methodRead;
+
+  /// A method that writes (`POST`, `PUT`, `PATCH`, `DELETE`) in the
+  /// Network tab; `command`'s orange by default.
+  final String? methodWrite;
+
+  /// What lights a node of the application graph that just changed or ran
+  /// (its border, glow, at most a quarter of its fill, the pulse along its
+  /// edges); a terminal's yellow by default.
+  final String? graphFlash;
+
+  /// The outline of a hot branch of the application graph (the widgets
+  /// that rebuild often, the branch above them); a terminal's magenta by
+  /// default, a hue apart from every layer's.
+  ///
+  /// The nodes of a graph layer take the theme's `graph-<layer id>` (any
+  /// key of that form is a theme's): `graph-beans` (`good`'s green by
+  /// default), `graph-widgets` (`logger`'s cyan blue), `graph-signals`
+  /// (`command`'s orange), else a colour of the theme's palette.
+  final String? graphHot;
+
+  /// The font family of every debug tool's text; the app theme's by
+  /// default (its `code` style for the logs and the console).
+  final String? fontFamily;
+
+  /// The size of the logs' and the console's text; 11 by default.
+  final double? fontSize;
+}
+
+/// `spring.flutter.debug.network.*`.
+final class FlutterDebugNetworkProperties {
+  /// Settings with these values.
+  const FlutterDebugNetworkProperties({
+    this.enabled,
+    this.bodies = false,
+    this.bodyLimit = const DataSize.ofBytes(64 * 1024),
+    this.bodyBudget = const DataSize.ofBytes(4 * 1024 * 1024),
+    this.maxEntries = 200,
+    this.maxFrames = 200,
+  });
+
+  /// Whether the app has the network recorder and its views: `true` in
+  /// every build that has the debug panel (the Network tab) or the
+  /// console with its `network` pane or `net` segment, `false` or not set
+  /// in none (the build leaves its code out). Set to `false` in a profile,
+  /// it turns off the recorder of a running app whose build has it.
   final bool? enabled;
 
-  /// The corner its pill shows in.
-  final FrameMeterPosition position;
+  /// Whether request and response bodies and WebSocket payloads are kept,
+  /// cut at [bodyLimit], their secrets masked (JSON keys and form
+  /// parameters that look secret). Off: only the sizes.
+  final bool bodies;
+
+  /// The most bytes of a body or a payload kept; at most 1MB, a larger
+  /// value is taken as 1MB.
+  final DataSize bodyLimit;
+
+  /// The most bytes of bodies and payloads the recorder keeps in all,
+  /// with [bodies]: past it, a new one keeps its size only, until old
+  /// requests leave the journal.
+  final DataSize bodyBudget;
+
+  /// How many requests and WebSocket connections are kept; the oldest goes
+  /// first.
+  @Range(1, 10000)
+  final int maxEntries;
+
+  /// How many frames of each WebSocket connection are kept; the counts go
+  /// on past it.
+  @Range(0, 10000)
+  final int maxFrames;
+}
+
+/// `spring.flutter.debug.graph.*`: the application graph.
+final class FlutterDebugGraphProperties {
+  /// Settings with these values.
+  const FlutterDebugGraphProperties({
+    this.enabled,
+    this.layers = const ['*'],
+    this.hot = const FlutterDebugGraphHotProperties(),
+  });
+
+  /// Whether the app has the panel's Graph tab: `true` in every build with
+  /// the panel, `false` in none (the build leaves its code out), not set in
+  /// debug builds only. Its engine is in the build only with a
+  /// layer ([layers]); the console's `graph` pane comes by
+  /// `spring.flutter.debug.console.panes` instead.
+  final bool? enabled;
+
+  /// The layers the build has, by name: this starter's `widgets` and
+  /// `beans`, a starter's own, `*` for every one. Read by the build: a
+  /// layer it does not name is left out, its code and bean with it; with
+  /// none, the Graph tab, the `graph` pane and the engine are no code in
+  /// the app.
+  final List<String> layers;
+
+  /// When a widget's branch is hot: outlined in the debug theme's
+  /// `graph-hot`, from the widget up to the root.
+  final FlutterDebugGraphHotProperties hot;
+}
+
+/// `spring.flutter.debug.graph.hot.*`: the hot branches of the widgets
+/// layer.
+final class FlutterDebugGraphHotProperties {
+  /// Settings with these values.
+  const FlutterDebugGraphHotProperties({
+    this.rebuilds = 3,
+    this.window = const Duration(seconds: 5),
+  });
+
+  /// How many rebuilds within [window] make a widget hot (its node and the
+  /// branch above it outlined, its tooltip telling `PageBackdrop: 14
+  /// rebuilds in 5 s`).
+  @Range(1, 100000)
+  final int rebuilds;
+
+  /// The window the rebuilds are counted in; also the window of a
+  /// widget's rebuild count in its card.
+  final Duration window;
+}
+
+/// `spring.flutter.debug.logs.*`.
+final class FlutterDebugLogsProperties {
+  /// Settings with these values.
+  const FlutterDebugLogsProperties({
+    this.export = const FlutterDebugLogsExportProperties(),
+  });
+
+  /// The export of the records as a file (`.log`, `.jsonl`).
+  final FlutterDebugLogsExportProperties export;
+}
+
+/// `spring.flutter.debug.logs.export.*`.
+final class FlutterDebugLogsExportProperties {
+  /// Settings with these values.
+  const FlutterDebugLogsExportProperties({this.enabled});
+
+  /// Whether the app has the log export (the Logs tab's `Export .log` and
+  /// `Export .jsonl`, and the `DebugFileExport` beans): `true` in every
+  /// build, `false` in none (the build leaves its code out), not set in
+  /// debug builds only. In any case only as far as the debug
+  /// panel or the console is in the build too. Set to `false` in a
+  /// profile, it turns off the export of a running app whose build has it.
+  final bool? enabled;
 }
 
 /// `spring.flutter.debug.isolates.*`.
@@ -143,26 +408,151 @@ final class FlutterDebugIsolatesProperties {
   /// Settings with these values.
   const FlutterDebugIsolatesProperties({
     this.enabled,
-    this.position = FrameMeterPosition.bottomRight,
     this.interval = const Duration(seconds: 1),
   });
 
   /// Whether the app has the task manager: `true` in every build, `false`
-  /// in none (the build leaves its code out), not set in debug and
-  /// profile builds only (a release build compiles it away).
+  /// in none (the build leaves its code out), not set in debug
+  /// builds only (a release build compiles it away).
   final bool? enabled;
 
-  /// The corner its table shows in.
-  final FrameMeterPosition position;
-
-  /// How often it reads the loads while its table or its tab shows;
-  /// nothing is read, or measured, while neither does.
+  /// How often it reads the loads and the memory while its tab or the
+  /// console's `isolates` or `memory` segment shows; nothing is read, or
+  /// measured, while none does.
   final Duration interval;
 }
 
+/// `spring.flutter.debug.console.*`.
+final class FlutterDebugConsoleProperties {
+  /// Settings with these values.
+  const FlutterDebugConsoleProperties({
+    this.enabled,
+    this.position = DebugCorner.topLeft,
+    this.opacity = 0.9,
+    this.interaction = DebugConsoleInteraction.interact,
+    this.passThroughOpacity = 0.7,
+    this.slideDuration = const Duration(milliseconds: 220),
+    this.maxLines = 12,
+    this.width = 1,
+    this.segments = const ['fps', 'scene-fps', 'frames-lost', 'filter'],
+    this.header,
+    this.panes = const ['logs'],
+    this.shownPanes,
+    this.history = 50,
+    this.filter = const FlutterDebugLogsFilterProperties(),
+  });
+
+  /// Whether the app has the console: `true` in every build, `false` or
+  /// not set in none (the build leaves its code out).
+  final bool? enabled;
+
+  /// The corner it shows in.
+  final DebugCorner position;
+
+  /// How opaque its background is, from 0 (the records alone over the
+  /// app) to 1; the records stay opaque. The panes' while they interact,
+  /// the header's always.
+  @Range(0, 1)
+  final double opacity;
+
+  /// How its panes take the pointer at the start: `pass-through`, every
+  /// tap, scroll, hover and drag over them reaches the app, only the
+  /// header and the handles take one; `interact`, the panes work (the
+  /// records scroll and select, the input line types), the default. The
+  /// toggle at the right of the header switches it while the app runs, ⌥
+  /// (Alt) held on a desktop interacts while held.
+  final DebugConsoleInteraction interaction;
+
+  /// How opaque the panes' background is while they pass the pointer
+  /// through, from 0 (none: the app shows as it is, only the panes' text
+  /// over it) to 1; 0.7 by default, the app seen and the panes read. A
+  /// pane's own opacity counts only while they interact. The header keeps
+  /// `opacity`.
+  @Range(0, 1)
+  final double passThroughOpacity;
+
+  /// How long it takes to slide in from its edge when shown and back out
+  /// when hidden, as a game's console drops down (from the top in a top
+  /// corner, from the bottom in a bottom one); 0 shows and hides it at
+  /// once.
+  final Duration slideDuration;
+
+  /// How many lines high the `logs` pane starts; long records wrap, and
+  /// older ones are a scroll away, as far back as the log buffer keeps
+  /// them. The divider under it moves the room between it and the pane
+  /// below; the lowest pane, the handle on the console's lower edge (by
+  /// mouse or touch). The heights dragged to are kept while the app runs.
+  @Range(1, 200)
+  final int maxLines;
+
+  /// How much of a wide screen's width it takes, from 0.2 to 1; on a
+  /// phone (narrower than 600) all of it.
+  @Range(0.2, 1)
+  final double width;
+
+  /// The segments the build has, by name: this starter's (`fps`,
+  /// `frames-lost`, `filter`, `isolates` and `memory` with the task
+  /// manager, `timeline`, `net` with the network recorder), another
+  /// starter's, an application's own (`@ConsoleSegment`); `*` stands for
+  /// every one. Read by the build: a segment it does not name (and no `*`)
+  /// is left out of the build, its code and bean with it. Not set, each
+  /// segment's module says whether it is in (this starter's `fps`,
+  /// `frames-lost` and `filter` are, and a starter documents its own); the
+  /// default list gives the header's order of those. Their order is the
+  /// header's when `header` is not set.
+  final List<String> segments;
+
+  /// The segments the header shows at the start, in its order; `*` stands
+  /// for the others of `segments`. Not set: all of `segments`. A name that
+  /// `segments` does not have fails the start. The debug panel's Console
+  /// tab shows, hides and moves them while the app runs.
+  final List<String>? header;
+
+  /// The panes the build has, by name: `logs` (the records of the log
+  /// buffer, with their selection and the `export` command), `commands`
+  /// (the commands and their input line, with the application's
+  /// `@ConsoleCommand` classes), a starter's (`network`), an application's
+  /// own (`@ConsolePane`); `*` stands for every one. Read by the build: a
+  /// pane it does not name (and no `*`) is left out of the build, its code
+  /// and bean with it. `[logs]` by default; listed, `logs` is in only when
+  /// named.
+  final List<String> panes;
+
+  /// The panes shown at the start, under the header by their own order;
+  /// `*` stands for all of `panes`. Not set: `logs` when the build has it;
+  /// empty: the header alone. A name that `panes` does not have fails the
+  /// start. The debug panel's Console tab shows and hides them while the
+  /// app runs.
+  final List<String>? shownPanes;
+
+  /// How many lines typed into the `commands` pane up and down go back
+  /// through.
+  @Range(0, 1000)
+  final int history;
+
+  /// The records it shows at the start; with the debug panel, its Logs
+  /// tab starts with it too, and changes it for both.
+  final FlutterDebugLogsFilterProperties filter;
+}
+
+/// `spring.flutter.debug.console.filter.*`.
+final class FlutterDebugLogsFilterProperties {
+  /// Settings with these values.
+  const FlutterDebugLogsFilterProperties({
+    this.level = SpringLogLevel.trace,
+    this.text = '',
+  });
+
+  /// The lowest level shown.
+  final SpringLogLevel level;
+
+  /// What a record's message or logger name must contain, in any case;
+  /// empty: every record.
+  final String text;
+}
+
 /// `spring.flutter.debug.overlays.*`: the overlays of the debug features
-/// (the frame meter, the timeline, the task manager) that show in one
-/// corner.
+/// (the frame meter, the console) that show in one corner.
 final class FlutterDebugOverlaysProperties {
   /// Settings with these values.
   const FlutterDebugOverlaysProperties({
@@ -235,14 +625,26 @@ enum DebugOverlaySnap {
   free,
 }
 
+/// How the debug console's panes take the pointer
+/// (`spring.flutter.debug.console.interaction`).
+enum DebugConsoleInteraction {
+  /// Not at all: every tap, scroll, hover and drag over them reaches the
+  /// app under the console; the header and the handles still take theirs.
+  passThrough,
+
+  /// As each pane does: the records scroll and select, a row takes a tap,
+  /// the graph pans, the input line types.
+  interact,
+}
+
 /// A debug feature in the build or not, `spring.flutter.debug.<feature>.*`.
 final class FlutterDebugFeatureProperties {
   /// Settings with these values.
   const FlutterDebugFeatureProperties({this.enabled});
 
   /// Whether the app has the feature: `true` in every build, `false` in
-  /// none (the build leaves its code out), not set in debug and profile
-  /// builds only (a release build compiles it away).
+  /// none (the build leaves its code out), not set in debug builds only (a
+  /// release build compiles it away).
   final bool? enabled;
 }
 
@@ -268,7 +670,7 @@ final class FlutterFrameMeterProperties {
   /// Settings with these values.
   const FlutterFrameMeterProperties({
     this.enabled = false,
-    this.position = FrameMeterPosition.topRight,
+    this.position = DebugCorner.topRight,
     this.targetRate = 60,
   });
 
@@ -277,7 +679,7 @@ final class FlutterFrameMeterProperties {
   final bool enabled;
 
   /// The corner of the screen it shows in.
-  final FrameMeterPosition position;
+  final DebugCorner position;
 
   /// The frames a second the screen is meant to show: a frame within
   /// `1 / target-rate` is good, up to twice that a warning, more a drop.

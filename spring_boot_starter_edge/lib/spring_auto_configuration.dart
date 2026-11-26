@@ -1,5 +1,5 @@
 /// The beans the edge starter adds to an application: the fetch server of
-/// a function, the runtime and, in debug and profile builds unless the
+/// a function, the runtime and, in debug builds unless the
 /// configuration says otherwise, the list of what works differently.
 ///
 /// The generator finds this library in every dependency that has one and
@@ -62,7 +62,7 @@ final BeanModule springBootStarterEdgeAutoConfiguration = BeanModule(
 /// in the build.
 ///
 /// In the build by `spring.main.startup-checks.enabled`: `true` in every
-/// build, `false` in none, not set in debug and profile builds only. The
+/// build, `false` in none, not set in debug builds only. The
 /// edge build (`dart run spring_boot_starter_edge:build`) is a release
 /// build (`-Ddart.vm.product=true`) unless `--debug`; a plain
 /// `dart compile js` or `wasm` defines no `dart.vm.product` and keeps

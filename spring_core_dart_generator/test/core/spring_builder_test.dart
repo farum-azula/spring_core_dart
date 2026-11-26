@@ -24,6 +24,7 @@ void main() {
       '$root/spring_gen/{{}}.spring.introspection.dart',
       '$root/spring_gen/{{}}.spring.properties.dart',
       '$root/spring_gen/{{}}.spring.proxies.dart',
+      '$root/spring_gen/{{}}.spring.signals.dart',
       '$root/spring_gen/{{}}.spring.debug.dart',
       '$root/spring_gen/{{}}.spring.env.dart',
     ];

@@ -143,6 +143,11 @@ class LoggingConsoleProperties {
   /// setting it leaves the output an application set itself (Flutter's
   /// `debugPrint`).
   ConsoleTarget? target;
+
+  /// Starts every line of a record with a bar (`▌`) in the level's
+  /// colour, so a multi-line record (a stack trace) reads as one. Lines
+  /// the terminal wraps itself are not marked.
+  bool recordBar = false;
 }
 
 /// `logging.buffer.*`.

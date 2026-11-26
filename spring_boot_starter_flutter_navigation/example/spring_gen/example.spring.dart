@@ -9,26 +9,28 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i5;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i7;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
     as _i2;
+import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
+    as _i4;
 import 'package:spring_boot_starter_flutter_cupertino/spring_auto_configuration.dart'
-    as _i6;
-import 'package:spring_boot_starter_flutter_cupertino/src/cupertino_theme_design.dart'
-    as _i10;
-import 'package:spring_boot_starter_flutter_material/spring_auto_configuration.dart'
-    as _i7;
-import 'package:spring_boot_starter_flutter_material/src/material_theme_design.dart'
-    as _i11;
-import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
     as _i8;
-import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
-    as _i3;
-import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_flutter_cupertino/src/cupertino_theme_design.dart'
+    as _i11;
+import 'package:spring_boot_starter_flutter_material/spring_auto_configuration.dart'
     as _i9;
+import 'package:spring_boot_starter_flutter_material/src/material_theme_design.dart'
+    as _i12;
+import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
+    as _i3;
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
+    as _i6;
+import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
+    as _i10;
 
-import '../example.dart' as _i4;
+import '../example.dart' as _i5;
 
 part 'example.spring.debug.dart';
 part 'example.spring.env.dart';
@@ -37,50 +39,53 @@ part 'example.spring.env.dart';
 _i1.BeanModule get $application => _i1.BeanModule(
   r'application',
   [
-    _i1.BeanDefinition<_i3.ScreenRoutes>(
+    _i1.BeanDefinition<_i6.ScreenRoutes>(
       name: r'screenRoutes#application',
       source: r'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart#ScreenRoutes',
-      create: (r) => _i3.ScreenRoutes.route(source: r'application')
+      create: (r) => _i6.ScreenRoutes.route(source: r'application')
           .shell(
-            (s) => _i4.MainTabs(s),
+            (s) => _i5.MainTabs(s),
             (t) =>
                 t.branch(r'/catalog', (b) => b).branch(r'/profile', (b) => b),
-            key: _i4.MainTabs,
+            key: _i5.MainTabs,
             source: r'asset:spring_boot_starter_flutter_navigation/example/example.dart#MainTabs',
           )
           .screen(
             r'/catalog',
-            (r) => const _i4.CatalogPage(),
+            (r) => const _i5.CatalogPage(),
             name: r'catalog-page',
             title: r'Catalog',
             source: r'asset:spring_boot_starter_flutter_navigation/example/example.dart#CatalogPage',
           )
           .screen(
             r'/catalog/books/{isbn}',
-            (r) => const _i4.BookPage(),
+            (r) => const _i5.BookPage(),
             name: r'book-page',
             title: r'Book',
             params: {r'page': int},
-            extra: _i4.BookSummary,
+            extra: _i5.BookSummary,
             source: r'asset:spring_boot_starter_flutter_navigation/example/example.dart#BookPage',
           )
           .screen(
             r'/profile',
-            (r) => const _i4.ProfilePage(),
+            (r) => const _i5.ProfilePage(),
             name: r'profile-page',
             title: r'Profile',
             source: r'asset:spring_boot_starter_flutter_navigation/example/example.dart#ProfilePage',
           )
           .screen(
             r'/checkout',
-            (r) => const _i4.CheckoutPage(),
+            (r) => const _i5.CheckoutPage(),
             name: r'checkout-page',
             title: r'Checkout',
             source: r'asset:spring_boot_starter_flutter_navigation/example/example.dart#CheckoutPage',
           )
-          .notFound((r) => const _i4.NotFoundPage())
+          .notFound((r) => const _i5.NotFoundPage())
           .build(),
     ),
+    if (!const bool.fromEnvironment('dart.vm.product') &&
+        !const bool.fromEnvironment('dart.vm.profile'))
+      ..._$debugWidgetFields,
   ],
   resources: const {
     r'application.properties': _i1.EmbeddedResource.text(
@@ -94,27 +99,30 @@ _i1.BeanModule get $application => _i1.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i5.springBootAutoConfiguration,
+    _i7.springBootAutoConfiguration,
     _i2.springBootStarterFlutterAutoConfiguration,
-    _i6.springBootStarterFlutterCupertinoAutoConfiguration,
-    _i7.springBootStarterFlutterMaterialAutoConfiguration,
-    _i8.springBootStarterFlutterNavigationAutoConfiguration,
-    _i9.springBootStarterLoggingAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
+    _i8.springBootStarterFlutterCupertinoAutoConfiguration,
+    _i9.springBootStarterFlutterMaterialAutoConfiguration,
+    _i3.springBootStarterFlutterNavigationAutoConfiguration,
+    _i10.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product') &&
+        !const bool.fromEnvironment('dart.vm.profile'))
       ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    _i6.springBootStarterFlutterCupertinoAutoConfiguration:
+    _i8.springBootStarterFlutterCupertinoAutoConfiguration:
         const _i1.AutoConfigurationModule(
-          factories: [_i10.CupertinoThemeDesign()],
+          factories: [_i11.CupertinoThemeDesign()],
         ),
-    _i7.springBootStarterFlutterMaterialAutoConfiguration:
+    _i9.springBootStarterFlutterMaterialAutoConfiguration:
         const _i1.AutoConfigurationModule(
-          factories: [_i11.MaterialThemeDesign()],
+          factories: [_i12.MaterialThemeDesign()],
         ),
   },
   dartDefines: _$dartDefines,
-  fingerprint: !const bool.fromEnvironment('dart.vm.product')
+  fingerprint:
+      !const bool.fromEnvironment('dart.vm.product') &&
+          !const bool.fromEnvironment('dart.vm.profile')
       ? _$fingerprint
       : null,
 );
@@ -132,7 +140,7 @@ Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// The route of [CatalogPage]: its path, name, values and `to`.
-extension CatalogPageRoute on _i4.CatalogPage {
+extension CatalogPageRoute on _i5.CatalogPage {
   /// The path pattern.
   static const pattern = r'/catalog';
 
@@ -140,11 +148,11 @@ extension CatalogPageRoute on _i4.CatalogPage {
   static const routeName = r'catalog-page';
 
   /// The location of this screen with these values.
-  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+  static _i6.RouteLocation to() => _i6.RouteLocation.expand(pattern);
 }
 
 /// The route of [BookPage]: its path, name, values and `to`.
-extension BookPageRoute on _i4.BookPage {
+extension BookPageRoute on _i5.BookPage {
   /// The path pattern.
   static const pattern = r'/catalog/books/{isbn}';
 
@@ -152,20 +160,20 @@ extension BookPageRoute on _i4.BookPage {
   static const routeName = r'book-page';
 
   /// The path variable `isbn`.
-  static const isbn = _i3.RouteVar<String>(r'isbn');
+  static const isbn = _i6.RouteVar<String>(r'isbn');
 
   /// The query parameter `page`.
-  static const page = _i3.RouteParam<int>(r'page');
+  static const page = _i6.RouteParam<int>(r'page');
 
   /// The extra object, not in the address.
-  static const extra = _i3.RouteExtra<_i4.BookSummary>();
+  static const extra = _i6.RouteExtra<_i5.BookSummary>();
 
   /// The location of this screen with these values.
-  static _i3.RouteLocation to({
+  static _i6.RouteLocation to({
     required String isbn,
     int? page,
-    _i4.BookSummary? extra,
-  }) => _i3.RouteLocation.expand(
+    _i5.BookSummary? extra,
+  }) => _i6.RouteLocation.expand(
     pattern,
     pathVariables: {r'isbn': isbn},
     params: {r'page': page},
@@ -174,7 +182,7 @@ extension BookPageRoute on _i4.BookPage {
 }
 
 /// The route of [ProfilePage]: its path, name, values and `to`.
-extension ProfilePageRoute on _i4.ProfilePage {
+extension ProfilePageRoute on _i5.ProfilePage {
   /// The path pattern.
   static const pattern = r'/profile';
 
@@ -182,11 +190,11 @@ extension ProfilePageRoute on _i4.ProfilePage {
   static const routeName = r'profile-page';
 
   /// The location of this screen with these values.
-  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+  static _i6.RouteLocation to() => _i6.RouteLocation.expand(pattern);
 }
 
 /// The route of [CheckoutPage]: its path, name, values and `to`.
-extension CheckoutPageRoute on _i4.CheckoutPage {
+extension CheckoutPageRoute on _i5.CheckoutPage {
   /// The path pattern.
   static const pattern = r'/checkout';
 
@@ -194,5 +202,5 @@ extension CheckoutPageRoute on _i4.CheckoutPage {
   static const routeName = r'checkout-page';
 
   /// The location of this screen with these values.
-  static _i3.RouteLocation to() => _i3.RouteLocation.expand(pattern);
+  static _i6.RouteLocation to() => _i6.RouteLocation.expand(pattern);
 }

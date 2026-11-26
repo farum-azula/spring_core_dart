@@ -322,7 +322,7 @@ are in a module of their own
 (`springBootStarterEdgeStartupChecksAutoConfiguration`), which the
 generator puts into the build by `spring.main.startup-checks.enabled`:
 `true` in every build, `false` in none (no code, so no list), not set in
-debug and profile builds only. The build is a release build unless
+debug builds only. The build is a release build unless
 `--debug`, so a function has no list unless the key is `true`;
 `spring.edge.warnings` (or `spring.main.startup-checks.enabled: false` at
 run time) turns it off where it is in the build.
@@ -352,7 +352,7 @@ tries again. It costs one call to the store per cold start;
 |---|---|---|
 | `spring.edge.runtime` | — | The platform, set by the entry file; read it, do not write it |
 | `spring.edge.warnings` | `true` | The warning list at start, where the build has it (`spring.main.startup-checks.enabled`) |
-| `spring.main.startup-checks.enabled` | debug and profile builds | Read by the generator: `true` keeps the warning list in every build, `false` in none |
+| `spring.main.startup-checks.enabled` | debug builds | Read by the generator: `true` keeps the warning list in every build, `false` in none |
 | `spring.edge.supabase.anon-key-as-anonymous` | `true` | The anon key as a bearer token is a request without a token |
 | `spring.edge.cloudflare.rate-limit.database` | — | The binding of the D1 database the rate limiter counts in |
 | `spring.edge.cloudflare.rate-limit.table` | `rate_limit` | The table of its buckets, created when it is missing |

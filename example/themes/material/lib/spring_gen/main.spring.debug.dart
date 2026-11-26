@@ -9,20 +9,25 @@
 
 part of 'main.spring.dart';
 
-/// The auto-configurations only debug and profile builds have (their build key
-/// leaves them out of a release build), which `springApplication` adds
-/// to its own outside release builds.
+/// The auto-configurations only debug builds have (their build key leaves
+/// them out of a profile or a release build), which `springApplication` adds
+/// to its own in debug builds.
 List<_i1.BeanModule> get _$debugAutoConfigurations => [
   _i2.springBootStarterFlutterDebugAutoConfiguration,
+  _i2.springBootStarterFlutterDebugBeansGraphAutoConfiguration,
+  _i2.springBootStarterFlutterDebugFlutterToolsAutoConfiguration,
   _i2.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
   _i2.springBootStarterFlutterDebugIsolatesAutoConfiguration,
+  _i2.springBootStarterFlutterDebugLogsExportAutoConfiguration,
   _i2.springBootStarterFlutterDebugMotionAutoConfiguration,
   _i2.springBootStarterFlutterDebugTimelineAutoConfiguration,
+  _i2.springBootStarterFlutterDebugWidgetsGraphAutoConfiguration,
+  _i3.springBootStarterFlutterNavigationDebugGraphAutoConfiguration,
 ];
 
 /// The hash of the generated code, which a hot reload compares to restart
 /// the application only when its beans changed (`SpringApplication.reload`).
-const _$fingerprint = 'b171b9fb';
+const _$fingerprint = '32ee38e5';
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
@@ -37,3 +42,66 @@ Future<_i1.ConfigurableApplicationContext> reloadApplicationAsync(
   _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
+
+/// The public fields of the application's widgets and their states, which the
+/// cards of the debug graph show (`DebugWidgetFields`).
+List<_i4.BeanDefinition<Object>> get _$debugWidgetFields => [
+  _i4.BeanDefinition<_i5.DebugWidgetFields>(
+    name: r'debugWidgetFields',
+    source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#DebugWidgetFields',
+    lazy: true,
+    create: (r) => _i5.DebugWidgetFields({
+      _i6.Shell: [(r'shell', (o) => (o as _i6.Shell).shell)],
+      _i7.PageFrame: [
+        (r'title', (o) => (o as _i7.PageFrame).title),
+        (r'intro', (o) => (o as _i7.PageFrame).intro),
+        (r'children', (o) => (o as _i7.PageFrame).children),
+      ],
+      _i8.Section: [
+        (r'title', (o) => (o as _i8.Section).title),
+        (r'note', (o) => (o as _i8.Section).note),
+        (r'child', (o) => (o as _i8.Section).child),
+      ],
+      _i9.PillChip: [
+        (r'label', (o) => (o as _i9.PillChip).label),
+        (r'selected', (o) => (o as _i9.PillChip).selected),
+        (r'error', (o) => (o as _i9.PillChip).error),
+        (r'onPressed', (o) => (o as _i9.PillChip).onPressed),
+      ],
+      _i9.ActionButton: [
+        (r'label', (o) => (o as _i9.ActionButton).label),
+        (r'onPressed', (o) => (o as _i9.ActionButton).onPressed),
+      ],
+      _i9.BoxField: [
+        (r'label', (o) => (o as _i9.BoxField).label),
+        (r'error', (o) => (o as _i9.BoxField).error),
+        (r'enabled', (o) => (o as _i9.BoxField).enabled),
+        (r'initialText', (o) => (o as _i9.BoxField).initialText),
+      ],
+      _i9.TileCard: [
+        (r'child', (o) => (o as _i9.TileCard).child),
+        (r'selected', (o) => (o as _i9.TileCard).selected),
+        (r'onPressed', (o) => (o as _i9.TileCard).onPressed),
+      ],
+      _i9.GlowBorder: [
+        (r'child', (o) => (o as _i9.GlowBorder).child),
+        (r'width', (o) => (o as _i9.GlowBorder).width),
+      ],
+      _i10.Swatch: [
+        (r'color', (o) => (o as _i10.Swatch).color),
+        (r'label', (o) => (o as _i10.Swatch).label),
+        (r'width', (o) => (o as _i10.Swatch).width),
+      ],
+      _i11.ThemePicture: [
+        (r'image', (o) => (o as _i11.ThemePicture).image),
+        (r'width', (o) => (o as _i11.ThemePicture).width),
+        (r'height', (o) => (o as _i11.ThemePicture).height),
+        (r'fit', (o) => (o as _i11.ThemePicture).fit),
+      ],
+      _i12.YamlBox: [
+        (r'text', (o) => (o as _i12.YamlBox).text),
+        (r'label', (o) => (o as _i12.YamlBox).label),
+      ],
+    }),
+  ),
+];

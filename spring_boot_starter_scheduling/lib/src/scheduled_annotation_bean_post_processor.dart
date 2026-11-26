@@ -43,19 +43,36 @@ final class ScheduledAnnotationBeanPostProcessor extends BeanPostProcessor
   /// another one, and resolves `${...}` in the attributes with
   /// [environment].
   ScheduledAnnotationBeanPostProcessor(
-    this.scheduler,
+    TaskScheduler scheduler,
     this.environment, {
-    this.isolates = SchedulingIsolates.primary,
-  });
+    SchedulingIsolates isolates = SchedulingIsolates.primary,
+  }) : _scheduler = (() => scheduler),
+       _isolates = (() => isolates);
+
+  /// The same, with the scheduler and the isolates looked up on first use:
+  /// a post-processor that takes beans when it is made makes them before
+  /// the other post-processors, which then skip them (Spring's "not
+  /// eligible for getting processed by all BeanPostProcessors").
+  ScheduledAnnotationBeanPostProcessor.lazy(
+    TaskScheduler Function() scheduler,
+    this.environment, {
+    required SchedulingIsolates Function() isolates,
+  }) : _scheduler = scheduler,
+       // A named parameter cannot be private, so no `this._isolates`.
+       // ignore: prefer_initializing_formals
+       _isolates = isolates;
+
+  final TaskScheduler Function() _scheduler;
+  final SchedulingIsolates Function() _isolates;
 
   /// Which isolates of a server's pool run the methods
   /// (`spring.task.scheduling.isolates`): in another isolate than the
   /// first, none with [SchedulingIsolates.primary].
-  final SchedulingIsolates isolates;
+  late final SchedulingIsolates isolates = _isolates();
 
   /// The default scheduler of `@Scheduled` methods, used when they give
   /// no `scheduler:`.
-  final TaskScheduler scheduler;
+  late final TaskScheduler scheduler = _scheduler();
 
   /// Resolves the `${...}` placeholders of the attributes.
   final PropertyResolver environment;

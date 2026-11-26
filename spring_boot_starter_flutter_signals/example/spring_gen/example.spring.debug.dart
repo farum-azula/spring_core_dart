@@ -9,32 +9,37 @@
 
 part of 'example.spring.dart';
 
-/// The auto-configurations only debug and profile builds have (their build key
-/// leaves them out of a release build), which `springApplication` adds
-/// to its own outside release builds.
-List<_i2.BeanModule> get _$debugAutoConfigurations => [
-  _i4.springBootStarterFlutterDebugAutoConfiguration,
-  _i4.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
-  _i4.springBootStarterFlutterDebugIsolatesAutoConfiguration,
-  _i4.springBootStarterFlutterDebugMotionAutoConfiguration,
-  _i4.springBootStarterFlutterDebugTimelineAutoConfiguration,
-  _i5.springBootStarterFlutterSignalsDebugAutoConfiguration,
+/// The auto-configurations only debug builds have (their build key leaves
+/// them out of a profile or a release build), which `springApplication` adds
+/// to its own in debug builds.
+List<_i1.BeanModule> get _$debugAutoConfigurations => [
+  _i8.springBootStarterFlutterDebugAutoConfiguration,
+  _i8.springBootStarterFlutterDebugBeansGraphAutoConfiguration,
+  _i8.springBootStarterFlutterDebugFlutterToolsAutoConfiguration,
+  _i8.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
+  _i8.springBootStarterFlutterDebugIsolatesAutoConfiguration,
+  _i8.springBootStarterFlutterDebugLogsExportAutoConfiguration,
+  _i8.springBootStarterFlutterDebugMotionAutoConfiguration,
+  _i8.springBootStarterFlutterDebugTimelineAutoConfiguration,
+  _i8.springBootStarterFlutterDebugWidgetsGraphAutoConfiguration,
+  _i9.springBootStarterFlutterSignalsDebugAutoConfiguration,
+  _i9.springBootStarterFlutterSignalsDebugGraphAutoConfiguration,
 ];
 
 /// The hash of the generated code, which a hot reload compares to restart
 /// the application only when its beans changed (`SpringApplication.reload`).
-const _$fingerprint = 'f420b7f4';
+const _$fingerprint = 'd3457962';
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i2.ConfigurableApplicationContext reloadApplication(
-  _i2.ConfigurableApplicationContext running, {
+_i1.ConfigurableApplicationContext reloadApplication(
+  _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i2.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i2.ConfigurableApplicationContext running, {
+Future<_i1.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);

@@ -12,13 +12,15 @@ import 'package:flutter_web_plugins/url_strategy.dart'
     show BrowserPlatformLocation, PathUrlStrategy, setUrlStrategy;
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    show FlutterAppCustomizer;
+    show DebugGraphRouteBeans, FlutterAppCustomizer;
+
 import 'package:spring_boot_starter_flutter_navigation/src/navigation.dart';
 import 'package:spring_boot_starter_flutter_navigation/src/properties/navigation_properties.dart';
 import 'package:spring_boot_starter_flutter_navigation/src/properties/properties_beans.dart';
 import 'package:spring_boot_starter_flutter_navigation/src/route_language.dart';
 import 'package:spring_boot_starter_flutter_navigation/src/route_location.dart';
 import 'package:spring_boot_starter_flutter_navigation/src/route_scopes.dart';
+import 'package:spring_boot_starter_flutter_navigation/src/route_scopes_graph_beans.dart';
 import 'package:spring_boot_starter_flutter_navigation/src/route_table.dart';
 import 'package:spring_boot_starter_flutter_navigation/src/route_template.dart';
 import 'package:spring_boot_starter_flutter_navigation/src/screen_mappings.dart';
@@ -47,7 +49,11 @@ final class NavigationScopesRegistrar implements BeanFactoryPostProcessor {
     beanFactory
       ..registerScope(NavigationScopes.route, scopes.route)
       ..registerScope(NavigationScopes.branch, scopes.branch)
-      ..registerSingleton('routeScopes', scopes, types: const [RouteScopes]);
+      ..registerSingleton(
+        'routeScopes',
+        scopes,
+        types: const [RouteScopes],
+      );
   }
 }
 
@@ -167,6 +173,70 @@ final BeanModule springBootStarterFlutterNavigationAutoConfiguration =
         ),
       ],
       imports: [navigationConfigBeans],
+    );
+
+/// The live `route` beans for the application graph of the debug panel's
+/// Graph tab (`routeScopesGraphBeans`, a `DebugGraphRouteBeans`), so the
+/// graph groups the beans by route. The generator puts this module into
+/// the app by `spring.flutter.debug.graph.enabled`, as far as the panel's
+/// switch (its parent) lets it in: otherwise the build has no code of it.
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild(
+    'spring.flutter.debug.graph.enabled',
+    parents: [AutoConfigurationBuild('spring.flutter.debug.enabled')],
+  ),
+)
+final BeanModule springBootStarterFlutterNavigationDebugGraphAutoConfiguration =
+    BeanModule(
+      'springBootStarterFlutterNavigationDebugGraphAutoConfiguration',
+      [
+        _routeScopesGraphBeans,
+      ],
+    );
+
+/// The live `route` beans for the application graph of the debug
+/// console's `graph` pane (`routeScopesGraphBeans`). The generator puts
+/// this module into the app only with the console
+/// (`spring.flutter.debug.console.enabled: true`) and when
+/// `spring.flutter.debug.console.panes` names `graph` or holds `*`.
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild.named(
+    'spring.flutter.debug.console.panes',
+    'graph',
+    whenMissing: BuildInclusion.never,
+    parents: [
+      AutoConfigurationBuild(
+        'spring.flutter.debug.console.enabled',
+        whenMissing: BuildInclusion.never,
+      ),
+    ],
+  ),
+)
+final BeanModule
+springBootStarterFlutterNavigationDebugConsoleGraphAutoConfiguration =
+    BeanModule(
+      'springBootStarterFlutterNavigationDebugConsoleGraphAutoConfiguration',
+      [_routeScopesGraphBeans],
+    );
+
+// The adapter of the route scopes, in the module of each view of the
+// graph: the first makes it.
+final BeanDefinition<RouteScopesGraphBeans> _routeScopesGraphBeans =
+    BeanDefinition<RouteScopesGraphBeans>(
+      name: 'routeScopesGraphBeans',
+      types: const [RouteScopesGraphBeans, DebugGraphRouteBeans],
+      source: _source,
+      conditions: const [
+        ConditionalOnProperty(
+          'spring.flutter.debug.graph.enabled',
+          havingValue: 'true',
+          matchIfMissing: true,
+        ),
+        ConditionGroup('$_source#routeScopesGraphBeans', [
+          ConditionalOnMissingBean(RouteScopesGraphBeans),
+        ]),
+      ],
+      create: (r) => RouteScopesGraphBeans(r.dependency<RouteScopes>()),
     );
 
 // The browser's address bar without `#` for the route, its `#heading`

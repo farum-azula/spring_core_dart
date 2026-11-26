@@ -378,6 +378,19 @@ A `route` bean is created when its screen opens and destroyed when it
 closes; a `branch` bean lives while the branch of a shell lives (until
 the shell closes).
 
+The `routeScopes` bean tells which screen each live `route` bean belongs
+to, read from the scopes when asked (nothing is kept for it):
+
+```dart
+final scopes = context.getBean<RouteScopes>();
+scopes.liveRouteBeans();      // {12: {'bookForm': BookForm}}, by screen id
+screen.pageKey;               // the key of the screen's page in the navigator
+```
+
+The debug panel's application graph groups the beans by route with it
+(its `Group by: Route`), through `routeScopesGraphBeans`, a bean of a
+debug module: a build without the graph has none of it.
+
 ## Markdown screens
 
 `content:` names Markdown resources of `lib/resources/`: one file, or a

@@ -60,18 +60,27 @@ final class FollowKeeper {
       return result;
     } on Object {
       _recording = null;
-      for (final follow in _kept) {
-        try {
-          follow();
-        } on Object {
-          // A member that is gone, or a value that fails itself: there
-          // is nothing of it to follow.
-        }
-      }
+      followKept();
       rethrow;
     } finally {
       _recording = outer;
       _running = nested;
+    }
+  }
+
+  /// Whether a run that did not throw followed anything.
+  bool get hasKept => _kept.isNotEmpty;
+
+  /// Follows, for the reader of the moment, what the last run that did
+  /// not throw followed.
+  void followKept() {
+    for (final follow in _kept) {
+      try {
+        follow();
+      } on Object {
+        // A member that is gone, or a value that fails itself: there is
+        // nothing of it to follow.
+      }
     }
   }
 }

@@ -147,8 +147,8 @@ final edgeAutoConfiguration = <BeanDefinition<Object>>[
 ];
 
 /// The startup checks of the edge starter, in the build by
-/// `spring.main.startup-checks.enabled` (by default in debug and profile
-/// builds only, so a release build ships none of their code), and only in
+/// `spring.main.startup-checks.enabled` (by default in debug builds only, so a
+/// release build ships none of their code), and only in
 /// a function (`spring.edge.runtime` is set):
 ///
 /// - `edgeWarnings` ([EdgeWarnings]), the list of what works differently

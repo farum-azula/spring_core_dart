@@ -3,6 +3,8 @@ include: package:very_good_analysis/analysis_options.yaml
 analyzer:
   exclude:
     - "**/*.spring.dart"
+    # A Flutter package outside the workspace, analyzed by the `flutter` job.
+    - tool/signals_checks/**
   language:
     strict-casts: true
     strict-inference: true

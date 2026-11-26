@@ -35,6 +35,12 @@ const _branchKey = #springNavigationBranch;
 /// The `route` and `branch` scopes of one navigation. A lookup from a
 /// widget gets the beans of that widget's screen and branch; any other
 /// lookup (a singleton, a service) those of the screen on top.
+///
+/// [liveRouteBeans] tells which screen each live `route` bean belongs to;
+/// the application graph of the debug tools groups the beans by route
+/// with it, through a bean of a debug module. It reads the scopes when
+/// called and keeps nothing for it, so it costs nothing until a tool
+/// asks.
 final class RouteScopes {
   /// Empty scopes, attached to their navigation when it is made.
   RouteScopes();
@@ -78,6 +84,21 @@ final class RouteScopes {
       branch: screen.branch,
     ),
   );
+
+  /// The `route` beans alive now, by the id of their screen
+  /// ([NavigationEntry.id]), each by its bean name. Read from the scopes
+  /// at each call.
+  Map<int, Map<String, Object>> liveRouteBeans() => {
+    for (final MapEntry(key: id, value: scope) in _screens.entries)
+      if (scope.names.isNotEmpty) id: _beansOf(scope),
+  };
+
+  // Each name comes from the scope, so `get` returns what it holds.
+  static Map<String, Object> _beansOf(SimpleMapScope scope) => {
+    for (final name in scope.names.toList()) name: scope.get(name, _absent),
+  };
+
+  static Object _absent() => throw StateError('not in the scope');
 
   /// Destroys the beans of screen [id] (after it left the screen).
   void destroyScreen(int id) => _screens.remove(id)?.destroy();

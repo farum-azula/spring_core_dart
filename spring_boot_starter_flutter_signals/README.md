@@ -277,27 +277,121 @@ it (an abstract class, or a class that can be created and is a
 component's base). Not checked by the build: a field read after an
 `await` in an asynchronous `@Computed` getter.
 
-## The debug tab and the log
+## The debug tools
 
-"State" in the debug panel (`spring.flutter.signals.debug.enabled`; not
-set: debug and profile builds) lists every bean with followed state that
-lives now, by its class:
+Three tools, each with its own switch, none of them in a release build
+unless asked for, and none collecting anything unless it shows:
 
-- a field: its value and how often it was assigned;
-- a computed value: what it is now; an asynchronous one: where its load
-  is and how often it ran;
-- an effect: how often it ran.
+- **The Signals tab** of the debug panel (`spring.flutter.signals.debug.enabled`;
+  not set: debug builds; never without the panel, whose
+  `spring.flutter.debug.enabled` is its parent switch): every bean with
+  followed state by class and scope, its members in columns:
 
-A member shows once it was first used. `@Signal(hidden: true)` keeps a
-value (a token) out of the tab and of the log.
+  ```
+           value      changed  told  changes  writes  ticks  reads/5s  time
+  coupon   TEN        0.4s     0.4s  3        4       3      12        —
+  items    List(2) ▸  12s      12s   5        5       5      40        —
+  total    9.0        0.4s     —     8        —       —      18        14µs
+  save()   effect     12s      —     5        —       —      —         30µs
+  ```
 
-The logger `spring.flutter.signals` writes every assignment and every run
-of an effect at `debug`:
+  `changed` is the time since the value really changed (an equal value
+  is no change), `told` since its readers were told (a queued write
+  changes at once and is told at the flush). Values are short (a type's
+  name, `Map(1)`, `List(3)`, a long text cut; a tap on a collection shows
+  its first items), in the theme's `number` colour, a failure red, a load
+  amber; a field marked `@Signal(hidden: true)`, a member whose name looks
+  secret and a value kept for its caller show a lock with the reason,
+  never the value. A row that changed in the last two seconds is lit and
+  fades. The times move once a second.
+
+  The tab has three sub-tabs: **Fields** (the columns above, then the
+  queues: what waits, the schedule, the drops; and the open buffers),
+  **Graph** and **List**. **Graph** is the debug panel's application
+  graph with the signals layer alone, left to right: `@Signal` fields
+  (rounded), `@Computed` values (hexagons) and `@Effect` methods
+  (slanted) in a lane per bean, then the widgets that read them in the
+  `Widgets` lane (a Spring widget a pill, a `Watch` a tagged box): by
+  name, `MatchHeader`, `ReviewTile [42]` by a key that is a number, an
+  enum or a plain word, a `Watch` after the widget it is in (`Watch in
+  PageBackdrop`, never "a widget"); the widgets of one type fold into
+  one plate, `ReviewTile ×10`, until it is tapped open. "On screen" (the
+  default) shows the widgets in the app's window (the panel over them
+  does not hide them), what they read and the effects on the same
+  sources; "All" everything. When a field ticks its node flashes (a
+  brighter border, a glow, at most a quarter of the theme's
+  `graph-flash` in its fill) and a pulse runs along its edges to the
+  readers. A tap on a node highlights everything before and after it
+  and shows its value, counts, queue, a widget's rebuilds over the read
+  window and what it read; the pointer over it shows a tooltip. When the
+  tab opens, the widgets on the screen are built once again, so their
+  reads show even on an idle page under the panel. **List** shows the
+  same as an indented list (`MatchHeader · 4 rebuilds/5s`). The graph is
+  laid out again only when who reads what changes, never for a value,
+  and painted at most once a frame while something is lit. The Graph
+  sub-tab is there when the build has the signals layer (`signalsGraphLayer`,
+  with the panel's Graph tab: `spring.flutter.debug.graph.enabled`,
+  `spring.flutter.debug.graph.layers`); without it the tab has Fields and
+  List, and none of the graph's code.
+
+  The widget names are kept by `signalWidgetNames`, a bean of the tab's,
+  the graph's and the console's panes' modules, there only while one of
+  those views is in the running app: a build or a run with none keeps
+  nothing of any widget. Widgets are named only while a tool collects;
+  when one starts, those on the screen are built once again. A
+  third-party `WidgetBuildTracker` that wants the widget implements
+  `WidgetAwareBuildTracker`.
+- **The debug console's `signals` segment**, a module of its own: in the
+  build only with the console (`spring.flutter.debug.console.enabled:
+  true`) and when `spring.flutter.debug.console.segments` names `signals`
+  or holds `*`; it shows the ticks, flushes and effect runs of the last
+  frame (`signals 3 ticks · 1 flush · 2 effects`), collected only while
+  the console shows.
+- **The debug console's `signals` pane** (`signalsPane`, order 20), a
+  module of its own: in the build only with the console and when
+  `spring.flutter.debug.console.panes` names `signals` or holds `*`. The
+  console's application graph preset to the signals layer, compact, on
+  the console's own background: a node flashes and a pulse runs to its
+  readers when it ticks; the scope, `Live only` and the bean lanes as in the Graph tab,
+  a tapped node told in one line (value, times, counts, queue). It
+  collects only while it shows; hidden it is not built. The console's
+  `graph` pane (`panes: [graph]`) shows the same layer among the others
+  the build has.
+- **The signals layer of the application graph** (`signalsGraphLayer`):
+  the debug panel's **Graph** tab (under `App`) and the console's `graph`
+  pane draw it beside the other layers. In the build when
+  `spring.flutter.debug.graph.layers` names `signals`, holds `*` or is
+  not set, inside `spring.flutter.debug.graph.enabled`, this tab's and
+  the panel's switches (the `graph` pane: inside the console's); it
+  brings the Graph tab and the graph's engine with it.
+- **The activity log** at DEBUG under `spring.flutter.signals.activity`
+  (in the build with the tab, off until `debug.log.enabled: true`): writes,
+  publications, flushes, drops, computations and effect runs with their
+  time and failures; names only, never a value.
 
 ```yaml
+spring:
+  flutter:
+    debug:
+      console:
+        enabled: true          # the console (not set: no code)
+        segments: [fps, signals, frames-lost, filter]  # signals: built in
+        panes: [commands, signals, graph]  # the graphs in the console: built in
+        shown-panes: [signals]       # shown at the start
+      graph:
+        enabled: true          # the panel's Graph tab (not set: debug builds)
+        layers: [signals]      # the layers built in (not set: all)
+    signals:
+      debug:
+        enabled: true          # the Signals tab (false: no code)
+        read-window: 5s        # the read counts
+        reads: true            # count reads while a tool shows
+        log:
+          enabled: true        # the activity log
+          reads: false         # every read too (very many lines)
 logging:
   level:
-    spring.flutter.signals: debug
+    spring.flutter.signals.activity: debug
 ```
 
 ## Tests
@@ -320,30 +414,15 @@ a plain object: its fields work, nothing follows them.
 
 ## Things to know
 
-- **The bean's own calls are followed, and only followed.** A bean with
-  such members is proxied by a subclass that sees the calls the bean
-  makes on itself, so a field read or assigned inside a method is
-  followed. Other advice on the bean (`@Transactional`, `@PreAuthorize`,
-  `@Cacheable`) skips those calls, as in any bean and as in Spring: it
-  runs for a call from outside.
-- **With other advice on the same bean** (`@Transactional`, `@Cacheable`,
-  an aspect) both run: one proxy, one chain. The advice that follows
-  state is outside every advice of the default order (its order is
-  `signalsAdvisorOrder`, one step before `Ordered.lowestPrecedence`), so:
-  - a method is still one change, told after the other advice is done
-    with it (an asynchronous one up to its first `await`);
-  - **a rollback does not undo the fields.** The transaction rolls the
-    database back; a field keeps what the method assigned, and its
-    readers were told. Assign after the work that may fail, or assign
-    the old value back in a `catch`;
-  - on a `@Computed` member the other advice runs when the value is
-    computed, not for each read of the kept one: a transaction is opened
-    once per load;
-  - an advice with an earlier order is outside and runs for every read.
-    Method security is one (`methodSecurityAdvisorOrder`, before every
-    other advice): `@PreAuthorize` on a `@Computed` member is checked for
-    each read, and a kept value is never handed to someone who may not
-    read it. An aspect of your own gets there with `@Order`.
+- **The bean's own calls are followed.** The bean is made as a generated
+  subclass whose followed members go straight to their signals, so a
+  field read or assigned inside a method is followed. Other advice on the
+  bean (`@Transactional`, `@PreAuthorize`, `@Cacheable`) is an ordinary
+  proxy around it and skips those calls, as in Spring; it needs
+  `spring.flutter.signals.allow-advice: true`.
+- **Writes are told by a queue** (`@Signal(queue: ...)`, the default one
+  tells them in a microtask), and **a transaction holds them** in a
+  `SignalBuffer` until its commit; a rollback drops them.
 - **A guard protects the member it is on, not what is under it.** With
   `@PreAuthorize` on a `@Computed` getter and a plain `@Signal` field
   under it, anybody reads and assigns the field: guard the field's

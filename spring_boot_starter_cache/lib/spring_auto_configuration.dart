@@ -30,7 +30,7 @@ final BeanModule springBootStarterCacheAutoConfiguration = BeanModule(
 /// proxied bean when it is created, so a wrong one stops the start.
 ///
 /// In the build by `spring.main.startup-checks.enabled`: `true` in every
-/// build, `false` in none, not set in debug and profile builds only, so a
+/// build, `false` in none, not set in debug builds only, so a
 /// release build ships none of its code (a wrong annotation then fails at
 /// the member's first call).
 ///

@@ -593,6 +593,23 @@ class DefaultListableBeanFactory
   List<BeanPostProcessor> get beanPostProcessors =>
       List.unmodifiable(_postProcessors);
 
+  /// Removes [processor], added with [addBeanPostProcessor]; the beans
+  /// created from then on no longer pass through it. Returns whether it
+  /// was registered. For a tool that watches the beans only while it is
+  /// used (the Flutter starter's debug bean graph), so the container does
+  /// no work for it the rest of the time.
+  ///
+  /// ```dart
+  /// factory.addBeanPostProcessor(recorder);
+  /// // ... beans created and destroyed now pass through the recorder
+  /// factory.removeBeanPostProcessor(recorder);
+  /// ```
+  ///
+  /// Spring (Java): `AbstractBeanFactory.getBeanPostProcessors()` is a
+  /// mutable list; `factory.getBeanPostProcessors().remove(recorder)`.
+  bool removeBeanPostProcessor(BeanPostProcessor processor) =>
+      _postProcessors.remove(processor);
+
   @override
   void registerScope(String name, CustomScope scope) {
     if (name == ScopeType.singleton || name == ScopeType.prototype) {
@@ -664,6 +681,83 @@ class DefaultListableBeanFactory
   @override
   List<String> getDependenciesForBean(String beanName) =>
       List.unmodifiable(_dependencies[_canonical(beanName)] ?? const {});
+
+  /// The names of the local beans [dependency] points to, as the container
+  /// chooses them now for an injection point of the bean [requester]
+  /// (`null`: a lookup from outside, a widget's), without creating any
+  /// bean: the selected bean for a single, `@Lazy`, provider or
+  /// `@Resource` point, every candidate for a collection or a map, none
+  /// for a `@Value`. A point that is ambiguous gives every candidate; one
+  /// that nothing satisfies, or only a bean of a parent factory or a
+  /// resolvable dependency, gives none.
+  ///
+  /// For tools that draw the bean graph (the Flutter starter's debug bean
+  /// graph): the container itself never calls it, so it costs nothing
+  /// where no tool does.
+  ///
+  /// ```dart
+  /// final checkout = factory.getBeanDefinition('checkout');
+  /// for (final dependency in checkout.dependencies) {
+  ///   final names = factory.dependencyCandidateNames(
+  ///     dependency,
+  ///     requester: 'checkout',
+  ///   );
+  ///   print('$dependency -> $names');
+  /// }
+  /// ```
+  ///
+  /// Spring (Java): no counterpart; Spring's `getDependenciesForBean` lists
+  /// what a created bean was given, which [getDependenciesForBean] does here
+  /// too.
+  List<String> dependencyCandidateNames(
+    Dependency dependency, {
+    String? requester,
+  }) {
+    List<String> local(Iterable<_Candidate> candidates) => [
+      for (final candidate in candidates)
+        if (identical(candidate.owner, this)) candidate.beanName,
+    ];
+    switch (dependency.kind) {
+      case DependencyKind.value:
+        return const [];
+      case DependencyKind.collection || DependencyKind.map:
+        return local(
+          _autowireCandidates(
+            dependency.type,
+            dependency.qualifier,
+            requester: requester,
+            multiple: true,
+          ),
+        );
+      case DependencyKind.resource when containsBean(dependency.name!):
+        final target = _canonical(_stripFactoryPrefix(dependency.name!));
+        return [if (_localDefinition(target) != null) target];
+      case DependencyKind.resource when !dependency.fallbackToType:
+        return const [];
+      case DependencyKind.single ||
+          DependencyKind.lazy ||
+          DependencyKind.provider ||
+          DependencyKind.resource:
+        final candidates = _autowireCandidates(
+          dependency.type,
+          dependency.qualifier,
+          requester: requester,
+          multiple: false,
+        );
+        try {
+          final selected = _determineAutowireCandidate(
+            dependency.type,
+            candidates,
+            qualifier: dependency.qualifier,
+            name: dependency.name,
+            requiredBy: requester,
+          );
+          return local([?selected]);
+        } on NoUniqueBeanDefinitionException {
+          return local(candidates);
+        }
+    }
+  }
 
   @override
   bool isCurrentlyInCreation(String beanName) =>

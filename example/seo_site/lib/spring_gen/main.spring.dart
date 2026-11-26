@@ -11,23 +11,25 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:flutter/widgets.dart';
-import 'package:seo_site_app/src/pages.dart' as _i5;
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i6;
+import 'package:seo_site_app/src/pages.dart' as _i6;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i8;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
     as _i2;
+import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
+    as _i5;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter_material/spring_auto_configuration.dart'
-    as _i7;
-import 'package:spring_boot_starter_flutter_material/src/material_theme_design.dart'
-    as _i10;
-import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
-    as _i8;
-import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
-    as _i4;
-import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i9;
-import 'package:spring_core_dart/spring_core_dart.dart' as _i3;
+import 'package:spring_boot_starter_flutter_material/src/material_theme_design.dart'
+    as _i11;
+import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
+    as _i3;
+import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
+    as _i7;
+import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
+    as _i10;
+import 'package:spring_core_dart/spring_core_dart.dart' as _i4;
 
 part 'main.spring.debug.dart';
 part 'main.spring.env.dart';
@@ -35,23 +37,23 @@ part 'messages.spring.keys.dart';
 part 'theme.spring.keys.dart';
 
 /// Beans found by `@ComponentScan` in `lib/`.
-_i3.BeanModule get $application => _i3.BeanModule(
+_i4.BeanModule get $application => _i4.BeanModule(
   r'application',
   [
-    _i3.BeanDefinition<_i4.ScreenRoutes>(
+    _i4.BeanDefinition<_i7.ScreenRoutes>(
       name: r'screenRoutes#application',
       source: r'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart#ScreenRoutes',
-      create: (r) => _i4.ScreenRoutes.route(source: r'application')
+      create: (r) => _i7.ScreenRoutes.route(source: r'application')
           .screen(
             r'/',
-            (r) => const _i5.HomePage(),
+            (r) => const _i6.HomePage(),
             name: r'home-page',
             title: r'Home',
             source: r'package:seo_site_app/src/pages.dart#HomePage',
           )
           .screen(
             r'/docs/{*path}',
-            (r) => const _i5.DocsPage(),
+            (r) => const _i6.DocsPage(),
             name: r'docs-page',
             title: r'Docs',
             content: r'resources:content/docs/',
@@ -59,7 +61,7 @@ _i3.BeanModule get $application => _i3.BeanModule(
           )
           .screen(
             r'/blog/{*path}',
-            (r) => const _i5.BlogPage(),
+            (r) => const _i6.BlogPage(),
             name: r'blog-page',
             title: r'Blog',
             content: r'resources:content/blog/',
@@ -67,80 +69,83 @@ _i3.BeanModule get $application => _i3.BeanModule(
           )
           .screen(
             r'/legal/{*path}',
-            (r) => const _i5.LegalPage(),
+            (r) => const _i6.LegalPage(),
             name: r'legal-page',
             title: r'Legal',
             source: r'package:seo_site_app/src/pages.dart#LegalPage',
           )
           .screen(
             r'/books/{id}',
-            (r) => const _i5.BookPage(),
+            (r) => const _i6.BookPage(),
             name: r'book-page',
             title: r'Book',
             source: r'package:seo_site_app/src/pages.dart#BookPage',
           )
           .screen(
             r'/about',
-            (r) => const _i5.AboutPage(),
+            (r) => const _i6.AboutPage(),
             name: r'about-page',
             title: r'#{about.title}',
             source: r'package:seo_site_app/src/pages.dart#AboutPage',
           )
           .screen(
             r'/account',
-            (r) => const _i5.AccountPage(),
+            (r) => const _i6.AccountPage(),
             name: r'account-page',
             title: r'Account',
             source: r'package:seo_site_app/src/pages.dart#AccountPage',
           )
-          .notFound((r) => const _i5.NotFoundPage())
+          .notFound((r) => const _i6.NotFoundPage())
           .build(),
     ),
+    if (!const bool.fromEnvironment('dart.vm.product') &&
+        !const bool.fromEnvironment('dart.vm.profile'))
+      ..._$debugWidgetFields,
   ],
   resources: const {
-    r'application-web.yml': _i3.EmbeddedResource.text(
+    r'application-web.yml': _i4.EmbeddedResource.text(
       "# The pages for search engines, link previews and language models. Only\n# the web build reads this profile's file.\nspring:\n  flutter:\n    web:\n      seo:\n        enabled: true\n        # Required: canonical, og:url and the sitemap are absolute.\n        site-url: https://lumen.example\n        # Every screen is a page: paths without variables, a page per file\n        # of a screen's Markdown folder, @RouteInfo(paths:) for the rest.\n        from-routes: true\n        title: '{title} · Lumen'\n        description: Lumen, a small library documented with a Flutter web site.\n        image: resources:images/preview.png\n        # No lastmod: the pages are committed and CI builds them again from\n        # a checkout whose dates are not the ones they were built from.\n        lastmod: false\n        # A Markdown folder the routes cannot name: /legal/{*path} reads it\n        # itself, without content:.\n        content:\n          - location: resources:content/legal/\n            path: /legal\n            exclude: ['_*.md']\n        # A route's page, said differently: a longer title on the home page.\n        pages:\n          - path: /\n            title: Lumen, a small library\n",
     ),
-    r'application.yml': _i3.EmbeddedResource.text(
+    r'application.yml': _i4.EmbeddedResource.text(
       '# The site: the app widget, its theme, the dev server of `flutter run`.\n# The pages for search engines are in application-web.yml (the web build\n# reads them).\nspring:\n  application:\n    name: seo-site\n  flutter:\n    app:\n      type: material\n      title: Lumen Docs\n      description: Lumen, a small library documented with a Flutter web site.\n      debug-banner: false\n    theme:\n      seed-color: \'#3F6FB5\'\n      styles:\n        code:\n          background: \$colors.surface-container-high\n          radius: 8\n    # English without a prefix, Japanese under /ja: the router sets the\n    # app\'s language from the address, the build writes the pages of both.\n    navigation:\n      languages: [en, ja]\n    web:\n      dev-server:\n        port: 5095\n',
     ),
-    r'content/blog/hello.md': _i3.EmbeddedResource.text(
+    r'content/blog/hello.md': _i4.EmbeddedResource.text(
       '---\ntitle: Hello, Lumen\ndescription: Why Lumen exists, in three paragraphs.\nimage: resources:images/book.png\n---\n\n# Hello, Lumen\n\nLumen began as a weekend project. This post is a page of the site, with\nits own preview picture.\n',
     ),
-    r'content/docs/getting-started.ja.md': _i3.EmbeddedResource.text(
+    r'content/docs/getting-started.ja.md': _i4.EmbeddedResource.text(
       '---\ntitle: はじめに\ndescription: Lumen をインストールして、5 分で最初のページを表示します。\n---\n\n# はじめに\n\nパッケージを追加します:\n\n```yaml\ndependencies:\n  lumen: ^1.0.0\n```\n\n次に[ルーティングのガイド](guides/routing.md#paths)を読んでください。\n',
     ),
-    r'content/docs/getting-started.md': _i3.EmbeddedResource.text(
+    r'content/docs/getting-started.md': _i4.EmbeddedResource.text(
       '---\ntitle: Getting started\ndescription: Install Lumen and show the first page in five minutes.\n---\n\n# Getting started\n\nAdd the package:\n\n```yaml\ndependencies:\n  lumen: ^1.0.0\n```\n\nThen read the [routing guide](guides/routing.md#paths).\n',
     ),
-    r'content/docs/guides/routing.md': _i3.EmbeddedResource.text(
+    r'content/docs/guides/routing.md': _i4.EmbeddedResource.text(
       "# Routing\n\nA page has an address. Without a front matter, the first heading is the\npage's title.\n\n## Paths\n\n`/docs/guides/routing` is this file, `guides/routing.md`. Back to the\n[documentation](../index.md).\n",
     ),
-    r'content/docs/index.ja.md': _i3.EmbeddedResource.text(
+    r'content/docs/index.ja.md': _i4.EmbeddedResource.text(
       '---\ntitle: ドキュメント\ndescription: Lumen のすべて。最初のインストールからルートまで。\n---\n\n# ドキュメント\n\nLumen は小さなライブラリです。まず[はじめに](getting-started.md)を読み、\n次に[ルーティング](guides/routing.md)を読んでください。\n',
     ),
-    r'content/docs/index.md': _i3.EmbeddedResource.text(
+    r'content/docs/index.md': _i4.EmbeddedResource.text(
       '---\ntitle: Documentation\ndescription: Everything about Lumen, from the first install to the routes.\n---\n\n# Documentation\n\nLumen is a small library. Start with [getting started](getting-started.md),\nthen read about [routing](guides/routing.md).\n',
     ),
-    r'content/legal/_draft.md': _i3.EmbeddedResource.text(
+    r'content/legal/_draft.md': _i4.EmbeddedResource.text(
       '# A draft\n\nFiles whose name starts with `_` are left out of the site (`exclude`).\n',
     ),
-    r'content/legal/privacy.md': _i3.EmbeddedResource.text(
+    r'content/legal/privacy.md': _i4.EmbeddedResource.text(
       '---\ntitle: Privacy\ndescription: What the site keeps about its visitors, which is nothing.\n---\n\n# Privacy\n\nThe site keeps no data about its visitors.\n',
     ),
-    r'content/legal/terms.md': _i3.EmbeddedResource.text(
+    r'content/legal/terms.md': _i4.EmbeddedResource.text(
       '---\ntitle: Terms\ndescription: The terms of use of the site.\n---\n\n# Terms\n\nUse the site as you like.\n',
     ),
-    r'images/book.png': _i3.EmbeddedResource.base64(
+    r'images/book.png': _i4.EmbeddedResource.base64(
       r'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',
     ),
-    r'images/preview.png': _i3.EmbeddedResource.base64(
+    r'images/preview.png': _i4.EmbeddedResource.base64(
       r'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',
     ),
-    r'messages.properties': _i3.EmbeddedResource.text(
+    r'messages.properties': _i4.EmbeddedResource.text(
       'about.title=About\nabout.description=Who writes Lumen, and how to reach them.\n',
     ),
-    r'messages_ja.properties': _i3.EmbeddedResource.text(
+    r'messages_ja.properties': _i4.EmbeddedResource.text(
       'about.title=概要\nabout.description=Lumen を書いている人と、連絡の方法。\n',
     ),
   },
@@ -151,22 +156,25 @@ _i3.BeanModule get $application => _i3.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i6.springBootAutoConfiguration,
+    _i8.springBootAutoConfiguration,
     _i2.springBootStarterFlutterAutoConfiguration,
-    _i7.springBootStarterFlutterMaterialAutoConfiguration,
-    _i8.springBootStarterFlutterNavigationAutoConfiguration,
-    _i9.springBootStarterLoggingAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
+    _i9.springBootStarterFlutterMaterialAutoConfiguration,
+    _i3.springBootStarterFlutterNavigationAutoConfiguration,
+    _i10.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product') &&
+        !const bool.fromEnvironment('dart.vm.profile'))
       ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
-    _i7.springBootStarterFlutterMaterialAutoConfiguration:
+    _i9.springBootStarterFlutterMaterialAutoConfiguration:
         const _i1.AutoConfigurationModule(
-          factories: [_i10.MaterialThemeDesign()],
+          factories: [_i11.MaterialThemeDesign()],
         ),
   },
   dartDefines: _$dartDefines,
-  fingerprint: !const bool.fromEnvironment('dart.vm.product')
+  fingerprint:
+      !const bool.fromEnvironment('dart.vm.product') &&
+          !const bool.fromEnvironment('dart.vm.profile')
       ? _$fingerprint
       : null,
 );
@@ -184,7 +192,7 @@ Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// The route of [HomePage]: its path, name, values and `to`.
-extension HomePageRoute on _i5.HomePage {
+extension HomePageRoute on _i6.HomePage {
   /// The path pattern.
   static const pattern = r'/';
 
@@ -192,11 +200,11 @@ extension HomePageRoute on _i5.HomePage {
   static const routeName = r'home-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i7.RouteLocation to() => _i7.RouteLocation.expand(pattern);
 }
 
 /// The route of [DocsPage]: its path, name, values and `to`.
-extension DocsPageRoute on _i5.DocsPage {
+extension DocsPageRoute on _i6.DocsPage {
   /// The path pattern.
   static const pattern = r'/docs/{*path}';
 
@@ -204,15 +212,15 @@ extension DocsPageRoute on _i5.DocsPage {
   static const routeName = r'docs-page';
 
   /// The path variable `path`.
-  static const path = _i4.RouteVar<String>(r'path');
+  static const path = _i7.RouteVar<String>(r'path');
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to({required String path}) =>
-      _i4.RouteLocation.expand(pattern, pathVariables: {r'path': path});
+  static _i7.RouteLocation to({required String path}) =>
+      _i7.RouteLocation.expand(pattern, pathVariables: {r'path': path});
 }
 
 /// The route of [BlogPage]: its path, name, values and `to`.
-extension BlogPageRoute on _i5.BlogPage {
+extension BlogPageRoute on _i6.BlogPage {
   /// The path pattern.
   static const pattern = r'/blog/{*path}';
 
@@ -220,15 +228,15 @@ extension BlogPageRoute on _i5.BlogPage {
   static const routeName = r'blog-page';
 
   /// The path variable `path`.
-  static const path = _i4.RouteVar<String>(r'path');
+  static const path = _i7.RouteVar<String>(r'path');
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to({required String path}) =>
-      _i4.RouteLocation.expand(pattern, pathVariables: {r'path': path});
+  static _i7.RouteLocation to({required String path}) =>
+      _i7.RouteLocation.expand(pattern, pathVariables: {r'path': path});
 }
 
 /// The route of [LegalPage]: its path, name, values and `to`.
-extension LegalPageRoute on _i5.LegalPage {
+extension LegalPageRoute on _i6.LegalPage {
   /// The path pattern.
   static const pattern = r'/legal/{*path}';
 
@@ -236,15 +244,15 @@ extension LegalPageRoute on _i5.LegalPage {
   static const routeName = r'legal-page';
 
   /// The path variable `path`.
-  static const path = _i4.RouteVar<String>(r'path');
+  static const path = _i7.RouteVar<String>(r'path');
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to({required String path}) =>
-      _i4.RouteLocation.expand(pattern, pathVariables: {r'path': path});
+  static _i7.RouteLocation to({required String path}) =>
+      _i7.RouteLocation.expand(pattern, pathVariables: {r'path': path});
 }
 
 /// The route of [BookPage]: its path, name, values and `to`.
-extension BookPageRoute on _i5.BookPage {
+extension BookPageRoute on _i6.BookPage {
   /// The path pattern.
   static const pattern = r'/books/{id}';
 
@@ -252,15 +260,15 @@ extension BookPageRoute on _i5.BookPage {
   static const routeName = r'book-page';
 
   /// The path variable `id`.
-  static const id = _i4.RouteVar<String>(r'id');
+  static const id = _i7.RouteVar<String>(r'id');
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to({required String id}) =>
-      _i4.RouteLocation.expand(pattern, pathVariables: {r'id': id});
+  static _i7.RouteLocation to({required String id}) =>
+      _i7.RouteLocation.expand(pattern, pathVariables: {r'id': id});
 }
 
 /// The route of [AboutPage]: its path, name, values and `to`.
-extension AboutPageRoute on _i5.AboutPage {
+extension AboutPageRoute on _i6.AboutPage {
   /// The path pattern.
   static const pattern = r'/about';
 
@@ -268,11 +276,11 @@ extension AboutPageRoute on _i5.AboutPage {
   static const routeName = r'about-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i7.RouteLocation to() => _i7.RouteLocation.expand(pattern);
 }
 
 /// The route of [AccountPage]: its path, name, values and `to`.
-extension AccountPageRoute on _i5.AccountPage {
+extension AccountPageRoute on _i6.AccountPage {
   /// The path pattern.
   static const pattern = r'/account';
 
@@ -280,5 +288,5 @@ extension AccountPageRoute on _i5.AccountPage {
   static const routeName = r'account-page';
 
   /// The location of this screen with these values.
-  static _i4.RouteLocation to() => _i4.RouteLocation.expand(pattern);
+  static _i7.RouteLocation to() => _i7.RouteLocation.expand(pattern);
 }

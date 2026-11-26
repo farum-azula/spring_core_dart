@@ -265,5 +265,26 @@ spring:
     expect(t.ownNames, ['dark', 'ocean']);
     // Nothing chosen: `light` is active and `dark` the system's dark one.
     expect(SpringThemes(const {}).ownNames, ['light', 'dark']);
+    // Its own theme shown: not the built-in pair, its widgets may read
+    // tokens only that theme has.
+    final own = SpringThemes({
+      'themes.passport.tokens.passport.wide': '900',
+      'active': 'passport',
+    });
+    expect(own.ownNames, ['passport']);
+    expect(own.offersSystem, isFalse);
+    expect(
+      [own.offers('passport'), own.offers('dark'), own.offers('system')],
+      [
+        true,
+        false,
+        false,
+      ],
+    );
+    // `dark` tried once and kept: not shown at the next start.
+    final selection = ThemeSelection(own)..restore('dark');
+    expect(selection.active, 'passport');
+    selection.restore('system');
+    expect(selection.active, 'passport');
   });
 }

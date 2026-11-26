@@ -13,6 +13,7 @@ import 'package:spring_boot_starter_data/src/store/data_store.dart';
 import 'package:spring_boot_starter_data/src/store/in_memory_data_sources.dart';
 import 'package:spring_boot_starter_data/src/store/in_memory_data_store.dart';
 import 'package:spring_boot_starter_data/src/store/in_memory_transaction_manager.dart';
+import 'package:spring_boot_starter_data/src/transaction/data_transaction_lifecycle_registry.dart';
 import 'package:spring_boot_starter_data/src/transaction/platform_transaction_manager.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_interceptor.dart';
 import 'package:spring_boot_starter_data/src/transaction/transaction_template.dart';
@@ -200,6 +201,22 @@ Duration memoryLockTimeout(Environment environment) {
 /// `JdbcTemplateAutoConfiguration`, with `@EnableJdbcAuditing` for the
 /// auditing.
 final dataAutoConfiguration = <BeanDefinition<Object>>[
+  // What other starters learn of the running transaction (the Flutter
+  // signals starter holds its writes until the commit).
+  BeanDefinition<DataTransactionLifecycleRegistry>(
+    name: 'transactionLifecycleRegistry',
+    types: const [
+      DataTransactionLifecycleRegistry,
+      TransactionLifecycleRegistry,
+    ],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.transactionLifecycleRegistry', [
+        ConditionalOnMissingBean(TransactionLifecycleRegistry),
+      ]),
+    ],
+    create: (_) => const DataTransactionLifecycleRegistry(),
+  ),
   BeanDefinition<RelationalMappingContext>(
     name: 'relationalMappingContext',
     // A @Bean method: its bean conditions are decided when it is read.

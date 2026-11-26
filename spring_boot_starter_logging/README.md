@@ -86,6 +86,7 @@ spring.output.ansi.enabled=always        # console colours: always (default), de
 logging.threshold.console=warn           # console: warnings and errors only
 logging.console.enabled=true
 logging.console.target=stderr            # stdout (default), stderr
+logging.console.record-bar=true          # ▌ in the level's colour before every line of a record (default false)
 
 # The in-memory buffer (see "A log screen").
 logging.buffer.enabled=true
@@ -115,6 +116,22 @@ logging.enabled=false                    # turn the starter off
   in any case.
 - `spring.output.ansi.enabled=detect` colours only a terminal on standard
   output, or a Flutter debug or profile build.
+- `logging.console.record-bar=true` starts every line of a console record
+  with `▌` and a space, coloured by level as the level column is (errors
+  red, warnings yellow, the others green; plain without colours), so a
+  stack trace or a multi-line message reads as one record:
+
+  ```text
+  ▌ 2026-03-07T09:05:02.042Z ERROR 4711 --- [main] n.checkout.Payments : payment failed
+  ▌ StateError: timeout
+  ▌ #0 pay (checkout.dart:1)
+  ```
+
+  The bar is added after `logging.pattern.console`, so any pattern works
+  with it. It marks the line breaks in the text: a long line that the
+  terminal wraps itself continues without a bar. Only the console has it
+  (not the file or the buffer), and only with this starter: core's
+  `printLogHandler` stays plain.
 - The on/off properties take `true` / `false` in any case, and also
   `on` / `off`, `yes` / `no`, `1` / `0`; other values fail the start. For
   `logging.enabled`, only `false` turns the starter off: as with Spring

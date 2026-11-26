@@ -3,49 +3,338 @@
   "package": "spring_boot_starter_flutter_signals",
   "properties": [
     {
+      "name": "spring.flutter.signals.allow-advice",
+      "type": "bool",
+      "description": "Whether a bean with followed state may carry advice. Read by the build too: without it, such advice is a build error.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 51,
+      "class": "SignalsProperties"
+    },
+    {
+      "name": "spring.flutter.signals.buffer.async-methods",
+      "type": "bool",
+      "description": "Whether every async method of a bean on signals runs in a buffer (read by the build: `@SignalBuffer(false)` takes one out).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 87,
+      "class": "SignalsBufferProperties"
+    },
+    {
+      "name": "spring.flutter.signals.buffer.on-error",
+      "type": "SignalBufferOnError",
+      "description": "What happens to the writes of a method that failed.",
+      "default": "discard",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 90,
+      "class": "SignalsBufferProperties"
+    },
+    {
+      "name": "spring.flutter.signals.caller-bound",
+      "type": "bool",
+      "description": "Whether a value computed through method security or from the current user is kept for that user only. Turning it off lets one user's value reach another.",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 47,
+      "class": "SignalsProperties"
+    },
+    {
       "name": "spring.flutter.signals.debug.enabled",
       "type": "bool?",
-      "description": "Whether the app has the tab: `true` in every build, `false` in none (the build leaves its code out), not set in debug and profile builds only (a release build compiles it away).",
+      "description": "Whether the app has the Signals tab (and the activity log): `true` in every build, `false` in none (the build leaves its code out), not set in debug builds only (a release build compiles it away).",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
-      "line": 21,
+      "line": 134,
       "class": "SignalsDebugProperties"
+    },
+    {
+      "name": "spring.flutter.signals.debug.log.enabled",
+      "type": "bool",
+      "description": "Whether it logs (in the build with the Signals tab).",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 154,
+      "class": "SignalsDebugLogProperties"
+    },
+    {
+      "name": "spring.flutter.signals.debug.log.reads",
+      "type": "bool",
+      "description": "Whether it logs every read too.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 157,
+      "class": "SignalsDebugLogProperties"
+    },
+    {
+      "name": "spring.flutter.signals.debug.read-window",
+      "type": "Duration",
+      "description": "The window of the read counts.",
+      "default": "5s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 140,
+      "class": "SignalsDebugProperties"
+    },
+    {
+      "name": "spring.flutter.signals.debug.reads",
+      "type": "bool",
+      "description": "Whether reads are counted while a tool shows (they are the most frequent event).",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 144,
+      "class": "SignalsDebugProperties"
+    },
+    {
+      "name": "spring.flutter.signals.defer-timeout",
+      "type": "Duration",
+      "description": "How long `on-scope-end: defer` waits for them.",
+      "default": "5s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 39,
+      "class": "SignalsProperties"
+    },
+    {
+      "name": "spring.flutter.signals.eager",
+      "type": "bool",
+      "description": "Whether every signal is made with its bean rather than on first use.",
+      "default": false,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 42,
+      "class": "SignalsProperties"
+    },
+    {
+      "name": "spring.flutter.signals.on-scope-end",
+      "type": "OnScopeEnd",
+      "description": "What happens to writes not told yet when a bean's scope ends.",
+      "default": "discard",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 36,
+      "class": "SignalsProperties"
+    },
+    {
+      "name": "spring.flutter.signals.queue.capacity",
+      "type": "int",
+      "description": "How many fields may wait.",
+      "default": 1024,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 113,
+      "class": "SignalsQueueProperties"
+    },
+    {
+      "name": "spring.flutter.signals.queue.flush",
+      "type": "SignalFlush?",
+      "description": "The built-in schedule that tells its readers; `microtask` when not set. A `SignalFlushSchedule` bean with the queue's `@Qualifier` is the other way, and both for one queue fail the start.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 107,
+      "class": "SignalsQueueProperties"
+    },
+    {
+      "name": "spring.flutter.signals.queue.interval",
+      "type": "Duration",
+      "description": "How often, for `flush: interval`.",
+      "default": "100ms",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 110,
+      "class": "SignalsQueueProperties"
+    },
+    {
+      "name": "spring.flutter.signals.queue.on-overflow",
+      "type": "SignalOverflow",
+      "description": "What happens to one more.",
+      "default": "flush",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 116,
+      "class": "SignalsQueueProperties"
+    },
+    {
+      "name": "spring.flutter.signals.queues.*.capacity",
+      "type": "int",
+      "description": "How many fields may wait.",
+      "default": 1024,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 113,
+      "class": "SignalsQueueProperties"
+    },
+    {
+      "name": "spring.flutter.signals.queues.*.flush",
+      "type": "SignalFlush?",
+      "description": "The built-in schedule that tells its readers; `microtask` when not set. A `SignalFlushSchedule` bean with the queue's `@Qualifier` is the other way, and both for one queue fail the start.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 107,
+      "class": "SignalsQueueProperties"
+    },
+    {
+      "name": "spring.flutter.signals.queues.*.interval",
+      "type": "Duration",
+      "description": "How often, for `flush: interval`.",
+      "default": "100ms",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 110,
+      "class": "SignalsQueueProperties"
+    },
+    {
+      "name": "spring.flutter.signals.queues.*.on-overflow",
+      "type": "SignalOverflow",
+      "description": "What happens to one more.",
+      "default": "flush",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 116,
+      "class": "SignalsQueueProperties"
+    },
+    {
+      "name": "spring.flutter.signals.transaction.mode",
+      "type": "SignalTransactionMode",
+      "description": "Whether writes wait for the commit.",
+      "default": "buffered",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
+      "line": 65,
+      "class": "SignalsTransactionProperties"
     }
   ],
-  "hints": [],
-  "beans": [
+  "hints": [
     {
-      "name": "signalBeanNames",
-      "type": "SignalBeanNames",
-      "types": [
-        "SignalBeanNames",
-        "BeanFactoryPostProcessor"
-      ],
-      "scope": "singleton",
-      "primary": false,
-      "qualifiers": [],
-      "profiles": [],
-      "conditions": [],
-      "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
-      "line": 59,
-      "injects": [],
-      "members": [
+      "name": "spring.flutter.signals.buffer.on-error",
+      "values": [
         {
-          "name": "beans",
-          "kind": "field",
-          "type": "SignalBeans"
+          "value": "discard",
+          "description": "They are dropped."
         },
         {
-          "name": "postProcessBeanFactory",
-          "kind": "method",
-          "type": "void",
-          "parameters": [
-            "ConfigurableListableBeanFactory beanFactory"
-          ]
+          "value": "publish",
+          "description": "They are told as if it had succeeded."
         }
       ]
     },
+    {
+      "name": "spring.flutter.signals.on-scope-end",
+      "values": [
+        {
+          "value": "discard",
+          "description": "They are dropped, and a warning names the bean and the fields."
+        },
+        {
+          "value": "flush",
+          "description": "They are told at once, before the bean ends."
+        },
+        {
+          "value": "defer",
+          "description": "The bean's state stays until they are told by its queue, or until `spring.flutter.signals.defer-timeout` passes (then a warning)."
+        }
+      ]
+    },
+    {
+      "name": "spring.flutter.signals.queue.flush",
+      "values": [
+        {
+          "value": "immediate",
+          "description": "[SignalFlushSchedules.immediate]."
+        },
+        {
+          "value": "microtask",
+          "description": "[SignalFlushSchedules.microtask]."
+        },
+        {
+          "value": "frame",
+          "description": "[SignalFlushSchedules.frame]."
+        },
+        {
+          "value": "interval",
+          "description": "[SignalFlushSchedules.interval]."
+        }
+      ]
+    },
+    {
+      "name": "spring.flutter.signals.queue.on-overflow",
+      "values": [
+        {
+          "value": "flush",
+          "description": "Tells what it holds now, and takes the write. While the queue is telling already (a reader that writes), it refuses the write as [dropNewest] does."
+        },
+        {
+          "value": "drop-oldest",
+          "description": "Drops the oldest write it holds (the field keeps its value from before that write), with a warning."
+        },
+        {
+          "value": "drop-newest",
+          "description": "Refuses this write (the field keeps its value), with a warning."
+        }
+      ]
+    },
+    {
+      "name": "spring.flutter.signals.queues.*.flush",
+      "values": [
+        {
+          "value": "immediate",
+          "description": "[SignalFlushSchedules.immediate]."
+        },
+        {
+          "value": "microtask",
+          "description": "[SignalFlushSchedules.microtask]."
+        },
+        {
+          "value": "frame",
+          "description": "[SignalFlushSchedules.frame]."
+        },
+        {
+          "value": "interval",
+          "description": "[SignalFlushSchedules.interval]."
+        }
+      ]
+    },
+    {
+      "name": "spring.flutter.signals.queues.*.on-overflow",
+      "values": [
+        {
+          "value": "flush",
+          "description": "Tells what it holds now, and takes the write. While the queue is telling already (a reader that writes), it refuses the write as [dropNewest] does."
+        },
+        {
+          "value": "drop-oldest",
+          "description": "Drops the oldest write it holds (the field keeps its value from before that write), with a warning."
+        },
+        {
+          "value": "drop-newest",
+          "description": "Refuses this write (the field keeps its value), with a warning."
+        }
+      ]
+    },
+    {
+      "name": "spring.flutter.signals.transaction.mode",
+      "values": [
+        {
+          "value": "buffered",
+          "description": "Held in a [SignalBuffer] until the commit and dropped by a rollback."
+        },
+        {
+          "value": "direct",
+          "description": "Written at once, whatever the transaction does later."
+        }
+      ]
+    }
+  ],
+  "beans": [
     {
       "name": "signalBeans",
       "type": "SignalBeans",
@@ -60,7 +349,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
-      "line": 52,
+      "line": 70,
       "injects": [],
       "members": [
         {
@@ -69,6 +358,16 @@
           "type": "void",
           "parameters": [
             "void Function() listener"
+          ]
+        },
+        {
+          "name": "adopt",
+          "kind": "method",
+          "type": "SignalBean",
+          "parameters": [
+            "Object bean",
+            "SignalBean state",
+            "SignalRuntime runtime"
           ]
         },
         {
@@ -99,29 +398,20 @@
           "type": "bool"
         },
         {
+          "name": "keptStates",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
           "name": "live",
           "kind": "getter",
           "type": "Iterable<SignalBean>"
-        },
-        {
-          "name": "names",
-          "kind": "field",
-          "type": "Set<String>"
         },
         {
           "name": "notifyListeners",
           "kind": "method",
           "type": "void",
           "parameters": []
-        },
-        {
-          "name": "of",
-          "kind": "method",
-          "type": "SignalBean",
-          "parameters": [
-            "Object bean",
-            "String label"
-          ]
         },
         {
           "name": "removeListener",
@@ -138,6 +428,7 @@
       "type": "SignalBuildTracker",
       "types": [
         "SignalBuildTracker",
+        "WidgetAwareBuildTracker",
         "WidgetBuildTracker"
       ],
       "scope": "singleton",
@@ -146,7 +437,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
-      "line": 91,
+      "line": 100,
       "injects": [],
       "members": [
         {
@@ -156,6 +447,20 @@
           "parameters": [
             "void Function() rebuild"
           ]
+        },
+        {
+          "name": "attachTo",
+          "kind": "method",
+          "type": "WidgetBuildTracking",
+          "parameters": [
+            "void Function() rebuild",
+            "BuildContext context"
+          ]
+        },
+        {
+          "name": "names",
+          "kind": "field",
+          "type": "SignalWidgetNames?"
         }
       ]
     },
@@ -176,7 +481,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
-      "line": 80,
+      "line": 84,
       "injects": [],
       "members": [
         {
@@ -225,6 +530,11 @@
           ]
         },
         {
+          "name": "runtime",
+          "kind": "field",
+          "type": "SignalRuntime"
+        },
+        {
           "name": "setBeanFactory",
           "kind": "method",
           "type": "void",
@@ -235,13 +545,10 @@
       ]
     },
     {
-      "name": "signalsAdvisor",
-      "type": "DefaultPointcutAdvisor",
+      "name": "signalRuntime",
+      "type": "SignalRuntime",
       "types": [
-        "DefaultPointcutAdvisor",
-        "PointcutAdvisor",
-        "Advisor",
-        "Ordered"
+        "SignalRuntime"
       ],
       "scope": "singleton",
       "primary": false,
@@ -249,29 +556,541 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
-      "line": 65,
+      "line": 77,
       "injects": [],
       "members": [
         {
-          "name": "advice",
+          "name": "allowAdvice",
           "kind": "field",
-          "type": "MethodInterceptor"
+          "type": "bool"
         },
         {
-          "name": "order",
+          "name": "bufferPublishOnError",
           "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "buffered",
+          "kind": "method",
+          "type": "Future<T>",
+          "parameters": [
+            "Future<T> Function() body"
+          ]
+        },
+        {
+          "name": "callerBound",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "deferTimeout",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "eager",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "errors",
+          "kind": "field",
+          "type": "SignalErrorReporter"
+        },
+        {
+          "name": "onScopeEnd",
+          "kind": "field",
+          "type": "OnScopeEnd"
+        },
+        {
+          "name": "queueOf",
+          "kind": "method",
+          "type": "SignalQueue",
+          "parameters": [
+            "Signal options"
+          ]
+        },
+        {
+          "name": "queues",
+          "kind": "field",
+          "type": "SignalQueues"
+        },
+        {
+          "name": "transactions",
+          "kind": "field",
+          "type": "SignalTransactionBuffers?"
+        }
+      ]
+    },
+    {
+      "name": "signalWidgetNames",
+      "type": "SignalWidgetNames",
+      "types": [
+        "SignalWidgetNames"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(SignalWidgetNames)"
+      ],
+      "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
+      "line": 242,
+      "injects": [],
+      "members": [
+        {
+          "name": "install",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "liveOf",
+          "kind": "method",
+          "type": "int",
+          "parameters": [
+            "String type"
+          ]
+        },
+        {
+          "name": "naming",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "refreshAll",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "stop",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "track",
+          "kind": "method",
+          "type": "NamedSignalTracking",
+          "parameters": [
+            "void Function() rebuild",
+            "BuildContext widget",
+            "{bool watch}"
+          ]
+        },
+        {
+          "name": "trackWatch",
+          "kind": "method",
+          "type": "NamedSignalTracking",
+          "parameters": [
+            "void Function() rebuild",
+            "BuildContext widget"
+          ]
+        },
+        {
+          "name": "uninstall",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "signalsDebugLog",
+      "type": "SignalsDebugLog",
+      "types": [
+        "SignalsDebugLog",
+        "SignalProbe"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.signals.debug.enabled', havingValue: 'true', matchIfMissing: true)",
+        "@ConditionalOnProperty('spring.flutter.signals.debug.log.enabled', havingValue: 'true')"
+      ],
+      "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
+      "line": 332,
+      "injects": [],
+      "members": [
+        {
+          "name": "beginReader",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object reader"
+          ]
+        },
+        {
+          "name": "computed",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ComputedMember member",
+            "Duration took",
+            "Object? error"
+          ]
+        },
+        {
+          "name": "dropped",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "SignalQueue queue",
+            "ValueMember member"
+          ]
+        },
+        {
+          "name": "endReader",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "flushed",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "SignalQueue queue",
+            "int count"
+          ]
+        },
+        {
+          "name": "ran",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "EffectFollower effect",
+            "Duration took",
+            "Object? error"
+          ]
+        },
+        {
+          "name": "read",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "SignalMember member"
+          ]
+        },
+        {
+          "name": "reads",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "stop",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "told",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ValueMember member"
+          ]
+        },
+        {
+          "name": "wrote",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ValueMember member"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "signalsDebugRecorder",
+      "type": "SignalsDebugRecorder",
+      "types": [
+        "SignalsDebugRecorder",
+        "SignalProbe"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(SignalsDebugRecorder)"
+      ],
+      "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
+      "line": 216,
+      "injects": [],
+      "members": [
+        {
+          "name": "active",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "beginReader",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Object reader"
+          ]
+        },
+        {
+          "name": "changedAt",
+          "kind": "method",
+          "type": "Duration?",
+          "parameters": [
+            "ValueMember member"
+          ]
+        },
+        {
+          "name": "computed",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ComputedMember member",
+            "Duration took",
+            "Object? error"
+          ]
+        },
+        {
+          "name": "countReads",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "dropped",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "SignalQueue queue",
+            "ValueMember member"
+          ]
+        },
+        {
+          "name": "dropsOf",
+          "kind": "method",
+          "type": "int",
+          "parameters": [
+            "SignalQueue queue"
+          ]
+        },
+        {
+          "name": "endReader",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "flushed",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "SignalQueue queue",
+            "int count"
+          ]
+        },
+        {
+          "name": "frameEnded",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "frames",
+          "kind": "field",
+          "type": "Queue<SignalFrame>"
+        },
+        {
+          "name": "lampAt",
+          "kind": "method",
+          "type": "double",
+          "parameters": [
+            "Object node",
+            "Duration now",
+            "{Duration fade}"
+          ]
+        },
+        {
+          "name": "lampOf",
+          "kind": "method",
+          "type": "double",
+          "parameters": [
+            "Object node",
+            "{Duration fade}"
+          ]
+        },
+        {
+          "name": "lastFrame",
+          "kind": "getter",
+          "type": "SignalFrame"
+        },
+        {
+          "name": "lastLit",
+          "kind": "getter",
+          "type": "Duration?"
+        },
+        {
+          "name": "litAt",
+          "kind": "method",
+          "type": "Duration?",
+          "parameters": [
+            "Object node"
+          ]
+        },
+        {
+          "name": "names",
+          "kind": "field",
+          "type": "SignalWidgetNames?"
+        },
+        {
+          "name": "now",
+          "kind": "getter",
+          "type": "Duration"
+        },
+        {
+          "name": "onActivity",
+          "kind": "method",
+          "type": "void Function()",
+          "parameters": [
+            "void Function() wake"
+          ]
+        },
+        {
+          "name": "pruneEnded",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "ran",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "EffectFollower effect",
+            "Duration took",
+            "Object? error"
+          ]
+        },
+        {
+          "name": "read",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "SignalMember member"
+          ]
+        },
+        {
+          "name": "readBy",
+          "kind": "method",
+          "type": "Set<SignalMember>",
+          "parameters": [
+            "Object reader"
+          ]
+        },
+        {
+          "name": "readWindow",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "readers",
+          "kind": "getter",
+          "type": "Map<Object, Set<SignalMember>>"
+        },
+        {
+          "name": "readsOf",
+          "kind": "method",
+          "type": "int",
+          "parameters": [
+            "SignalMember member"
+          ]
+        },
+        {
+          "name": "rebuildsOf",
+          "kind": "method",
+          "type": "int",
+          "parameters": [
+            "Object reader"
+          ]
+        },
+        {
+          "name": "structure",
+          "kind": "getter",
           "type": "int"
         },
         {
-          "name": "pointcut",
-          "kind": "field",
-          "type": "AopPointcut"
+          "name": "tellsOf",
+          "kind": "method",
+          "type": "int",
+          "parameters": [
+            "ValueMember member"
+          ]
         },
         {
-          "name": "toString",
+          "name": "timingOf",
           "kind": "method",
-          "type": "String",
+          "type": "SignalTiming?",
+          "parameters": [
+            "Object reader"
+          ]
+        },
+        {
+          "name": "told",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ValueMember member"
+          ]
+        },
+        {
+          "name": "toldAt",
+          "kind": "method",
+          "type": "Duration?",
+          "parameters": [
+            "ValueMember member"
+          ]
+        },
+        {
+          "name": "use",
+          "kind": "method",
+          "type": "void Function()",
           "parameters": []
+        },
+        {
+          "name": "writesOf",
+          "kind": "method",
+          "type": "int",
+          "parameters": [
+            "ValueMember member"
+          ]
+        },
+        {
+          "name": "wrote",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ValueMember member"
+          ]
         }
       ]
     },
@@ -280,6 +1099,7 @@
       "type": "SignalsDebugSection",
       "types": [
         "SignalsDebugSection",
+        "GroupedDebugPanelSection",
         "DebugPanelSection",
         "Ordered"
       ],
@@ -291,7 +1111,7 @@
         "@ConditionalOnProperty('spring.flutter.signals.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
-      "line": 119,
+      "line": 317,
       "injects": [],
       "members": [
         {
@@ -308,13 +1128,347 @@
           ]
         },
         {
+          "name": "graph",
+          "kind": "field",
+          "type": "SignalsGraphLayer?"
+        },
+        {
+          "name": "group",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
           "name": "order",
           "kind": "getter",
           "type": "int"
         },
         {
+          "name": "queues",
+          "kind": "field",
+          "type": "SignalQueues?"
+        },
+        {
+          "name": "recorder",
+          "kind": "field",
+          "type": "SignalsDebugRecorder?"
+        },
+        {
           "name": "title",
           "kind": "getter",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "signalsGraphBuilders",
+      "type": "DebugGraphBuilders",
+      "types": [
+        "DebugGraphBuilders"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(DebugGraphBuilders)"
+      ],
+      "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
+      "line": 261,
+      "injects": [],
+      "members": [
+        {
+          "name": "types",
+          "kind": "field",
+          "type": "Set<String>"
+        }
+      ]
+    },
+    {
+      "name": "signalsGraphLayer",
+      "type": "SignalsGraphLayer",
+      "types": [
+        "SignalsGraphLayer",
+        "DebugGraphLayer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(SignalsGraphLayer)"
+      ],
+      "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
+      "line": 280,
+      "injects": [],
+      "members": [
+        {
+          "name": "beans",
+          "kind": "field",
+          "type": "SignalBeans"
+        },
+        {
+          "name": "buildView",
+          "kind": "method",
+          "type": "Widget",
+          "parameters": [
+            "{bool compact}",
+            "{DebugGraphSettings settings}",
+            "{DebugGraphMemory? memory}"
+          ]
+        },
+        {
+          "name": "changes",
+          "kind": "getter",
+          "type": "Listenable"
+        },
+        {
+          "name": "choices",
+          "kind": "getter",
+          "type": "List<DebugGraphChoice>"
+        },
+        {
+          "name": "collect",
+          "kind": "method",
+          "type": "DebugGraphPart",
+          "parameters": [
+            "DebugGraphScope scope"
+          ]
+        },
+        {
+          "name": "colorOf",
+          "kind": "method",
+          "type": "Color",
+          "parameters": [
+            "DebugStyle style"
+          ]
+        },
+        {
+          "name": "detailsOf",
+          "kind": "method",
+          "type": "List<DebugGraphDetail>",
+          "parameters": [
+            "DebugGraphNode node"
+          ]
+        },
+        {
+          "name": "dispose",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "flashMeaning",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "glowOf",
+          "kind": "method",
+          "type": "double",
+          "parameters": [
+            "DebugGraphNode node"
+          ]
+        },
+        {
+          "name": "heatMeaning",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "heatOf",
+          "kind": "method",
+          "type": "double",
+          "parameters": [
+            "DebugGraphNode node"
+          ]
+        },
+        {
+          "name": "hotNoteOf",
+          "kind": "method",
+          "type": "String?",
+          "parameters": [
+            "DebugGraphNode node"
+          ]
+        },
+        {
+          "name": "id",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "isLive",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "DebugGraphNode node",
+            "Duration window"
+          ]
+        },
+        {
+          "name": "kinds",
+          "kind": "getter",
+          "type": "List<DebugGraphKind>"
+        },
+        {
+          "name": "lanes",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "layout",
+          "kind": "getter",
+          "type": "DebugGraphLayout?"
+        },
+        {
+          "name": "onActivity",
+          "kind": "method",
+          "type": "void Function()",
+          "parameters": [
+            "void Function() wake"
+          ]
+        },
+        {
+          "name": "options",
+          "kind": "getter",
+          "type": "List<DebugGraphOption>"
+        },
+        {
+          "name": "order",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "recorder",
+          "kind": "field",
+          "type": "SignalsDebugRecorder"
+        },
+        {
+          "name": "routes",
+          "kind": "field",
+          "type": "DebugGraphRoutes?"
+        },
+        {
+          "name": "select",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "DebugGraphNode? node"
+          ]
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "void Function()",
+          "parameters": []
+        },
+        {
+          "name": "started",
+          "kind": "getter",
+          "type": "bool"
+        },
+        {
+          "name": "title",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "viewMemory",
+          "kind": "field",
+          "type": "DebugGraphMemory"
+        },
+        {
+          "name": "widgets",
+          "kind": "field",
+          "type": "WidgetsGraphLayer?"
+        }
+      ]
+    },
+    {
+      "name": "signalsPane",
+      "type": "SignalsPane",
+      "types": [
+        "SignalsPane",
+        "DebugGraphPane",
+        "DebugConsolePane"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.debug.console.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
+      "line": 407,
+      "injects": [],
+      "members": [
+        {
+          "name": "backgroundOpacity",
+          "kind": "getter",
+          "type": "double?"
+        },
+        {
+          "name": "build",
+          "kind": "method",
+          "type": "Widget",
+          "parameters": [
+            "BuildContext context",
+            "DebugConsole console"
+          ]
+        },
+        {
+          "name": "buildHeader",
+          "kind": "method",
+          "type": "Widget?",
+          "parameters": [
+            "BuildContext context",
+            "DebugConsole console"
+          ]
+        },
+        {
+          "name": "initialHeight",
+          "kind": "getter",
+          "type": "double"
+        },
+        {
+          "name": "layer",
+          "kind": "field",
+          "type": "SignalsGraphLayer"
+        },
+        {
+          "name": "layers",
+          "kind": "field",
+          "type": "List<DebugGraphLayer>"
+        },
+        {
+          "name": "memory",
+          "kind": "field",
+          "type": "DebugGraphMemory"
+        },
+        {
+          "name": "minHeight",
+          "kind": "getter",
+          "type": "double"
+        },
+        {
+          "name": "name",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "settings",
+          "kind": "field",
+          "type": "DebugGraphSettings"
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "void Function()",
+          "parameters": []
+        },
+        {
+          "name": "title",
+          "kind": "field",
           "type": "String"
         }
       ]
@@ -331,13 +1485,114 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter_signals/src/properties/signals_properties.dart",
-      "line": 5,
+      "line": 8,
       "injects": [],
       "members": [
+        {
+          "name": "allowAdvice",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "buffer",
+          "kind": "field",
+          "type": "SignalsBufferProperties"
+        },
+        {
+          "name": "callerBound",
+          "kind": "field",
+          "type": "bool"
+        },
         {
           "name": "debug",
           "kind": "field",
           "type": "SignalsDebugProperties"
+        },
+        {
+          "name": "deferTimeout",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "eager",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "onScopeEnd",
+          "kind": "field",
+          "type": "OnScopeEnd"
+        },
+        {
+          "name": "queue",
+          "kind": "field",
+          "type": "SignalsQueueProperties"
+        },
+        {
+          "name": "queues",
+          "kind": "field",
+          "type": "Map<String, SignalsQueueProperties>"
+        },
+        {
+          "name": "transaction",
+          "kind": "field",
+          "type": "SignalsTransactionProperties"
+        }
+      ]
+    },
+    {
+      "name": "signalsSegment",
+      "type": "SignalsSegment",
+      "types": [
+        "SignalsSegment",
+        "SampledDebugConsoleSegment",
+        "DebugConsoleSegment"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.debug.console.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_signals/spring_auto_configuration.dart",
+      "line": 372,
+      "injects": [],
+      "members": [
+        {
+          "name": "interval",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "name",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "open",
+          "kind": "method",
+          "type": "void Function()",
+          "parameters": []
+        },
+        {
+          "name": "read",
+          "kind": "method",
+          "type": "DebugConsoleValue",
+          "parameters": []
+        },
+        {
+          "name": "recorder",
+          "kind": "field",
+          "type": "SignalsDebugRecorder"
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "void Function()",
+          "parameters": [
+            "void Function() changed"
+          ]
         }
       ]
     }

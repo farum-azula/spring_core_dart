@@ -28,7 +28,8 @@ void main() {
     expect(
       generated('main.spring.dart'),
       contains(
-        "if(!constbool.fromEnvironment('dart.vm.product'))"
+        "if(!constbool.fromEnvironment('dart.vm.product')&&"
+        "!constbool.fromEnvironment('dart.vm.profile'))"
         r'..._$debugAutoConfigurations',
       ),
     );

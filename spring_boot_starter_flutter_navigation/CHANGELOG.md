@@ -1,5 +1,7 @@
 ## Unreleased
 
+- `RouteScopes` tells which screen each live `route` bean belongs to: `liveRouteBeans()` (by screen id, each by bean name), read from the scopes when called, with nothing kept for it. The Flutter starter's application graph groups the beans by route with it through `routeScopesGraphBeans` (a `DebugGraphRouteBeans`), a bean of the debug modules `springBootStarterFlutterNavigationDebugGraphAutoConfiguration` (by `spring.flutter.debug.graph.enabled` under the panel's switch) and `springBootStarterFlutterNavigationDebugConsoleGraphAutoConfiguration` (the console's `graph` pane); `RouteScopes` itself implements no debug interface, so a build without the graph has none of that code. `ScreenEntry.pageKey` / `ScreenEntry.pageKeyOf(id)`: the key of a screen's page in the navigator.
+
 - `RouteContentView`: an address's `#anchor` that is not ASCII (`#制限`) scrolls to its heading; the address has it percent-encoded and the heading's id does not.
 
 ## 0.9.0

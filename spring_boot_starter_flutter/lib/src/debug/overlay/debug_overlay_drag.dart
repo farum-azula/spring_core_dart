@@ -3,9 +3,9 @@ import 'dart:convert';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
+import 'package:spring_boot_starter_flutter/src/debug/debug_layout.dart';
 import 'package:spring_boot_starter_flutter/src/debug/overlay/debug_overlay.dart';
 import 'package:spring_boot_starter_flutter/src/files/file_template.dart';
-import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart';
 import 'package:spring_boot_starter_flutter/src/properties/flutter_properties.dart'
     show DebugOverlaySnap;
 
@@ -59,14 +59,14 @@ final class DebugOverlayDrag extends ChangeNotifier
   /// Where the places are kept; `null`: for this run only.
   final DebugOverlayPlaces? places;
 
-  final _corners = <String, DebugOverlayCorner>{};
+  final _corners = <String, DebugCorner>{};
   final _free = <String, Offset>{};
   // The overlay being dragged and where, from the top left, a fraction of
   // the screen each way.
   (String, Offset)? _dragging;
 
   @override
-  DebugOverlayCorner cornerOf(DebugOverlay overlay) =>
+  DebugCorner cornerOf(DebugOverlay overlay) =>
       _corners[overlay.id] ?? overlay.corner;
 
   @override
@@ -114,10 +114,8 @@ final class DebugOverlayDrag extends ChangeNotifier
       final top = middle.dy < 0.5;
       final left = middle.dx < 0.5;
       _corners[overlay.id] = top
-          ? (left ? FrameMeterPosition.topLeft : FrameMeterPosition.topRight)
-          : (left
-                ? FrameMeterPosition.bottomLeft
-                : FrameMeterPosition.bottomRight);
+          ? (left ? DebugCorner.topLeft : DebugCorner.topRight)
+          : (left ? DebugCorner.bottomLeft : DebugCorner.bottomRight);
       _free.remove(overlay.id);
     }
     notifyListeners();
@@ -136,7 +134,7 @@ final class DebugOverlayDrag extends ChangeNotifier
       final json = jsonDecode(text) as Map<String, Object?>;
       for (final MapEntry(:key, :value)
           in (json['corners'] as Map? ?? const {}).entries) {
-        final corner = FrameMeterPosition.values
+        final corner = DebugCorner.values
             .where((c) => c.name == value)
             .firstOrNull;
         if (corner != null) {

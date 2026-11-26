@@ -1,5 +1,6 @@
-// The debug timeline: the observations' stats, the pill over the app, the
-// full view with its tabs, the shortcut and the copied JSON.
+// The debug timeline: the observations' stats, the view with its tabs (the
+// debug panel's Timeline tab), the copied JSON and the console's
+// `timeline` segment.
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
@@ -58,17 +59,17 @@ Future<DebugTimeline> _pump(
     trace: start.trace,
     observations: observations,
   );
-  await tester.pumpWidget(
-    WidgetsApp(
-      color: const Color(0xFF000000),
-      builder: (context, _) => DebugTimelineHost(
-        timeline: timeline,
-        child: DebugDock(overlays: [timeline], child: const SizedBox.expand()),
-      ),
-    ),
-  );
+  await _view(tester, timeline);
   return timeline;
 }
+
+Future<void> _view(WidgetTester tester, DebugTimeline timeline) =>
+    tester.pumpWidget(
+      WidgetsApp(
+        color: const Color(0xFF000000),
+        builder: (context, _) => TimelineView(timeline: timeline),
+      ),
+    );
 
 void main() {
   group('TimelineObservations', () {
@@ -116,76 +117,18 @@ void main() {
     });
   });
 
-  testWidgets('the pill shows the start, the app and the last observation', (
+  testWidgets("the console's timeline segment: how long the start took", (
     tester,
   ) async {
     final timeline = await _pump(tester);
-    expect(find.byType(DebugTimelinePill), findsNothing);
-    timeline.shown = true;
-    await tester.pump();
-    expect(find.text('⏱ start 3.2s · app 4.1s'), findsOneWidget);
-    expect(find.text('no observations'), findsOneWidget);
-    timeline.observations
-      ..onStop(_stopped('http', 80))
-      ..onStop(_stopped('http', 84));
-    await tester.pump(timeline.observations.interval);
-    expect(find.text('http call 84ms'), findsOneWidget);
-    expect(find.byType(TimelineSparkline), findsOneWidget);
-  });
-
-  testWidgets('the shortcut shows and hides the pill', (tester) async {
-    final timeline = await _pump(tester);
-    expect(timeline.action, 'debug.timeline');
-    expect(timeline.keys, contains('primary+shift+l'));
-    expect(
-      timeline.handle(const ShortcutInvocation('debug.timeline', null)),
-      isTrue,
-    );
-    expect(timeline.shown, isTrue);
-    timeline.expanded = true;
-    timeline.handle(const ShortcutInvocation('debug.timeline', null));
-    expect(timeline.shown, isFalse);
-    expect(timeline.expanded, isFalse);
-  });
-
-  testWidgets('a tap on the pill opens the full view, Close closes it', (
-    tester,
-  ) async {
-    final timeline = await _pump(tester);
-    timeline.shown = true;
-    await tester.pump();
-    await tester.tap(find.byType(DebugTimelinePill));
-    await tester.pump();
-    expect(timeline.expanded, isTrue);
-    expect(find.byType(TimelineView), findsOneWidget);
-    // A side panel on a wide screen.
-    expect(
-      tester.getSize(find.byType(TimelineView)).width,
-      lessThan(DebugTimelineHost.panelWidth),
-    );
-    await tester.tap(find.text('Close'));
-    await tester.pump();
-    expect(find.byType(TimelineView), findsNothing);
-  });
-
-  testWidgets('on a narrow screen the view covers the whole width', (
-    tester,
-  ) async {
-    final timeline = await _pump(tester, size: const Size(400, 800));
-    timeline.expanded = true;
-    await tester.pump();
-    expect(
-      tester.getSize(find.byType(TimelineView)).width,
-      greaterThan(360),
-    );
+    final segment = TimelineSegment(timeline);
+    expect(segment.read().toString(), 'start 4.1s');
   });
 
   testWidgets('Start shows the stages and groups the beans, slowest first', (
     tester,
   ) async {
-    final timeline = await _pump(tester);
-    timeline.expanded = true;
-    await tester.pump();
+    await _pump(tester);
     for (final stage in ['page', 'engine', 'starting', 'ready', 'app']) {
       expect(find.text(stage), findsOneWidget);
     }
@@ -208,15 +151,13 @@ void main() {
   testWidgets('an event long after the start does not stretch it', (
     tester,
   ) async {
-    final timeline = await _pump(
+    await _pump(
       tester,
       after: (start) {
         start.now = const Duration(seconds: 100);
         start.trace.recordEvent('AppLifecycleStateEvent hidden');
       },
     );
-    timeline.expanded = true;
-    await tester.pump();
     expect(find.textContaining('4.1s · zoom'), findsOneWidget);
     // The axis ends with the start, not at the event 100 s later.
     expect(find.text('0ms'), findsOneWidget);
@@ -227,9 +168,7 @@ void main() {
 
   testWidgets('Observations and Events list theirs', (tester) async {
     final timeline = await _pump(tester);
-    timeline
-      ..expanded = true
-      ..observations.onStop(_stopped('db.query', 12));
+    timeline.observations.onStop(_stopped('db.query', 12));
     await tester.pump(timeline.observations.interval);
     await tester.tap(find.text('Observations'));
     await tester.pump();
@@ -242,6 +181,20 @@ void main() {
     await tester.tap(find.text('Events'));
     await tester.pump();
     expect(find.text('ContextRefreshedEvent'), findsOneWidget);
+  });
+
+  testWidgets('closed and opened again: the tab it was left on', (
+    tester,
+  ) async {
+    final timeline = await _pump(tester);
+    await tester.tap(find.text('Observations'));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox());
+    expect(find.byType(TimelineView), findsNothing);
+    await _view(tester, timeline);
+    expect(timeline.viewTab, 1);
+    expect(find.byType(TimelineSparkline), findsNothing);
+    expect(find.text('ContextRefreshedEvent'), findsNothing);
   });
 
   testWidgets('Copy JSON puts the steps and the stats on the clipboard', (
@@ -264,9 +217,7 @@ void main() {
       ),
     );
     final timeline = await _pump(tester);
-    timeline
-      ..expanded = true
-      ..observations.onStop(_stopped('db.query', 12));
+    timeline.observations.onStop(_stopped('db.query', 12));
     await tester.pump(timeline.observations.interval);
     await tester.tap(find.text('Copy JSON'));
     await tester.pump();
@@ -284,7 +235,7 @@ void main() {
     );
   });
 
-  testWidgets('the section switches the pill and embeds the view', (
+  testWidgets('the section embeds the view', (
     tester,
   ) async {
     final timeline = await _pump(tester);
@@ -297,9 +248,6 @@ void main() {
       ),
     );
     expect(find.byType(TimelineView), findsOneWidget);
-    await tester.tap(find.text('Off'));
-    await tester.pump();
-    expect(timeline.shown, isTrue);
-    expect(find.text('On'), findsOneWidget);
+    expect(find.text('Off'), findsNothing);
   });
 }

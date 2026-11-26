@@ -12,6 +12,11 @@ final class Collect implements ErrorHandler {
   void handleError(Object error, StackTrace stackTrace) => errors.add(error);
 }
 
+final class TypedCollect implements TypedErrorHandler<StateError> {
+  @override
+  void handleError(StateError error, StackTrace stackTrace) {}
+}
+
 final class Propagate implements ErrorHandler {
   @override
   void handleError(Object error, StackTrace stackTrace) =>
@@ -90,6 +95,17 @@ void main() {
         .run((context) {
           final scheduler = context.getBean<TaskScheduler>();
           expect((scheduler as TimerTaskScheduler).errorHandler, same(handler));
+        });
+  });
+
+  test("a handler of one error type is not the scheduler's", () {
+    const ApplicationContextRunner()
+        .withAutoConfiguration(springBootAutoConfiguration)
+        .withAutoConfiguration(springBootStarterSchedulingAutoConfiguration)
+        .withBean<TypedErrorHandler<StateError>>(TypedCollect.new)
+        .run((context) {
+          final scheduler = context.getBean<TaskScheduler>();
+          expect((scheduler as TimerTaskScheduler).errorHandler, isNull);
         });
   });
 

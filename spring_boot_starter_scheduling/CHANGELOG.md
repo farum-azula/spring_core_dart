@@ -1,3 +1,8 @@
+## Unreleased
+
+- `scheduledAnnotationBeanPostProcessor` takes the `TaskScheduler` and the properties on first use (`ScheduledAnnotationBeanPostProcessor.lazy`): made with it, they and what they need (`defaultValidator`, the advice of other starters) were made before the other post-processors and skipped by them ("not eligible for getting processed by all BeanPostProcessors").
+- `ErrorHandler` moved to `spring_core_dart`; this library still exports it, and the scheduler picks it as before.
+
 ## 0.9.0
 
 - Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.

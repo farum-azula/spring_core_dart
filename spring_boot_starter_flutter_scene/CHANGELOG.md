@@ -1,3 +1,11 @@
+## Unreleased
+
+- A scene on the engine's canvas leaves it as soon as its route starts to leave (popped, or covered by the next page: its secondary transition runs; a dialog does not run it), not when the transition ends: the engine's canvas cannot fade with the page, so the leaving page's scene stood over the next page for the whole transition (Dota Passport's profile frame over the match page, about 300 ms with a 220 ms fade).
+- A scene drawn on the layer's or the engine's canvas builds its widgets under an `Offstage` keyed `PaintedElsewhere`: the debug graph's "On screen" counts them by the scene's place (a `Watch` in a scene is no longer off the screen). A const key: nothing at run time.
+- The debug panel's Scenes tab is listed under the menu's `App` group (`GroupedDebugPanelSection`).
+- What is not shown is not built: the `scene-fps` segment is in the build only with the console and the scenes (`spring.flutter.scene.enabled`), its parent switches, and when `spring.flutter.debug.console.segments` names it, holds `*` or is not set (its default names it). It is named by `@ConsoleSegment('scene-fps')` in its bean definition; `SceneFpsSegment` has no `name` getter of its own. The scenes' debug tab has the scenes' and the debug panel's switches as parents: a build without the panel has none of its code.
+- The debug console's `scene-fps` segment (`SceneFpsSegment`, the `sceneFpsSegment` bean, `springBootStarterFlutterSceneDebugConsoleAutoConfiguration`): the frames a second the 3D scenes draw, shown only while one moves; in the build only with the console (`spring.flutter.debug.console.enabled: true`). `SceneFrames.source` names what the scenes report their frames by (`3D`).
+
 ## 0.9.0
 
 - No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.9.0.

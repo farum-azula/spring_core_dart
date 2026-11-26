@@ -6,8 +6,8 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_validator.d
 const _dataSource = 'package:spring_boot_starter_data#DataAutoConfiguration';
 
 /// The startup checks of the starter, in the build by
-/// `spring.main.startup-checks.enabled` (by default in debug and profile
-/// builds only, so a release build ships none of their code):
+/// `spring.main.startup-checks.enabled` (by default in debug builds only,
+/// so a profile or a release build ships none of their code):
 ///
 /// - `transactionValidator` — fails the startup for a `@Transactional`
 ///   method that is not async, or a transaction manager it names that does

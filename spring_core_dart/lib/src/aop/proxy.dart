@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:spring_core_dart/src/aop/advisor.dart';
 import 'package:spring_core_dart/src/aop/aop_context.dart';
 import 'package:spring_core_dart/src/aop/aop_pointcut.dart';
+import 'package:spring_core_dart/src/aop/derived_futures.dart';
 import 'package:spring_core_dart/src/aop/join_point.dart';
 
 /// The interface every generated AOP proxy implements: it exposes the
@@ -339,7 +340,6 @@ final class AopProxyFactory {
   }) : signatures = List.unmodifiable(signatures),
        introductions = List.unmodifiable(introductions),
        _advise = null,
-       adviseSelfCalls = false,
        unavailableReason = null,
        isDeferred = false;
 
@@ -358,7 +358,6 @@ final class AopProxyFactory {
        knownAdvisors = null,
        _create = null,
        _advise = null,
-       adviseSelfCalls = false,
        unavailableReason = reason,
        isDeferred = false;
 
@@ -383,7 +382,6 @@ final class AopProxyFactory {
       knownAdvisors = null,
       _create = null,
       _advise = null,
-      adviseSelfCalls = false,
       unavailableReason = deferredReason,
       isDeferred = true;
 
@@ -401,7 +399,6 @@ final class AopProxyFactory {
        introductions = const [],
        _create = null,
        _advise = null,
-       adviseSelfCalls = false,
        unavailableReason = reason ?? prunedReason,
        isDeferred = false;
 
@@ -432,21 +429,11 @@ final class AopProxyFactory {
     required Object? Function(Object bean, ProxyInvoker invoker) this._advise,
     List<Introduction> introductions = const [],
     this.knownAdvisors,
-    this.adviseSelfCalls = false,
   }) : signatures = List.unmodifiable(signatures),
        introductions = List.unmodifiable(introductions),
        _create = null,
        unavailableReason = null,
        isDeferred = false;
-
-  /// Whether a call the bean makes on itself goes through the advice that
-  /// asks for such calls (a [SelfCallInterceptor]; a subclass proxy only).
-  /// Off by default, as in Spring, where a call on `this` skips the proxy;
-  /// the generator turns it on for a bean with a member whose annotation
-  /// is marked `@ProxyTargetClass()`: such advice follows what the bean
-  /// does to its own state. Every other advice skips those calls either
-  /// way.
-  final bool adviseSelfCalls;
 
   /// The [unavailableReason] of [AopProxyFactory.deferred].
   static const deferredReason =
@@ -549,7 +536,6 @@ final class AopProxyFactory {
       beanAliases: beanAliases,
       introductions: introductions,
       partial: isPartial,
-      adviseSelfCalls: adviseSelfCalls,
     );
     if (_advise case final advise?) {
       return advise(target, invoker) ??
@@ -680,7 +666,6 @@ final class ProxyInvoker {
     List<String> beanAliases = const [],
     List<Introduction> introductions = const [],
     this.partial = false,
-    this.adviseSelfCalls = false,
   }) : _advisors = [...advisors],
        beanAliases = List.unmodifiable(beanAliases),
        introductions = List.unmodifiable(introductions),
@@ -737,10 +722,6 @@ final class ProxyInvoker {
   /// advice for; [addAdvisor] and [addAdvice] then throw.
   final bool partial;
 
-  /// Whether a call the bean makes on itself runs the advice that asks
-  /// for such calls ([AopProxyFactory.adviseSelfCalls]).
-  final bool adviseSelfCalls;
-
   /// Throws the [AopConfigException] for advice added at run time to a
   /// proxy whose class the build pruned to some of the bean's members
   /// ([AopProxyFactory.isPartial]): the advice could not reach the others.
@@ -760,6 +741,14 @@ final class ProxyInvoker {
       partialProxy(beanName);
     }
     _advisors.add(advisor);
+    _forgetChains();
+  }
+
+  /// Puts [advisor] first, as the outermost advice, of the members this
+  /// proxy already intercepts: unlike [addAdvisor], it works on a [partial]
+  /// proxy, since it reaches no member the proxy does not have.
+  void prependAdvisor(PointcutAdvisor advisor) {
+    _advisors.insert(0, advisor);
     _forgetChains();
   }
 
@@ -801,28 +790,7 @@ final class ProxyInvoker {
     null,
   );
 
-  // The same for the calls the bean makes on itself.
-  late final List<List<MethodInterceptor>?> _ownChains = List.filled(
-    signatures.length,
-    null,
-  );
-
-  void _forgetChains() {
-    _chains.fillRange(0, _chains.length, null);
-    _ownChains.fillRange(0, _ownChains.length, null);
-  }
-
-  /// The interceptors of member [index] for a call the bean makes on
-  /// itself: those of [chainFor] that ask for such calls
-  /// ([SelfCallInterceptor]).
-  List<MethodInterceptor> ownChainFor(int index) => _ownChains[index] ??= [
-    for (final interceptor in chainFor(index))
-      if (switch (interceptor) {
-        _DynamicInterceptor(:final advice) => advice,
-        _ => interceptor,
-      } is SelfCallInterceptor)
-        interceptor,
-  ];
+  void _forgetChains() => _chains.fillRange(0, _chains.length, null);
 
   /// The interceptors for member [index], outermost first, computed on
   /// the first call and cached until the advisors change.
@@ -855,15 +823,11 @@ final class ProxyInvoker {
   // A subclass proxy (the bean is its own proxy, [target] is [proxy])
   // calling itself from its own code: like a `this.` call on Spring's
   // target, the call skips the advice (unless made through
-  // `AopContext.currentProxy()`), but for the advice that asks for such
-  // calls in a proxy that advises them ([ownChainFor]).
+  // `AopContext.currentProxy()`).
   bool _isSelfCall(Object proxy, Object target) =>
       identical(proxy, target) &&
       isInProxyBody(proxy) &&
       !takeCallThroughProxy(proxy);
-
-  List<MethodInterceptor> _chain(int index, {required bool own}) =>
-      own ? ownChainFor(index) : chainFor(index);
 
   /// Calls the synchronous member [methodIndex] (its index in
   /// [signatures]) of [proxy] through its advice and returns the result.
@@ -886,10 +850,10 @@ final class ProxyInvoker {
     final subclass = identical(proxy, target);
     final own =
         subclass && isInProxyBody(proxy) && !takeCallThroughProxy(proxy);
-    if (own && !adviseSelfCalls) {
+    if (own) {
       return original(arguments);
     }
-    final chain = own ? ownChainFor(methodIndex) : chainFor(methodIndex);
+    final chain = chainFor(methodIndex);
     final previous = enterProxyCall(proxy);
     try {
       if (chain.isEmpty) {
@@ -923,7 +887,6 @@ final class ProxyInvoker {
           chain,
           1,
           body,
-          selfCall: own,
         ),
       );
     } finally {
@@ -947,7 +910,7 @@ final class ProxyInvoker {
     required Future<T> Function(List<Object?> arguments) original,
   }) {
     final own = _isSelfCall(proxy, target);
-    if (own && !adviseSelfCalls) {
+    if (own) {
       return original(arguments);
     }
     final body = identical(proxy, target)
@@ -955,7 +918,7 @@ final class ProxyInvoker {
               runProxyBody(proxy, () => original(args), async: true)
         : original;
     return runAsyncWithCurrentProxy(proxy, () {
-      final chain = _chain(methodIndex, own: own);
+      final chain = chainFor(methodIndex);
       if (chain.isEmpty) {
         return body(arguments);
       }
@@ -968,7 +931,6 @@ final class ProxyInvoker {
           chain,
           0,
           body,
-          selfCall: own,
         ).proceed(),
       );
     });
@@ -988,7 +950,7 @@ final class ProxyInvoker {
     required FutureOr<T> Function(List<Object?> arguments) original,
   }) {
     final own = _isSelfCall(proxy, target);
-    if (own && !adviseSelfCalls) {
+    if (own) {
       return original(arguments);
     }
     final body = identical(proxy, target)
@@ -996,7 +958,7 @@ final class ProxyInvoker {
               runProxyBody(proxy, () => original(args), async: true)
         : original;
     return runAsyncWithCurrentProxy(proxy, () {
-      final chain = _chain(methodIndex, own: own);
+      final chain = chainFor(methodIndex);
       if (chain.isEmpty) {
         return body(arguments);
       }
@@ -1008,7 +970,6 @@ final class ProxyInvoker {
         chain,
         0,
         body,
-        selfCall: own,
       ).proceed();
       return result is Future ? retypeFuture<T>(result) : result as T;
     });
@@ -1042,20 +1003,6 @@ final class _DynamicInterceptor implements MethodInterceptor {
   }
 }
 
-/// Whether a [MethodInvocation] is one of a call a bean made on itself.
-extension SelfCallInvocation on MethodInvocation {
-  /// Whether this call is one the bean made on itself (a subclass proxy
-  /// calling its own member from its own code), which only the
-  /// [SelfCallInterceptor]s see. An interceptor that keeps an invocation
-  /// to proceed with later (a computed value recomputed when what it read
-  /// changes) keeps none of these: proceeding with it would skip the
-  /// advice an outside call has.
-  bool get isSelfCall {
-    final invocation = this;
-    return invocation is _Invocation && invocation.selfCall;
-  }
-}
-
 // One step of the interceptor chain: proceeding runs interceptor
 // [_index] with a fresh invocation for the next step (so arguments passed
 // to `proceed` flow on), and the target call after the last interceptor.
@@ -1067,12 +1014,8 @@ class _Invocation implements MethodInvocation {
     this.args,
     this._chain,
     this._index,
-    this._call, {
-    this.selfCall = false,
-  });
-
-  // A call the bean made on itself (its own chain, [ProxyInvoker.ownChainFor]).
-  final bool selfCall;
+    this._call,
+  );
 
   @override
   final Object proxy;
@@ -1098,7 +1041,6 @@ class _Invocation implements MethodInvocation {
     _chain,
     _index + 1,
     _call,
-    selfCall: selfCall,
   );
 
   @override
@@ -1136,9 +1078,8 @@ final class _AsyncInvocation<T> extends _Invocation
     super.args,
     super._chain,
     super._index,
-    Future<T> Function(List<Object?> arguments) super._call, {
-    super.selfCall,
-  });
+    Future<T> Function(List<Object?> arguments) super._call,
+  );
 
   @override
   _Invocation _next(List<Object?> arguments) => _AsyncInvocation<T>(
@@ -1149,7 +1090,6 @@ final class _AsyncInvocation<T> extends _Invocation
     _chain,
     _index + 1,
     (args) => retypeFuture<T>(_call(args)),
-    selfCall: selfCall,
   );
 
   @override
@@ -1172,9 +1112,8 @@ final class _FutureOrInvocation<T> extends _Invocation
     super.args,
     super._chain,
     super._index,
-    super._call, {
-    super.selfCall,
-  });
+    super._call,
+  );
 
   @override
   _Invocation _next(List<Object?> arguments) => _FutureOrInvocation<T>(
@@ -1185,7 +1124,6 @@ final class _FutureOrInvocation<T> extends _Invocation
     _chain,
     _index + 1,
     _call,
-    selfCall: selfCall,
   );
 
   @override
@@ -1204,17 +1142,22 @@ Future<T> _chainFuture<T>(
   FutureOr<void> Function(Object? value)? onValue,
   FutureOr<void> Function(Object error)? onError,
   FutureOr<void> Function()? always,
-) => retypeFuture<T>(future).then<T>(
-  (value) =>
-      _after(onValue?.call(value), () => _after(always?.call(), () => value)),
-  onError: (Object error, StackTrace stackTrace) => _after(
-    onError?.call(error),
-    () => _after(
-      always?.call(),
-      () => Error.throwWithStackTrace(error, stackTrace),
+) {
+  final typed = retypeFuture<T>(future);
+  final chained = typed.then<T>(
+    (value) =>
+        _after(onValue?.call(value), () => _after(always?.call(), () => value)),
+    onError: (Object error, StackTrace stackTrace) => _after(
+      onError?.call(error),
+      () => _after(
+        always?.call(),
+        () => Error.throwWithStackTrace(error, stackTrace),
+      ),
     ),
-  ),
-);
+  );
+  DerivedFutures.link(chained, typed);
+  return chained;
+}
 
 // [next] right away, or after [pending] when it is a Future.
 FutureOr<R> _after<R>(FutureOr<void> pending, FutureOr<R> Function() next) =>

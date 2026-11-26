@@ -92,73 +92,76 @@ void _$set44(_i1.LoggingConsoleProperties object, Object? value) =>
 Object? _$get45(_i1.LoggingConsoleProperties object) => object.target;
 void _$set46(_i1.LoggingConsoleProperties object, Object? value) =>
     object.target = (value as _i1.ConsoleTarget?);
-_i1.LoggingConsoleProperties _$create47(
+Object? _$get47(_i1.LoggingConsoleProperties object) => object.recordBar;
+void _$set48(_i1.LoggingConsoleProperties object, Object? value) =>
+    object.recordBar = (value as bool);
+_i1.LoggingConsoleProperties _$create49(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.LoggingConsoleProperties();
-Object? _$get48(_i1.LoggingBufferProperties object) => object.enabled;
-void _$set49(_i1.LoggingBufferProperties object, Object? value) =>
-    object.enabled = (value as bool);
-Object? _$get50(_i1.LoggingBufferProperties object) => object.capacity;
+Object? _$get50(_i1.LoggingBufferProperties object) => object.enabled;
 void _$set51(_i1.LoggingBufferProperties object, Object? value) =>
+    object.enabled = (value as bool);
+Object? _$get52(_i1.LoggingBufferProperties object) => object.capacity;
+void _$set53(_i1.LoggingBufferProperties object, Object? value) =>
     object.capacity = (value as int);
-_i1.LoggingBufferProperties _$create52(
+_i1.LoggingBufferProperties _$create54(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.LoggingBufferProperties();
-Object? _$get53(_i1.LoggingFileProperties object) => object.name;
-void _$set54(_i1.LoggingFileProperties object, Object? value) =>
-    object.name = (value as String?);
-Object? _$get55(_i1.LoggingFileProperties object) => object.path;
+Object? _$get55(_i1.LoggingFileProperties object) => object.name;
 void _$set56(_i1.LoggingFileProperties object, Object? value) =>
-    object.path = (value as String?);
-Object? _$get57(_i1.LoggingFileProperties object) => object.rollingPolicy;
+    object.name = (value as String?);
+Object? _$get57(_i1.LoggingFileProperties object) => object.path;
 void _$set58(_i1.LoggingFileProperties object, Object? value) =>
+    object.path = (value as String?);
+Object? _$get59(_i1.LoggingFileProperties object) => object.rollingPolicy;
+void _$set60(_i1.LoggingFileProperties object, Object? value) =>
     object.rollingPolicy = (value as _i1.LoggingRollingPolicyProperties);
-_i1.LoggingFileProperties _$create59(
+_i1.LoggingFileProperties _$create61(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.LoggingFileProperties();
-Object? _$get60(_i1.LoggingRollingPolicyProperties object) =>
-    object.cleanHistoryOnStart;
-void _$set61(_i1.LoggingRollingPolicyProperties object, Object? value) =>
-    object.cleanHistoryOnStart = (value as bool);
 Object? _$get62(_i1.LoggingRollingPolicyProperties object) =>
-    object.maxFileSize;
+    object.cleanHistoryOnStart;
 void _$set63(_i1.LoggingRollingPolicyProperties object, Object? value) =>
-    object.maxFileSize = (value as _i2.DataSize);
-Object? _$get64(_i1.LoggingRollingPolicyProperties object) => object.maxHistory;
+    object.cleanHistoryOnStart = (value as bool);
+Object? _$get64(_i1.LoggingRollingPolicyProperties object) =>
+    object.maxFileSize;
 void _$set65(_i1.LoggingRollingPolicyProperties object, Object? value) =>
-    object.maxHistory = (value as int);
-Object? _$get66(_i1.LoggingRollingPolicyProperties object) =>
-    object.totalSizeCap;
+    object.maxFileSize = (value as _i2.DataSize);
+Object? _$get66(_i1.LoggingRollingPolicyProperties object) => object.maxHistory;
 void _$set67(_i1.LoggingRollingPolicyProperties object, Object? value) =>
+    object.maxHistory = (value as int);
+Object? _$get68(_i1.LoggingRollingPolicyProperties object) =>
+    object.totalSizeCap;
+void _$set69(_i1.LoggingRollingPolicyProperties object, Object? value) =>
     object.totalSizeCap = (value as _i2.DataSize?);
-_i1.LoggingRollingPolicyProperties _$create68(
+_i1.LoggingRollingPolicyProperties _$create70(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.LoggingRollingPolicyProperties();
-Object? _$get69(_i1.LoggingCharsetProperties object) => object.console;
-void _$set70(_i1.LoggingCharsetProperties object, Object? value) =>
-    object.console = (value as String?);
-Object? _$get71(_i1.LoggingCharsetProperties object) => object.file;
+Object? _$get71(_i1.LoggingCharsetProperties object) => object.console;
 void _$set72(_i1.LoggingCharsetProperties object, Object? value) =>
+    object.console = (value as String?);
+Object? _$get73(_i1.LoggingCharsetProperties object) => object.file;
+void _$set74(_i1.LoggingCharsetProperties object, Object? value) =>
     object.file = (value as String?);
-_i1.LoggingCharsetProperties _$create73(
+_i1.LoggingCharsetProperties _$create75(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.LoggingCharsetProperties();
-Object? _$get74(_i1.ApplicationGroupProperties object) => object.group;
-void _$set75(_i1.ApplicationGroupProperties object, Object? value) =>
+Object? _$get76(_i1.ApplicationGroupProperties object) => object.group;
+void _$set77(_i1.ApplicationGroupProperties object, Object? value) =>
     object.group = (value as String?);
-_i1.ApplicationGroupProperties _$create76(
+_i1.ApplicationGroupProperties _$create78(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.ApplicationGroupProperties();
-Object? _$get77(_i1.AnsiProperties object) => object.enabled;
-void _$set78(_i1.AnsiProperties object, Object? value) =>
+Object? _$get79(_i1.AnsiProperties object) => object.enabled;
+void _$set80(_i1.AnsiProperties object, Object? value) =>
     object.enabled = (value as _i1.AnsiOutput?);
-_i1.AnsiProperties _$create79(
+_i1.AnsiProperties _$create81(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.AnsiProperties();
@@ -427,13 +430,21 @@ get $loggingConfigBeansPropertiesIntrospections => [
         get: _$get45,
         set: _$set46,
       ),
+      _i2.IntrospectedProperty<_i1.LoggingConsoleProperties>(
+        r'recordBar',
+        typeInfo: _i2.ClassType<bool>(),
+        hasInitialValue: true,
+        initialValue: false,
+        get: _$get47,
+        set: _$set48,
+      ),
     ],
     library: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart',
     parts: {_i2.IntrospectionPart.read, _i2.IntrospectionPart.write},
     instantiate: _i1.LoggingConsoleProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.LoggingConsoleProperties>(
       parameters: [],
-      create: _$create47,
+      create: _$create49,
     ),
   ),
   const _i2.Introspection<_i1.LoggingBufferProperties>(
@@ -444,16 +455,16 @@ get $loggingConfigBeansPropertiesIntrospections => [
         typeInfo: _i2.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: true,
-        get: _$get48,
-        set: _$set49,
+        get: _$get50,
+        set: _$set51,
       ),
       _i2.IntrospectedProperty<_i1.LoggingBufferProperties>(
         r'capacity',
         typeInfo: _i2.ClassType<int>(),
         hasInitialValue: true,
         initialValue: 1000,
-        get: _$get50,
-        set: _$set51,
+        get: _$get52,
+        set: _$set53,
         annotations: [_i2.Range(1, 1000000)],
       ),
     ],
@@ -462,7 +473,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
     instantiate: _i1.LoggingBufferProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.LoggingBufferProperties>(
       parameters: [],
-      create: _$create52,
+      create: _$create54,
     ),
   ),
   const _i2.Introspection<_i1.LoggingFileProperties>(
@@ -472,21 +483,21 @@ get $loggingConfigBeansPropertiesIntrospections => [
         r'name',
         nullable: true,
         typeInfo: _i2.ClassType<String>(nullable: true),
-        get: _$get53,
-        set: _$set54,
+        get: _$get55,
+        set: _$set56,
       ),
       _i2.IntrospectedProperty<_i1.LoggingFileProperties>(
         r'path',
         nullable: true,
         typeInfo: _i2.ClassType<String>(nullable: true),
-        get: _$get55,
-        set: _$set56,
+        get: _$get57,
+        set: _$set58,
       ),
       _i2.IntrospectedProperty<_i1.LoggingFileProperties>(
         r'rollingPolicy',
         typeInfo: _i2.ClassType<_i1.LoggingRollingPolicyProperties>(),
-        get: _$get57,
-        set: _$set58,
+        get: _$get59,
+        set: _$set60,
       ),
     ],
     library: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart',
@@ -494,7 +505,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
     instantiate: _i1.LoggingFileProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.LoggingFileProperties>(
       parameters: [],
-      create: _$create59,
+      create: _$create61,
     ),
   ),
   const _i2.Introspection<_i1.LoggingRollingPolicyProperties>(
@@ -505,29 +516,29 @@ get $loggingConfigBeansPropertiesIntrospections => [
         typeInfo: _i2.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: false,
-        get: _$get60,
-        set: _$set61,
+        get: _$get62,
+        set: _$set63,
       ),
       _i2.IntrospectedProperty<_i1.LoggingRollingPolicyProperties>(
         r'maxFileSize',
         typeInfo: _i2.ClassType<_i2.DataSize>(),
-        get: _$get62,
-        set: _$set63,
+        get: _$get64,
+        set: _$set65,
       ),
       _i2.IntrospectedProperty<_i1.LoggingRollingPolicyProperties>(
         r'maxHistory',
         typeInfo: _i2.ClassType<int>(),
         hasInitialValue: true,
         initialValue: 7,
-        get: _$get64,
-        set: _$set65,
+        get: _$get66,
+        set: _$set67,
       ),
       _i2.IntrospectedProperty<_i1.LoggingRollingPolicyProperties>(
         r'totalSizeCap',
         nullable: true,
         typeInfo: _i2.ClassType<_i2.DataSize>(nullable: true),
-        get: _$get66,
-        set: _$set67,
+        get: _$get68,
+        set: _$set69,
       ),
     ],
     library: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart',
@@ -536,7 +547,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
     constructor:
         _i2.IntrospectedConstructor<_i1.LoggingRollingPolicyProperties>(
           parameters: [],
-          create: _$create68,
+          create: _$create70,
         ),
   ),
   const _i2.Introspection<_i1.LoggingCharsetProperties>(
@@ -546,15 +557,15 @@ get $loggingConfigBeansPropertiesIntrospections => [
         r'console',
         nullable: true,
         typeInfo: _i2.ClassType<String>(nullable: true),
-        get: _$get69,
-        set: _$set70,
+        get: _$get71,
+        set: _$set72,
       ),
       _i2.IntrospectedProperty<_i1.LoggingCharsetProperties>(
         r'file',
         nullable: true,
         typeInfo: _i2.ClassType<String>(nullable: true),
-        get: _$get71,
-        set: _$set72,
+        get: _$get73,
+        set: _$set74,
       ),
     ],
     library: r'package:spring_boot_starter_logging/src/properties/logging_properties.dart',
@@ -562,7 +573,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
     instantiate: _i1.LoggingCharsetProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.LoggingCharsetProperties>(
       parameters: [],
-      create: _$create73,
+      create: _$create75,
     ),
   ),
   const _i2.Introspection<_i1.ApplicationGroupProperties>(
@@ -572,8 +583,8 @@ get $loggingConfigBeansPropertiesIntrospections => [
         r'group',
         nullable: true,
         typeInfo: _i2.ClassType<String>(nullable: true),
-        get: _$get74,
-        set: _$set75,
+        get: _$get76,
+        set: _$set77,
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'spring.application')],
@@ -582,7 +593,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
     instantiate: _i1.ApplicationGroupProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.ApplicationGroupProperties>(
       parameters: [],
-      create: _$create76,
+      create: _$create78,
     ),
   ),
   const _i2.Introspection<_i1.AnsiProperties>(
@@ -595,8 +606,8 @@ get $loggingConfigBeansPropertiesIntrospections => [
           _i1.AnsiOutput.values,
           nullable: true,
         ),
-        get: _$get77,
-        set: _$set78,
+        get: _$get79,
+        set: _$set80,
       ),
     ],
     annotations: [_i2.ConfigurationProperties(r'spring.output.ansi')],
@@ -605,7 +616,7 @@ get $loggingConfigBeansPropertiesIntrospections => [
     instantiate: _i1.AnsiProperties.new,
     constructor: _i2.IntrospectedConstructor<_i1.AnsiProperties>(
       parameters: [],
-      create: _$create79,
+      create: _$create81,
     ),
   ),
 ];

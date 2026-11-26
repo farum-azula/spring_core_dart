@@ -102,6 +102,31 @@ void main() {
           ]);
         });
   });
+
+  test('the route scopes are no debug type; the graph module adapts them', () {
+    expect(RouteScopes(), isNot(isA<DebugGraphRouteBeans>()));
+    runner.run((context) {
+      expect(context, doesNotHaveBean<DebugGraphRouteBeans>());
+    });
+    runner
+        .withAutoConfiguration(
+          springBootStarterFlutterNavigationDebugGraphAutoConfiguration,
+        )
+        .run((context) {
+          expect(context.startupFailure, isNull);
+          final beans = context.getBean<DebugGraphRouteBeans>();
+          expect(beans.routeScopeNames, {NavigationScopes.route});
+          expect(beans.liveBeansByPage(), isEmpty);
+        });
+    runner
+        .withAutoConfiguration(
+          springBootStarterFlutterNavigationDebugGraphAutoConfiguration,
+        )
+        .withPropertyValues(['spring.flutter.debug.graph.enabled=false'])
+        .run((context) {
+          expect(context, doesNotHaveBean<DebugGraphRouteBeans>());
+        });
+  });
 }
 
 final class _AllowAll implements RouteAuthorizationFilter {

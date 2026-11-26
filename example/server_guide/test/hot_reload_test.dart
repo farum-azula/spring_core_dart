@@ -1,7 +1,7 @@
 // Hot reload in a debug run: the generated reloadApplication keeps the
 // running context while the generated code is unchanged. The fingerprint
 // it compares and reloadApplication are in bin/spring_gen/main.spring.debug.dart,
-// which the application refers to only in debug and profile builds; a
+// which the application refers to only in debug builds; a
 // release build (dart compile exe) leaves it out.
 @TestOn('vm')
 library;

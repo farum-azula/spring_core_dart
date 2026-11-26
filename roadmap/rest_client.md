@@ -1,4 +1,4 @@
-# RestClient, RestTemplate and @HttpExchange (planned, no package of its own)
+# RestClient and @HttpExchange (planned, no package of its own)
 
 The layer between the `HttpTransport` of `spring_web_dart` (send a
 request, get bytes back) and `@FeignClient` (declared interfaces): call a
@@ -19,7 +19,7 @@ in Spring):
   `dart:io` server): `RestClient` (fluent, URI templates, bodies through
   the `ObjectMapper`, 4xx / 5xx as `RestClientResponseException` and its
   subclasses, `onStatus` handlers, interceptors, `exchange` for the raw
-  response), `RestTemplate` for those used to it, the
+  response), the
   `@HttpExchange` / `@GetExchange` / `@PostExchange` / ... annotations.
 - **`spring_boot_dart`** (Boot 3's `spring-boot-autoconfigure`, Boot 4's
   `spring-boot-restclient`): a `RestClient.Builder` bean from
@@ -31,7 +31,7 @@ in Spring):
 
 Steps:
 
-1. `RestClient` and `RestTemplate` with the auto-configuration and the
+1. `RestClient` with the auto-configuration and the
    OAuth2 interceptor (about half a day).
 2. Later: `@HttpExchange` interfaces implemented by the generator, as it
    does for `@FeignClient` today (most of it reused). Not urgent: Feign
@@ -40,3 +40,10 @@ Steps:
 
 Before Spring AI: the providers' clients are easier on `RestClient` than
 on the bare `HttpTransport`.
+
+No `RestTemplate` (the owner, 26 November 2026): Spring Framework 7.1
+deprecated it for removal (`@Deprecated(since = "7.1", forRemoval =
+true)`), and Spring Boot 4.2 deprecated `RestTemplateBuilder`,
+`RestTemplateCustomizer`, its auto-configuration and `TestRestTemplate`;
+`RestClient` is their replacement, `RestTestClient` in tests. The family
+never had it and will not.

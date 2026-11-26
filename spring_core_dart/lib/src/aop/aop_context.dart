@@ -142,37 +142,6 @@ bool isInProxyBody(Object proxy) {
       identical(zone[_zoneKey], proxy);
 }
 
-/// Runs [body] as code of no bean: a call it makes on a subclass proxy is
-/// advised as one through the bean's reference, also when the code that
-/// started it ran in a proxy's body (an effect a field assignment re-runs,
-/// a computed value recomputed). The framework runs what it calls on its
-/// own, not as a part of the bean's call, this way.
-///
-/// Spring (Java): no counterpart needed; there a call's receiver decides.
-T runOutsideProxyBodies<T>(T Function() body) {
-  final current = _current;
-  final through = _throughProxy;
-  final depth = _bodies.length;
-  final saved = depth == 0 ? const <Object>[] : _bodies.sublist(0);
-  _current = null;
-  _throughProxy = null;
-  _bodies.clear();
-  try {
-    return _zonedBodies
-        ? runZoned(
-            body,
-            zoneValues: {_bodyZoneKey: const <Object>[], _zoneKey: null},
-          )
-        : body();
-  } finally {
-    _bodies
-      ..clear()
-      ..addAll(saved);
-    _current = current;
-    _throughProxy = through;
-  }
-}
-
 /// Notes that the own code of the subclass proxy [proxy] runs from now
 /// until [leaveProxyBody]: the synchronous form of [runProxyBody], for the
 /// path of every advised call, which makes no closure for it.

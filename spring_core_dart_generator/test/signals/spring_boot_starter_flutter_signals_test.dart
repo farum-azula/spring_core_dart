@@ -1,8 +1,8 @@
 // The generator for spring_boot_starter_flutter_signals: a bean with a
-// @Signal, @Computed or @Effect member gets a proxy that extends it, with
-// every member kept and its own calls advised; the type arguments of its
-// getters are written for typed collections; a misplaced annotation fails
-// the build. The starter is stubbed: the generator knows it by address.
+// @Signal, @Computed or @Effect member is made as a generated subclass whose
+// followed members go straight to their signals; advice is a wrapper around
+// it, and a build error unless allowed; a misplaced annotation fails the
+// build. The starter is stubbed: the generator knows it by address.
 import 'dart:isolate';
 
 import 'package:analyzer/dart/analysis/results.dart';
@@ -15,6 +15,7 @@ import 'package:spring_core_dart_generator/src/packages.dart';
 import 'package:test/test.dart';
 
 import '../support/module_files.dart';
+import '../support/starter_build_switches.dart';
 
 const _scan = r'''
 import 'package:spring_core_dart/spring_core_dart.dart';
@@ -30,24 +31,104 @@ const _stubs = {
   '$_starter|lib/src/annotations.dart': '''
 import 'package:spring_core_dart/spring_core_dart.dart';
 
-@ProxyTargetClass()
+enum OnScopeEnd { discard, flush, defer }
+
+@AccessHook()
 class Signal {
-  const Signal();
+  const Signal({
+    this.hidden = false,
+    this.queued = true,
+    this.queue,
+    this.eager,
+    this.onScopeEnd,
+  });
+  final bool hidden;
+  final bool queued;
+  final String? queue;
+  final bool? eager;
+  final OnScopeEnd? onScopeEnd;
 }
 
-@ProxyTargetClass()
+@AccessHook()
 class Computed {
   const Computed();
 }
 
 @BeanMethodAnnotation()
-@ProxyTargetClass()
+@AccessHook()
 class Effect {
   const Effect();
+}
+
+@BeanMethodAnnotation()
+@AccessHook()
+class OnWatched {
+  const OnWatched(this.signals, {this.each = false});
+  final List<String> signals;
+  final bool each;
+}
+
+@BeanMethodAnnotation()
+@AccessHook()
+class OnUnwatched {
+  const OnUnwatched(this.signals, {this.each = false});
+  final List<String> signals;
+  final bool each;
+}
+
+abstract class SignalMember {}
+
+class ValueMember extends SignalMember {
+  Object? read() => null;
+  Object? readDirect() => null;
+  void write(Object? value) {}
+  void writeDirect(Object? value) {}
+}
+
+class ComputedMember extends SignalMember {
+  Object? read() => null;
+}
+
+class AsyncMember extends ComputedMember {}
+
+class SignalBean {
+  SignalBean(this.label);
+  final String label;
+  ValueMember field(
+    String name,
+    Object? Function() initial, {
+    List<TypeCapture<Object?>> arguments = const [],
+    String? type,
+    Signal options = const Signal(),
+  }) => ValueMember();
+  ComputedMember computed(String name, Object? Function() compute) =>
+      ComputedMember();
+  AsyncMember asynchronous(String name, Object? Function() compute) =>
+      AsyncMember();
+  T effectBody<T>(String name, T Function() body) => body();
+  Future<T> buffered<T>(Future<T> Function() body) => body();
+}
+
+class ProbedSignalBean extends SignalBean {
+  ProbedSignalBean(super.label);
+}
+
+abstract interface class SignalBeanHolder {
+  SignalBean get signalBean;
+  Map<String, SignalMember Function()> get signalMembers;
+  List<String> get eagerSignals;
+  List<String> get signalQueues;
+}
+''',
+  '$_starter|lib/src/signal_buffer.dart': '''
+class SignalBuffer {
+  const SignalBuffer([this.enabled = true]);
+  final bool enabled;
 }
 ''',
   '$_starter|lib/$_starter.dart': '''
 export 'src/annotations.dart';
+export 'src/signal_buffer.dart';
 ''',
 };
 
@@ -72,7 +153,56 @@ Future<PackageConfig> _packageConfig() async {
   ]);
 }
 
-Future<TestBuilderResult> _build(String beans) async {
+const _allowAdvice = '''
+spring:
+  flutter:
+    signals:
+      allow-advice: true
+''';
+
+const _bufferAll = '''
+spring:
+  flutter:
+    signals:
+      buffer:
+        async-methods: true
+''';
+
+// The starter's debug modules, each with its build switch as the starter
+// writes it: the part decides the probes by them.
+const _debugModules = [
+  'springBootStarterFlutterSignalsDebugAutoConfiguration',
+  'springBootStarterFlutterSignalsDebugConsoleAutoConfiguration',
+  'springBootStarterFlutterSignalsDebugConsolePaneAutoConfiguration',
+  'springBootStarterFlutterSignalsDebugGraphAutoConfiguration',
+  'springBootStarterFlutterSignalsDebugGraphPaneAutoConfiguration',
+];
+
+// The starter's auto-configuration with [modules] (by name, the source of
+// each one's `build:`), empty modules.
+String _autoConfiguration(Map<String, String>? modules) {
+  final switches =
+      modules ??
+      {
+        for (final module in _debugModules)
+          module: starterBuildSwitch(module, package: _starter),
+      };
+  return [
+    "import 'package:spring_boot_dart/spring_boot_dart.dart';",
+    for (final MapEntry(key: module, value: build) in switches.entries) ...[
+      '@AutoConfigurationModule(build: $build)',
+      "final BeanModule $module = BeanModule('$module', []);",
+    ],
+  ].join('\n');
+}
+
+Future<TestBuilderResult> _build(
+  String beans, {
+  bool allowAdvice = false,
+  bool bufferAll = false,
+  String? config,
+  Map<String, String>? modules,
+}) async {
   final readerWriter = TestReaderWriter(
     rootPackage: 'pkg',
     flattenOutput: true,
@@ -83,7 +213,13 @@ Future<TestBuilderResult> _build(String beans) async {
     {
       'pkg|lib/src/beans.dart': _scan,
       'pkg|lib/src/app.dart': '$_header$beans',
+      if (allowAdvice) 'pkg|lib/resources/application.yml': _allowAdvice,
+      if (bufferAll) 'pkg|lib/resources/application.yml': _bufferAll,
+      'pkg|lib/resources/application.yml': ?config,
       ..._stubs,
+      '$_starter|lib/spring_auto_configuration.dart': _autoConfiguration(
+        modules,
+      ),
     },
     rootPackage: 'pkg',
     readerWriter: readerWriter,
@@ -101,8 +237,20 @@ Matcher _has(String code) => contains(_normalize(code));
 
 /// The generated module of [beans] (normalized), after checking that it
 /// compiles against the stubs.
-Future<String> _generate(String beans) async {
-  final result = await _build(beans);
+Future<String> _generate(
+  String beans, {
+  bool allowAdvice = false,
+  bool bufferAll = false,
+  String? config,
+  Map<String, String>? modules,
+}) async {
+  final result = await _build(
+    beans,
+    allowAdvice: allowAdvice,
+    bufferAll: bufferAll,
+    config: config,
+    modules: modules,
+  );
   expect(result.errors, isEmpty);
   const path = 'lib/spring_gen/src/beans.spring.dart';
   final output = moduleText(result, AssetId('pkg', path));
@@ -139,9 +287,10 @@ Future<String> _errors(String beans) async {
 
 void main() {
   group('the proxy of a bean with followed state', () {
-    test('extends the class though it has no private member, keeps every '
-        'member and advises its own calls', () async {
-      final output = await _generate('''
+    test(
+      'is made as a subclass over its signals, with no advice in it',
+      () async {
+        final output = await _generate('''
 class Book {
   const Book(this.title);
   final String title;
@@ -152,7 +301,7 @@ class Basket {
   @Signal()
   List<Book> items = [];
 
-  @Signal()
+  @Signal(queued: false)
   String? coupon;
 
   @Computed()
@@ -161,24 +310,359 @@ class Basket {
   @Effect()
   void save() {}
 
-  // No annotation: still in the proxy, so its assignments are one change.
+  // No annotation: the class's own, nothing is generated for it.
   void clear() => coupon = null;
 }
 ''');
-      expect(output, _has(r'class _$BasketProxy extends Basket with'));
-      expect(output, _has('adviseSelfCalls: true'));
-      // Every member, also the one without an annotation.
-      expect(output, _has('@override void clear()'));
-      expect(output, _has('@override set coupon(String? value)'));
-      expect(output, _has('@override int get count'));
-      // The element type of the list, for a typed collection.
+        expect(output, _has(r'class _$BasketSignals extends Basket'));
+        expect(output, _has(r'create: (r) => _$BasketSignals()'));
+        expect(output, isNot(_has('adviseSelfCalls')));
+        expect(
+          output,
+          isNot(_has(r'class _$BasketSignals extends Basket { void clear')),
+        );
+        expect(output, _has('_itemsSignal.read()'));
+        expect(output, _has('_itemsSignal.write(value)'));
+        // A field that takes no part in a buffer pays for none.
+        expect(output, _has('_couponSignal.readDirect()'));
+        expect(output, _has('_couponSignal.writeDirect(value)'));
+        expect(output, _has('_countComputed.read()'));
+        expect(output, _has('arguments: const [TypeCapture<Book>()]'));
+        expect(output, _has("signalBean.effectBody('save'"));
+      },
+    );
+
+    group('the debug probe is in the builds of the debug tools', () {
+      const bean = '''
+@Component()
+class Basket {
+  @Signal()
+  int count = 0;
+}
+''';
+      String debug(String debug, String console) =>
+          '''
+spring:
+  flutter:
+    debug:
+      console:
+        enabled: $console
+    signals:
+      debug:
+        enabled: $debug
+''';
+
+      test('not set: debug builds only, under the constant a profile or a '
+          'release build folds', () async {
+        final output = await _generate(bean);
+        expect(
+          output,
+          _has(
+            'final SignalBean signalBean = '
+            "(!const bool.fromEnvironment('dart.vm.product') && "
+            "!const bool.fromEnvironment('dart.vm.profile')) "
+            "? ProbedSignalBean('Basket') : SignalBean('Basket');",
+          ),
+        );
+      });
+
+      test('both false: no probe in any build', () async {
+        final output = await _generate(bean, config: debug('false', 'false'));
+        expect(
+          output,
+          _has("final SignalBean signalBean = SignalBean('Basket');"),
+        );
+        expect(output, isNot(_has('ProbedSignalBean')));
+      });
+
+      test('the console true with no tool of the signals in it: no probe, '
+          'nothing would listen', () async {
+        final output = await _generate(bean, config: debug('false', 'true'));
+        expect(output, isNot(_has('ProbedSignalBean')));
+      });
+
+      for (final (tool, list) in [
+        ('the segment', 'segments: [signals]'),
+        ('the signals pane', 'panes: [signals]'),
+        ('the graph pane', 'panes: [graph]'),
+      ]) {
+        test('the console true with $tool: in every build, a release one '
+            'too', () async {
+          final output = await _generate(
+            bean,
+            config: debug('false', 'true\n        $list'),
+          );
+          expect(
+            output,
+            _has("final SignalBean signalBean = ProbedSignalBean('Basket');"),
+          );
+        });
+      }
+
+      test('the graph pane without the signals layer: no probe', () async {
+        final output = await _generate(
+          bean,
+          config: '''
+spring:
+  flutter:
+    debug:
+      console:
+        enabled: true
+        panes: [graph]
+      graph:
+        layers: [widgets]
+    signals:
+      debug:
+        enabled: false
+''',
+        );
+        expect(output, isNot(_has('ProbedSignalBean')));
+      });
+
+      test('the panel false: no probe, the Signals tab and the graph leave '
+          'with it', () async {
+        final output = await _generate(
+          bean,
+          config: '''
+spring:
+  flutter:
+    debug:
+      enabled: false
+''',
+        );
+        expect(output, isNot(_has('ProbedSignalBean')));
+      });
+
+      test('the panel true, the Signals tab not set: the narrowest, debug '
+          'builds only', () async {
+        final output = await _generate(
+          bean,
+          config: '''
+spring:
+  flutter:
+    debug:
+      enabled: true
+''',
+        );
+        expect(output, _has("(!const bool.fromEnvironment('dart.vm.product')"));
+        expect(output, _has("? ProbedSignalBean('Basket') : SignalBean("));
+      });
+
+      test("the starter's own switch, not a copy of it: a module whose "
+          'switch is not set is not in', () async {
+        final output = await _generate(
+          bean,
+          config: '''
+spring:
+  flutter:
+    signals:
+      debug:
+        enabled: true
+''',
+          modules: {
+            'springBootStarterFlutterSignalsDebugAutoConfiguration':
+                "AutoConfigurationBuild('spring.flutter.signals.debug.other', "
+                'whenMissing: BuildInclusion.never)',
+          },
+        );
+        expect(output, isNot(_has('ProbedSignalBean')));
+      });
+
+      test('the State tab off and the console not set: no probe, as the '
+          'console is built only when asked for', () async {
+        final output = await _generate(
+          bean,
+          config: '''
+spring:
+  flutter:
+    signals:
+      debug:
+        enabled: false
+''',
+        );
+        expect(output, isNot(_has('ProbedSignalBean')));
+      });
+    });
+
+    test('with advice allowed: an ordinary wrapper around the subclass, '
+        'private members or not', () async {
+      final output = await _generate('''
+class Marked {
+  const Marked();
+}
+
+@Aspect()
+@Component()
+class Marking {
+  @Around('@annotation(Marked)')
+  Object? around(ProceedingJoinPoint point) => point.proceed();
+}
+
+@Component()
+class Basket {
+  int _hidden = 0;
+
+  @Signal()
+  int count = 0;
+
+  @Marked()
+  int bump() => _hidden++;
+}
+''', allowAdvice: true);
+      expect(output, _has(r'class _$BasketSignals extends Basket'));
+      expect(output, _has(r'class _$BasketProxy with AdvisedWrapper'));
+      expect(output, _has('implements Basket'));
+      expect(output, isNot(_has('adviseSelfCalls')));
+    });
+
+    test('advice is a build error by default, naming where and how to allow '
+        'it', () async {
+      final errors = await _errors('''
+class Marked {
+  const Marked();
+}
+
+@Aspect()
+@Component()
+class Marking {
+  @Around('@annotation(Marked)')
+  Object? around(ProceedingJoinPoint point) => point.proceed();
+}
+
+@Component()
+class Basket {
+  @Signal()
+  int count = 0;
+
+  @Marked()
+  void bump() {}
+}
+''');
+      expect(errors, contains('Advice on a bean with @Signal'));
+      expect(errors, contains('Basket.bump'));
+      expect(errors, contains('spring.flutter.signals.allow-advice: true'));
+    });
+
+    test('@SignalBuffer: the method runs in a buffer of its bean, with '
+        'its parameters', () async {
+      final output = await _generate('''
+@Component()
+class Basket {
+  @Signal()
+  int count = 0;
+
+  @SignalBuffer()
+  Future<void> fill(int amount, {String note = ''}) async => count += amount;
+
+  Future<void> plain() async {}
+}
+''');
       expect(
         output,
-        _has('returnTypeArguments: [TypeCapture<Book>()]'),
+        _has(
+          "Future<void> fill(int amount, {String note = ''}) => "
+          'signalBean.buffered(() => super.fill(amount, note: note));',
+        ),
       );
-      // The effect is found as an annotated method.
-      expect(output, _has('annotations: [Effect()]'));
+      expect(output, isNot(_has('super.plain()')));
     });
+
+    test(
+      'buffer.async-methods: every async method, but @SignalBuffer(false)',
+      () async {
+        final output = await _generate('''
+@Component()
+class Basket {
+  @Signal()
+  int count = 0;
+
+  Future<void> fill() async => count++;
+
+  @SignalBuffer(false)
+  Future<void> load() async {}
+
+  void sync() {}
+}
+''', bufferAll: true);
+        expect(output, _has('signalBean.buffered(() => super.fill())'));
+        expect(output, isNot(_has('super.load()')));
+        expect(output, isNot(_has('super.sync()')));
+      },
+    );
+
+    for (final (name, source, expected) in [
+      (
+        'a stream',
+        '@SignalBuffer()\n  Stream<int> feed() async* {}',
+        'which makes a stream',
+      ),
+      (
+        'a sync method',
+        '@SignalBuffer()\n  void fill() {}',
+        'which is not async',
+      ),
+    ]) {
+      test('@SignalBuffer on $name fails the build', () async {
+        final errors = await _errors('''
+@Component()
+class Basket {
+  @Signal()
+  int count = 0;
+
+  $source
+}
+''');
+        expect(errors, contains(expected));
+      });
+    }
+
+    test('@SignalBuffer on a bean without signals fails the build', () async {
+      final errors = await _errors('''
+@Component()
+class Plain {
+  @SignalBuffer()
+  Future<void> fill() async {}
+}
+''');
+      expect(errors, contains('has no @Signal field'));
+    });
+
+    for (final (name, method, expected) in [
+      (
+        'an unknown name, with a hint',
+        "@OnWatched(['cuont'])\n  void on() {}",
+        "Did you mean 'count'?",
+      ),
+      ('an empty list', '@OnWatched([])\n  void on() {}', 'an empty list'),
+      (
+        'a private method',
+        "@OnWatched(['count'])\n  void _on() {}",
+        'the private method',
+      ),
+      (
+        'a static method',
+        "@OnUnwatched(['count'])\n  static void on() {}",
+        'the static method',
+      ),
+      (
+        'parameters',
+        "@OnUnwatched(['count'])\n  void on(int value) {}",
+        'takes parameters',
+      ),
+    ]) {
+      test('@OnWatched / @OnUnwatched: $name fails the build', () async {
+        final errors = await _errors('''
+@Component()
+class Basket {
+  @Signal()
+  int count = 0;
+
+  $method
+}
+''');
+        expect(errors, contains(expected));
+      });
+    }
 
     test('a bean without such a member is as before', () async {
       final output = await _generate('''
@@ -206,11 +690,37 @@ class Prices {
 ''');
       expect(
         output,
-        _has(
-          'returnTypeArguments: [TypeCapture<String>(), TypeCapture<double>()]',
-        ),
+        _has('arguments: const [TypeCapture<String>(), TypeCapture<double>()]'),
       );
       expect(_normalize('TypeCapture<').allMatches(output), hasLength(2));
+    });
+
+    test('a filtered Map carries its types, directly and in a Future, and '
+        'a member without a filter none', () async {
+      final output = await _generate('''
+import 'package:spring_security_core/spring_security_core.dart';
+
+@Service()
+class Owners {
+  @Signal()
+  Map<String, int> all = {};
+
+  @PostFilter('true')
+  Map<String, int> kept() => all;
+
+  @PostFilter('true')
+  Future<Map<String, bool>> later() async => {};
+
+  @PreFilter('true')
+  int count(int limit, Map<int, String> incoming) => limit;
+
+  Map<String, double> plain() => {};
+}
+''', allowAdvice: true);
+      expect(output, _has('resultMapTypes:MapTypes<String,int>()'));
+      expect(output, _has('resultMapTypes:MapTypes<String,bool>()'));
+      expect(output, _has('parameterMapTypes:[null,MapTypes<int,String>()]'));
+      expect(output, isNot(contains('MapTypes<String,double>')));
     });
 
     test('a class that cannot be extended fails the build', () async {
@@ -270,6 +780,36 @@ $members
       );
     });
 
+    test('@Transactional on a @Computed getter: no transaction would start, '
+        'a method is named instead', () async {
+      final errors = await _errors('''
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
+
+@Service()
+class Loaded {
+  @Transactional()
+  @Computed()
+  Future<int> get total async => 1;
+}
+''');
+      expect(errors, contains('@Transactional on the @Computed getter'));
+      expect(errors, contains('Loaded.total'));
+      expect(errors, contains('Make it a method'));
+    });
+
+    test('@Transactional on a @Computed method builds', () async {
+      await _generate('''
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
+
+@Service()
+class Loaded {
+  @Transactional()
+  @Computed()
+  Future<int> total() async => 1;
+}
+''', allowAdvice: true);
+    });
+
     test('@Computed on a field', () async {
       expect(
         await inBean('@Computed()\n  int total = 0;'),
@@ -301,6 +841,59 @@ class Config {
         allOf(
           contains('@Configuration class Config'),
           contains('Move the state into a component'),
+        ),
+      );
+    });
+  });
+
+  group('an annotation marked @AccessHook', () {
+    test('that no part of the generator writes code for fails the build, '
+        'naming it and what is supported', () async {
+      final errors = await _errors('''
+@AccessHook()
+class Tracked {
+  const Tracked();
+}
+
+@Component()
+class Basket {
+  @Tracked()
+  int count = 0;
+
+  @Signal()
+  int total = 0;
+}
+''');
+      expect(
+        errors,
+        allOf(
+          contains('@Tracked on Basket.count'),
+          contains(
+            '@AccessHook currently supports only the annotations of '
+            'spring_boot_starter_flutter_signals',
+          ),
+          contains('@Signal, @Computed, @Effect, @OnWatched, @OnUnwatched'),
+        ),
+      );
+      expect(errors, isNot(contains('@Signal on Basket.total')));
+    });
+
+    test('on a member of a class that is no bean fails the same way', () async {
+      expect(
+        await _errors('''
+@AccessHook()
+class Tracked {
+  const Tracked();
+}
+
+abstract class Plain {
+  @Tracked()
+  int count = 0;
+}
+'''),
+        contains(
+          '@Tracked on Plain.count: Tracked is marked @AccessHook, and no '
+          'part of the generator writes code for it',
         ),
       );
     });
@@ -349,7 +942,7 @@ class Customer extends Named {}
       expect(output, _has('@override set count(int value)'));
       expect(output, _has('@override int get price'));
       expect(output, _has('@override set name(String value)'));
-      expect('adviseSelfCalls:true'.allMatches(output), hasLength(2));
+      expect('Signalsextends'.allMatches(output), hasLength(2));
     });
 
     test('a mixin is checked like a class', () async {
@@ -550,7 +1143,7 @@ class Notes {
   List<String> lines = [];
 }
 ''');
-        expect('adviseSelfCalls:true'.allMatches(output), hasLength(2));
+        expect('Signalsextends'.allMatches(output), hasLength(2));
       },
     );
 

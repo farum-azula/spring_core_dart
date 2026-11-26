@@ -16,10 +16,11 @@
 /// - A `main` annotated with `@SpringBootApplication()` (from
 ///   `spring_boot_dart`) gets the same for the whole package, plus
 ///   `springApplication` and `runApplication(args)`, and
-///   `*.spring.debug.dart`: what only debug and profile builds use (the
-///   fingerprint of the generated code and `reloadApplication`, for hot
-///   reload), a part the library refers to only under `!dart.vm.product`,
-///   so a release build leaves it out; and `*.spring.env.dart`, a part with
+///   `*.spring.debug.dart`: what only debug builds use (the fingerprint
+///   of the generated code and `reloadApplication`, for hot reload), a
+///   part the library refers to only under `!dart.vm.product` and
+///   `!dart.vm.profile`, so a profile or a release build leaves it out;
+///   and `*.spring.env.dart`, a part with
 ///   the constant map of the `--dart-define`s it may read
 ///   (`String.fromEnvironment` of each property and environment variable),
 ///   which `springApplication` passes as `dartDefines`.

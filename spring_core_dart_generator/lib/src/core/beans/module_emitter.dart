@@ -69,9 +69,9 @@ String _docText(String value) => value.replaceAllMapped(
 ///   `@ConfigurationProperties` classes, the descriptions only their binder
 ///   uses (`onlyForBinding`), in a getter `$<name>PropertiesIntrospections`;
 /// - the parts of an application's library the builder fills
-///   (`partDeclarations`): `<library>.spring.debug.dart`, what only debug and
-///   profile builds use, which the library refers to only under
-///   `!dart.vm.product`, and `<library>.spring.env.dart`, the values of the
+///   (`partDeclarations`): `<library>.spring.debug.dart`, what only debug
+///   builds use, which the library refers to only under `!dart.vm.product`
+///   and `!dart.vm.profile`, and `<library>.spring.env.dart`, the values of the
 ///   `--dart-define`s the application may read.
 ///
 /// The library itself contains, in this order:
@@ -94,8 +94,8 @@ String _docText(String value) => value.replaceAllMapped(
 /// The packages' parts ([generations]) add their classes, their bean
 /// definitions after the beans' (and the creation of the beans they make),
 /// their statements to the module getter and their declarations after it,
-/// through a [ModuleEmission]; the code of a part in debug and profile
-/// builds only sits under the condition [generationConditions] gives it.
+/// through a [ModuleEmission]; the code of a part in debug builds only
+/// sits under the condition [generationConditions] gives it.
 ///
 /// Code is built with `code_builder`, so imports get prefixes such as
 /// `_i1.` (omitted in the examples below), and formatted with
@@ -169,8 +169,8 @@ class ModuleEmitter {
   final List<PackageGeneration> generations;
 
   /// The condition the code of a part of [generations] is under, by part
-  /// ([notInReleaseCondition] for one its build key leaves to debug and
-  /// profile builds, `PackageGeneration.build`); a part without one is in
+  /// ([debugOnlyCondition] for one its build key leaves to debug builds,
+  /// `PackageGeneration.build`); a part without one is in
   /// every build. Its bean definitions (those it writes, and those of the
   /// beans it makes), its module statements, its lists of introspections
   /// and its resources are written under it; its classes, declarations and
@@ -305,8 +305,8 @@ class ModuleEmitter {
   /// comment. [extra] declarations are appended after the getter (and
   /// the parts' leading declarations); [partDeclarations] go into parts
   /// of the library, by the part's ending ([applicationPartExtensions]: the
-  /// debug part, which the library refers to only under
-  /// `!dart.vm.product`, and the part of the `--dart-define` values).
+  /// debug part, which the library refers to only in debug builds
+  /// ([debugOnlyCondition]), and the part of the `--dart-define` values).
   /// [resources] are embedded as
   /// `resources:` files. [packageParts] are the generated files of each
   /// part that are `part of` the library ([PackageGeneration.moduleParts]),
@@ -363,7 +363,11 @@ class ModuleEmitter {
       foreign: foreignAdvice,
       defer: deferProxies,
     );
-    final emission = _emission = ModuleEmission._(this, moduleName);
+    final emission = _emission = ModuleEmission._(
+      this,
+      moduleName,
+      partDeclarations.keys.toSet(),
+    );
     // Classes and definitions first: the types in their annotations go
     // into the module's typeTests. The proxies go into a part of their own
     // (`<library>.spring.proxies.dart`).
@@ -399,12 +403,60 @@ class ModuleEmitter {
       ))
         absentMarkerClass(),
     ];
+    // The definitions a part places in a part of the application's
+    // library (the debug part), by getter, spread into the module's beans.
+    final placed = <String, (BeanPlacement, List<Expression>)>{};
+    final beanDefinitions = <Expression>[];
+    for (final bean in module.beans) {
+      final definition = _guardedBean(bean, _definition(bean));
+      final placement = _placementOf(bean, emission);
+      if (placement == null) {
+        beanDefinitions.add(definition);
+        continue;
+      }
+      if (!partDeclarations.containsKey(placement.extension)) {
+        throw InvalidGenerationSource(
+          placement.outsideApplication,
+          element: bean.element,
+        );
+      }
+      (placed[placement.getter] ??= (placement, [])).$2.add(definition);
+    }
     final definitions = literalList([
-      for (final bean in module.beans) _guardedBean(bean, _definition(bean)),
+      ...beanDefinitions,
+      for (final (placement, _) in placed.values)
+        CodeExpression(
+          Code(
+            switch (placement.condition) {
+              final condition? => 'if ($condition) ...${placement.getter}',
+              null => '...${placement.getter}',
+            },
+          ),
+        ),
       for (final generation in generations)
         for (final definition in generation.beanDefinitions(emission))
           _guarded(generation, definition),
     ]);
+    final filledParts = <String, List<Spec>>{};
+    for (final generation in generations) {
+      for (final MapEntry(key: extension, value: specs)
+          in generation.partFiles(emission).entries) {
+        (filledParts[extension] ??= []).addAll(specs);
+      }
+    }
+    // A part's declarations go into the same file as the builder's for its
+    // ending (the debug part), after them.
+    final allPartDeclarations = <String, List<Spec>>{...filledParts};
+    for (final MapEntry(key: extension, value: specs)
+        in partDeclarations.entries) {
+      allPartDeclarations[extension] = [...specs, ...?filledParts[extension]];
+    }
+    for (final (placement, list) in placed.values) {
+      allPartDeclarations[placement.extension] = [
+        ...?allPartDeclarations[placement.extension],
+        _placedGetter(placement, list),
+      ];
+    }
     final parts = [
       for (final part in [...packageParts.values, ...coreParts]) ...part.parts,
     ];
@@ -540,7 +592,7 @@ class ModuleEmitter {
           if (proxies.isNotEmpty)
             Directive.part(p.url.basename(proxiesFile.path)),
           for (final MapEntry(key: extension, value: declarations)
-              in partDeclarations.entries)
+              in allPartDeclarations.entries)
             if (declarations.isNotEmpty)
               Directive.part(
                 p.url.basename(moduleFileId(output, extension).path),
@@ -597,7 +649,7 @@ class ModuleEmitter {
     final proxiesSource = _partSource(proxies, emitter);
     final partSources = {
       for (final MapEntry(key: extension, value: declarations)
-          in partDeclarations.entries)
+          in allPartDeclarations.entries)
         extension: ?_partSource(declarations, emitter),
     };
     final source =
@@ -632,6 +684,41 @@ class ModuleEmitter {
         "part of '${p.url.basename(output.path)}';\n\n"
         '${code.join('\n\n')}';
   }
+
+  // Where the first part that answers places [bean]'s definition; `null`:
+  // in the module getter.
+  BeanPlacement? _placementOf(BeanModel bean, ModuleEmission emission) {
+    for (final generation in generations) {
+      if (generation.beanPlacement(bean, emission) case final placement?) {
+        return placement;
+      }
+    }
+    return null;
+  }
+
+  // The getter of the definitions [placement] puts in a part:
+  // `List<BeanDefinition<Object>> get _$debugConsoleSegments => [...]`.
+  Method _placedGetter(BeanPlacement placement, List<Expression> list) =>
+      Method(
+        (m) => m
+          ..docs.add(placement.docs)
+          ..type = MethodType.getter
+          ..returns = TypeReference(
+            (t) => t
+              ..symbol = 'List'
+              ..types.add(
+                TypeReference(
+                  (t) => t
+                    ..symbol = 'BeanDefinition'
+                    ..url = _springUrl
+                    ..types.add(refer('Object')),
+                ),
+              ),
+          )
+          ..name = placement.getter
+          ..lambda = true
+          ..body = literalList(list).code,
+      );
 
   // The part that wrote the creation of each bean a part makes
   // (`PackageCreation`), so its definition goes under the part's condition.
@@ -1395,8 +1482,6 @@ class ModuleEmitter {
         'signatures': signatures,
         if (proxy.introductions.isNotEmpty) 'introductions': introductions,
         ..._knownAdvisorsArgument(proxy),
-        // The bean's own calls are advised too (`@ProxyTargetClass()`).
-        if (proxy.targetClass) 'adviseSelfCalls': literalTrue,
         'advise': _closure(
           ['bean', 'invoker'],
           bean
@@ -1457,21 +1542,17 @@ class ModuleEmitter {
         'kind': _spring('MemberKind').property(member.kind.name),
       if (_simpleName(member.returnType) != 'dynamic')
         'returnType': _str(_simpleName(member.returnType)),
-      // The type arguments of a getter's type, for advice that follows
-      // the bean's state and must make typed objects of it.
-      if (proxy.targetClass &&
-          member.kind == ProxyMemberKind.getter &&
-          member.returnType is InterfaceType &&
-          (member.returnType as InterfaceType).typeArguments.isNotEmpty &&
-          (member.returnType as InterfaceType).typeArguments.every(
-            _canCapture,
+      // A filtered Map is a copy: never the bean's own, which may be kept.
+      if (_filters(proxy, member, _postFilter) &&
+          _mapTypes(member.returnType, element) != null)
+        'resultMapTypes': _mapTypes(member.returnType, element)!,
+      if (_filters(proxy, member, _preFilter) &&
+          member.parameters.any(
+            (parameter) => _mapTypes(parameter.type, element) != null,
           ))
-        'returnTypeArguments': literalConstList([
-          for (final argument
-              in (member.returnType as InterfaceType).typeArguments)
-            _spring(
-              'TypeCapture',
-            ).constInstance([], {}, [_anyType(argument, element)]),
+        'parameterMapTypes': literalConstList([
+          for (final parameter in member.parameters)
+            _mapTypes(parameter.type, element) ?? literalNull,
         ]),
       if (member.kind == ProxyMemberKind.method && member.parameters.isNotEmpty)
         'parameterTypes': literalConstList([
@@ -2447,6 +2528,46 @@ class ModuleEmitter {
 
   // Whether [type] can be written in generated code as a type argument:
   // made of public classes only.
+  static const _postFilter = TypeChecker.fromUrl(
+    'package:spring_security_core/src/method/annotations.dart#PostFilter',
+  );
+  static const _preFilter = TypeChecker.fromUrl(
+    'package:spring_security_core/src/method/annotations.dart#PreFilter',
+  );
+
+  // Whether [checker]'s annotation applies to [member]: on it, on what it
+  // overrides, or on its class.
+  bool _filters(ProxyModel proxy, ProxyMember member, TypeChecker checker) {
+    bool isFilter(DartObject annotation) =>
+        annotation.type != null && checker.isExactlyType(annotation.type!);
+    return member.mergedAnnotations.any(isFilter) ||
+        member.implementingTypeAnnotations.any(isFilter) ||
+        member.superclassAnnotations.any((level) => level.any(isFilter)) ||
+        checker.hasAnnotationOf(proxy.targetType.element);
+  }
+
+  // `MapTypes<K, V>()` for a `Map<K, V>` or a future of one; `null` for any
+  // other type, or one whose arguments cannot be named here.
+  Expression? _mapTypes(DartType type, Element element) {
+    final value = switch (type) {
+      InterfaceType(isDartAsyncFuture: true, :final typeArguments) ||
+      InterfaceType(
+        isDartAsyncFutureOr: true,
+        :final typeArguments,
+      ) when typeArguments.length == 1 => typeArguments.single,
+      _ => type,
+    };
+    if (value is! InterfaceType ||
+        !value.isDartCoreMap ||
+        value.typeArguments.length != 2 ||
+        !value.typeArguments.every(_canCapture)) {
+      return null;
+    }
+    return _spring('MapTypes').constInstance([], {}, [
+      for (final argument in value.typeArguments) _anyType(argument, element),
+    ]);
+  }
+
   bool _canCapture(DartType type) => switch (type) {
     InterfaceType(:final element, :final typeArguments) =>
       element.isPublic && typeArguments.every(_canCapture),
@@ -2613,6 +2734,13 @@ class ModuleEmitter {
       case ConstructorCreation(configuration: final model?):
         return refer(model.className)
             .newInstance([refer('r'), ...positional], named);
+      // A bean on signals: made as its generated subclass; advice, if any,
+      // is a wrapper around it.
+      case ConstructorCreation(:final lookup)
+          when bean.proxy?.accessHooks != null:
+        return refer(
+          bean.proxy!.accessHooks!.className,
+        ).newInstance([if (lookup != null) refer('r'), ...positional], named);
       // A subclass proxy: the generated subclass forwards to the
       // constructor (after the bean factory for `@Lookup` methods); a
       // pruned one is not generated.
@@ -2995,9 +3123,19 @@ class ModuleEmitter {
 /// }, [refer('ScreenRoutes', navigationUrl)]);
 /// ```
 final class ModuleEmission {
-  ModuleEmission._(this._emitter, this.moduleName);
+  ModuleEmission._(this._emitter, this.moduleName, this._applicationParts);
 
   final ModuleEmitter _emitter;
+
+  final Set<String> _applicationParts;
+
+  /// Whether the module's library has the part [extension] of an
+  /// application's library ([applicationPartExtensions]: the debug part),
+  /// into which [PackageGeneration.partFiles] may write too: only the
+  /// module of a `@SpringBootApplication` has them, a nested
+  /// `@ComponentScan` none.
+  bool hasApplicationPart(String extension) =>
+      _applicationParts.contains(extension);
 
   /// The `BeanModule` name: the `@ComponentScan` variable, or
   /// `application`.
@@ -3027,6 +3165,19 @@ final class ModuleEmission {
   /// A reference to the public runtime type [name] of `spring_core_dart`
   /// (`BeanDefinition`).
   Reference spring(String name) => _spring(name);
+
+  /// A constructor taking the [parameters] of the bean constructor
+  /// [constructorName] and forwarding them as `super.` parameters; [first]
+  /// goes before them.
+  Constructor forwardingConstructor(
+    String? constructorName,
+    List<ProxyParameter> parameters, [
+    Parameter? first,
+  ]) => _emitter._forwardingConstructor(constructorName, parameters, first);
+
+  /// Whether [type] can be named in generated code as a type argument:
+  /// made of public classes only.
+  bool canCapture(DartType type) => _emitter._canCapture(type);
 
   /// A raw string literal of [value], so `$` and backslashes are written as
   /// they are.
@@ -3104,7 +3255,7 @@ final class ModuleSources {
 
   /// The parts of an application's library the builder fills, by their
   /// ending ([applicationPartExtensions]): `<library>.spring.debug.dart`
-  /// with what only debug and profile builds use (the fingerprint of the
+  /// with what only debug builds use (the fingerprint of the
   /// generated code, the hot-reload functions), `<library>.spring.env.dart`
   /// with the values of the `--dart-define`s. A part without declarations
   /// is not there.

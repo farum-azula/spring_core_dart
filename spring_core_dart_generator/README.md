@@ -85,15 +85,22 @@ automatically to every package that depends on it.
   profile): always (`true`), never (`false`: no code, no import), or,
   when not set, as its `whenMissing` says (by default in the debug part,
   `_$debugAutoConfigurations`, which the library spreads in under
-  `if (!const bool.fromEnvironment('dart.vm.product'))`, so a release
-  compiles it away). The proxies written for library beans follow the
+  `if (!const bool.fromEnvironment('dart.vm.product') &&
+  !const bool.fromEnvironment('dart.vm.profile'))`, so a profile or a
+  release build compiles it away; a profile build gets the module only
+  with `true`). A switch's `parents` narrow it: each parent is
+  decided the same way, and the module goes where the narrowest of them
+  all lets it (never, else debug builds only, else always).
+  `AutoConfigurationBuild.named('<list>', '<name>')` reads a list (a YAML
+  list or a comma-separated value): in when it names `<name>` or holds
+  `*`. The proxies written for library beans follow the
   modules they come from. A property the build cannot read (`${FLAG}`
   without a default, a file that does not parse) fails the build naming
   the module; one set only in a profile's file is warned about. A
   package's part of the generator can take a key the same way
   (`PackageGeneration.build`, a `PackageBuild('<property>')`), so one key
   leaves out the package's module and all its part writes: `false` runs
-  none of the part, and under `whenMissing: notInRelease` its bean
+  none of the part, and under `whenMissing: debugOnly` its bean
   definitions, module statements, introspection lists and resources sit
   under the same `dart.vm.product` constant (its classes and top-level
   declarations cannot, and a release build drops them unused).
@@ -108,7 +115,7 @@ some of it (they are outputs of the main builder in `build.yaml`):
 | `<library>.spring.introspection.dart` | a library with the descriptions (`Introspection`) of the classes the module uses, in a getter `$<module>Introspections` (`$appBeansIntrospections`); the object methods' `copyWith`. A unit test registers them without a context: `Introspector.shared.registerAll($appBeansIntrospections)` |
 | `<library>.spring.properties.dart` | the binding of the `@ConfigurationProperties` classes: the descriptions only their binder uses, in `$<module>PropertiesIntrospections` |
 | `<library>.spring.proxies.dart` | a part of the module's library: the AOP proxy classes and the lazy-resolution proxies |
-| `<library>.spring.debug.dart` | for a `@SpringBootApplication` only, a part of its library: what only debug and profile builds use (below) |
+| `<library>.spring.debug.dart` | for a `@SpringBootApplication` only, a part of its library: what only debug builds use (below) |
 | `<library>.spring.env.dart` | for a `@SpringBootApplication` only, a part of its library: `_$dartDefines`, the constant map of the `--dart-define`s it may read (below) |
 
 The names follow the framework's convention for generated files,
@@ -152,15 +159,17 @@ it: `dart run -DSPRING_PROFILES_ACTIVE=prod`, `flutter build web
 **What only development needs: `<library>.spring.debug.dart`.** The
 `@SpringBootApplication` output puts into a part of its own what only a
 hot reload uses, and its library refers to it only under
-`!const bool.fromEnvironment('dart.vm.product')`, the constant the
-`notInRelease` modules use. A release build (`dart compile exe`, AOT, a
-Flutter release) compiles none of it; a debug or profile run behaves as
-before, hot reload included.
+`!const bool.fromEnvironment('dart.vm.product') &&
+!const bool.fromEnvironment('dart.vm.profile')`, the constant of the
+debug-only modules (`BuildInclusion.debugOnly`, the default when a
+module's key is not set). A release build (`dart compile exe`, AOT, a
+Flutter release) and a Flutter profile build compile none of it; a debug
+run behaves as before, hot reload included.
 
 | In the debug part | What it is for |
 |---|---|
-| `_$fingerprint` | the hash of the generated code (the library and its files), which `springApplication` passes as `fingerprint:` in debug and profile builds (`null` in release): `SpringApplication.reload` keeps the running context when it is unchanged, else restarts it |
-| `_$debugAutoConfigurations`, `_$debugAutoConfigurationMetadata` | the auto-configurations only debug and profile builds have (a module whose build key leaves it out of release: the Flutter debug panel and its meters, the startup checks) and their orderings; `springApplication` spreads them into its own outside release builds |
+| `_$fingerprint` | the hash of the generated code (the library and its files), which `springApplication` passes as `fingerprint:` in debug builds (`null` in profile and release): `SpringApplication.reload` keeps the running context when it is unchanged, else restarts it |
+| `_$debugAutoConfigurations`, `_$debugAutoConfigurationMetadata` | the auto-configurations only debug builds have (a module whose build key is not set: the Flutter debug panel and its meters, the startup checks) and their orderings; `springApplication` spreads them into its own in debug builds only |
 | `reloadApplication`, `reloadApplicationAsync` | the generated hot-reload calls (`context = reloadApplication(context)` in a root widget's `reassemble()`, or a server's restart on reload) |
 
 What stays in every build, on purpose: the `hotReload: () =>
@@ -169,7 +178,7 @@ context starts the same application in another isolate
 (`ApplicationLaunch`, the web server's `server.isolates.count`); the
 getters `springApplication` and `$application` (a getter costs nothing in
 release); a bean's `source:` (start-up error messages and the actuator
-read it); the `notInRelease` modules, guarded by their own build key.
+read it); the `debugOnly` modules, guarded by their own build key.
 
 **Object methods.** `@EqualsAndHashCode`, `@ToString` and `@CopyWith`
 (`spring_core_dart`) are read by introspection, which describes the
@@ -991,10 +1000,11 @@ test/<part>/                generated output and every rejected declaration
   what cannot work; the actuator's adds `build-info.properties` to an
   application's resources.
 - **A part can be left out by a build key**, as an auto-configuration
-  module can: `PackageBuild('<property>', whenMissing:)` has the same
-  reading as `AutoConfigurationBuild` (`application.yml` /
+  module can: `PackageBuild('<property>', whenMissing:, parents:)` has
+  the same reading as `AutoConfigurationBuild` (`application.yml` /
   `application.properties` without a profile; `true`, `false`, not set;
-  `BuildInclusion.notInRelease` by default). No built-in part takes a key
+  `BuildInclusion.debugOnly` by default; parents narrow it), through
+  the same `BuildSwitch` and `BuildKeys.decideSwitch`. No built-in part takes a key
   yet.
 - **The generated code did not change** with this organisation: every
   example and package gives the same bytes as before, and a clean

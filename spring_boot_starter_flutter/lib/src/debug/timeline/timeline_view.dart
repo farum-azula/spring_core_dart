@@ -39,7 +39,7 @@ enum _Tab {
 }
 
 class _TimelineViewState extends State<TimelineView> {
-  _Tab _tab = _Tab.start;
+  _Tab get _tab => _Tab.values[widget.timeline.viewTab % _Tab.values.length];
   bool _copied = false;
 
   Future<void> _copy() async {
@@ -75,7 +75,7 @@ class _TimelineViewState extends State<TimelineView> {
                         tab.label,
                         selected: tab == _tab,
                         onTap: () => setState(() {
-                          _tab = tab;
+                          widget.timeline.viewTab = tab.index;
                           _copied = false;
                         }),
                       ),

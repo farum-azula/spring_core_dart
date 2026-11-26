@@ -6,7 +6,7 @@ import 'package:spring_boot_starter_flutter/src/debug/overlay/debug_overlay.dart
 
 /// The debug panel's Overlays tab: each debug overlay on screen or not,
 /// and, with the `drag` feature, every moved one put back in its corner.
-final class DebugOverlaysSection implements DebugPanelSection, Ordered {
+final class DebugOverlaysSection implements GroupedDebugPanelSection, Ordered {
   /// The tab of [overlays]; [placement] when they can be moved.
   const DebugOverlaysSection(this.overlays, {this.placement});
 
@@ -20,7 +20,10 @@ final class DebugOverlaysSection implements DebugPanelSection, Ordered {
   String get title => 'Overlays';
 
   @override
-  int get order => 15;
+  int get order => 45;
+
+  @override
+  String get group => 'Tools';
 
   @override
   Widget build(BuildContext context) {
@@ -29,8 +32,7 @@ final class DebugOverlaysSection implements DebugPanelSection, Ordered {
       return Text(
         'No debug feature with an overlay is in this build '
         '(spring.flutter.debug.frame-meter.enabled, '
-        'spring.flutter.debug.timeline.enabled, '
-        'spring.flutter.debug.isolates.enabled).',
+        'spring.flutter.debug.console.enabled).',
         style: style.text.copyWith(color: style.muted),
       );
     }

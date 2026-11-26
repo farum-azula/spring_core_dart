@@ -90,6 +90,7 @@ int parseDataSize(String value) {
 /// logging.threshold.console=warn          # console: warnings only
 /// spring.output.ansi.enabled=always       # colours: always (default)/detect/never
 /// logging.console.enabled=true
+/// logging.console.record-bar=true       # ▌ before every line of a record
 /// logging.buffer.enabled=true
 /// logging.buffer.capacity=2000
 /// logging.threshold.buffer=debug
@@ -296,6 +297,7 @@ final class LoggingSystem {
       lookup: lookup,
       ansi: _ansi(_bind(environment, AnsiProperties()).enabled),
     );
+    console.recordBar = logging.console.recordBar;
     console.threshold = _level(
       logging.threshold.console,
       'logging.threshold.console',

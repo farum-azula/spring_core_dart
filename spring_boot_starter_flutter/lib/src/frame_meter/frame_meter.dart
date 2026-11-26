@@ -1,33 +1,20 @@
-import 'dart:async';
-import 'dart:collection';
-import 'dart:ui' show FramePhase, FrameTiming;
-
-import 'package:spring_boot_starter_flutter/src/frame_meter/outside_frames.dart';
-
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/foundation.dart';
+import 'package:spring_boot_starter_flutter/src/debug/debug_layout.dart';
+import 'package:spring_boot_starter_flutter/src/frame_meter/frame_stats.dart';
+import 'package:spring_boot_starter_flutter/src/frame_meter/outside_frames.dart';
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter/src/splash/splash_stage.dart';
+import 'package:spring_boot_starter_flutter/src/theme/frame_meter_theme.dart';
 import 'package:spring_boot_starter_flutter/src/theme/spring_themes.dart';
 
 /// The corner of the screen the frame meter shows in
 /// (`spring.flutter.frame-meter.position`).
-enum FrameMeterPosition {
-  /// Top left.
-  topLeft,
-
-  /// Top right.
-  topRight,
-
-  /// Bottom left.
-  bottomLeft,
-
-  /// Bottom right.
-  bottomRight,
-}
+@Deprecated('Use DebugCorner')
+typedef FrameMeterPosition = DebugCorner;
 
 /// A small panel over [child] with the frames a second the app really
-/// draws, the time of their build and raster, and a bar per frame: green
+/// draws (with [detailed], the time of their build and raster too), and a
+/// bar per frame: green
 /// within the budget of [targetRate], yellow up to twice it, red over.
 ///
 /// A frame is late only when the app was waiting for it. While something
@@ -43,17 +30,18 @@ enum FrameMeterPosition {
 ///
 /// The times are Flutter's own (`FrameTiming`), on every platform the web
 /// included. Frames drawn without Flutter (a 3D scene on a canvas of its
-/// own, [OutsideFrames]) have a line of their own: how many a second, and
-/// what one cost the page's thread. The panel is drawn again at most four times a second, and
-/// its own frames are not counted, so an idle app shows `idle`, not the
+/// own, [OutsideFrames]) show beside them (`60 (120 3D)`). The panel is
+/// drawn again at most four times a second ([FrameStats]), and its own
+/// frames are not counted, so an idle app shows `idle`, not the
 /// meter.
 class FrameMeter extends StatelessWidget {
   /// A meter over [child] in the corner [position].
   const FrameMeter({
     required this.child,
-    this.position = FrameMeterPosition.topRight,
+    this.position = DebugCorner.topRight,
     this.targetRate = 60,
     this.stages,
+    this.detailed = false,
     super.key,
   });
 
@@ -61,7 +49,7 @@ class FrameMeter extends StatelessWidget {
   final Widget child;
 
   /// The corner it shows in.
-  final FrameMeterPosition position;
+  final DebugCorner position;
 
   /// The frames a second the screen is meant to show.
   final int targetRate;
@@ -70,14 +58,15 @@ class FrameMeter extends StatelessWidget {
   /// nor counts, so it takes nothing from the splash. `null`: always on.
   final ValueListenable<SplashStage>? stages;
 
+  /// Whether it shows the times of build and raster as well.
+  final bool detailed;
+
   @override
   Widget build(BuildContext context) {
     final top =
-        position == FrameMeterPosition.topLeft ||
-        position == FrameMeterPosition.topRight;
+        position == DebugCorner.topLeft || position == DebugCorner.topRight;
     final left =
-        position == FrameMeterPosition.topLeft ||
-        position == FrameMeterPosition.bottomLeft;
+        position == DebugCorner.topLeft || position == DebugCorner.bottomLeft;
     return Stack(
       textDirection: TextDirection.ltr,
       children: [
@@ -91,7 +80,11 @@ class FrameMeter extends StatelessWidget {
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(8),
-                child: FrameMeterGauge(targetRate: targetRate, stages: stages),
+                child: FrameMeterGauge(
+                  targetRate: targetRate,
+                  stages: stages,
+                  detailed: detailed,
+                ),
               ),
             ),
           ),
@@ -104,9 +97,33 @@ class FrameMeter extends StatelessWidget {
 /// The meter's panel alone, measuring the frames while it is shown: what
 /// [FrameMeter] puts in a corner, and what the debug overlays stack with
 /// the others. Nothing until the app shows ([stages]).
+///
+/// Compact by default: one short line, the frames a second in the
+/// theme's primary colour and those drawn without Flutter beside them
+/// (`60 (120 3D)`), over a strip with a bar per frame. [detailed] adds the
+/// times of build and raster and the worst frame (the debug panel's
+/// Frames tab).
 class FrameMeterGauge extends StatefulWidget {
   /// The panel, with the budget of [targetRate].
-  const FrameMeterGauge({this.targetRate = 60, this.stages, super.key});
+  const FrameMeterGauge({
+    this.targetRate = 60,
+    this.stages,
+    this.detailed = false,
+    this.look,
+    this.number,
+    this.textStyle,
+    super.key,
+  });
+
+  /// Colours over the theme's `frame-meter` look, each that is set (the
+  /// debug theme's, over the debug overlays); `null`: the theme's.
+  final FrameMeterTheme? look;
+
+  /// The colour of the rate; `null`: the theme's primary colour.
+  final Color? number;
+
+  /// The text's style; `null`: the theme's `frame-meter` text style.
+  final TextStyle? textStyle;
 
   /// The frames a second the screen is meant to show.
   final int targetRate;
@@ -115,266 +132,175 @@ class FrameMeterGauge extends StatefulWidget {
   /// nor counts. `null`: always on.
   final ValueListenable<SplashStage>? stages;
 
+  /// Whether it shows the times as well.
+  final bool detailed;
+
   @override
   State<FrameMeterGauge> createState() => _FrameMeterState();
 }
 
-// One frame of the app: when it started, how long after the one before,
-// how long its build and raster took, and whether the app was waiting
-// for it (the frame before ended with this one already asked for).
-typedef _Frame = ({
-  int start,
-  int interval,
-  int build,
-  int raster,
-  bool awaited,
-});
-
-extension on _Frame {
-  // How long the frame took to come once it was wanted: the time since
-  // the frame before when the app was waiting for it, else its own work.
-  int get took => awaited && interval > 0 ? interval : build + raster;
-}
-
 class _FrameMeterState extends State<FrameMeterGauge> {
-  static const _shown = 48;
-  static const _window = Duration(seconds: 1);
-  static const _pause = 250000;
+  late final FrameStats _stats = FrameStats(
+    targetRate: widget.targetRate,
+    stages: widget.stages,
+  )..addListener(_changed);
 
-  final _frames = ListQueue<_Frame>();
-  // For each frame that ended, in order: whether it was drawn for the
-  // meter alone, and whether the next one was asked for already. Reports
-  // of frames come later, in batches.
-  final _ends = ListQueue<({bool own, bool next})>();
-  bool _awaited = false;
-  int? _lastStart;
-  // The frame to come is the meter's own: nothing else had asked for one
-  // when the meter asked to be drawn again.
-  bool _mine = false;
-  bool _fresh = false;
-  int _outside = 0;
-  bool _outsideShown = false;
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    SchedulerBinding.instance.addTimingsCallback(_timings);
-    _watch();
-    widget.stages?.addListener(_stageChanged);
-    _timer = Timer.periodic(const Duration(milliseconds: 250), (_) {
-      // Frames drawn without Flutter (OutsideFrames) show too.
-      final outside = OutsideFrames.all.fold(0, (sum, s) => sum + s.count);
-      final moved = outside != _outside;
-      _outside = outside;
-      if ((_fresh || moved || _outsideShown) && mounted) {
-        _fresh = false;
-        _outsideShown = moved;
-        // A frame that is coming anyway carries the meter with it, and
-        // stays the app's.
-        _mine = !SchedulerBinding.instance.hasScheduledFrame;
-        setState(() {});
-      }
-    });
-  }
-
-  // Notes, as each frame ends, whether the app has asked for the next:
-  // a callback after the frame that puts itself back, and asks for no
-  // frame itself.
-  void _watch() {
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      _ends.addLast((
-        own: _mine,
-        next: SchedulerBinding.instance.hasScheduledFrame,
-      ));
-      _mine = false;
-      // Frames nobody reported (the reports stopped): not kept for ever.
-      while (_ends.length > 600) {
-        _ends.removeFirst();
-      }
-      _watch();
-    });
-  }
-
-  void _stageChanged() {
-    if (_started && mounted) {
+  void _changed() {
+    if (mounted) {
       setState(() {});
     }
   }
 
   @override
   void dispose() {
-    widget.stages?.removeListener(_stageChanged);
-    _timer?.cancel();
-    SchedulerBinding.instance.removeTimingsCallback(_timings);
+    _stats
+      ..removeListener(_changed)
+      ..dispose();
     super.dispose();
   }
 
-  bool get _started =>
-      widget.stages == null || widget.stages!.value == SplashStage.app;
-
-  void _timings(List<FrameTiming> timings) {
-    if (!_started) {
-      return;
-    }
-    for (final timing in timings) {
-      final start = timing.timestampInMicroseconds(FramePhase.vsyncStart);
-      final end = _ends.isEmpty ? null : _ends.removeFirst();
-      // What the frame before left: this one asked for, or not.
-      final awaited = _awaited;
-      _awaited = end?.next ?? false;
-      // The meter's own repaint: not the app's, and not a frame between
-      // two of the app's either (the time between those runs across it).
-      if (end?.own ?? false) {
-        continue;
-      }
-      final last = _lastStart;
-      _lastStart = start;
-      _frames.addLast((
-        start: start,
-        // The first frame after a pause starts anew: the pause is no
-        // frame. A frame the app was waiting for is late however long.
-        interval: last == null || (!awaited && start - last > _pause)
-            ? 0
-            : start - last,
-        build: timing.buildDuration.inMicroseconds,
-        raster: timing.rasterDuration.inMicroseconds,
-        awaited: awaited,
-      ));
-      _fresh = true;
-    }
-    while (_frames.length > _shown) {
-      _frames.removeFirst();
-    }
-  }
-
   @override
-  Widget build(BuildContext context) => !_started
-      ? const SizedBox.shrink()
-      : _Panel(
-          frames: _frames.toList(),
-          budget: 1000000 ~/ widget.targetRate,
-          window: _window.inMicroseconds,
-        );
+  Widget build(BuildContext context) => switch (_stats.reading) {
+    null => const SizedBox.shrink(),
+    final reading => _Panel(
+      reading: reading,
+      detailed: widget.detailed,
+      over: widget.look,
+      number: widget.number,
+      textStyle: widget.textStyle,
+    ),
+  };
 }
 
 class _Panel extends StatelessWidget {
   const _Panel({
-    required this.frames,
-    required this.budget,
-    required this.window,
+    required this.reading,
+    required this.detailed,
+    this.over,
+    this.number,
+    this.textStyle,
   });
 
-  final List<_Frame> frames;
-  final int budget;
-  final int window;
+  final FrameReading reading;
+  final bool detailed;
+  final FrameMeterTheme? over;
+  final Color? number;
+  final TextStyle? textStyle;
 
   @override
   Widget build(BuildContext context) {
     final theme = SpringTheme.maybeOf(context);
     final look = theme?.frameMeter;
     final colors = theme?.colorScheme;
-    final good = look?.good ?? colors?.primary ?? const Color(0xFF4CAF50);
+    final good =
+        over?.good ?? look?.good ?? colors?.primary ?? const Color(0xFF4CAF50);
     final warning =
-        look?.warning ?? colors?.tertiary ?? const Color(0xFFFFC107);
-    final bad = look?.bad ?? colors?.error ?? const Color(0xFFF44336);
+        over?.warning ??
+        look?.warning ??
+        colors?.tertiary ??
+        const Color(0xFFFFC107);
+    final bad =
+        over?.bad ?? look?.bad ?? colors?.error ?? const Color(0xFFF44336);
     final foreground =
-        look?.foreground ?? colors?.onSurface ?? const Color(0xFFFFFFFF);
+        over?.foreground ??
+        look?.foreground ??
+        colors?.onSurface ??
+        const Color(0xFFFFFFFF);
+    final accent = number ?? colors?.primary ?? const Color(0xFF4FC3F7);
     final background =
+        over?.background ??
         look?.background ??
         (colors?.surface ?? const Color(0xFF000000)).withValues(alpha: 0.85);
     final style =
-        (theme?.textStyle(look?.textStyle ?? 'labelsmall') ??
+        (textStyle ??
+                theme?.textStyle(look?.textStyle ?? 'labelsmall') ??
                 const TextStyle(fontSize: 11))
             .copyWith(color: foreground, height: 1.3);
+    final budget = reading.budget;
 
-    Color colorOf(int took) => took <= budget * 1.2
-        ? good
-        : took <= budget * 2
-        ? warning
-        : bad;
+    Color colorOf(int took) => switch (FrameReading.statusOf(took, budget)) {
+      FrameStatus.good => good,
+      FrameStatus.warning => warning,
+      FrameStatus.bad => bad,
+    };
 
-    final last = frames.isEmpty ? null : frames.last.start;
-    final recent = [
-      for (final frame in frames)
-        if (last != null && last - frame.start < window) frame,
-    ];
-    // The time between the frames the app was waiting for: it moves at
-    // every frame there, and a longer time is a late frame.
-    final moving = <int>[
-      for (final frame in recent)
-        if (frame.awaited && frame.interval > 0) frame.interval,
-    ];
-    // Without any, the frames it drew because something asked for one now
-    // and then: few by choice, not late.
-    final paced = <int>[
-      if (moving.isEmpty)
-        for (final (i, frame) in recent.indexed)
-          if (i > 0 && frame.interval > 0) frame.interval,
-    ];
-    final between = moving.isEmpty ? paced : moving;
-    final idle = between.isEmpty;
-    final rate = idle
-        ? 0
-        : (between.length * 1e6 / between.reduce((a, b) => a + b)).round();
-    double average(int Function(_Frame) of) => recent.isEmpty
-        ? 0
-        : recent.map(of).reduce((a, b) => a + b) / recent.length / 1000;
-    final worst = recent.isEmpty
-        ? 0
-        : recent.map((frame) => frame.took).reduce((a, b) => a > b ? a : b);
-
+    final rate = reading.rate;
+    final bars = CustomPaint(
+      size: Size(detailed ? 96 : 72, detailed ? 24 : 10),
+      painter: _Bars(
+        reading.took,
+        budget: budget,
+        colorOf: colorOf,
+        line: foreground.withValues(alpha: 0.4),
+      ),
+    );
     return DecoratedBox(
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: detailed
+            ? const EdgeInsets.symmetric(horizontal: 8, vertical: 6)
+            : const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              idle ? 'idle' : '$rate fps',
-              style: style.copyWith(
-                // Few frames by choice are no fault: the plain color.
-                color: moving.isEmpty
-                    ? foreground
-                    : colorOf(1000000 ~/ rate.clamp(1, 1000)),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            for (final source in OutsideFrames.all)
-              if (source.recent case final recent?)
-                Text(
-                  '${source.name} ${recent.rate} fps · '
-                  '${recent.cost.toStringAsFixed(1)} ms',
-                  style: style.copyWith(
-                    color: colorOf(1000000 ~/ recent.rate.clamp(1, 1000)),
-                    fontWeight: FontWeight.bold,
+          children: detailed
+              ? [
+                  Text(
+                    reading.idle ? 'idle' : '$rate fps',
+                    style: style.copyWith(
+                      // Few frames by choice are no fault: the plain color.
+                      color: reading.moving
+                          ? colorOf(1000000 ~/ rate.clamp(1, 1000))
+                          : foreground,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-            Text(
-              'build ${average((f) => f.build).toStringAsFixed(1)} ms\n'
-              'raster ${average((f) => f.raster).toStringAsFixed(1)} ms\n'
-              'worst ${(worst / 1000).toStringAsFixed(0)} ms',
-              style: style,
-            ),
-            const SizedBox(height: 4),
-            CustomPaint(
-              size: const Size(96, 24),
-              painter: _Bars(
-                [for (final frame in frames) frame.took],
-                budget: budget,
-                colorOf: colorOf,
-                line: foreground.withValues(alpha: 0.4),
-              ),
-            ),
-          ],
+                  for (final source in OutsideFrames.all)
+                    if (source.recent case final recent?)
+                      Text(
+                        '${source.name} ${recent.rate} fps · '
+                        '${recent.cost.toStringAsFixed(1)} ms',
+                        style: style.copyWith(
+                          color: colorOf(1000000 ~/ recent.rate.clamp(1, 1000)),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                  Text(
+                    'build ${reading.build.toStringAsFixed(1)} ms\n'
+                    'raster ${reading.raster.toStringAsFixed(1)} ms\n'
+                    'worst ${(reading.worst / 1000).toStringAsFixed(0)} ms',
+                    style: style,
+                  ),
+                  const SizedBox(height: 4),
+                  bars,
+                ]
+              : [
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: reading.idle ? 'idle' : '$rate',
+                          style: TextStyle(
+                            color: reading.idle ? foreground : accent,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        for (final source in OutsideFrames.all)
+                          if (source.recent case final recent?)
+                            TextSpan(
+                              text: ' (${recent.rate} ${source.name})',
+                            ),
+                      ],
+                    ),
+                    style: style,
+                    maxLines: 1,
+                  ),
+                  const SizedBox(height: 2),
+                  bars,
+                ],
         ),
       ),
     );
@@ -399,7 +325,7 @@ class _Bars extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final top = budget * 3;
-    final width = size.width / _FrameMeterState._shown;
+    final width = size.width / FrameStats.kept;
     for (final (i, time) in took.indexed) {
       if (time == 0) {
         continue;

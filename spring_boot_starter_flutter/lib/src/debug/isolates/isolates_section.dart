@@ -1,14 +1,16 @@
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_panel.dart';
-import 'package:spring_boot_starter_flutter/src/debug/debug_style.dart';
 import 'package:spring_boot_starter_flutter/src/debug/isolates/debug_isolates.dart';
 import 'package:spring_boot_starter_flutter/src/debug/isolates/isolates_view.dart';
+import 'package:spring_boot_starter_flutter/src/debug/isolates/memory/memory_block.dart';
+import 'package:spring_boot_starter_flutter/src/debug/isolates/size/size_block.dart';
 
-/// The task manager in the debug panel: its small table shown on screen
-/// or not, and every row in full ([IsolatesView]), read while the tab is
-/// open.
-final class DebugIsolatesSection implements DebugPanelSection, Ordered {
+/// The task manager in the debug panel: the memory on top
+/// ([DebugMemoryBlock]), what the page downloaded on the web
+/// ([DebugSizeBlock]), then every row in full ([IsolatesView]), read
+/// while the tab is open.
+final class DebugIsolatesSection implements GroupedDebugPanelSection, Ordered {
   /// The section of [isolates].
   const DebugIsolatesSection(this.isolates);
 
@@ -22,30 +24,16 @@ final class DebugIsolatesSection implements DebugPanelSection, Ordered {
   int get order => 57;
 
   @override
-  Widget build(BuildContext context) {
-    final style = DebugStyle.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ListenableBuilder(
-          listenable: isolates,
-          builder: (context, _) => Row(
-            children: [
-              Text(
-                'Show on screen ',
-                style: style.text.copyWith(color: style.muted),
-              ),
-              const SizedBox(width: 6),
-              DebugChip(
-                isolates.shown ? 'On' : 'Off',
-                selected: isolates.shown,
-                onTap: () => isolates.shown = !isolates.shown,
-              ),
-            ],
-          ),
-        ),
-        Expanded(child: IsolatesView(rows: isolates.rows)),
-      ],
-    );
-  }
+  String get group => 'Performance';
+
+  @override
+  Widget build(BuildContext context) => IsolatesView(
+    rows: isolates.rows,
+    header: [
+      DebugMemoryBlock(memory: isolates.memory),
+      const SizedBox(height: 16),
+      const DebugSizeBlock(),
+      const SizedBox(height: 16),
+    ],
+  );
 }

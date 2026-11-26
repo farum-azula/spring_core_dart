@@ -347,4 +347,41 @@ void main() {
       '[$isolate] ${'neon.checkout.Payments'.padRight(40)} : paid {order=1}',
     );
   });
+
+  test('withBar marks every line, coloured as %clr colours the level', () {
+    expect(
+      LogPattern.withBar('a\nb', SpringLogLevel.info, ansi: false),
+      '${LogPattern.recordBar} a\n${LogPattern.recordBar} b',
+    );
+    for (final level in SpringLogLevel.values) {
+      final pattern = LogPattern('%clr(|)', ansi: true);
+      final open = pattern.format(at(level)).split('|').first;
+      expect(
+        LogPattern.withBar('x', level, ansi: true),
+        '$open${LogPattern.recordBar}\x1B[0;39m x',
+      );
+    }
+  });
+
+  test('withBar keeps the colour of a coloured message on its next lines', () {
+    final text =
+        LogPattern(
+          '%clr(%m){red}',
+          ansi: true,
+        ).formatLine(
+          SpringLogRecord(SpringLogLevel.info, 'a', 'one\ntwo', time: time),
+        );
+    final lines = LogPattern.withBar(
+      text,
+      SpringLogLevel.info,
+      ansi: true,
+    ).split('\n');
+    expect(lines[1], endsWith('\x1B[31mtwo\x1B[0;39m'));
+    final plain = LogPattern.withBar(
+      'a\nb',
+      SpringLogLevel.info,
+      ansi: true,
+    ).split('\n');
+    expect(plain[1], '\x1B[32m${LogPattern.recordBar}\x1B[0;39m b');
+  });
 }

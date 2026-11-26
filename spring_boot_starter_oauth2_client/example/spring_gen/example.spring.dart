@@ -120,7 +120,9 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     _i12.springSecurityCoreAutoConfiguration,
   ],
   dartDefines: _$dartDefines,
-  fingerprint: !const bool.fromEnvironment('dart.vm.product')
+  fingerprint:
+      !const bool.fromEnvironment('dart.vm.product') &&
+          !const bool.fromEnvironment('dart.vm.profile')
       ? _$fingerprint
       : null,
 );

@@ -2,6 +2,8 @@
 // (example/spring_gen/example.spring.dart): a field's readers are told of
 // an assignment, a computed value is kept, an effect runs again, an
 // asynchronous value loads once and again when what it read changes.
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spring_boot_starter_flutter_signals/spring_boot_starter_flutter_signals.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart'
@@ -203,6 +205,59 @@ void main() {
           ),
         ),
       );
+    });
+  });
+
+  group('refresh and reload always end', () {
+    // Ends in time, or the test fails instead of waiting for ever.
+    Future<void> ends(Future<void> load) =>
+        expectLater(load.timeout(const Duration(seconds: 1)), completes);
+
+    test('a refresh asked for again while one runs: both end', () async {
+      final loads = <Completer<int>>[];
+      final books = SignalBean('Catalog').asynchronous('books', () {
+        final load = Completer<int>();
+        loads.add(load);
+        return load.future;
+      });
+      books.read();
+      final first = books.refresh();
+      final second = books.refresh();
+      loads.last.complete(3);
+      await ends(second);
+      await ends(first);
+    });
+
+    test('the bean closed while it loads again', () async {
+      final bean = SignalBean('Catalog');
+      final books = bean.asynchronous('books', () => Completer<int>().future);
+      books.read();
+      final refreshing = books.refresh();
+      bean.close();
+      await ends(refreshing);
+    });
+
+    test('a stream that ends without an event', () async {
+      final prices = SignalBean('Catalog').asynchronous(
+        'prices',
+        Stream<int>.empty,
+      );
+      prices.read();
+      await ends(prices.reload());
+    });
+
+    test('the same future again', () async {
+      final kept = Future<int>.value(1);
+      final books = SignalBean('Catalog').asynchronous('books', () => kept);
+      books.read();
+      await kept;
+      await ends(books.refresh());
+    });
+
+    test('a plain value', () async {
+      final count = SignalBean('Catalog').asynchronous('count', () => 3);
+      count.read();
+      await ends(count.refresh());
     });
   });
 

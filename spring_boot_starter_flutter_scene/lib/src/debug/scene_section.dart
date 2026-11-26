@@ -4,7 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_scene/scene.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    show DebugChip, DebugPanelSection, DebugStyle;
+    show DebugChip, DebugStyle, GroupedDebugPanelSection;
 import 'package:spring_boot_starter_flutter_scene/src/conditions/scene_condition.dart';
 import 'package:spring_boot_starter_flutter_scene/src/debug/page_isolation.dart';
 import 'package:spring_boot_starter_flutter_scene/src/debug/scene_debug.dart';
@@ -44,7 +44,7 @@ import 'package:spring_boot_starter_flutter_scene/src/scene_status.dart';
 ///
 /// The engine gives no time on the GPU, and nothing per model: a model's
 /// cost is seen by hiding it.
-final class SceneDebugSection implements DebugPanelSection, Ordered {
+final class SceneDebugSection implements GroupedDebugPanelSection, Ordered {
   /// The tab over [debug]'s views, the [availability], the [models] and
   /// the [materials], with the [precisions] the build found.
   const SceneDebugSection({
@@ -79,6 +79,9 @@ final class SceneDebugSection implements DebugPanelSection, Ordered {
 
   @override
   int get order => 58;
+
+  @override
+  String get group => 'App';
 
   @override
   Widget build(BuildContext context) => _SceneDebugView(this);

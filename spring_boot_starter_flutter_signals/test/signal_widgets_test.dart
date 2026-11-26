@@ -19,6 +19,13 @@ Future<ApplicationContext> _pump(WidgetTester tester, Widget home) async {
   return SpringScope.of(tester.element(find.byType(Directionality).first));
 }
 
+// The writes are told in a microtask; the first pump runs it, the second
+// builds what it marked.
+Future<void> _told(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump();
+}
+
 void main() {
   testWidgets('the example: the catalog loads, a tap changes the total', (
     tester,
@@ -28,12 +35,12 @@ void main() {
     expect(find.text('Total: 0.0'), findsOneWidget);
 
     await tester.tap(find.text('fiction two'));
-    await tester.pump();
+    await _told(tester);
     expect(find.text('Total: 12.0'), findsOneWidget);
 
     // Another genre: the view shows the load, then the new books.
     context.getBean<Catalog>().genre = 'poetry';
-    await tester.pump();
+    await _told(tester);
     expect(find.text('Loading'), findsOneWidget);
     await tester.pumpAndSettle(const Duration(milliseconds: 50));
     expect(find.text('poetry one'), findsOneWidget);
@@ -58,18 +65,18 @@ void main() {
     expect(builds, 1);
 
     basket.add(const Book('Dune', 10));
-    await tester.pump();
+    await _told(tester);
     expect(find.text('10.0'), findsOneWidget);
     expect(builds, 2);
 
     // The genre of the catalog is not read here.
     context.getBean<Catalog>().genre = 'poetry';
-    await tester.pump();
+    await _told(tester);
     expect(builds, 2);
 
     // Two assignments in one method: one build.
     basket.clear();
-    await tester.pump();
+    await _told(tester);
     expect(builds, 3);
   });
 
@@ -86,7 +93,7 @@ void main() {
     expect(find.text('Coupon: none'), findsOneWidget);
 
     basket.coupon = 'TEN';
-    await tester.pump();
+    await _told(tester);
     expect(find.text('Coupon: TEN'), findsOneWidget);
 
     // The items are not read by this widget: its text is not built again.
@@ -96,12 +103,13 @@ void main() {
     basket.add(const Book('Dune', 10));
     expect(label.dirty, isFalse);
     expect(rebuilt, isFalse);
-    await tester.pump();
+    await _told(tester);
     expect(find.text('Coupon: TEN'), findsOneWidget);
 
     basket.coupon = null;
+    context.getBean<SignalRuntime>().queues.primary.flush();
     expect(label.dirty, isTrue);
-    await tester.pump();
+    await _told(tester);
     expect(find.text('Coupon: none'), findsOneWidget);
     expect(builds, 1);
   });
@@ -121,7 +129,7 @@ void main() {
     expect(find.text('2 books'), findsOneWidget);
 
     final refreshed = context.getBean<Catalog>().books.refresh();
-    await tester.pump();
+    await _told(tester);
     // The last value stays on screen.
     expect(find.text('2 books'), findsOneWidget);
     expect(find.text('Loading'), findsNothing);
@@ -150,7 +158,7 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     final before = builds;
     basket.add(const Book('Dune', 10));
-    await tester.pump();
+    await _told(tester);
     expect(builds, before);
   });
 }

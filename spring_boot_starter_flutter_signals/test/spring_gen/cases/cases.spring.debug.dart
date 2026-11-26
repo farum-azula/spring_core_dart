@@ -9,31 +9,65 @@
 
 part of 'cases.spring.dart';
 
-/// The auto-configurations only debug and profile builds have (their build key
-/// leaves them out of a release build), which `springApplication` adds
-/// to its own outside release builds.
-List<_i2.BeanModule> get _$debugAutoConfigurations => [
-  _i5.springBootStarterFlutterDebugAutoConfiguration,
-  _i5.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
-  _i5.springBootStarterFlutterDebugIsolatesAutoConfiguration,
-  _i5.springBootStarterFlutterDebugMotionAutoConfiguration,
-  _i5.springBootStarterFlutterDebugTimelineAutoConfiguration,
+/// The auto-configurations only debug builds have (their build key leaves
+/// them out of a profile or a release build), which `springApplication` adds
+/// to its own in debug builds.
+List<_i1.BeanModule> get _$debugAutoConfigurations => [
+  _i6.springBootStarterFlutterDebugAutoConfiguration,
+  _i6.springBootStarterFlutterDebugBeansGraphAutoConfiguration,
+  _i6.springBootStarterFlutterDebugFlutterToolsAutoConfiguration,
+  _i6.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
+  _i6.springBootStarterFlutterDebugIsolatesAutoConfiguration,
+  _i6.springBootStarterFlutterDebugLogsExportAutoConfiguration,
+  _i6.springBootStarterFlutterDebugMotionAutoConfiguration,
+  _i6.springBootStarterFlutterDebugTimelineAutoConfiguration,
+  _i6.springBootStarterFlutterDebugWidgetsGraphAutoConfiguration,
 ];
 
 /// The hash of the generated code, which a hot reload compares to restart
 /// the application only when its beans changed (`SpringApplication.reload`).
-const _$fingerprint = '7daa99e7';
+const _$fingerprint = '346fec52';
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i2.ConfigurableApplicationContext reloadApplication(
-  _i2.ConfigurableApplicationContext running, {
+_i1.ConfigurableApplicationContext reloadApplication(
+  _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i2.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i2.ConfigurableApplicationContext running, {
+Future<_i1.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i1.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
+
+/// The public fields of the application's widgets and their states, which the
+/// cards of the debug graph show (`DebugWidgetFields`).
+List<_i1.BeanDefinition<Object>> get _$debugWidgetFields => [
+  _i1.BeanDefinition<_i7.DebugWidgetFields>(
+    name: r'debugWidgetFields',
+    source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#DebugWidgetFields',
+    lazy: true,
+    create: (r) => _i7.DebugWidgetFields({
+      _i8.SignalsTable: [
+        (r'rows', (o) => (o as _i8.SignalsTable).rows),
+        (r'recorder', (o) => (o as _i8.SignalsTable).recorder),
+        (r'now', (o) => (o as _i8.SignalsTable).now),
+        (r'timesAt', (o) => (o as _i8.SignalsTable).timesAt),
+        (r'expanded', (o) => (o as _i8.SignalsTable).expanded),
+        (r'onExpand', (o) => (o as _i8.SignalsTable).onExpand),
+      ],
+      _i8.SignalsRowHighlight: [
+        (r'changedAt', (o) => (o as _i8.SignalsRowHighlight).changedAt),
+        (r'now', (o) => (o as _i8.SignalsRowHighlight).now),
+        (r'color', (o) => (o as _i8.SignalsRowHighlight).color),
+        (r'fade', (o) => (o as _i8.SignalsRowHighlight).fade),
+        (r'child', (o) => (o as _i8.SignalsRowHighlight).child),
+      ],
+      _i8.SignalsLock: [(r'reason', (o) => (o as _i8.SignalsLock).reason)],
+      _i8.SignalLamp: [(r'level', (o) => (o as _i8.SignalLamp).level)],
+      _i9.Watch: [(r'builder', (o) => (o as _i9.Watch).builder)],
+    }),
+  ),
+];

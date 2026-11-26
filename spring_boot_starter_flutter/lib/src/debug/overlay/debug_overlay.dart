@@ -1,8 +1,9 @@
 import 'package:flutter/widgets.dart';
-import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart';
+import 'package:spring_boot_starter_flutter/src/debug/debug_layout.dart';
 
 /// The corner a debug overlay shows in (`top-right`, `bottom-left`, …).
-typedef DebugOverlayCorner = FrameMeterPosition;
+@Deprecated('Use DebugCorner')
+typedef DebugOverlayCorner = DebugCorner;
 
 /// A debug feature that can show a small widget over the app: the frame
 /// meter, the timeline. The `debugDock` puts the overlays shown of one

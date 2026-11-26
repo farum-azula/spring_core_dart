@@ -26,6 +26,13 @@ String formatIsolateMemory(int? bytes) {
   if (bytes == null) {
     return _none;
   }
+  final (number, unit) = formatIsolateMemoryParts(bytes);
+  return '$number $unit';
+}
+
+/// Bytes as a number and its unit apart (`48.3`, `MB`), for a number
+/// drawn larger than its unit.
+(String, String) formatIsolateMemoryParts(int bytes) {
   var value = bytes.toDouble();
   var unit = 0;
   while (value >= 1024 && unit < _memoryUnits.length - 1) {
@@ -35,7 +42,7 @@ String formatIsolateMemory(int? bytes) {
   final number = unit == 0 || value >= 100
       ? '${value.round()}'
       : value.toStringAsFixed(1);
-  return '$number ${_memoryUnits[unit]}';
+  return (number, _memoryUnits[unit]);
 }
 
 // How the details whose names end so are written.
@@ -124,14 +131,18 @@ const _nameWidth = 88.0;
 /// "Copy JSON" copies the rows ([IsolateLoad.toJson]).
 ///
 /// It listens to [rows] while it is on screen: with an
-/// `IsolateLoadsWatch` they are read only then. A screen narrower than
-/// the table scrolls it sideways.
+/// `IsolateLoadsWatch` they are read only then. The [header] and the
+/// table scroll as one; a screen narrower than the table scrolls the
+/// table sideways.
 class IsolatesView extends StatefulWidget {
-  /// The view of [rows].
-  const IsolatesView({required this.rows, super.key});
+  /// The view of [rows], under [header].
+  const IsolatesView({required this.rows, this.header = const [], super.key});
 
   /// The rows.
   final ValueListenable<List<IsolateLoad>> rows;
+
+  /// What scrolls above the table (the memory and size blocks).
+  final List<Widget> header;
 
   @override
   State<IsolatesView> createState() => _IsolatesViewState();
@@ -156,51 +167,54 @@ class _IsolatesViewState extends State<IsolatesView> {
   @override
   Widget build(BuildContext context) {
     final style = DebugStyle.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerRight,
-          child: DebugChip(_copied ? 'Copied' : 'Copy JSON', onTap: _copy),
-        ),
-        Container(height: 1, color: style.line),
-        const SizedBox(height: 8),
-        Expanded(
-          child: ListenableBuilder(
-            listenable: widget.rows,
-            builder: (context, _) => LayoutBuilder(
-              builder: (context, room) => SingleChildScrollView(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    width: math.max(
-                      room.maxWidth,
-                      _columns.fold(_nameWidth, (sum, c) => sum + c.width),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _Cells(
-                          name: 'name',
-                          cells: [for (final column in _columns) column.title],
-                          style: style.code.copyWith(color: style.muted),
+    return LayoutBuilder(
+      builder: (context, room) => SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 8),
+            ...widget.header,
+            Row(
+              children: [
+                Expanded(
+                  child: Text('Isolates and threads', style: style.title),
+                ),
+                DebugChip(_copied ? 'Copied' : 'Copy JSON', onTap: _copy),
+              ],
+            ),
+            Container(height: 1, color: style.line),
+            const SizedBox(height: 8),
+            ListenableBuilder(
+              listenable: widget.rows,
+              builder: (context, _) => SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: math.max(
+                    room.maxWidth,
+                    _columns.fold(_nameWidth, (sum, c) => sum + c.width),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _Cells(
+                        name: 'name',
+                        cells: [for (final column in _columns) column.title],
+                        style: style.code.copyWith(color: style.muted),
+                      ),
+                      for (final load in widget.rows.value) _Load(load),
+                      if (widget.rows.value.isEmpty)
+                        Text(
+                          'No isolates',
+                          style: style.text.copyWith(color: style.muted),
                         ),
-                        for (final load in widget.rows.value) _Load(load),
-                        if (widget.rows.value.isEmpty)
-                          Text(
-                            'No isolates',
-                            style: style.text.copyWith(color: style.muted),
-                          ),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

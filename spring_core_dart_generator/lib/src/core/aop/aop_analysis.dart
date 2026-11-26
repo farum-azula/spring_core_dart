@@ -214,6 +214,24 @@ void analyzeAop(
       for (final bean in advisors) ...?bean.advisorPointcut?.annotations,
     },
   );
+  // Which member of a bean on signals a pointcut of the build matches.
+  for (final bean in module.beans) {
+    final proxy = bean.proxy;
+    final subclass = proxy?.accessHooks;
+    if (proxy == null || subclass == null) {
+      continue;
+    }
+    final names = [...bean.aliases, ...bean.qualifiers];
+    for (final member in proxy.members) {
+      if (expressions.any(
+        (pointcut) =>
+            pointcut.matchesBean(_signature(proxy, member), bean.name, names),
+      )) {
+        subclass.pointcutMatch = member.name;
+        break;
+      }
+    }
+  }
   // Deferred only knowing all the advice of the package and of the
   // auto-configurations it builds on: a context made of the starter's
   // modules alone (an `ApplicationContextRunner`) has no proxy class for
@@ -277,7 +295,6 @@ void analyzeAop(
     if (proxy == null ||
         proxy.unavailableReason != null ||
         proxy.mixins.isNotEmpty ||
-        proxy.targetClass ||
         proxy.introductions.isNotEmpty ||
         bean.aspect != null ||
         _classMayBeAdvised(proxy, foreign)) {
@@ -451,6 +468,9 @@ void _defer(
 // are the starters' (`@Transactional`, `@Cacheable`, `@Secured`, ...).
 bool _isInert(DartObject annotation, ForeignAdvice? foreign) {
   final element = annotation.type?.element;
+  if (_isAccessHook(annotation)) {
+    return true;
+  }
   if (element == null ||
       element.name == 'Validated' ||
       (foreign != null && _namedByAdvisor(annotation, foreign))) {
@@ -463,6 +483,14 @@ bool _isInert(DartObject annotation, ForeignAdvice? foreign) {
       uri.startsWith('package:spring_core_dart/') ||
       uri.startsWith('package:spring_boot_dart/');
 }
+
+// An annotation whose class is marked `@AccessHook()` (a `@Signal`): what
+// it does is in the bean's generated subclass, so it is no advice.
+bool _isAccessHook(DartObject annotation) =>
+    annotation.type?.element?.metadata.annotations.any(
+      (mark) => mark.element?.enclosingElement?.name == 'AccessHook',
+    ) ??
+    false;
 
 // Adds every `@DeclareParents` of [aspects] to the generated proxy classes
 // of the beans whose class matches its type pattern and does not already
@@ -566,6 +594,7 @@ bool _anyAdvice(
   );
   return annotations.any(
     (annotation) =>
+        !_isAccessHook(annotation) &&
         !(configurationProperties &&
             annotation.type?.element?.name == 'Validated') &&
         _mayBeAdvice(annotation, foreign),

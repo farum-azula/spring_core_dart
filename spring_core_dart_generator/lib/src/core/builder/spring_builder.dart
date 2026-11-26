@@ -62,6 +62,40 @@ const autoConfigurationModuleChecker = TypeChecker.fromUrl(
 /// `META-INF/spring/...AutoConfiguration.imports` for the same purpose.
 const autoConfigurationLibrary = 'lib/spring_auto_configuration.dart';
 
+/// The build switch of each auto-configuration module of [package] that
+/// has one (`@AutoConfigurationModule(build: ...)` in its
+/// [autoConfigurationLibrary]), by the module's variable name, in the
+/// order of the library: what a part of the module build that serves those
+/// modules decides by, so it says what the modules say. Empty when
+/// [buildStep] cannot read that library.
+///
+/// ```dart
+/// final switches = await moduleBuildSwitches(
+///   build.buildStep,
+///   'spring_boot_starter_flutter_signals',
+/// );
+/// switches['springBootStarterFlutterSignalsDebugAutoConfiguration'];
+/// // BuildSwitch('spring.flutter.signals.debug.enabled', parents: [...])
+/// ```
+Future<Map<String, BuildSwitch>> moduleBuildSwitches(
+  BuildStep buildStep,
+  String package,
+) async {
+  final id = AssetId(package, autoConfigurationLibrary);
+  if (!await buildStep.canRead(id) || !await buildStep.resolver.isLibrary(id)) {
+    return const {};
+  }
+  final library = await buildStep.resolver.libraryFor(id);
+  return {
+    for (final variable in library.topLevelVariables)
+      if (autoConfigurationModuleChecker.firstAnnotationOf(variable)
+          case final annotation?)
+        if (ConstantReader(annotation).peek('build') case final build?
+            when !build.isNull)
+          variable.name!: BuildSwitch.fromAnnotation(build),
+  };
+}
+
 /// The builder that writes `<file>.spring.dart`: the bean module of a
 /// `@ComponentScan()` variable, or the whole application of a
 /// `@SpringBootApplication()` `main`.
@@ -325,7 +359,10 @@ class SpringBuilder implements Builder {
       moduleFileId(output, introspectionExtension): formatted.introspection,
       moduleFileId(output, propertiesExtension): formatted.properties,
       moduleFileId(output, proxiesExtension): formatted.proxies,
-      for (final extension in applicationPartExtensions)
+      for (final extension in [
+        ...packagePartExtensions,
+        ...applicationPartExtensions,
+      ])
         moduleFileId(output, extension): formatted.parts[extension],
     };
     for (final MapEntry(key: id, value: source) in files.entries) {
@@ -499,7 +536,7 @@ class SpringBuilder implements Builder {
   /// input reaches ([reachablePackages]), all of them when its
   /// dependencies cannot be read, less those their build keys leave out
   /// ([PackageGeneration.build], read from [keys]); with the condition the
-  /// code of each one only in debug and profile builds is under.
+  /// code of each one only in debug builds is under.
   Future<
     ({List<PackageGeneration> built, Map<PackageGeneration, String> conditions})
   >
@@ -996,15 +1033,15 @@ class SpringBuilder implements Builder {
           : null,
     );
     final (exclude, excludeName) = _exclusions(emitter, boots.single);
-    // The auto-configurations a release build leaves out go into the debug
-    // part, which the library spreads in only outside release builds.
+    // The auto-configurations of debug builds only go into the debug part,
+    // which the library spreads in only in debug builds.
     final debugModules = [
       for (final module in autoConfigurations)
-        if (module.conditions.contains(notInReleaseCondition)) module,
+        if (module.conditions.contains(debugOnlyCondition)) module,
     ];
     final releasedModules = [
       for (final module in autoConfigurations)
-        if (!module.conditions.contains(notInReleaseCondition)) module,
+        if (!module.conditions.contains(debugOnlyCondition)) module,
     ];
     // The nested @ComponentScan modules are the application's too: a
     // placeholder of theirs is read as much as one of the scan's own.
@@ -1068,7 +1105,7 @@ class SpringBuilder implements Builder {
                         if (debugModules.any((m) => m.ordering != null))
                           literalSpread(): const CodeExpression(
                             Code(
-                              '$notInReleaseCondition '
+                              '$debugOnlyCondition '
                               '? $_debugAutoConfigurationMetadata : const {}',
                             ),
                           ),
@@ -1077,10 +1114,10 @@ class SpringBuilder implements Builder {
                     if (excludeName.isNotEmpty)
                       'excludeName': literalList(excludeName),
                     if (defines.isNotEmpty) 'dartDefines': refer(_dartDefines),
-                    // Read by a hot reload only; a release build leaves
-                    // the debug part out.
+                    // Read by a hot reload only; a profile or a release
+                    // build leaves the debug part out.
                     'fingerprint': const CodeExpression(
-                      Code('$notInReleaseCondition ? $_fingerprint : null'),
+                      Code('$debugOnlyCondition ? $_fingerprint : null'),
                     ),
                   },
                 )
@@ -1262,10 +1299,10 @@ class SpringBuilder implements Builder {
       Method(
         (m) => m
           ..docs.add(
-            '/// The auto-configurations only debug and profile builds have '
-            '(their build key\n/// leaves them out of a release build), '
-            'which `springApplication` adds\n/// to its own outside '
-            'release builds.',
+            '/// The auto-configurations only debug builds have (their build '
+            'key leaves\n/// them out of a profile or a release build), '
+            'which `springApplication` adds\n/// to its own in debug '
+            'builds.',
           )
           ..type = MethodType.getter
           ..returns = TypeReference(
@@ -1277,7 +1314,7 @@ class SpringBuilder implements Builder {
           ..lambda = true
           ..body = literalList([
             for (final module in debugModules)
-              module.entry(except: notInReleaseCondition),
+              module.entry(except: debugOnlyCondition),
           ]).code,
       ),
       if (ordered.isNotEmpty)
@@ -1300,15 +1337,15 @@ class SpringBuilder implements Builder {
             ..lambda = true
             ..body = literalMap({
               for (final module in ordered)
-                module.entry(except: notInReleaseCondition): module.ordering,
+                module.entry(except: debugOnlyCondition): module.ordering,
             }).code,
         ),
     ];
   }
 
-  // [getter] of the debug part spread into a list outside release builds.
+  // [getter] of the debug part spread into a list in debug builds only.
   static Expression _inDebug(String getter) =>
-      CodeExpression(Code('if ($notInReleaseCondition) ...$getter'));
+      CodeExpression(Code('if ($debugOnlyCondition) ...$getter'));
 
   // The getters of the debug part with the auto-configurations a release
   // build leaves out, and their orderings.
@@ -1724,9 +1761,10 @@ class SpringBuilder implements Builder {
   //
   // A module with `build: AutoConfigurationBuild(property)` is decided by
   // that property of the application's configuration ([keys]): in, out (no
-  // code at all), or in under `!dart.vm.product`, which a release build
-  // compiles away with everything only the module reaches. A module with
-  // a `platform` is in under that platform's constant the same way.
+  // code at all), or in under [debugOnlyCondition], which a profile or a
+  // release build compiles away with everything only the module reaches.
+  // A module with a `platform` is in under that platform's constant the
+  // same way.
   // [proxies]: the build of the beans (by source) with a deferred proxy
   // that are only in such modules, so their proxies leave with them;
   // walked only when a module is decided so.
@@ -1783,7 +1821,7 @@ class SpringBuilder implements Builder {
             continue;
           }
           final conditions = [
-            if (choice == BuildInclusion.notInRelease) notInReleaseCondition,
+            if (choice == BuildInclusion.debugOnly) debugOnlyCondition,
             ?_platformCondition(ConstantReader(annotation).peek('platform')),
           ];
           decided.add((variable, conditions));
@@ -1880,7 +1918,8 @@ class SpringBuilder implements Builder {
   }
 
   // `AutoConfigurationModule.build` against the application's
-  // configuration ([keys]); a module without one is always built.
+  // configuration ([keys]), its parents' switches included; a module
+  // without one is always built.
   static BuildInclusion _buildChoice(
     ConstantReader? build,
     BuildKeys keys,
@@ -1889,17 +1928,8 @@ class SpringBuilder implements Builder {
     if (build == null || build.isNull) {
       return BuildInclusion.always;
     }
-    return keys.decide(
-      build.read('property').stringValue,
-      whenMissing: switch (build
-          .read('whenMissing')
-          .objectValue
-          .variable
-          ?.name) {
-        'always' => BuildInclusion.always,
-        'never' => BuildInclusion.never,
-        _ => BuildInclusion.notInRelease,
-      },
+    return keys.decideSwitch(
+      BuildSwitch.fromAnnotation(build),
       subject: module,
     );
   }

@@ -55,6 +55,12 @@ final class ScreenEntry extends NavigationEntry with ChangeNotifier {
   /// The route's state.
   RouteState get state => _state;
 
+  /// The key of the screen's page in the navigator ([Page.key]).
+  LocalKey get pageKey => pageKeyOf(id);
+
+  /// The key of the page of the screen [id].
+  static LocalKey pageKeyOf(int id) => ValueKey<String>('screen $id');
+
   set state(RouteState value) {
     _state = value;
     notifyListeners();

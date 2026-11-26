@@ -87,7 +87,7 @@ void main() {
     test('true: the module, always', () async {
       final code = await output(config: 'neon.debug.enabled=true');
       expect(code, matches(RegExp(r'[\[,]_i\d+\.neonCacheAutoConfiguration,')));
-      expect(code, isNot(matches(_notInRelease)));
+      expect(code, isNot(matches(_debugOnly)));
     });
 
     test('false: no module, no code', () async {
@@ -95,13 +95,14 @@ void main() {
       expect(code, isNot(contains('neonCacheAutoConfiguration')));
     });
 
-    test('not set: only outside a release, from the debug part', () async {
+    test('not set: only in debug builds, from the debug part', () async {
       final code = await output();
-      expect(code, matches(_notInRelease));
+      expect(code, matches(_debugOnly));
       expect(
         code,
         contains(
-          "if(!constbool.fromEnvironment('dart.vm.product'))"
+          "if(!constbool.fromEnvironment('dart.vm.product')&&"
+          "!constbool.fromEnvironment('dart.vm.profile'))"
           r'..._$debugAutoConfigurations',
         ),
         reason: 'the library spreads the debug part in, under one condition',
@@ -134,7 +135,7 @@ void main() {
           ),
           reason: '$file: $config',
         );
-        expect(_compact(result), matches(_notInRelease));
+        expect(_compact(result), matches(_debugOnly));
       }
     });
 
@@ -152,8 +153,8 @@ void main() {
         logs,
         contains(
           endsWith(
-            'The module is built as when it is not set: in debug and profile '
-            'builds only, so in a release build what '
+            'The module is built as when it is not set: in debug builds '
+            'only, so in a profile-mode or a release build what '
             'application-dev.properties sets has no code to act on. Set '
             'neon.debug.enabled: true without a profile to keep the module '
             'in every build.',
@@ -207,7 +208,8 @@ void main() {
       expect(
         code,
         contains(
-          "...!constbool.fromEnvironment('dart.vm.product')"
+          "...!constbool.fromEnvironment('dart.vm.product')&&"
+          "!constbool.fromEnvironment('dart.vm.profile')"
           r'?_$debugAutoConfigurationMetadata:const{}',
         ),
       );
@@ -246,7 +248,7 @@ void main() {
           ),
         ),
       );
-      expect(code, isNot(matches(_notInRelease)));
+      expect(code, isNot(matches(_debugOnly)));
     });
 
     test('web: under dart.library.js_interop', () async {
@@ -276,7 +278,7 @@ void main() {
           ),
         ),
       );
-      expect(code, isNot(matches(_notInRelease)));
+      expect(code, isNot(matches(_debugOnly)));
     });
 
     test('server with a build property not set: both conditions', () async {
@@ -284,7 +286,7 @@ void main() {
         ", build: AutoConfigurationBuild('neon.debug.enabled'), "
         'platform: ModulePlatform.server',
       );
-      expect(code, matches(_notInRelease));
+      expect(code, matches(_debugOnly));
       expect(
         code,
         contains(
@@ -311,7 +313,7 @@ void main() {
           "constbool.fromEnvironment('SPRING_ALL_PLATFORMS')))",
         ),
       );
-      expect(code, isNot(matches(_notInRelease)));
+      expect(code, isNot(matches(_debugOnly)));
     });
 
     test('with a build property not set: both conditions', () async {
@@ -319,7 +321,7 @@ void main() {
         ", build: AutoConfigurationBuild('neon.debug.enabled'), "
         'platform: ModulePlatform.native',
       );
-      expect(code, matches(_notInRelease));
+      expect(code, matches(_debugOnly));
       expect(
         code,
         contains(
@@ -523,11 +525,11 @@ void main(List<String> args) => runApplication(args);
 }
 
 // The fake starter's module among the auto-configurations of the debug
-// part, those only debug and profile builds have (alone or under a
+// part, those only debug builds have (alone or under a
 // platform's condition too). Only the module's own entry counts: the
 // starters of the workspace, which the build of the test sees too, may
 // have modules there.
-final _notInRelease = RegExp(
+final _debugOnly = RegExp(
   r'_\$debugAutoConfigurations=>\[[^\]]*_i\d+\.neonCacheAutoConfiguration',
 );
 

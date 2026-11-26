@@ -1,3 +1,8 @@
+## Unreleased
+
+- `logging.console.record-bar` (default `false`): every line of a console record, the first, the lines of a multi-line message, the stack trace and its causes, starts with `▌` and a space, in the colour `%clr` gives the level (errors red, warnings yellow, the others green) when `spring.output.ansi.enabled` allows colours, plain otherwise; so a multi-line record reads as one, as in the Flutter debug console. It is applied after `logging.pattern.console`, so it works with any pattern (`LogPattern.withBar`, `ConsoleAppender.recordBar`). Lines the terminal wraps itself are not marked. Off, it costs one bool check per record. Core's `printLogHandler`, used without this starter, has no bar.
+- `logging.console.record-bar`: a colour the pattern sets (`%clr(%m){red}`) is set again after the bar on every next line of a multi-line record, so the bar no longer resets it.
+
 ## 0.9.0
 
 - Its code names the introspection classes by their new names (`Introspector`, `Introspection`, `IntrospectedProperty`, `IntrospectedMethod`, `IntrospectedConstructor`, `IntrospectedParameter`; spring_core_dart's renames); nothing changes for its users.

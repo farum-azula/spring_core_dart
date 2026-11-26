@@ -64,7 +64,7 @@ void main() {
     await tester.pumpWidget(
       const Directionality(
         textDirection: TextDirection.ltr,
-        child: FrameMeter(child: SizedBox()),
+        child: FrameMeter(detailed: true, child: SizedBox()),
       ),
     );
     // A frame of Flutter, so the meter has started counting.

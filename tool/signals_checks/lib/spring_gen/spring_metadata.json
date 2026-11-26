@@ -1,0 +1,2895 @@
+{
+  "version": 1,
+  "package": "signals_checks",
+  "properties": [],
+  "hints": [],
+  "beans": [
+    {
+      "name": "advised2",
+      "type": "Advised2",
+      "types": [
+        "Advised2"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 532,
+      "injects": [
+        {
+          "parameter": "factory",
+          "type": "BeanFactory",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "callPlain",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "factory",
+          "kind": "field",
+          "type": "BeanFactory"
+        }
+      ]
+    },
+    {
+      "name": "advisedRuns",
+      "type": "AdvisedRuns",
+      "types": [
+        "AdvisedRuns"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 633,
+      "injects": [
+        {
+          "parameter": "jdbc",
+          "type": "JdbcTemplate",
+          "qualifier": null
+        },
+        {
+          "parameter": "source",
+          "type": "RunSource",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "aspectEffect",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "aspectUnwatch",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "jdbc",
+          "kind": "field",
+          "type": "JdbcTemplate"
+        },
+        {
+          "name": "preEffect",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "runs",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "securedEffect",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "source",
+          "kind": "field",
+          "type": "RunSource"
+        },
+        {
+          "name": "transactionalEffect",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "transactionalWatch",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "watchedByAdvice",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "aspected",
+      "type": "Aspected",
+      "types": [
+        "Aspected"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 392,
+      "injects": [],
+      "members": [
+        {
+          "name": "assign",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "bodies",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "composed",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        },
+        {
+          "name": "observed",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "viaThis",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "branchScoped",
+      "type": "BranchScoped",
+      "types": [
+        "BranchScoped"
+      ],
+      "scope": "branch",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 561,
+      "injects": [],
+      "members": [
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "busy",
+      "type": "Busy",
+      "types": [
+        "Busy"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 336,
+      "injects": [],
+      "members": [
+        {
+          "name": "assignLater",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "LaterTick event"
+          ]
+        },
+        {
+          "name": "heard",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "later",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "on",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Tick event"
+          ]
+        },
+        {
+          "name": "tick",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "ticks",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "cart",
+      "type": "Cart",
+      "types": [
+        "Cart"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 785,
+      "injects": [
+        {
+          "parameter": "jdbc",
+          "type": "JdbcTemplate",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "authorizedWithWrites",
+          "kind": "method",
+          "type": "Future<Note>",
+          "parameters": []
+        },
+        {
+          "name": "cachedLoad",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "count",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "evictLoads",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "fails",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int value"
+          ]
+        },
+        {
+          "name": "fill",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int value",
+            "Future<void> gate"
+          ]
+        },
+        {
+          "name": "filteredWithWrites",
+          "kind": "method",
+          "type": "Future<List<Note>>",
+          "parameters": []
+        },
+        {
+          "name": "guardedFill",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int value"
+          ]
+        },
+        {
+          "name": "inTransaction",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int value",
+            "{bool fail}"
+          ]
+        },
+        {
+          "name": "jdbc",
+          "kind": "field",
+          "type": "JdbcTemplate"
+        },
+        {
+          "name": "leavesWork",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "lines",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "loaderBuffered",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Future<void> gate"
+          ]
+        },
+        {
+          "name": "loading",
+          "kind": "field",
+          "type": "bool"
+        },
+        {
+          "name": "loads",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "onEvent",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "CartEvent event"
+          ]
+        },
+        {
+          "name": "other",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "outer",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int value"
+          ]
+        },
+        {
+          "name": "readsOwn",
+          "kind": "method",
+          "type": "Future<List<int>>",
+          "parameters": [
+            "int value"
+          ]
+        },
+        {
+          "name": "showLoader",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Future<void> gate"
+          ]
+        },
+        {
+          "name": "tickTwice",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "ticks",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "combo",
+      "type": "Combo",
+      "types": [
+        "Combo"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 268,
+      "injects": [
+        {
+          "parameter": "jdbc",
+          "type": "JdbcTemplate",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "base",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "bodies",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "both",
+          "kind": "method",
+          "type": "int",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "cached",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        },
+        {
+          "name": "evict",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "filtered",
+          "kind": "method",
+          "type": "List<Note>",
+          "parameters": []
+        },
+        {
+          "name": "guarded",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        },
+        {
+          "name": "jdbc",
+          "kind": "field",
+          "type": "JdbcTemplate"
+        },
+        {
+          "name": "load",
+          "kind": "method",
+          "type": "Future<String>",
+          "parameters": [
+            "String user"
+          ]
+        },
+        {
+          "name": "put",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "deferState",
+      "type": "DeferState",
+      "types": [
+        "DeferState"
+      ],
+      "scope": "custom",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 547,
+      "injects": [],
+      "members": [
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "delayed",
+      "type": "Delayed",
+      "types": [
+        "Delayed"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 768,
+      "injects": [],
+      "members": [
+        {
+          "name": "adminAssigns",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "other",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "delayedSchedule",
+      "type": "Function",
+      "types": [
+        "Function"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [
+        "delayed"
+      ],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 750,
+      "injects": [
+        {
+          "parameter": "log",
+          "type": "ScheduleLog",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "==",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Object other"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "discardState",
+      "type": "DiscardState",
+      "types": [
+        "DiscardState"
+      ],
+      "scope": "custom",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 533,
+      "injects": [],
+      "members": [
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "earlyReader",
+      "type": "EarlyReader",
+      "types": [
+        "EarlyReader"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 950,
+      "injects": [
+        {
+          "parameter": "guarded",
+          "type": "Guarded",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "guarded",
+          "kind": "field",
+          "type": "Guarded"
+        },
+        {
+          "name": "seen",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "watch",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "effectState",
+      "type": "EffectState",
+      "types": [
+        "EffectState"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 613,
+      "injects": [],
+      "members": [
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "entry",
+      "type": "Entry",
+      "types": [
+        "Entry"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 572,
+      "injects": [
+        {
+          "parameter": "selfish",
+          "type": "Selfish",
+          "qualifier": null
+        },
+        {
+          "parameter": "unadvised",
+          "type": "Unadvised",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "selfish",
+          "kind": "field",
+          "type": "Selfish"
+        },
+        {
+          "name": "unadvised",
+          "kind": "field",
+          "type": "Unadvised"
+        }
+      ]
+    },
+    {
+      "name": "failing",
+      "type": "Failing",
+      "types": [
+        "Failing"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 578,
+      "injects": [],
+      "members": [
+        {
+          "name": "computedFails",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "fails",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "other",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "survived",
+          "kind": "field",
+          "type": "List<int>"
+        },
+        {
+          "name": "survives",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "failsFirst",
+      "type": "FailsFirst",
+      "types": [
+        "FailsFirst"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 606,
+      "injects": [],
+      "members": [
+        {
+          "name": "fails",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "flushState",
+      "type": "FlushState",
+      "types": [
+        "FlushState"
+      ],
+      "scope": "custom",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 540,
+      "injects": [],
+      "members": [
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "fullStack",
+      "type": "FullStack",
+      "types": [
+        "FullStack"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 696,
+      "injects": [
+        {
+          "parameter": "jdbc",
+          "type": "JdbcTemplate",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "base",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "bodies",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "cachingOnComputed",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        },
+        {
+          "name": "evict",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "failsInTransaction",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "jdbc",
+          "kind": "field",
+          "type": "JdbcTemplate"
+        },
+        {
+          "name": "value",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "guarded",
+      "type": "Guarded",
+      "types": [
+        "Guarded"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 181,
+      "injects": [],
+      "members": [
+        {
+          "name": "bodies",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "first",
+          "kind": "getter",
+          "type": "Note"
+        },
+        {
+          "name": "level",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "mine",
+          "kind": "getter",
+          "type": "List<Note>"
+        },
+        {
+          "name": "notes",
+          "kind": "field",
+          "type": "List<Note>"
+        },
+        {
+          "name": "pre",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "raise",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "replace",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "List<Note> incoming"
+          ]
+        },
+        {
+          "name": "secured",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "viaThis",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "guardedEffect",
+      "type": "GuardedEffect",
+      "types": [
+        "GuardedEffect"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 620,
+      "injects": [
+        {
+          "parameter": "state",
+          "type": "EffectState",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "state",
+          "kind": "field",
+          "type": "EffectState"
+        },
+        {
+          "name": "watch",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "guardedReader",
+      "type": "GuardedReader",
+      "types": [
+        "GuardedReader"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 228,
+      "injects": [
+        {
+          "parameter": "guarded",
+          "type": "Guarded",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "fromFirst",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "fromMine",
+          "kind": "getter",
+          "type": "List<String>"
+        },
+        {
+          "name": "fromPre",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "fromSecured",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "guarded",
+          "kind": "field",
+          "type": "Guarded"
+        },
+        {
+          "name": "tick",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "whoAsks",
+          "kind": "getter",
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "guardedWatch",
+      "type": "GuardedWatch",
+      "types": [
+        "GuardedWatch"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 254,
+      "injects": [
+        {
+          "parameter": "guarded",
+          "type": "Guarded",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "calls",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "door",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "guarded",
+          "kind": "field",
+          "type": "Guarded"
+        },
+        {
+          "name": "opened",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "innerAspect",
+      "type": "InnerAspect",
+      "types": [
+        "InnerAspect"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 380,
+      "injects": [
+        {
+          "parameter": "outer",
+          "type": "OuterAspect",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "around",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": [
+            "ProceedingJoinPoint point"
+          ]
+        },
+        {
+          "name": "outer",
+          "kind": "field",
+          "type": "OuterAspect"
+        }
+      ]
+    },
+    {
+      "name": "lateVaultEffect",
+      "type": "LateVaultEffect",
+      "types": [
+        "LateVaultEffect"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 319,
+      "injects": [
+        {
+          "parameter": "vault",
+          "type": "Vault",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "vault",
+          "kind": "field",
+          "type": "Vault"
+        },
+        {
+          "name": "watch",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "ledger",
+      "type": "Ledger",
+      "types": [
+        "Ledger"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 41,
+      "injects": [
+        {
+          "parameter": "jdbc",
+          "type": "JdbcTemplate",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "asyncBody",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "asyncFails",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "balance",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "db",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "gated",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int v",
+            "Future<void> gate"
+          ]
+        },
+        {
+          "name": "jdbc",
+          "kind": "field",
+          "type": "JdbcTemplate"
+        },
+        {
+          "name": "other",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "plainAsync",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "setUp",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "syncFails",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "syncLooking",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int v"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ledgerWatcher",
+      "type": "LedgerWatcher",
+      "types": [
+        "LedgerWatcher"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 122,
+      "injects": [
+        {
+          "parameter": "ledger",
+          "type": "Ledger",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "ledger",
+          "kind": "field",
+          "type": "Ledger"
+        },
+        {
+          "name": "watch",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "options",
+      "type": "Options",
+      "types": [
+        "Options"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 437,
+      "injects": [],
+      "members": [
+        {
+          "name": "followedList",
+          "kind": "field",
+          "type": "List<int>"
+        },
+        {
+          "name": "framed",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "held",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "heldTwice",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "instant",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "newestA",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "newestB",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "oldestA",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "oldestB",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "parity",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "plainList",
+          "kind": "field",
+          "type": "List<int>"
+        },
+        {
+          "name": "ready",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "secretNote",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "smallA",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "smallB",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "tag",
+          "kind": "field",
+          "type": "Tag"
+        },
+        {
+          "name": "ticked",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "outerAspect",
+      "type": "OuterAspect",
+      "types": [
+        "OuterAspect"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 367,
+      "injects": [],
+      "members": [
+        {
+          "name": "around",
+          "kind": "method",
+          "type": "Object?",
+          "parameters": [
+            "ProceedingJoinPoint point"
+          ]
+        },
+        {
+          "name": "calls",
+          "kind": "field",
+          "type": "List<String>"
+        }
+      ]
+    },
+    {
+      "name": "ownedReaders",
+      "type": "OwnedReaders",
+      "types": [
+        "OwnedReaders"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 968,
+      "injects": [
+        {
+          "parameter": "guarded",
+          "type": "Guarded",
+          "qualifier": null
+        },
+        {
+          "parameter": "combo",
+          "type": "Combo",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "cached",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "combo",
+          "kind": "field",
+          "type": "Combo"
+        },
+        {
+          "name": "filtered",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "fromCache",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "guarded",
+          "kind": "field",
+          "type": "Guarded"
+        },
+        {
+          "name": "mine",
+          "kind": "field",
+          "type": "List<List<String>>"
+        },
+        {
+          "name": "strict",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "strictly",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "pingListener",
+      "type": "PingListener",
+      "types": [
+        "PingListener"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 583,
+      "injects": [
+        {
+          "parameter": "factory",
+          "type": "BeanFactory",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "factory",
+          "kind": "field",
+          "type": "BeanFactory"
+        },
+        {
+          "name": "on",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Ping event"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "plainSecured",
+      "type": "PlainSecured",
+      "types": [
+        "PlainSecured"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 542,
+      "injects": [
+        {
+          "parameter": "unadvised",
+          "type": "Unadvised",
+          "qualifier": null
+        },
+        {
+          "parameter": "advised",
+          "type": "Advised2",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "adminOnly",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "advised",
+          "kind": "field",
+          "type": "Advised2"
+        },
+        {
+          "name": "advisedEntryViaUnadvised",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "advisedEntryViaUnadvisedLater",
+          "kind": "method",
+          "type": "Future<String>",
+          "parameters": []
+        },
+        {
+          "name": "openViaAdvised",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "openViaUnadvised",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "openViaUnadvisedLater",
+          "kind": "method",
+          "type": "Future<String>",
+          "parameters": []
+        },
+        {
+          "name": "unadvised",
+          "kind": "field",
+          "type": "Unadvised"
+        }
+      ]
+    },
+    {
+      "name": "priced",
+      "type": "Priced",
+      "types": [
+        "Priced"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 345,
+      "injects": [
+        {
+          "parameter": "jdbc",
+          "type": "JdbcTemplate",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "bodies",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "cachedAsync",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "cachedSync",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        },
+        {
+          "name": "evict",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "evictAsync",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "filteredCached",
+          "kind": "method",
+          "type": "List<Doc>",
+          "parameters": []
+        },
+        {
+          "name": "guardedCached",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        },
+        {
+          "name": "jdbc",
+          "kind": "field",
+          "type": "JdbcTemplate"
+        },
+        {
+          "name": "loaded",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "n",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "plainLoaded",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "protoState",
+      "type": "ProtoState",
+      "types": [
+        "ProtoState"
+      ],
+      "scope": "prototype",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 526,
+      "injects": [],
+      "members": [
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "routeScoped",
+      "type": "RouteScoped",
+      "types": [
+        "RouteScoped"
+      ],
+      "scope": "route",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 554,
+      "injects": [],
+      "members": [
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "runSource",
+      "type": "RunSource",
+      "types": [
+        "RunSource"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 689,
+      "injects": [],
+      "members": [
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "runner",
+      "type": "Runner",
+      "types": [
+        "Runner"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 425,
+      "injects": [],
+      "members": [
+        {
+          "name": "run",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "void Function() callback"
+          ]
+        },
+        {
+          "name": "runLater",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "void Function() callback"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "scheduleLog",
+      "type": "ScheduleLog",
+      "types": [
+        "ScheduleLog"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 738,
+      "injects": [],
+      "members": [
+        {
+          "name": "cancels",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "flushes",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "schedules",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "schedules",
+      "type": "Schedules",
+      "types": [
+        "Schedules"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 747,
+      "injects": [],
+      "members": [
+        {
+          "name": "delayedSchedule",
+          "kind": "method",
+          "type": "void Function() Function(void Function())",
+          "parameters": [
+            "ScheduleLog log"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "scopedCart",
+      "type": "ScopedCart",
+      "types": [
+        "ScopedCart"
+      ],
+      "scope": "custom",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 919,
+      "injects": [],
+      "members": [
+        {
+          "name": "fill",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int v",
+            "Future<void> gate"
+          ]
+        },
+        {
+          "name": "flushed",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "selfCalling",
+      "type": "SelfCalling",
+      "types": [
+        "SelfCalling"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 414,
+      "injects": [
+        {
+          "parameter": "self",
+          "type": "SelfCalling",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "adminValue",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        },
+        {
+          "name": "followedThroughThis",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "log",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "self",
+          "kind": "field",
+          "type": "SelfCalling"
+        },
+        {
+          "name": "throughSelf",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        },
+        {
+          "name": "throughThis",
+          "kind": "method",
+          "type": "int",
+          "parameters": []
+        },
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "selfish",
+      "type": "Selfish",
+      "types": [
+        "Selfish"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 439,
+      "injects": [
+        {
+          "parameter": "jdbc",
+          "type": "JdbcTemplate",
+          "qualifier": null
+        },
+        {
+          "parameter": "runner",
+          "type": "Runner",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "adminOnly",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "int x"
+          ]
+        },
+        {
+          "name": "adminValue",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "afterAwaitSelf",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "afterAwaitTx",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "assignAfterAwait",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int x"
+          ]
+        },
+        {
+          "name": "assignInTx",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int x"
+          ]
+        },
+        {
+          "name": "assignNow",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "int x"
+          ]
+        },
+        {
+          "name": "jdbc",
+          "kind": "field",
+          "type": "JdbcTemplate"
+        },
+        {
+          "name": "publishVia",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ApplicationEventPublisher publisher"
+          ]
+        },
+        {
+          "name": "reference",
+          "kind": "field",
+          "type": "Selfish?"
+        },
+        {
+          "name": "runner",
+          "kind": "field",
+          "type": "Runner"
+        },
+        {
+          "name": "save",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int x"
+          ]
+        },
+        {
+          "name": "selfAdmin",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "selfSave",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "v",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "viaPlainObject",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Selfish proxy"
+          ]
+        },
+        {
+          "name": "viaPlainObjectAfterAwait",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "Selfish proxy"
+          ]
+        },
+        {
+          "name": "viaRunner",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "viaRunnerLater",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "viaUnadvised",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Unadvised u"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "selfishEffect",
+      "type": "SelfishEffect",
+      "types": [
+        "SelfishEffect"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 596,
+      "injects": [
+        {
+          "parameter": "selfish",
+          "type": "Selfish",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "selfish",
+          "kind": "field",
+          "type": "Selfish"
+        },
+        {
+          "name": "watch",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "shelf",
+      "type": "Shelf",
+      "types": [
+        "Shelf"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 32,
+      "injects": [
+        {
+          "parameter": "jdbc",
+          "type": "JdbcTemplate",
+          "qualifier": null
+        },
+        {
+          "parameter": "inner",
+          "type": "ShelfInner",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "addsItem",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "String item",
+            "{bool fail}"
+          ]
+        },
+        {
+          "name": "assignTwo",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "commits",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "counts",
+          "kind": "field",
+          "type": "Map<String, int>"
+        },
+        {
+          "name": "doubled",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "doubledRuns",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "fails",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "inner",
+          "kind": "field",
+          "type": "ShelfInner"
+        },
+        {
+          "name": "items",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "jdbc",
+          "kind": "field",
+          "type": "JdbcTemplate"
+        },
+        {
+          "name": "onlyReadsItems",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "other",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "outerThenFails",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "outerWithNested",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int outer",
+            "int nested",
+            "{bool fail}"
+          ]
+        },
+        {
+          "name": "outerWithRequiresNew",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "readOnlyWrites",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "readsOwn",
+          "kind": "method",
+          "type": "Future<List<int>>",
+          "parameters": [
+            "int v",
+            "Future<void> gate"
+          ]
+        },
+        {
+          "name": "setUp",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "stored",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "unbuffered",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "unbufferedInTransaction",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "shelfInner",
+      "type": "ShelfInner",
+      "types": [
+        "ShelfInner"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 152,
+      "injects": [
+        {
+          "parameter": "shelf",
+          "type": "Shelf",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "nested",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int v",
+            "{bool fail}"
+          ]
+        },
+        {
+          "name": "requiresNew",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "shelf",
+          "kind": "field",
+          "type": "Shelf"
+        }
+      ]
+    },
+    {
+      "name": "shelfWatcher",
+      "type": "ShelfWatcher",
+      "types": [
+        "ShelfWatcher"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 171,
+      "injects": [
+        {
+          "parameter": "shelf",
+          "type": "Shelf",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "seen",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "shelf",
+          "kind": "field",
+          "type": "Shelf"
+        },
+        {
+          "name": "watch",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "signalErrors",
+      "type": "SignalErrors",
+      "types": [
+        "SignalErrors",
+        "TypedErrorHandler<SignalExecutionException>",
+        "TypedErrorHandler<Object>"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 616,
+      "injects": [],
+      "members": [
+        {
+          "name": "errors",
+          "kind": "field",
+          "type": "List<SignalExecutionException>"
+        },
+        {
+          "name": "handleError",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "SignalExecutionException error",
+            "StackTrace stackTrace"
+          ]
+        },
+        {
+          "name": "throwing",
+          "kind": "field",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "testScopes",
+      "type": "TestScopes",
+      "types": [
+        "TestScopes",
+        "BeanFactoryPostProcessor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 569,
+      "injects": [],
+      "members": [
+        {
+          "name": "custom",
+          "kind": "field",
+          "type": "SimpleMapScope"
+        },
+        {
+          "name": "postProcessBeanFactory",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "ConfigurableListableBeanFactory beanFactory"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "txVault",
+      "type": "TxVault",
+      "types": [
+        "TxVault"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 246,
+      "injects": [
+        {
+          "parameter": "jdbc",
+          "type": "JdbcTemplate",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "db",
+          "kind": "method",
+          "type": "Future<int>",
+          "parameters": []
+        },
+        {
+          "name": "jdbc",
+          "kind": "field",
+          "type": "JdbcTemplate"
+        },
+        {
+          "name": "save",
+          "kind": "method",
+          "type": "Future<String>",
+          "parameters": [
+            "int v",
+            "String returned"
+          ]
+        },
+        {
+          "name": "setUp",
+          "kind": "method",
+          "type": "Future<void>",
+          "parameters": []
+        },
+        {
+          "name": "value",
+          "kind": "field",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "unadvised",
+      "type": "Unadvised",
+      "types": [
+        "Unadvised"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 522,
+      "injects": [
+        {
+          "parameter": "factory",
+          "type": "BeanFactory",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "callPlain",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        },
+        {
+          "name": "callSelfish",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "factory",
+          "kind": "field",
+          "type": "BeanFactory"
+        }
+      ]
+    },
+    {
+      "name": "uncaughtVaultEffect",
+      "type": "UncaughtVaultEffect",
+      "types": [
+        "UncaughtVaultEffect"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 335,
+      "injects": [
+        {
+          "parameter": "vault",
+          "type": "Vault",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "vault",
+          "kind": "field",
+          "type": "Vault"
+        },
+        {
+          "name": "watch",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "vault",
+      "type": "Vault",
+      "types": [
+        "Vault"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 133,
+      "injects": [],
+      "members": [
+        {
+          "name": "assignAdmin",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "int v"
+          ]
+        },
+        {
+          "name": "computes",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "derivedSameBean",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "docs",
+          "kind": "field",
+          "type": "List<Doc>"
+        },
+        {
+          "name": "docsOf",
+          "kind": "method",
+          "type": "List<Doc>",
+          "parameters": []
+        },
+        {
+          "name": "firstDoc",
+          "kind": "getter",
+          "type": "Doc"
+        },
+        {
+          "name": "firstDocLater",
+          "kind": "getter",
+          "type": "Future<Doc>"
+        },
+        {
+          "name": "guarded",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "guardedLater",
+          "kind": "getter",
+          "type": "Future<int>"
+        },
+        {
+          "name": "keptMap",
+          "kind": "getter",
+          "type": "Map<String, String>"
+        },
+        {
+          "name": "owners",
+          "kind": "field",
+          "type": "Map<String, String>"
+        },
+        {
+          "name": "ownersOf",
+          "kind": "method",
+          "type": "Map<String, String>",
+          "parameters": []
+        },
+        {
+          "name": "perUser",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "postAssign",
+          "kind": "method",
+          "type": "String",
+          "parameters": [
+            "String v"
+          ]
+        },
+        {
+          "name": "replaceDocs",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "List<Doc> incoming"
+          ]
+        },
+        {
+          "name": "secret",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "visible",
+          "kind": "getter",
+          "type": "List<Doc>"
+        },
+        {
+          "name": "visibleLater",
+          "kind": "getter",
+          "type": "Future<List<Doc>>"
+        },
+        {
+          "name": "visibleMap",
+          "kind": "getter",
+          "type": "Map<String, String>"
+        }
+      ]
+    },
+    {
+      "name": "vaultEffect",
+      "type": "VaultEffect",
+      "types": [
+        "VaultEffect"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 303,
+      "injects": [
+        {
+          "parameter": "vault",
+          "type": "Vault",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "vault",
+          "kind": "field",
+          "type": "Vault"
+        },
+        {
+          "name": "watch",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "vaultReader",
+      "type": "VaultReader",
+      "types": [
+        "VaultReader"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/main.dart",
+      "line": 274,
+      "injects": [
+        {
+          "parameter": "vault",
+          "type": "Vault",
+          "qualifier": null
+        }
+      ],
+      "members": [
+        {
+          "name": "computes",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "fromFirstDoc",
+          "kind": "getter",
+          "type": "String"
+        },
+        {
+          "name": "fromGuarded",
+          "kind": "getter",
+          "type": "int"
+        },
+        {
+          "name": "fromVisible",
+          "kind": "getter",
+          "type": "List<Doc>"
+        },
+        {
+          "name": "tick",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "vault",
+          "kind": "field",
+          "type": "Vault"
+        }
+      ]
+    },
+    {
+      "name": "watched",
+      "type": "Watched",
+      "types": [
+        "Watched"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:signals_checks/matrix.dart",
+      "line": 488,
+      "injects": [],
+      "members": [
+        {
+          "name": "a",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "bad",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "c",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "calls",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "eachOn",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "failsOff",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "failsOn",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "groupOff",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "groupOn",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "slow",
+          "kind": "field",
+          "type": "int"
+        },
+        {
+          "name": "slowOff",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "sum",
+          "kind": "getter",
+          "type": "int"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

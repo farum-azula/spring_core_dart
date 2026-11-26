@@ -1770,10 +1770,11 @@ class ProxyModel {
   /// build pruned it ([pruned]: nothing but the reason is emitted).
   String? unavailableReason;
 
-  /// Whether a member of the class carries an annotation marked
-  /// `@ProxyTargetClass()`: the proxy extends the class and keeps every
-  /// member, since the advice follows what the bean does to itself.
-  bool targetClass = false;
+  /// The generated subclass the bean is made as, when a member of the class
+  /// carries an annotation marked `@AccessHook()` (a `@Signal` field);
+  /// `null` for any other bean. This model is then the ordinary proxy
+  /// around that subclass, for the advice that matches the bean.
+  AccessHooks? accessHooks;
 
   /// Whether [unavailableReason] is the build's pruning (no pointcut it
   /// knows matches the bean), not a type that cannot be proxied: then no
@@ -1961,6 +1962,37 @@ class SubclassProxy {
   /// Whether the subclass is emitted `final`, which Dart requires when the
   /// bean class is `base`.
   final bool isFinal;
+}
+
+/// The generated subclass a bean is made as, which overrides the members
+/// carrying an annotation marked `@AccessHook()` with their hooks: they go
+/// straight to what follows them, with no advice.
+/// The bean's proxy, when advice matches it, wraps an instance of it.
+final class AccessHooks {
+  /// The subclass [className] of the bean, forwarding the constructor of
+  /// [subclass], over the bean's [members].
+  AccessHooks({
+    required this.className,
+    required this.subclass,
+    required this.members,
+    this.advice,
+  });
+
+  /// The name of the generated class.
+  final String className;
+
+  /// The bean constructor it forwards to.
+  final SubclassProxy subclass;
+
+  /// The public members of the bean that a subclass can override.
+  final List<ProxyMember> members;
+
+  /// Where the first advice annotation of the bean is
+  /// (`@Transactional on Ledger.save`); `null` when it carries none.
+  final String? advice;
+
+  /// The first member a pointcut of the build matches; `null` for none.
+  String? pointcutMatch;
 }
 
 /// One bean of the module: everything the emitter needs to write its

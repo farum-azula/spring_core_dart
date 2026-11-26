@@ -378,8 +378,8 @@ final cacheAutoConfiguration = <BeanDefinition<Object>>[
 ];
 
 /// The startup checks of the starter, in the build by
-/// `spring.main.startup-checks.enabled` (by default in debug and profile
-/// builds only, so a release build ships none of their code):
+/// `spring.main.startup-checks.enabled` (by default in debug builds only, so a
+/// release build ships none of their code):
 ///
 /// - `cacheOperationValidator`, the [CacheOperationValidator] that checks
 ///   the cache annotations of every proxied bean when it is created, so a

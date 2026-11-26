@@ -30,6 +30,10 @@ const Map<String, String> _$dartDefines = {
     'LOGGING_CONSOLE_ENABLED': String.fromEnvironment(
       'LOGGING_CONSOLE_ENABLED',
     ),
+  if (bool.hasEnvironment('LOGGING_CONSOLE_RECORDBAR'))
+    'LOGGING_CONSOLE_RECORDBAR': String.fromEnvironment(
+      'LOGGING_CONSOLE_RECORDBAR',
+    ),
   if (bool.hasEnvironment('LOGGING_CONSOLE_TARGET'))
     'LOGGING_CONSOLE_TARGET': String.fromEnvironment('LOGGING_CONSOLE_TARGET'),
   if (bool.hasEnvironment('LOGGING_ENABLED'))
@@ -164,6 +168,66 @@ const Map<String, String> _$dartDefines = {
     'SPRING_FLUTTER_APP_TYPE': String.fromEnvironment(
       'SPRING_FLUTTER_APP_TYPE',
     ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_CONSOLE_ENABLED'))
+    'SPRING_FLUTTER_DEBUG_CONSOLE_ENABLED': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_CONSOLE_ENABLED',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_CONSOLE_FILTER_LEVEL'))
+    'SPRING_FLUTTER_DEBUG_CONSOLE_FILTER_LEVEL': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_CONSOLE_FILTER_LEVEL',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_CONSOLE_FILTER_TEXT'))
+    'SPRING_FLUTTER_DEBUG_CONSOLE_FILTER_TEXT': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_CONSOLE_FILTER_TEXT',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_CONSOLE_HEADER'))
+    'SPRING_FLUTTER_DEBUG_CONSOLE_HEADER': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_CONSOLE_HEADER',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_CONSOLE_HISTORY'))
+    'SPRING_FLUTTER_DEBUG_CONSOLE_HISTORY': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_CONSOLE_HISTORY',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_CONSOLE_INTERACTION'))
+    'SPRING_FLUTTER_DEBUG_CONSOLE_INTERACTION': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_CONSOLE_INTERACTION',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_CONSOLE_MAXLINES'))
+    'SPRING_FLUTTER_DEBUG_CONSOLE_MAXLINES': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_CONSOLE_MAXLINES',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_CONSOLE_OPACITY'))
+    'SPRING_FLUTTER_DEBUG_CONSOLE_OPACITY': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_CONSOLE_OPACITY',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_CONSOLE_PANES'))
+    'SPRING_FLUTTER_DEBUG_CONSOLE_PANES': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_CONSOLE_PANES',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_CONSOLE_PASSTHROUGHOPACITY'))
+    'SPRING_FLUTTER_DEBUG_CONSOLE_PASSTHROUGHOPACITY': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_CONSOLE_PASSTHROUGHOPACITY',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_CONSOLE_POSITION'))
+    'SPRING_FLUTTER_DEBUG_CONSOLE_POSITION': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_CONSOLE_POSITION',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_CONSOLE_SEGMENTS'))
+    'SPRING_FLUTTER_DEBUG_CONSOLE_SEGMENTS': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_CONSOLE_SEGMENTS',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_CONSOLE_SHOWNPANES'))
+    'SPRING_FLUTTER_DEBUG_CONSOLE_SHOWNPANES': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_CONSOLE_SHOWNPANES',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_CONSOLE_SLIDEDURATION'))
+    'SPRING_FLUTTER_DEBUG_CONSOLE_SLIDEDURATION': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_CONSOLE_SLIDEDURATION',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_CONSOLE_WIDTH'))
+    'SPRING_FLUTTER_DEBUG_CONSOLE_WIDTH': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_CONSOLE_WIDTH',
+    ),
   if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_DRAG_ENABLED'))
     'SPRING_FLUTTER_DEBUG_DRAG_ENABLED': String.fromEnvironment(
       'SPRING_FLUTTER_DEBUG_DRAG_ENABLED',
@@ -172,9 +236,29 @@ const Map<String, String> _$dartDefines = {
     'SPRING_FLUTTER_DEBUG_ENABLED': String.fromEnvironment(
       'SPRING_FLUTTER_DEBUG_ENABLED',
     ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_FLUTTERTOOLS_ENABLED'))
+    'SPRING_FLUTTER_DEBUG_FLUTTERTOOLS_ENABLED': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_FLUTTERTOOLS_ENABLED',
+    ),
   if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_FRAMEMETER_ENABLED'))
     'SPRING_FLUTTER_DEBUG_FRAMEMETER_ENABLED': String.fromEnvironment(
       'SPRING_FLUTTER_DEBUG_FRAMEMETER_ENABLED',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_GRAPH_ENABLED'))
+    'SPRING_FLUTTER_DEBUG_GRAPH_ENABLED': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_GRAPH_ENABLED',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_GRAPH_HOT_REBUILDS'))
+    'SPRING_FLUTTER_DEBUG_GRAPH_HOT_REBUILDS': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_GRAPH_HOT_REBUILDS',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_GRAPH_HOT_WINDOW'))
+    'SPRING_FLUTTER_DEBUG_GRAPH_HOT_WINDOW': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_GRAPH_HOT_WINDOW',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_GRAPH_LAYERS'))
+    'SPRING_FLUTTER_DEBUG_GRAPH_LAYERS': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_GRAPH_LAYERS',
     ),
   if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_ISOLATES_ENABLED'))
     'SPRING_FLUTTER_DEBUG_ISOLATES_ENABLED': String.fromEnvironment(
@@ -184,13 +268,37 @@ const Map<String, String> _$dartDefines = {
     'SPRING_FLUTTER_DEBUG_ISOLATES_INTERVAL': String.fromEnvironment(
       'SPRING_FLUTTER_DEBUG_ISOLATES_INTERVAL',
     ),
-  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_ISOLATES_POSITION'))
-    'SPRING_FLUTTER_DEBUG_ISOLATES_POSITION': String.fromEnvironment(
-      'SPRING_FLUTTER_DEBUG_ISOLATES_POSITION',
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_LOGS_EXPORT_ENABLED'))
+    'SPRING_FLUTTER_DEBUG_LOGS_EXPORT_ENABLED': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_LOGS_EXPORT_ENABLED',
     ),
   if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_MOTION_ENABLED'))
     'SPRING_FLUTTER_DEBUG_MOTION_ENABLED': String.fromEnvironment(
       'SPRING_FLUTTER_DEBUG_MOTION_ENABLED',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_NETWORK_BODIES'))
+    'SPRING_FLUTTER_DEBUG_NETWORK_BODIES': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_NETWORK_BODIES',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_NETWORK_BODYBUDGET'))
+    'SPRING_FLUTTER_DEBUG_NETWORK_BODYBUDGET': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_NETWORK_BODYBUDGET',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_NETWORK_BODYLIMIT'))
+    'SPRING_FLUTTER_DEBUG_NETWORK_BODYLIMIT': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_NETWORK_BODYLIMIT',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_NETWORK_ENABLED'))
+    'SPRING_FLUTTER_DEBUG_NETWORK_ENABLED': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_NETWORK_ENABLED',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_NETWORK_MAXENTRIES'))
+    'SPRING_FLUTTER_DEBUG_NETWORK_MAXENTRIES': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_NETWORK_MAXENTRIES',
+    ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_NETWORK_MAXFRAMES'))
+    'SPRING_FLUTTER_DEBUG_NETWORK_MAXFRAMES': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_NETWORK_MAXFRAMES',
     ),
   if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_OVERLAYS_DRAG_REMEMBER'))
     'SPRING_FLUTTER_DEBUG_OVERLAYS_DRAG_REMEMBER': String.fromEnvironment(
@@ -224,13 +332,13 @@ const Map<String, String> _$dartDefines = {
     'SPRING_FLUTTER_DEBUG_OVERLAYS_MAXHEIGHT': String.fromEnvironment(
       'SPRING_FLUTTER_DEBUG_OVERLAYS_MAXHEIGHT',
     ),
+  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_THEME'))
+    'SPRING_FLUTTER_DEBUG_THEME': String.fromEnvironment(
+      'SPRING_FLUTTER_DEBUG_THEME',
+    ),
   if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_TIMELINE_ENABLED'))
     'SPRING_FLUTTER_DEBUG_TIMELINE_ENABLED': String.fromEnvironment(
       'SPRING_FLUTTER_DEBUG_TIMELINE_ENABLED',
-    ),
-  if (bool.hasEnvironment('SPRING_FLUTTER_DEBUG_TIMELINE_POSITION'))
-    'SPRING_FLUTTER_DEBUG_TIMELINE_POSITION': String.fromEnvironment(
-      'SPRING_FLUTTER_DEBUG_TIMELINE_POSITION',
     ),
   if (bool.hasEnvironment('SPRING_FLUTTER_DESKTOP_WINDOW_INITIALSIZE'))
     'SPRING_FLUTTER_DESKTOP_WINDOW_INITIALSIZE': String.fromEnvironment(
@@ -803,6 +911,10 @@ const Map<String, String> _$dartDefines = {
     'logging.console.enabled': String.fromEnvironment(
       'logging.console.enabled',
     ),
+  if (bool.hasEnvironment('logging.console.record-bar'))
+    'logging.console.record-bar': String.fromEnvironment(
+      'logging.console.record-bar',
+    ),
   if (bool.hasEnvironment('logging.console.target'))
     'logging.console.target': String.fromEnvironment('logging.console.target'),
   if (bool.hasEnvironment('logging.enabled'))
@@ -938,6 +1050,66 @@ const Map<String, String> _$dartDefines = {
     'spring.flutter.app.type': String.fromEnvironment(
       'spring.flutter.app.type',
     ),
+  if (bool.hasEnvironment('spring.flutter.debug.console.enabled'))
+    'spring.flutter.debug.console.enabled': String.fromEnvironment(
+      'spring.flutter.debug.console.enabled',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.console.filter.level'))
+    'spring.flutter.debug.console.filter.level': String.fromEnvironment(
+      'spring.flutter.debug.console.filter.level',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.console.filter.text'))
+    'spring.flutter.debug.console.filter.text': String.fromEnvironment(
+      'spring.flutter.debug.console.filter.text',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.console.header'))
+    'spring.flutter.debug.console.header': String.fromEnvironment(
+      'spring.flutter.debug.console.header',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.console.history'))
+    'spring.flutter.debug.console.history': String.fromEnvironment(
+      'spring.flutter.debug.console.history',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.console.interaction'))
+    'spring.flutter.debug.console.interaction': String.fromEnvironment(
+      'spring.flutter.debug.console.interaction',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.console.max-lines'))
+    'spring.flutter.debug.console.max-lines': String.fromEnvironment(
+      'spring.flutter.debug.console.max-lines',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.console.opacity'))
+    'spring.flutter.debug.console.opacity': String.fromEnvironment(
+      'spring.flutter.debug.console.opacity',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.console.panes'))
+    'spring.flutter.debug.console.panes': String.fromEnvironment(
+      'spring.flutter.debug.console.panes',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.console.pass-through-opacity'))
+    'spring.flutter.debug.console.pass-through-opacity': String.fromEnvironment(
+      'spring.flutter.debug.console.pass-through-opacity',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.console.position'))
+    'spring.flutter.debug.console.position': String.fromEnvironment(
+      'spring.flutter.debug.console.position',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.console.segments'))
+    'spring.flutter.debug.console.segments': String.fromEnvironment(
+      'spring.flutter.debug.console.segments',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.console.shown-panes'))
+    'spring.flutter.debug.console.shown-panes': String.fromEnvironment(
+      'spring.flutter.debug.console.shown-panes',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.console.slide-duration'))
+    'spring.flutter.debug.console.slide-duration': String.fromEnvironment(
+      'spring.flutter.debug.console.slide-duration',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.console.width'))
+    'spring.flutter.debug.console.width': String.fromEnvironment(
+      'spring.flutter.debug.console.width',
+    ),
   if (bool.hasEnvironment('spring.flutter.debug.drag.enabled'))
     'spring.flutter.debug.drag.enabled': String.fromEnvironment(
       'spring.flutter.debug.drag.enabled',
@@ -946,9 +1118,29 @@ const Map<String, String> _$dartDefines = {
     'spring.flutter.debug.enabled': String.fromEnvironment(
       'spring.flutter.debug.enabled',
     ),
+  if (bool.hasEnvironment('spring.flutter.debug.flutter-tools.enabled'))
+    'spring.flutter.debug.flutter-tools.enabled': String.fromEnvironment(
+      'spring.flutter.debug.flutter-tools.enabled',
+    ),
   if (bool.hasEnvironment('spring.flutter.debug.frame-meter.enabled'))
     'spring.flutter.debug.frame-meter.enabled': String.fromEnvironment(
       'spring.flutter.debug.frame-meter.enabled',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.graph.enabled'))
+    'spring.flutter.debug.graph.enabled': String.fromEnvironment(
+      'spring.flutter.debug.graph.enabled',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.graph.hot.rebuilds'))
+    'spring.flutter.debug.graph.hot.rebuilds': String.fromEnvironment(
+      'spring.flutter.debug.graph.hot.rebuilds',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.graph.hot.window'))
+    'spring.flutter.debug.graph.hot.window': String.fromEnvironment(
+      'spring.flutter.debug.graph.hot.window',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.graph.layers'))
+    'spring.flutter.debug.graph.layers': String.fromEnvironment(
+      'spring.flutter.debug.graph.layers',
     ),
   if (bool.hasEnvironment('spring.flutter.debug.isolates.enabled'))
     'spring.flutter.debug.isolates.enabled': String.fromEnvironment(
@@ -958,13 +1150,37 @@ const Map<String, String> _$dartDefines = {
     'spring.flutter.debug.isolates.interval': String.fromEnvironment(
       'spring.flutter.debug.isolates.interval',
     ),
-  if (bool.hasEnvironment('spring.flutter.debug.isolates.position'))
-    'spring.flutter.debug.isolates.position': String.fromEnvironment(
-      'spring.flutter.debug.isolates.position',
+  if (bool.hasEnvironment('spring.flutter.debug.logs.export.enabled'))
+    'spring.flutter.debug.logs.export.enabled': String.fromEnvironment(
+      'spring.flutter.debug.logs.export.enabled',
     ),
   if (bool.hasEnvironment('spring.flutter.debug.motion.enabled'))
     'spring.flutter.debug.motion.enabled': String.fromEnvironment(
       'spring.flutter.debug.motion.enabled',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.network.bodies'))
+    'spring.flutter.debug.network.bodies': String.fromEnvironment(
+      'spring.flutter.debug.network.bodies',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.network.body-budget'))
+    'spring.flutter.debug.network.body-budget': String.fromEnvironment(
+      'spring.flutter.debug.network.body-budget',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.network.body-limit'))
+    'spring.flutter.debug.network.body-limit': String.fromEnvironment(
+      'spring.flutter.debug.network.body-limit',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.network.enabled'))
+    'spring.flutter.debug.network.enabled': String.fromEnvironment(
+      'spring.flutter.debug.network.enabled',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.network.max-entries'))
+    'spring.flutter.debug.network.max-entries': String.fromEnvironment(
+      'spring.flutter.debug.network.max-entries',
+    ),
+  if (bool.hasEnvironment('spring.flutter.debug.network.max-frames'))
+    'spring.flutter.debug.network.max-frames': String.fromEnvironment(
+      'spring.flutter.debug.network.max-frames',
     ),
   if (bool.hasEnvironment('spring.flutter.debug.overlays.drag.remember'))
     'spring.flutter.debug.overlays.drag.remember': String.fromEnvironment(
@@ -998,13 +1214,13 @@ const Map<String, String> _$dartDefines = {
     'spring.flutter.debug.overlays.max-height': String.fromEnvironment(
       'spring.flutter.debug.overlays.max-height',
     ),
+  if (bool.hasEnvironment('spring.flutter.debug.theme'))
+    'spring.flutter.debug.theme': String.fromEnvironment(
+      'spring.flutter.debug.theme',
+    ),
   if (bool.hasEnvironment('spring.flutter.debug.timeline.enabled'))
     'spring.flutter.debug.timeline.enabled': String.fromEnvironment(
       'spring.flutter.debug.timeline.enabled',
-    ),
-  if (bool.hasEnvironment('spring.flutter.debug.timeline.position'))
-    'spring.flutter.debug.timeline.position': String.fromEnvironment(
-      'spring.flutter.debug.timeline.position',
     ),
   if (bool.hasEnvironment('spring.flutter.desktop.window.initial-size'))
     'spring.flutter.desktop.window.initial-size': String.fromEnvironment(

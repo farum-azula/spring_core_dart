@@ -1,5 +1,11 @@
 import 'dart:async';
 
+import 'package:spring_boot_dart/spring_boot_dart.dart'
+    show
+        CallerBoundReads,
+        CallerContextPropagation,
+        CallerContexts,
+        CallerIdentitySource;
 import 'package:spring_security_core/src/core/authentication.dart';
 
 /// A small box holding the [authentication] of the current user, or
@@ -36,24 +42,98 @@ abstract interface class SecurityContext {
 /// Spring (Java): `new SecurityContextImpl(result)`.
 final class SecurityContextImpl implements SecurityContext {
   /// A context holding [authentication]; empty when it is omitted.
-  SecurityContextImpl([this.authentication]);
+  SecurityContextImpl([this._authentication]);
+
+  Authentication? _authentication;
 
   @override
-  Authentication? authentication;
+  Authentication? get authentication {
+    CallerBoundReads.note(const SecurityCallerSource());
+    return _authentication;
+  }
+
+  // Whoever kept a value for the user there was is told.
+  @override
+  set authentication(Authentication? value) {
+    if (identical(value, _authentication)) {
+      return;
+    }
+    _authentication = value;
+    CallerBoundReads.callerChanged();
+  }
 
   @override
   bool operator ==(Object other) =>
-      other is SecurityContextImpl && other.authentication == authentication;
+      other is SecurityContextImpl && other._authentication == _authentication;
 
   @override
-  int get hashCode => authentication.hashCode;
+  int get hashCode => _authentication.hashCode;
 
   @override
   String toString() =>
       'SecurityContextImpl ['
       // The interpolation cannot be wrapped (dart format keeps it).
       // ignore: lines_longer_than_80_chars
-      '${authentication == null ? 'Null authentication' : 'Authentication=$authentication'}]';
+      '${_authentication == null ? 'Null authentication' : 'Authentication=$_authentication'}]';
+}
+
+/// Says who the caller is, for what keeps values
+/// ([CallerBoundReads]): the authentication of the current context.
+final class SecurityCallerSource implements CallerIdentitySource {
+  /// The source over [strategy]; without one, over the strategy of
+  /// [SecurityContextHolder] at each read.
+  const SecurityCallerSource([this.strategy]);
+
+  /// Where the user is read.
+  final SecurityContextHolderStrategy? strategy;
+
+  // A token whose authentication was taken back is nobody's: a new object
+  // each time, so that nothing kept for it is handed out again.
+  @override
+  Object? currentCaller() {
+    final user = (strategy ?? SecurityContextHolder.getContextHolderStrategy())
+        .getContext()
+        .authentication;
+    return user == null || user.isAuthenticated ? user : Object();
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is SecurityCallerSource && identical(other.strategy, strategy);
+
+  @override
+  int get hashCode => identityHashCode(strategy);
+}
+
+/// Runs code later as the user of the moment it was captured: an effect
+/// of the Flutter signals starter runs again as the user it was made for,
+/// never as the user whose change ran it. With the default strategy a
+/// capture outside every scope stands for the program-wide user (who that
+/// is when the code runs); inside a scope, for that scope's context.
+final class SecurityCallerContext implements CallerContextPropagation {
+  /// The propagation over [SecurityContextHolder]'s strategy.
+  const SecurityCallerContext();
+
+  @override
+  Object? capture() =>
+      switch (SecurityContextHolder.getContextHolderStrategy()) {
+        final ZoneSecurityContextHolderStrategy zones => zones.captureCaller(),
+        final other => CallerBoundReads.quietly(other.getContext),
+      };
+
+  @override
+  R runAs<R>(Object? captured, R Function() body) =>
+      switch (SecurityContextHolder.getContextHolderStrategy()) {
+        final ZoneSecurityContextHolderStrategy zones => zones.runAsCaller(
+          captured,
+          body,
+        ),
+        final other when captured is SecurityContext => other.runWithContext(
+          body,
+          captured,
+        ),
+        _ => body(),
+      };
 }
 
 /// The rule that decides which [SecurityContext] is "current": one per
@@ -113,7 +193,19 @@ final class ZoneSecurityContextHolderStrategy
   ///
   /// Each instance has its own scopes: a scope opened by one strategy is
   /// invisible to another.
-  ZoneSecurityContextHolderStrategy();
+  ZoneSecurityContextHolderStrategy() {
+    CallerContexts.register(const SecurityCallerContext());
+  }
+
+  /// Where the current code takes its context from: its scope, or the
+  /// program-wide context; for [runAsCaller].
+  Object captureCaller() => _holder;
+
+  /// Runs [body] with the context [captured] (a [captureCaller]) came
+  /// from: a scope's own, or the program-wide one even inside a scope.
+  R runAsCaller<R>(Object? captured, R Function() body) => captured is _Holder
+      ? runZoned(body, zoneValues: {_key: captured})
+      : body();
 
   // Each strategy has its own key: scopes of one strategy are invisible to
   // another.
@@ -150,6 +242,7 @@ final class ZoneSecurityContextHolderStrategy
 
   @override
   SecurityContext getContext() {
+    CallerBoundReads.note(const SecurityCallerSource());
     final holder = _holder;
     return holder.context ??= identical(holder, _global)
         ? _ProgramWideContext(this)
@@ -158,16 +251,33 @@ final class ZoneSecurityContextHolderStrategy
 
   @override
   void setContext(SecurityContext context) {
-    final holder = _holder..context = context;
+    final holder = _holder;
+    final before = _userOf(holder.context);
+    holder.context = context;
     if (identical(holder, _global)) {
-      if (context.authentication case final authentication?) {
-        _reportProgramWide(authentication);
+      final user = _userOf(context);
+      if (user != null) {
+        _reportProgramWide(user);
+      }
+      if (!identical(before, user)) {
+        CallerBoundReads.callerChanged();
       }
     }
   }
 
   @override
-  void clearContext() => _holder.context = null;
+  void clearContext() {
+    final holder = _holder;
+    final before = _userOf(holder.context);
+    holder.context = null;
+    if (identical(holder, _global) && before != null) {
+      CallerBoundReads.callerChanged();
+    }
+  }
+
+  // Storing a user is no read of the current one.
+  static Authentication? _userOf(SecurityContext? context) =>
+      CallerBoundReads.quietly(() => context?.authentication);
 
   @override
   SecurityContext createEmptyContext() => SecurityContextImpl();
@@ -209,13 +319,25 @@ final class GlobalSecurityContextHolderStrategy
   SecurityContext? _context;
 
   @override
-  SecurityContext getContext() => _context ??= createEmptyContext();
+  SecurityContext getContext() {
+    CallerBoundReads.note(const SecurityCallerSource());
+    return _context ??= createEmptyContext();
+  }
 
   @override
-  void setContext(SecurityContext context) => _context = context;
+  void setContext(SecurityContext context) => _replace(context);
 
   @override
-  void clearContext() => _context = null;
+  void clearContext() => _replace(null);
+
+  void _replace(SecurityContext? context) {
+    final before = CallerBoundReads.quietly(() => _context?.authentication);
+    final user = CallerBoundReads.quietly(() => context?.authentication);
+    _context = context;
+    if (!identical(before, user)) {
+      CallerBoundReads.callerChanged();
+    }
+  }
 
   @override
   SecurityContext createEmptyContext() => SecurityContextImpl();
@@ -230,11 +352,11 @@ final class GlobalSecurityContextHolderStrategy
   @override
   R runWithContext<R>(R Function() body, [SecurityContext? context]) {
     final previous = _context;
-    _context = context;
+    _replace(context);
     try {
       return body();
     } finally {
-      _context = previous;
+      _replace(previous);
     }
   }
 }
@@ -293,7 +415,10 @@ abstract final class SecurityContextHolder {
 
   /// The current context, never `null` (an empty one is created when
   /// there is none). Read `.authentication` on it for the user.
-  static SecurityContext getContext() => _strategy.getContext();
+  static SecurityContext getContext() {
+    CallerBoundReads.note(const SecurityCallerSource());
+    return _strategy.getContext();
+  }
 
   /// Makes [context] current in the current scope; this is how a login
   /// takes effect.

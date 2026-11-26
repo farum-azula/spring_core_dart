@@ -1,7 +1,8 @@
 // The frame meter: spring.flutter.frame-meter.* turns it on and puts it
 // in a corner; the theme's frame-meter colors it; it counts the app's
 // frames from Flutter's timings, not its own, and shows idle when nothing
-// is drawn.
+// is drawn. Compact by default: one line, the rate in the primary colour
+// and the 3D's beside it, over the strip of bars; detailed, the times.
 import 'dart:ui' show FrameTiming;
 
 import 'package:flutter/widgets.dart';
@@ -88,7 +89,7 @@ void main() {
       'spring.flutter.frame-meter.position=bottom-left',
     );
     final meter = tester.widget<FrameMeter>(find.byType(FrameMeter));
-    expect(meter.position, FrameMeterPosition.bottomLeft);
+    expect(meter.position, DebugCorner.bottomLeft);
     expect(find.text('idle'), findsOneWidget);
     expect(find.text('home'), findsOneWidget);
   });
@@ -99,7 +100,7 @@ void main() {
     await tester.pumpWidget(
       const Directionality(
         textDirection: TextDirection.ltr,
-        child: FrameMeter(child: SizedBox()),
+        child: FrameMeter(detailed: true, child: SizedBox()),
       ),
     );
     final report = tester.binding.platformDispatcher.onReportTimings!;
@@ -115,6 +116,61 @@ void main() {
     expect(find.text('60 fps'), findsOneWidget);
   });
 
+  group('compact', () {
+    testWidgets("one line, the rate in the theme's primary colour, over the "
+        'strip of bars; no times', (tester) async {
+      await tester.pumpWidget(
+        const Directionality(
+          textDirection: TextDirection.ltr,
+          child: FrameMeter(child: SizedBox()),
+        ),
+      );
+      final report = tester.binding.platformDispatcher.onReportTimings!;
+      report([for (var i = 0; i <= 30; i++) _frame(i * 16667)]);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('60'), findsOneWidget);
+      final line = tester.widget<Text>(find.text('60'));
+      final rate = (line.textSpan! as TextSpan).children!.first as TextSpan;
+      expect(rate.style!.color, const Color(0xFF4FC3F7), reason: 'primary');
+      expect(rate.style!.fontWeight, FontWeight.bold);
+      expect(find.textContaining('build'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(FrameMeterGauge),
+          matching: find.byType(CustomPaint),
+        ),
+        findsOneWidget,
+        reason: 'the strip',
+      );
+    });
+
+    testWidgets('the frames drawn without Flutter beside: 60 (60 3D), gone '
+        'when the 3D stops', (tester) async {
+      var now = 0;
+      OutsideFrames.clock = () => now;
+      addTearDown(OutsideFrames.reset);
+      await tester.pumpWidget(
+        const Directionality(
+          textDirection: TextDirection.ltr,
+          child: FrameMeter(child: SizedBox()),
+        ),
+      );
+      final report = tester.binding.platformDispatcher.onReportTimings!;
+      report([for (var i = 0; i <= 30; i++) _frame(i * 16667)]);
+      final scene = OutsideFrames.of('3D');
+      for (var i = 0; i < 61; i++) {
+        scene.frame(const Duration(microseconds: 900));
+        now += 16667;
+      }
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('60 (60 3D)'), findsOneWidget);
+      now += 2000000;
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.textContaining('3D'), findsNothing);
+    });
+  });
+
   group('few frames by choice are not late frames', () {
     Color? colorOf(WidgetTester tester, String text) =>
         tester.widget<Text>(find.text(text)).style?.color;
@@ -125,7 +181,7 @@ void main() {
       await tester.pumpWidget(
         const Directionality(
           textDirection: TextDirection.ltr,
-          child: FrameMeter(child: SizedBox()),
+          child: FrameMeter(detailed: true, child: SizedBox()),
         ),
       );
       // Ten more frames, none asked for as the one before ended.
@@ -147,7 +203,7 @@ void main() {
       await tester.pumpWidget(
         const Directionality(
           textDirection: TextDirection.ltr,
-          child: FrameMeter(child: SizedBox()),
+          child: FrameMeter(detailed: true, child: SizedBox()),
         ),
       );
       for (var i = 0; i < 3; i++) {
@@ -174,7 +230,7 @@ void main() {
       await tester.pumpWidget(
         const Directionality(
           textDirection: TextDirection.ltr,
-          child: FrameMeter(child: _Spinner()),
+          child: FrameMeter(detailed: true, child: _Spinner()),
         ),
       );
       // The ticker asks for the next frame as each one ends.
@@ -196,7 +252,7 @@ void main() {
       await tester.pumpWidget(
         const Directionality(
           textDirection: TextDirection.ltr,
-          child: FrameMeter(child: _Spinner()),
+          child: FrameMeter(detailed: true, child: _Spinner()),
         ),
       );
       for (var i = 0; i < 3; i++) {

@@ -29,6 +29,13 @@ List<Object> _reported(void Function() body) {
   return errors;
 }
 
+/// A [SignalExecutionException] whose cause is an [E].
+Matcher _failedWith<E>() => isA<SignalExecutionException>().having(
+  (failure) => failure.cause,
+  'cause',
+  isA<E>(),
+);
+
 /// What [read] gives each time something it read changes.
 (List<T>, void Function()) _follow<T>(T Function() read) {
   final seen = <T>[];
@@ -236,33 +243,37 @@ void main() {
     expect(Shapes.shared, 4);
   });
 
-  test('a setter that is no field is one change', () {
+  test('with flush: immediate each assignment of a setter is told, and '
+      'batch makes them one change', () {
     final bean = app.getBean<Shapes>();
     final (seen, stop) = _follow(() => '${bean.amount}/${bean.thing}');
     addTearDown(stop);
     seen.clear();
     bean.both = 9;
-    expect(seen, ['9/9']);
+    expect(seen, ['9/1', '9/9']);
+    seen.clear();
+    batch(() => bean.both = 10);
+    expect(seen, ['10/10']);
   });
 
-  test('a method that throws: what it assigned is told once, the error is '
-      "the caller's", () {
+  test('a method that throws: what it assigned is told, the error is the '
+      "caller's", () {
     final bean = app.getBean<Steps>();
     bean.seen.clear();
     expect(bean.fail, throwsStateError);
-    expect(bean.seen, ['7/7']);
+    expect(bean.seen, ['7/0', '7/7']);
     expect([bean.a, bean.b], [7, 7]);
   });
 
-  test('an asynchronous method is one change up to its first await; after '
-      'it each assignment is its own', () async {
+  test('an asynchronous method with flush: immediate: each assignment is '
+      'its own', () async {
     final bean = app.getBean<Steps>();
     bean
       ..a = 0
       ..b = 0;
     bean.seen.clear();
     await bean.later();
-    expect(bean.seen, ['1/1', '2/1', '2/2']);
+    expect(bean.seen, ['1/0', '1/1', '2/1', '2/2']);
   });
 
   test('an effect may write what it reads, until it holds', () {
@@ -276,10 +287,10 @@ void main() {
   test('an effect that throws: the error is reported, not thrown at the '
       'assignment that ran it; the effect lives on', () {
     final bean = app.getBean<Fragile>();
-    expect(_reported(() => bean.value = -1), [isArgumentError]);
+    expect(_reported(() => bean.value = -1), [_failedWith<ArgumentError>()]);
     expect(bean.value, -1);
     expect(_reported(() => bean.value = 1), isEmpty);
-    expect(_reported(() => bean.value = -2), [isArgumentError]);
+    expect(_reported(() => bean.value = -2), [_failedWith<ArgumentError>()]);
     bean.value = 0;
   });
 
@@ -292,38 +303,24 @@ void main() {
     expect(bean.second, 1);
   });
 
-  test('without the auto-configuration of the starter the application '
-      'says that nothing is followed', () async {
-    final warnings = <String>[];
-    final stop = SpringLog.listen((record) {
-      if (record.level == SpringLogLevel.warning) {
-        warnings.add(record.message);
-      }
-    });
-    addTearDown(stop);
-    final context = await SpringApplication(
-      [$application],
-      autoConfigurations: [
-        springBootAutoConfiguration,
-        springBootStarterFlutterAutoConfiguration,
-      ],
-    ).runAsync(const []);
-    addTearDown(context.closeAsync);
+  test(
+    'without the auto-configuration of the starter no effect runs',
+    () async {
+      final context = await SpringApplication(
+        [$application],
+        autoConfigurations: [
+          springBootAutoConfiguration,
+          springBootStarterFlutterAutoConfiguration,
+        ],
+      ).runAsync(const []);
+      addTearDown(context.closeAsync);
 
-    final bean = context.getBean<Inherited>();
-    bean.count = 2;
-    // Plain fields: nothing ran for the change.
-    expect(bean.seen, isEmpty);
-    expect(
-      warnings,
-      contains(
-        allOf(
-          contains("The bean 'inherited' has members annotated for advice"),
-          contains('no advice matches it'),
-        ),
-      ),
-    );
-  });
+      final bean = context.getBean<Inherited>();
+      bean.count = 2;
+      // Plain fields: nothing ran for the change.
+      expect(bean.seen, isEmpty);
+    },
+  );
 
   group('with the advice of another starter on the same bean (a '
       'transaction)', () {
@@ -340,17 +337,17 @@ void main() {
       ledger.seen.clear();
     });
 
-    test('both run for a method, and its readers are told once', () {
+    test('both run for a method, and its readers are told', () {
       ledger.deposit(5);
       expect(audit.log, ['begin deposit', 'commit deposit']);
-      expect(ledger.seen, ['5/1']);
+      expect(ledger.seen, ['5/0', '5/1']);
     });
 
     test("the bean's own calls skip the other advice, as in any bean; "
-        'the state is followed all the same, in one change', () {
+        'the state is followed all the same', () {
       ledger.depositTwice(1);
       expect(audit.log, isEmpty);
-      expect(ledger.seen, ['2/2']);
+      expect(ledger.seen, ['1/0', '1/1', '2/1', '2/2']);
     });
 
     test('a method that fails: the other advice rolls back, the fields '
@@ -367,22 +364,21 @@ void main() {
       expect(ledger.seen, ['-3/0', '-3/1']);
     });
 
-    test('on a computed value the other advice runs when it is computed, '
-        'not for each read of the kept one', () async {
+    test('on a computed value the other advice runs for each call through '
+        'the proxy, as on any bean; the value is kept inside it', () async {
       ledger.balance = 4;
       expect(await ledger.doubled, 8);
       expect(await ledger.doubled, 8);
-      expect(await ledger.doubled, 8);
-      expect(audit.log, ['begin doubled', 'commit doubled']);
-
-      ledger.balance = 1;
-      expect(await ledger.doubled, 2);
       expect(audit.log, [
         'begin doubled',
         'commit doubled',
         'begin doubled',
         'commit doubled',
       ]);
+
+      ledger.balance = 1;
+      expect(await ledger.doubled, 2);
+      expect(audit.log, hasLength(6));
     });
 
     test('an advice with an earlier order (method security) runs for '
@@ -428,7 +424,7 @@ void main() {
         'member are refused', () {
       guard.owner = false;
       // The reader bean's effect is refused meanwhile, and says so.
-      expect(_reported(() => vault.secret = 1), [isStateError]);
+      expect(_reported(() => vault.secret = 1), [_failedWith<StateError>()]);
       expect(vault.secret, 1);
       expect(() => vault.report, throwsStateError);
       guard.owner = true;
@@ -469,7 +465,7 @@ void main() {
       vault.secret = 1;
       expect(reader.seen, [2]);
       guard.owner = false;
-      expect(_reported(() => vault.secret = 2), [isStateError]);
+      expect(_reported(() => vault.secret = 2), [_failedWith<StateError>()]);
       expect(vault.secret, 2);
       expect(reader.seen, [2]);
       guard.owner = true;
@@ -483,7 +479,7 @@ void main() {
       watchman.door = 0;
       watchman.noted.clear();
       guard.owner = false;
-      expect(_reported(() => watchman.door = 1), [isStateError]);
+      expect(_reported(() => watchman.door = 1), [_failedWith<StateError>()]);
       expect(watchman.door, 1);
       expect(watchman.noted, isEmpty);
       guard.owner = true;

@@ -22,6 +22,8 @@
 ///   injected in turn.
 /// - `SpringLog` and `@Log()`: logging for the framework and applications;
 ///   `SecretNames`, the rule for names whose values are masked.
+/// - `ErrorHandler` and `TypedErrorHandler`: receive the errors of work
+///   that has no caller, as a scheduled task.
 /// - `deepEquals` and `deepHash`: equality and hash of collections by
 ///   content.
 ///
@@ -75,6 +77,7 @@ export 'package:spring_core_dart/src/core/env/property_resolver.dart';
 export 'package:spring_core_dart/src/core/env/property_source.dart';
 export 'package:spring_core_dart/src/core/env/random_value_property_source.dart';
 export 'package:spring_core_dart/src/core/env/system_environment_property_source.dart';
+export 'package:spring_core_dart/src/core/error_handler.dart';
 export 'package:spring_core_dart/src/core/io/cache_store.dart';
 export 'package:spring_core_dart/src/core/io/file_system_resource.dart';
 export 'package:spring_core_dart/src/core/io/path_matcher.dart';
@@ -98,3 +101,4 @@ export 'package:spring_core_dart/src/core/metrics/application_startup.dart';
 export 'package:spring_core_dart/src/core/order.dart';
 export 'package:spring_core_dart/src/core/principal.dart';
 export 'package:spring_core_dart/src/core/secret_names.dart';
+export 'package:spring_core_dart/src/core/transaction_lifecycle_registry.dart';

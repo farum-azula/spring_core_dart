@@ -6,7 +6,7 @@ import 'package:spring_boot_starter_flutter/src/splash/splash_stages.dart';
 
 /// The start: when each stage of the start was reached (the web page, the
 /// engine, the splash, the beans, the tasks, the app).
-final class DebugStartSection implements DebugPanelSection, Ordered {
+final class DebugStartSection implements GroupedDebugPanelSection, Ordered {
   /// The section of [stages]; `null` outside `SpringApplicationWidget`.
   const DebugStartSection(this.stages);
 
@@ -18,6 +18,9 @@ final class DebugStartSection implements DebugPanelSection, Ordered {
 
   @override
   int get order => 50;
+
+  @override
+  String get group => 'App';
 
   @override
   Widget build(BuildContext context) {

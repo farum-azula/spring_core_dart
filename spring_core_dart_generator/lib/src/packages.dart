@@ -4,6 +4,8 @@ import 'package:spring_core_dart_generator/src/core/builder/package_generation.d
 import 'package:spring_core_dart_generator/src/data/data_generation.dart';
 import 'package:spring_core_dart_generator/src/feign/feign_generation.dart';
 import 'package:spring_core_dart_generator/src/flutter/change_notifier_generation.dart';
+import 'package:spring_core_dart_generator/src/flutter/debug_console_generation.dart';
+import 'package:spring_core_dart_generator/src/flutter/debug_widget_fields_generation.dart';
 import 'package:spring_core_dart_generator/src/flutter/flutter_generation.dart';
 import 'package:spring_core_dart_generator/src/navigation/navigation_generation.dart';
 import 'package:spring_core_dart_generator/src/scheduling/scheduling_generation.dart';
@@ -42,6 +44,8 @@ const List<PackageGeneration> packageGenerations = [
   FlutterGeneration(),
   NavigationGeneration(),
   ChangeNotifierGeneration(),
+  DebugConsoleGeneration(),
+  DebugWidgetFieldsGeneration(),
   SignalsGeneration(),
   WebGeneration(),
   WebSocketGeneration(),

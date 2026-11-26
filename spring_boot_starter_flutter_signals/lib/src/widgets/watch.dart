@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:spring_boot_starter_flutter_signals/src/debug/signal_widget_names.dart';
 import 'package:spring_boot_starter_flutter_signals/src/widgets/signal_build_tracker.dart';
 
 /// Builds again when followed state its [builder] read has changed, and
@@ -25,7 +26,11 @@ class Watch extends StatefulWidget {
 }
 
 class _WatchState extends State<Watch> {
-  late final SignalTracking _tracking = SignalTracking(_rebuild);
+  // Kept with its element for the debug tools when a view of them is in
+  // the app, and named only while one collects.
+  late final SignalTracking _tracking =
+      SignalWidgetNames.current?.trackWatch(_rebuild, context) ??
+      SignalTracking(_rebuild);
 
   void _rebuild() {
     if (mounted) {

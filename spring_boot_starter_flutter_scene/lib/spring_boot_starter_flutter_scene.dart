@@ -28,6 +28,7 @@ export 'src/conditions/scene_condition.dart';
 export 'src/conditions/slow_frames_scene_condition.dart';
 export 'src/conditions/touch_scene_condition.dart';
 export 'src/debug/scene_debug.dart';
+export 'src/debug/scene_fps_segment.dart';
 export 'src/debug/scene_material_precisions.dart';
 export 'src/debug/scene_model_shape.dart';
 export 'src/debug/scene_section.dart';

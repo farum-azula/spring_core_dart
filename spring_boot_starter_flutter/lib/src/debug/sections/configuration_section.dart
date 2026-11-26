@@ -9,18 +9,25 @@ import 'package:spring_boot_starter_flutter/src/debug/debug_style.dart';
 /// `pwd`, `passphrase`, `token`, `apiKey`...) shows as `******`, and the
 /// password and secret query parameters of a URL value are masked
 /// (`postgres://ada:******@db/shop`), as Spring Boot's actuator does.
-final class DebugConfigurationSection implements DebugPanelSection, Ordered {
+final class DebugConfigurationSection
+    implements GroupedDebugPanelSection, Ordered {
   /// The section of [environment].
-  const DebugConfigurationSection(this.environment);
+  DebugConfigurationSection(this.environment);
 
   /// The configuration read.
   final ConfigurableEnvironment environment;
+
+  /// The text of its filter, kept while the panel is closed.
+  String filter = '';
 
   @override
   String get title => 'Configuration';
 
   @override
   int get order => 20;
+
+  @override
+  String get group => 'App';
 
   /// The properties, each once, from the source that wins.
   List<(String, String, String)> properties() {
@@ -57,7 +64,7 @@ class _Configuration extends StatefulWidget {
 
 class _ConfigurationState extends State<_Configuration> {
   late final _all = widget.section.properties();
-  String _filter = '';
+  late String _filter = widget.section.filter;
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +86,11 @@ class _ConfigurationState extends State<_Configuration> {
           style: style.text,
         ),
         const SizedBox(height: 8),
-        DebugFilter(onChanged: (text) => setState(() => _filter = text)),
+        DebugFilter(
+          initial: _filter,
+          onChanged: (text) =>
+              setState(() => _filter = widget.section.filter = text),
+        ),
         Expanded(
           child: ListView.builder(
             itemCount: shown.length,

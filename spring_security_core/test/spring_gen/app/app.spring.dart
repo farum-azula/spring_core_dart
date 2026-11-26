@@ -450,6 +450,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             r'owners',
             _$target17,
             returnType: r'Map',
+            resultMapTypes: _i1.MapTypes<String, String>(),
             annotations: [
               _i8.PostFilter(r'filterObject.value == authentication.name'),
             ],

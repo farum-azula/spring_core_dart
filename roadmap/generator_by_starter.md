@@ -106,7 +106,7 @@ Its code is not organised that way:
   the core names no other starter's URL and imports no starter folder. A
   part has a build key as a module has (`StarterBuild(property,
   whenMissing:)`, `core/build_inclusion.dart`, shared with the modules'):
-  `false` runs nothing, `notInRelease` puts what can be guarded under
+  `false` runs nothing, `debugOnly` puts what can be guarded under
   `!dart.vm.product` (definitions, statements, introspections,
   resources; classes and declarations are dropped by the compiler when
   nothing uses them). The tests are split by part (`test/<part>/`,
@@ -167,7 +167,7 @@ Not done, on purpose (the owner, 17 November 2026):
   (its address often comes at start); at most an opt-out key, later.
 
 Found on the way: `dart compile js` / `wasm` define no `dart.vm.product`,
-so a deployed edge function keeps the `notInRelease` modules unless their
+so a deployed edge function keeps the `debugOnly` modules unless their
 key is `false` (Flutter's release builds and AOT drop them).
 
 ## Next: the core by concern, introspection on its own (the owner, 19 November 2026)

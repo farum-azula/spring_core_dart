@@ -32,6 +32,10 @@ const Map<String, String> _$dartDefines = {
     'LOGGING_CONSOLE_ENABLED': String.fromEnvironment(
       'LOGGING_CONSOLE_ENABLED',
     ),
+  if (bool.hasEnvironment('LOGGING_CONSOLE_RECORDBAR'))
+    'LOGGING_CONSOLE_RECORDBAR': String.fromEnvironment(
+      'LOGGING_CONSOLE_RECORDBAR',
+    ),
   if (bool.hasEnvironment('LOGGING_CONSOLE_TARGET'))
     'LOGGING_CONSOLE_TARGET': String.fromEnvironment('LOGGING_CONSOLE_TARGET'),
   if (bool.hasEnvironment('LOGGING_ENABLED'))
@@ -1366,6 +1370,10 @@ const Map<String, String> _$dartDefines = {
   if (bool.hasEnvironment('logging.console.enabled'))
     'logging.console.enabled': String.fromEnvironment(
       'logging.console.enabled',
+    ),
+  if (bool.hasEnvironment('logging.console.record-bar'))
+    'logging.console.record-bar': String.fromEnvironment(
+      'logging.console.record-bar',
     ),
   if (bool.hasEnvironment('logging.console.target'))
     'logging.console.target': String.fromEnvironment('logging.console.target'),

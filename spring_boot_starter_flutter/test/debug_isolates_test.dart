@@ -1,8 +1,8 @@
 // The task manager of the isolates and the engine's threads: the engine's
 // rows from Flutter's frame times and from round trips to its threads,
-// measured only while read; the small table over the app and the full one
-// in the debug panel, read only while they show; the shortcut, the copied
-// JSON, and the rows in the `isolateLoads` of a running app.
+// measured only while read; the console's `isolates` segment and the full
+// table in the debug panel, read only while they show; the copied JSON,
+// and the rows in the `isolateLoads` of a running app.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' show FrameTiming;
@@ -104,10 +104,7 @@ Future<(DebugIsolates, _Source)> _pump(
   await tester.pumpWidget(
     WidgetsApp(
       color: const Color(0xFF000000),
-      builder: (context, _) => DebugDock(
-        overlays: [isolates],
-        child: const SizedBox.expand(),
-      ),
+      builder: (context, _) => const SizedBox.expand(),
     ),
   );
   return (isolates, source);
@@ -518,93 +515,30 @@ void main() {
     });
   });
 
-  testWidgets('the table over the app: a line per row, read while shown', (
-    tester,
-  ) async {
+  testWidgets("the console's isolates segment: how many rows and the "
+      'busiest, read only while started', (tester) async {
     final (isolates, source) = await _pump(tester);
-    expect(find.byType(DebugIsolatesGauge), findsNothing);
+    final segment = IsolatesSegment(isolates);
     await tester.pump(const Duration(seconds: 5));
-    // Hidden: nothing is read, so nothing is measured.
+    // Not started: nothing is read, so nothing is measured.
     expect(source.reads, 0);
 
-    isolates.shown = true;
-    await tester.pump();
+    var changes = 0;
+    final stop = segment.start(() => changes++);
     expect(source.reads, 1);
-    for (final name in ['main', 'task-1', 'raster', 'platform']) {
-      expect(find.text(name), findsOneWidget, reason: name);
-    }
-    expect(find.text('42%'), findsOneWidget);
-    expect(find.text('1.2ms'), findsOneWidget);
-    expect(find.text('100%'), findsOneWidget);
-    expect(find.text('7%'), findsOneWidget);
-    expect(find.text('0.3ms'), findsOneWidget);
-    // In the order `isolateLoads` gives them.
-    expect(
-      tester.getTopLeft(find.text('main')).dy,
-      lessThan(tester.getTopLeft(find.text('task-1')).dy),
-    );
-    expect(
-      tester.getTopLeft(find.text('raster')).dy,
-      lessThan(tester.getTopLeft(find.text('platform')).dy),
-    );
+    expect(segment.read().toString(), 'isolates 4 · 100%');
 
-    // Read again every interval, and shown.
+    // Read again every interval.
     source.rows = const [IsolateLoad(name: 'main', kind: 'main', busy: 0.9)];
     await tester.pump(const Duration(seconds: 1));
     expect(source.reads, 2);
-    expect(find.text('90%'), findsOneWidget);
-    expect(find.text('raster'), findsNothing);
+    expect(changes, greaterThan(0));
+    expect(segment.read().toString(), 'isolates 1 · 90%');
 
-    isolates.shown = false;
-    await tester.pump();
+    stop();
     final reads = source.reads;
     await tester.pump(const Duration(seconds: 5));
     expect(source.reads, reads);
-  });
-
-  testWidgets('a phone: at most eight rows, then how many more', (
-    tester,
-  ) async {
-    final (isolates, _) = await _pump(
-      tester,
-      size: const Size(360, 640),
-      rows: [
-        for (var i = 1; i <= 11; i++)
-          IsolateLoad(name: 'task-$i', kind: 'task'),
-      ],
-    );
-    isolates.shown = true;
-    await tester.pump();
-    expect(find.text('task-8'), findsOneWidget);
-    expect(find.text('task-9'), findsNothing);
-    expect(find.text('… 3 more'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    expect(
-      tester.getSize(find.byType(DebugIsolatesGauge)).width,
-      DebugIsolatesGauge.width,
-    );
-    expect(isolates.size, DebugIsolatesGauge.sizeOf(9));
-    expect(
-      tester.getSize(find.byType(DebugIsolatesGauge)).height,
-      isolates.size.height,
-    );
-  });
-
-  testWidgets('the shortcut shows and hides the table', (tester) async {
-    final (isolates, _) = await _pump(tester);
-    expect(isolates.action, 'debug.isolates');
-    expect(isolates.keys, ['primary+shift+i', 'taps:7+hold:2s']);
-    expect(isolates.id, 'isolates');
-    expect(
-      isolates.handle(const ShortcutInvocation('debug.isolates', null)),
-      isTrue,
-    );
-    expect(isolates.shown, isTrue);
-    await tester.pump();
-    expect(find.byType(DebugIsolatesGauge), findsOneWidget);
-    isolates.handle(const ShortcutInvocation('debug.isolates', null));
-    await tester.pump();
-    expect(find.byType(DebugIsolatesGauge), findsNothing);
   });
 
   testWidgets('the section: every value of every row, read while open', (
@@ -638,11 +572,7 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     expect(source.reads, 3);
 
-    // The switch of the table over the app.
-    await tester.tap(find.text('Off'));
-    await tester.pump();
-    expect(isolates.shown, isTrue);
-    expect(find.text('On'), findsOneWidget);
+    expect(find.text('Off'), findsNothing, reason: 'no overlay to switch');
 
     // Another tab: no reads.
     await tester.pumpWidget(const SizedBox());
@@ -706,7 +636,6 @@ void main() {
       _mock(tester, SystemChannels.keyboard, (call) async => <int, int>{});
       final context = await _start(
         tester,
-        'spring.flutter.debug.isolates.position=top-left\n'
         'spring.flutter.debug.isolates.interval=250ms',
       );
       final engine = context.getBean<FlutterEngineLoads>();
@@ -719,19 +648,17 @@ void main() {
       expect(sampler.isRunning, isFalse);
 
       final isolates = context.getBean<DebugIsolates>();
-      expect(isolates.corner, DebugOverlayCorner.topLeft);
       expect(isolates.rows.interval, const Duration(milliseconds: 250));
       expect(isolates.rows.loads, same(loads));
 
-      // Ctrl+Shift+I shows the table, which reads.
-      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
-      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyI);
-      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
-      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      // The debug panel's tab reads.
+      context.getBean<DebugPanel>().toggle();
       await tester.pump();
-      expect(isolates.shown, isTrue);
-      expect(find.byType(DebugIsolatesGauge), findsOneWidget);
+      // The test font is wide: the tab is scrolled to.
+      await tester.ensureVisible(find.text('Isolates'));
+      await tester.tap(find.text('Isolates'));
+      await tester.pump();
+      expect(find.byType(IsolatesView), findsOneWidget);
       expect(engine.isRunning, isTrue);
       expect(sampler.isRunning, isTrue);
 
@@ -749,26 +676,12 @@ void main() {
       expect(rows['raster']!.kind, 'engine');
       expect(rows['raster']!.busy, isNotNull);
       expect(rows['platform']!.lag, isNotNull);
-      for (final name in rows.keys) {
-        expect(find.text(name), findsOneWidget, reason: name);
-      }
-
-      // The debug panel has its tab, and hides the table meanwhile.
-      context.getBean<DebugPanel>().toggle();
-      await tester.pump();
-      expect(find.byType(DebugIsolatesGauge), findsNothing);
-      // The test font is wide: the tab is scrolled to.
-      await tester.ensureVisible(find.text('Isolates'));
-      await tester.tap(find.text('Isolates'));
-      await tester.pump();
-      expect(find.byType(IsolatesView), findsOneWidget);
       expect(find.text('raster'), findsOneWidget);
 
-      // Closed and hidden: nothing reads, and after a while the engine's
-      // probes stop. (The sampler stops alike, by a clock of its own that
-      // a test's time does not move.)
+      // Closed: nothing reads, and after a while the engine's probes stop.
+      // (The sampler stops alike, by a clock of its own that a test's time
+      // does not move.)
       context.getBean<DebugPanel>().close();
-      isolates.shown = false;
       await tester.pump();
       expect(isolates.rows.isReading, isFalse);
       await tester.pump(const Duration(seconds: 40));

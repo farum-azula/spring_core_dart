@@ -215,44 +215,15 @@ const _log = SpringLog('spring.scheduling');
 /// slept catches up).
 const _maxWait = Duration(days: 1);
 
-/// Receives the errors thrown by scheduled tasks, instead of the log.
-///
-/// By default an error of a task, thrown or from its `Future`, is logged
-/// at error level to `spring.scheduling` and the task keeps its schedule.
-/// Declare an `ErrorHandler` bean to do something else, such as reporting
-/// the error to a crash service. The starter's scheduler uses the only
-/// `ErrorHandler` bean, or the primary one; with several and none
-/// primary, it uses none. A handler that throws stops the task: the error
-/// is logged and the task does not run again (Spring's
-/// `LOG_AND_PROPAGATE`).
-///
-/// ```dart
-/// // Every failed run is reported, and the task keeps running.
-/// @Component()
-/// class ReportErrors implements ErrorHandler {
-///   @override
-///   void handleError(Object error, StackTrace stackTrace) =>
-///       crashReporter.record(error, stackTrace);
-/// }
-/// ```
-///
-/// Spring (Java):
-/// ```java
-/// scheduler.setErrorHandler(t -> crashReporter.record(t));
-/// ```
-abstract interface class ErrorHandler {
-  /// Called with each [error] a run throws, synchronously or through its
-  /// `Future`, and its [stackTrace]. Throw to stop the task.
-  void handleError(Object error, StackTrace stackTrace);
-}
-
 /// The [TaskScheduler] the starter provides: it waits with `dart:async`
 /// timers and runs every task on the event loop, so a task never runs
 /// twice at the same time.
 ///
 /// An application gets it injected as `TaskScheduler`; the starter sets
 /// it up from the `spring.task.scheduling.shutdown.*` properties and the
-/// `ErrorHandler` bean. Create one yourself without Spring Boot, or in a
+/// `ErrorHandler` bean (the only one, or the primary; with several and none
+/// primary it uses none, and a handler that throws stops the task, Spring's
+/// `LOG_AND_PROPAGATE`). Create one yourself without Spring Boot, or in a
 /// test with a fake clock ([TimerTaskScheduler.new]'s `now` and
 /// `createTimer`), registered in place of the starter's.
 ///

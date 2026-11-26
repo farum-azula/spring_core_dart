@@ -3,11 +3,13 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
+import 'package:source_gen/source_gen.dart' show TypeChecker;
 import 'package:spring_core_dart_generator/src/core/beans/annotation_placement.dart';
 import 'package:spring_core_dart_generator/src/core/beans/bean_model.dart';
 import 'package:spring_core_dart_generator/src/core/beans/bean_scanner.dart';
 import 'package:spring_core_dart_generator/src/core/beans/module_emitter.dart';
 import 'package:spring_core_dart_generator/src/core/builder/build_inclusion.dart';
+import 'package:spring_core_dart_generator/src/core/builder/generated_path.dart';
 import 'package:spring_core_dart_generator/src/core/builder/package_directory.dart';
 import 'package:spring_core_dart_generator/src/core/introspection/introspection_scanner.dart';
 
@@ -88,15 +90,16 @@ abstract class PackageGeneration {
   /// - `true`: the part runs as one without a key;
   /// - `false`: it does not run, so the module has none of its code;
   /// - not set: [PackageBuild.whenMissing]; for
-  ///   [BuildInclusion.notInRelease] the part runs and its bean
+  ///   [BuildInclusion.debugOnly] the part runs and its bean
   ///   definitions (those it writes and those of the beans it makes), its
   ///   module statements, its lists of introspections and its resources
   ///   ([ModuleParts.resources]) are written under
-  ///   `if (!const bool.fromEnvironment('dart.vm.product'))`, the constant
-  ///   of such a module, so a release build compiles them away. Its
-  ///   classes, declarations, part files and proxy mixins cannot be under
-  ///   a condition (declarations are no statements); a release build drops
-  ///   them as nothing else uses them. Its [applicationResources] are the
+  ///   `if (!const bool.fromEnvironment('dart.vm.product') &&
+  ///   !const bool.fromEnvironment('dart.vm.profile'))`, the constant of
+  ///   such a module, so a profile or a release build compiles them away.
+  ///   Its classes, declarations, part files and proxy mixins cannot be
+  ///   under a condition (declarations are no statements); such a build
+  ///   drops them as nothing else uses them. Its [applicationResources] are the
   ///   application's files once added, and are not under it either.
   ///
   /// `null` (the default): the part is in every build of a package that
@@ -153,6 +156,18 @@ abstract class PackageGeneration {
   /// post-processor that reads it; where Spring ignores an annotation
   /// without a word, the build says so.
   List<AnnotationPlacement> get placements => const [];
+
+  /// The annotations marked `@AccessHook()` whose hooks the part writes
+  /// into the generated subclass of a bean (the signals starter's
+  /// `@Signal`, `@Computed`, `@Effect`, `@OnWatched`, `@OnUnwatched`). A
+  /// member carrying an annotation marked `@AccessHook()` that no started
+  /// part lists fails the build: no code would run for it.
+  ///
+  /// ```dart
+  /// @override
+  /// List<TypeChecker> get accessHooks => const [signalChecker];
+  /// ```
+  List<TypeChecker> get accessHooks => const [];
 
   /// Reads, before the module's libraries are scanned, what the scan and
   /// the emission need that is in no library of the module: files of the
@@ -260,6 +275,15 @@ abstract class PackageGeneration {
   /// beans are made of (the data starter's repositories).
   Iterable<Spec> classes(ModuleEmission emission) => const [];
 
+  /// The declarations the part writes into generated files of its own
+  /// that are `part of` the module's library, by the file's ending (one
+  /// of `packagePartExtensions`): the generated subclasses of the beans
+  /// on signals. An application's module may also get some in its debug
+  /// part (`debugExtension`, after the builder's own;
+  /// [ModuleEmission.hasApplicationPart]): the readers of the widgets'
+  /// fields. Asked after the build has analysed the module's advice.
+  Map<String, Iterable<Spec>> partFiles(ModuleEmission emission) => const {};
+
   /// How [bean], a bean of the module whose creation is a [PackageCreation],
   /// is made: the body of its definition's `create: (r) => ...`
   /// (`_$BookRepositoryImpl.$create(r)`), or `null` when the bean is
@@ -268,6 +292,16 @@ abstract class PackageGeneration {
 
   /// The bean definitions written after those of the module's beans.
   Iterable<Expression> beanDefinitions(ModuleEmission emission) => const [];
+
+  /// Where the definition of [bean], a bean of the module, goes when it is
+  /// not to be in the module getter: a getter of a part of the
+  /// application's library (the debug part), spread into the module's
+  /// beans under a condition, so a build without it refers to the class
+  /// nowhere (the console's `@ConsoleSegment` classes); `null` leaves the
+  /// bean where it is. The first part that answers places it. A bean
+  /// placed so in a module that has no such part (a nested
+  /// `@ComponentScan`) fails the build ([BeanPlacement.outsideApplication]).
+  BeanPlacement? beanPlacement(BeanModel bean, ModuleEmission emission) => null;
 
   /// The statements the module getter runs before it returns the
   /// `BeanModule` (a getter without any is written as `=>`).
@@ -303,7 +337,7 @@ List<PackageGeneration> startedGenerations(
 /// The parts of [started] that the build keys of the application's
 /// configuration ([keys]) leave in the module build
 /// ([PackageGeneration.build]), in their order, with the condition the code
-/// of each one only in debug and profile builds is under.
+/// of each one only in debug builds is under.
 ({List<PackageGeneration> built, Map<PackageGeneration, String> conditions})
 builtGenerations(List<PackageGeneration> started, BuildKeys keys) {
   final built = <PackageGeneration>[];
@@ -312,17 +346,16 @@ builtGenerations(List<PackageGeneration> started, BuildKeys keys) {
     final key = generation.build;
     final inclusion = key == null
         ? BuildInclusion.always
-        : keys.decide(
-            key.property,
-            whenMissing: key.whenMissing,
+        : keys.decideSwitch(
+            key,
             subject: "${generation.package}'s generator part",
             noun: 'part',
           );
     switch (inclusion) {
       case BuildInclusion.never:
         continue;
-      case BuildInclusion.notInRelease:
-        conditions[generation] = notInReleaseCondition;
+      case BuildInclusion.debugOnly:
+        conditions[generation] = debugOnlyCondition;
       case BuildInclusion.always:
         break;
     }
@@ -334,19 +367,11 @@ builtGenerations(List<PackageGeneration> started, BuildKeys keys) {
 /// When a [PackageGeneration] is in the module build: by [property] of the
 /// application's configuration, as `AutoConfigurationBuild` decides a
 /// module (`true`: in every build; `false`: in none; not set:
-/// [whenMissing]).
-final class PackageBuild {
-  /// The part by [property]; [whenMissing] when it is not set.
-  const PackageBuild(
-    this.property, {
-    this.whenMissing = BuildInclusion.notInRelease,
-  });
-
-  /// The property that decides (`spring.clock.enabled`).
-  final String property;
-
-  /// What the build does when the configuration does not set [property].
-  final BuildInclusion whenMissing;
+/// [whenMissing]), and only as far as each of [parents] lets it in.
+final class PackageBuild extends BuildSwitch {
+  /// The part by [property]; [whenMissing] when it is not set; within
+  /// [parents].
+  const PackageBuild(super.property, {super.whenMissing, super.parents});
 }
 
 /// What [PackageGeneration.prepareModule] and
@@ -446,4 +471,45 @@ final class MetadataBuild {
 
   /// Where the packages are on disk, for the files the build does not see.
   final PackageDirectories packageDirectories;
+}
+
+/// Where [PackageGeneration.beanPlacement] puts a bean's definition: into
+/// the getter [getter] of the application's part [extension]
+/// (`<library>.spring.debug.dart`), which the module spreads into its
+/// beans, under [condition] when there is one.
+///
+/// ```dart
+/// // In main.spring.debug.dart:
+/// List<BeanDefinition<Object>> get _$debugConsoleSegments => [
+///   BeanDefinition<PingSegment>(...),
+/// ];
+/// // In main.spring.dart, the module's beans:
+/// ..._$debugConsoleSegments,
+/// ```
+final class BeanPlacement {
+  /// The placement into [getter] of [extension], under [condition], with
+  /// the getter's [docs]; [outsideApplication] says why a module without
+  /// the part cannot have the bean.
+  const BeanPlacement({
+    required this.getter,
+    required this.docs,
+    required this.outsideApplication,
+    this.extension = debugExtension,
+    this.condition,
+  });
+
+  /// The getter's name (`_$debugConsoleSegments`).
+  final String getter;
+
+  /// Its doc comment, `///` lines.
+  final String docs;
+
+  /// The ending of the part it is in.
+  final String extension;
+
+  /// The constant the module spreads the getter under; `null`: always.
+  final String? condition;
+
+  /// The build error for a placed bean of a module without the part.
+  final String outsideApplication;
 }

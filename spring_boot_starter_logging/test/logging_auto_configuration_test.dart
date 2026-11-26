@@ -322,4 +322,86 @@ void main() {
     expect(system.levelOf('neon.shop'), SpringLogLevel.debug);
     expect(system.loggerLevels, {'neon': SpringLogLevel.debug});
   });
+
+  group('logging.console.record-bar', () {
+    final failure = StackTrace.fromString('#0 pay (checkout.dart:1)\n#1 main');
+
+    test('is off by default', () {
+      runner.run((context) => log.info('a\nb'));
+      expect(console.single, 'INFO  [neon.shop] a\nb');
+      expect(system.console.recordBar, isFalse);
+    });
+
+    test('marks every line: the message, the error and the stack trace', () {
+      runner
+          .withPropertyValues(['logging.console.record-bar=true'])
+          .run(
+            (context) => log.error(
+              'payment\nfailed',
+              error: StateError('timeout'),
+              stackTrace: failure,
+            ),
+          );
+      expect(
+        console.single,
+        '▌ ERROR [neon.shop] payment\n'
+        '▌ failed\n'
+        '▌ Bad state: timeout\n'
+        '▌ #0 pay (checkout.dart:1)\n'
+        '▌ #1 main',
+      );
+      expect(system.console.recordBar, isTrue);
+    });
+
+    test('a custom pattern: the bar comes after the formatting', () {
+      runner
+          .withPropertyValues([
+            'logging.console.record-bar=true',
+            'logging.pattern.console=<%m>%n%ex{1}',
+          ])
+          .run(
+            (context) =>
+                log.warning('x\ny', error: 'cause', stackTrace: failure),
+          );
+      expect(
+        console.single,
+        '▌ <x\n▌ y>\n▌ cause\n▌ #0 pay (checkout.dart:1)',
+      );
+    });
+
+    test("with colours, the level's colour of the pattern", () {
+      SpringLog.setLevel('neon.shop', SpringLogLevel.trace);
+      const ApplicationContextRunner()
+          .withAutoConfiguration(springBootStarterLoggingAutoConfiguration)
+          .withPropertyValues([
+            'logging.console.record-bar=true',
+            'logging.pattern.console=%clr(%p) %m',
+          ])
+          .run((context) {
+            log
+              ..error('e\ne')
+              ..warning('w')
+              ..info('i')
+              ..debug('d')
+              ..trace('t');
+          });
+      String bar(String code) => '\x1B[${code}m▌\x1B[0;39m ';
+      String level(String code, String name) => '\x1B[${code}m$name\x1B[0;39m';
+      expect(console, [
+        '${bar('31')}${level('31', 'ERROR')} e\n${bar('31')}e',
+        '${bar('33')}${level('33', 'WARN')} w',
+        '${bar('32')}${level('32', 'INFO')} i',
+        '${bar('32')}${level('32', 'DEBUG')} d',
+        '${bar('32')}${level('32', 'TRACE')} t',
+      ]);
+    });
+
+    test('without colours, the plain bar', () {
+      runner
+          .withPropertyValues(['logging.console.record-bar=true'])
+          .run((context) => log.error('x'));
+      expect(console.single, '▌ ERROR [neon.shop] x');
+      expect(console.single, isNot(contains('\x1B')));
+    });
+  });
 }

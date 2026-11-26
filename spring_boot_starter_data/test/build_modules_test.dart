@@ -1,7 +1,8 @@
-// The modules a release build leaves out, as the generator lists them in
-// the example's application: in its debug part (`_$debugAutoConfigurations`,
-// spread in under `!dart.vm.product`) when their key is not set, in every
-// build when it is `true`.
+// The modules a profile or a release build leaves out, as the generator
+// lists them in the example's application: in its debug part
+// (`_$debugAutoConfigurations`, spread in under `!dart.vm.product` and
+// `!dart.vm.profile`) when their key is not set, in every build when it is
+// `true`.
 import 'dart:io';
 import 'dart:isolate';
 
@@ -18,7 +19,7 @@ void main() {
   final code = _generated();
 
   test('the startup checks: spring.main.startup-checks.enabled not set, so '
-      'not in a release build', () {
+      'in debug builds only', () {
     expect(
       _generated('example.spring.debug.dart'),
       matches(
@@ -31,7 +32,8 @@ void main() {
     expect(
       code,
       contains(
-        "if(!constbool.fromEnvironment('dart.vm.product'))"
+        "if(!constbool.fromEnvironment('dart.vm.product')&&"
+        "!constbool.fromEnvironment('dart.vm.profile'))"
         r'..._$debugAutoConfigurations',
       ),
     );

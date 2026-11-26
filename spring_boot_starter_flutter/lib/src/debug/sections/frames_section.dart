@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_frame_meter.dart';
+import 'package:spring_boot_starter_flutter/src/debug/debug_layout.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_panel.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_style.dart';
 import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart';
@@ -8,7 +9,7 @@ import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart';
 /// The frames: the frame meter turned on or off over the running app, and
 /// its corner, without a new build. Without the meter in the build
 /// (`spring.flutter.debug.frame-meter.enabled`) it says so.
-final class DebugFramesSection implements DebugPanelSection, Ordered {
+final class DebugFramesSection implements GroupedDebugPanelSection, Ordered {
   /// The section of [meter]'s switch, `null` when the build left it out.
   const DebugFramesSection(this.meter);
 
@@ -20,6 +21,9 @@ final class DebugFramesSection implements DebugPanelSection, Ordered {
 
   @override
   int get order => 10;
+
+  @override
+  String get group => 'Performance';
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +44,12 @@ final class DebugFramesSection implements DebugPanelSection, Ordered {
           Text('Frame meter', style: style.title),
           const SizedBox(height: 8),
           // Live here: the overlays hide while the panel is open.
-          const FrameMeterGauge(),
+          FrameMeterGauge(
+            detailed: true,
+            look: style.meter,
+            number: style.meterNumber,
+            textStyle: style.meterText,
+          ),
           const SizedBox(height: 12),
           Text(
             'On screen',
@@ -61,7 +70,7 @@ final class DebugFramesSection implements DebugPanelSection, Ordered {
           const SizedBox(height: 6),
           Wrap(
             children: [
-              for (final position in FrameMeterPosition.values)
+              for (final position in DebugCorner.values)
                 DebugChip(
                   position.name,
                   selected: meter.position == position,

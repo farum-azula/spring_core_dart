@@ -9,50 +9,45 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i4;
-import 'dart:collection' as _i3;
+import 'dart:async' as _i3;
+import 'dart:collection' as _i12;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i8;
-import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i15;
+import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
+import 'package:spring_boot_dart/src/annotations.dart' as _i14;
+import 'package:spring_boot_dart/src/properties/boot_properties.dart' as _i4;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
-    as _i5;
-import 'package:spring_boot_starter_flutter_signals/src/annotations.dart'
     as _i6;
-import 'package:spring_boot_starter_flutter_signals/src/properties/properties_beans.dart'
+import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
     as _i7;
-import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_flutter_signals/spring_boot_starter_flutter_signals.dart'
+    as _i10;
+import 'package:spring_boot_starter_flutter_signals/src/annotations.dart'
+    as _i11;
+import 'package:spring_boot_starter_flutter_signals/src/debug/signals_section.dart'
+    as _i8;
+import 'package:spring_boot_starter_flutter_signals/src/properties/properties_beans.dart'
+    as _i13;
+import 'package:spring_boot_starter_flutter_signals/src/widgets/watch.dart'
     as _i9;
+import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
+    as _i16;
+import 'package:spring_boot_starter_logging/src/properties/logging_properties.dart'
+    as _i5;
 
-import '../../cases/cases.dart' as _i1;
+import '../../cases/cases.dart' as _i2;
 
 part 'cases.spring.debug.dart';
 part 'cases.spring.env.dart';
 part 'cases.spring.proxies.dart';
+part 'cases.spring.signals.dart';
 
-Object? _$invoke0(_i1.Inherited bean, List<Object?> arguments) {
+Object? _$invoke0(_i2.Inherited bean, List<Object?> arguments) {
   bean.watch();
   return null;
 }
 
-const _$target1 = _i2.AopTarget(
-  r'Inherited',
-  types: [r'Inherited', r'Counted', r'Priced'],
-  annotations: [_i2.Component()],
-  annotationTypes: [r'Component'],
-);
-const _$target2 = _i2.AopTarget(
-  r'Overriding',
-  types: [r'Overriding', r'Counted'],
-  annotations: [_i2.Component()],
-  annotationTypes: [r'Component'],
-);
-const _$target3 = _i2.AopTarget(
-  r'Late',
-  types: [r'Late'],
-  annotations: [_i2.Component()],
-  annotationTypes: [r'Component'],
-);
-const _$knownAdvisors4 = {
+const _$knownAdvisors1 = {
   r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Audit',
   r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Guard',
   r'package:spring_boot_dart',
@@ -60,1133 +55,452 @@ const _$knownAdvisors4 = {
   r'package:spring_boot_starter_flutter_signals',
   r'package:spring_boot_starter_logging',
 };
-Object? _$invoke5(_i1.Injected bean, List<Object?> arguments) {
+Object? _$invoke2(_i2.Injected bean, List<Object?> arguments) {
   bean.start();
   return null;
 }
 
-const _$target6 = _i2.AopTarget(
-  r'Injected',
-  types: [r'Injected'],
-  annotations: [_i2.Component()],
-  annotationTypes: [r'Component'],
-);
-const _$target7 = _i2.AopTarget(
-  r'Constructed',
-  types: [r'Constructed'],
-  annotations: [_i2.Component()],
-  annotationTypes: [r'Component'],
-);
-Object? _$invoke8(_i1.Draft bean, List<Object?> arguments) {
+Object? _$invoke3(_i2.Draft bean, List<Object?> arguments) {
   bean.watch();
   return null;
 }
 
-const _$target9 = _i2.AopTarget(
-  r'Draft',
-  types: [r'Draft'],
-  annotations: [_i2.Component()],
-  annotationTypes: [r'Component'],
-);
-Object? _$invoke10(_i1.ScreenState bean, List<Object?> arguments) {
+Object? _$invoke4(_i2.ScreenState bean, List<Object?> arguments) {
   bean.watch();
   return null;
 }
 
-const _$target11 = _i2.AopTarget(
-  r'ScreenState',
-  types: [r'ScreenState'],
-  annotations: [_i2.Component()],
-  annotationTypes: [r'Component'],
-);
-const _$target12 = _i2.AopTarget(
+const _$target5 = _i1.AopTarget(
   r'Shapes',
   types: [r'Shapes'],
-  annotations: [_i2.Component()],
+  annotations: [_i1.Component()],
   annotationTypes: [r'Component'],
 );
-Object? _$invoke13(_i1.Steps bean, List<Object?> arguments) {
+Object? _$invoke6(_i2.Steps bean, List<Object?> arguments) {
   bean.watch();
   return null;
 }
 
-const _$target14 = _i2.AopTarget(
-  r'Steps',
-  types: [r'Steps'],
-  annotations: [_i2.Component()],
-  annotationTypes: [r'Component'],
-);
-Object? _$invoke15(_i1.Clamped bean, List<Object?> arguments) {
+Object? _$invoke7(_i2.Clamped bean, List<Object?> arguments) {
   bean.clamp();
   return null;
 }
 
-const _$target16 = _i2.AopTarget(
-  r'Clamped',
-  types: [r'Clamped'],
-  annotations: [_i2.Component()],
-  annotationTypes: [r'Component'],
-);
-Object? _$invoke17(_i1.Fragile bean, List<Object?> arguments) {
+Object? _$invoke8(_i2.Fragile bean, List<Object?> arguments) {
   bean.check();
   return null;
 }
 
-const _$target18 = _i2.AopTarget(
-  r'Fragile',
-  types: [r'Fragile'],
-  annotations: [_i2.Component()],
-  annotationTypes: [r'Component'],
-);
-const _$target19 = _i2.AopTarget(
-  r'Looping',
-  types: [r'Looping'],
-  annotations: [_i2.Component()],
-  annotationTypes: [r'Component'],
-);
-const _$target20 = _i2.AopTarget(
-  r'Listening',
-  types: [r'Listening'],
-  annotations: [_i2.Service()],
-  annotationTypes: [r'Service'],
-);
-Object? _$invoke21(_i1.Ledger bean, List<Object?> arguments) {
+Object? _$invoke9(_i2.Ledger bean, List<Object?> arguments) {
   bean.watch();
   return null;
 }
 
-const _$target22 = _i2.AopTarget(
+const _$target10 = _i1.AopTarget(
   r'Ledger',
   types: [r'Ledger'],
-  annotations: [_i2.Component()],
+  annotations: [_i1.Component()],
   annotationTypes: [r'Component'],
 );
-const _$target23 = _i2.AopTarget(
+const _$target11 = _i1.AopTarget(
   r'Vault',
   types: [r'Vault'],
-  annotations: [_i2.Component()],
+  annotations: [_i1.Component()],
   annotationTypes: [r'Component'],
 );
-Object? _$invoke24(_i1.Watchman bean, List<Object?> arguments) {
+Object? _$invoke12(_i2.Watchman bean, List<Object?> arguments) {
   bean.note();
   return null;
 }
 
-const _$target25 = _i2.AopTarget(
+const _$target13 = _i1.AopTarget(
   r'Watchman',
   types: [r'Watchman'],
-  annotations: [_i2.Component()],
+  annotations: [_i1.Component()],
   annotationTypes: [r'Component'],
 );
-Object? _$invoke26(_i1.Reader bean, List<Object?> arguments) {
+Object? _$invoke14(_i2.Reader bean, List<Object?> arguments) {
   bean.watch();
   return null;
 }
 
-const _$target27 = _i2.AopTarget(
-  r'Reader',
-  types: [r'Reader'],
-  annotations: [_i2.Component()],
-  annotationTypes: [r'Component'],
+const _$target15 = _i1.AopTarget(
+  r'MessagesProperties',
+  types: [r'MessagesProperties'],
+  annotations: [_i1.ConfigurationProperties(r'spring.messages')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target16 = _i1.AopTarget(
+  r'LoggingProperties',
+  types: [r'LoggingProperties'],
+  annotations: [_i1.ConfigurationProperties(r'logging')],
+  annotationTypes: [r'ConfigurationProperties'],
 );
 
 /// Beans found by `@ComponentScan` in `lib/ and test/cases/`.
-_i2.BeanModule get $application => _i2.BeanModule(
+_i1.BeanModule get $application => _i1.BeanModule(
   r'application',
   [
-    _i2.BeanDefinition<_i1.Inherited>(
+    _i1.BeanDefinition<_i2.Inherited>(
       name: r'inherited',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Inherited',
-      types: const [_i1.Inherited, _i1.Counted, _i1.Priced],
-      create: (r) => _$InheritedProxy(),
+      types: const [_i2.Inherited, _i2.Counted, _i2.Priced],
+      create: (r) => _$InheritedSignals(),
       annotatedMethods: [
-        const _i2.IntrospectedMethod<_i1.Inherited>(
+        const _i1.IntrospectedMethod<_i2.Inherited>(
           r'watch',
           isVoid: true,
           invoke: _$invoke0,
-          annotations: [_i6.Effect()],
+          annotations: [_i11.Effect()],
         ),
       ],
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature.of(
-            r'watch',
-            _$target1,
-            returnType: r'void',
-            annotations: [_i6.Effect()],
-            annotationTypes: [r'Effect'],
-          ),
-          _i2.MethodSignature.of(
-            r'seen',
-            _$target1,
-            kind: _i2.MemberKind.getter,
-            returnType: r'List',
-            returnTypeArguments: [_i2.TypeCapture<int>()],
-          ),
-          _i2.MethodSignature.of(
-            r'cost',
-            _$target1,
-            kind: _i2.MemberKind.getter,
-            returnType: r'double',
-            annotations: [_i6.Computed()],
-            annotationTypes: [r'Computed'],
-          ),
-          _i2.MethodSignature.of(
-            r'count',
-            _$target1,
-            declaringType: r'Counted',
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-            implementingTypes: [r'Counted'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i2.MethodSignature.of(
-            r'twice',
-            _$target1,
-            declaringType: r'Counted',
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Computed()],
-            annotationTypes: [r'Computed'],
-            implementingTypes: [r'Counted'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i2.MethodSignature.of(
-            r'count',
-            _$target1,
-            declaringType: r'Counted',
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-            implementingTypes: [r'Counted'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i2.MethodSignature.of(
-            r'price',
-            _$target1,
-            declaringType: r'Priced',
-            kind: _i2.MemberKind.getter,
-            returnType: r'double',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-            implementingTypes: [r'Priced'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i2.MethodSignature.of(
-            r'price',
-            _$target1,
-            declaringType: r'Priced',
-            kind: _i2.MemberKind.setter,
-            returnType: r'double',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-            implementingTypes: [r'Priced'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-        ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$InheritedProxy ? (bean..aopInvoker = invoker) : null,
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
       ),
     ),
-    _i2.BeanDefinition<_i1.Overriding>(
+    _i1.BeanDefinition<_i2.Overriding>(
       name: r'overriding',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Overriding',
-      types: const [_i1.Overriding, _i1.Counted],
-      create: (r) => _$OverridingProxy(),
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature.of(
-            r'twice',
-            _$target2,
-            declaringType: r'Counted',
-            declaringTypes: [r'Overriding', r'Counted'],
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Computed()],
-            annotationTypes: [r'Computed'],
-          ),
-          _i2.MethodSignature.of(
-            r'count',
-            _$target2,
-            declaringType: r'Counted',
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-            implementingTypes: [r'Counted'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-          _i2.MethodSignature.of(
-            r'count',
-            _$target2,
-            declaringType: r'Counted',
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-            implementingTypes: [r'Counted'],
-            implementingTypeAnnotations: [],
-            implementingTypeAnnotationTypes: [],
-          ),
-        ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$OverridingProxy ? (bean..aopInvoker = invoker) : null,
+      types: const [_i2.Overriding, _i2.Counted],
+      create: (r) => _$OverridingSignals(),
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
       ),
     ),
-    _i2.BeanDefinition<_i1.Late>(
+    _i1.BeanDefinition<_i2.Late>(
       name: r'late',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Late',
-      create: (r) => _$LateProxy(),
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature.of(
-            r'name',
-            _$target3,
-            kind: _i2.MemberKind.getter,
-            returnType: r'String',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'nick',
-            _$target3,
-            kind: _i2.MemberKind.getter,
-            returnType: r'String',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'shown',
-            _$target3,
-            kind: _i2.MemberKind.getter,
-            returnType: r'String',
-            annotations: [_i6.Computed()],
-            annotationTypes: [r'Computed'],
-          ),
-          _i2.MethodSignature.of(
-            r'name',
-            _$target3,
-            kind: _i2.MemberKind.setter,
-            returnType: r'String',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'nick',
-            _$target3,
-            kind: _i2.MemberKind.setter,
-            returnType: r'String',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-        ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$LateProxy ? (bean..aopInvoker = invoker) : null,
+      create: (r) => _$LateSignals(),
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
       ),
     ),
-    _i2.BeanDefinition<_i1.Settings>(
+    _i1.BeanDefinition<_i2.Settings>(
       name: r'settings',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Settings',
-      create: (r) => _i1.Settings(),
-      annotations: const [_i2.Component()],
-      aopProxy: const _i2.AopProxyFactory.pruned(
-        knownAdvisors: _$knownAdvisors4,
+      create: (r) => _i2.Settings(),
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
       ),
     ),
-    _i2.BeanDefinition<_i1.Injected>(
+    _i1.BeanDefinition<_i2.Injected>(
       name: r'injected',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Injected',
       dependencies: const [
-        _i2.Dependency(_i1.Settings, name: r'settings'),
-        _i2.Dependency.value(r'${cases.limit:3}'),
+        _i1.Dependency(_i2.Settings, name: r'settings'),
+        _i1.Dependency.value(r'${cases.limit:3}'),
       ],
-      create: (r) => _$InjectedProxy(),
+      create: (r) => _$InjectedSignals(),
       inject: (bean, r) {
-        bean.settings = r.dependency<_i1.Settings>(name: r'settings');
+        bean.settings = r.dependency<_i2.Settings>(name: r'settings');
         bean.limit = r.value<int>(r'${cases.limit:3}');
       },
       postConstruct: (bean) {
         bean.start();
       },
       annotatedMethods: [
-        const _i2.IntrospectedMethod<_i1.Injected>(
+        const _i1.IntrospectedMethod<_i2.Injected>(
           r'start',
           isVoid: true,
-          invoke: _$invoke5,
-          annotations: [_i6.Effect()],
+          invoke: _$invoke2,
+          annotations: [_i11.Effect()],
         ),
       ],
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature.of(
-            r'start',
-            _$target6,
-            returnType: r'void',
-            annotations: [_i6.Effect()],
-            annotationTypes: [r'Effect'],
-          ),
-          _i2.MethodSignature.of(
-            r'settings',
-            _$target6,
-            kind: _i2.MemberKind.getter,
-            returnType: r'Settings',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'limit',
-            _$target6,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'started',
-            _$target6,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-          ),
-          _i2.MethodSignature.of(
-            r'doubled',
-            _$target6,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Computed()],
-            annotationTypes: [r'Computed'],
-          ),
-          _i2.MethodSignature.of(
-            r'settings',
-            _$target6,
-            kind: _i2.MemberKind.setter,
-            returnType: r'Settings',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'limit',
-            _$target6,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'started',
-            _$target6,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-          ),
-        ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$InjectedProxy ? (bean..aopInvoker = invoker) : null,
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
       ),
     ),
-    _i2.BeanDefinition<_i1.Constructed>(
+    _i1.BeanDefinition<_i2.Constructed>(
       name: r'constructed',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Constructed',
-      create: (r) => _$ConstructedProxy(),
+      create: (r) => _$ConstructedSignals(),
       postConstruct: (bean) {
         bean.init();
       },
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature.of(r'init', _$target7, returnType: r'void'),
-          _i2.MethodSignature.of(
-            r'count',
-            _$target7,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'initial',
-            _$target7,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-          ),
-          _i2.MethodSignature.of(
-            r'ready',
-            _$target7,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-          ),
-          _i2.MethodSignature.of(
-            r'twice',
-            _$target7,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Computed()],
-            annotationTypes: [r'Computed'],
-          ),
-          _i2.MethodSignature.of(
-            r'count',
-            _$target7,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'initial',
-            _$target7,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-          ),
-          _i2.MethodSignature.of(
-            r'ready',
-            _$target7,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-          ),
-        ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$ConstructedProxy ? (bean..aopInvoker = invoker) : null,
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
       ),
     ),
-    _i2.BeanDefinition<_i1.Draft>(
+    _i1.BeanDefinition<_i2.Draft>(
       name: r'draft',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Draft',
       scope: r'prototype',
-      create: (r) => _$DraftProxy(),
+      create: (r) => _$DraftSignals(),
       annotatedMethods: [
-        const _i2.IntrospectedMethod<_i1.Draft>(
+        const _i1.IntrospectedMethod<_i2.Draft>(
           r'watch',
           isVoid: true,
-          invoke: _$invoke8,
-          annotations: [_i6.Effect()],
+          invoke: _$invoke3,
+          annotations: [_i11.Effect()],
         ),
       ],
-      annotations: const [_i2.Component(), _i2.Scope(r'prototype')],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature.of(
-            r'watch',
-            _$target9,
-            returnType: r'void',
-            annotations: [_i6.Effect()],
-            annotationTypes: [r'Effect'],
-          ),
-          _i2.MethodSignature.of(
-            r'text',
-            _$target9,
-            kind: _i2.MemberKind.getter,
-            returnType: r'String',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'runs',
-            _$target9,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-          ),
-          _i2.MethodSignature.of(
-            r'text',
-            _$target9,
-            kind: _i2.MemberKind.setter,
-            returnType: r'String',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'runs',
-            _$target9,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-          ),
-        ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$DraftProxy ? (bean..aopInvoker = invoker) : null,
+      annotations: const [_i1.Component(), _i1.Scope(r'prototype')],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
       ),
     ),
-    _i2.BeanDefinition<_i1.ScreenState>(
+    _i1.BeanDefinition<_i2.ScreenState>(
       name: r'screenState',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#ScreenState',
       scope: r'screen',
-      create: (r) => _$ScreenStateProxy(),
+      create: (r) => _$ScreenStateSignals(),
       preDestroy: (bean) {
         bean.bye();
       },
       annotatedMethods: [
-        const _i2.IntrospectedMethod<_i1.ScreenState>(
+        const _i1.IntrospectedMethod<_i2.ScreenState>(
           r'watch',
           isVoid: true,
-          invoke: _$invoke10,
-          annotations: [_i6.Effect()],
+          invoke: _$invoke4,
+          annotations: [_i11.Effect()],
         ),
       ],
-      annotations: const [_i2.Component(), _i2.Scope(r'screen')],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature.of(
-            r'watch',
-            _$target11,
-            returnType: r'void',
-            annotations: [_i6.Effect()],
-            annotationTypes: [r'Effect'],
-          ),
-          _i2.MethodSignature.of(r'bye', _$target11, returnType: r'void'),
-          _i2.MethodSignature.of(
-            r'taps',
-            _$target11,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'runs',
-            _$target11,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-          ),
-          _i2.MethodSignature.of(
-            r'destroyed',
-            _$target11,
-            kind: _i2.MemberKind.getter,
-            returnType: r'bool',
-          ),
-          _i2.MethodSignature.of(
-            r'tapsAtDestroy',
-            _$target11,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-          ),
-          _i2.MethodSignature.of(
-            r'taps',
-            _$target11,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'runs',
-            _$target11,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-          ),
-          _i2.MethodSignature.of(
-            r'destroyed',
-            _$target11,
-            kind: _i2.MemberKind.setter,
-            returnType: r'bool',
-          ),
-          _i2.MethodSignature.of(
-            r'tapsAtDestroy',
-            _$target11,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-          ),
-        ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$ScreenStateProxy ? (bean..aopInvoker = invoker) : null,
+      annotations: const [_i1.Component(), _i1.Scope(r'screen')],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
       ),
     ),
-    _i2.BeanDefinition<_i1.ScreenScope>(
+    _i1.BeanDefinition<_i2.ScreenScope>(
       name: r'screenScope',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#ScreenScope',
-      types: const [_i1.ScreenScope, _i2.BeanFactoryPostProcessor],
-      create: (r) => _i1.ScreenScope(),
-      annotations: const [_i2.Component()],
+      types: const [_i2.ScreenScope, _i1.BeanFactoryPostProcessor],
+      create: (r) => _i2.ScreenScope(),
+      annotations: const [_i1.Component()],
     ),
-    _i2.BeanDefinition<_i1.Shapes>(
+    _i1.BeanDefinition<_i2.Shapes>(
       name: r'shapes',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Shapes',
-      create: (r) => _$ShapesProxy(),
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
+      create: (r) => _$ShapesSignals(),
+      annotations: const [_i1.Component()],
+      aopProxy: _i1.AopProxyFactory.unavailable(
         signatures: const [
-          _i2.MethodSignature.of(r'inc', _$target12, returnType: r'void'),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
+            r'inc',
+            _$target5,
+            declaringTypes: [],
+            returnType: r'void',
+          ),
+          _i1.MethodSignature.of(
             r'pick',
-            _$target12,
+            _$target5,
+            declaringTypes: [],
             returnType: r'T',
             parameterTypes: [r'T', r'T', r'int'],
             parameterNames: [r'first', r'second', r'times'],
           ),
-          _i2.MethodSignature.of(r'call', _$target12, returnType: r'int'),
-          _i2.MethodSignature.of(
-            r'listener',
-            _$target12,
-            kind: _i2.MemberKind.getter,
-            returnType: r'Function',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
+          _i1.MethodSignature.of(
+            r'+',
+            _$target5,
+            declaringTypes: [],
+            returnType: r'int',
+            parameterTypes: [r'int'],
+            parameterNames: [r'other'],
           ),
-          _i2.MethodSignature.of(
-            r'pair',
-            _$target12,
-            kind: _i2.MemberKind.getter,
-            returnType: r'Record',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'index',
-            _$target12,
-            kind: _i2.MemberKind.getter,
-            returnType: r'Map',
-            returnTypeArguments: [
-              _i2.TypeCapture<String>(),
-              _i2.TypeCapture<List<int>>(),
-            ],
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'lazy',
-            _$target12,
-            kind: _i2.MemberKind.getter,
-            returnType: r'Iterable',
-            returnTypeArguments: [_i2.TypeCapture<int>()],
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'any',
-            _$target12,
-            kind: _i2.MemberKind.getter,
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'thing',
-            _$target12,
-            kind: _i2.MemberKind.getter,
-            returnType: r'Object',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'titles',
-            _$target12,
-            kind: _i2.MemberKind.getter,
-            returnType: r'List',
-            returnTypeArguments: [_i2.TypeCapture<String>()],
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'ids',
-            _$target12,
-            kind: _i2.MemberKind.getter,
-            returnType: r'Set',
-            returnTypeArguments: [_i2.TypeCapture<int>()],
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'amount',
-            _$target12,
-            kind: _i2.MemberKind.getter,
-            returnType: r'num',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'fast',
-            _$target12,
-            kind: _i2.MemberKind.getter,
-            returnType: r'HashSet',
-            returnTypeArguments: [_i2.TypeCapture<int>()],
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'line',
-            _$target12,
-            kind: _i2.MemberKind.getter,
-            returnType: r'ListQueue',
-            returnTypeArguments: [_i2.TypeCapture<int>()],
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'byName',
-            _$target12,
-            kind: _i2.MemberKind.getter,
-            returnType: r'LinkedHashMap',
-            returnTypeArguments: [
-              _i2.TypeCapture<String>(),
-              _i2.TypeCapture<int>(),
-            ],
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'frozen',
-            _$target12,
-            kind: _i2.MemberKind.getter,
-            returnType: r'UnmodifiableListView',
-            returnTypeArguments: [_i2.TypeCapture<int>()],
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'hidden',
-            _$target12,
-            kind: _i2.MemberKind.getter,
+          _i1.MethodSignature.of(
+            r'call',
+            _$target5,
+            declaringTypes: [],
             returnType: r'int',
           ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'listener',
-            _$target12,
-            kind: _i2.MemberKind.setter,
+            _$target5,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
             returnType: r'Function',
-            annotations: [_i6.Signal()],
+            annotations: [_i11.Signal()],
             annotationTypes: [r'Signal'],
           ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'pair',
-            _$target12,
-            kind: _i2.MemberKind.setter,
+            _$target5,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
             returnType: r'Record',
-            annotations: [_i6.Signal()],
+            annotations: [_i11.Signal()],
             annotationTypes: [r'Signal'],
           ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'index',
-            _$target12,
-            kind: _i2.MemberKind.setter,
+            _$target5,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
             returnType: r'Map',
-            annotations: [_i6.Signal()],
+            annotations: [_i11.Signal()],
             annotationTypes: [r'Signal'],
           ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'lazy',
-            _$target12,
-            kind: _i2.MemberKind.setter,
+            _$target5,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
             returnType: r'Iterable',
-            annotations: [_i6.Signal()],
+            annotations: [_i11.Signal()],
             annotationTypes: [r'Signal'],
           ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'any',
-            _$target12,
-            kind: _i2.MemberKind.setter,
-            annotations: [_i6.Signal()],
+            _$target5,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
+            annotations: [_i11.Signal()],
             annotationTypes: [r'Signal'],
           ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'thing',
-            _$target12,
-            kind: _i2.MemberKind.setter,
+            _$target5,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
             returnType: r'Object',
-            annotations: [_i6.Signal()],
+            annotations: [_i11.Signal()],
             annotationTypes: [r'Signal'],
           ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'titles',
-            _$target12,
-            kind: _i2.MemberKind.setter,
+            _$target5,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
             returnType: r'List',
-            annotations: [_i6.Signal()],
+            annotations: [_i11.Signal()],
             annotationTypes: [r'Signal'],
           ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'ids',
-            _$target12,
-            kind: _i2.MemberKind.setter,
+            _$target5,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
             returnType: r'Set',
-            annotations: [_i6.Signal()],
+            annotations: [_i11.Signal()],
             annotationTypes: [r'Signal'],
           ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'amount',
-            _$target12,
-            kind: _i2.MemberKind.setter,
+            _$target5,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
             returnType: r'num',
-            annotations: [_i6.Signal()],
+            annotations: [_i11.Signal()],
             annotationTypes: [r'Signal'],
           ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'fast',
-            _$target12,
-            kind: _i2.MemberKind.setter,
+            _$target5,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
             returnType: r'HashSet',
-            annotations: [_i6.Signal()],
+            annotations: [_i11.Signal()],
             annotationTypes: [r'Signal'],
           ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'line',
-            _$target12,
-            kind: _i2.MemberKind.setter,
+            _$target5,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
             returnType: r'ListQueue',
-            annotations: [_i6.Signal()],
+            annotations: [_i11.Signal()],
             annotationTypes: [r'Signal'],
           ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'byName',
-            _$target12,
-            kind: _i2.MemberKind.setter,
+            _$target5,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
             returnType: r'LinkedHashMap',
-            annotations: [_i6.Signal()],
+            annotations: [_i11.Signal()],
             annotationTypes: [r'Signal'],
           ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'frozen',
-            _$target12,
-            kind: _i2.MemberKind.setter,
+            _$target5,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
             returnType: r'UnmodifiableListView',
-            annotations: [_i6.Signal()],
+            annotations: [_i11.Signal()],
             annotationTypes: [r'Signal'],
           ),
-          _i2.MethodSignature.of(
-            r'both',
-            _$target12,
-            kind: _i2.MemberKind.setter,
+          _i1.MethodSignature.of(
+            r'hidden',
+            _$target5,
+            declaringTypes: [],
+            kind: _i1.MemberKind.getter,
             returnType: r'int',
           ),
         ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$ShapesProxy ? (bean..aopInvoker = invoker) : null,
+        reason: r'Shapes declares the operator +, which a proxy cannot forward. Move the advised methods to an interface without operators.',
       ),
     ),
-    _i2.BeanDefinition<_i1.Steps>(
+    _i1.BeanDefinition<_i2.Steps>(
       name: r'steps',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Steps',
-      create: (r) => _$StepsProxy(),
+      create: (r) => _$StepsSignals(),
       annotatedMethods: [
-        const _i2.IntrospectedMethod<_i1.Steps>(
+        const _i1.IntrospectedMethod<_i2.Steps>(
           r'watch',
           isVoid: true,
-          invoke: _$invoke13,
-          annotations: [_i6.Effect()],
+          invoke: _$invoke6,
+          annotations: [_i11.Effect()],
         ),
       ],
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature.of(
-            r'watch',
-            _$target14,
-            returnType: r'void',
-            annotations: [_i6.Effect()],
-            annotationTypes: [r'Effect'],
-          ),
-          _i2.MethodSignature.of(r'later', _$target14, returnType: r'Future'),
-          _i2.MethodSignature.of(r'fail', _$target14, returnType: r'void'),
-          _i2.MethodSignature.of(
-            r'a',
-            _$target14,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'b',
-            _$target14,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'seen',
-            _$target14,
-            kind: _i2.MemberKind.getter,
-            returnType: r'List',
-            returnTypeArguments: [_i2.TypeCapture<String>()],
-          ),
-          _i2.MethodSignature.of(
-            r'a',
-            _$target14,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'b',
-            _$target14,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-        ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$StepsProxy ? (bean..aopInvoker = invoker) : null,
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
       ),
     ),
-    _i2.BeanDefinition<_i1.Clamped>(
+    _i1.BeanDefinition<_i2.Clamped>(
       name: r'clamped',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Clamped',
-      create: (r) => _$ClampedProxy(),
+      create: (r) => _$ClampedSignals(),
       annotatedMethods: [
-        const _i2.IntrospectedMethod<_i1.Clamped>(
+        const _i1.IntrospectedMethod<_i2.Clamped>(
           r'clamp',
           isVoid: true,
-          invoke: _$invoke15,
-          annotations: [_i6.Effect()],
+          invoke: _$invoke7,
+          annotations: [_i11.Effect()],
         ),
       ],
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature.of(
-            r'clamp',
-            _$target16,
-            returnType: r'void',
-            annotations: [_i6.Effect()],
-            annotationTypes: [r'Effect'],
-          ),
-          _i2.MethodSignature.of(
-            r'level',
-            _$target16,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'runs',
-            _$target16,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-          ),
-          _i2.MethodSignature.of(
-            r'level',
-            _$target16,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'runs',
-            _$target16,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-          ),
-        ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$ClampedProxy ? (bean..aopInvoker = invoker) : null,
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
       ),
     ),
-    _i2.BeanDefinition<_i1.Fragile>(
+    _i1.BeanDefinition<_i2.Fragile>(
       name: r'fragile',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Fragile',
-      create: (r) => _$FragileProxy(),
+      create: (r) => _$FragileSignals(),
       annotatedMethods: [
-        const _i2.IntrospectedMethod<_i1.Fragile>(
+        const _i1.IntrospectedMethod<_i2.Fragile>(
           r'check',
           isVoid: true,
-          invoke: _$invoke17,
-          annotations: [_i6.Effect()],
+          invoke: _$invoke8,
+          annotations: [_i11.Effect()],
         ),
       ],
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature.of(
-            r'check',
-            _$target18,
-            returnType: r'void',
-            annotations: [_i6.Effect()],
-            annotationTypes: [r'Effect'],
-          ),
-          _i2.MethodSignature.of(
-            r'value',
-            _$target18,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'value',
-            _$target18,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-        ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$FragileProxy ? (bean..aopInvoker = invoker) : null,
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
       ),
     ),
-    _i2.BeanDefinition<_i1.Looping>(
+    _i1.BeanDefinition<_i2.Looping>(
       name: r'looping',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Looping',
-      create: (r) => _$LoopingProxy(),
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature.of(
-            r'seed',
-            _$target19,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'first',
-            _$target19,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Computed()],
-            annotationTypes: [r'Computed'],
-          ),
-          _i2.MethodSignature.of(
-            r'second',
-            _$target19,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Computed()],
-            annotationTypes: [r'Computed'],
-          ),
-          _i2.MethodSignature.of(
-            r'seed',
-            _$target19,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-        ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$LoopingProxy ? (bean..aopInvoker = invoker) : null,
+      create: (r) => _$LoopingSignals(),
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
       ),
     ),
-    _i2.BeanDefinition<_i1.Listening>(
+    _i1.BeanDefinition<_i2.Listening>(
       name: r'listening',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Listening',
-      create: (r) => _$ListeningProxy(),
+      create: (r) => _$ListeningSignals(),
       eventListeners: [
-        _i2.EventListenerMethod.of<_i1.Listening, _i1.Ping>(r'Listening.on', (
+        _i1.EventListenerMethod.of<_i2.Listening, _i2.Ping>(r'Listening.on', (
           bean,
           event,
         ) {
@@ -1194,368 +508,261 @@ _i2.BeanModule get $application => _i2.BeanModule(
           return null;
         }),
       ],
-      annotations: const [_i2.Service()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature.of(
-            r'on',
-            _$target20,
-            returnType: r'void',
-            parameterTypes: [r'Ping'],
-            parameterNames: [r'ping'],
-          ),
-          _i2.MethodSignature.of(
-            r'heard',
-            _$target20,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'heard',
-            _$target20,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-        ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$ListeningProxy ? (bean..aopInvoker = invoker) : null,
+      annotations: const [_i1.Service()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
       ),
     ),
-    _i2.BeanDefinition<_i1.Audit>(
+    _i1.BeanDefinition<_i2.Audit>(
       name: r'audit',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Audit',
-      create: (r) => _i1.Audit(),
-      annotations: const [_i2.Aspect(), _i2.Component()],
-      aspect: _i2.AspectMetadata<_i1.Audit>(
+      create: (r) => _i2.Audit(),
+      annotations: const [_i1.Aspect(), _i1.Component()],
+      aspect: _i1.AspectMetadata<_i2.Audit>(
         advice: [
-          _i2.AspectAdvice<_i1.Audit>(
-            kind: _i2.AdviceKind.around,
+          _i1.AspectAdvice<_i2.Audit>(
+            kind: _i1.AdviceKind.around,
             pointcut: r'@annotation(Audited)',
             methodName: r'around',
             invoke: (aspect, joinPoint, value, bindings) =>
-                aspect.around((joinPoint as _i2.ProceedingJoinPoint)),
+                aspect.around((joinPoint as _i1.ProceedingJoinPoint)),
           ),
         ],
       ),
     ),
-    _i2.BeanDefinition<_i1.Guard>(
+    _i1.BeanDefinition<_i2.Guard>(
       name: r'guard',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Guard',
       order: -2147483548,
-      create: (r) => _i1.Guard(),
+      create: (r) => _i2.Guard(),
       annotations: const [
-        _i2.Aspect(),
-        _i2.Order(-2147483548),
-        _i2.Component(),
+        _i1.Aspect(),
+        _i1.Order(-2147483548),
+        _i1.Component(),
       ],
-      aspect: _i2.AspectMetadata<_i1.Guard>(
+      aspect: _i1.AspectMetadata<_i2.Guard>(
         advice: [
-          _i2.AspectAdvice<_i1.Guard>(
-            kind: _i2.AdviceKind.around,
+          _i1.AspectAdvice<_i2.Guard>(
+            kind: _i1.AdviceKind.around,
             pointcut: r'@annotation(OwnerOnly)',
             methodName: r'check',
             invoke: (aspect, joinPoint, value, bindings) =>
-                aspect.check((joinPoint as _i2.ProceedingJoinPoint)),
+                aspect.check((joinPoint as _i1.ProceedingJoinPoint)),
           ),
         ],
       ),
     ),
-    _i2.BeanDefinition<_i1.Ledger>(
+    _i1.BeanDefinition<_i2.Ledger>(
       name: r'ledger',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Ledger',
-      create: (r) => _$LedgerProxy(),
+      create: (r) => _$LedgerSignals(),
       annotatedMethods: [
-        const _i2.IntrospectedMethod<_i1.Ledger>(
+        const _i1.IntrospectedMethod<_i2.Ledger>(
           r'watch',
           isVoid: true,
-          invoke: _$invoke21,
-          annotations: [_i6.Effect()],
+          invoke: _$invoke9,
+          annotations: [_i11.Effect()],
         ),
       ],
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
+      annotations: const [_i1.Component()],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature.of(
-            r'watch',
-            _$target22,
-            returnType: r'void',
-            annotations: [_i6.Effect()],
-            annotationTypes: [r'Effect'],
-          ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'deposit',
-            _$target22,
+            _$target10,
             returnType: r'void',
             parameterTypes: [r'int'],
             parameterNames: [r'amount'],
-            annotations: [_i1.Audited()],
+            annotations: [_i2.Audited()],
             annotationTypes: [r'Audited'],
           ),
-          _i2.MethodSignature.of(
-            r'depositTwice',
-            _$target22,
-            returnType: r'void',
-            parameterTypes: [r'int'],
-            parameterNames: [r'amount'],
-          ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'failing',
-            _$target22,
+            _$target10,
             returnType: r'void',
-            annotations: [_i1.Audited()],
+            annotations: [_i2.Audited()],
             annotationTypes: [r'Audited'],
           ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'transfer',
-            _$target22,
+            _$target10,
             returnType: r'Future',
             parameterTypes: [r'int'],
             parameterNames: [r'amount'],
-            annotations: [_i1.Audited()],
+            annotations: [_i2.Audited()],
             annotationTypes: [r'Audited'],
           ),
-          _i2.MethodSignature.of(
-            r'balance',
-            _$target22,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'version',
-            _$target22,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'seen',
-            _$target22,
-            kind: _i2.MemberKind.getter,
-            returnType: r'List',
-            returnTypeArguments: [_i2.TypeCapture<String>()],
-          ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'doubled',
-            _$target22,
-            kind: _i2.MemberKind.getter,
+            _$target10,
+            kind: _i1.MemberKind.getter,
             returnType: r'Future',
-            returnTypeArguments: [_i2.TypeCapture<int>()],
-            annotations: [_i1.Audited(), _i6.Computed()],
+            annotations: [_i2.Audited(), _i11.Computed()],
             annotationTypes: [r'Audited', r'Computed'],
           ),
-          _i2.MethodSignature.of(
-            r'totals',
-            _$target22,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-          ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'total',
-            _$target22,
-            kind: _i2.MemberKind.getter,
+            _$target10,
+            kind: _i1.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i1.OwnerOnly(), _i6.Computed()],
+            annotations: [_i2.OwnerOnly(), _i11.Computed()],
             annotationTypes: [r'OwnerOnly', r'Computed'],
           ),
-          _i2.MethodSignature.of(
-            r'balance',
-            _$target22,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'version',
-            _$target22,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'totals',
-            _$target22,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-          ),
         ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$LedgerProxy ? (bean..aopInvoker = invoker) : null,
+        knownAdvisors: _$knownAdvisors1,
+        create: (target, invoker) =>
+            _$LedgerProxy((target as _i2.Ledger), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.Vault>(
+    _i1.BeanDefinition<_i2.Vault>(
       name: r'vault',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Vault',
-      create: (r) => _$VaultProxy(),
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
+      create: (r) => _$VaultSignals(),
+      annotations: const [_i1.Component()],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature.of(
-            r'secret',
-            _$target23,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'report',
-            _$target23,
-            kind: _i2.MemberKind.getter,
+            _$target11,
+            kind: _i1.MemberKind.getter,
             returnType: r'int',
-            annotations: [_i1.OwnerOnly(), _i6.Computed()],
+            annotations: [_i2.OwnerOnly(), _i11.Computed()],
             annotationTypes: [r'OwnerOnly', r'Computed'],
           ),
-          _i2.MethodSignature.of(
-            r'summary',
-            _$target23,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Computed()],
-            annotationTypes: [r'Computed'],
-          ),
-          _i2.MethodSignature.of(
-            r'secret',
-            _$target23,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
         ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$VaultProxy ? (bean..aopInvoker = invoker) : null,
+        knownAdvisors: _$knownAdvisors1,
+        create: (target, invoker) =>
+            _$VaultProxy((target as _i2.Vault), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.Watchman>(
+    _i1.BeanDefinition<_i2.Watchman>(
       name: r'watchman',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Watchman',
-      create: (r) => _$WatchmanProxy(),
+      create: (r) => _$WatchmanSignals(),
       annotatedMethods: [
-        const _i2.IntrospectedMethod<_i1.Watchman>(
+        const _i1.IntrospectedMethod<_i2.Watchman>(
           r'note',
           isVoid: true,
-          invoke: _$invoke24,
-          annotations: [_i1.OwnerOnly(), _i6.Effect()],
+          invoke: _$invoke12,
+          annotations: [_i2.OwnerOnly(), _i11.Effect()],
         ),
       ],
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
+      annotations: const [_i1.Component()],
+      aopProxy: _i1.AopProxyFactory(
         signatures: const [
-          _i2.MethodSignature.of(
+          _i1.MethodSignature.of(
             r'note',
-            _$target25,
+            _$target13,
             returnType: r'void',
-            annotations: [_i1.OwnerOnly(), _i6.Effect()],
+            annotations: [_i2.OwnerOnly(), _i11.Effect()],
             annotationTypes: [r'OwnerOnly', r'Effect'],
           ),
-          _i2.MethodSignature.of(
-            r'door',
-            _$target25,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
-          _i2.MethodSignature.of(
-            r'noted',
-            _$target25,
-            kind: _i2.MemberKind.getter,
-            returnType: r'List',
-            returnTypeArguments: [_i2.TypeCapture<int>()],
-          ),
-          _i2.MethodSignature.of(
-            r'door',
-            _$target25,
-            kind: _i2.MemberKind.setter,
-            returnType: r'int',
-            annotations: [_i6.Signal()],
-            annotationTypes: [r'Signal'],
-          ),
         ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$WatchmanProxy ? (bean..aopInvoker = invoker) : null,
+        knownAdvisors: _$knownAdvisors1,
+        create: (target, invoker) =>
+            _$WatchmanProxy((target as _i2.Watchman), invoker),
       ),
     ),
-    _i2.BeanDefinition<_i1.Reader>(
+    _i1.BeanDefinition<_i2.Reader>(
       name: r'reader',
       source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Reader',
-      dependencies: const [_i2.Dependency(_i1.Vault, name: r'vault')],
-      create: (r) => _$ReaderProxy(r.dependency<_i1.Vault>(name: r'vault')),
+      dependencies: const [_i1.Dependency(_i2.Vault, name: r'vault')],
+      create: (r) => _$ReaderSignals(r.dependency<_i2.Vault>(name: r'vault')),
       annotatedMethods: [
-        const _i2.IntrospectedMethod<_i1.Reader>(
+        const _i1.IntrospectedMethod<_i2.Reader>(
           r'watch',
           isVoid: true,
-          invoke: _$invoke26,
-          annotations: [_i6.Effect()],
+          invoke: _$invoke14,
+          annotations: [_i11.Effect()],
         ),
       ],
-      annotations: const [_i2.Component()],
-      aopProxy: _i2.AopProxyFactory.subclass(
-        signatures: const [
-          _i2.MethodSignature.of(
-            r'watch',
-            _$target27,
-            returnType: r'void',
-            annotations: [_i6.Effect()],
-            annotationTypes: [r'Effect'],
-          ),
-          _i2.MethodSignature.of(
-            r'vault',
-            _$target27,
-            kind: _i2.MemberKind.getter,
-            returnType: r'Vault',
-          ),
-          _i2.MethodSignature.of(
-            r'seen',
-            _$target27,
-            kind: _i2.MemberKind.getter,
-            returnType: r'List',
-            returnTypeArguments: [_i2.TypeCapture<int>()],
-          ),
-          _i2.MethodSignature.of(
-            r'view',
-            _$target27,
-            kind: _i2.MemberKind.getter,
-            returnType: r'int',
-            annotations: [_i6.Computed()],
-            annotationTypes: [r'Computed'],
-          ),
-        ],
-        adviseSelfCalls: true,
-        advise: (bean, invoker) =>
-            bean is _$ReaderProxy ? (bean..aopInvoker = invoker) : null,
+      annotations: const [_i1.Component()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
       ),
     ),
+    if (!const bool.fromEnvironment('dart.vm.product') &&
+        !const bool.fromEnvironment('dart.vm.profile'))
+      ..._$debugWidgetFields,
   ],
-  imports: [_i7.signalsConfigBeans],
+  imports: [_i13.signalsConfigBeans],
+  resources: const {
+    r'application.yml': _i1.EmbeddedResource.text(
+      'spring:\n  flutter:\n    signals:\n      allow-advice: true\n      queue:\n        flush: immediate\n',
+    ),
+  },
+  aopProxies: {
+    r'package:spring_boot_dart/src/properties/boot_properties.dart#MessagesProperties':
+        _i1.AopProxyFactory(
+          signatures: const [
+            _i1.MethodSignature.of(
+              r'cacheDuration',
+              _$target15,
+              kind: _i1.MemberKind.getter,
+              returnType: r'Duration',
+              annotations: [_i14.DurationUnit(_i1.ChronoUnit.seconds)],
+              annotationTypes: [r'DurationUnit'],
+            ),
+            _i1.MethodSignature.of(
+              r'cacheDuration',
+              _$target15,
+              kind: _i1.MemberKind.setter,
+              returnType: r'Duration',
+              annotations: [_i14.DurationUnit(_i1.ChronoUnit.seconds)],
+              annotationTypes: [r'DurationUnit'],
+            ),
+          ],
+          knownAdvisors: _$knownAdvisors1,
+          create: (target, invoker) => _$MessagesPropertiesProxy(
+            (target as _i4.MessagesProperties),
+            invoker,
+          ),
+        ),
+    r'package:spring_boot_starter_logging/src/properties/logging_properties.dart#LoggingProperties':
+        _i1.AopProxyFactory(
+          signatures: const [
+            _i1.MethodSignature.of(
+              r'exceptionConversionWord',
+              _$target16,
+              kind: _i1.MemberKind.getter,
+              returnType: r'String',
+              annotations: [_i14.RawValue()],
+              annotationTypes: [r'RawValue'],
+            ),
+            _i1.MethodSignature.of(
+              r'exceptionConversionWord',
+              _$target16,
+              kind: _i1.MemberKind.setter,
+              returnType: r'String',
+              annotations: [_i14.RawValue()],
+              annotationTypes: [r'RawValue'],
+            ),
+          ],
+          knownAdvisors: _$knownAdvisors1,
+          create: (target, invoker) => _$LoggingPropertiesProxy(
+            (target as _i5.LoggingProperties),
+            invoker,
+          ),
+        ),
+  },
 );
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
 /// up to date after a hot reload).
-_i2.SpringApplication get springApplication => _i2.SpringApplication(
+_i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i8.springBootAutoConfiguration,
-    _i5.springBootStarterFlutterAutoConfiguration,
-    _i9.springBootStarterLoggingAutoConfiguration,
-    if (!const bool.fromEnvironment('dart.vm.product'))
+    _i15.springBootAutoConfiguration,
+    _i6.springBootStarterFlutterAutoConfiguration,
+    _i16.springBootStarterLoggingAutoConfiguration,
+    if (!const bool.fromEnvironment('dart.vm.product') &&
+        !const bool.fromEnvironment('dart.vm.profile'))
       ..._$debugAutoConfigurations,
   ],
   dartDefines: _$dartDefines,
-  fingerprint: !const bool.fromEnvironment('dart.vm.product')
+  fingerprint:
+      !const bool.fromEnvironment('dart.vm.product') &&
+          !const bool.fromEnvironment('dart.vm.profile')
       ? _$fingerprint
       : null,
 );
@@ -1563,11 +770,11 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
 /// Starts the application: config files, environment, context, runners
 /// (asynchronous runners go on one after another after it returns;
 /// [runApplicationAsync] waits for them).
-_i2.ConfigurableApplicationContext runApplication(List<String> args) =>
+_i1.ConfigurableApplicationContext runApplication(List<String> args) =>
     springApplication.run(args, hotReload: () => springApplication);
 
 /// Like [runApplication], reading config files asynchronously (Flutter assets)
 /// and completing once every runner has finished.
-Future<_i2.ConfigurableApplicationContext> runApplicationAsync(
+Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
   List<String> args,
 ) => springApplication.runAsync(args, hotReload: () => springApplication);

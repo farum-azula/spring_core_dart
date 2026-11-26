@@ -368,7 +368,7 @@ methods and failure analyzer, the cache starter's annotations, the edge
 starter's warning list). The generator reads
 `spring.main.startup-checks.enabled` when it writes the application:
 `true` keeps those checks in every build, `false` in none, not set in
-debug and profile builds only, so a release build ships none of their
+debug builds only, so a release build ships none of their
 code and a mistake fails at the first call instead of the start. The key is declared for the editors only
 (`spring_metadata.json`); no bean binds it at run time.
 
@@ -716,8 +716,8 @@ Good to know:
   `@AutoConfigurationModule(build: AutoConfigurationBuild('neon.cache.enabled'))`
   lets the application's configuration decide, when the generator runs:
   `true` builds the module in, `false` leaves it out (no code at all),
-  not set follows `whenMissing` (`BuildInclusion.notInRelease` by
-  default: in debug and profile builds, listed in the generated
+  not set follows `whenMissing` (`BuildInclusion.debugOnly` by
+  default: in debug builds, listed in the generated
   `main.spring.debug.dart` and added under
   `if (!const bool.fromEnvironment('dart.vm.product'))`, so a release
   compiles it away; or `always`, `never`). The generator reads
@@ -725,7 +725,16 @@ Good to know:
   value it cannot read stops the build, and one set only in a profile's
   file is warned about, saying what it means for a release build. Such a
   module keeps its `order`, `before` and `after`, under the same
-  condition.
+  condition. A feature that only works inside another lists that one's
+  switch in `parents` (`AutoConfigurationBuild('neon.cache.stats.enabled',
+  parents: [AutoConfigurationBuild('neon.cache.enabled')])`): the module
+  is in a build only as far as its own switch and every parent's let it
+  in, the narrowest winning, so it leaves with its parent whatever its
+  own key says. `AutoConfigurationBuild.named('<list property>', '<name>',
+  whenMissing:)` decides by a list instead: in when the list names it or
+  holds `*`, out when it is set without either, `whenMissing` when it is
+  not set (the debug console's segments, one module each, by
+  `spring.flutter.debug.console.segments`).
 - **A module only where its code works.**
   `@AutoConfigurationModule(platform: ModulePlatform.native)` lists the
   module under a constant the compiler knows, so another platform's build
@@ -982,8 +991,9 @@ bean module as getters, plus a fingerprint of the generated code, and
 the generated `reloadApplication(context)` decides what to do. The
 fingerprint and `reloadApplication` are in the part
 `spring_gen/main.spring.debug.dart`, which the application refers to only
-under `!const bool.fromEnvironment('dart.vm.product')`: debug and profile
-builds have them, a release build compiles none of it.
+under `!const bool.fromEnvironment('dart.vm.product') &&
+!const bool.fromEnvironment('dart.vm.profile')`: debug builds have them, a
+profile or release build compiles none of it.
 
 - only method bodies changed (same fingerprint): the context is kept;
   the beans keep their state and already run the new code;

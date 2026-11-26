@@ -73,7 +73,7 @@
     {
       "name": "spring.flutter.scene.debug.enabled",
       "type": "bool?",
-      "description": "Whether the app has the tab: `true` in every build, `false` in none (the build leaves its code out), not set in debug and profile builds only (a release build compiles it away).",
+      "description": "Whether the app has the tab: `true` in every build, `false` in none (the build leaves its code out), not set in debug builds only (a release build compiles it away).",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_flutter_scene/src/properties/scene_properties.dart",
@@ -364,7 +364,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.app.enabled', havingValue: 'true')"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 254,
+      "line": 261,
       "injects": [],
       "members": [
         {
@@ -456,7 +456,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.app.placement', havingValue: 'background', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 267,
+      "line": 274,
       "injects": [],
       "members": [
         {
@@ -490,7 +490,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 149,
+      "line": 156,
       "injects": [],
       "members": [
         {
@@ -601,7 +601,7 @@
         "@ConditionalOnMissingBean(SceneBackend)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 117,
+      "line": 124,
       "injects": [],
       "members": [
         {
@@ -635,7 +635,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 308,
+      "line": 326,
       "injects": [],
       "members": [
         {
@@ -692,6 +692,7 @@
       "type": "SceneDebugSection",
       "types": [
         "SceneDebugSection",
+        "GroupedDebugPanelSection",
         "DebugPanelSection",
         "Ordered"
       ],
@@ -704,7 +705,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 321,
+      "line": 339,
       "injects": [],
       "members": [
         {
@@ -724,6 +725,11 @@
           "name": "debug",
           "kind": "field",
           "type": "SceneDebug"
+        },
+        {
+          "name": "group",
+          "kind": "getter",
+          "type": "String"
         },
         {
           "name": "materials",
@@ -773,7 +779,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 138,
+      "line": 145,
       "injects": [],
       "members": [
         {
@@ -867,7 +873,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.engine-log', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 131,
+      "line": 138,
       "injects": [],
       "members": [
         {
@@ -890,6 +896,58 @@
       ]
     },
     {
+      "name": "sceneFpsSegment",
+      "type": "SceneFpsSegment",
+      "types": [
+        "SceneFpsSegment",
+        "SampledDebugConsoleSegment",
+        "DebugConsoleSegment"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)",
+        "@ConditionalOnProperty('spring.flutter.debug.console.enabled', havingValue: 'true', matchIfMissing: true)"
+      ],
+      "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
+      "line": 383,
+      "injects": [],
+      "members": [
+        {
+          "name": "interval",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "name",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "open",
+          "kind": "method",
+          "type": "void Function()?",
+          "parameters": []
+        },
+        {
+          "name": "read",
+          "kind": "method",
+          "type": "DebugConsoleValue?",
+          "parameters": []
+        },
+        {
+          "name": "start",
+          "kind": "method",
+          "type": "void Function()",
+          "parameters": [
+            "void Function() changed"
+          ]
+        }
+      ]
+    },
+    {
       "name": "sceneFrames",
       "type": "SceneFrames",
       "types": [
@@ -903,7 +961,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 188,
+      "line": 195,
       "injects": [],
       "members": [
         {
@@ -989,7 +1047,7 @@
         "@ConditionalOnMissingBean(SceneMaterialLoader)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 223,
+      "line": 230,
       "injects": [],
       "members": [
         {
@@ -1016,7 +1074,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 234,
+      "line": 241,
       "injects": [],
       "members": [
         {
@@ -1081,7 +1139,7 @@
         "@ConditionalOnMissingBean(SceneModelImporter)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 195,
+      "line": 202,
       "injects": [],
       "members": [
         {
@@ -1109,7 +1167,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 206,
+      "line": 213,
       "injects": [],
       "members": [
         {
@@ -1268,7 +1326,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 168,
+      "line": 175,
       "injects": [],
       "members": [
         {
@@ -1385,7 +1443,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 278,
+      "line": 285,
       "injects": [],
       "members": [
         {
@@ -1457,7 +1515,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 246,
+      "line": 253,
       "injects": [],
       "members": [
         {
@@ -1554,7 +1612,7 @@
         "@ConditionalOnProperty('spring.flutter.scene.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter_scene/spring_auto_configuration.dart",
-      "line": 161,
+      "line": 168,
       "injects": [],
       "members": [
         {

@@ -12,7 +12,7 @@ TypeChecker _spring(String name) =>
     TypeChecker.typeNamedLiterally(name, inPackage: 'spring_core_dart');
 
 final TypeChecker _beanMethodAnnotation = _spring('BeanMethodAnnotation');
-final TypeChecker _proxyTargetClass = _spring('ProxyTargetClass');
+final TypeChecker _accessHook = _spring('AccessHook');
 final TypeChecker _bean = _spring('Bean');
 final TypeChecker _eventListener = _spring('EventListener');
 final TypeChecker _autowired = _spring('Autowired');
@@ -660,7 +660,7 @@ final class _AspectPlacement extends AnnotationPlacement {
 
 // Every annotation marked `@BeanMethodAnnotation()` that no part places
 // itself (`@Scheduled`, an application's own): a public instance method of
-// a bean. Those marked `@ProxyTargetClass()` have checks of their own.
+// a bean. Those marked `@AccessHook()` have checks of their own.
 final class _BeanMethodAnnotationPlacement extends AnnotationPlacement {
   const _BeanMethodAnnotationPlacement();
 
@@ -672,7 +672,7 @@ final class _BeanMethodAnnotationPlacement extends AnnotationPlacement {
   @override
   bool covers(InterfaceType type) =>
       _beanMethodAnnotation.hasAnnotationOf(type.element) &&
-      !_proxyTargetClass.hasAnnotationOf(type.element);
+      !_accessHook.hasAnnotationOf(type.element);
 
   // On the class it may say something of every method (an application's
   // own annotation decides).

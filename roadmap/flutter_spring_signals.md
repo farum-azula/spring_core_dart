@@ -27,7 +27,7 @@ How it is made, which is not what the plan below expected: the state is
 writes for each field. That took three things in the framework, each
 useful apart from signals:
 
-- `@ProxyTargetClass()` on an annotation class (`spring_core_dart`): a
+- `@AccessHook()` on an annotation class (`spring_core_dart`): a
   bean with such a member gets a proxy that extends its class, with every
   member kept and the calls the bean makes on itself seen by the advice
   that asks for them (`SelfCallInterceptor`, `adviseSelfCalls`). Other

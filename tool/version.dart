@@ -65,6 +65,7 @@ const dependents = [
   'extensions/language_server',
   'tool/load_bench',
   'tool/edge_checks',
+  'tool/signals_checks',
 ];
 
 const _versionFile = 'spring_boot_dart/lib/src/version.dart';

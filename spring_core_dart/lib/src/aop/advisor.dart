@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:spring_core_dart/src/aop/aop_pointcut.dart';
+import 'package:spring_core_dart/src/aop/derived_futures.dart';
 import 'package:spring_core_dart/src/aop/join_point.dart';
 import 'package:spring_core_dart/src/aop/proxy.dart';
 import 'package:spring_core_dart/src/core/order.dart';
@@ -625,7 +626,9 @@ Future<T> retypeFuture<T>(Object? value) {
   }
   // `Future<Object?>` is not a `Future<T>`; cast each completed value.
   if (value is Future) {
-    return value.then((v) => v as T);
+    final retyped = value.then((v) => v as T);
+    DerivedFutures.link(retyped, value);
+    return retyped;
   }
   return Future<T>.value(value as FutureOr<T>);
 }

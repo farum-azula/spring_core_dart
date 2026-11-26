@@ -83,11 +83,12 @@ class DbProps { String url = ''; }
         );
         expect(output, hasCode('SpringApplication get springApplication =>'));
         // The fingerprint and the reload functions, in the debug part, for
-        // debug and profile builds only.
+        // debug builds only.
         expect(
           output,
           hasCode(
-            "fingerprint: !const bool.fromEnvironment('dart.vm.product') "
+            "fingerprint: !const bool.fromEnvironment('dart.vm.product') && "
+            "!const bool.fromEnvironment('dart.vm.profile') "
             r'? _$fingerprint : null',
           ),
         );

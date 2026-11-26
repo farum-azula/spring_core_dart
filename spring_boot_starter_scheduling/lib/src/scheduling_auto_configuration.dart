@@ -93,12 +93,15 @@ final schedulingAutoConfiguration = <BeanDefinition<Object>>[
     conditions: const [
       ConditionGroup(_source, [_enabled]),
     ],
-    create: (r) => ScheduledAnnotationBeanPostProcessor(
+    // The scheduler and the properties on first use, not when the
+    // post-processor is made: they would be made before the other
+    // post-processors, which would skip them.
+    create: (r) => ScheduledAnnotationBeanPostProcessor.lazy(
       // Like Spring: the only TaskScheduler, the primary one, or the one
       // named `taskScheduler` (others are picked with @Scheduled(scheduler:)).
-      r.dependency<TaskScheduler>(name: 'taskScheduler'),
+      r.lazyDependency<TaskScheduler>(name: 'taskScheduler'),
       r.dependency<Environment>(),
-      isolates: r.dependency<SchedulingProperties>().isolates,
+      isolates: () => r.dependency<SchedulingProperties>().isolates,
     ),
   ),
 ];

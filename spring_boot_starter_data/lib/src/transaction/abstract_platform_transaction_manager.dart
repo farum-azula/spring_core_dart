@@ -153,7 +153,7 @@ abstract class AbstractPlatformTransactionManager
           readOnly: def.readOnly,
           name: def.name,
           suspended: false,
-        );
+        ).._toldOfSavepoint(savepoint);
       case Propagation.required:
       case Propagation.supports:
       case Propagation.mandatory:
@@ -517,13 +517,35 @@ final class DefaultTransactionStatus implements TransactionStatus {
   String? get transactionName => name;
 
   @override
-  Future<Object> createSavepoint() async =>
-      await _hooks.createSavepoint(_requireTx());
+  Future<Object> createSavepoint() async {
+    final savepoint = await _hooks.createSavepoint(_requireTx());
+    _toldOfSavepoint(savepoint);
+    return savepoint;
+  }
 
   @override
   Future<void> rollbackToSavepoint(Object savepoint) async {
     await _hooks.rollbackToSavepoint(_requireTx(), savepoint);
+    _toldOfSavepointRollback(savepoint);
   }
+
+  void _toldOfSavepoint(Object savepoint) {
+    for (final sync in _currentSynchronizations) {
+      sync.savepoint(savepoint);
+    }
+  }
+
+  void _toldOfSavepointRollback(Object savepoint) {
+    for (final sync in _currentSynchronizations) {
+      sync.savepointRollback(savepoint);
+    }
+  }
+
+  // A joined or nested block has no list of its own: the running
+  // transaction's.
+  List<TransactionSynchronization> get _currentSynchronizations =>
+      TransactionSynchronizationManager.currentTransaction?.synchronizations ??
+      const [];
 
   @override
   Future<void> releaseSavepoint(Object savepoint) async {
@@ -534,6 +556,7 @@ final class DefaultTransactionStatus implements TransactionStatus {
   Future<void> rollbackToHeldSavepoint() async {
     final savepoint = _savepoint!;
     await _hooks.rollbackToSavepoint(_transaction!, savepoint);
+    _toldOfSavepointRollback(savepoint);
     await _hooks.releaseSavepoint(_transaction, savepoint);
   }
 

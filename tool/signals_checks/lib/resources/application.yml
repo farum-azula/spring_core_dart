@@ -1,0 +1,34 @@
+spring:
+  main:
+    banner-mode: off
+  flutter:
+    signals:
+      allow-advice: true
+      queues:
+        manual:
+          flush: interval
+          interval: 1h
+        small:
+          flush: interval
+          interval: 1h
+          capacity: 1
+        oldest:
+          flush: interval
+          interval: 1h
+          capacity: 1
+          on-overflow: drop-oldest
+        newest:
+          flush: interval
+          interval: 1h
+          capacity: 1
+          on-overflow: drop-newest
+        immediate:
+          flush: immediate
+        frames:
+          flush: frame
+        ticking:
+          flush: interval
+          interval: 5ms
+logging:
+  level:
+    root: error

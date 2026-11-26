@@ -1,0 +1,6 @@
+spring:
+  flutter:
+    signals:
+      allow-advice: true
+      queue:
+        flush: immediate

@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spring_boot_starter_flutter/src/debug/debug_layout.dart';
 import 'package:spring_boot_starter_flutter/src/debug/overlay/debug_dock.dart';
 import 'package:spring_boot_starter_flutter/src/debug/overlay/debug_overlay.dart';
 import 'package:spring_boot_starter_flutter/src/debug/overlay/debug_overlay_drag.dart';
@@ -21,7 +22,7 @@ final class _Overlay extends ChangeNotifier implements DebugOverlay {
   String get title => id;
 
   @override
-  DebugOverlayCorner get corner => DebugOverlayCorner.topRight;
+  DebugCorner get corner => DebugCorner.topRight;
 
   @override
   final int order;
@@ -127,10 +128,10 @@ void main() {
     await gesture.moveBy(const Offset(-10, 10));
     await gesture.up();
     await tester.pump();
-    expect(drag.cornerOf(meter), DebugOverlayCorner.bottomLeft);
+    expect(drag.cornerOf(meter), DebugCorner.bottomLeft);
     expect(drag.freeOf(meter), isNull);
     drag.reset();
-    expect(drag.cornerOf(meter), DebugOverlayCorner.topRight);
+    expect(drag.cornerOf(meter), DebugCorner.topRight);
   });
 
   testWidgets('snap free: it stays where it was dropped', (tester) async {

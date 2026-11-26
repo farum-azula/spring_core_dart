@@ -302,24 +302,76 @@ enum ModulePlatform {
 /// - `false`: in none, so the module is no code at all;
 /// - not set: [whenMissing].
 ///
+/// [AutoConfigurationBuild.named] decides by a list instead: the module
+/// is in the build when the list names it or holds `*`.
+///
+/// A feature that only works inside another one lists that one's switch
+/// in [parents]: the module is in a build only as far as its own switch
+/// and every parent's let it in (the narrowest of them wins), so a tab of
+/// the debug panel leaves with the panel even when its own switch is not
+/// set.
+///
 /// ```dart
 /// @AutoConfigurationModule(
 ///   build: AutoConfigurationBuild('spring.flutter.debug.enabled'),
 /// )
 /// final BeanModule debugAutoConfiguration = BeanModule(...);
+///
+/// @AutoConfigurationModule(
+///   build: AutoConfigurationBuild(
+///     'spring.flutter.debug.flutter-tools.enabled',
+///     parents: [AutoConfigurationBuild('spring.flutter.debug.enabled')],
+///   ),
+/// )
+/// final BeanModule flutterToolsAutoConfiguration = BeanModule(...);
 /// ```
+///
+/// Spring has no counterpart: Spring decides at run time
+/// (`@ConditionalOnProperty`), and the class path is what the build left
+/// in.
 class AutoConfigurationBuild {
-  /// The module by [property]; [whenMissing] when it is not set.
+  /// The module by [property]; [whenMissing] when it is not set; and
+  /// only as far as each of [parents] lets it in.
   const AutoConfigurationBuild(
     this.property, {
-    this.whenMissing = BuildInclusion.notInRelease,
+    this.whenMissing = BuildInclusion.debugOnly,
+    this.parents = const [],
+  }) : name = null;
+
+  /// The module by the list [property]: in every build when the list
+  /// names [name] or holds `*`, in none when it is set without either,
+  /// [whenMissing] when it is not set (so [whenMissing] says whether the
+  /// list's default names it); and only as far as each of [parents] lets
+  /// it in.
+  ///
+  /// ```dart
+  /// // In the build when spring.flutter.debug.console.segments names it.
+  /// AutoConfigurationBuild.named(
+  ///   'spring.flutter.debug.console.segments',
+  ///   'isolates',
+  ///   whenMissing: BuildInclusion.never,
+  /// )
+  /// ```
+  const AutoConfigurationBuild.named(
+    this.property,
+    String this.name, {
+    required this.whenMissing,
+    this.parents = const [],
   });
 
   /// The property that decides (`spring.flutter.debug.enabled`).
   final String property;
 
+  /// For a list [property]: the item that puts the module in; `null`: the
+  /// property is `true` or `false`.
+  final String? name;
+
   /// What the build does when the configuration does not set [property].
   final BuildInclusion whenMissing;
+
+  /// The switches of the features the module works inside: each must let
+  /// it in too.
+  final List<AutoConfigurationBuild> parents;
 }
 
 /// Where an [AutoConfigurationBuild] module goes when its property is not
@@ -328,9 +380,10 @@ enum BuildInclusion {
   /// In every build.
   always,
 
-  /// In debug and profile builds; a release build compiles it away
-  /// (`dart.vm.product`), so it ships none of its code.
-  notInRelease,
+  /// In debug builds only: a profile or release build compiles it away
+  /// (`dart.vm.profile`, `dart.vm.product`), so it ships none of its code
+  /// and a profile measures the app without it.
+  debugOnly,
 
   /// In no build.
   never,

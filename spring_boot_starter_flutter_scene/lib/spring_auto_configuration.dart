@@ -9,7 +9,13 @@ library;
 import 'package:flutter/foundation.dart' show ChangeNotifier, Listenable;
 import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    show DebugPanelSection, FlutterAppCustomizer, HttpTransport, SplashTask;
+    show
+        ConsoleSegment,
+        DebugConsoleSegment,
+        DebugPanelSection,
+        FlutterAppCustomizer,
+        HttpTransport,
+        SplashTask;
 import 'package:spring_boot_starter_flutter_scene/src/app/application_scene.dart';
 import 'package:spring_boot_starter_flutter_scene/src/app/application_scene_background.dart';
 import 'package:spring_boot_starter_flutter_scene/src/app/scene_customizer.dart';
@@ -17,6 +23,7 @@ import 'package:spring_boot_starter_flutter_scene/src/conditions/scene_condition
 import 'package:spring_boot_starter_flutter_scene/src/conditions/slow_frames_scene_condition.dart';
 import 'package:spring_boot_starter_flutter_scene/src/conditions/touch_scene_condition.dart';
 import 'package:spring_boot_starter_flutter_scene/src/debug/scene_debug.dart';
+import 'package:spring_boot_starter_flutter_scene/src/debug/scene_fps_segment.dart';
 import 'package:spring_boot_starter_flutter_scene/src/debug/scene_material_precisions.dart';
 import 'package:spring_boot_starter_flutter_scene/src/debug/scene_section.dart';
 import 'package:spring_boot_starter_flutter_scene/src/engine/scene_availability.dart';
@@ -298,10 +305,21 @@ final BeanModule springBootStarterFlutterSceneAutoConfiguration = BeanModule(
 /// measures by (`sceneDebug`, the observer of every scene view). The
 /// generator puts this module into the app by
 /// `spring.flutter.scene.debug.enabled`: `true` always, `false` never (no
-/// code), not set in debug and profile builds only. The tab shows where
-/// the debug panel is in the build (`spring.flutter.debug.enabled`).
+/// code), not set in debug builds only; and only as far as
+/// its parents let it in: the scenes (`spring.flutter.scene.enabled`) and
+/// the debug panel (`spring.flutter.debug.enabled`), so a build without
+/// the panel has none of its code.
 @AutoConfigurationModule(
-  build: AutoConfigurationBuild('spring.flutter.scene.debug.enabled'),
+  build: AutoConfigurationBuild(
+    'spring.flutter.scene.debug.enabled',
+    parents: [
+      AutoConfigurationBuild(
+        'spring.flutter.scene.enabled',
+        whenMissing: BuildInclusion.always,
+      ),
+      AutoConfigurationBuild('spring.flutter.debug.enabled'),
+    ],
+  ),
 )
 final BeanModule springBootStarterFlutterSceneDebugAutoConfiguration =
     BeanModule('springBootStarterFlutterSceneDebugAutoConfiguration', [
@@ -333,5 +351,48 @@ final BeanModule springBootStarterFlutterSceneDebugAutoConfiguration =
           ),
           status: r.dependency<SceneStatus>(),
         ),
+      ),
+    ]);
+
+/// The debug console's `scene-fps` segment (`sceneFpsSegment`): the frames
+/// a second the 3D scenes draw, while one moves. The generator puts this
+/// module into the app only with the console
+/// (`spring.flutter.debug.console.enabled: true`) and the scenes
+/// (`spring.flutter.scene.enabled`), its parents, and when
+/// `spring.flutter.debug.console.segments` names `scene-fps`, holds `*`
+/// or is not set (its default names it): otherwise there is no code of it.
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild.named(
+    'spring.flutter.debug.console.segments',
+    'scene-fps',
+    whenMissing: BuildInclusion.always,
+    parents: [
+      AutoConfigurationBuild(
+        'spring.flutter.debug.console.enabled',
+        whenMissing: BuildInclusion.never,
+      ),
+      AutoConfigurationBuild(
+        'spring.flutter.scene.enabled',
+        whenMissing: BuildInclusion.always,
+      ),
+    ],
+  ),
+)
+final BeanModule springBootStarterFlutterSceneDebugConsoleAutoConfiguration =
+    BeanModule('springBootStarterFlutterSceneDebugConsoleAutoConfiguration', [
+      BeanDefinition<SceneFpsSegment>(
+        name: 'sceneFpsSegment',
+        types: const [SceneFpsSegment, DebugConsoleSegment],
+        source: _source,
+        conditions: const [
+          _scenesOn,
+          ConditionalOnProperty(
+            'spring.flutter.debug.console.enabled',
+            havingValue: 'true',
+            matchIfMissing: true,
+          ),
+        ],
+        annotations: const [ConsoleSegment('scene-fps')],
+        create: (_) => const SceneFpsSegment(),
       ),
     ]);

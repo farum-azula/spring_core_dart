@@ -326,6 +326,17 @@ final class TransactionInfo {
 /// Spring (Java): `org.springframework.transaction.support.
 /// TransactionSynchronization`.
 abstract class TransactionSynchronization {
+  /// A savepoint of the transaction was made (a nested block starts).
+  ///
+  /// Spring (Java): `TransactionSynchronization.savepoint`.
+  void savepoint(Object savepoint) {}
+
+  /// The transaction went back to [savepoint]: what was done after it is
+  /// undone, and the transaction goes on.
+  ///
+  /// Spring (Java): `TransactionSynchronization.savepointRollback`.
+  void savepointRollback(Object savepoint) {}
+
   /// Before the commit, in order of registration; an exception here rolls
   /// the transaction back.
   FutureOr<void> beforeCommit({required bool readOnly}) {}

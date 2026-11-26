@@ -1,5 +1,8 @@
 ## Unreleased
 
+- **Breaking:** a module whose build switch is not set is in debug builds only (`BuildInclusion.debugOnly`, the new default of `whenMissing`): a profile build compiles it away too (`dart.vm.profile`), so a profile measures the app without the debug tools. `BuildInclusion.notInRelease` is gone.
+- `AutoConfigurationBuild(parents: [...])`: a module that only works inside another feature lists that feature's switch, and is in a build only as far as its own switch and every parent's let it in (the narrowest wins: none, else debug and profile builds only, else every build). A tab of the debug panel leaves with the panel even when its own key is not set.
+- `AutoConfigurationBuild.named(property, name, whenMissing:)`: a module decided by a list property, in the build when the list names it or holds `*`, out when it is set without either, `whenMissing` when it is not set (the debug console's segments, by `spring.flutter.debug.console.segments`).
 - `startupChecksEnabled`: `spring.main.startup-checks.enabled=false` at run time (command line, environment, a profile) turns off the startup checks the build kept, as a Boot `*.enabled=false` does.
 - A bare `@ConditionalOnMissingBean()` / `@ConditionalOnBean()` on a `@Bean` method looks for beans of the method's declared return type (`BeanDefinition.factoryMethodReturnType`), as Spring Boot's `OnBeanCondition`: `Clock clock() => SystemClock()` backs off for an application's own `Clock`.
 

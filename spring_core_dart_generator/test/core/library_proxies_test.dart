@@ -615,10 +615,10 @@ class TaskAudit {
     }
 
     // The other starters of the workspace have modules of their own under
-    // `dart.vm.product` (their checks at start); only this starter's module
-    // and its proxy are looked at.
+    // the debug builds' constant (their checks at start); only this
+    // starter's module and its proxy are looked at.
     final releaseGuarded = RegExp(
-      r"dart\.vm\.product'\)[^,\]]*?"
+      r"dart\.vm\.profile'\)[^,\]]*?"
       r"(_i\d+\.starterDebugAutoConfiguration|r'package:starter/task\.dart#Task')",
     );
 
@@ -648,6 +648,7 @@ class TaskAudit {
         code,
         contains(
           "aopProxies:{if(!constbool.fromEnvironment('dart.vm.product')&&"
+          "!constbool.fromEnvironment('dart.vm.profile')&&"
           "(constbool.fromEnvironment('dart.library.js_interop')||"
           "constbool.fromEnvironment('SPRING_ALL_PLATFORMS')))"
           "r'package:starter/task.dart#Task':",
@@ -687,13 +688,14 @@ final BeanModule starterWebAutoConfiguration = BeanModule(
       expect(code, isNot(contains('starterDebugAutoConfiguration')));
     });
 
-    test('not set: the proxy registered only outside a release', () async {
+    test('not set: the proxy registered only in debug builds', () async {
       final code = (await output()).replaceAll(RegExp(r'\s'), '');
       expect(code, contains(r'class_$TaskProxy'));
       expect(
         code,
         contains(
-          "aopProxies:{if(!constbool.fromEnvironment('dart.vm.product'))"
+          "aopProxies:{if(!constbool.fromEnvironment('dart.vm.product')&&"
+          "!constbool.fromEnvironment('dart.vm.profile'))"
           "r'package:starter/task.dart#Task':",
         ),
       );

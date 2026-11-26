@@ -2,8 +2,8 @@
 // (`PackageGeneration.build`), as an auto-configuration module has one: the
 // application's configuration puts the part's code in every build (`true`),
 // in none (`false`), or, when it does not set the key, as `whenMissing`
-// says; in debug and profile builds only, its code is under the constant a
-// release build compiles away.
+// says; in debug builds only, its code is under the constant a profile or
+// a release build compiles away.
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
@@ -25,7 +25,9 @@ import 'package:pkg/spring_gen/src/beans.spring.dart';
 final BeanModule pkgBeans = $pkgBeans;
 ''';
 
-const _guard = "if(!constbool.fromEnvironment('dart.vm.product'))";
+const _guard =
+    "if(!constbool.fromEnvironment('dart.vm.product')&&"
+    "!constbool.fromEnvironment('dart.vm.profile'))";
 
 // A bean the part makes.
 final class _ClockCreation extends PackageCreation {}
@@ -167,9 +169,9 @@ void _expectNever(String module) {
   }
 }
 
-// The part's code in debug and profile builds only: what can be under the
-// constant is, the declarations are not.
-void _expectNotInRelease(String module) {
+// The part's code in debug builds only: what can be under the constant
+// is, the declarations are not.
+void _expectDebugOnly(String module) {
   expect(
     module,
     contains(
@@ -221,10 +223,10 @@ void main() {
   });
 
   group('the key not set', () {
-    test('whenMissing notInRelease (the default): under the constant a '
-        'release build compiles away', () async {
+    test('whenMissing debugOnly (the default): under the constant a '
+        'profile or a release build compiles away', () async {
       final (module, _) = await _module(_key);
-      _expectNotInRelease(module);
+      _expectDebugOnly(module);
     });
 
     test('whenMissing always: in every build', () async {
@@ -266,7 +268,7 @@ void main() {
 
     test('neither true nor false: warned about, decided as not set', () async {
       final (module, logs) = await _module(_key, files: _yaml('maybe'));
-      _expectNotInRelease(module);
+      _expectDebugOnly(module);
       expect(
         logs,
         contains(
@@ -276,6 +278,44 @@ void main() {
           ),
         ),
       );
+    });
+  });
+
+  group('parents: in the build only as far as each lets it in', () {
+    const child = PackageBuild(
+      'clock.ticks.enabled',
+      parents: [PackageBuild('clock.enabled')],
+    );
+
+    test('the parent false: no code, the own key true or not', () async {
+      for (final ticks in ['', '  ticks:\n    enabled: true\n']) {
+        final (module, _) = await _module(
+          child,
+          files: {'application.yml': 'clock:\n  enabled: false\n$ticks'},
+        );
+        _expectNever(module);
+      }
+    });
+
+    test('both true: in every build', () async {
+      final (module, _) = await _module(
+        child,
+        files: {
+          'application.yml':
+              'clock:\n  enabled: true\n  ticks:\n'
+              '    enabled: true\n',
+        },
+      );
+      _expectAlways(module);
+    });
+
+    test('the parent not set, the own key true: the narrowest, debug '
+        'builds only', () async {
+      final (module, _) = await _module(
+        child,
+        files: {'application.yml': 'clock:\n  ticks:\n    enabled: true\n'},
+      );
+      _expectDebugOnly(module);
     });
   });
 }

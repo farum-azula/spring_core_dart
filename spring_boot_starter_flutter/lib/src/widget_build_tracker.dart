@@ -23,6 +23,31 @@ abstract interface class WidgetBuildTracker {
   WidgetBuildTracking attach(VoidCallback rebuild);
 }
 
+/// A [WidgetBuildTracker] that is also told which widget it tracks: the
+/// Spring widgets call [attachTo] with the widget's element in place of
+/// [attach], so a debug tool can name the widget (`ReviewTile #3`). A
+/// tracker that only implements [WidgetBuildTracker] keeps working: it
+/// is called through [attach] as before.
+///
+/// ```dart
+/// final class StoreTracker implements WidgetAwareBuildTracker {
+///   @override
+///   WidgetBuildTracking attach(VoidCallback rebuild) => _Tracking(rebuild);
+///
+///   @override
+///   WidgetBuildTracking attachTo(VoidCallback rebuild, BuildContext context) =>
+///       _Tracking(rebuild, context.widget.runtimeType);
+/// }
+/// ```
+///
+/// Spring has no counterpart.
+abstract interface class WidgetAwareBuildTracker implements WidgetBuildTracker {
+  /// The tracking of the widget of the element [context]; [rebuild] asks
+  /// that widget to build again. Keep only what is needed of [context]:
+  /// the tracking lives as long as the element.
+  WidgetBuildTracking attachTo(VoidCallback rebuild, BuildContext context);
+}
+
 /// What a [WidgetBuildTracker] keeps for one widget.
 abstract interface class WidgetBuildTracking {
   /// Runs [build] and notes what it read; from then on a change of any of
@@ -36,24 +61,35 @@ abstract interface class WidgetBuildTracking {
 /// The trackings of one widget: one per [WidgetBuildTracker] bean of the
 /// application, made when the widget first builds.
 final class WidgetBuildTrackings {
-  /// The trackings that ask for a build with [rebuild].
-  WidgetBuildTrackings(this.rebuild);
+  /// The trackings that ask for a build with [rebuild], of the widget of
+  /// the element [context] when given (told to a
+  /// [WidgetAwareBuildTracker]).
+  WidgetBuildTrackings(this.rebuild, [this.context]);
 
   /// Asks the widget to build again.
   final VoidCallback rebuild;
 
-  ApplicationContext? _context;
+  /// The element of the widget tracked.
+  final BuildContext? context;
+
+  ApplicationContext? _applicationContext;
   List<WidgetBuildTracking> _trackings = const [];
 
-  /// Runs [build] through the trackers of [context].
-  T track<T>(ApplicationContext context, T Function() build) {
-    if (!identical(context, _context)) {
+  /// Runs [build] through the trackers of [applicationContext].
+  T track<T>(ApplicationContext applicationContext, T Function() build) {
+    if (!identical(applicationContext, _applicationContext)) {
       dispose();
-      _context = context;
+      _applicationContext = applicationContext;
+      final context = this.context;
       _trackings = [
         for (final tracker
-            in context.getBeanProvider<WidgetBuildTracker>().orderedList())
-          tracker.attach(rebuild),
+            in applicationContext
+                .getBeanProvider<WidgetBuildTracker>()
+                .orderedList())
+          if (context != null && tracker is WidgetAwareBuildTracker)
+            tracker.attachTo(rebuild, context)
+          else
+            tracker.attach(rebuild),
       ];
     }
     var tracked = build;
@@ -70,6 +106,6 @@ final class WidgetBuildTrackings {
       tracking.dispose();
     }
     _trackings = const [];
-    _context = null;
+    _applicationContext = null;
   }
 }

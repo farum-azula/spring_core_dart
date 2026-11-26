@@ -129,7 +129,9 @@ final class _CharacterKeys implements ShortcutKeys {
 /// `escape`, `space`, `tab`, `backspace`, `delete`, `home`, `end`,
 /// `page-up`, `page-down`, `up`, `down`, `left`, `right`, `slash`,
 /// `backslash`, `comma`, `period`, `semicolon`, `quote`, `minus`,
-/// `equal`, `bracket-left`, `bracket-right` and `backquote`.
+/// `equal`, `bracket-left`, `bracket-right`, `backquote` and `section`
+/// (`§`, left of `1` on an ISO keyboard of a Mac). A key alone, with no
+/// modifier, is the text's while a text field has the focus.
 final class KeyCombinationNotation implements ShortcutNotation {
   /// The notation of key combinations.
   const KeyCombinationNotation();
@@ -182,6 +184,35 @@ final class KeyCombinationNotation implements ShortcutNotation {
     'bracket-left': (LogicalKeyboardKey.bracketLeft, '[', '['),
     'bracket-right': (LogicalKeyboardKey.bracketRight, ']', ']'),
     'backquote': (LogicalKeyboardKey.backquote, '`', '`'),
+    'section': (LogicalKeyboardKey(0xa7), '§', '§'),
+  };
+
+  // Shift changes what a digit or a sign types (`⇧\`` is `~`, `⇧1` is
+  // `!`), and the layout changes it too: these keys are matched where
+  // they lie on the keyboard.
+  static const Map<String, PhysicalKeyboardKey> _placed = {
+    '0': PhysicalKeyboardKey.digit0,
+    '1': PhysicalKeyboardKey.digit1,
+    '2': PhysicalKeyboardKey.digit2,
+    '3': PhysicalKeyboardKey.digit3,
+    '4': PhysicalKeyboardKey.digit4,
+    '5': PhysicalKeyboardKey.digit5,
+    '6': PhysicalKeyboardKey.digit6,
+    '7': PhysicalKeyboardKey.digit7,
+    '8': PhysicalKeyboardKey.digit8,
+    '9': PhysicalKeyboardKey.digit9,
+    'slash': PhysicalKeyboardKey.slash,
+    'backslash': PhysicalKeyboardKey.backslash,
+    'comma': PhysicalKeyboardKey.comma,
+    'period': PhysicalKeyboardKey.period,
+    'semicolon': PhysicalKeyboardKey.semicolon,
+    'quote': PhysicalKeyboardKey.quote,
+    'minus': PhysicalKeyboardKey.minus,
+    'equal': PhysicalKeyboardKey.equal,
+    'bracket-left': PhysicalKeyboardKey.bracketLeft,
+    'bracket-right': PhysicalKeyboardKey.bracketRight,
+    'backquote': PhysicalKeyboardKey.backquote,
+    'section': PhysicalKeyboardKey.intlBackslash,
   };
 
   static final _plain = RegExp(r'^([a-z0-9]|f[0-9]+)$');
@@ -217,7 +248,7 @@ final class KeyCombinationNotation implements ShortcutNotation {
         '${_keys.keys.where((k) => !_plain.hasMatch(k)).join(', ')}',
       );
     }
-    return _Combination(key, modifiers);
+    return _Combination(key, modifiers, _placed[name]);
   }
 }
 
@@ -234,19 +265,23 @@ enum _Modifier {
 }
 
 final class _Combination implements ShortcutKeys {
-  const _Combination(this.key, this.modifiers);
+  const _Combination(this.key, this.modifiers, this.place);
 
   final (LogicalKeyboardKey, String, String) key;
   final Set<_Modifier> modifiers;
+  final PhysicalKeyboardKey? place;
 
   @override
-  ShortcutActivator get activator => SingleActivator(
-    key.$1,
-    control: modifiers.contains(_Modifier.control),
-    alt: modifiers.contains(_Modifier.alt),
-    shift: modifiers.contains(_Modifier.shift),
-    meta: modifiers.contains(_Modifier.meta),
-  );
+  ShortcutActivator get activator => switch (place) {
+    final place? => _PlacedActivator(place, modifiers),
+    null => SingleActivator(
+      key.$1,
+      control: modifiers.contains(_Modifier.control),
+      alt: modifiers.contains(_Modifier.alt),
+      shift: modifiers.contains(_Modifier.shift),
+      meta: modifiers.contains(_Modifier.meta),
+    ),
+  };
 
   @override
   String label(TargetPlatform platform) {
@@ -258,4 +293,51 @@ final class _Combination implements ShortcutKeys {
         ? [for (final m in ordered) m.apple, key.$2].join()
         : [for (final m in ordered) m.other, key.$3].join('+');
   }
+}
+
+/// A key matched where it lies on the keyboard, with exactly [modifiers]
+/// held: what it types may change with Shift and the layout.
+final class _PlacedActivator extends ShortcutActivator {
+  const _PlacedActivator(this.place, this.modifiers);
+
+  final PhysicalKeyboardKey place;
+  final Set<_Modifier> modifiers;
+
+  @override
+  Iterable<LogicalKeyboardKey>? get triggers => null;
+
+  @override
+  bool accepts(KeyEvent event, HardwareKeyboard state) =>
+      (modifiers.isNotEmpty || !_typing()) && _pressed(event, state);
+
+  bool _pressed(KeyEvent event, HardwareKeyboard state) =>
+      event is! KeyUpEvent &&
+      event.physicalKey == place &&
+      state.isControlPressed == modifiers.contains(_Modifier.control) &&
+      state.isAltPressed == modifiers.contains(_Modifier.alt) &&
+      state.isShiftPressed == modifiers.contains(_Modifier.shift) &&
+      state.isMetaPressed == modifiers.contains(_Modifier.meta);
+
+  @override
+  String debugDescribeKeys() =>
+      [for (final m in modifiers) m.name, place.debugName].join('+');
+}
+
+/// Whether [activator] takes [event] even while a text field has the
+/// focus: a key alone is the text's then ([ShortcutActivator.accepts]
+/// says no), but a field of the tool the shortcut opens, such as the debug
+/// console's input, closes it with the same key.
+bool acceptsWhileTyping(
+  ShortcutActivator activator,
+  KeyEvent event,
+  HardwareKeyboard state,
+) => activator is _PlacedActivator
+    ? activator._pressed(event, state)
+    : activator.accepts(event, state);
+
+bool _typing() {
+  final context = FocusManager.instance.primaryFocus?.context;
+  return context != null &&
+      (context.widget is EditableText ||
+          context.findAncestorWidgetOfExactType<EditableText>() != null);
 }

@@ -2,10 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_dart/spring_boot_dart.dart' show Ordered;
+import 'package:spring_boot_starter_flutter/src/debug/debug_layout.dart';
+import 'package:spring_boot_starter_flutter/src/debug/debug_markers.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_panel.dart';
 import 'package:spring_boot_starter_flutter/src/debug/debug_style.dart';
 import 'package:spring_boot_starter_flutter/src/debug/overlay/debug_overlay.dart';
-import 'package:spring_boot_starter_flutter/src/frame_meter/frame_meter.dart';
 import 'package:spring_boot_starter_flutter/src/spring_app.dart';
 
 /// The settings of the `debugDock` (`spring.flutter.debug.overlays.*`).
@@ -112,7 +113,7 @@ class DebugDock extends StatelessWidget {
       if (shown.isEmpty) {
         return app!;
       }
-      final byCorner = <DebugOverlayCorner, List<DebugOverlay>>{};
+      final byCorner = <DebugCorner, List<DebugOverlay>>{};
       final free = <(DebugOverlay, Offset)>[];
       for (final overlay in shown) {
         if (placement?.freeOf(overlay) case final at?) {
@@ -128,6 +129,7 @@ class DebugDock extends StatelessWidget {
         children: [
           app!,
           Positioned.fill(
+            key: const DebugToolSubtree(),
             child: SafeArea(
               child: Padding(
                 padding: settings.margin.add(const EdgeInsets.all(8)),
@@ -160,16 +162,13 @@ class DebugDock extends StatelessWidget {
   }
 
   Widget _corner(
-    DebugOverlayCorner corner,
+    DebugCorner corner,
     List<DebugOverlay> list,
     BoxConstraints room,
   ) {
-    final top =
-        corner == FrameMeterPosition.topLeft ||
-        corner == FrameMeterPosition.topRight;
+    final top = corner == DebugCorner.topLeft || corner == DebugCorner.topRight;
     final left =
-        corner == FrameMeterPosition.topLeft ||
-        corner == FrameMeterPosition.bottomLeft;
+        corner == DebugCorner.topLeft || corner == DebugCorner.bottomLeft;
     const gap = 8.0;
     final height =
         list.fold(0.0, (sum, o) => sum + o.size.height) +
@@ -254,10 +253,16 @@ class _PagesState extends State<_Pages> {
     setState(() => _shown = widget.overlays[(_index + by) % count].id);
   }
 
+  // A turn over an overlay that scrolls itself (the logs) is its own: the
+  // resolver gives it to the innermost.
   void _wheel(PointerSignalEvent event) {
-    if (event is! PointerScrollEvent) {
-      return;
+    if (event is PointerScrollEvent) {
+      GestureBinding.instance.pointerSignalResolver.register(event, _turn);
     }
+  }
+
+  void _turn(PointerSignalEvent signal) {
+    final event = signal as PointerScrollEvent;
     final now = DateTime.now();
     // One turn of a wheel or a trackpad's swipe is many events: one page.
     if (now.difference(_turned) < const Duration(milliseconds: 400)) {

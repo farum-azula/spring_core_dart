@@ -137,7 +137,9 @@ final class MethodSecurityPointcut implements AnnotationPointcut {
 final class MethodSecurityInterceptor implements MethodInterceptor {
   /// An interceptor evaluating expressions with [expressionHandler] and
   /// reading the user from [holderStrategy].
-  MethodSecurityInterceptor(this.expressionHandler, {this.holderStrategy});
+  MethodSecurityInterceptor(this.expressionHandler, {this.holderStrategy}) {
+    CallerContexts.register(const SecurityCallerContext());
+  }
 
   /// Parses and evaluates the expressions of the annotations.
   final MethodSecurityExpressionHandler expressionHandler;
@@ -184,7 +186,9 @@ final class MethodSecurityInterceptor implements MethodInterceptor {
       try {
         return _invoke(invocation, attributes);
       } on Object catch (error, stackTrace) {
-        return Future<Object?>.error(error, stackTrace);
+        final refused = Future<Object?>.error(error, stackTrace);
+        DerivedFutures.refused(refused, error, stackTrace);
+        return refused;
       }
     }
     return _invoke(invocation, attributes);
@@ -194,6 +198,8 @@ final class MethodSecurityInterceptor implements MethodInterceptor {
     MethodInvocation invocation,
     MethodSecurityAttributes attributes,
   ) {
+    // What this call lets through depends on who asks.
+    CallerBoundReads.note(SecurityCallerSource(holderStrategy));
     final authentication = _authentication;
     // Like Spring: no authentication fails every secured call with a 401
     // before any expression runs.
@@ -237,7 +243,14 @@ final class MethodSecurityInterceptor implements MethodInterceptor {
     Object? after(Object? value) {
       var current = value;
       if (postFilter != null) {
-        current = _filter(postFilter.value, current, root, signature, args);
+        current = _filter(
+          postFilter.value,
+          current,
+          root,
+          signature,
+          args,
+          signature.resultMapTypes,
+        );
       }
       if (post != null) {
         root.returnObject = current;
@@ -253,7 +266,10 @@ final class MethodSecurityInterceptor implements MethodInterceptor {
 
     if (invocation is AsyncMethodInvocation && result is Future) {
       // A new future with the checked (and filtered) value.
-      return (result as Future<Object?>).then(after);
+      final source = result as Future<Object?>;
+      final checked = source.then(after);
+      DerivedFutures.link(checked, source, transform: after);
+      return checked;
     }
     return after(result);
   }
@@ -319,16 +335,32 @@ final class MethodSecurityInterceptor implements MethodInterceptor {
     return [
       for (var i = 0; i < args.length; i++)
         if (i == index)
-          _filter(filter.value, args[i], root, signature, args)
+          _filter(
+            filter.value,
+            args[i],
+            root,
+            signature,
+            args,
+            i < signature.parameterMapTypes.length
+                ? signature.parameterMapTypes[i]
+                : null,
+          )
         else
           args[i],
     ];
   }
 
+  // A typed copy when the build gave the map's types: the map itself may
+  // be a value someone keeps. In place only without them (a hand-written
+  // signature), as Spring filters a Map.
   static Map<Object?, Object?> _filterMap(
     Map<Object?, Object?> map,
     bool Function(Object?) keep,
+    MapTypes<Object?, Object?>? types,
   ) {
+    if (types != null) {
+      return types.copyWhere(map, keep);
+    }
     try {
       map.removeWhere((key, value) => !keep(MapEntry(key, value)));
     } on UnsupportedError {
@@ -337,14 +369,15 @@ final class MethodSecurityInterceptor implements MethodInterceptor {
     return map;
   }
 
-  // A filtered copy of a List or Set (with its element type), the Map
-  // itself filtered; null stays null.
+  // A filtered copy of a List or Set (with its element type) or of a Map
+  // whose types are known; null stays null.
   Object? _filter(
     String expression,
     Object? collection,
     MethodSecurityExpressionRoot root,
     MethodSignature signature,
     List<Object?> args,
+    MapTypes<Object?, Object?>? mapTypes,
   ) {
     if (collection == null) {
       return null;
@@ -363,8 +396,7 @@ final class MethodSecurityInterceptor implements MethodInterceptor {
       return switch (collection) {
         final List<Object?> list => list.where(keep).toList(),
         final Set<Object?> set => set.where(keep).toSet(),
-        // In place, like Spring (a copy would lose the map's types).
-        final Map<Object?, Object?> map => _filterMap(map, keep),
+        final Map<Object?, Object?> map => _filterMap(map, keep, mapTypes),
         _ => throw ArgumentError(
           'Can only filter a List, Set or Map, not ${collection.runtimeType}',
         ),

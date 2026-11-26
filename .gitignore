@@ -35,3 +35,6 @@ example/supabase/supabase/functions/api/
 spring_boot_starter_supabase/test/stack/supabase/functions/api/
 spring_boot_starter_supabase/test/stack/supabase/functions/edge-test/
 spring_boot_starter_supabase/test/stack/supabase/functions/edge-test-wasm/
+
+# Local path overrides of the checks package (CI copies the template).
+tool/signals_checks/pubspec_overrides.yaml
