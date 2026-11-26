@@ -15,7 +15,8 @@ import 'package:spring_boot_starter_flutter/src/text/selection_controls.dart';
 import 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
 
 /// The logs: the records of the logging system's buffer (`logBuffer`),
-/// newest first, live, scrolling, each coloured as the console colours it
+/// oldest first with the newest at the bottom, live, scrolling, each
+/// coloured as the console colours it
 /// ([debugLogSpan]), filtered by level and text. The filter is the
 /// `debugLogFilter` bean: kept while the panel is closed, and the one the
 /// debug console shows by.

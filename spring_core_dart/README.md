@@ -2222,6 +2222,24 @@ most applications never write them.
   `registerSingleton`.
 - `@Configurable` with `autowireBean`: inject beans into objects created
   elsewhere, such as a Flutter `State`.
+- `@AccessHook()` on an annotation class: a bean with a member carrying
+  that annotation is made as a generated subclass that overrides the
+  member (in Dart a field is an implicit getter and setter, so the bean's
+  own code reaches the override too). Advice on such a bean is an ordinary
+  proxy around it. Only the signals starter's annotations (`@Signal`,
+  `@Computed`, `@Effect`, `@OnWatched`, `@OnUnwatched`) are supported: any
+  other annotation marked with it fails the build.
+- `TransactionLifecycleRegistry`: how a package that must not depend on the
+  data starter hears a transaction begin, commit, and roll back (or end
+  with an unknown outcome, `afterRollbackOrUnknown`); the data starter
+  registers the bean `transactionLifecycleRegistry`.
+- `CallerContexts`: captures the caller of the moment (its security
+  context and the like) to run code later as that caller, as the signals
+  starter runs a later `@Effect` as the user its bean was made for.
+- `ErrorHandler` and `TypedErrorHandler<E>`: receive the errors of work
+  that has no caller to throw them to (a scheduled task, a re-run effect),
+  as in Spring; each component that takes one says how it picks it. There
+  is no application-wide channel of errors.
 
 ```dart
 // Logs every bean the container creates.

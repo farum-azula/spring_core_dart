@@ -2151,12 +2151,6 @@ spring:
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `spring.flutter.frame-meter.enabled` | `true` / `false` | `false` | Shows the frame meter over the app (`FrameMeter`, put there by `SpringApp`) |
-| `spring.flutter.resources.cache.enabled` | `true` / `false` | `true` | Whether an `http:` or `https:` resource of the `ResourceLoader` (a `Resource` of `@Value`, `ResourceView`, `ResourceImage`) is downloaded once and kept in the files' `cache` place (`spring/resources/<sha256 of the address>/`, `data` and `meta.json`) |
-| `spring.flutter.resources.cache.max-age` | duration | `7d` | How long a kept resource is used as it is; past it, it is still used and asked again in the background with `If-None-Match` / `If-Modified-Since` (an unchanged one costs no download) |
-| `spring.flutter.resources.cache.max-entry-size` | data size | `50MB` | The largest resource kept; a larger one is read from the network every time |
-| `spring.flutter.resources.cache.max-size` | data size (`200MB`) | none (the system's) | The most bytes the kept resources take together; past it the least recently used go first. Only their folder counts (`spring/resources/`): the `@Cacheable` caches on disk (`spring.cache.type: disk`, `spring/caches/`) keep to limits of their own |
-| `spring.flutter.resources.cache.locations[n].pattern` / `.max-age` / `.enabled` | address pattern (`**` any path, `*` one segment), duration, `true` / `false` | none | Rules by address, the first that matches wins: an age of their own, or `enabled: false` not to keep them |
-| `spring.flutter.resources.view.fade` | duration | `200ms` | How long a `ResourceView` fades its resource in over its placeholder; none when the system asks for less motion |
 | `spring.flutter.frame-meter.position` | `top-left` / `top-right` / `bottom-left` / `bottom-right` | `top-right` | The corner of the screen it shows in, inside the safe area |
 | `spring.flutter.frame-meter.target-rate` | number | `60` | The frames a second the screen is meant to show: a frame within `1 / target-rate` is good, up to twice that a warning, more a drop |
 
@@ -2175,6 +2169,17 @@ spring:
         bad: $colors.error
         text-style: label-small
 ```
+
+The resources the `ResourceLoader` downloads (`http:` and `https:`), kept on the disk, and how a `ResourceView` shows them:
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.flutter.resources.cache.enabled` | `true` / `false` | `true` | Whether an `http:` or `https:` resource of the `ResourceLoader` (a `Resource` of `@Value`, `ResourceView`, `ResourceImage`) is downloaded once and kept in the files' `cache` place (`spring/resources/<sha256 of the address>/`, `data` and `meta.json`) |
+| `spring.flutter.resources.cache.max-age` | duration | `7d` | How long a kept resource is used as it is; past it, it is still used and asked again in the background with `If-None-Match` / `If-Modified-Since` (an unchanged one costs no download) |
+| `spring.flutter.resources.cache.max-entry-size` | data size | `50MB` | The largest resource kept; a larger one is read from the network every time |
+| `spring.flutter.resources.cache.max-size` | data size (`200MB`) | none (the system's) | The most bytes the kept resources take together; past it the least recently used go first. Only their folder counts (`spring/resources/`): the `@Cacheable` caches on disk (`spring.cache.type: disk`, `spring/caches/`) keep to limits of their own |
+| `spring.flutter.resources.cache.locations[n].pattern` / `.max-age` / `.enabled` | address pattern (`**` any path, `*` one segment), duration, `true` / `false` | none | Rules by address, the first that matches wins: an age of their own, or `enabled: false` not to keep them |
+| `spring.flutter.resources.view.fade` | duration | `200ms` | How long a `ResourceView` fades its resource in over its placeholder; none when the system asks for less motion |
 
 The window of a desktop app (macOS, Windows, Linux) has keys of its own.
 They carry `desktop` in their name because only desktop apps read them: a
@@ -3687,7 +3692,7 @@ spring:
 | `spring.flutter.debug.graph.hot.window` | duration | `5s` | The window those rebuilds are counted in, and a widget's rebuild count in its card |
 
 The panel lists its sections in a menu. On a screen at least 600 logical
-pixels wide (the console's phone width, `DebugConsoleView.phoneWidth`) the
+pixels wide (the console's phone width, `DebugLayout.phoneWidth`) the
 menu is a side menu on the left, always open, with the section shown in
 the debug theme's accent and its content to the right; with the menu
 focused (after a tap), the up and down arrows move the selection. On a
@@ -3701,18 +3706,19 @@ order of their first section:
 | Group | Sections |
 |---|---|
 | Logs & state | Logs; Signals (signals starter) |
+| Network | Network (with `spring.flutter.debug.network.enabled: true`) |
 | Performance | Frames, Motion, Timeline, Isolates |
 | App | Configuration, Beans, Graph, Start; Scenes (scene starter) |
-| Tools | Overlays, Theme, Flutter |
+| Tools | Theme, Overlays, Console, Flutter |
 
 The sections:
 
 | Section | What it shows |
 |---|---|
-| Logs | The records of the logging system's buffer (`logBuffer`), newest first and live, scrolling, each colored as the console colors it (the time and `:` faint, the level green, yellow or red, the logger cyan), by level and text (the `debugLogFilter` bean, kept while the panel is closed and shared with the debug console). The text selects and copies; records are picked whole, copied and [exported](#the-log-export) |
+| Logs | The records of the logging system's buffer (`logBuffer`), oldest first with the newest at the bottom, live, scrolling, each colored as the console colors it (the time and `:` faint, the level green, yellow or red, the logger cyan), by level and text (the `debugLogFilter` bean, kept while the panel is closed and shared with the debug console). The text selects and copies; records are picked whole, copied and [exported](#the-log-export) |
 | Frames | The [frame meter](#the-app-widget) live with the times of build and raster, on or off over the app (compact there: one line, `60 (120 3D)`, over the strip of bars), and its corner, without a new build (the `debugFrameMeter` bean; "not in this build" when the module is left out) |
 | Motion | Every animation of the app on or off (the `debugMotion` bean; "not in this build" when the module is left out) |
-| Configuration | The active profiles and every property with the source that sets it; values of keys that name a secret (`password`, `secret`, `token`, `key`, `credential`) show as `******` |
+| Configuration | The active profiles and every property with the source that sets it; values of keys that look secret by the family's rule (`SecretNames`: `password`, `pwd`, `passwd`, `passphrase`, `secret`, `token`, `credential` and the like, no longer a plain `key`) show as `******`, and so do the password and the secret query parameters of a URL value |
 | Beans | Every bean of the context with its type |
 | Graph | [The application graph](#the-application-graph): every layer the build has (the signals starter's), one toolbar row (the layers' switches, the scope, Fit, `Options ▾`, `Groups ▾`, `Legend`), a card beside each node tapped; kept while the app runs; in the build only with a layer |
 | Theme | The app's themes and `system`; a tap shows one. Under them, in a row of their own, the [debug themes](#debug-themes); a tap draws the debug tools in another at once |
@@ -4362,13 +4368,15 @@ the labels are short and the pointer over a button tells its full name):
   the entries, so they never move while the pointer passes. The wheel
   over the legend scrolls only the legend, never the graph under it.
 
-A tap on a node opens its **card** beside it, a tap on another node
-another card (several may be open): one short line closed, its title and
-the first values its layer tells (`Basket · coupon  FIVE · 2 s ago ·
-3 changes · 1 write`); a tap opens it into labelled rows, wrapped, with
-the chips that fold a repeat back, collapse a branch or a lane; `×`
-closes it, `Close all cards` (Options) closes them all. A card follows
-its node as the graph pans and zooms.
+A tap on a node selects it and lights its chain; a **double tap** (a
+double click) opens its **card** beside it, open with its labelled rows,
+and closes it again; a double tap on another node opens another card
+(several may be open). A card's rows tell what its layer knows (`Basket ·
+coupon  'FIVE' · 2 s ago · 3 changes · 1 write`), wrapped, and a row may
+list nodes under it (`DebugGraphDetail.links`): a row whose node is on the
+graph selects it. `×` closes a card, `Close all cards` (Options) closes
+them all. A card follows its node as the graph pans and zooms. A lane
+folds by a tap on its title (`[-]` / `[+]`).
 
 **What a view keeps.** Its layers, scope, "Live only", the groups chosen,
 the lanes, branches and repeats folded or opened, where the graph is (pan

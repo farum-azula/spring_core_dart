@@ -21,8 +21,8 @@ abstract final class MainStartupChecksProperties {
   /// `@Transactional` and cache annotations checked when the beans are
   /// created, the explanations of a database that fails the start, the
   /// edge starter's warning list): `true` in every build, `false` in none.
-  /// Default: in debug builds, so a release build ships none
-  /// of their code and its mistakes fail at the first call. Read by the
-  /// generator.
+  /// Default: in debug builds only, so a profile or a release build ships
+  /// none of their code and its mistakes fail at the first call. Read by
+  /// the generator.
   bool? enabled;
 }

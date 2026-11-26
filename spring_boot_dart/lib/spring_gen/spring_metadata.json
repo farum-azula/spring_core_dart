@@ -345,7 +345,7 @@
     {
       "name": "spring.main.startup-checks.enabled",
       "type": "bool?",
-      "description": "Whether the starters' startup checks are in the build (the `@Transactional` and cache annotations checked when the beans are created, the explanations of a database that fails the start, the edge starter's warning list): `true` in every build, `false` in none. Default: in debug builds, so a release build ships none of their code and its mistakes fail at the first call. Read by the generator.",
+      "description": "Whether the starters' startup checks are in the build (the `@Transactional` and cache annotations checked when the beans are created, the explanations of a database that fails the start, the edge starter's warning list): `true` in every build, `false` in none. Default: in debug builds only, so a profile or a release build ships none of their code and its mistakes fail at the first call. Read by the generator.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_dart/src/build_properties.dart",

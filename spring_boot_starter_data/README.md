@@ -399,6 +399,13 @@ The transaction lives in a `Zone`: it follows `await`, and work started
 in it without `await` that outlives it fails instead of running outside
 it.
 
+Packages that must not depend on this starter hear its transactions
+through the bean `transactionLifecycleRegistry` (spring_core_dart's
+`TransactionLifecycleRegistry`): begin, commit, rollback or an unknown
+outcome (`afterRollbackOrUnknown`), savepoints included. The signals
+starter publishes the writes of a transaction on commit and drops them on
+rollback this way.
+
 ### Compared with Spring
 
 The transactions are checked against Spring itself, on PostgreSQL:

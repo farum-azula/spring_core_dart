@@ -1686,12 +1686,13 @@ and off with a tap, and reorders the header's segments by dragging them
 (a long press first on touch), live.
 
 The panes **pass the pointer through** to the app or **interact**, all of
-them, yours included, with nothing for a pane to do. Passing it through
-(the default), every tap, scroll, hover and drag over a pane reaches the
-app, under a background of `pass-through-opacity` (0.7 by default: the
-app seen, the panes read); only the header (with `Select` and the rest a
-pane adds) and the handles take one. Interacting, the panes work: the records scroll and
-select, the input line types, the graph pans. The toggle at the right of
+them, yours included, with nothing for a pane to do. Interacting (the
+default, `interaction: interact`), the panes work: the records scroll and
+select, the input line types, the graph pans. Passing it through, every
+tap, scroll, hover and drag over a pane reaches the app, under a
+background of `pass-through-opacity` (0.7 by default: the app seen, the
+panes read); only the header (with `Select` and the rest a pane adds) and
+the handles take one. The toggle at the right of
 the header (`Pass-through` / `Interact`, finger-sized) switches it; on a
 desktop ⌥ (Alt) held interacts while held. Starting the records'
 selection or focusing the input line switches to interacting, and it stays
