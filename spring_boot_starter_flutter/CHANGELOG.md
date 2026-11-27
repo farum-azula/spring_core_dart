@@ -1,3 +1,7 @@
+## Unreleased
+
+- The documentation says what 0.10.0 does: the Logs tab lists the oldest record first and the newest at the bottom (the dartdoc of `debugLogsSection`), and the console bean's dartdoc names the Console tab beside the Overlays tab.
+
 ## 0.10.0
 
 - **Debug builds only by default:** a debug tool whose build switch is not set (the panel, the frame meter, the motion switch, the Flutter tab, the task manager, the timeline, the graph and its layers, the log export) is in debug builds only; a profile build has it only with its switch `true`, so a profile measures the app without the tools. The console stays out of every build unless `spring.flutter.debug.console.enabled: true`, which puts it in every build, release included.

@@ -1,3 +1,7 @@
+## Unreleased
+
+- The documentation of `spring.main.startup-checks.enabled` (`MainStartupChecksProperties.enabled`) says what the 0.10.0 build does: not set, the startup checks are in debug builds only, so a profile or a release build ships none of their code.
+
 ## 0.10.0
 
 - **Breaking:** a module whose build switch is not set is in debug builds only (`BuildInclusion.debugOnly`, the new default of `whenMissing`): a profile build compiles it away too (`dart.vm.profile`), so a profile measures the app without the debug tools. `BuildInclusion.notInRelease` is gone.
