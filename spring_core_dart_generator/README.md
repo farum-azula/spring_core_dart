@@ -116,7 +116,7 @@ some of it (they are outputs of the main builder in `build.yaml`):
 | `<library>.spring.properties.dart` | the binding of the `@ConfigurationProperties` classes: the descriptions only their binder uses, in `$<module>PropertiesIntrospections` |
 | `<library>.spring.proxies.dart` | a part of the module's library: the AOP proxy classes and the lazy-resolution proxies |
 | `<library>.spring.debug.dart` | for a `@SpringBootApplication` only, a part of its library: what only debug builds use (below) |
-| `<library>.spring.env.dart` | for a `@SpringBootApplication` only, a part of its library: `_$dartDefines`, the constant map of the `--dart-define`s it may read (below) |
+| `<library>.spring.env.dart` | for a `@SpringBootApplication` only, a part of its library: `_$dartDefines`, the constant map of the `--dart-define` flags it may read (below) |
 
 The names follow the framework's convention for generated files,
 `<name>.spring.<kind>.dart`, as `theme.spring.keys.dart` and
@@ -127,13 +127,13 @@ an export or a `part` line for them, except the libraries that call
 Every file is formatted as `dart format` formats the files of its package:
 at the package's language version (the short style before 3.7) and with
 the `formatter:` options (`page_width`, `trailing_commas`) of the
-`analysis_options.yaml` nearest to it, its `include:`s followed. Running
+`analysis_options.yaml` nearest to it, and the files its `include:` names are followed too. Running
 `dart format` over a package changes no generated file. The comments,
 which `dart format` leaves as they are written, fit in the page too: a
 doc comment paragraph with a longer line is wrapped (a code span in
 backticks is never broken).
 
-**The `--dart-define`s: `<library>.spring.env.dart`.** A compiled program
+**The `--dart-define` flags: `<library>.spring.env.dart`.** A compiled program
 reads a `--dart-define` only through `String.fromEnvironment` with a
 literal key, so the build writes one for each property and environment
 variable the application may read (its `${...}` placeholders,
@@ -228,7 +228,7 @@ Into the `.spring.dart` file it writes:
   a `ProcedureMethod`; a `watch…By` method (`Stream<List<T>>`) and a `changes…By`
   method (`Stream<RowChange<T>>`) are derived like a find. What each method
   needs of its store (`@Lock`, `@Query`, `@Procedure`, a stream of changes,
-  `@Transactional`) is passed as `StoreRequirement`s, and checked by the
+  `@Transactional`) is passed as `StoreRequirement` instances, and checked by the
   build against the stores the dependencies describe
   (`@DataStoreDeclaration` in `lib/spring_auto_configuration.dart`) when it
   knows the repository's store (`@UseStore`, `spring.data.store`, a
@@ -238,6 +238,74 @@ Into the `.spring.dart` file it writes:
   `collectionsNeedJson` (the SQL store) a `Map`, a `Set`, or a `List` of
   anything but simple values in the entity, with neither `@Json` nor
   `@MappedCollection`, is one of those problems too, with the fix;
+- for `spring_boot_starter_restclient`, a class for each HTTP service
+  interface an `@ImportHttpServices` imports (on the application's
+  `main`, a bean class such as a `@Configuration()` class, whose
+  conditions the interfaces' beans and group take, or a `@ComponentScan`
+  variable):
+  each method is its `RestClient` call written out, from its exchange
+  annotation (`@GetExchange`, ..., and the interface's `@HttpExchange`
+  for the URL prefix and defaults) and its parameters' roles, with no
+  handler and no annotation read at run time. The bean (named after the
+  interface, `bookService`) is made on the client of its group,
+  `HttpServiceGroups.restClient('<group>')`, and gets a proxy as any
+  bean, so advice on the interface's methods (`@Retryable`) runs; each
+  group gets an `HttpServiceGroup` bean.
+
+  ```dart
+  // You write:
+  @HttpExchange('/books')
+  abstract interface class BookService {
+    @GetExchange('/{isbn}')
+    Future<Book> find(@PathVariable() String isbn);
+
+    @GetExchange()
+    Future<List<Book>> search(@RequestParam() String q, {@RequestParam() int? year});
+  }
+
+  @SpringBootApplication()
+  @ImportHttpServices(group: 'catalog', types: [BookService])
+  void main(List<String> args) => runApplication(args);
+
+  // It generates:
+  class _$BookServiceHttpService implements BookService {
+    _$BookServiceHttpService(this._rest);
+
+    final RestClient _rest;
+
+    @override
+    Future<Book> find(String isbn) => _rest
+        .get()
+        .uri(r'/books/{isbn}', {r'isbn': isbn})
+        .retrieve()
+        .body<Book>();
+
+    @override
+    Future<List<Book>> search(String q, {int? year}) => _rest
+        .get()
+        .uri(
+          (UriBuilder uri) => uri
+              .path(r'/books')
+              .queryParam(r'q', q)
+              .queryParamIfPresent(r'year', year)
+              .build(),
+        )
+        .retrieve()
+        .body<List<Book>>(const ListType<Book>(ClassType<Book>()));
+  }
+  ```
+
+  What Spring's `HttpServiceProxyFactory` refuses when the application
+  starts (or would send wrong) fails the build, each problem with its
+  fix: a `{variable}` no `@PathVariable` fills (with a did-you-mean) and
+  a `@PathVariable` with no `{variable}`, a parameter without a role, a
+  body on a `GET` or `HEAD`, two bodies, parts with a body or another
+  content type, a return type no call gives, a method without an exchange
+  annotation (or with a server's `@GetMapping`), a listed type that is
+  no abstract interface class, an interface in two groups or imported by
+  two classes under different conditions, `@ImportHttpServices` on a
+  class that is no bean, and, in an application, an interface with
+  calls that no `@ImportHttpServices` imports;
 - `@Aspect` advice metadata and the AOP proxy classes. Each proxy class
   and each of its members has a `///` comment with what the build found
   to run around it: the annotations an annotation-driven advisor matches
@@ -346,7 +414,7 @@ annotations and the list of properties are always written.
 | Part | What | Written when |
 |---|---|---|
 | getters | `IntrospectedProperty.get` | the class is written out: a controller's return type (also in `Future`, `Stream`, `ResponseEntity`, `Page`), an `@ExceptionHandler`'s answer, a WebSocket reply, a client's argument, the static type of a value given to `ObjectMapper.writeValueAsString`, `valueToTree` or `convertValue`, or to a WebSocket session's `sendJson` and the registry's `broadcast`; `@ConfigurationProperties` |
-| constructor and setters | `IntrospectedConstructor`, `instantiate`, `set`, `fromJson` | the class is read in: `@RequestBody` and `@RequestPart`, a controller's return type and an `@ExceptionHandler`'s answer (a test reads the answer back with `mapper.readValue<BookDto>(res.body)`, and `test/` is not scanned), a WebSocket message, a client's answer (Feign, `@WebSocketClient`), the type argument of `ObjectMapper.readValue<T>`, `treeToValue`, `readList`, `readMap` or `convertValue<T>`; `@ConfigurationProperties` |
+| constructor and setters | `IntrospectedConstructor`, `instantiate`, `set`, `fromJson` | the class is read in: `@RequestBody` and `@RequestPart`, a controller's return type and an `@ExceptionHandler`'s answer (a test reads the answer back with `mapper.readValue<BookDto>(res.body)`, and `test/` is not scanned), a WebSocket message, a client's answer (an HTTP service, `@WebSocketClient`), the type argument of `ObjectMapper.readValue<T>`, `treeToValue`, `readList`, `readMap` or `convertValue<T>`; `@ConfigurationProperties` |
 | the getters of constrained properties | `get` of the properties with a constraint, `@Valid()` or `@Each()` | the class is validated: `@RequestBody @Valid()` |
 | methods | `IntrospectedMethod` | a SpEL expression may call them: `@PreAuthorize`, `@PostAuthorize`, `@PreFilter`, `@PostFilter` and `@Cacheable`, `@CachePut`, `@CacheEvict` (keys and conditions) over the arguments or the result they name, a `@Query` with a `:#{...}` the build does not compile; also the methods a JSON annotation marks (`@JsonValue`, `@JsonAnyGetter` with the getters, `@JsonAnySetter` with the setters) |
 
@@ -953,7 +1021,8 @@ introspections, and checks them; it names no other package's part. What a
 package (a starter, or a library such as `spring_web_dart`) adds to a
 module's generation is its part, a `PackageGeneration` in
 `lib/src/<part>/` (`data/`, `flutter/`, `navigation/`, `signals/`,
-`web/`, `websocket/`, `scheduling/`, `security/`, `cache/`, `actuator/`;
+`web/`, `websocket/`, `scheduling/`, `security/`, `cache/`, `actuator/`,
+`restclient/`;
 `search/` and `test/` hold their builders' code). What `spring_core_dart`
 brings itself (the JSON Schemas of `spring.json.schemas`) is the core's.
 
@@ -988,12 +1057,14 @@ test/<part>/                generated output and every rejected declaration
   the builders ask them (the order of what they write and of the errors
   they report): the data starter's metadata, Flutter, navigation, the
   change notifier (Flutter), signals, web, WebSocket, scheduling,
-  security, cache, the actuator's and the data starter's module part.
+  security, cache, the actuator's, Supabase, the RestClient
+  starter's and the data starter's module part.
   The core's own part file (the JSON Schemas' classes) comes after the
   parts'.
-- **What a part does:** the Flutter, navigation and data parts write
-  code of their own (widget bindings, the `ScreenRoutes` bean,
-  repositories and entity introspections, the drivers' glue); the web,
+- **What a part does:** the Flutter, navigation, RestClient and data
+  parts write code of their own (widget bindings, the `ScreenRoutes`
+  bean, the HTTP service clients and their groups, repositories and
+  entity introspections, the drivers' glue); the web,
   WebSocket, scheduling, security, cache and signals parts write nothing
   and say what their annotations do with the values of a bean's methods
   (which classes the build describes, for what) or fail the build for

@@ -79,7 +79,7 @@ class Transient {
 /// list or a map of them, or plain `Map<String, Object?>` / `List` data.
 ///
 /// The value is written and read through the application's `ObjectMapper`
-/// (the one controllers and Feign clients use), so its settings and the
+/// (the one controllers and HTTP clients use), so its settings and the
 /// `@Json...` annotations of the classes apply; the build describes the
 /// classes of the property's type for it (as it does for a controller's
 /// body), with no `@Introspected` to add for the classes of the
@@ -344,7 +344,7 @@ class OnDelete {
   final OnDeleteAction action;
 }
 
-/// Marks a property whose values must be unique in its table (`NULL`s
+/// Marks a property whose values must be unique in its table (`NULL` values
 /// excepted: as in SQL, several rows may hold null).
 ///
 /// The schema the starter creates gets a `UNIQUE` constraint

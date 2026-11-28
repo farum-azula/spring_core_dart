@@ -13,7 +13,7 @@ import 'package:spring_boot_starter_oauth2_client/src/dpop/jwk_thumbprint.dart';
 /// the Secure Enclave or the Android Keystore, which sign without ever
 /// exporting it; elsewhere [SoftwareDPoPKey] keeps it in memory. Most
 /// applications never touch this type: the starter declares a `DPoPKey`
-/// bean, and the token clients, the user services and the Feign
+/// bean, and the token clients, the user services and the `RestClient`
 /// interceptor use it. Declare a bean of your own to use a key kept
 /// elsewhere (a hardware key, a key the app stored).
 ///
@@ -243,7 +243,7 @@ abstract final class ECDSA {
   /// The raw `R || S` of the DER ECDSA signature [der], [outputLength]
   /// bytes long (64 for ES256, 96 for ES384, 132 for ES512).
   ///
-  /// Strict: one `SEQUENCE` of two positive, minimally encoded `INTEGER`s
+  /// Strict: one `SEQUENCE` of two positive, minimally encoded `INTEGER` values
   /// that fit in half of [outputLength], nothing before or after. Throws a
   /// [FormatException] otherwise.
   static Uint8List transcodeSignatureToConcat(

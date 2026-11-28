@@ -50,7 +50,7 @@ void main() {
           // The primary manager is the single candidate.
           expect(context, hasSingleBean<TransactionTemplate>());
           final advisor = context.getBean<DefaultPointcutAdvisor>();
-          expect(advisor.order, Ordered.lowestPrecedence);
+          expect(advisor.order, AdvisorOrder.transaction);
         });
   });
 

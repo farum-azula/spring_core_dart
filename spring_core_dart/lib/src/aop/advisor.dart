@@ -348,8 +348,8 @@ final class AspectMetadata<A extends Object> {
   /// The advice methods, in declaration order.
   final List<AspectAdvice<A>> advice;
 
-  /// The aspect's named `@Pointcut`s, method name to expression. It also
-  /// holds the pointcuts of other classes the aspect refers to, under a
+  /// The aspect's named `@Pointcut` annotations, method name to expression. It
+  /// also holds the pointcuts of other classes the aspect refers to, under a
   /// qualified key (`'CommonPointcuts.inWeb'`).
   final Map<String, String> pointcuts;
 

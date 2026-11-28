@@ -111,14 +111,14 @@ HttpRequest _get(String url, {Duration? timeout, Duration? readTimeout}) =>
     );
 
 // An entry with these times, for the waterfall.
-HttpExchange _exchange(
+HttpCall _exchange(
   int id,
   DateTime started, {
   Duration? total,
   Duration? firstByte,
   bool failed = false,
 }) {
-  final exchange = HttpExchange(
+  final exchange = HttpCall(
     id: id,
     url: Uri.parse('https://api.neon.books/$id'),
     started: started,
@@ -131,10 +131,10 @@ HttpExchange _exchange(
     ..totalTime = total
     ..statusCode = failed ? null : (total == null ? null : 200)
     ..state = failed
-        ? HttpExchangeState.failed
+        ? HttpCallState.failed
         : total == null
-        ? HttpExchangeState.waiting
-        : HttpExchangeState.done;
+        ? HttpCallState.waiting
+        : HttpCallState.done;
   return exchange;
 }
 
@@ -165,7 +165,7 @@ void main() {
       final response = await transport.stream(
         _get('https://api.neon.books/events'),
       );
-      final exchange = journal.entries.single as HttpExchange;
+      final exchange = journal.entries.single as HttpCall;
       expect(exchange.headersTime, greaterThanOrEqualTo(_ms(25)));
       expect(exchange.firstByte, exchange.headersTime);
       final inFlight = exchange.phases(
@@ -194,7 +194,7 @@ void main() {
       expect(transport.resourceTiming, isNull, reason: 'not a browser');
 
       await transport.send(_get('https://api.neon.books/books'));
-      final exchange = journal.entries.single as HttpExchange;
+      final exchange = journal.entries.single as HttpCall;
       expect(exchange.headersTime, isNull);
       expect(exchange.firstByte, isNull);
       expect(exchange.phases(DateTime.now()), [
@@ -216,7 +216,7 @@ void main() {
       );
 
       await transport.send(_get('https://api.neon.books/books?page=2'));
-      final exchange = journal.entries.single as HttpExchange;
+      final exchange = journal.entries.single as HttpCall;
       final browser = exchange.resourceTiming!;
       expect(browser.restricted, isFalse);
       expect(browser.protocol, 'h2');
@@ -245,7 +245,7 @@ void main() {
       final response = await transport.stream(
         _get('https://api.neon.books/events'),
       );
-      final exchange = journal.entries.single as HttpExchange;
+      final exchange = journal.entries.single as HttpCall;
       expect(timings.asked, isEmpty, reason: 'not before the body is done');
       timings.entries['https://api.neon.books/events'] = const [_browserEntry];
       await response.body.drain<void>();
@@ -255,7 +255,7 @@ void main() {
 
       timings.asked.clear();
       await transport.send(_get('https://api.neon.books/later'));
-      final later = journal.entries.last as HttpExchange;
+      final later = journal.entries.last as HttpCall;
       expect(later.resourceTiming, isNull);
       timings.entries['https://api.neon.books/later'] = const [_browserEntry];
       await Future<void>.delayed(const Duration(milliseconds: 150));
@@ -317,7 +317,7 @@ void main() {
       );
       await Future<void>.delayed(const Duration(milliseconds: 150));
       expect(timings.asked, isEmpty);
-      final exchange = journal.entries.single as HttpExchange;
+      final exchange = journal.entries.single as HttpCall;
       expect(exchange.phases(DateTime.now()).single.name, 'Total');
     });
   });
@@ -512,7 +512,7 @@ void main() {
       final streamed = await recorded.stream(_get(url('/big')));
       final chunks = await streamed.body.toList();
       expect(chunks.expand((c) => c).toList(), big);
-      final exchanges = journal.entries.cast<HttpExchange>().toList();
+      final exchanges = journal.entries.cast<HttpCall>().toList();
       expect(exchanges.map((e) => e.responseSize), [big.length, 2, big.length]);
       expect(exchanges.last.headersTime, isNotNull);
       expect(exchanges.first.headersTime, isNull);
@@ -538,8 +538,8 @@ void main() {
       expect(through.isTimeout, isTrue);
       expect(through.isTimeout, plain.isTimeout);
       expect(through.message, plain.message);
-      final failed = journal.entries.single as HttpExchange;
-      expect(failed.state, HttpExchangeState.failed);
+      final failed = journal.entries.single as HttpCall;
+      expect(failed.state, HttpCallState.failed);
       expect(failed.timeout, isTrue);
 
       final streamedPlain = await bare.stream(timeout);

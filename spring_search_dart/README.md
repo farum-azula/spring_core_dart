@@ -108,7 +108,7 @@ Everything is a bean, asked in `@Order`:
 | Bean | What it does |
 |---|---|
 | `SearchDocumentSource` | Gives documents |
-| `SearchAnalyzer` | Cuts the text of a language into terms: a `SearchTokenizer` then `SearchTokenFilter`s. Name it in `spring.search.analyzers.<language>` |
+| `SearchAnalyzer` | Cuts the text of a language into terms: a `SearchTokenizer` then `SearchTokenFilter` instances. Name it in `spring.search.analyzers.<language>` |
 | `SearchRanker` | Changes the score of each hit, after the index |
 
 The filters that come with it: `WordPartsFilter` (camel-case parts),

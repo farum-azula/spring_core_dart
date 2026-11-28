@@ -138,6 +138,19 @@ final app = springBootTest(
 );
 ```
 
+Or, declared with annotations on a test class:
+
+```dart
+@SpringBootTest(properties: {'spring.task.scheduling.enabled': false})
+class ReportsTest {
+  @Autowired()
+  late Reports reports;
+
+  @Test()
+  Future<void> refresh() => reports.refreshCache();
+}
+```
+
 Cron expressions in detail, `TaskScheduler`, `@Async` listeners, error
 handling and the differences from Spring are in the package
 [README](https://pub.dev/packages/spring_boot_starter_scheduling).

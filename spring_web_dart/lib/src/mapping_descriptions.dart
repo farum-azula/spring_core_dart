@@ -21,8 +21,8 @@
 /// }
 /// ```
 ///
-/// Spring Boot (Java): the `MappingDescriptionProvider`s of the actuator's
-/// `MappingsEndpoint`.
+/// Spring Boot (Java): the `MappingDescriptionProvider` instances of the
+/// actuator's `MappingsEndpoint`.
 abstract interface class MappingDescriptions {
   /// The key of these mappings in the actuator's answer
   /// (`dispatcherHandlers`, `screens`).

@@ -9,12 +9,11 @@ import 'package:spring_web_dart/src/http_status.dart';
 /// status or the headers depend on what happened: `201 Created` with a
 /// `Location` header, `404 Not Found` when nothing was found, an `ETag`
 /// for caching. Build one with the shortcuts ([ResponseEntity.ok],
-/// [created], [notFound], [status], ...). In the other direction, a Feign
-/// client method declared to return `Future<ResponseEntity<Book>>` gives
-/// the caller the status and headers of the answer next to the decoded
-/// body. The client still throws a `FeignException` for an error status
-/// (unless the client dismisses 404s, which then come back as a 404
-/// entity without a body).
+/// [created], [notFound], [status], ...). In the other direction, an HTTP
+/// service method declared to return `Future<ResponseEntity<Book>>` (or a
+/// `RestClient` call's `toEntity`) gives the caller the status and headers
+/// of the answer next to the decoded body. The client still throws a
+/// `RestClientResponseException` for an error status.
 ///
 /// ```dart
 /// // A controller: 201 Created, with the address of the new book.
@@ -30,8 +29,8 @@ import 'package:spring_web_dart/src/http_status.dart';
 /// Future<ResponseEntity<Book>> find(@PathVariable() String isbn) async =>
 ///     ResponseEntity.ofNullable(await books.findOrNull(isbn));
 ///
-/// // A Feign client returning ResponseEntity<Book> for the same call:
-/// // the caller learns where the book was stored.
+/// // An HTTP service client returning ResponseEntity<Book> for the same
+/// // call: the caller learns where the book was stored.
 /// final response = await catalog.create(book);
 /// log.info(response.headers.location); // /books/978-0
 /// ```

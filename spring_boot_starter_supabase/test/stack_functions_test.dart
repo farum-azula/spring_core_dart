@@ -79,17 +79,17 @@ void main() {
         });
       });
 
-      test('an error status of a function is a FeignException with its '
-          'status and body', () async {
+      test('an error status of a function is a '
+          'RestClientResponseException with its status and body', () async {
         await ada.run(() async {
           await expectLater(
             ada.functions.stats('fail'),
             throwsA(
-              isA<FeignException>()
-                  .having((e) => e.status, 'status', 422)
+              isA<HttpClientErrorException>()
+                  .having((e) => e.statusCode.value, 'status', 422)
                   .having(
-                    (e) => e.responseBody,
-                    'responseBody',
+                    (e) => e.bodyText,
+                    'bodyText',
                     contains('no stats from fail'),
                   ),
             ),
@@ -97,7 +97,11 @@ void main() {
           await expectLater(
             ada.functions.report(0),
             throwsA(
-              isA<FeignException>().having((e) => e.status, 'status', 404),
+              isA<HttpClientErrorException>().having(
+                (e) => e.statusCode.value,
+                'status',
+                404,
+              ),
             ),
           );
         });
@@ -119,10 +123,10 @@ void main() {
       });
     });
 
-    // No Feign interface of the test application returns an EventStream
-    // or bytes (one would need the generator): the same client under it
-    // (SupabaseHttp, the key and the token of the caller) reads them, and
-    // test/stack/README.md has the interface for a check by hand.
+    // The functions of the stack that send events and a file are read
+    // through the client under the interfaces (SupabaseHttp, the key and
+    // the token of the caller); test/stack/README.md has the interface for
+    // a check by hand.
     group('through the gateway', () {
       test('server-sent events of a function arrive one by one', () async {
         await ada.run(() async {

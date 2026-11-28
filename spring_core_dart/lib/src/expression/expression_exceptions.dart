@@ -1,3 +1,5 @@
+import 'package:spring_core_dart/src/core/nested_exception.dart';
+
 /// The severity of a [SpelMessage]. Every message defined today is an
 /// [error]; the other kinds exist because Spring defines them.
 ///
@@ -828,7 +830,7 @@ abstract final class SpelLimits {
 ///   log.warn(ex.getMessage());
 /// }
 /// ```
-class ExpressionException implements Exception {
+class ExpressionException implements Exception, NestedException {
   /// Creates an exception with [simpleMessage], optionally pointing at
   /// [position] in [expressionString] and wrapping [cause].
   ExpressionException(
@@ -852,6 +854,7 @@ class ExpressionException implements Exception {
 
   /// The error that caused this one (a converter's or an accessor's), or
   /// `null`.
+  @override
   final Object? cause;
 
   /// The full message, with the expression and position; the same as
@@ -916,7 +919,7 @@ class EvaluationException extends ExpressionException {
 /// Thrown by `parseExpression`, before anything is evaluated, so parsing
 /// at startup finds bad expressions early. Template structure errors (an
 /// unclosed `#{`, an empty `#{}`, unbalanced brackets) are plain
-/// `ParseException`s; errors inside an expression are
+/// `ParseException` instances; errors inside an expression are
 /// [SpelParseException]s with a [SpelMessage].
 ///
 /// ```dart
@@ -1057,7 +1060,7 @@ class SpelEvaluationException extends EvaluationException {
 /// ```java
 /// throw new AccessException("Service is closed");
 /// ```
-class AccessException implements Exception {
+class AccessException implements Exception, NestedException {
   /// Creates an exception with [message], optionally wrapping [cause].
   AccessException(this.message, [this.cause]);
 
@@ -1065,6 +1068,7 @@ class AccessException implements Exception {
   final String message;
 
   /// The error that caused this one, or `null`.
+  @override
   final Object? cause;
 
   @override

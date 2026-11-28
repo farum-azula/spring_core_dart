@@ -5,7 +5,7 @@ import 'dart:convert';
 ///
 /// HTTP names the format of a body in the `Content-Type` header and the
 /// formats a client can read in `Accept`. Most code only needs the
-/// static constants, which are plain `String`s and so work in annotations
+/// static constants, which are plain `String` values and so work in annotations
 /// and headers: `produces: MediaType.applicationJson`. Parse a
 /// [MediaType] when a header's value must be examined: its [type] and
 /// [subtype], a parameter such as the [charset], or whether it matches
@@ -146,7 +146,7 @@ final class MediaType {
   static const applicationGraphqlResponse = 'application/graphql-response+json';
 
   /// `application/json`: JSON, the default body format of controllers and
-  /// Feign clients.
+  /// HTTP clients.
   static const applicationJson = 'application/json';
 
   /// `application/x-ndjson`: newline-delimited JSON.

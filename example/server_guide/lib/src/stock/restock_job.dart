@@ -5,7 +5,7 @@ import 'package:neon_books_server/src/stock/stock_service.dart';
 import 'package:neon_books_server/src/supplier/supplier_clients.dart';
 import 'package:neon_books_server/src/supplier/supplier_configured.dart';
 import 'package:neon_books_server/src/supplier/supplier_models.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
+import 'package:spring_boot_starter_restclient/spring_boot_starter_restclient.dart';
 import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.dart';
 
 @Component()
@@ -44,10 +44,17 @@ class RestockJob {
         } else {
           log.info('no delivery of ${book.isbn} (${delivery.statusCode})');
         }
-      } on FeignNotFound {
-        log.info('the supplier does not sell $book');
-      } on FeignException catch (error) {
-        log.warning('restocking $book failed: ${error.status}');
+      } on RestClientResponseException catch (error) {
+        if (error.statusCode == HttpStatus.notFound) {
+          log.info('the supplier does not sell $book');
+        } else {
+          log.warning('restocking $book failed: ${error.statusCode}');
+        }
+      } on ResourceAccessException catch (error) {
+        // After the retries of SupplierDeliveries.order: the next run
+        // tries again.
+        log.warning('the supplier is not reachable: ${error.message}');
+        return;
       }
     }
   }

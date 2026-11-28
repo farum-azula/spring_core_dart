@@ -219,8 +219,8 @@ final class ResourceTiming {
   final bool restricted;
 }
 
-/// Where an HTTP exchange is.
-enum HttpExchangeState {
+/// Where an HTTP call is.
+enum HttpCallState {
   /// Sent, no answer yet.
   waiting,
 
@@ -237,12 +237,13 @@ enum HttpExchangeState {
   failed,
 }
 
-/// An HTTP exchange of an `HttpTransport`: the request, then the
-/// response or the failure.
-final class HttpExchange extends NetworkEntry {
-  /// An exchange of [method] to [url], sent with [requestHeaders] and
+/// An HTTP call of an `HttpTransport`: the request, then the response or
+/// the failure. Named `HttpExchange` in 0.10.0; renamed so as not to
+/// clash with the `@HttpExchange` annotation of `spring_web_dart`.
+final class HttpCall extends NetworkEntry {
+  /// A call of [method] to [url], sent with [requestHeaders] and
   /// [requestSize] bytes of body, of which [requestBody] was kept.
-  HttpExchange({
+  HttpCall({
     required super.id,
     required super.url,
     required super.started,
@@ -269,7 +270,7 @@ final class HttpExchange extends NetworkEntry {
   final bool streamed;
 
   /// Where it is.
-  HttpExchangeState state = HttpExchangeState.waiting;
+  HttpCallState state = HttpCallState.waiting;
 
   /// The status code, once the headers have arrived.
   int? statusCode;
@@ -334,12 +335,12 @@ final class HttpExchange extends NetworkEntry {
   @override
   String get status => switch (statusCode) {
     final code? => '$code',
-    null => state == HttpExchangeState.failed ? 'ERR' : '…',
+    null => state == HttpCallState.failed ? 'ERR' : '…',
   };
 
   @override
   NetworkStatusClass get statusClass => switch (statusCode) {
-    _ when state == HttpExchangeState.failed && statusCode == null =>
+    _ when state == HttpCallState.failed && statusCode == null =>
       NetworkStatusClass.failed,
     final code? => NetworkStatusClass.ofCode(code),
     null => NetworkStatusClass.pending,
@@ -356,8 +357,7 @@ final class HttpExchange extends NetworkEntry {
 
   @override
   bool get isDone =>
-      state != HttpExchangeState.waiting &&
-      state != HttpExchangeState.receiving;
+      state != HttpCallState.waiting && state != HttpCallState.receiving;
 }
 
 /// Which way a WebSocket frame went.

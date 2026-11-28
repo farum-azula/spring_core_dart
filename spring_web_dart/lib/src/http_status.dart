@@ -5,7 +5,7 @@
 /// `StreamedHttpResponse`, so code reading a response can write
 /// `status.is4xxClientError` instead of comparing number ranges. It is an
 /// extension type over `int`: it costs nothing at runtime, compares with
-/// plain `int`s and passes wherever an `int` is expected. The standard
+/// plain `int` values and passes wherever an `int` is expected. The standard
 /// codes also have named constants in [HttpStatus]; a code without one
 /// (such as 599 from some proxy) is still an [HttpStatusCode].
 ///

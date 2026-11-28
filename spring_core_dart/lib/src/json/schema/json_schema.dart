@@ -31,7 +31,7 @@ import 'package:spring_core_dart/src/json/json_exception.dart';
 /// (with a scheme), `uri-reference`, `uuid`, `ipv4` and `ipv6`; other
 /// formats are ignored.
 ///
-/// A `$ref` is resolved against the base URI (the `$id`s around it): a
+/// A `$ref` is resolved against the base URI (the `$id` values around it): a
 /// fragment (`#/$defs/item`, `#anchor`) in the same document, another
 /// document through the [registry] by its absolute URI. A `$ref` that
 /// loops without reaching a value is reported, not followed forever.
@@ -52,7 +52,7 @@ import 'package:spring_core_dart/src/json/json_exception.dart';
 final class JsonSchema {
   /// The schema [document], with the URI [id] it is known by (its `$id`
   /// is resolved against it) and the [registry] that holds the documents
-  /// its `$ref`s point to.
+  /// its `$ref` keywords point to.
   JsonSchema(this.document, {Uri? id, this.registry})
     : _given = id == null ? null : _withoutFragment(id),
       id = _idOf(document, id),
@@ -96,8 +96,8 @@ final class JsonSchema {
   /// given), else that URI; `null` when it has neither.
   final Uri? id;
 
-  /// The documents other documents' `$ref`s are looked up in; `null` when
-  /// the schema refers only to itself.
+  /// The documents other documents' `$ref` keywords are looked up in; `null`
+  /// when the schema refers only to itself.
   final JsonSchemaRegistry? registry;
 
   final Uri? _given;

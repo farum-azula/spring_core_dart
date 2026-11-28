@@ -54,7 +54,8 @@ generator (after the split):
 
 | What | How | Generator |
 |---|---|---|
-| `@EdgeFunctions`, `@StorageBucket`, `@RealtimeChannel`, `@PhoenixChannel` | annotations marked `@InterfaceProxy`, handlers in the starters | none |
+| `@StorageBucket`, `@RealtimeChannel`, `@PhoenixChannel` | annotations marked `@InterfaceProxy`, handlers in the starters | none |
+| `@EdgeFunctions` | an `@HttpExchange` interface, imported with `@ImportHttpServices(group: EdgeFunctions.group, types: [...])`; its bean is direct `RestClient` calls on the group the starter points at the project | the HTTP service part; the Supabase part's placements, and a build error for an import into another group |
 | `StorageTemplate`, `SupabaseAuth`, `SupabaseCredentials` | beans | none |
 | The PostgREST store | a `DataStore`; derived queries reach it as `Criteria` at run time | none |
 | `@Procedure`, repository methods returning `Stream` | general data-starter features (database functions, watching changes), for any store that supports them | data part |
@@ -78,7 +79,7 @@ generator (after the split):
 
 - `spring_boot_starter_supabase`: depends on `spring_boot_dart`,
   `spring_web_dart`, `spring_boot_starter_data`, `spring_security_core`,
-  `spring_boot_starter_websocket`, `spring_boot_starter_feign`; not on the
+  `spring_boot_starter_websocket`, `spring_boot_starter_restclient`; not on the
   security starters (the server side is configured through their
   properties).
 - Properties (`spring.supabase.*`): `url`, `anon-key`,
@@ -204,7 +205,7 @@ changed.
   later.
 - Declared buckets (the owner, November 2026), on top of the template:
   an `@StorageBucket('avatars')` interface (an `@InterfaceProxy`
-  annotation of its own, not `@FeignClient`: a public URL is no request,
+  annotation of its own, not an HTTP service: a public URL is no request,
   a signed URL is completed from the answer, bodies are streams), its
   handler calling `StorageTemplate`. Methods with a path template filled
   from the parameters: `@Upload('{userId}/avatar.png', contentType:,
@@ -220,10 +221,11 @@ changed.
 
 ## 6. Edge Functions
 
-- `@EdgeFunctions()` interfaces with `@EdgeFunction('name', method:)`, on
-  the Feign machinery: `…/functions/v1`, the token from
-  `SupabaseCredentials`, JSON, `@RequestParam` / `@RequestBody`, Feign's
-  errors, an observation per call.
+- `@EdgeFunctions()` interfaces with `@EdgeFunction('name', method:)`,
+  HTTP service interfaces of the group `supabase-functions`: `…/functions/v1`,
+  the token from `SupabaseCredentials`, JSON, `@RequestParam` /
+  `@RequestBody`, `RestClient`'s errors, an observation per call. An
+  interface imported into another group fails the build.
 
 ## 7. Schemas
 
@@ -277,8 +279,8 @@ own (`.github/workflows/supabase.yml`), not in the main one.
   (`{parameter}` and `#{...}`), and again by `StorageTemplate`, which
   encodes the segments.
 - **`@EdgeFunction` names take `${property}` and `@PathVariable()`
-  parameters, not SpEL**: an `@EdgeFunctions` interface is a Feign client
-  (settings `spring.feign.client.config.supabase-functions.*`), and a
+  parameters, not SpEL**: an `@EdgeFunctions` interface is an HTTP service
+  interface (settings `spring.http.serviceclient.supabase-functions.*`), and a
   function's name is fixed where it is deployed.
 - **No `resource(bucket, path)`**: the core has no `WritableResource`, and
   `Resource.exists()` is synchronous, which a remote object cannot answer.

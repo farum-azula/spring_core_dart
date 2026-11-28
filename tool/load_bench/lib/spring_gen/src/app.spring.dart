@@ -109,9 +109,9 @@ class _$SecurityConfigConfiguration extends _i4.SecurityConfig {
 const _$knownAdvisors0 = {
   r'package:spring_boot_dart',
   r'package:spring_boot_starter_data',
-  r'package:spring_boot_starter_feign',
   r'package:spring_boot_starter_logging',
   r'package:spring_boot_starter_oauth2_client',
+  r'package:spring_boot_starter_restclient',
   r'package:spring_boot_starter_security',
   r'package:spring_boot_starter_web',
   r'package:spring_security_core',

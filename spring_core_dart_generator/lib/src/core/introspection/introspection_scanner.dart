@@ -64,7 +64,7 @@ const _configurationProperties = TypeChecker.fromUrl(
 /// what the application does with a class, so that the class is described
 /// for that use and no other (see [IntrospectionNeed]): a controller's
 /// result is written out as JSON, a `@RequestBody` read in, a method an
-/// expression calls invoked, a Feign client's answer read in, an entity's
+/// expression calls invoked, an HTTP client's answer read in, an entity's
 /// JSON column written and read. Introspection finds the `@Introspected`
 /// classes itself; the others ask through this interface, in
 /// `ModuleScan.introspection` for the parts.

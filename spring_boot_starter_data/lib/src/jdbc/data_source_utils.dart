@@ -11,7 +11,7 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_synchroniza
 
 /// The connection of a running transaction, bound in the transaction's
 /// scope with the [DataSource] as its key: every `JdbcTemplate` call of
-/// the transaction (across `await`s) finds it there.
+/// the transaction (across `await` expressions) finds it there.
 ///
 /// Spring (Java): `org.springframework.jdbc.datasource.ConnectionHolder`.
 final class ConnectionHolder {
@@ -146,8 +146,8 @@ final class ConnectionHolder {
 /// transaction of the data source, the transaction's connection; else one
 /// of the pool, given back when the operation ends.
 ///
-/// It is also where the data source's `JdbcSessionHook`s run for the work
-/// outside a transaction: [getConnection] prepares the pooled connection
+/// It is also where the data source's `JdbcSessionHook` instances run for the
+/// work outside a transaction: [getConnection] prepares the pooled connection
 /// it hands out (`beforeWork`) and [releaseConnection] cleans it
 /// (`afterWork`) before the pool has it back, so every statement of a
 /// `JdbcTemplate` runs between the two. [transactionBegun] is the hooks'

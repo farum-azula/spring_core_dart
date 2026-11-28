@@ -12,49 +12,27 @@
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 import 'package:supabase_example_app/src/profile/functions.dart' as _i1;
 
-Object? _$get0(_i1.Invite object) => object.email;
-_i1.Invite _$create1(List<Object?> positional, Map<Symbol, Object?> named) =>
-    _i1.Invite(email: (named[#email] as String));
-Object? _$get2(_i1.InviteResult object) => object.id;
-_i1.InviteResult _$create3(
+Object? _$get0(_i1.InviteResult object) => object.id;
+_i1.InviteResult _$create1(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.InviteResult(id: (named[#id] as String));
+Object? _$get2(_i1.Invite object) => object.email;
+_i1.Invite _$create3(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i1.Invite(email: (named[#email] as String));
 
 /// The descriptions of the classes the module `application` uses: its
 /// `@Introspected` classes, and those its beans read, write or call by
 /// name. The module hands them to the context; a unit test registers them
 /// without one (`Introspector.shared.registerAll(...)`).
 List<_i2.Introspection<Object>> get $applicationIntrospections => [
-  const _i2.Introspection<_i1.Invite>(
-    className: r'Invite',
-    properties: [
-      _i2.IntrospectedProperty<_i1.Invite>(
-        r'email',
-        typeInfo: _i2.ClassType<String>(),
-        get: _$get0,
-      ),
-    ],
-    library: r'package:supabase_example_app/src/profile/functions.dart',
-    constructor: _i2.IntrospectedConstructor<_i1.Invite>(
-      parameters: [
-        _i2.IntrospectedParameter(
-          r'email',
-          type: _i2.ClassType<String>(),
-          symbol: #email,
-          isRequired: true,
-        ),
-      ],
-      create: _$create1,
-    ),
-  ),
   const _i2.Introspection<_i1.InviteResult>(
     className: r'InviteResult',
     properties: [
       _i2.IntrospectedProperty<_i1.InviteResult>(
         r'id',
         typeInfo: _i2.ClassType<String>(),
-        get: _$get2,
+        get: _$get0,
       ),
     ],
     library: r'package:supabase_example_app/src/profile/functions.dart',
@@ -64,6 +42,28 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
           r'id',
           type: _i2.ClassType<String>(),
           symbol: #id,
+          isRequired: true,
+        ),
+      ],
+      create: _$create1,
+    ),
+  ),
+  const _i2.Introspection<_i1.Invite>(
+    className: r'Invite',
+    properties: [
+      _i2.IntrospectedProperty<_i1.Invite>(
+        r'email',
+        typeInfo: _i2.ClassType<String>(),
+        get: _$get2,
+      ),
+    ],
+    library: r'package:supabase_example_app/src/profile/functions.dart',
+    constructor: _i2.IntrospectedConstructor<_i1.Invite>(
+      parameters: [
+        _i2.IntrospectedParameter(
+          r'email',
+          type: _i2.ClassType<String>(),
+          symbol: #email,
           isRequired: true,
         ),
       ],

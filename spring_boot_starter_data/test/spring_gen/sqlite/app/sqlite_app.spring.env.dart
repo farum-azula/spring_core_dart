@@ -682,6 +682,10 @@ const Map<String, String> _$dartDefines = {
     'SPRING_REMOTE_ALLOWINSECURE': String.fromEnvironment(
       'SPRING_REMOTE_ALLOWINSECURE',
     ),
+  if (bool.hasEnvironment('SPRING_RESILIENCE_ENABLED'))
+    'SPRING_RESILIENCE_ENABLED': String.fromEnvironment(
+      'SPRING_RESILIENCE_ENABLED',
+    ),
   if (bool.hasEnvironment('SPRING_RESOURCES_EMBED_EXCLUDE'))
     'SPRING_RESOURCES_EMBED_EXCLUDE': String.fromEnvironment(
       'SPRING_RESOURCES_EMBED_EXCLUDE',
@@ -1545,6 +1549,10 @@ const Map<String, String> _$dartDefines = {
   if (bool.hasEnvironment('spring.remote.allow-insecure'))
     'spring.remote.allow-insecure': String.fromEnvironment(
       'spring.remote.allow-insecure',
+    ),
+  if (bool.hasEnvironment('spring.resilience.enabled'))
+    'spring.resilience.enabled': String.fromEnvironment(
+      'spring.resilience.enabled',
     ),
   if (bool.hasEnvironment('spring.resources.embed.exclude'))
     'spring.resources.embed.exclude': String.fromEnvironment(

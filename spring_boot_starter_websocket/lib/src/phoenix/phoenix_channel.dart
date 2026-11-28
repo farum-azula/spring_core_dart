@@ -61,8 +61,8 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// ```
 ///
 /// Differs from Spring: Spring has no Phoenix client; like
-/// `@WebSocketClient` it follows the `@FeignClient` style, an injectable
-/// interface with typed streams.
+/// `@WebSocketClient` it follows the style of HTTP service interfaces, an
+/// injectable interface with typed streams.
 @InterfaceProxy(primary: true)
 class PhoenixChannel {
   /// A channel of the client [name], joining [topic] on the socket at

@@ -4,6 +4,7 @@ import 'package:spring_boot_starter_oauth2_client/src/registration/client_regist
 import 'package:spring_boot_starter_oauth2_client/src/registration/client_registration_repository.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/client_registrations.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/common_oauth2_provider.dart';
+import 'package:spring_boot_starter_oauth2_client/src/web/oauth2_provider_addresses.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 
 const _log = SpringLog('spring.security.oauth2.client.registration');
@@ -13,7 +14,10 @@ const _log = SpringLog('spring.security.oauth2.client.registration');
 ///
 /// For each registration, the provider is the `provider` property, else
 /// the registration id. With the provider's `issuer-uri`, the endpoints
-/// come from its metadata ([ClientRegistrations.fromIssuerLocation]);
+/// come from its metadata ([ClientRegistrations.fromIssuerLocation]), and
+/// the hosts of the token, JWK Set, user-info and revocation endpoints it
+/// names join [allowedAddresses]
+/// ([OAuth2ProviderAllowedAddresses.allowDiscovered]);
 /// else a common provider (google, github, facebook, okta) gives them;
 /// else the provider's properties must. The provider's properties then
 /// override what came before, and the registration's own properties come
@@ -39,15 +43,24 @@ const _log = SpringLog('spring.security.oauth2.client.registration');
 /// Spring Boot (Java): `OAuth2ClientPropertiesMapper`.
 final class OAuth2ClientPropertiesMapper {
   /// A mapper of [properties]; discovery uses [transport] (the
-  /// `httpTransport` bean in an application).
-  OAuth2ClientPropertiesMapper(this.properties, {this.transport});
+  /// `httpTransport` bean in an application) and adds the endpoints'
+  /// hosts to [allowedAddresses] (its allow list).
+  OAuth2ClientPropertiesMapper(
+    this.properties, {
+    this.transport,
+    this.allowedAddresses,
+  });
 
   /// The properties mapped.
   final OAuth2ClientProperties properties;
 
-  /// The transport of issuer discovery; a new platform transport when
-  /// `null`.
+  /// The transport of issuer discovery; when `null`, a client that calls
+  /// only the issuer's host (see [ClientRegistrations.fromIssuerLocation]).
   final HttpTransport? transport;
+
+  /// The allow list of [transport], which the hosts of the discovered
+  /// endpoints join; `null` to add nothing.
+  final AllowedAddresses? allowedAddresses;
 
   // The registrations already warned about (a supplier that failed is
   // called again; the warning stays one).
@@ -132,7 +145,14 @@ final class OAuth2ClientPropertiesMapper {
           transport: transport,
         );
         builder.registrationId(registrationId);
-        return _build(_applyProvider(builder, provider), registration);
+        final built = _build(_applyProvider(builder, provider), registration);
+        if (allowedAddresses case final allowed?) {
+          OAuth2ProviderAllowedAddresses.allowDiscovered(
+            allowed,
+            OAuth2ProviderAllowedAddresses.endpointsOf(built),
+          );
+        }
+        return built;
       };
     }
     final common = CommonOAuth2Provider.of(providerId);

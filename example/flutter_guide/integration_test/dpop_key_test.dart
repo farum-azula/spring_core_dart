@@ -183,9 +183,9 @@ void main() {
           // generated main.spring.dart orders them.
           autoConfigurations: [
             springBootAutoConfiguration,
-            springBootStarterFeignAutoConfiguration,
             springSecurityCoreAutoConfiguration,
             springBootStarterFlutterSecurityAutoConfiguration,
+            springBootStarterRestclientAutoConfiguration,
             springBootStarterOauth2ClientAutoConfiguration,
           ],
           bannerMode: BannerMode.off,

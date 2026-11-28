@@ -13,8 +13,9 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
 /// token with every unsafe request; with `CookieCsrfTokenRepository` it
 /// hands the token out in a cookie scripts may read, and a script proves
 /// it runs on the app's page by copying it into a header (what Angular
-/// does by itself). This decorator does the copying for the Feign clients
-/// and the web login, so no app code handles the token.
+/// does by itself). This decorator does the copying for the app's
+/// `RestClient` instances and HTTP services and the web login, so no app code
+/// handles the token.
 ///
 /// - Only requests to [server]'s origin get the header: the token never
 ///   goes to the provider or any other API.

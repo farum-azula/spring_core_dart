@@ -2,7 +2,8 @@
 // table "What each package brings" must match the `export` directives of
 // the packages' main libraries (followed through their own files and into
 // the packages they export), and every package with a main library has a
-// row.
+// row, but those of its table "Discontinued packages" (still in the
+// repository, no longer part of the family).
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
@@ -78,6 +79,25 @@ void main() {
   final start = doc.indexOf('\n## What each package brings');
   final end = doc.indexOf('\n## ', start + 1);
   final table = doc.substring(start, end);
+  final discontinuedStart = doc.indexOf('\n## Discontinued packages');
+  final discontinued = {
+    if (discontinuedStart >= 0)
+      for (final row
+          in RegExp(
+            r'^\| `([a-z_0-9]+)` \|',
+            multiLine: true,
+          ).allMatches(
+            doc.substring(
+              discontinuedStart,
+              doc.indexOf('\n## ', discontinuedStart + 1),
+            ),
+          ))
+        row[1]!,
+  };
+  final packages = [
+    for (final package in familyPackages())
+      if (!discontinued.contains(package)) package,
+  ];
 
   /// The packages of the "Re-exports" column of [package]'s row.
   Set<String>? documented(String package) {
@@ -96,14 +116,23 @@ void main() {
   test('the table has a row for every package of the family', () {
     expect(
       [
-        for (final package in familyPackages())
+        for (final package in packages)
           if (documented(package) == null) package,
       ],
       isEmpty,
     );
   });
 
-  for (final package in familyPackages()) {
+  test('a discontinued package has no row', () {
+    expect(
+      [for (final package in discontinued) documented(package)],
+      [
+        for (final _ in discontinued) null,
+      ],
+    );
+  });
+
+  for (final package in packages) {
     test('$package re-exports what the table says', () {
       expect(documented(package), reExportedPackages(package));
     });

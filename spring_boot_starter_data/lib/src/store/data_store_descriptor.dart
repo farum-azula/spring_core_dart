@@ -3,7 +3,7 @@ import 'package:spring_boot_starter_data/src/store/data_store_capabilities.dart'
 /// Marks a top-level constant [DataStoreDescriptor] as a store the build
 /// knows: the generator finds the declarations in (or exported by)
 /// `lib/spring_auto_configuration.dart` of the application's dependencies,
-/// as it finds their `@AutoConfigurationModule`s.
+/// as it finds their `@AutoConfigurationModule` annotations.
 ///
 /// ```dart
 /// // lib/spring_auto_configuration.dart of the package of the store

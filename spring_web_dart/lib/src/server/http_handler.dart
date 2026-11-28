@@ -101,8 +101,8 @@ abstract interface class HandlerMapping {
 /// A controller receives the request as a parameter, but a service it
 /// calls, a logger or a helper deep in the call chain does not. The web
 /// starter runs every request in its own `Zone`, so [currentRequest]
-/// returns that request anywhere in its handling, across `await`s, and
-/// `null` outside a request.
+/// returns that request anywhere in its handling, across `await` expressions,
+/// and `null` outside a request.
 ///
 /// ```dart
 /// // An audit service records who asked, without a request parameter.

@@ -241,7 +241,7 @@ final class CriteriaMatcher<T extends Object> {
           holds(fold(value)! as String, argument);
 
   /// The order of two column values of one type (numbers, texts, dates,
-  /// booleans, `BigInt`s), as `Comparable.compare` gives it; null when
+  /// booleans, `BigInt` values), as `Comparable.compare` gives it; null when
   /// they cannot be compared (different types).
   static int? compareValues(Object? a, Object? b) {
     if (a is num && b is num) {
@@ -263,8 +263,8 @@ final class CriteriaMatcher<T extends Object> {
   }
 
   /// Whether two column values are the same: by [compareValues] when they
-  /// compare (1 and 1.0, two `DateTime`s of one moment), bytes by content,
-  /// else by `==`; two nulls are the same.
+  /// compare (1 and 1.0, two `DateTime` instances of one moment), bytes by
+  /// content, else by `==`; two nulls are the same.
   static bool sameValue(Object? a, Object? b) {
     if (a == null || b == null) {
       return a == null && b == null;

@@ -296,6 +296,7 @@ class Reports {
 }
 
 @SpringBootApplication()
+@ImportHttpServices(group: EdgeFunctions.group, types: [Functions])
 Future<void> main(List<String> args) async {
   final context = await springApplication.runAsync(args);
   context.close();

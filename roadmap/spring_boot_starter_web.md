@@ -1,8 +1,8 @@
 # spring_boot_starter_web
 
 The server side of `spring_web_dart`: Spring MVC controllers with the
-mapping annotations Feign clients already use (`@GetMapping`,
-`@PathVariable`, `@RequestBody`, ...), server-sent events, WebSocket
+mapping annotations (`@GetMapping`, the parameter annotations
+`@PathVariable`, `@RequestBody`, ... that HTTP service clients share), server-sent events, WebSocket
 endpoints, filters and `ProblemDetail` errors. Runs on the VM and inside
 Flutter apps on mobile and desktop (a local API, a companion server, an
 MCP server for AI tools); not on the web, which has no server sockets.
@@ -100,7 +100,7 @@ exists.
 
 - `@ConditionalOnWebApplication` / `@ConditionalOnNotWebApplication`.
 - Files, the rest: several byte ranges (`multipart/byteranges`), `ETag`
-  for resources, streamed uploads in Feign, `@RequestPart` with
+  for resources, streamed uploads of the HTTP clients, `@RequestPart` with
   `multipart/mixed` — see *Files* below.
 - `ResponseBodyEmitter`, `@ModelAttribute` (form binding to objects),
   `HttpSession`; views (*MVC* below, to investigate; static resources
@@ -200,14 +200,14 @@ section.
   written as bytes (not server-sent events), `StreamingResponseBody` with
   a `ResponseBodySink` for code that writes the body itself.
 - **Tests:** `MockMvc.multipart` with `MockMultipartFile`.
-- **Feign:** multipart request bodies (`@RequestPart`, `MultipartFile`),
-  see [spring_boot_starter_feign](spring_boot_starter_feign.md).
+- **HTTP clients:** multipart request bodies (`@RequestPart`,
+  `MultipartFile`) of `RestClient` and the HTTP service clients.
 
 Left:
 
 - Several byte ranges in one response (`multipart/byteranges`).
 - `ETag` (and `If-None-Match`) for resources.
-- Streamed uploads in Feign (the multipart body is built in memory).
+- Streamed uploads of the HTTP clients (the multipart body is built in memory).
 - `@RequestPart` with `multipart/mixed` bodies.
 
 ## MVC: views and static resources (to investigate)
@@ -373,7 +373,7 @@ JVM servers (Netty, Tomcat) cannot run in a Dart process.
 
 - **The main isolate by default** (done). `HttpServer` I/O is
   asynchronous, so the server does not block the UI, the same as the
-  Feign client. Controllers use the same beans as the widgets: one state,
+  HTTP client. Controllers use the same beans as the widgets: one state,
   nothing copied. This is enough for a local API, a companion server or
   an MCP server.
 - **Heavy work.** What can drop frames is synchronous CPU work inside a
@@ -550,7 +550,7 @@ It also reads SSE streams and emitters event by event, sends multipart
 uploads (`multipart` with `MockMultipartFile`), and opens WebSocket
 sessions in memory. `springBootTest(webEnvironment:
 WebEnvironment.randomPort)` runs the real server with `@LocalServerPort`,
-so a Feign client and the controller can be tested together.
+so a `RestClient` and the controller can be tested together.
 
 Left: test slices (`@WebMvcTest`), and the examples' hand-written
 `dart:io` stand-in servers (the `spring_web_dart` example and tests)
@@ -572,7 +572,7 @@ becoming Spring controllers.
 7. ~~**WebSocket endpoints.**~~ Done.
 8. ~~**Files:** multipart uploads, `Resource` downloads with `Range`,
    byte streams, `StreamingResponseBody`, `MockMvc.multipart`.~~ Done;
-   byte-range lists, `ETag`, streamed Feign uploads left.
+   byte-range lists, `ETag`, streamed client uploads left.
 9. **Flutter:** lifecycle and default address done; platform checks,
    blocking warnings, JSON offload left.
 10. **Static files, forwarded headers, limits:** compression and the body

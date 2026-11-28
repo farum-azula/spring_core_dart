@@ -1,7 +1,9 @@
-// What every supplier call gets (chapter 9): an API key and the
-// application's name in headers (a RequestInterceptor), and retries of
-// failed connections (a Retryer).
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
+// What every supplier call gets (chapter 9): the `supplier` group of HTTP
+// services (its base URL and timeouts in spring.http.serviceclient.supplier.*),
+// and an API key and the application's name in headers (an interceptor on
+// the group's RestClient).
+import 'package:neon_books_server/src/supplier/supplier_clients.dart';
+import 'package:spring_boot_starter_restclient/spring_boot_starter_restclient.dart';
 
 /// `neon.supplier.*`, from config/supplier.properties (imported) and its
 /// dev variant; the key comes from the environment in prod.
@@ -12,29 +14,45 @@ class SupplierProperties {
 }
 
 @Configuration()
+@ImportHttpServices(
+  group: 'supplier',
+  types: [SupplierOffers, SupplierDeliveries],
+)
 class SupplierClientConfig {
+  /// The headers on every call of the `supplier` group, after its
+  /// properties are applied.
   @Bean()
-  RequestInterceptor supplierHeaders(
+  RestClientHttpServiceGroupConfigurer supplierHeaders(
     SupplierProperties supplier,
     @Value(r'${spring.application.name}') String application,
-  ) => SupplierHeaders(application, supplier.apiKey);
-
-  /// Up to 3 attempts when the connection fails or times out.
-  @Bean()
-  Retryer supplierRetryer() => const DefaultRetryer(maxAttempts: 3);
+  ) => RestClientHttpServiceGroupConfigurer.of(
+    (groups) => groups
+        .filterByName(['supplier'])
+        .forEachClient(
+          (group, builder) => builder.requestInterceptor(
+            SupplierHeaders(application, supplier.apiKey),
+          ),
+        ),
+  );
 }
 
-final class SupplierHeaders implements RequestInterceptor {
+/// The application's name and the API key (masked in the request log, as
+/// every `X-Api-Key`).
+final class SupplierHeaders implements ClientHttpRequestInterceptor {
   SupplierHeaders(this.application, this.apiKey);
 
   final String application;
   final String apiKey;
 
   @override
-  void apply(RequestTemplate template) {
-    template.header('X-Client', application);
-    if (template.clientName.startsWith('supplier')) {
-      template.header('X-Api-Key', apiKey);
-    }
+  Future<HttpResponse> intercept(
+    HttpRequest request,
+    List<int>? body,
+    ClientHttpRequestExecution execution,
+  ) {
+    request.headers
+      ..set('X-Client', application)
+      ..set('X-Api-Key', apiKey);
+    return execution.execute(request, body);
   }
 }

@@ -473,3 +473,52 @@ class _$HierarchyConfig$RoleHierarchyProxy
     ),
   ) as List<_i7.GrantedAuthority>);
 }
+
+/// Wraps `RetriedOrders`: each call runs the advice that matches it at run time
+/// (each member says what the build found for it).
+class _$RetriedOrdersProxy
+    with _i1.AdvisedWrapper
+    implements _i8.RetriedOrders {
+  _$RetriedOrdersProxy(this._target, this.aopInvoker);
+
+  final _i8.RetriedOrders _target;
+
+  @override
+  final _i1.ProxyInvoker aopInvoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  String toString() => _target.toString();
+
+  /// cancel: no advice of its own found by the build
+  @override
+  _i3.Future<String> cancel(String id) => this.aopInvoker.invokeAsync<String>(
+    proxy: this,
+    target: this._target,
+    methodIndex: 0,
+    arguments: [id],
+    original: (args) => this._target.cancel((args[0] as String)),
+  );
+
+  /// owner: no advice of its own found by the build
+  @override
+  _i3.Future<String> owner(String id) => this.aopInvoker.invokeAsync<String>(
+    proxy: this,
+    target: this._target,
+    methodIndex: 1,
+    arguments: [id],
+    original: (args) => this._target.owner((args[0] as String)),
+  );
+
+  /// calls: no advice of its own found by the build
+  @override
+  List<String> get calls => (this.aopInvoker.invoke(
+    proxy: this,
+    target: this._target,
+    methodIndex: 2,
+    arguments: const [],
+    original: (_) => this._target.calls,
+  ) as List<String>);
+}

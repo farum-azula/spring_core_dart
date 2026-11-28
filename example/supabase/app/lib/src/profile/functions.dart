@@ -16,9 +16,10 @@ class InviteResult {
   final String id;
 }
 
-/// The Edge Functions of the project, as a Feign client of
-/// `<spring.supabase.url>/functions/v1`: each call carries the anon key
-/// and the user's token, so the function knows who asks.
+/// The Edge Functions of the project, as an HTTP service interface of
+/// `<spring.supabase.url>/functions/v1` (imported on `main`, in the group
+/// `supabase-functions`): each call carries the anon key and the user's
+/// token, so the function knows who asks.
 @EdgeFunctions()
 abstract interface class Functions {
   /// `POST /functions/v1/api/send-invite`.

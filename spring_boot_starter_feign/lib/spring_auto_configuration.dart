@@ -20,7 +20,13 @@ export 'package:spring_boot_starter_logging/spring_auto_configuration.dart';
 
 /// The Feign starter's auto-configuration module: the HTTP transport and
 /// the factory of the `@FeignClient` beans (`feignAutoConfiguration`).
-@AutoConfigurationModule()
+///
+/// Registered after the RestClient starter's module: in an application
+/// with both, that starter's `httpTransport` (with its allowed addresses)
+/// is the one, and Feign's backs off.
+@AutoConfigurationModule(
+  after: ['springBootStarterRestclientAutoConfiguration'],
+)
 final BeanModule springBootStarterFeignAutoConfiguration = BeanModule(
   'springBootStarterFeignAutoConfiguration',
   [...feignAutoConfiguration],

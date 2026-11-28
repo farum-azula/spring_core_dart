@@ -28,8 +28,8 @@ abstract interface class DataRepository<T, ID> {}
 /// referenced by id (`AggregateReference`), never loaded with it.
 ///
 /// Spring (Java): `org.springframework.data.repository.CrudRepository`. The
-/// `Iterable` results of Spring are `Iterable`s here too; [ListCrudRepository]
-/// returns `List`s.
+/// `Iterable` results of Spring are `Iterable` instances here too;
+/// [ListCrudRepository] returns `List` instances.
 abstract interface class CrudRepository<T, ID>
     implements DataRepository<T, ID> {
   /// Inserts [entity] when it is new (its id is null, or its `@Version` is
@@ -78,7 +78,7 @@ abstract interface class CrudRepository<T, ID>
   Future<void> deleteAll();
 }
 
-/// [CrudRepository] returning `List`s instead of `Iterable`s.
+/// [CrudRepository] returning `List` instances instead of `Iterable` instances.
 ///
 /// Spring (Java): `org.springframework.data.repository.ListCrudRepository`.
 abstract interface class ListCrudRepository<T, ID>

@@ -11,8 +11,8 @@ import 'package:spring_boot_starter_data/src/store/data_store_capabilities.dart'
 /// [predicate] is a disjunction of conjunctions, as a `PartTree` has it:
 /// an entity matches when all the parts of at least one [OrPart] hold; no
 /// alternative at all matches everything. [arguments] holds the values the
-/// parts take, in the order the parts appear (the `OrPart`s in order, and
-/// in each the parts in order): a part consumes
+/// parts take, in the order the parts appear (the `OrPart` instances in order,
+/// and in each the parts in order): a part consumes
 /// `PartType.argumentCount` of them (none for `isNull`, two for
 /// `between`, one for the rest; `in` and `notIn` take one collection). A
 /// store may run the predicate itself (the in-memory store) or turn it
@@ -69,7 +69,7 @@ final class Criteria {
 /// a copy that the application may change without changing the store.
 ///
 /// Every method takes the entity (the table and columns), so one store
-/// serves every repository. Failures are `DataAccessException`s:
+/// serves every repository. Failures are `DataAccessException` instances:
 /// `DuplicateKeyException`, `OptimisticLockingFailureException`,
 /// `IncorrectUpdateSemanticsDataAccessException` and so on.
 ///

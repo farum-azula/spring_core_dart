@@ -10,6 +10,7 @@ targets:
         generate_for:
           - example/**
           - test/transaction/app/**
+          - test/resilience/app/**
           - test/integration/app/**
           - test/sqlite/app/**
           - test/postgres/app/**

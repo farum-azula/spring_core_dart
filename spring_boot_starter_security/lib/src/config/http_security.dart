@@ -2170,9 +2170,13 @@ final class OAuth2LoginConfigurer {
           'a bean, or call oauth2Login((login) => '
           'login.clientRegistrationRepository(...))',
         ));
+    // The application's transport (the RestClient starter's, with its
+    // allowed addresses); a platform one only for an HttpSecurity built
+    // without the beans.
+    final beanTransport = http._bean<HttpTransport>();
     HttpTransport? transport;
     HttpTransport transportOrDefault() =>
-        transport ??= http._bean<HttpTransport>() ?? platformHttpTransport();
+        transport ??= beanTransport ?? platformHttpTransport();
     final tokenClient =
         _token._client ??
         http
@@ -2202,7 +2206,10 @@ final class OAuth2LoginConfigurer {
         _idTokenDecoder ??
         (beanDecoder is TokenEndpointOidcIdTokenDecoder ? null : beanDecoder) ??
         OidcIdTokenDecoderFactory(
-          fetcher: transportJwkFetcher(transportOrDefault()),
+          // Without the beans, the default fetcher: the JWK Set's host only.
+          fetcher: beanTransport == null
+              ? null
+              : transportJwkFetcher(beanTransport),
         );
     final authorizedClients =
         _authorizedClientRepository ??

@@ -38,8 +38,8 @@
 /// This import re-exports `spring_security_core` (users, passwords,
 /// `@PreAuthorize`), `spring_boot_starter_web` and
 /// `spring_boot_starter_oauth2_client` (registrations, tokens, users,
-/// authorized clients, and the Feign starter it brings). It is the Dart
-/// version of Spring Boot's `spring-boot-starter-security` (with
+/// authorized clients, and the RestClient starter it brings). It is the
+/// Dart version of Spring Boot's `spring-boot-starter-security` (with
 /// `spring-boot-starter-oauth2-client`'s web part).
 library;
 

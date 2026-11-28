@@ -6,37 +6,40 @@ import 'package:spring_core_dart/src/beans/type_info.dart';
 /// generated code: each call is handed to an [InvocationHandler].
 ///
 /// Some libraries let the user declare only an interface and supply the
-/// behaviour themselves, such as an HTTP client where each method is a
-/// request. Java does this with runtime proxies; Dart has none, so the
-/// generator writes the class. An abstract class (an interface) carrying
-/// an annotation marked `@InterfaceProxy()` becomes a bean whose every
-/// method passes the call, with the method's metadata ([ProxyMethod]), to
-/// a handler. The handler comes from an [InvocationHandlerFactory] bean
-/// that supports the interface, which the library's starter provides.
-/// This is how Feign clients (`@FeignClient`) get their implementation.
+/// behaviour themselves, such as a WebSocket client where each method is
+/// a stream of messages or a message sent. Java does this with runtime
+/// proxies; Dart has none, so the generator writes the class. An abstract
+/// class (an interface) carrying an annotation marked `@InterfaceProxy()`
+/// becomes a bean whose every method passes the call, with the method's
+/// metadata ([ProxyMethod]), to a handler. The handler comes from an
+/// [InvocationHandlerFactory] bean that supports the interface, which the
+/// library's starter provides.
+/// This is how WebSocket clients (`@WebSocketClient`) get their
+/// implementation.
 /// Only library authors define such annotations; applications just use
 /// them.
 ///
 /// ```dart
-/// // The Feign starter's annotation, and an application's client.
+/// // The WebSocket starter's annotation, and an application's client.
 /// @InterfaceProxy(primary: true)
-/// class FeignClient {
-///   const FeignClient(this.name, {this.url});
+/// class WebSocketClient {
+///   const WebSocketClient(this.name, {this.url});
 ///   final String name;
 ///   final String? url;
 /// }
 ///
-/// @FeignClient('catalog', url: r'${catalog.url}')
-/// abstract interface class CatalogClient {
-///   @GetMapping('/books/{isbn}')
-///   Future<Book> find(@PathVariable() String isbn);
+/// @WebSocketClient('chat', url: r'${chat.url}')
+/// abstract interface class ChatSocket {
+///   @SendMessage()
+///   Future<void> send(ChatMessage message);
 /// }
-/// // The generator writes `class _$CatalogClientImpl implements
-/// // CatalogClient` and registers it as the bean `catalogClient`.
+/// // The generator writes `class _$ChatSocketImpl implements ChatSocket`
+/// // and registers it as the bean `chatSocket`.
 /// ```
 ///
 /// Spring (Java): JDK dynamic proxies (`java.lang.reflect.Proxy`) created
-/// at runtime, e.g. by Spring Cloud OpenFeign's `FeignClientFactoryBean`.
+/// at runtime, e.g. by `HttpServiceProxyFactory` for HTTP service
+/// interfaces.
 class InterfaceProxy {
   /// Marks the annotation class; with [primary] the generated beans are
   /// `@Primary`, so a fallback bean implementing the same interface does
@@ -51,23 +54,24 @@ class InterfaceProxy {
 /// parameters, return type and annotations, and a way to call it.
 ///
 /// The generator writes one per method; an [InvocationHandler] reads it to
-/// know what a call means (for Feign: the HTTP method, path and parameter
-/// bindings), and [callOn] lets it forward the call to a real
-/// implementation such as a fallback bean.
+/// know what a call means (for a WebSocket client: whether it sends a
+/// message or listens to them), and [callOn] lets it forward the call to
+/// a real implementation such as a fallback bean.
 ///
 /// ```dart
-/// // Future<Book> find(@PathVariable() String isbn)
+/// // Future<void> send(ChatMessage message)
 /// ProxyMethod(
-///   'find',
+///   'send',
 ///   parameters: const [
-///     IntrospectedParameter('isbn', type: ClassType<String>(),
-///         isRequired: true, annotations: [PathVariable()]),
+///     IntrospectedParameter('message', type: ClassType<ChatMessage>(),
+///         isRequired: true),
 ///   ],
-///   returnType: const ClassType<Book>(),
+///   returnType: const ClassType<void>(),
 ///   isFuture: true,
-///   annotations: const [GetMapping('/books/{isbn}')],
+///   isVoid: true,
+///   annotations: const [SendMessage()],
 ///   call: (target, arguments) =>
-///       (target as CatalogClient).find(arguments[0] as String),
+///       (target as ChatSocket).send(arguments[0] as ChatMessage),
 /// );
 /// ```
 ///
@@ -138,7 +142,7 @@ final class ProxyMethod {
 ///
 /// ```dart
 /// // In a handler factory: read the client annotation and the methods.
-/// final client = metadata.annotation<FeignClient>()!;
+/// final client = metadata.annotation<WebSocketClient>()!;
 /// for (final method in metadata.methods) {
 ///   log.debug('${metadata.typeName}.${method.name}');
 /// }
@@ -180,8 +184,9 @@ final class InterfaceMetadata<T extends Object> {
 /// The object that does the work of an interface proxy: every call of the
 /// generated implementation ends up in [invoke].
 ///
-/// A library implements it for its kind of interface (for Feign, turning
-/// the call into an HTTP request) and creates it in an
+/// A library implements it for its kind of interface (for a WebSocket
+/// client, turning the call into a message sent or a stream of those
+/// received) and creates it in an
 /// [InvocationHandlerFactory]. Applications do not implement it.
 ///
 /// ```dart
@@ -207,27 +212,27 @@ abstract interface class InvocationHandler {
 }
 
 /// A bean that provides the [InvocationHandler] for the interface proxies
-/// it supports, for example those annotated `@FeignClient`.
+/// it supports, for example those annotated `@WebSocketClient`.
 ///
 /// A starter declares one; when a generated proxy bean is created, it asks
 /// the factory beans in order and takes the handler of the first that
 /// supports its interface. Applications do not implement it.
 ///
 /// ```dart
-/// // The Feign starter's factory.
-/// final class FeignHandlers implements InvocationHandlerFactory {
+/// // The WebSocket starter's factory.
+/// final class WebSocketHandlers implements InvocationHandlerFactory {
 ///   @override
 ///   bool supports(InterfaceMetadata<Object> metadata) =>
-///       metadata.annotation<FeignClient>() != null;
+///       metadata.annotation<WebSocketClient>() != null;
 ///
 ///   @override
 ///   InvocationHandler create(InterfaceMetadata<Object> metadata) =>
-///       FeignHandler(metadata, ...);
+///       WebSocketHandler(metadata, ...);
 /// }
 /// ```
 ///
-/// Spring (Java): a `FactoryBean` creating the proxy, e.g. Spring Cloud
-/// OpenFeign's `FeignClientFactoryBean`.
+/// Spring (Java): a `FactoryBean` creating the proxy, e.g. Spring Data's
+/// `RepositoryFactoryBeanSupport`.
 abstract interface class InvocationHandlerFactory {
   /// Whether this factory handles the interface of [metadata], typically
   /// judged from its annotation.
@@ -265,7 +270,8 @@ abstract final class InterfaceProxies {
     throw StateError(
       'No InvocationHandlerFactory bean supports ${metadata.typeName}'
       '${annotations.isEmpty ? '' : ' ($annotations)'}: add the starter '
-      'that implements it (e.g. spring_boot_starter_feign for @FeignClient).',
+      'that implements it (e.g. spring_boot_starter_websocket for '
+      '@WebSocketClient).',
     );
   }
 }

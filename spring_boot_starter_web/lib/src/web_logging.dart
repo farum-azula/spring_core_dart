@@ -20,7 +20,7 @@ final class _Unquoted {
 
 /// The value shown in a log for the header [name]: always `masked` for the
 /// ones that carry credentials ([HttpSecrets.isSensitiveHeader], the rule
-/// the Feign client's logs share).
+/// the RestClient's logs share).
 String logHeaderValue(String name, List<String> values) =>
     HttpSecrets.isSensitiveHeader(name)
     ? 'masked'

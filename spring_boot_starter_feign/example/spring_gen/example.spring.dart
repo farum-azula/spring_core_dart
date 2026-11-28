@@ -176,6 +176,12 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     _i10.springBootStarterFeignAutoConfiguration,
     _i11.springBootStarterLoggingAutoConfiguration,
   ],
+  autoConfigurationMetadata: {
+    _i10.springBootStarterFeignAutoConfiguration:
+        const _i1.AutoConfigurationModule(
+          after: [r'springBootStarterRestclientAutoConfiguration'],
+        ),
+  },
   dartDefines: _$dartDefines,
   fingerprint:
       !const bool.fromEnvironment('dart.vm.product') &&

@@ -3,6 +3,7 @@ import 'package:spring_core_dart/src/beans/exceptions.dart';
 import 'package:spring_core_dart/src/beans/introspection.dart';
 import 'package:spring_core_dart/src/context/message/message_source.dart';
 import 'package:spring_core_dart/src/core/convert/conversion_service.dart';
+import 'package:spring_core_dart/src/core/retry/retry_policy.dart';
 
 /// A validation error about a whole object rather than one of its fields,
 /// such as "the passwords differ" or a failed class-level constraint.
@@ -952,7 +953,7 @@ class MapBindingResult extends AbstractBindingResult {
 ///   log.warn("{} errors", e.getBindingResult().getErrorCount());
 /// }
 /// ```
-class BindException implements Exception {
+class BindException implements Exception, NonRetryableException {
   /// An exception for the errors in [bindingResult].
   BindException(this.bindingResult);
 

@@ -118,7 +118,10 @@ abstract interface class OAuth2AccessTokenResponseClient<
 }
 
 /// The base of the token response clients: the form, the client
-/// authentication, the DPoP proof and the answer, on the [HttpTransport].
+/// authentication, the DPoP proof and the answer, sent by a `RestClient`
+/// on the [HttpTransport] (the `httpTransport` bean in an application, so
+/// its allow list and decorators apply). Redirects are not followed: the
+/// credentials and the code never go elsewhere.
 ///
 /// The client authenticates as its registration says:
 /// `client_secret_basic` puts `client_id:client_secret` in HTTP Basic,
@@ -152,10 +155,16 @@ abstract class AbstractTokenResponseClient<
     DateTime Function()? clock,
     this.dPoPKey,
     this.clientSecretResolver,
-  }) : _clock = clock ?? DateTime.now;
+  }) : _clock = clock ?? DateTime.now,
+       _rest = RestClient.builder()
+           .transport(transport)
+           .followRedirects(false)
+           .build();
 
-  /// The HTTP transport.
+  /// The HTTP transport the requests go through.
   final HttpTransport transport;
+
+  final RestClient _rest;
 
   /// The key of the DPoP proofs, or `null` for `Bearer` tokens only.
   final DPoPKey? dPoPKey;
@@ -218,16 +227,14 @@ abstract class AbstractTokenResponseClient<
             'registration ${logText(registration.registrationId)} to '
             '${logEndpoint(url)}',
       );
-      final response = await transport.send(
-        HttpRequest(
-          method: HttpMethod.post,
-          url: url,
-          headers: headers,
-          body: utf8.encode(formUrlEncodeAll(body)),
-          // Credentials and codes never follow a redirect elsewhere.
-          followRedirects: false,
-        ),
-      );
+      // The form encoded here, as Java's URLEncoder does (RFC 6749
+      // §2.3.1); the answer read below whatever its status.
+      final response = await _rest
+          .post()
+          .uri(url)
+          .headers((own) => own.addHeaders(headers))
+          .body(formUrlEncodeAll(body))
+          .exchange((_, answer) => answer.response);
       _log.debug(
         () =>
             'The token endpoint ${logEndpoint(url)} answered '
@@ -253,7 +260,9 @@ abstract class AbstractTokenResponseClient<
           _nonces.remember(url, response.headers);
         }
       }
-    } on HttpTransportException catch (e) {
+    } on RestClientException catch (e) {
+      // No answer (ResourceAccessException) or a body not written: as
+      // Spring's RestClient token clients.
       throw OAuth2AuthorizationException(
         OAuth2Error(
           OAuth2ErrorCodes.invalidTokenResponse,
@@ -366,7 +375,7 @@ Map<String, String> clientAuthentication(
 ///
 /// Spring (Java): `RestClientAuthorizationCodeTokenResponseClient`
 /// (`DefaultAuthorizationCodeTokenResponseClient` before Spring Security
-/// 6.4), on the `HttpTransport` instead of a `RestClient`.
+/// 6.4); the transport is a parameter instead of `setRestClient`.
 class DefaultAuthorizationCodeTokenResponseClient
     extends AbstractTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> {
   /// A client sending through [transport].

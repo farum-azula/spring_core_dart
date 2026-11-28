@@ -9,7 +9,8 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// (`TokenType.dpop`) `Authorization: DPoP <token>` and a fresh `DPoP`
 /// proof for that request, signed by [dPoPKey].
 ///
-/// The Feign interceptor of the starter uses it for every call. Use it
+/// The starter's `OAuth2ClientHttpRequestInterceptor` uses it for every
+/// `RestClient` call. Use it
 /// for a request the framework does not make: a WebSocket handshake (the
 /// proof's `htu` is then the `http(s)` form of the `ws(s)` URL), an
 /// `HttpTransport` call of your own. Which kind a token is comes from the

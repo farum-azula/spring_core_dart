@@ -8,7 +8,7 @@
 /// with time-to-live and size limits taken from the `spring.cache.*`
 /// properties. The rest of this library is for applications that go
 /// further: their own `CacheManager` or `Cache` storage, key generators,
-/// `CacheResolver`s that pick caches per call, and `CachingConfigurer`
+/// `CacheResolver` instances that pick caches per call, and `CachingConfigurer`
 /// defaults.
 ///
 /// ```dart

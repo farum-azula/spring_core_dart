@@ -9,9 +9,9 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// One client connected to the application's server: send it messages,
 /// close it, and read what its handshake carried.
 ///
-/// Endpoint methods and `WebSocketHandler`s receive it for each connection,
-/// and [WebSocketSessionRegistry] lists the open ones. Besides what every
-/// [WebSocketSession] does (send, close), it has an [id], the handshake's
+/// Endpoint methods and `WebSocketHandler` instances receive it for each
+/// connection, and [WebSocketSessionRegistry] lists the open ones. Besides what
+/// every [WebSocketSession] does (send, close), it has an [id], the handshake's
 /// [handshakeHeaders], [principal] and [pathVariables], [attributes] to
 /// keep per-connection state, and [sendJson]. Its incoming messages go to
 /// the handler (`handleMessage`, an endpoint's `@OnMessage` method): the
@@ -36,9 +36,9 @@ abstract interface class ServerWebSocketSession implements WebSocketSession {
   /// The headers of the handshake request, read-only.
   HttpHeaders get handshakeHeaders;
 
-  /// Values kept with this connection: those the `HandshakeInterceptor`s
-  /// set, such as a token, and any the application adds. The place for
-  /// per-connection state, as an endpoint is shared by all connections.
+  /// Values kept with this connection: those the `HandshakeInterceptor`
+  /// instances set, such as a token, and any the application adds. The place
+  /// for per-connection state, as an endpoint is shared by all connections.
   Map<String, Object?> get attributes;
 
   /// The user the handshake request was authenticated as; `null` when
@@ -180,7 +180,7 @@ abstract class TextWebSocketHandler extends AbstractWebSocketHandler {
 /// Use it to check a token in the URL, or to copy facts of the request
 /// into `session.attributes`. Add it with
 /// [WebSocketHandlerRegistration.addInterceptors]. It does not apply to
-/// `@WebSocketEndpoint`s; a web filter covers both.
+/// `@WebSocketEndpoint` annotations; a web filter covers both.
 ///
 /// ```dart
 /// // Only clients with a token connect; the handler finds it in

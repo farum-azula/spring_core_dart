@@ -58,16 +58,55 @@ void main() {
     });
   });
 
-  test("a failed answer is Feign's exception", () async {
+  test("a failed answer is the RestClient's exception", () async {
     transport
         .when(HttpMethod.get, '/functions/v1/reports/1')
         .respond(404, json: {'error': 'no such report'});
     await withApp((context) async {
       await expectLater(
         context.getBean<Functions>().report(1),
-        throwsA(isA<FeignNotFound>()),
+        throwsA(
+          isA<HttpClientErrorException>()
+              .having((e) => e.statusCode.value, 'status', 404)
+              .having((e) => e.bodyText, 'body', contains('no such report')),
+        ),
       );
     });
+  });
+
+  test('an error status is not tried again by default', () async {
+    transport
+        .when(HttpMethod.get, '/functions/v1/reports/1')
+        .respond(503, headers: {'Retry-After': '0'});
+    await withApp((context) async {
+      await expectLater(
+        context.getBean<Functions>().report(1),
+        throwsA(isA<HttpServerErrorException>()),
+      );
+    });
+    expect(transport.requests, hasLength(1));
+  });
+
+  test("the project's host is allowed by the application's transport, "
+      'and the group calls the functions', () async {
+    await baseRunner()
+        .withPropertyValues([
+          'spring.supabase.url=$projectUrl',
+          'spring.supabase.anon-key=anon-key',
+        ])
+        .runAsync((context) async {
+          expect(context.startupFailure, isNull);
+          final allowed = context.getBean<AllowedAddresses>();
+          expect(allowed.allowsHostName('abcd.supabase.co'), isTrue);
+          expect(allowed.allowsHostName('other.supabase.co'), isFalse);
+          expect(
+            context
+                .getBean<HttpServiceGroups>()
+                .group(EdgeFunctions.group)
+                .types,
+            [Functions],
+          );
+        });
   });
 
   test('inside asServiceRole the service role key is sent', () async {
@@ -143,7 +182,6 @@ void main() {
         ]);
       });
       final request = transport.requests.single;
-      expect(request.headers['Accept'], '*/*');
       expect(request.headers['apikey'], 'anon-key');
       expect(request.headers['Authorization'], 'Bearer anon-key');
     });
@@ -155,7 +193,13 @@ void main() {
       await withApp((context) async {
         await expectLater(
           context.getBean<Functions>().exportStream().toList(),
-          throwsA(isA<FeignForbidden>()),
+          throwsA(
+            isA<HttpClientErrorException>().having(
+              (e) => e.statusCode.value,
+              'status',
+              403,
+            ),
+          ),
         );
       });
     });

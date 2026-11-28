@@ -73,31 +73,6 @@
       ]
     },
     {
-      "name": "functions",
-      "type": "Functions",
-      "types": [
-        "Functions"
-      ],
-      "scope": "singleton",
-      "primary": true,
-      "qualifiers": [],
-      "profiles": [],
-      "conditions": [],
-      "source": "package:supabase_example_app/src/profile/functions.dart",
-      "line": 23,
-      "injects": [],
-      "members": [
-        {
-          "name": "sendInvite",
-          "kind": "method",
-          "type": "Future<InviteResult>",
-          "parameters": [
-            "Invite invite"
-          ]
-        }
-      ]
-    },
-    {
       "name": "todoProperties",
       "type": "TodoProperties",
       "types": [

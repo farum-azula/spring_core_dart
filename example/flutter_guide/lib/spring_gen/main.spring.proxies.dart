@@ -1024,3 +1024,59 @@ class _$SupportChatProxy extends _i15.SupportChat with _i3.AdvisedSubclass {
           ) as bool);
   }
 }
+
+/// Wraps `CatalogClient`: each call runs the advice that matches it at run time
+/// (each member says what the build found for it). Around every member:
+/// `@Retryable(includes: [ResourceAccessException], maxRetries: 2, delay: Duration(milliseconds: 150), multiplier: 1.5)`.
+class _$CatalogClientProxy
+    with _i3.AdvisedWrapper
+    implements _i16.CatalogClient {
+  _$CatalogClientProxy(this._target, this.aopInvoker);
+
+  final _i16.CatalogClient _target;
+
+  @override
+  final _i3.ProxyInvoker aopInvoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  String toString() => _target.toString();
+
+  /// page: no advice of its own found by the build
+  @override
+  _i4.Future<_i7.PageOfBooks> page({String? query, int? page}) =>
+      this.aopInvoker.invokeAsync<_i7.PageOfBooks>(
+        proxy: this,
+        target: this._target,
+        methodIndex: 0,
+        arguments: [query, page],
+        original: (args) => this._target.page(
+          query: (args[0] as String?),
+          page: (args[1] as int?),
+        ),
+      );
+
+  /// find: no advice of its own found by the build
+  @override
+  _i4.Future<_i7.Book> find(String isbn) =>
+      this.aopInvoker.invokeAsync<_i7.Book>(
+        proxy: this,
+        target: this._target,
+        methodIndex: 1,
+        arguments: [isbn],
+        original: (args) => this._target.find((args[0] as String)),
+      );
+
+  /// cover: no advice of its own found by the build
+  @override
+  _i4.Future<_i8.Uint8List> cover(String isbn) =>
+      this.aopInvoker.invokeAsync<_i8.Uint8List>(
+        proxy: this,
+        target: this._target,
+        methodIndex: 2,
+        arguments: [isbn],
+        original: (args) => this._target.cover((args[0] as String)),
+      );
+}

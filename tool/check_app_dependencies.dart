@@ -11,7 +11,7 @@
 // warning included, fails the check.
 //
 //   dart run tool/check_app_dependencies.dart            # every starter
-//   dart run tool/check_app_dependencies.dart feign cache  # some of them
+//   dart run tool/check_app_dependencies.dart restclient cache  # some of them
 //   dart run tool/check_app_dependencies.dart --keep     # keep the apps
 //   dart run tool/check_app_dependencies.dart --flutter  # the Flutter starters
 //
@@ -45,7 +45,7 @@ final class _Starter {
     this.router = false,
   });
 
-  /// The package name (`spring_boot_starter_feign`).
+  /// The package name (`spring_boot_starter_restclient`).
   final String package;
 
   /// `lib/src/feature.dart` after the imports: the starter's own feature.
@@ -156,12 +156,19 @@ class Ticks {
 ''',
   ),
   _Starter(
-    'spring_boot_starter_feign',
-    feature: r'''
-@FeignClient('books', url: r'${books.url:http://books.test}')
-abstract interface class BooksClient {
-  @GetMapping('/books/{isbn}')
-  Future<Map<String, Object?>> find(@PathVariable() String isbn);
+    'spring_boot_starter_restclient',
+    feature: '''
+const _book = MapType<String, Object?>(ClassType<String>(), DynamicType());
+
+@Service()
+class Books {
+  Books(RestClientBuilder builder)
+    : _rest = builder.baseUrl('http://books.test').build();
+
+  final RestClient _rest;
+
+  Future<Map<String, Object?>> find(String isbn) =>
+      _rest.get().uri('/books/{isbn}', isbn).retrieve().body(_book);
 }
 ''',
     featureTest: '''
@@ -173,8 +180,8 @@ abstract interface class BooksClient {
       overrides: [BeanOverride<HttpTransport>(server)],
     );
 
-    test('the client goes through it', () async {
-      expect(await books.getBean<BooksClient>().find('1'), {'isbn': '1'});
+    test('a RestClient call goes through it', () async {
+      expect(await books.getBean<Books>().find('1'), {'isbn': '1'});
     });
   });
 ''',
@@ -210,6 +217,10 @@ abstract interface class Functions {
   @EdgeFunction('hello')
   Future<Map<String, Object?>> hello(@RequestBody() Map<String, Object?> body);
 }
+
+@Configuration()
+@ImportHttpServices(group: EdgeFunctions.group, types: [Functions])
+class FunctionsImport {}
 
 @StorageBucket('avatars')
 abstract interface class Avatars {

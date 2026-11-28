@@ -1,7 +1,6 @@
 // The starter's beans: what comes with a registration, what backs off for
 // an application's bean, and how another auto-configuration registered
 // before this one replaces a default.
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
@@ -61,7 +60,7 @@ final _replacing = BeanModule('zzzReplacingAutoConfiguration', [
 void main() {
   final runner = const ApplicationContextRunner()
       .withAutoConfiguration(springBootAutoConfiguration)
-      .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
+      .withAutoConfiguration(springBootStarterRestclientAutoConfiguration)
       .withAutoConfiguration(springSecurityCoreAutoConfiguration)
       .withAutoConfiguration(springBootStarterOauth2ClientAutoConfiguration)
       .withBean<HttpTransport>(MockHttpTransport.new);
@@ -72,7 +71,7 @@ void main() {
       expect(context, doesNotHaveBean<ClientRegistrationRepository>());
       expect(context, doesNotHaveBean<OAuth2AuthorizedClientService>());
       expect(context, doesNotHaveBean<OAuth2AuthorizedClientManager>());
-      expect(context, doesNotHaveBean<OAuth2AccessTokenInterceptor>());
+      expect(context, doesNotHaveBean<OAuth2ClientHttpRequestInterceptor>());
     });
   });
 
@@ -108,7 +107,7 @@ void main() {
         isA<DefaultRefreshTokenTokenResponseClient>(),
       );
 
-      // Client credentials end to end, through the Feign starter's
+      // Client credentials end to end, through the application's
       // transport bean.
       final transport = context.getBean<HttpTransport>() as MockHttpTransport;
       transport
@@ -193,49 +192,5 @@ void main() {
             isNot(isA<_OwnClients>()),
           );
         });
-  });
-
-  group('Feign', () {
-    test('spring.feign.oauth2.enabled adds the interceptor', () {
-      runner
-          .withPropertyValues([
-            ..._registration,
-            'spring.feign.oauth2.enabled=true',
-            'spring.feign.oauth2.client-registration-id=partner',
-          ])
-          .run((context) {
-            final interceptor = context.getBean<OAuth2AccessTokenInterceptor>();
-            expect(interceptor.clientRegistrationId, 'partner');
-            expect(
-              context.getBeanNamesForType<RequestInterceptor>(),
-              ['oauth2AccessTokenInterceptor'],
-            );
-            expect(
-              context.getBean<ErrorDecoder>(),
-              isA<OAuth2AccessTokenErrorDecoder>(),
-            );
-          });
-    });
-
-    test('off by default', () {
-      runner.withPropertyValues(_registration).run((context) {
-        expect(context, doesNotHaveBean<OAuth2AccessTokenInterceptor>());
-        expect(context, doesNotHaveBean<ErrorDecoder>());
-      });
-    });
-
-    test("an application's ErrorDecoder is kept", () {
-      runner
-          .withPropertyValues([
-            ..._registration,
-            'spring.feign.oauth2.enabled=true',
-          ])
-          .withBean<ErrorDecoder>(() => const DefaultErrorDecoder())
-          .run((context) {
-            expect(context, hasSingleBean<ErrorDecoder>());
-            expect(context.getBean<ErrorDecoder>(), isA<DefaultErrorDecoder>());
-            expect(context, hasSingleBean<OAuth2AccessTokenInterceptor>());
-          });
-    });
   });
 }

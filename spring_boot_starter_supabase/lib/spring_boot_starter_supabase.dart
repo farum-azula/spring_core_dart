@@ -26,20 +26,26 @@
 ///   @EdgeFunction('send-invite')
 ///   Future<InviteResult> sendInvite(@RequestBody() Invite invite);
 /// }
+///
+/// @SpringBootApplication()
+/// @ImportHttpServices(group: EdgeFunctions.group, types: [Functions])
+/// void main(List<String> args) => runApplication(args);
 /// ```
 ///
 /// Every call is made as the same user: the bean `SupabaseCredentials`
 /// gives each of them its key and token, and what a user may read and
 /// write is decided by the database (row-level security).
 ///
-/// Its own client, over the `HttpTransport` and the WebSocket starter: no
-/// third-party package, and it compiles to WebAssembly.
+/// Its own client, on `RestClient` (the RestClient starter, whose
+/// transport calls the host of `spring.supabase.url` by itself) and the
+/// WebSocket starter: no third-party package, and it compiles to
+/// WebAssembly.
 library;
 
 export 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart';
 export 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
-export 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 export 'package:spring_boot_starter_logging/spring_boot_starter_logging.dart';
+export 'package:spring_boot_starter_restclient/spring_boot_starter_restclient.dart';
 export 'package:spring_boot_starter_websocket/spring_boot_starter_websocket.dart';
 export 'package:spring_security_core/spring_security_core.dart';
 export 'package:spring_web_dart/spring_web_dart.dart';
@@ -58,6 +64,8 @@ export 'src/data/postgrest_query.dart';
 export 'src/data/supabase_rls.dart';
 export 'src/expression/call_template.dart';
 export 'src/functions/edge_functions.dart';
+export 'src/http/supabase_allowed_addresses.dart';
+export 'src/http/supabase_credentials_interceptor.dart';
 export 'src/http/supabase_http.dart';
 export 'src/ratelimit/supabase_rate_limit_store.dart';
 export 'src/realtime/realtime_channel.dart';

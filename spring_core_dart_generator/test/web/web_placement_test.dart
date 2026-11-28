@@ -87,20 +87,23 @@ class Derived extends BaseApi {}
   group('what only a server reads', () {
     misplacedCases({
       '@CrossOrigin on an HTTP client': (
-        "@CrossOrigin() @FeignClient('svc', url: 'http://x') abstract "
-            "interface class Api { @GetMapping('/x') Future<String> x(); }",
+        "@CrossOrigin() @HttpExchange('/svc') abstract interface class "
+            "Api { @GetExchange('/x') Future<String> x(); } "
+            '@Configuration() @ImportHttpServices(types: [Api]) class C {}',
         ['@CrossOrigin on class Api: it applies to the routes of a server'],
       ),
       '@RateLimiter on a method of an HTTP client': (
-        "@FeignClient('svc', url: 'http://x') abstract interface class Api "
-            "{ @GetMapping('/x') @RateLimiter('10/1s') Future<void> x(); }",
+        "@HttpExchange('/svc') abstract interface class Api "
+            "{ @GetExchange('/x') @RateLimiter('10/1s') Future<void> x(); } "
+            '@Configuration() @ImportHttpServices(types: [Api]) class C {}',
         ['@RateLimiter on Api.x: it applies to the routes of a server'],
       ),
       '@ResponseStatus on a method of an HTTP client': (
-        "@FeignClient('svc', url: 'http://x') abstract interface class Api "
-            "{ @GetMapping('/x') @ResponseStatus(HttpStatus.created) "
-            'Future<void> x(); }',
-        ['@ResponseStatus on Api.x: it sets the status a server'],
+        "@HttpExchange('/svc') abstract interface class Api "
+            "{ @GetExchange('/x') @ResponseStatus(HttpStatus.created) "
+            'Future<void> x(); } '
+            '@Configuration() @ImportHttpServices(types: [Api]) class C {}',
+        ['@ResponseStatus on Api.x: it sets the status of a handler'],
       ),
       '@RateLimiter in a mixin of a class that is no controller': (
         "mixin M { @RateLimiter('10/1s') void m() {} } "

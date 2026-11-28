@@ -6,12 +6,13 @@ import 'package:spring_web_dart/src/http_method.dart';
 /// and media types of one HTTP call.
 ///
 /// Applications never implement it; they put one of the annotations on a
-/// method. It exists for the code that reads those annotations. The web
+/// method. It exists for the code that reads those annotations: the web
 /// server (`spring_boot_starter_web`) reads it to send each request to the
-/// right controller method, and the HTTP client (`spring_boot_starter_feign`)
-/// reads it to build the request of a `@FeignClient` method. Because every
-/// mapping annotation implements it, that code finds any of them with
-/// `annotations.whereType<Mapping>()`.
+/// right controller method. Because every mapping annotation implements
+/// it, that code finds any of them with `annotations.whereType<Mapping>()`.
+/// The calls of an HTTP service interface (a client) are declared with the
+/// exchange annotations instead (`@GetExchange`, ..., see `HttpExchange`),
+/// as in Spring.
 ///
 /// The annotations are marked `@BeanMethodAnnotation()`. That makes the
 /// code generator record each annotated method (its parameters, their
@@ -47,40 +48,30 @@ abstract interface class Mapping {
   /// accepts the wildcards of `PathPattern` (`*`, `**`, `{name:regex}`).
   ///
   /// Empty (`@GetMapping()`) means the base path itself: the path of the
-  /// class's `@RequestMapping` on a server, the `url` and `path` of
-  /// `@FeignClient` on a client, as in Spring when `path` is left out.
+  /// class's `@RequestMapping`, as in Spring when `path` is left out.
   String get path;
 
   /// Header entries in Spring's syntax, such as `'X-Api-Version=2'`.
   ///
-  /// A client sends every `'Name=value'` entry with each call (with
-  /// `${property}` placeholders filled). A server reads every entry as a
-  /// condition the request must meet for this method to be chosen:
-  /// `'Name'` (the header is present), `'!Name'` (absent), `'Name=value'`
-  /// and `'Name!=value'`. When no method meets them, the answer is a 400.
-  /// A client ignores the condition-only forms, as Spring Cloud OpenFeign
-  /// does.
+  /// The server reads every entry as a condition the request must meet for
+  /// this method to be chosen: `'Name'` (the header is present), `'!Name'`
+  /// (absent), `'Name=value'` and `'Name!=value'`. When no method meets
+  /// them, the answer is a 400.
   List<String> get headers;
 
   /// The media types of the response: one, or a comma-separated list
   /// (`MediaType.applicationJson`).
   ///
-  /// A server chooses this method only when the request's `Accept` header
-  /// allows one of them (otherwise the answer is a 406) and writes the
-  /// body with it. A client sends the value as its `Accept` header.
-  /// `null`: a server accepts any `Accept`; a client asks for JSON, or for
-  /// `text/event-stream` when the method returns an event stream.
+  /// The server chooses this method only when the request's `Accept`
+  /// header allows one of them (otherwise the answer is a 406) and writes
+  /// the body with it. `null`: any `Accept`.
   String? get produces;
 
   /// The media types of the request body: one, or a comma-separated list.
   ///
-  /// A server chooses this method only when the request's `Content-Type`
-  /// is one of them (otherwise the answer is a 415). A client sends its
-  /// body with this `Content-Type`: `MediaType.multipartFormData` makes a
-  /// multipart body, `MediaType.applicationFormUrlencoded` writes a map or
-  /// an object as form fields. `null`: a server accepts any body; a client
-  /// picks the type from the body (JSON for an object, `text/plain` for a
-  /// `String`, `application/octet-stream` for bytes).
+  /// The server chooses this method only when the request's
+  /// `Content-Type` is one of them (otherwise the answer is a 415).
+  /// `null`: any body.
   String? get consumes;
 }
 
@@ -94,8 +85,7 @@ abstract interface class Mapping {
 /// method, it is for the HTTP methods without a shortcut annotation
 /// (`HEAD`, `OPTIONS`, `TRACE`); for the others, [GetMapping],
 /// [PostMapping], [PutMapping], [PatchMapping] and [DeleteMapping] are
-/// shorter. A Feign client does not read it on the interface: its base
-/// path comes from `@FeignClient(path: ...)`.
+/// shorter.
 ///
 /// ```dart
 /// // Every path of this controller starts with /api/books.
@@ -162,13 +152,13 @@ class RequestMapping implements Mapping {
   final String? consumes;
 }
 
-/// Maps HTTP `GET` requests to a method. On a controller, the method
-/// answers them; on a Feign client, calling the method sends one.
+/// Maps HTTP `GET` requests to a method of a controller, which answers
+/// them. (On an HTTP service interface, a client, `@GetExchange` declares
+/// a `GET` call.)
 ///
 /// `GET` reads data without changing anything, which makes this the most
 /// common mapping. The path is optional: `@GetMapping()` maps the base
-/// path (the class's `@RequestMapping` on a controller, the `@FeignClient`
-/// path on a client). To give other attributes, write
+/// path (the class's `@RequestMapping`). To give other attributes, write
 /// `@GetMapping.of(path: ..., produces: ...)`: Dart does not allow an
 /// optional positional parameter and named ones in the same constructor.
 ///
@@ -235,29 +225,32 @@ class GetMapping implements Mapping {
   final String? consumes;
 }
 
-/// Maps HTTP `POST` requests to a method. On a controller, the method
-/// answers them; on a Feign client, calling the method sends one.
+/// Maps HTTP `POST` requests to a method of a controller, which answers
+/// them. (On an HTTP service interface, `@PostExchange` declares a `POST`
+/// call.)
 ///
 /// `POST` usually creates something or starts an action, with the data in
 /// the request body (see [RequestBody]). The path is optional, and other
 /// attributes are given with `@PostMapping.of(...)`, as for [GetMapping].
 ///
 /// ```dart
-/// // A Feign client: create sends the book as JSON to
-/// // POST {catalog.url}/books and reads the stored book from the answer.
-/// @FeignClient('catalog', url: r'${catalog.url}')
-/// abstract interface class CatalogClient {
+/// // POST /books with the book as JSON; the answer is the stored book.
+/// @RestController()
+/// class BookController {
+///   BookController(this.books);
+///   final BookService books;
+///
 ///   @PostMapping('/books')
-///   Future<Book> create(@RequestBody() Book book);
+///   Book create(@RequestBody() Book book) => books.save(book);
 /// }
 /// ```
 ///
 /// Spring (Java):
 /// ```java
-/// @FeignClient(name = "catalog", url = "${catalog.url}")
-/// interface CatalogClient {
+/// @RestController
+/// class BookController {
 ///   @PostMapping("/books")
-///   Book create(@RequestBody Book book);
+///   Book create(@RequestBody Book book) { return books.save(book); }
 /// }
 /// ```
 @BeanMethodAnnotation()
@@ -294,8 +287,9 @@ class PostMapping implements Mapping {
   final String? consumes;
 }
 
-/// Maps HTTP `PUT` requests to a method. On a controller, the method
-/// answers them; on a Feign client, calling the method sends one.
+/// Maps HTTP `PUT` requests to a method of a controller, which answers
+/// them. (On an HTTP service interface, `@PutExchange` declares a `PUT`
+/// call.)
 ///
 /// `PUT` replaces the whole resource at a known address with the request
 /// body; sending the same request twice gives the same result. For a
@@ -349,8 +343,9 @@ class PutMapping implements Mapping {
   final String? consumes;
 }
 
-/// Maps HTTP `PATCH` requests to a method. On a controller, the method
-/// answers them; on a Feign client, calling the method sends one.
+/// Maps HTTP `PATCH` requests to a method of a controller, which answers
+/// them. (On an HTTP service interface, `@PatchExchange` declares a
+/// `PATCH` call.)
 ///
 /// `PATCH` changes part of a resource: the body carries only the fields
 /// to change. To replace the whole resource, use [PutMapping].
@@ -405,8 +400,9 @@ class PatchMapping implements Mapping {
   final String? consumes;
 }
 
-/// Maps HTTP `DELETE` requests to a method. On a controller, the method
-/// answers them; on a Feign client, calling the method sends one.
+/// Maps HTTP `DELETE` requests to a method of a controller, which
+/// answers them. (On an HTTP service interface, `@DeleteExchange`
+/// declares a `DELETE` call.)
 ///
 /// `DELETE` removes the resource at the path. A controller method that
 /// returns nothing answers `200 OK` with no body; add
@@ -464,11 +460,12 @@ class DeleteMapping implements Mapping {
 /// Use it when the path itself names the resource, as in `/books/{isbn}`.
 /// On a controller, the server takes the value from the request path and
 /// converts it to the parameter's type: a `String`, a number, a `bool`,
-/// an enum, a `DateTime`, a `Duration`, a `Uri`, or a `List` of them. On a
-/// Feign client, the argument is percent-encoded and written into the
-/// path. Without a [name], the parameter's own name is the variable name.
-/// Every `{variable}` of the path needs such a parameter and every such
-/// parameter needs a variable; a mismatch is reported at startup.
+/// an enum, a `DateTime`, a `Duration`, a `Uri`, or a `List` of them. On
+/// an HTTP service interface, the argument is percent-encoded and written
+/// into the URL. Without a [name], the parameter's own name is the
+/// variable name. Every `{variable}` of the path needs such a parameter
+/// and every such parameter needs a variable; a mismatch is reported at
+/// startup (by the build on an HTTP service interface).
 ///
 /// A server always has a value once the path matched. A client needs one:
 /// a `null` argument is an `ArgumentError`, unless the parameter is
@@ -512,11 +509,12 @@ class PathVariable {
 /// converts it to the parameter's type (a `String`, a number, a `bool`, an
 /// enum, a `DateTime`, ...). A `List` parameter takes every value of a
 /// repeated parameter, and a `MultipartFile` parameter takes an uploaded
-/// file. On a Feign client, the argument is added to the query string; a
-/// `List` repeats the parameter. Without a [name], the parameter's own
-/// name is used. A `Map<String, ...>` parameter stands for all query
-/// parameters: a server fills it with every one it received, a client
-/// sends one query parameter per entry (the [name] is not used then).
+/// file. On an HTTP service interface, the argument is added to the query
+/// string (a form field with a form `contentType`); a `List` repeats the
+/// parameter, a `null` is left out. Without a [name], the parameter's own
+/// name is used. On a server, a `Map<String, ...>` parameter stands for
+/// all query parameters, filled with every one it received (the [name] is
+/// not used then).
 ///
 /// The Dart parameter decides whether a value is required:
 ///
@@ -568,12 +566,12 @@ class RequestParam {
 /// Use it for values that travel in headers rather than in the path or
 /// the body: a request id, a tenant, an API version, a token. On a
 /// controller, the server reads the header and converts it to the
-/// parameter's type; a `List` takes all its values. On a Feign client, the
-/// argument is sent as that header, replacing a value of the same name
-/// from the mapping's `headers`. Without a [name], the parameter's own name
-/// is the header name. A `Map<String, ...>` parameter stands for all
-/// headers: a server fills it with every header of the request, a client
-/// sends one header per entry. On a server, an `HttpHeaders` parameter
+/// parameter's type; a `List` takes all its values. On an HTTP service
+/// interface, the argument is sent as that header, replacing a value of
+/// the same name from the exchange's `headers`. Without a [name], the
+/// parameter's own name is the header name. On a server, a
+/// `Map<String, ...>` parameter stands for all headers, filled with every
+/// header of the request, and an `HttpHeaders` parameter
 /// gets all headers too.
 ///
 /// Whether a value is required follows the Dart parameter, as for
@@ -618,11 +616,11 @@ class RequestHeader {
 /// Use it when a value comes in a cookie, such as a session id or a user
 /// preference set by a browser. On a controller, the server reads the
 /// cookie from the request's `Cookie` header and converts it to the
-/// parameter's type. On a Feign client, the cookies of a call are sent
-/// together in one `Cookie` header (`a=1; b=2`); a `null` argument is left
-/// out. Without a [name], the parameter's own name is the cookie name.
-/// Whether a value is required follows the Dart parameter, as for
-/// [RequestParam].
+/// parameter's type. On an HTTP service interface, the cookies of a call
+/// are sent together in one `Cookie` header (`a=1; b=2`); a `null`
+/// argument is left out. Without a [name], the parameter's own name is
+/// the cookie name. Whether a value is required follows the Dart
+/// parameter, as for [RequestParam].
 ///
 /// ```dart
 /// // Cookie: SESSION=4f2a... picks the shopping cart of that session.
@@ -654,10 +652,9 @@ class CookieValue {
 /// `Stream` of bytes the body as it arrives, and a `Map` also accepts the
 /// fields of a form (`application/x-www-form-urlencoded`). With `@Valid()`
 /// on the parameter, the object is validated and a failure is a 400
-/// listing the field errors. On a Feign client, the argument becomes the
-/// body: JSON for an object, text for a `String`, the bytes for a
-/// `Uint8List`, form fields when the mapping `consumes` a form. The only
-/// parameter of a Feign method without an annotation is the body too.
+/// listing the field errors. On an HTTP service interface, the argument
+/// becomes the body: JSON for an object, text for a `String`, the bytes
+/// for a `Uint8List`.
 ///
 /// A method has at most one body. The body is required unless the
 /// parameter is nullable (`Book? book`) or has a default value: a server
@@ -699,10 +696,9 @@ class RequestBody {
 /// `MultipartFile` (or a `List<MultipartFile>` for several files under
 /// one name), a `String` or other simple value for a text field, bytes
 /// (`Uint8List`), or an object read from the part's JSON (validated with
-/// `@Valid()`). A request that is not multipart gets a 400. On a Feign
-/// client, each such parameter becomes a part of a multipart body; the
-/// mapping then needs no `consumes`. Without a [name], the parameter's own
-/// name is the part name.
+/// `@Valid()`). A request that is not multipart gets a 400. On an HTTP
+/// service interface, each such parameter becomes a part of a multipart
+/// body. Without a [name], the parameter's own name is the part name.
 ///
 /// The part is required unless the parameter is nullable
 /// (`MultipartFile? cover`) or has a default value; a missing required

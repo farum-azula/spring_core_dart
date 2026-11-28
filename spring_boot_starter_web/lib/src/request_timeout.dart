@@ -9,8 +9,8 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 const requestTimeoutDetail = 'The request did not complete in time.';
 
 /// How close to its end a `RequestDeadline` must be for an error to count
-/// as the timeout: the timers of the server and of a Feign call that
-/// share one end can fire a few milliseconds apart.
+/// as the timeout: the timers of the server and of an HTTP client call
+/// that share one end can fire a few milliseconds apart.
 const requestDeadlineSlack = Duration(milliseconds: 10);
 
 /// The 503 the request ends with when its deadline passed.

@@ -164,7 +164,7 @@ class _$AuthorRepositoryImpl extends SimpleRepository<Author, String>
 
   test('the types of repository signatures are not introspected', () {
     // Book has no @Table here: being returned by a repository describes
-    // nothing (only a Feign client's bodies are described that way).
+    // nothing (only an HTTP client's bodies are described that way).
     expect(output, isNot(_introspection('<Book>')));
   });
 

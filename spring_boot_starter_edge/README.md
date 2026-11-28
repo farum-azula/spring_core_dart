@@ -4,7 +4,7 @@ The same Spring Boot for Dart application as a **function**: on Supabase
 Edge Functions, Cloudflare Workers, AWS Lambda, Deno Deploy, Netlify Edge
 Functions and Vercel Functions. The application is compiled to JavaScript
 (or WebAssembly) and answers through the platform's fetch API
-instead of a socket; controllers, filters, Spring Security, Feign clients
+instead of a socket; controllers, filters, Spring Security, HTTP clients
 and the other starters are those of a server.
 
 Spring's counterparts: the serverless Java container
@@ -305,19 +305,22 @@ WARN  Running as a function; these work differently here:
   - @Scheduled Rates.refresh (PeriodicTrigger(fixedRate: 1:00:00.000000)): timers do not outlive a request; ...
   - cached values (bean 'cacheManager'): kept in the memory of each short-lived instance, ...
   - sessions (bean 'httpSessionRepository'): kept in the memory of each short-lived instance, ...
+  - @ConcurrencyLimit (bean 'reports'): counts the calls of each short-lived instance, not of all of them; ...
 ```
 
 Each line comes from an `EdgeWarningContributor` bean. The starter has
-three: an in-memory rate limiter; every `@Scheduled` method (the beans
+four: an in-memory rate limiter; every `@Scheduled` method (the beans
 that are a `TimerDrivenWork`); every bean that keeps its state in the
 memory of its instance (the beans that are an `IsolateLocalState`: the
-in-memory caches and sessions; a cache kept elsewhere is not listed).
+in-memory caches and sessions; a cache kept elsewhere is not listed);
+every bean with a `@ConcurrencyLimit` method (the limit counts the calls
+of one instance).
 Those two interfaces are `spring_core_dart`'s, and say nothing about a
 platform: a pool of isolates warns about the same beans. A bean of the
 contributor's type adds its own lines. `spring.edge.warnings: false`
 turns the list off.
 
-The list is a startup check: `edgeWarnings` and the three contributors
+The list is a startup check: `edgeWarnings` and the four contributors
 are in a module of their own
 (`springBootStarterEdgeStartupChecksAutoConfiguration`), which the
 generator puts into the build by `spring.main.startup-checks.enabled`:

@@ -360,6 +360,57 @@ void main() {
         failsWith('invalid_token_response'),
       );
     });
+
+    // On RestClient: no answer is a ResourceAccessException, the cause of
+    // the OAuth2 error, as in Spring's RestClient token clients.
+    test("the cause is the RestClient's ResourceAccessException; a host off "
+        'the allow list is one, naming it', () async {
+      final unreachable = MockHttpTransport()
+        ..when(HttpMethod.post, 'https://sso.test/token').fail(
+          HttpTransportException('connection refused'),
+        );
+      await expectLater(
+        DefaultAuthorizationCodeTokenResponseClient(unreachable)
+            .getTokenResponse(_codeGrant(_registration())),
+        throwsA(
+          isA<OAuth2AuthorizationException>().having(
+            (e) => e.cause,
+            'cause',
+            isA<ResourceAccessException>().having(
+              (e) => e.cause,
+              'cause',
+              isA<HttpTransportException>(),
+            ),
+          ),
+        ),
+      );
+      final filtered = platformHttpTransport(
+        allowedAddresses: AllowedAddresses(['api.test']),
+      );
+      addTearDown(filtered.close);
+      await expectLater(
+        DefaultAuthorizationCodeTokenResponseClient(filtered)
+            .getTokenResponse(_codeGrant(_registration())),
+        throwsA(
+          isA<OAuth2AuthorizationException>()
+              .having(
+                (e) => e.error.errorCode,
+                'code',
+                'invalid_token_response',
+              )
+              .having(
+                (e) => e.error.description,
+                'description',
+                contains('sso.test'),
+              )
+              .having(
+                (e) => (e.cause! as ResourceAccessException).cause,
+                'cause',
+                isA<FilteredHostException>(),
+              ),
+        ),
+      );
+    });
   });
 
   group('refresh and client credentials', () {

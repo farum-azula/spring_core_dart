@@ -1,3 +1,4 @@
+import 'package:spring_web_dart/src/client/address/allowed_addresses.dart';
 import 'package:spring_web_dart/src/client/http_request.dart';
 import 'package:spring_web_dart/src/client/http_response.dart';
 import 'package:spring_web_dart/src/client/platform_transport_stub.dart'
@@ -10,7 +11,8 @@ import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 /// and gives back the response, without knowing about JSON, annotations
 /// or error handling.
 ///
-/// It exists so that the clients built on it (Feign clients today) do not
+/// It exists so that the clients built on it (`RestClient`, WebSocket
+/// handshakes, downloads) do not
 /// depend on how a platform does HTTP. Three implementations come with
 /// this package:
 ///
@@ -21,14 +23,15 @@ import 'package:spring_web_dart/src/client/streamed_http_response.dart';
 /// - `MockHttpTransport` for tests, from
 ///   `package:spring_web_dart/testing.dart`.
 ///
-/// Most applications never call it. The Feign starter declares an
-/// `httpTransport` bean from [platformHttpTransport] and its clients use
-/// it. You implement this interface to put Feign on another HTTP library
+/// Most applications never call it. The RestClient starter declares an
+/// `httpTransport` bean from [platformHttpTransport] that calls only the
+/// addresses allowed by hand, and its clients use it. You implement this
+/// interface to put the clients on another HTTP library
 /// (Dio, `package:http`, a client with certificate pinning) and declare
 /// your implementation as a bean: the starter then uses it instead.
 ///
 /// ```dart
-/// // A one-off call outside any Feign client.
+/// // A one-off call outside any client.
 /// final transport = platformHttpTransport();
 /// try {
 ///   final response = await transport.send(
@@ -72,7 +75,8 @@ abstract interface class HttpTransport {
   Future<StreamedHttpResponse> stream(HttpRequest request);
 
   /// Releases the transport's connections. Call it when the transport is
-  /// no longer needed (the Feign starter does when the application stops);
+  /// no longer needed (the RestClient starter does when the application
+  /// stops);
   /// do not use the transport afterwards.
   void close();
 }
@@ -82,12 +86,12 @@ abstract interface class HttpTransport {
 /// and desktop), a `FetchHttpTransport` in the browser.
 ///
 /// It lets code shared between Flutter mobile and Flutter web create a
-/// transport without conditional imports. The Feign starter calls it for
-/// its default `httpTransport` bean. [connectTimeout] limits how long
-/// opening a connection may take; `fetch` has no such setting, so it is
-/// ignored in the browser. On a platform with neither `dart:io` nor
-/// `dart:js_interop` it throws an [UnsupportedError]: pass your own
-/// [HttpTransport] there.
+/// transport without conditional imports. The RestClient starter calls
+/// it for its default `httpTransport` bean.
+/// [connectTimeout] limits how long opening a connection may take;
+/// `fetch` has no such setting, so it is ignored in the browser. On a
+/// platform with neither `dart:io` nor `dart:js_interop` it throws an
+/// [UnsupportedError]: pass your own [HttpTransport] there.
 ///
 /// ```dart
 /// // Fail fast when the server cannot be reached.
@@ -105,14 +109,22 @@ abstract interface class HttpTransport {
 /// self-signed or for another host (`dart:io` only: a browser checks
 /// certificates by itself). For the downloads of the configuration with
 /// `spring.remote.allow-insecure` only; never for an API.
+///
+/// [allowedAddresses] limits the hosts and addresses the transport calls
+/// (see [AllowedAddresses]: resolved addresses are checked on `dart:io`,
+/// only hosts and address literals in a browser); `null` calls any. The
+/// `httpTransport` bean of `spring_boot_starter_restclient` always has
+/// one.
 HttpTransport platformHttpTransport({
   Duration? connectTimeout,
   FetchCredentials credentials = FetchCredentials.sameOrigin,
   bool allowBadCertificates = false,
+  AllowedAddresses? allowedAddresses,
 }) => platform.createTransport(
   connectTimeout: connectTimeout,
   credentials: credentials,
   allowBadCertificates: allowBadCertificates,
+  allowedAddresses: allowedAddresses,
 );
 
 /// Whether a browser sends its cookies (and HTTP authentication) with a
@@ -163,8 +175,8 @@ enum FetchCredentials {
 ///
 /// It is different from an error status: a `500` is a response, this
 /// exception means the server's answer never arrived. Such failures are
-/// often temporary, so they are worth retrying. Feign clients wrap it in
-/// a `RetryableException`, which a `Retryer` bean can retry (nothing is
+/// often temporary, so they are worth retrying. `RestClient` wraps it in
+/// a `ResourceAccessException`, which `@Retryable` can retry (nothing is
 /// retried by default); you catch it yourself only when you call a
 /// transport directly.
 ///

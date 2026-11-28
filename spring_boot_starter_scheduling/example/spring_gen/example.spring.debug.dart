@@ -11,7 +11,7 @@ part of 'example.spring.dart';
 
 /// The hash of the generated code, which a hot reload compares to restart
 /// the application only when its beans changed (`SpringApplication.reload`).
-const _$fingerprint = '1c51d01e';
+const _$fingerprint = '049e896c';
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;

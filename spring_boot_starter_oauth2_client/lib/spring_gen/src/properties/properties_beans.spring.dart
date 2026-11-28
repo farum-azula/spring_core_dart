@@ -10,24 +10,26 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
-import 'package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart'
-    as _i2;
 import 'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart'
+    as _i2;
+import 'package:spring_boot_starter_oauth2_client/src/properties/oauth2_rest_client_properties.dart'
     as _i3;
 
 import 'properties_beans.spring.introspection.dart' as _i4;
 import 'properties_beans.spring.properties.dart' as _i5;
 
 const _$target0 = _i1.AopTarget(
-  r'FeignOAuth2Properties',
-  types: [r'FeignOAuth2Properties'],
-  annotations: [_i1.ConfigurationProperties(r'spring.feign.oauth2')],
-  annotationTypes: [r'ConfigurationProperties'],
-);
-const _$target1 = _i1.AopTarget(
   r'OAuth2ClientProperties',
   types: [r'OAuth2ClientProperties'],
   annotations: [_i1.ConfigurationProperties(r'spring.security.oauth2.client')],
+  annotationTypes: [r'ConfigurationProperties'],
+);
+const _$target1 = _i1.AopTarget(
+  r'OAuth2RestClientProperties',
+  types: [r'OAuth2RestClientProperties'],
+  annotations: [
+    _i1.ConfigurationProperties(r'spring.security.oauth2.client.restclient'),
+  ],
   annotationTypes: [r'ConfigurationProperties'],
 );
 
@@ -35,44 +37,10 @@ const _$target1 = _i1.AopTarget(
 _i1.BeanModule get $oauth2ClientConfigBeans => _i1.BeanModule(
   r'oauth2ClientConfigBeans',
   [
-    _i1.BeanDefinition<_i2.FeignOAuth2Properties>(
-      name: r'feignOAuth2Properties',
-      source: r'package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart#FeignOAuth2Properties',
-      create: (r) => _i2.FeignOAuth2Properties(),
-      annotations: const [_i1.ConfigurationProperties(r'spring.feign.oauth2')],
-      aopProxy: const _i1.AopProxyFactory.deferred(
-        signatures: [
-          _i1.MethodSignature.of(
-            r'enabled',
-            _$target0,
-            kind: _i1.MemberKind.getter,
-            returnType: r'bool',
-          ),
-          _i1.MethodSignature.of(
-            r'clientRegistrationId',
-            _$target0,
-            kind: _i1.MemberKind.getter,
-            returnType: r'String',
-          ),
-          _i1.MethodSignature.of(
-            r'enabled',
-            _$target0,
-            kind: _i1.MemberKind.setter,
-            returnType: r'bool',
-          ),
-          _i1.MethodSignature.of(
-            r'clientRegistrationId',
-            _$target0,
-            kind: _i1.MemberKind.setter,
-            returnType: r'String',
-          ),
-        ],
-      ),
-    ),
-    _i1.BeanDefinition<_i3.OAuth2ClientProperties>(
+    _i1.BeanDefinition<_i2.OAuth2ClientProperties>(
       name: r'OAuth2ClientProperties',
       source: r'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart#OAuth2ClientProperties',
-      create: (r) => _i1.ConstructorBound.from<_i3.OAuth2ClientProperties>(
+      create: (r) => _i1.ConstructorBound.from<_i2.OAuth2ClientProperties>(
         r,
         r'OAuth2ClientProperties',
       ),
@@ -83,26 +51,64 @@ _i1.BeanModule get $oauth2ClientConfigBeans => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'validate',
-            _$target1,
+            _$target0,
             declaringTypes: [],
             returnType: r'void',
           ),
           _i1.MethodSignature.of(
             r'registration',
-            _$target1,
+            _$target0,
             declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'Map',
           ),
           _i1.MethodSignature.of(
             r'provider',
-            _$target1,
+            _$target0,
             declaringTypes: [],
             kind: _i1.MemberKind.getter,
             returnType: r'Map',
           ),
         ],
         reason: r'OAuth2ClientProperties cannot be implemented by a generated class (it has private members, or is final, base or sealed) and implements no interface. Add an interface with the advised methods and inject the bean by it, or make its members public.',
+      ),
+    ),
+    _i1.BeanDefinition<_i3.OAuth2RestClientProperties>(
+      name: r'OAuth2RestClientProperties',
+      source: r'package:spring_boot_starter_oauth2_client/src/properties/oauth2_rest_client_properties.dart#OAuth2RestClientProperties',
+      create: (r) => _i3.OAuth2RestClientProperties(),
+      annotations: const [
+        _i1.ConfigurationProperties(
+          r'spring.security.oauth2.client.restclient',
+        ),
+      ],
+      aopProxy: const _i1.AopProxyFactory.deferred(
+        signatures: [
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target1,
+            kind: _i1.MemberKind.getter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'clientRegistrationId',
+            _$target1,
+            kind: _i1.MemberKind.getter,
+            returnType: r'String',
+          ),
+          _i1.MethodSignature.of(
+            r'enabled',
+            _$target1,
+            kind: _i1.MemberKind.setter,
+            returnType: r'bool',
+          ),
+          _i1.MethodSignature.of(
+            r'clientRegistrationId',
+            _$target1,
+            kind: _i1.MemberKind.setter,
+            returnType: r'String',
+          ),
+        ],
       ),
     ),
   ],

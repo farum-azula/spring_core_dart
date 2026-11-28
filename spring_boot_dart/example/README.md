@@ -241,7 +241,7 @@ void reassemble() {
 }
 ```
 
-A restart runs your `CommandLineRunner`s again, like a fresh launch. If
+A restart runs your `CommandLineRunner` instances again, like a fresh launch. If
 they do start-up work that must not repeat (migrations, an
 `app_started` analytics event), skip them:
 

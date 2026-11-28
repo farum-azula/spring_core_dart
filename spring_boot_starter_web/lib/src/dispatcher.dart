@@ -149,8 +149,8 @@ abstract class OncePerRequestFilter implements WebFilter {
 ///
 /// 1. runs the request in its own `Zone`, so that
 ///    `RequestContextHolder.currentRequest` is the request anywhere in its
-///    handling, across `await`s; with [requestTimeout] it runs under a
-///    `RequestDeadline` too (see below);
+///    handling, across `await` expressions; with [requestTimeout] it runs under
+///    a `RequestDeadline` too (see below);
 /// 2. strips [contextPath] (a request outside it gets a 404);
 /// 3. runs the [filters], in order;
 /// 4. asks each of the [handlerMappings] in turn for a handler and calls
@@ -162,7 +162,7 @@ abstract class OncePerRequestFilter implements WebFilter {
 ///
 /// With [requestTimeout] (`server.request-timeout`) the steps above run
 /// under a `RequestDeadline` of that length, which the code they call can
-/// read: a Feign call, for one, never outlives it. When it passes before
+/// read: a `RestClient` call, for one, never outlives it. When it passes before
 /// the answer starts, the request is answered with a 503 problem
 /// (`AsyncRequestTimeoutException`, a generic detail, logged as a warning
 /// like other 5xx answers, at most once per 10 seconds), and everything

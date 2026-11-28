@@ -21,7 +21,7 @@ final class DataSourceTransactionObject {
 /// The transaction manager of a JDBC [DataSource]: a transaction is one
 /// connection of the data source, begun with the transaction's isolation
 /// and read-only flag, bound in the scope (`ConnectionHolder`) so the
-/// `JdbcTemplate`s and the repositories of the transaction share it.
+/// `JdbcTemplate` instances and the repositories of the transaction share it.
 ///
 /// - The propagation rules are the base class's; here `requiresNew` takes a
 ///   second connection of the pool (so a pool of one connection cannot run

@@ -86,7 +86,7 @@ final class RecordingHttpTransport implements HttpTransport {
         contentType,
       )
       ..totalTime = clock.elapsed
-      ..state = HttpExchangeState.done;
+      ..state = HttpCallState.done;
     journal.changed();
     if (mark != null) {
       _readTiming(exchange, request.url, mark);
@@ -119,7 +119,7 @@ final class RecordingHttpTransport implements HttpTransport {
         sensitive: request.sensitiveHeaders,
       )
       ..headersTime = clock.elapsed
-      ..state = HttpExchangeState.receiving;
+      ..state = HttpCallState.receiving;
     journal.changed();
     return StreamedHttpResponse(
       response.statusCode,
@@ -141,10 +141,10 @@ final class RecordingHttpTransport implements HttpTransport {
   @override
   void close() => delegate.close();
 
-  HttpExchange _start(HttpRequest request, {required bool streamed}) {
+  HttpCall _start(HttpRequest request, {required bool streamed}) {
     final size = request.body?.length ?? 0;
     return journal.add(
-      HttpExchange(
+      HttpCall(
         id: journal.nextId(),
         url: journal.masking.url(request.url),
         started: DateTime.now(),
@@ -168,7 +168,7 @@ final class RecordingHttpTransport implements HttpTransport {
   // or a little later when its entry is not there yet. The address is the
   // request's own, looked up and never kept.
   void _readTiming(
-    HttpExchange exchange,
+    HttpCall exchange,
     Uri url,
     double mark, [
     int tried = 0,
@@ -189,9 +189,9 @@ final class RecordingHttpTransport implements HttpTransport {
     }
   }
 
-  void _fail(HttpExchange exchange, Object error, Duration elapsed) {
+  void _fail(HttpCall exchange, Object error, Duration elapsed) {
     exchange
-      ..state = HttpExchangeState.failed
+      ..state = HttpCallState.failed
       ..error = journal.masking.text(
         error is HttpTransportException ? error.message : '$error',
       )
@@ -205,7 +205,7 @@ final class RecordingHttpTransport implements HttpTransport {
   // nothing waits here that the caller has not asked for.
   Stream<List<int>> _observed(
     Stream<List<int>> body,
-    HttpExchange exchange,
+    HttpCall exchange,
     Stopwatch clock,
     String? contentType, {
     void Function()? onDone,
@@ -216,7 +216,7 @@ final class RecordingHttpTransport implements HttpTransport {
     StreamSubscription<List<int>>? source;
     late final StreamController<List<int>> controller;
 
-    void finish(HttpExchangeState state, {String? error}) {
+    void finish(HttpCallState state, {String? error}) {
       if (exchange.isDone) {
         return;
       }
@@ -252,7 +252,7 @@ final class RecordingHttpTransport implements HttpTransport {
               onEnded?.call();
             }
             finish(
-              HttpExchangeState.failed,
+              HttpCallState.failed,
               error: journal.masking.text(
                 error is HttpTransportException ? error.message : '$error',
               ),
@@ -260,7 +260,7 @@ final class RecordingHttpTransport implements HttpTransport {
             controller.addError(error, stack);
           },
           onDone: () {
-            finish(HttpExchangeState.done);
+            finish(HttpCallState.done);
             onDone?.call();
             unawaited(controller.close());
           },
@@ -272,7 +272,7 @@ final class RecordingHttpTransport implements HttpTransport {
         if (!exchange.isDone) {
           onEnded?.call();
         }
-        finish(HttpExchangeState.cancelled);
+        finish(HttpCallState.cancelled);
         return source?.cancel();
       },
     );

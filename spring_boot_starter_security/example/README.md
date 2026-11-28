@@ -3,7 +3,7 @@
 [`example.dart`](example.dart) is a Spring Boot application with a secured
 book API on port 8080. It shows:
 
-- two `SecurityFilterChain`s: the API (`/api/**`) with HTTP Basic, no
+- two `SecurityFilterChain` instances: the API (`/api/**`) with HTTP Basic, no
   session and so no CSRF token, and every other page with a login form, a
   session and CSRF protection;
 - users with hashed passwords (`{argon2}...`) from a `UserDetailsService`

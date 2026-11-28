@@ -7,7 +7,7 @@
 /// controller uses (`@GetMapping`, `@PathVariable()`, `@RequestBody()`,
 /// ...). The generator writes the implementation: arguments become the
 /// path, query, headers and body, JSON goes through the `ObjectMapper`,
-/// error statuses become `FeignException`s, and server-sent events
+/// error statuses become `FeignException` instances, and server-sent events
 /// arrive as an `EventStream`. Timeouts, logging, retries, interceptors
 /// and fallbacks are configured per client.
 ///

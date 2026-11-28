@@ -5,7 +5,6 @@ import 'package:neon_books_app/src/admin/book_form.dart';
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/api/problems.dart';
 import 'package:neon_books_app/src/app/messages.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The beans of [AdminPage].
@@ -75,9 +74,13 @@ class _AdminPageState extends SpringState<AdminPage, AdminPageBeans> {
         _added = added;
       });
       _snack(context.message('admin.added', args: [added.title]));
-    } on FeignBadRequest catch (error) {
-      // The server said no: its field errors under the fields.
-      setState(() => _errors = fieldErrorsOf(error));
+    } on HttpClientErrorException catch (error) {
+      if (error.statusCode == HttpStatus.badRequest) {
+        // The server said no: its field errors under the fields.
+        setState(() => _errors = fieldErrorsOf(error));
+      } else if (mounted) {
+        _snack(errorMessage(context, error));
+      }
     } on Exception catch (error) {
       if (mounted) {
         _snack(errorMessage(context, error));
@@ -129,7 +132,7 @@ class _AdminPageState extends SpringState<AdminPage, AdminPageBeans> {
     try {
       final lines = await admin.serverLogs();
       setState(() => _serverLog = lines);
-    } on FeignException catch (error) {
+    } on RestClientException catch (error) {
       if (mounted) {
         _snack(errorMessage(context, error));
       }

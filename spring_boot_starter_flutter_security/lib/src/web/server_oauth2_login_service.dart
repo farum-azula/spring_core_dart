@@ -63,10 +63,12 @@ const _log = SpringLog('spring.security.oauth2.client.login');
 /// or in the `Location` header of a `2xx` answer (`202 Accepted`). Any
 /// other success (`204`, a redirect) only ends the server's session.
 ///
-/// The requests carry the CSRF token through [CsrfCookieHttpTransport]
-/// (added around [transport] when it is not one already); the cookies go
-/// with them when the transport's `fetch` sends them (the package's
-/// `httpTransport` bean does for a server on another origin).
+/// The requests are sent by a `RestClient` on [transport], without
+/// following redirects, and carry the CSRF token through
+/// [CsrfCookieHttpTransport] (added around [transport] when it is not one
+/// already); the cookies go with them when the transport's `fetch` sends
+/// them (the package's `httpTransport` bean does for a server on another
+/// origin).
 ///
 /// Spring has no counterpart: Spring Security logs browsers in on the
 /// server; this is the page's side of `oauth2Login()`.
@@ -92,6 +94,11 @@ class ServerOAuth2LoginService implements OAuth2LoginService {
 
   /// Sends the requests to the server, with the CSRF token.
   late final HttpTransport transport;
+
+  late final RestClient _rest = RestClient.builder()
+      .transport(transport)
+      .followRedirects(false)
+      .build();
 
   /// The page: its cookies, and leaving it for the login and logout pages.
   final BrowserPage page;
@@ -197,16 +204,15 @@ class ServerOAuth2LoginService implements OAuth2LoginService {
     );
     final HttpResponse response;
     try {
-      response = await transport.send(
-        HttpRequest(
-          method: HttpMethod.get,
-          url: url,
-          headers: HttpHeaders({'Accept': 'application/json'}),
-          timeout: timeout,
-          followRedirects: false,
-        ),
+      response = await RequestDeadline.run(
+        timeout,
+        () => _rest
+            .get()
+            .uri(url)
+            .accept(MediaType.applicationJson)
+            .exchange((_, answer) => answer.response),
       );
-    } on HttpTransportException catch (e) {
+    } on ResourceAccessException catch (e) {
       _log.warning(
         'Nobody restored: the user endpoint $url cannot be reached '
         '(${e.isTimeout ? 'timeout' : 'no answer'})',
@@ -267,17 +273,16 @@ class ServerOAuth2LoginService implements OAuth2LoginService {
         );
         Uri? next;
         try {
-          final response = await transport.send(
-            HttpRequest(
-              method: HttpMethod.post,
-              url: url,
-              headers: HttpHeaders({'Accept': 'application/json'}),
-              timeout: timeout,
-              followRedirects: false,
-            ),
+          final response = await RequestDeadline.run(
+            timeout,
+            () => _rest
+                .post()
+                .uri(url)
+                .accept(MediaType.applicationJson)
+                .exchange((_, answer) => answer.response),
           );
           next = _logoutTarget(url, response);
-        } on HttpTransportException catch (e) {
+        } on ResourceAccessException catch (e) {
           _log.warning(
             'The server logout $url was not reached '
             '(${e.isTimeout ? 'timeout' : 'no answer'}); logged out here only',

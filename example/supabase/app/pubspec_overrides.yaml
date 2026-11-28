@@ -9,8 +9,6 @@ dependency_overrides:
     path: ../../../spring_boot_starter_cache
   spring_boot_starter_data:
     path: ../../../spring_boot_starter_data
-  spring_boot_starter_feign:
-    path: ../../../spring_boot_starter_feign
   spring_boot_starter_flutter:
     path: ../../../spring_boot_starter_flutter
   spring_boot_starter_flutter_material:
@@ -23,6 +21,8 @@ dependency_overrides:
     path: ../../../spring_boot_starter_logging
   spring_boot_starter_oauth2_client:
     path: ../../../spring_boot_starter_oauth2_client
+  spring_boot_starter_restclient:
+    path: ../../../spring_boot_starter_restclient
   spring_boot_starter_supabase:
     path: ../../../spring_boot_starter_supabase
   spring_boot_starter_test:

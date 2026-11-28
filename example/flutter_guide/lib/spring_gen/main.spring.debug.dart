@@ -12,69 +12,69 @@ part of 'main.spring.dart';
 /// The auto-configurations only debug builds have (their build key leaves
 /// them out of a profile or a release build), which `springApplication` adds
 /// to its own in debug builds.
-List<_i16.BeanModule> get _$debugAutoConfigurations => [
-  _i17.springBootStarterCacheStartupChecksAutoConfiguration,
-  _i18.springBootStarterFlutterDebugAutoConfiguration,
-  _i18.springBootStarterFlutterDebugBeansGraphAutoConfiguration,
-  _i18.springBootStarterFlutterDebugFlutterToolsAutoConfiguration,
-  _i18.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
-  _i18.springBootStarterFlutterDebugIsolatesAutoConfiguration,
-  _i18.springBootStarterFlutterDebugLogsExportAutoConfiguration,
-  _i18.springBootStarterFlutterDebugMotionAutoConfiguration,
-  _i18.springBootStarterFlutterDebugTimelineAutoConfiguration,
-  _i18.springBootStarterFlutterDebugWidgetsGraphAutoConfiguration,
-  _i19.springBootStarterFlutterNavigationDebugGraphAutoConfiguration,
+List<_i17.BeanModule> get _$debugAutoConfigurations => [
+  _i18.springBootStarterCacheStartupChecksAutoConfiguration,
+  _i19.springBootStarterFlutterDebugAutoConfiguration,
+  _i19.springBootStarterFlutterDebugBeansGraphAutoConfiguration,
+  _i19.springBootStarterFlutterDebugFlutterToolsAutoConfiguration,
+  _i19.springBootStarterFlutterDebugFrameMeterAutoConfiguration,
+  _i19.springBootStarterFlutterDebugIsolatesAutoConfiguration,
+  _i19.springBootStarterFlutterDebugLogsExportAutoConfiguration,
+  _i19.springBootStarterFlutterDebugMotionAutoConfiguration,
+  _i19.springBootStarterFlutterDebugTimelineAutoConfiguration,
+  _i19.springBootStarterFlutterDebugWidgetsGraphAutoConfiguration,
+  _i20.springBootStarterFlutterNavigationDebugGraphAutoConfiguration,
 ];
 
 /// The orderings of [_$debugAutoConfigurations] (`AutoConfigurationModule`).
-Map<_i16.BeanModule, _i16.AutoConfigurationModule>
+Map<_i17.BeanModule, _i17.AutoConfigurationModule>
 get _$debugAutoConfigurationMetadata => {
-  _i17.springBootStarterCacheStartupChecksAutoConfiguration:
-      const _i16.AutoConfigurationModule(
+  _i18.springBootStarterCacheStartupChecksAutoConfiguration:
+      const _i17.AutoConfigurationModule(
         after: [r'springBootStarterCacheAutoConfiguration'],
       ),
 };
 
 /// The hash of the generated code, which a hot reload compares to restart
 /// the application only when its beans changed (`SpringApplication.reload`).
-const _$fingerprint = '23a542a9';
+const _$fingerprint = '24e0be3d';
 
 /// For hot reload: [running] if the generated code is unchanged, else a
 /// restarted application with the new beans and the same arguments;
 /// [runners]: whether ApplicationRunner / CommandLineRunner beans run again.
-_i16.ConfigurableApplicationContext reloadApplication(
-  _i16.ConfigurableApplicationContext running, {
+_i17.ConfigurableApplicationContext reloadApplication(
+  _i17.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reload(running, runners: runners);
 
 /// Like [reloadApplication], reading config files asynchronously.
-Future<_i16.ConfigurableApplicationContext> reloadApplicationAsync(
-  _i16.ConfigurableApplicationContext running, {
+Future<_i17.ConfigurableApplicationContext> reloadApplicationAsync(
+  _i17.ConfigurableApplicationContext running, {
   bool runners = true,
 }) => springApplication.reloadAsync(running, runners: runners);
 
 /// The public fields of the application's widgets and their states, which the
 /// cards of the debug graph show (`DebugWidgetFields`).
 List<_i3.BeanDefinition<Object>> get _$debugWidgetFields => [
-  _i3.BeanDefinition<_i20.DebugWidgetFields>(
+  _i3.BeanDefinition<_i21.DebugWidgetFields>(
     name: r'debugWidgetFields',
     source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#DebugWidgetFields',
     lazy: true,
-    create: (r) => _i20.DebugWidgetFields({
-      _i21.HomePage: [(r'shell', (o) => (o as _i21.HomePage).shell)],
-      _i22.BookPage: [(r'isbn', (o) => (o as _i22.BookPage).isbn)],
-      _i23.BookTile: [(r'book', (o) => (o as _i23.BookTile).book)],
-      _i23.BookTilePlaceholder: [
-        (r'count', (o) => (o as _i23.BookTilePlaceholder).count),
+    create: (r) => _i21.DebugWidgetFields({
+      _i22.HomePage: [(r'shell', (o) => (o as _i22.HomePage).shell)],
+      _i23.BookPage: [(r'isbn', (o) => (o as _i23.BookPage).isbn)],
+      _i24.BookTile: [(r'book', (o) => (o as _i24.BookTile).book)],
+      _i24.BookTilePlaceholder: [
+        (r'count', (o) => (o as _i24.BookTilePlaceholder).count),
       ],
-      _i24.YamlBox: [
-        (r'text', (o) => (o as _i24.YamlBox).text),
-        (r'label', (o) => (o as _i24.YamlBox).label),
+      _i25.YamlBox: [
+        (r'text', (o) => (o as _i25.YamlBox).text),
+        (r'label', (o) => (o as _i25.YamlBox).label),
       ],
-      _i25.ThemeTag: [
-        (r'label', (o) => (o as _i25.ThemeTag).label),
-        (r'selected', (o) => (o as _i25.ThemeTag).selected),
-        (r'onPressed', (o) => (o as _i25.ThemeTag).onPressed),
+      _i26.ThemeTag: [
+        (r'label', (o) => (o as _i26.ThemeTag).label),
+        (r'selected', (o) => (o as _i26.ThemeTag).selected),
+        (r'onPressed', (o) => (o as _i26.ThemeTag).onPressed),
       ],
     }),
   ),

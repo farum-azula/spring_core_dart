@@ -118,7 +118,10 @@ How the checks run:
   instead of opening the method.
 - **Before every other advice.** `@Cacheable`, `@Validated` and the
   application's aspects run only for an authorized call, so a cached result
-  is never returned to a caller who may not call the method.
+  is never returned to a caller who may not call the method. `@Retryable`
+  too: a denied call is checked once and never retried (Spring retries
+  first), and an `AuthenticationException` or `AccessDeniedException` the
+  method throws is never retried either.
 - **On the class**, an annotation applies to every method without one of
   its own (not to getters and setters).
 
@@ -161,7 +164,7 @@ first `await`.
 
 To hear about logins and logouts, wrap the strategy in a
 `ListeningSecurityContextHolderStrategy` with
-`SecurityContextChangedListener`s (Spring Security's names): each
+`SecurityContextChangedListener` instances (Spring Security's names): each
 `setContext` and `clearContext` hands them a `SecurityContextChangedEvent`
 with the contexts before and after. `spring_boot_starter_flutter_security`
 does this so that widgets follow the logged-in user.

@@ -4,8 +4,6 @@
 import 'package:neon_books_server/spring_gen/src/app.spring.dart';
 import 'package:neon_books_server/src/catalog/book.dart';
 import 'package:neon_books_server/src/orders/order.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
-    show FeignException;
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 
 @RestControllerAdvice()
@@ -46,7 +44,7 @@ class ApiErrors {
   /// The supplier failed: 502, with the details in the log only.
   @ExceptionHandler()
   @ResponseStatus(HttpStatus.badGateway)
-  ProblemDetail supplierFailed(FeignException error) {
+  ProblemDetail supplierFailed(RestClientException error) {
     log.warning('supplier call failed: $error');
     return ProblemDetail.forStatusAndDetail(
       HttpStatus.badGateway,

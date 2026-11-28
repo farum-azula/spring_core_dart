@@ -1,6 +1,7 @@
 import 'package:spring_core_dart/src/aop/join_point.dart';
 import 'package:spring_core_dart/src/beans/introspection.dart';
 import 'package:spring_core_dart/src/context/message/message_source.dart';
+import 'package:spring_core_dart/src/core/retry/retry_policy.dart';
 import 'package:spring_core_dart/src/validation/constraints.dart';
 import 'package:spring_core_dart/src/validation/errors.dart';
 import 'package:spring_core_dart/src/validation/message_escapes.dart';
@@ -105,7 +106,7 @@ final class ConstraintViolation {
 ///   e.getConstraintViolations();
 /// }
 /// ```
-class ConstraintViolationException implements Exception {
+class ConstraintViolationException implements Exception, NonRetryableException {
   /// An exception for [constraintViolations]; [message] defaults to their
   /// `path: message` pairs joined with `, `, as Hibernate Validator writes
   /// it.

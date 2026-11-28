@@ -653,7 +653,7 @@ class CheckoutLogTest {
 }
 ```
 
-`CapturedLogs` has `records` (`SpringLogRecord`s with level, logger and
+`CapturedLogs` has `records` (`SpringLogRecord` instances with level, logger and
 message), `messages`, `text` (one `LEVEL [logger] message` line per
 record), `atLevel(level)` (exactly that level) and `ofLogger(name)` (that
 logger and the loggers below it). Records are captured after the loggers'
@@ -1015,7 +1015,7 @@ The response is a `MockServerHttpResponse`: `statusCode`, `headers`,
 
 ### Files: uploads and downloads
 
-`mvc.multipart` sends `MockMultipartFile`s (field name, original file
+`mvc.multipart` sends `MockMultipartFile` instances (field name, original file
 name, content type, bytes, as in Spring) and text fields (`params`) as one
 `multipart/form-data` body. It goes through the same multipart parsing
 and limits as on the server. A `MockMultipartFile` without a file name is
@@ -1064,9 +1064,10 @@ test('downloads part of a cover', () async {
 });
 ```
 
-Over a real server (`WebEnvironment.randomPort`), a Feign client sends
-files as described in the Feign starter's
-[Files and multipart](../spring_boot_starter_feign/README.md#files-and-multipart).
+Over a real server (`WebEnvironment.randomPort`), an HTTP service
+client sends files as `@RequestPart` parameters, as described in the
+RestClient starter's
+[HTTP service clients](../spring_boot_starter_restclient/README.md#http-service-clients).
 
 ### Server-sent events
 
@@ -1091,7 +1092,7 @@ test('streams changes', () async {
 
 `response.events` holds the events written so far, `response.chunks` the
 raw body from now on, and `result.completion` completes when the
-application has finished the response. `SseEmitter`s and
+application has finished the response. `SseEmitter` instances and
 `application/x-ndjson` streams are read the same way.
 
 ### WebSocket endpoints
@@ -1117,8 +1118,8 @@ body of the answer.
 
 ### A real server: `webEnvironment`
 
-Some clients need a real socket: a Feign client, `dart:io`'s
-`HttpClient`, a WebSocket client. For them the test starts the server on a
+Some clients need a real socket: a `RestClient` or an HTTP service
+client, `dart:io`'s `HttpClient`, a WebSocket client. For them the test starts the server on a
 free port.
 
 | `webEnvironment` | Spring | What starts |
@@ -1209,8 +1210,9 @@ application never open a port. For a real server in a runner, add
   `@AutoConfigureMockMvc` (an `@Autowired MockMvc` field or `app.mockMvc`
   always works with the web starter). Its expectations are named
   parameters with matchers instead of `status().isOk()` and
-  `jsonPath(...)`. There is no `WebTestClient` or `TestRestTemplate`: use
-  a Feign client or `HttpClient` against `localServerPort`.
+  `jsonPath(...)`. There is no `WebTestClient`, `RestTestClient` or
+  `TestRestTemplate`: use a `RestClient` or `HttpClient` against
+  `localServerPort`.
 - **One test slice**, `@DataTest` ([section 19](#19-data-tests-datatest)).
   There is no `@WebMvcTest` yet; use `ApplicationContextRunner` for a part
   of the configuration.

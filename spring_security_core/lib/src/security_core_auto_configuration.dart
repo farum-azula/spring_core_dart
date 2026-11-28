@@ -19,8 +19,12 @@ const _source = 'package:spring_security_core#SecurityCoreAutoConfiguration';
 /// someone who may not call the method. An aspect that must run before
 /// the security check needs a lower order than this value.
 ///
+/// It is [AdvisorOrder.methodSecurity], before the retries too: a denied
+/// call is checked once and never retried (unlike Spring, where the
+/// retries come first).
+///
 /// Spring (Java): `AuthorizationInterceptorsOrder.FIRST` + 100.
-const int methodSecurityAdvisorOrder = Ordered.highestPrecedence + 100;
+const int methodSecurityAdvisorOrder = AdvisorOrder.methodSecurity;
 
 /// Changes the prefix that role checks add, `ROLE_` by default.
 ///
@@ -71,13 +75,13 @@ final class _OnAuthenticationSources implements Condition {
 ///   advisor, and a startup check that every expression parses and every
 ///   bean with such annotations is proxied. The application can add a
 ///   `RoleHierarchy`, a `PermissionEvaluator`, `GrantedAuthorityDefaults`
-///   and `SecurityExpressionContextCustomizer`s as beans, or replace the
-///   `MethodSecurityExpressionHandler`.
+///   and `SecurityExpressionContextCustomizer` instances as beans, or replace
+///   the `MethodSecurityExpressionHandler`.
 /// - **Authentication events**: an `AuthenticationEventPublisher` that
 ///   publishes `AuthenticationSuccessEvent` and the failure events as
 ///   application events, unless the application declares its own.
 /// - **An `AuthenticationManager`**, when the application declares a
-///   `UserDetailsService` or `AuthenticationProvider`s and no manager.
+///   `UserDetailsService` or `AuthenticationProvider` instances and no manager.
 ///   With providers, a `ProviderManager` over all of them. Otherwise a
 ///   `DaoAuthenticationProvider` over the user service, with the
 ///   `PasswordEncoder` bean (the delegating encoder without one), storing

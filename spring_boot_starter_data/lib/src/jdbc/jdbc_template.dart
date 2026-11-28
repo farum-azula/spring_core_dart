@@ -46,9 +46,9 @@ final class BoundParameters extends UnmodifiableListView<Object?> {
 ///   they are.
 /// - Inside `@Transactional` / `TransactionTemplate` of a
 ///   `DataSourceTransactionManager` on the same [DataSource], the
-///   transaction's connection is used, across `await`s; the transaction's
-///   remaining time bounds each statement. Outside, each call takes a
-///   connection from the pool and gives it back.
+///   transaction's connection is used, across `await` expressions; the
+///   transaction's remaining time bounds each statement. Outside, each call
+///   takes a connection from the pool and gives it back.
 /// - Logs: the SQL, time and rows at debug (`spring.jdbc.core.JdbcTemplate`),
 ///   the values at trace (`spring.jdbc.core.StatementCreatorUtils`), slow
 ///   statements at warn; see [StatementLogger].

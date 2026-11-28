@@ -8,7 +8,7 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
 /// does not change: it injects this service and calls [login] with a
 /// registration id of its configuration, [restore] at startup and
 /// [logout]. The user then is in the `SecurityContextHolder`, where
-/// `@PreAuthorize`, the Feign clients, `PrincipalBuilder` and
+/// `@PreAuthorize`, the HTTP services, `PrincipalBuilder` and
 /// `PrincipalView` see them. The package declares the implementation of
 /// the platform as the `oauth2LoginService` bean:
 ///

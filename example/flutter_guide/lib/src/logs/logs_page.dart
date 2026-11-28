@@ -4,7 +4,7 @@ import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter
 /// The Logs screen: the app's log lines from the `LogBuffer` bean (the
 /// logging starter keeps the last `logging.buffer.capacity` records in
 /// memory), filtered by level, the newest first. The calls to the server
-/// are there too (`logging.level.feign=debug`).
+/// are there too (`logging.level.web.client=debug`).
 @ScreenRoute('/logs', title: '#{logs.title}')
 class LogsPage extends SpringStatefulWidget<(LogBuffer,)> {
   const LogsPage({super.key});

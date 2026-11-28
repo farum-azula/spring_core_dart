@@ -129,234 +129,241 @@ _i1.ObservationsAnnotationsProperties _$create53(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.ObservationsAnnotationsProperties();
-Object? _$get54(_i1.TaskExecutionIsolatesProperties object) => object.coreSize;
-void _$set55(_i1.TaskExecutionIsolatesProperties object, Object? value) =>
+Object? _$get54(_i1.ResilienceProperties object) => object.enabled;
+void _$set55(_i1.ResilienceProperties object, Object? value) =>
+    object.enabled = (value as bool);
+_i1.ResilienceProperties _$create56(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.ResilienceProperties();
+Object? _$get57(_i1.TaskExecutionIsolatesProperties object) => object.coreSize;
+void _$set58(_i1.TaskExecutionIsolatesProperties object, Object? value) =>
     object.coreSize = (value as int?);
-Object? _$get56(_i1.TaskExecutionIsolatesProperties object) => object.maxSize;
-void _$set57(_i1.TaskExecutionIsolatesProperties object, Object? value) =>
+Object? _$get59(_i1.TaskExecutionIsolatesProperties object) => object.maxSize;
+void _$set60(_i1.TaskExecutionIsolatesProperties object, Object? value) =>
     object.maxSize = (value as int?);
-Object? _$get58(_i1.TaskExecutionIsolatesProperties object) => object.keepAlive;
-void _$set59(_i1.TaskExecutionIsolatesProperties object, Object? value) =>
+Object? _$get61(_i1.TaskExecutionIsolatesProperties object) => object.keepAlive;
+void _$set62(_i1.TaskExecutionIsolatesProperties object, Object? value) =>
     object.keepAlive = (value as Duration);
-Object? _$get60(_i1.TaskExecutionIsolatesProperties object) =>
+Object? _$get63(_i1.TaskExecutionIsolatesProperties object) =>
     object.queueCapacity;
-void _$set61(_i1.TaskExecutionIsolatesProperties object, Object? value) =>
+void _$set64(_i1.TaskExecutionIsolatesProperties object, Object? value) =>
     object.queueCapacity = (value as int?);
-Object? _$get62(_i1.TaskExecutionIsolatesProperties object) =>
+Object? _$get65(_i1.TaskExecutionIsolatesProperties object) =>
     object.allowCoreTimeout;
-void _$set63(_i1.TaskExecutionIsolatesProperties object, Object? value) =>
+void _$set66(_i1.TaskExecutionIsolatesProperties object, Object? value) =>
     object.allowCoreTimeout = (value as bool);
-Object? _$get64(_i1.TaskExecutionIsolatesProperties object) =>
+Object? _$get67(_i1.TaskExecutionIsolatesProperties object) =>
     object.namePrefix;
-void _$set65(_i1.TaskExecutionIsolatesProperties object, Object? value) =>
+void _$set68(_i1.TaskExecutionIsolatesProperties object, Object? value) =>
     object.namePrefix = (value as String);
-_i1.TaskExecutionIsolatesProperties _$create66(
+_i1.TaskExecutionIsolatesProperties _$create69(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.TaskExecutionIsolatesProperties();
-Object? _$get67(_i1.MessagesProperties object) => object.alwaysUseMessageFormat;
-void _$set68(_i1.MessagesProperties object, Object? value) =>
+Object? _$get70(_i1.MessagesProperties object) => object.alwaysUseMessageFormat;
+void _$set71(_i1.MessagesProperties object, Object? value) =>
     object.alwaysUseMessageFormat = (value as bool);
-Object? _$get69(_i1.MessagesProperties object) => object.basename;
-void _$set70(_i1.MessagesProperties object, Object? value) =>
+Object? _$get72(_i1.MessagesProperties object) => object.basename;
+void _$set73(_i1.MessagesProperties object, Object? value) =>
     object.basename = (value as List<String>);
-Object? _$get71(_i1.MessagesProperties object) => object.cacheDuration;
-void _$set72(_i1.MessagesProperties object, Object? value) =>
+Object? _$get74(_i1.MessagesProperties object) => object.cacheDuration;
+void _$set75(_i1.MessagesProperties object, Object? value) =>
     object.cacheDuration = (value as Duration?);
-Object? _$get73(_i1.MessagesProperties object) => object.commonMessages;
-void _$set74(_i1.MessagesProperties object, Object? value) =>
+Object? _$get76(_i1.MessagesProperties object) => object.commonMessages;
+void _$set77(_i1.MessagesProperties object, Object? value) =>
     object.commonMessages = (value as List<String>?);
-Object? _$get75(_i1.MessagesProperties object) => object.defaultLocale;
-void _$set76(_i1.MessagesProperties object, Object? value) =>
+Object? _$get78(_i1.MessagesProperties object) => object.defaultLocale;
+void _$set79(_i1.MessagesProperties object, Object? value) =>
     object.defaultLocale = (value as String?);
-Object? _$get77(_i1.MessagesProperties object) => object.encoding;
-void _$set78(_i1.MessagesProperties object, Object? value) =>
+Object? _$get80(_i1.MessagesProperties object) => object.encoding;
+void _$set81(_i1.MessagesProperties object, Object? value) =>
     object.encoding = (value as String?);
-Object? _$get79(_i1.MessagesProperties object) => object.fallbackToSystemLocale;
-void _$set80(_i1.MessagesProperties object, Object? value) =>
+Object? _$get82(_i1.MessagesProperties object) => object.fallbackToSystemLocale;
+void _$set83(_i1.MessagesProperties object, Object? value) =>
     object.fallbackToSystemLocale = (value as bool);
-Object? _$get81(_i1.MessagesProperties object) =>
+Object? _$get84(_i1.MessagesProperties object) =>
     object.useCodeAsDefaultMessage;
-void _$set82(_i1.MessagesProperties object, Object? value) =>
+void _$set85(_i1.MessagesProperties object, Object? value) =>
     object.useCodeAsDefaultMessage = (value as bool);
-_i1.MessagesProperties _$create83(
+_i1.MessagesProperties _$create86(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.MessagesProperties();
-Object? _$get84(_i1.JsonProperties object) => object.propertyNamingStrategy;
-void _$set85(_i1.JsonProperties object, Object? value) =>
+Object? _$get87(_i1.JsonProperties object) => object.propertyNamingStrategy;
+void _$set88(_i1.JsonProperties object, Object? value) =>
     object.propertyNamingStrategy = (value as String);
-Object? _$get86(_i1.JsonProperties object) => object.defaultPropertyInclusion;
-void _$set87(_i1.JsonProperties object, Object? value) =>
+Object? _$get89(_i1.JsonProperties object) => object.defaultPropertyInclusion;
+void _$set90(_i1.JsonProperties object, Object? value) =>
     object.defaultPropertyInclusion = (value as _i3.JsonInclusion);
-Object? _$get88(_i1.JsonProperties object) => object.timeZone;
-void _$set89(_i1.JsonProperties object, Object? value) =>
+Object? _$get91(_i1.JsonProperties object) => object.timeZone;
+void _$set92(_i1.JsonProperties object, Object? value) =>
     object.timeZone = (value as String?);
-Object? _$get90(_i1.JsonProperties object) => object.deserialization;
-void _$set91(_i1.JsonProperties object, Object? value) =>
+Object? _$get93(_i1.JsonProperties object) => object.deserialization;
+void _$set94(_i1.JsonProperties object, Object? value) =>
     object.deserialization = (value as _i1.JsonDeserializationProperties);
-Object? _$get92(_i1.JsonProperties object) => object.serialization;
-void _$set93(_i1.JsonProperties object, Object? value) =>
+Object? _$get95(_i1.JsonProperties object) => object.serialization;
+void _$set96(_i1.JsonProperties object, Object? value) =>
     object.serialization = (value as _i1.JsonSerializationProperties);
-Object? _$get94(_i1.JsonProperties object) => object.mapper;
-void _$set95(_i1.JsonProperties object, Object? value) =>
+Object? _$get97(_i1.JsonProperties object) => object.mapper;
+void _$set98(_i1.JsonProperties object, Object? value) =>
     object.mapper = (value as _i1.JsonMapperProperties);
-Object? _$get96(_i1.JsonProperties object) => object.datatype;
-void _$set97(_i1.JsonProperties object, Object? value) =>
+Object? _$get99(_i1.JsonProperties object) => object.datatype;
+void _$set100(_i1.JsonProperties object, Object? value) =>
     object.datatype = (value as _i1.JsonDatatypeProperties);
-Object? _$get98(_i1.JsonProperties object) => object.schemas;
-void _$set99(_i1.JsonProperties object, Object? value) =>
+Object? _$get101(_i1.JsonProperties object) => object.schemas;
+void _$set102(_i1.JsonProperties object, Object? value) =>
     object.schemas = (value as List<_i1.JsonSchemaProperties>);
-Object? _$get100(_i1.JsonProperties object) => object.schemasRegistry;
-void _$set101(_i1.JsonProperties object, Object? value) =>
+Object? _$get103(_i1.JsonProperties object) => object.schemasRegistry;
+void _$set104(_i1.JsonProperties object, Object? value) =>
     object.schemasRegistry = (value as _i1.JsonSchemasRegistryProperties);
-_i1.JsonProperties _$create102(
+_i1.JsonProperties _$create105(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.JsonProperties();
-Object? _$get103(_i1.JsonDeserializationProperties object) =>
+Object? _$get106(_i1.JsonDeserializationProperties object) =>
     object.acceptFloatAsInt;
-void _$set104(_i1.JsonDeserializationProperties object, Object? value) =>
+void _$set107(_i1.JsonDeserializationProperties object, Object? value) =>
     object.acceptFloatAsInt = (value as bool);
-Object? _$get105(_i1.JsonDeserializationProperties object) =>
+Object? _$get108(_i1.JsonDeserializationProperties object) =>
     object.failOnNullForPrimitives;
-void _$set106(_i1.JsonDeserializationProperties object, Object? value) =>
+void _$set109(_i1.JsonDeserializationProperties object, Object? value) =>
     object.failOnNullForPrimitives = (value as bool);
-Object? _$get107(_i1.JsonDeserializationProperties object) =>
+Object? _$get110(_i1.JsonDeserializationProperties object) =>
     object.failOnUnknownProperties;
-void _$set108(_i1.JsonDeserializationProperties object, Object? value) =>
+void _$set111(_i1.JsonDeserializationProperties object, Object? value) =>
     object.failOnUnknownProperties = (value as bool);
-Object? _$get109(_i1.JsonDeserializationProperties object) =>
+Object? _$get112(_i1.JsonDeserializationProperties object) =>
     object.readDateTimestampsAsNanoseconds;
-void _$set110(_i1.JsonDeserializationProperties object, Object? value) =>
+void _$set113(_i1.JsonDeserializationProperties object, Object? value) =>
     object.readDateTimestampsAsNanoseconds = (value as bool);
-_i1.JsonDeserializationProperties _$create111(
+_i1.JsonDeserializationProperties _$create114(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.JsonDeserializationProperties();
-Object? _$get112(_i1.JsonSerializationProperties object) => object.indentOutput;
-void _$set113(_i1.JsonSerializationProperties object, Object? value) =>
+Object? _$get115(_i1.JsonSerializationProperties object) => object.indentOutput;
+void _$set116(_i1.JsonSerializationProperties object, Object? value) =>
     object.indentOutput = (value as bool);
-Object? _$get114(_i1.JsonSerializationProperties object) =>
+Object? _$get117(_i1.JsonSerializationProperties object) =>
     object.writeDateTimestampsAsNanoseconds;
-void _$set115(_i1.JsonSerializationProperties object, Object? value) =>
+void _$set118(_i1.JsonSerializationProperties object, Object? value) =>
     object.writeDateTimestampsAsNanoseconds = (value as bool);
-Object? _$get116(_i1.JsonSerializationProperties object) =>
+Object? _$get119(_i1.JsonSerializationProperties object) =>
     object.writeDatesAsTimestamps;
-void _$set117(_i1.JsonSerializationProperties object, Object? value) =>
+void _$set120(_i1.JsonSerializationProperties object, Object? value) =>
     object.writeDatesAsTimestamps = (value as bool);
-Object? _$get118(_i1.JsonSerializationProperties object) =>
+Object? _$get121(_i1.JsonSerializationProperties object) =>
     object.writeDurationsAsTimestamps;
-void _$set119(_i1.JsonSerializationProperties object, Object? value) =>
+void _$set122(_i1.JsonSerializationProperties object, Object? value) =>
     object.writeDurationsAsTimestamps = (value as bool);
-_i1.JsonSerializationProperties _$create120(
+_i1.JsonSerializationProperties _$create123(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.JsonSerializationProperties();
-Object? _$get121(_i1.JsonMapperProperties object) =>
+Object? _$get124(_i1.JsonMapperProperties object) =>
     object.defaultViewInclusion;
-void _$set122(_i1.JsonMapperProperties object, Object? value) =>
+void _$set125(_i1.JsonMapperProperties object, Object? value) =>
     object.defaultViewInclusion = (value as bool);
-Object? _$get123(_i1.JsonMapperProperties object) =>
+Object? _$get126(_i1.JsonMapperProperties object) =>
     object.sortPropertiesAlphabetically;
-void _$set124(_i1.JsonMapperProperties object, Object? value) =>
+void _$set127(_i1.JsonMapperProperties object, Object? value) =>
     object.sortPropertiesAlphabetically = (value as bool);
-_i1.JsonMapperProperties _$create125(
+_i1.JsonMapperProperties _$create128(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.JsonMapperProperties();
-Object? _$get126(_i1.JsonDatatypeProperties object) => object.datetime;
-void _$set127(_i1.JsonDatatypeProperties object, Object? value) =>
+Object? _$get129(_i1.JsonDatatypeProperties object) => object.datetime;
+void _$set130(_i1.JsonDatatypeProperties object, Object? value) =>
     object.datetime = (value as _i1.JsonDatetimeProperties);
-_i1.JsonDatatypeProperties _$create128(
+_i1.JsonDatatypeProperties _$create131(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.JsonDatatypeProperties();
-Object? _$get129(_i1.JsonDatetimeProperties object) =>
+Object? _$get132(_i1.JsonDatetimeProperties object) =>
     object.readDateTimestampsAsNanoseconds;
-void _$set130(_i1.JsonDatetimeProperties object, Object? value) =>
+void _$set133(_i1.JsonDatetimeProperties object, Object? value) =>
     object.readDateTimestampsAsNanoseconds = (value as bool?);
-Object? _$get131(_i1.JsonDatetimeProperties object) =>
+Object? _$get134(_i1.JsonDatetimeProperties object) =>
     object.writeDateTimestampsAsNanoseconds;
-void _$set132(_i1.JsonDatetimeProperties object, Object? value) =>
+void _$set135(_i1.JsonDatetimeProperties object, Object? value) =>
     object.writeDateTimestampsAsNanoseconds = (value as bool?);
-Object? _$get133(_i1.JsonDatetimeProperties object) =>
+Object? _$get136(_i1.JsonDatetimeProperties object) =>
     object.writeDatesAsTimestamps;
-void _$set134(_i1.JsonDatetimeProperties object, Object? value) =>
+void _$set137(_i1.JsonDatetimeProperties object, Object? value) =>
     object.writeDatesAsTimestamps = (value as bool?);
-Object? _$get135(_i1.JsonDatetimeProperties object) =>
+Object? _$get138(_i1.JsonDatetimeProperties object) =>
     object.writeDurationsAsTimestamps;
-void _$set136(_i1.JsonDatetimeProperties object, Object? value) =>
+void _$set139(_i1.JsonDatetimeProperties object, Object? value) =>
     object.writeDurationsAsTimestamps = (value as bool?);
-_i1.JsonDatetimeProperties _$create137(
+_i1.JsonDatetimeProperties _$create140(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.JsonDatetimeProperties();
-Object? _$get138(_i1.JsonSchemaProperties object) => object.location;
-void _$set139(_i1.JsonSchemaProperties object, Object? value) =>
+Object? _$get141(_i1.JsonSchemaProperties object) => object.location;
+void _$set142(_i1.JsonSchemaProperties object, Object? value) =>
     object.location = (value as String?);
-Object? _$get140(_i1.JsonSchemaProperties object) => object.sha256;
-void _$set141(_i1.JsonSchemaProperties object, Object? value) =>
+Object? _$get143(_i1.JsonSchemaProperties object) => object.sha256;
+void _$set144(_i1.JsonSchemaProperties object, Object? value) =>
     object.sha256 = (value as String?);
-Object? _$get142(_i1.JsonSchemaProperties object) => object.prefix;
-void _$set143(_i1.JsonSchemaProperties object, Object? value) =>
+Object? _$get145(_i1.JsonSchemaProperties object) => object.prefix;
+void _$set146(_i1.JsonSchemaProperties object, Object? value) =>
     object.prefix = (value as String?);
-Object? _$get144(_i1.JsonSchemaProperties object) => object.name;
-void _$set145(_i1.JsonSchemaProperties object, Object? value) =>
+Object? _$get147(_i1.JsonSchemaProperties object) => object.name;
+void _$set148(_i1.JsonSchemaProperties object, Object? value) =>
     object.name = (value as String?);
-_i1.JsonSchemaProperties _$create146(
+_i1.JsonSchemaProperties _$create149(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.JsonSchemaProperties();
-Object? _$get147(_i1.JsonSchemasRegistryProperties object) => object.properties;
-void _$set148(_i1.JsonSchemasRegistryProperties object, Object? value) =>
+Object? _$get150(_i1.JsonSchemasRegistryProperties object) => object.properties;
+void _$set151(_i1.JsonSchemasRegistryProperties object, Object? value) =>
     object.properties = (value as bool);
-_i1.JsonSchemasRegistryProperties _$create149(
+_i1.JsonSchemasRegistryProperties _$create152(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.JsonSchemasRegistryProperties();
-Object? _$get150(_i4.RateLimitProperties object) => object.enabled;
-void _$set151(_i4.RateLimitProperties object, Object? value) =>
+Object? _$get153(_i4.RateLimitProperties object) => object.enabled;
+void _$set154(_i4.RateLimitProperties object, Object? value) =>
     object.enabled = (value as bool?);
-Object? _$get152(_i4.RateLimitProperties object) => object.store;
-void _$set153(_i4.RateLimitProperties object, Object? value) =>
+Object? _$get155(_i4.RateLimitProperties object) => object.store;
+void _$set156(_i4.RateLimitProperties object, Object? value) =>
     object.store = (value as String?);
-Object? _$get154(_i4.RateLimitProperties object) => object.onStoreFailure;
-void _$set155(_i4.RateLimitProperties object, Object? value) =>
+Object? _$get157(_i4.RateLimitProperties object) => object.onStoreFailure;
+void _$set158(_i4.RateLimitProperties object, Object? value) =>
     object.onStoreFailure = (value as _i4.RateLimitStoreFailure);
-Object? _$get156(_i4.RateLimitProperties object) => object.verifyStore;
-void _$set157(_i4.RateLimitProperties object, Object? value) =>
+Object? _$get159(_i4.RateLimitProperties object) => object.verifyStore;
+void _$set160(_i4.RateLimitProperties object, Object? value) =>
     object.verifyStore = (value as bool);
-Object? _$get158(_i4.RateLimitProperties object) =>
+Object? _$get161(_i4.RateLimitProperties object) =>
     object.storeFailureRetryAfter;
-void _$set159(_i4.RateLimitProperties object, Object? value) =>
+void _$set162(_i4.RateLimitProperties object, Object? value) =>
     object.storeFailureRetryAfter = (value as Duration);
-Object? _$get160(_i4.RateLimitProperties object) => object.trustedProxies;
-void _$set161(_i4.RateLimitProperties object, Object? value) =>
+Object? _$get163(_i4.RateLimitProperties object) => object.trustedProxies;
+void _$set164(_i4.RateLimitProperties object, Object? value) =>
     object.trustedProxies = (value as List<String>);
-Object? _$get162(_i4.RateLimitProperties object) => object.clientAddressHeader;
-void _$set163(_i4.RateLimitProperties object, Object? value) =>
+Object? _$get165(_i4.RateLimitProperties object) => object.clientAddressHeader;
+void _$set166(_i4.RateLimitProperties object, Object? value) =>
     object.clientAddressHeader = (value as String);
-Object? _$get164(_i4.RateLimitProperties object) => object.ipv6PrefixLength;
-void _$set165(_i4.RateLimitProperties object, Object? value) =>
+Object? _$get167(_i4.RateLimitProperties object) => object.ipv6PrefixLength;
+void _$set168(_i4.RateLimitProperties object, Object? value) =>
     object.ipv6PrefixLength = (value as int);
-Object? _$get166(_i4.RateLimitProperties object) => object.hashAddresses;
-void _$set167(_i4.RateLimitProperties object, Object? value) =>
+Object? _$get169(_i4.RateLimitProperties object) => object.hashAddresses;
+void _$set170(_i4.RateLimitProperties object, Object? value) =>
     object.hashAddresses = (value as bool);
-Object? _$get168(_i4.RateLimitProperties object) => object.hashSecret;
-void _$set169(_i4.RateLimitProperties object, Object? value) =>
+Object? _$get171(_i4.RateLimitProperties object) => object.hashSecret;
+void _$set172(_i4.RateLimitProperties object, Object? value) =>
     object.hashSecret = (value as String?);
-Object? _$get170(_i4.RateLimitProperties object) => object.headers;
-void _$set171(_i4.RateLimitProperties object, Object? value) =>
+Object? _$get173(_i4.RateLimitProperties object) => object.headers;
+void _$set174(_i4.RateLimitProperties object, Object? value) =>
     object.headers = (value as bool);
-Object? _$get172(_i4.RateLimitProperties object) => object.memory;
-void _$set173(_i4.RateLimitProperties object, Object? value) =>
+Object? _$get175(_i4.RateLimitProperties object) => object.memory;
+void _$set176(_i4.RateLimitProperties object, Object? value) =>
     object.memory = (value as _i4.RateLimitMemoryProperties);
-Object? _$get174(_i4.RateLimitProperties object) => object.rules;
-void _$set175(_i4.RateLimitProperties object, Object? value) =>
+Object? _$get177(_i4.RateLimitProperties object) => object.rules;
+void _$set178(_i4.RateLimitProperties object, Object? value) =>
     object.rules = (value as List<_i4.RateLimitRuleProperties>);
-Object? _$get176(_i4.RateLimitProperties object) => object.isOn;
-_i4.RateLimitProperties _$create177(
+Object? _$get179(_i4.RateLimitProperties object) => object.isOn;
+_i4.RateLimitProperties _$create180(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i4.RateLimitProperties();
@@ -671,6 +678,27 @@ get $bootPropertiesBeansPropertiesIntrospections => [
           create: _$create53,
         ),
   ),
+  const _i3.Introspection<_i1.ResilienceProperties>(
+    className: r'ResilienceProperties',
+    properties: [
+      _i3.IntrospectedProperty<_i1.ResilienceProperties>(
+        r'enabled',
+        typeInfo: _i3.ClassType<bool>(),
+        hasInitialValue: true,
+        initialValue: false,
+        get: _$get54,
+        set: _$set55,
+      ),
+    ],
+    annotations: [_i3.ConfigurationProperties(r'spring.resilience')],
+    library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+    instantiate: _i1.ResilienceProperties.new,
+    constructor: _i3.IntrospectedConstructor<_i1.ResilienceProperties>(
+      parameters: [],
+      create: _$create56,
+    ),
+  ),
   const _i3.Introspection<_i1.TaskExecutionIsolatesProperties>(
     className: r'TaskExecutionIsolatesProperties',
     properties: [
@@ -678,44 +706,44 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         r'coreSize',
         nullable: true,
         typeInfo: _i3.ClassType<int>(nullable: true),
-        get: _$get54,
-        set: _$set55,
+        get: _$get57,
+        set: _$set58,
       ),
       _i3.IntrospectedProperty<_i1.TaskExecutionIsolatesProperties>(
         r'maxSize',
         nullable: true,
         typeInfo: _i3.ClassType<int>(nullable: true),
-        get: _$get56,
-        set: _$set57,
+        get: _$get59,
+        set: _$set60,
       ),
       _i3.IntrospectedProperty<_i1.TaskExecutionIsolatesProperties>(
         r'keepAlive',
         typeInfo: _i3.ClassType<Duration>(),
-        get: _$get58,
-        set: _$set59,
+        get: _$get61,
+        set: _$set62,
       ),
       _i3.IntrospectedProperty<_i1.TaskExecutionIsolatesProperties>(
         r'queueCapacity',
         nullable: true,
         typeInfo: _i3.ClassType<int>(nullable: true),
-        get: _$get60,
-        set: _$set61,
+        get: _$get63,
+        set: _$set64,
       ),
       _i3.IntrospectedProperty<_i1.TaskExecutionIsolatesProperties>(
         r'allowCoreTimeout',
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: true,
-        get: _$get62,
-        set: _$set63,
+        get: _$get65,
+        set: _$set66,
       ),
       _i3.IntrospectedProperty<_i1.TaskExecutionIsolatesProperties>(
         r'namePrefix',
         typeInfo: _i3.ClassType<String>(),
         hasInitialValue: true,
         initialValue: r'task-',
-        get: _$get64,
-        set: _$set65,
+        get: _$get67,
+        set: _$set68,
       ),
     ],
     annotations: [
@@ -727,7 +755,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
     constructor:
         _i3.IntrospectedConstructor<_i1.TaskExecutionIsolatesProperties>(
           parameters: [],
-          create: _$create66,
+          create: _$create69,
         ),
   ),
   const _i3.Introspection<_i1.MessagesProperties>(
@@ -738,59 +766,59 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: false,
-        get: _$get67,
-        set: _$set68,
+        get: _$get70,
+        set: _$set71,
       ),
       _i3.IntrospectedProperty<_i1.MessagesProperties>(
         r'basename',
         typeInfo: _i3.ListType<String>(_i3.ClassType<String>()),
-        get: _$get69,
-        set: _$set70,
+        get: _$get72,
+        set: _$set73,
       ),
       _i3.IntrospectedProperty<_i1.MessagesProperties>(
         r'cacheDuration',
         nullable: true,
         typeInfo: _i3.ClassType<Duration>(nullable: true),
-        get: _$get71,
-        set: _$set72,
+        get: _$get74,
+        set: _$set75,
         annotations: [_i5.DurationUnit(_i3.ChronoUnit.seconds)],
       ),
       _i3.IntrospectedProperty<_i1.MessagesProperties>(
         r'commonMessages',
         nullable: true,
         typeInfo: _i3.ListType<String>(_i3.ClassType<String>(), nullable: true),
-        get: _$get73,
-        set: _$set74,
+        get: _$get76,
+        set: _$set77,
       ),
       _i3.IntrospectedProperty<_i1.MessagesProperties>(
         r'defaultLocale',
         nullable: true,
         typeInfo: _i3.ClassType<String>(nullable: true),
-        get: _$get75,
-        set: _$set76,
+        get: _$get78,
+        set: _$set79,
       ),
       _i3.IntrospectedProperty<_i1.MessagesProperties>(
         r'encoding',
         nullable: true,
         typeInfo: _i3.ClassType<String>(nullable: true),
-        get: _$get77,
-        set: _$set78,
+        get: _$get80,
+        set: _$set81,
       ),
       _i3.IntrospectedProperty<_i1.MessagesProperties>(
         r'fallbackToSystemLocale',
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: true,
-        get: _$get79,
-        set: _$set80,
+        get: _$get82,
+        set: _$set83,
       ),
       _i3.IntrospectedProperty<_i1.MessagesProperties>(
         r'useCodeAsDefaultMessage',
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: false,
-        get: _$get81,
-        set: _$set82,
+        get: _$get84,
+        set: _$set85,
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.messages')],
@@ -799,7 +827,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
     instantiate: _i1.MessagesProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.MessagesProperties>(
       parameters: [],
-      create: _$create83,
+      create: _$create86,
     ),
   ),
   const _i3.Introspection<_i1.JsonProperties>(
@@ -810,8 +838,8 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         typeInfo: _i3.ClassType<String>(),
         hasInitialValue: true,
         initialValue: r'LOWER_CAMEL_CASE',
-        get: _$get84,
-        set: _$set85,
+        get: _$get87,
+        set: _$set88,
         annotations: [
           _i3.PropertyValues([
             r'SNAKE_CASE',
@@ -829,53 +857,53 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         typeInfo: _i3.EnumType<_i3.JsonInclusion>(_i3.JsonInclusion.values),
         hasInitialValue: true,
         initialValue: _i3.JsonInclusion.always,
-        get: _$get86,
-        set: _$set87,
+        get: _$get89,
+        set: _$set90,
       ),
       _i3.IntrospectedProperty<_i1.JsonProperties>(
         r'timeZone',
         nullable: true,
         typeInfo: _i3.ClassType<String>(nullable: true),
-        get: _$get88,
-        set: _$set89,
+        get: _$get91,
+        set: _$set92,
       ),
       _i3.IntrospectedProperty<_i1.JsonProperties>(
         r'deserialization',
         typeInfo: _i3.ClassType<_i1.JsonDeserializationProperties>(),
-        get: _$get90,
-        set: _$set91,
+        get: _$get93,
+        set: _$set94,
       ),
       _i3.IntrospectedProperty<_i1.JsonProperties>(
         r'serialization',
         typeInfo: _i3.ClassType<_i1.JsonSerializationProperties>(),
-        get: _$get92,
-        set: _$set93,
+        get: _$get95,
+        set: _$set96,
       ),
       _i3.IntrospectedProperty<_i1.JsonProperties>(
         r'mapper',
         typeInfo: _i3.ClassType<_i1.JsonMapperProperties>(),
-        get: _$get94,
-        set: _$set95,
+        get: _$get97,
+        set: _$set98,
       ),
       _i3.IntrospectedProperty<_i1.JsonProperties>(
         r'datatype',
         typeInfo: _i3.ClassType<_i1.JsonDatatypeProperties>(),
-        get: _$get96,
-        set: _$set97,
+        get: _$get99,
+        set: _$set100,
       ),
       _i3.IntrospectedProperty<_i1.JsonProperties>(
         r'schemas',
         typeInfo: _i3.ListType<_i1.JsonSchemaProperties>(
           _i3.ClassType<_i1.JsonSchemaProperties>(),
         ),
-        get: _$get98,
-        set: _$set99,
+        get: _$get101,
+        set: _$set102,
       ),
       _i3.IntrospectedProperty<_i1.JsonProperties>(
         r'schemasRegistry',
         typeInfo: _i3.ClassType<_i1.JsonSchemasRegistryProperties>(),
-        get: _$get100,
-        set: _$set101,
+        get: _$get103,
+        set: _$set104,
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.json')],
@@ -884,7 +912,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
     instantiate: _i1.JsonProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonProperties>(
       parameters: [],
-      create: _$create102,
+      create: _$create105,
     ),
   ),
   const _i3.Introspection<_i1.JsonDeserializationProperties>(
@@ -895,32 +923,32 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: true,
-        get: _$get103,
-        set: _$set104,
+        get: _$get106,
+        set: _$set107,
       ),
       _i3.IntrospectedProperty<_i1.JsonDeserializationProperties>(
         r'failOnNullForPrimitives',
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: true,
-        get: _$get105,
-        set: _$set106,
+        get: _$get108,
+        set: _$set109,
       ),
       _i3.IntrospectedProperty<_i1.JsonDeserializationProperties>(
         r'failOnUnknownProperties',
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: false,
-        get: _$get107,
-        set: _$set108,
+        get: _$get110,
+        set: _$set111,
       ),
       _i3.IntrospectedProperty<_i1.JsonDeserializationProperties>(
         r'readDateTimestampsAsNanoseconds',
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: true,
-        get: _$get109,
-        set: _$set110,
+        get: _$get112,
+        set: _$set113,
       ),
     ],
     library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
@@ -928,7 +956,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
     instantiate: _i1.JsonDeserializationProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonDeserializationProperties>(
       parameters: [],
-      create: _$create111,
+      create: _$create114,
     ),
   ),
   const _i3.Introspection<_i1.JsonSerializationProperties>(
@@ -939,32 +967,32 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: false,
-        get: _$get112,
-        set: _$set113,
+        get: _$get115,
+        set: _$set116,
       ),
       _i3.IntrospectedProperty<_i1.JsonSerializationProperties>(
         r'writeDateTimestampsAsNanoseconds',
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: true,
-        get: _$get114,
-        set: _$set115,
+        get: _$get117,
+        set: _$set118,
       ),
       _i3.IntrospectedProperty<_i1.JsonSerializationProperties>(
         r'writeDatesAsTimestamps',
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: false,
-        get: _$get116,
-        set: _$set117,
+        get: _$get119,
+        set: _$set120,
       ),
       _i3.IntrospectedProperty<_i1.JsonSerializationProperties>(
         r'writeDurationsAsTimestamps',
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: false,
-        get: _$get118,
-        set: _$set119,
+        get: _$get121,
+        set: _$set122,
       ),
     ],
     library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
@@ -972,7 +1000,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
     instantiate: _i1.JsonSerializationProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonSerializationProperties>(
       parameters: [],
-      create: _$create120,
+      create: _$create123,
     ),
   ),
   const _i3.Introspection<_i1.JsonMapperProperties>(
@@ -983,16 +1011,16 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: false,
-        get: _$get121,
-        set: _$set122,
+        get: _$get124,
+        set: _$set125,
       ),
       _i3.IntrospectedProperty<_i1.JsonMapperProperties>(
         r'sortPropertiesAlphabetically',
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: true,
-        get: _$get123,
-        set: _$set124,
+        get: _$get126,
+        set: _$set127,
       ),
     ],
     library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
@@ -1000,7 +1028,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
     instantiate: _i1.JsonMapperProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonMapperProperties>(
       parameters: [],
-      create: _$create125,
+      create: _$create128,
     ),
   ),
   const _i3.Introspection<_i1.JsonDatatypeProperties>(
@@ -1009,8 +1037,8 @@ get $bootPropertiesBeansPropertiesIntrospections => [
       _i3.IntrospectedProperty<_i1.JsonDatatypeProperties>(
         r'datetime',
         typeInfo: _i3.ClassType<_i1.JsonDatetimeProperties>(),
-        get: _$get126,
-        set: _$set127,
+        get: _$get129,
+        set: _$set130,
       ),
     ],
     library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
@@ -1018,7 +1046,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
     instantiate: _i1.JsonDatatypeProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonDatatypeProperties>(
       parameters: [],
-      create: _$create128,
+      create: _$create131,
     ),
   ),
   const _i3.Introspection<_i1.JsonDatetimeProperties>(
@@ -1028,29 +1056,29 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         r'readDateTimestampsAsNanoseconds',
         nullable: true,
         typeInfo: _i3.ClassType<bool>(nullable: true),
-        get: _$get129,
-        set: _$set130,
+        get: _$get132,
+        set: _$set133,
       ),
       _i3.IntrospectedProperty<_i1.JsonDatetimeProperties>(
         r'writeDateTimestampsAsNanoseconds',
         nullable: true,
         typeInfo: _i3.ClassType<bool>(nullable: true),
-        get: _$get131,
-        set: _$set132,
+        get: _$get134,
+        set: _$set135,
       ),
       _i3.IntrospectedProperty<_i1.JsonDatetimeProperties>(
         r'writeDatesAsTimestamps',
         nullable: true,
         typeInfo: _i3.ClassType<bool>(nullable: true),
-        get: _$get133,
-        set: _$set134,
+        get: _$get136,
+        set: _$set137,
       ),
       _i3.IntrospectedProperty<_i1.JsonDatetimeProperties>(
         r'writeDurationsAsTimestamps',
         nullable: true,
         typeInfo: _i3.ClassType<bool>(nullable: true),
-        get: _$get135,
-        set: _$set136,
+        get: _$get138,
+        set: _$set139,
       ),
     ],
     library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
@@ -1058,7 +1086,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
     instantiate: _i1.JsonDatetimeProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonDatetimeProperties>(
       parameters: [],
-      create: _$create137,
+      create: _$create140,
     ),
   ),
   const _i3.Introspection<_i1.JsonSchemaProperties>(
@@ -1068,29 +1096,29 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         r'location',
         nullable: true,
         typeInfo: _i3.ClassType<String>(nullable: true),
-        get: _$get138,
-        set: _$set139,
+        get: _$get141,
+        set: _$set142,
       ),
       _i3.IntrospectedProperty<_i1.JsonSchemaProperties>(
         r'sha256',
         nullable: true,
         typeInfo: _i3.ClassType<String>(nullable: true),
-        get: _$get140,
-        set: _$set141,
+        get: _$get143,
+        set: _$set144,
       ),
       _i3.IntrospectedProperty<_i1.JsonSchemaProperties>(
         r'prefix',
         nullable: true,
         typeInfo: _i3.ClassType<String>(nullable: true),
-        get: _$get142,
-        set: _$set143,
+        get: _$get145,
+        set: _$set146,
       ),
       _i3.IntrospectedProperty<_i1.JsonSchemaProperties>(
         r'name',
         nullable: true,
         typeInfo: _i3.ClassType<String>(nullable: true),
-        get: _$get144,
-        set: _$set145,
+        get: _$get147,
+        set: _$set148,
       ),
     ],
     library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
@@ -1098,7 +1126,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
     instantiate: _i1.JsonSchemaProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonSchemaProperties>(
       parameters: [],
-      create: _$create146,
+      create: _$create149,
     ),
   ),
   const _i3.Introspection<_i1.JsonSchemasRegistryProperties>(
@@ -1109,8 +1137,8 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: true,
-        get: _$get147,
-        set: _$set148,
+        get: _$get150,
+        set: _$set151,
       ),
     ],
     library: r'package:spring_boot_dart/src/properties/boot_properties.dart',
@@ -1118,7 +1146,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
     instantiate: _i1.JsonSchemasRegistryProperties.new,
     constructor: _i3.IntrospectedConstructor<_i1.JsonSchemasRegistryProperties>(
       parameters: [],
-      create: _$create149,
+      create: _$create152,
     ),
   ),
   const _i3.Introspection<_i4.RateLimitProperties>(
@@ -1128,15 +1156,15 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         r'enabled',
         nullable: true,
         typeInfo: _i3.ClassType<bool>(nullable: true),
-        get: _$get150,
-        set: _$set151,
+        get: _$get153,
+        set: _$set154,
       ),
       _i3.IntrospectedProperty<_i4.RateLimitProperties>(
         r'store',
         nullable: true,
         typeInfo: _i3.ClassType<String>(nullable: true),
-        get: _$get152,
-        set: _$set153,
+        get: _$get155,
+        set: _$set156,
         annotations: [
           _i3.PropertyValues([
             r'memory',
@@ -1153,86 +1181,86 @@ get $bootPropertiesBeansPropertiesIntrospections => [
         ),
         hasInitialValue: true,
         initialValue: _i4.RateLimitStoreFailure.deny,
-        get: _$get154,
-        set: _$set155,
+        get: _$get157,
+        set: _$set158,
       ),
       _i3.IntrospectedProperty<_i4.RateLimitProperties>(
         r'verifyStore',
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: true,
-        get: _$get156,
-        set: _$set157,
+        get: _$get159,
+        set: _$set160,
       ),
       _i3.IntrospectedProperty<_i4.RateLimitProperties>(
         r'storeFailureRetryAfter',
         typeInfo: _i3.ClassType<Duration>(),
-        get: _$get158,
-        set: _$set159,
+        get: _$get161,
+        set: _$set162,
       ),
       _i3.IntrospectedProperty<_i4.RateLimitProperties>(
         r'trustedProxies',
         typeInfo: _i3.ListType<String>(_i3.ClassType<String>()),
-        get: _$get160,
-        set: _$set161,
+        get: _$get163,
+        set: _$set164,
       ),
       _i3.IntrospectedProperty<_i4.RateLimitProperties>(
         r'clientAddressHeader',
         typeInfo: _i3.ClassType<String>(),
         hasInitialValue: true,
         initialValue: r'X-Forwarded-For',
-        get: _$get162,
-        set: _$set163,
+        get: _$get165,
+        set: _$set166,
       ),
       _i3.IntrospectedProperty<_i4.RateLimitProperties>(
         r'ipv6PrefixLength',
         typeInfo: _i3.ClassType<int>(),
         hasInitialValue: true,
         initialValue: 64,
-        get: _$get164,
-        set: _$set165,
+        get: _$get167,
+        set: _$set168,
       ),
       _i3.IntrospectedProperty<_i4.RateLimitProperties>(
         r'hashAddresses',
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: false,
-        get: _$get166,
-        set: _$set167,
+        get: _$get169,
+        set: _$set170,
       ),
       _i3.IntrospectedProperty<_i4.RateLimitProperties>(
         r'hashSecret',
         nullable: true,
         typeInfo: _i3.ClassType<String>(nullable: true),
-        get: _$get168,
-        set: _$set169,
+        get: _$get171,
+        set: _$set172,
       ),
       _i3.IntrospectedProperty<_i4.RateLimitProperties>(
         r'headers',
         typeInfo: _i3.ClassType<bool>(),
         hasInitialValue: true,
         initialValue: true,
-        get: _$get170,
-        set: _$set171,
+        get: _$get173,
+        set: _$set174,
       ),
       _i3.IntrospectedProperty<_i4.RateLimitProperties>(
         r'memory',
         typeInfo: _i3.ClassType<_i4.RateLimitMemoryProperties>(),
-        get: _$get172,
-        set: _$set173,
+        get: _$get175,
+        set: _$set176,
       ),
       _i3.IntrospectedProperty<_i4.RateLimitProperties>(
         r'rules',
         typeInfo: _i3.ListType<_i4.RateLimitRuleProperties>(
           _i3.ClassType<_i4.RateLimitRuleProperties>(),
         ),
-        get: _$get174,
-        set: _$set175,
+        get: _$get177,
+        set: _$set178,
       ),
       _i3.IntrospectedProperty<_i4.RateLimitProperties>(
         r'isOn',
         typeInfo: _i3.ClassType<bool>(),
-        get: _$get176,
+        get: _$get179,
       ),
     ],
     annotations: [_i3.ConfigurationProperties(r'spring.web.rate-limit')],
@@ -1242,7 +1270,7 @@ get $bootPropertiesBeansPropertiesIntrospections => [
     instantiate: _i4.RateLimitProperties.new,
     constructor: _i3.IntrospectedConstructor<_i4.RateLimitProperties>(
       parameters: [],
-      create: _$create177,
+      create: _$create180,
     ),
   ),
 ];

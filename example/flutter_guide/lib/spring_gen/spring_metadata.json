@@ -5,7 +5,7 @@
     {
       "name": "api.base-url",
       "type": "String",
-      "description": "`http://${api.host}`: the Feign clients' URL.",
+      "description": "`http://${api.host}`: the base URL of the `server` group of HTTP services (`spring.http.serviceclient.server.base-url`).",
       "default": "http://localhost:8080",
       "deprecated": null,
       "source": "package:neon_books_app/src/api/api_properties.dart",
@@ -19,7 +19,7 @@
       "default": "5s",
       "deprecated": null,
       "source": "package:neon_books_app/src/api/api_config.dart",
-      "line": 19,
+      "line": 40,
       "class": "networkTransport"
     },
     {
@@ -29,7 +29,7 @@
       "default": "localhost:8080",
       "deprecated": null,
       "source": "package:neon_books_app/src/api/api_properties.dart",
-      "line": 17,
+      "line": 16,
       "class": "ApiProperties"
     },
     {
@@ -120,91 +120,6 @@
   ],
   "beans": [
     {
-      "name": "accountClient",
-      "type": "AccountClient",
-      "types": [
-        "AccountClient"
-      ],
-      "scope": "singleton",
-      "primary": true,
-      "qualifiers": [],
-      "profiles": [],
-      "conditions": [],
-      "source": "package:neon_books_app/src/api/account_client.dart",
-      "line": 7,
-      "injects": [],
-      "members": [
-        {
-          "name": "login",
-          "kind": "method",
-          "type": "Future<ResponseEntity<void>>",
-          "parameters": [
-            "Map<String, String> form"
-          ]
-        },
-        {
-          "name": "logout",
-          "kind": "method",
-          "type": "Future<ResponseEntity<void>>",
-          "parameters": []
-        },
-        {
-          "name": "me",
-          "kind": "method",
-          "type": "Future<Me>",
-          "parameters": []
-        }
-      ]
-    },
-    {
-      "name": "adminClient",
-      "type": "AdminClient",
-      "types": [
-        "AdminClient"
-      ],
-      "scope": "singleton",
-      "primary": true,
-      "qualifiers": [],
-      "profiles": [],
-      "conditions": [],
-      "source": "package:neon_books_app/src/api/admin_client.dart",
-      "line": 7,
-      "injects": [],
-      "members": [
-        {
-          "name": "addBook",
-          "kind": "method",
-          "type": "Future<ResponseEntity<Book>>",
-          "parameters": [
-            "NewBook book"
-          ]
-        },
-        {
-          "name": "deleteBook",
-          "kind": "method",
-          "type": "Future<void>",
-          "parameters": [
-            "String isbn"
-          ]
-        },
-        {
-          "name": "serverLogs",
-          "kind": "method",
-          "type": "Future<List<Object?>>",
-          "parameters": []
-        },
-        {
-          "name": "uploadCover",
-          "kind": "method",
-          "type": "Future<void>",
-          "parameters": [
-            "String isbn",
-            "MultipartFile file"
-          ]
-        }
-      ]
-    },
-    {
       "name": "adminService",
       "type": "AdminService",
       "types": [
@@ -275,7 +190,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_app/src/api/api_config.dart",
-      "line": 13,
+      "line": 32,
       "injects": [],
       "members": [
         {
@@ -283,14 +198,9 @@
           "kind": "method",
           "type": "HttpTransport",
           "parameters": [
-            "Duration connectTimeout"
+            "Duration connectTimeout",
+            "AllowedAddresses allowedAddresses"
           ]
-        },
-        {
-          "name": "retryer",
-          "kind": "method",
-          "type": "Retryer",
-          "parameters": []
         },
         {
           "name": "sessionTransport",
@@ -316,7 +226,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_app/src/api/api_properties.dart",
-      "line": 14,
+      "line": 13,
       "injects": [],
       "members": [
         {
@@ -545,7 +455,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_app/src/catalog/catalog.dart",
-      "line": 11,
+      "line": 10,
       "injects": [
         {
           "parameter": "_service",
@@ -594,48 +504,6 @@
           "type": "Future<void>",
           "parameters": [
             "int page"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "catalogClient",
-      "type": "CatalogClient",
-      "types": [
-        "CatalogClient"
-      ],
-      "scope": "singleton",
-      "primary": true,
-      "qualifiers": [],
-      "profiles": [],
-      "conditions": [],
-      "source": "package:neon_books_app/src/api/catalog_client.dart",
-      "line": 9,
-      "injects": [],
-      "members": [
-        {
-          "name": "cover",
-          "kind": "method",
-          "type": "Future<Uint8List>",
-          "parameters": [
-            "String isbn"
-          ]
-        },
-        {
-          "name": "find",
-          "kind": "method",
-          "type": "Future<Book>",
-          "parameters": [
-            "String isbn"
-          ]
-        },
-        {
-          "name": "page",
-          "kind": "method",
-          "type": "Future<PageOfBooks>",
-          "parameters": [
-            "{String? query}",
-            "{int? page}"
           ]
         }
       ]
@@ -781,51 +649,6 @@
       ]
     },
     {
-      "name": "errorDecoder",
-      "type": "OAuth2AccessTokenErrorDecoder",
-      "types": [
-        "OAuth2AccessTokenErrorDecoder",
-        "ErrorDecoder"
-      ],
-      "scope": "singleton",
-      "primary": false,
-      "qualifiers": [],
-      "profiles": [
-        "sso & !web"
-      ],
-      "conditions": [],
-      "source": "package:neon_books_app/src/account/keycloak.dart",
-      "line": 42,
-      "injects": [
-        {
-          "parameter": "tokens",
-          "type": "KeycloakTokenInterceptor",
-          "qualifier": null
-        }
-      ],
-      "members": [
-        {
-          "name": "decode",
-          "kind": "method",
-          "type": "Exception",
-          "parameters": [
-            "String methodKey",
-            "HttpResponse response"
-          ]
-        },
-        {
-          "name": "delegate",
-          "kind": "field",
-          "type": "ErrorDecoder"
-        },
-        {
-          "name": "interceptor",
-          "kind": "field",
-          "type": "OAuth2AccessTokenInterceptor"
-        }
-      ]
-    },
-    {
       "name": "keycloakConfig",
       "type": "KeycloakConfig",
       "types": [
@@ -839,17 +662,9 @@
       ],
       "conditions": [],
       "source": "package:neon_books_app/src/account/keycloak.dart",
-      "line": 10,
+      "line": 9,
       "injects": [],
       "members": [
-        {
-          "name": "errorDecoder",
-          "kind": "method",
-          "type": "ErrorDecoder",
-          "parameters": [
-            "KeycloakTokenInterceptor tokens"
-          ]
-        },
         {
           "name": "keycloakRoles",
           "kind": "method",
@@ -859,7 +674,7 @@
         {
           "name": "keycloakTokens",
           "kind": "method",
-          "type": "KeycloakTokenInterceptor",
+          "type": "RestClientHttpServiceGroupConfigurer",
           "parameters": [
             "OAuth2AuthorizedClientManager manager",
             "OAuth2AuthorizedClientService clients",
@@ -884,7 +699,7 @@
       ],
       "conditions": [],
       "source": "package:neon_books_app/src/account/keycloak.dart",
-      "line": 17,
+      "line": 16,
       "injects": [],
       "members": [
         {
@@ -899,10 +714,9 @@
     },
     {
       "name": "keycloakTokens",
-      "type": "KeycloakTokenInterceptor",
+      "type": "RestClientHttpServiceGroupConfigurer",
       "types": [
-        "KeycloakTokenInterceptor",
-        "RequestInterceptor"
+        "RestClientHttpServiceGroupConfigurer"
       ],
       "scope": "singleton",
       "primary": false,
@@ -912,7 +726,7 @@
       ],
       "conditions": [],
       "source": "package:neon_books_app/src/account/keycloak.dart",
-      "line": 24,
+      "line": 26,
       "injects": [
         {
           "parameter": "manager",
@@ -937,17 +751,12 @@
       ],
       "members": [
         {
-          "name": "apply",
+          "name": "configureGroups",
           "kind": "method",
-          "type": "Future<void>",
+          "type": "void",
           "parameters": [
-            "RequestTemplate template"
+            "HttpServiceGroupBuilders groups"
           ]
-        },
-        {
-          "name": "tokens",
-          "kind": "field",
-          "type": "OAuth2AccessTokenInterceptor"
         }
       ]
     },
@@ -1153,8 +962,14 @@
       ],
       "conditions": [],
       "source": "package:neon_books_app/src/api/api_config.dart",
-      "line": 18,
-      "injects": [],
+      "line": 39,
+      "injects": [
+        {
+          "parameter": "allowedAddresses",
+          "type": "AllowedAddresses",
+          "qualifier": null
+        }
+      ],
       "members": [
         {
           "name": "close",
@@ -1217,48 +1032,6 @@
           "kind": "method",
           "type": "Future<ShopOrder>",
           "parameters": []
-        }
-      ]
-    },
-    {
-      "name": "retryer",
-      "type": "DefaultRetryer",
-      "types": [
-        "DefaultRetryer",
-        "Retryer"
-      ],
-      "scope": "singleton",
-      "primary": false,
-      "qualifiers": [],
-      "profiles": [],
-      "conditions": [],
-      "source": "package:neon_books_app/src/api/api_config.dart",
-      "line": 36,
-      "injects": [],
-      "members": [
-        {
-          "name": "maxAttempts",
-          "kind": "field",
-          "type": "int"
-        },
-        {
-          "name": "maxPeriod",
-          "kind": "field",
-          "type": "Duration"
-        },
-        {
-          "name": "nextDelay",
-          "kind": "method",
-          "type": "Duration?",
-          "parameters": [
-            "int attempt",
-            "RetryableException error"
-          ]
-        },
-        {
-          "name": "period",
-          "kind": "field",
-          "type": "Duration"
         }
       ]
     },
@@ -1358,7 +1131,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_app/src/account/server_authentication_provider.dart",
-      "line": 16,
+      "line": 15,
       "injects": [
         {
           "parameter": "_account",
@@ -1402,7 +1175,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_app/src/account/session.dart",
-      "line": 46,
+      "line": 45,
       "injects": [
         {
           "parameter": "_authenticationManager",
@@ -1509,7 +1282,7 @@
       ],
       "conditions": [],
       "source": "package:neon_books_app/src/api/api_config.dart",
-      "line": 26,
+      "line": 52,
       "injects": [
         {
           "parameter": "network",
@@ -1553,50 +1326,6 @@
       ]
     },
     {
-      "name": "shopClient",
-      "type": "ShopClient",
-      "types": [
-        "ShopClient"
-      ],
-      "scope": "singleton",
-      "primary": true,
-      "qualifiers": [],
-      "profiles": [],
-      "conditions": [],
-      "source": "package:neon_books_app/src/api/shop_client.dart",
-      "line": 7,
-      "injects": [],
-      "members": [
-        {
-          "name": "basket",
-          "kind": "method",
-          "type": "Future<ServerBasket>",
-          "parameters": []
-        },
-        {
-          "name": "orders",
-          "kind": "method",
-          "type": "Future<List<ShopOrder>>",
-          "parameters": []
-        },
-        {
-          "name": "placeOrder",
-          "kind": "method",
-          "type": "Future<ResponseEntity<ShopOrder>>",
-          "parameters": []
-        },
-        {
-          "name": "setQuantity",
-          "kind": "method",
-          "type": "Future<void>",
-          "parameters": [
-            "String isbn",
-            "Quantity quantity"
-          ]
-        }
-      ]
-    },
-    {
       "name": "ssoProperties",
       "type": "SsoProperties",
       "types": [
@@ -1625,29 +1354,6 @@
           "name": "registrationId",
           "kind": "field",
           "type": "String"
-        }
-      ]
-    },
-    {
-      "name": "stockClient",
-      "type": "StockClient",
-      "types": [
-        "StockClient"
-      ],
-      "scope": "singleton",
-      "primary": true,
-      "qualifiers": [],
-      "profiles": [],
-      "conditions": [],
-      "source": "package:neon_books_app/src/api/stock_client.dart",
-      "line": 9,
-      "injects": [],
-      "members": [
-        {
-          "name": "events",
-          "kind": "method",
-          "type": "EventStream<StockChanged>",
-          "parameters": []
         }
       ]
     },

@@ -30,7 +30,7 @@ Data, Auth as Spring Security's login.
 | A live list | `todos/todo.dart`, `todos/todo_list.dart` | a repository method, `Stream<List<Todo>> watchByListIdOrderByIdAsc(listId)`: the query runs again after each change Realtime tells |
 | Add, tick, delete | `todos/todo_list.dart` | `save` and `deleteById` of the repository (`POST`, `PATCH`, `DELETE` of `/rest/v1/todos`) |
 | An avatar | `profile/avatars.dart`, `profile/profile_card.dart` | a `@StorageBucket` interface with `@Upload` and `@Download`, the path `#{authentication.name}/avatar.png` |
-| An Edge Function | `profile/functions.dart` | an `@EdgeFunctions` interface (a Feign client), called with the user's token |
+| An Edge Function | `profile/functions.dart`, `main.dart` | an `@EdgeFunctions` interface (an HTTP service interface, imported with `@ImportHttpServices(group: EdgeFunctions.group, ...)`), called with the user's token |
 
 **The server** (`server/lib/src/`): SQL over the project's database, the
 project's tokens as bearer tokens.
@@ -218,6 +218,8 @@ when not set) and `SUPABASE_ANON_KEY` from the build (`--dart-define`): a
 Flutter app has no environment. The anon key is meant to be public; no
 other key belongs in an app, and the starter warns at startup about a
 service role key, a database address or a JWT secret that ships in one.
+The app's HTTP transport calls only the addresses allowed by hand; the
+host of `spring.supabase.url` is one by itself, so nothing else is set.
 
 On a device the session is kept in the Keychain or Keystore
 (`spring_boot_starter_flutter_security`) and the user is signed in again

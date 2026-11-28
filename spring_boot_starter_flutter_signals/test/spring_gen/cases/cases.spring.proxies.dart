@@ -200,6 +200,55 @@ class _$WatchmanProxy with _i1.AdvisedWrapper implements _i2.Watchman {
   }
 }
 
+/// Wraps `Restock`: each call runs the advice that matches it at run time (each
+/// member says what the build found for it).
+class _$RestockProxy with _i1.AdvisedWrapper implements _i2.Restock {
+  _$RestockProxy(this._target, this.aopInvoker);
+
+  final _i2.Restock _target;
+
+  @override
+  final _i1.ProxyInvoker aopInvoker;
+
+  @override
+  Object get aopTarget => _target;
+
+  @override
+  String toString() => _target.toString();
+
+  /// refill: `@Retryable(delay: Duration.zero)`
+  @override
+  _i3.Future<void> refill(int amount) => this.aopInvoker.invokeAsync<void>(
+    proxy: this,
+    target: this._target,
+    methodIndex: 0,
+    arguments: [amount],
+    original: (args) => this._target.refill((args[0] as int)),
+  );
+
+  @override
+  void watch() => this._target.watch();
+
+  @override
+  int get stock => this._target.stock;
+
+  @override
+  int get attempts => this._target.attempts;
+
+  @override
+  List<int> get seen => this._target.seen;
+
+  @override
+  set stock(int value) {
+    this._target.stock = value;
+  }
+
+  @override
+  set attempts(int value) {
+    this._target.attempts = value;
+  }
+}
+
 /// Wraps `MessagesProperties`: each call runs the advice that matches it at run
 /// time (each member says what the build found for it).
 class _$MessagesPropertiesProxy

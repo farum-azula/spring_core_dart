@@ -115,7 +115,7 @@ abstract interface class CatalogClient {
           'this._handler.invoke(this._metadata.methods[5], const []); }',
         ),
       );
-      // A sync generic result (e.g. a Feign EventStream<T>): described with
+      // A sync generic result (e.g. a WebSocket Stream<T>): described with
       // its type argument and cast.
       expect(
         output,
@@ -159,8 +159,8 @@ abstract interface class CatalogClient {
       expect(await compileErrors({'lib/src/service.dart': source}), isEmpty);
     });
 
-    test('primary and qualifiers of the annotation itself, like '
-        '@FeignClient(primary: false, qualifiers: [...])', () async {
+    test('primary and qualifiers of the annotation itself: '
+        '@Remote(primary: false, qualifiers: [...])', () async {
       final output = await generateModule("""
 @InterfaceProxy(primary: true)
 class Remote {
@@ -170,7 +170,7 @@ class Remote {
   final List<String> qualifiers;
 }
 
-@Remote('catalog', primary: false, qualifiers: ['books', 'catalogFeign'])
+@Remote('catalog', primary: false, qualifiers: ['books', 'catalogRemote'])
 abstract interface class CatalogClient {
   Future<String> ping();
 }
@@ -188,7 +188,7 @@ abstract interface class StockClient {
           'qualifiers: const {',
         ),
       );
-      expect(output, hasCode("r'books', r'catalogFeign'"));
+      expect(output, hasCode("r'books', r'catalogRemote'"));
       expect(
         output,
         hasCode(

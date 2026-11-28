@@ -7,7 +7,7 @@ returns a `Response` (the fetch API): Supabase Edge Functions (Deno),
 Deno Deploy, Cloudflare Workers, Vercel and Netlify Edge Functions. One
 adapter from that function to the web starter's dispatcher runs an
 ordinary Spring Boot for Dart application there, controllers, filters,
-security and Feign clients unchanged.
+security and HTTP clients unchanged.
 
 Spring's counterparts: Spring Cloud Function and its adapters (AWS
 Lambda, Azure, Google Cloud), and AWS's serverless Java container that

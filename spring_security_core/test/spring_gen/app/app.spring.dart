@@ -12,16 +12,17 @@
 import 'dart:async' as _i3;
 
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
-import 'package:spring_boot_starter_cache/src/annotations.dart' as _i9;
+import 'package:spring_boot_starter_cache/src/annotations.dart' as _i10;
 import 'package:spring_security_core/src/authorization/authorization_manager.dart'
     as _i6;
 import 'package:spring_security_core/src/core/authentication.dart' as _i5;
 import 'package:spring_security_core/src/core/authority.dart' as _i7;
-import 'package:spring_security_core/src/method/annotations.dart' as _i8;
+import 'package:spring_security_core/src/method/annotations.dart' as _i9;
 import 'package:spring_security_core/src/method/expression_handler.dart' as _i4;
 
 import '../../app/orders.dart' as _i2;
-import 'app.spring.introspection.dart' as _i10;
+import '../../app/retried_orders.dart' as _i8;
+import 'app.spring.introspection.dart' as _i11;
 
 part 'app.spring.proxies.dart';
 
@@ -89,7 +90,7 @@ Object? _$invoke18(_i2.AdminService bean, List<Object?> arguments) =>
 const _$target19 = _i1.AopTarget(
   r'AdminService',
   types: [r'AdminService'],
-  annotations: [_i1.Service(), _i8.PreAuthorize("hasRole('ADMIN')")],
+  annotations: [_i1.Service(), _i9.PreAuthorize("hasRole('ADMIN')")],
   annotationTypes: [r'Service', r'PreAuthorize'],
 );
 Object? _$invoke20(_i2.Reports bean, List<Object?> arguments) =>
@@ -116,6 +117,16 @@ const _$target24 = _i1.AopTarget(
   r'RoleHierarchyImpl',
   types: [r'RoleHierarchyImpl', r'RoleHierarchy'],
 );
+Object? _$invoke25(_i8.RetriedOrders bean, List<Object?> arguments) =>
+    bean.cancel((arguments[0] as String));
+Object? _$invoke26(_i8.RetriedOrders bean, List<Object?> arguments) =>
+    bean.owner((arguments[0] as String));
+const _$target27 = _i1.AopTarget(
+  r'RetriedOrders',
+  types: [r'RetriedOrders'],
+  annotations: [_i1.Service()],
+  annotationTypes: [r'Service'],
+);
 
 /// Beans found by `@ComponentScan` in `test/app`.
 _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
@@ -139,7 +150,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
           isVoid: true,
           invoke: _$invoke0,
           annotations: [
-            _i8.PreAuthorize(
+            _i9.PreAuthorize(
               "hasRole('ADMIN') or #order.owner == principal.username",
             ),
           ],
@@ -158,7 +169,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
           isFuture: true,
           invoke: _$invoke1,
           annotations: [
-            _i8.PreAuthorize(
+            _i9.PreAuthorize(
               "hasRole('ADMIN') or #order.owner == authentication.name",
             ),
           ],
@@ -176,7 +187,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
           returnTypeInfo: _i1.ClassType<_i2.Purchase>(),
           invoke: _$invoke2,
           annotations: [
-            _i8.PostAuthorize(r'returnObject.owner == authentication.name'),
+            _i9.PostAuthorize(r'returnObject.owner == authentication.name'),
           ],
         ),
         const _i1.IntrospectedMethod<_i2.OrderService>(
@@ -193,7 +204,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
           isFuture: true,
           invoke: _$invoke3,
           annotations: [
-            _i8.PostAuthorize(r'returnObject.owner == authentication.name'),
+            _i9.PostAuthorize(r'returnObject.owner == authentication.name'),
           ],
         ),
         const _i1.IntrospectedMethod<_i2.OrderService>(
@@ -209,7 +220,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke4,
           annotations: [
-            _i8.Secured([r'ROLE_SUPPORT']),
+            _i9.Secured([r'ROLE_SUPPORT']),
           ],
         ),
         const _i1.IntrospectedMethod<_i2.OrderService>(
@@ -227,7 +238,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
           ),
           invoke: _$invoke5,
           annotations: [
-            _i8.PreFilter(r'filterObject.owner == authentication.name'),
+            _i9.PreFilter(r'filterObject.owner == authentication.name'),
           ],
         ),
         const _i1.IntrospectedMethod<_i2.OrderService>(
@@ -248,7 +259,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
           returnTypeInfo: _i1.ClassType<int>(),
           invoke: _$invoke6,
           annotations: [
-            _i8.PreFilter(
+            _i9.PreFilter(
               r'filterObject.owner == authentication.name',
               filterTarget: r'mine',
             ),
@@ -261,7 +272,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
           ),
           invoke: _$invoke7,
           annotations: [
-            _i8.PostFilter(r'filterObject.owner == authentication.name'),
+            _i9.PostFilter(r'filterObject.owner == authentication.name'),
           ],
         ),
         const _i1.IntrospectedMethod<_i2.OrderService>(
@@ -272,7 +283,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
           isFuture: true,
           invoke: _$invoke8,
           annotations: [
-            _i8.PostFilter(r'filterObject.owner == authentication.name'),
+            _i9.PostFilter(r'filterObject.owner == authentication.name'),
           ],
         ),
         const _i1.IntrospectedMethod<_i2.OrderService>(
@@ -283,20 +294,20 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
           ),
           invoke: _$invoke9,
           annotations: [
-            _i8.PostFilter(r'filterObject.value == authentication.name'),
+            _i9.PostFilter(r'filterObject.value == authentication.name'),
           ],
         ),
         const _i1.IntrospectedMethod<_i2.OrderService>(
           r'open',
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke10,
-          annotations: [_i8.PreAuthorize(r'permitAll')],
+          annotations: [_i9.PreAuthorize(r'permitAll')],
         ),
         const _i1.IntrospectedMethod<_i2.OrderService>(
           r'closed',
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke11,
-          annotations: [_i8.PreAuthorize(r'denyAll')],
+          annotations: [_i9.PreAuthorize(r'denyAll')],
         ),
         const _i1.IntrospectedMethod<_i2.OrderService>(
           r'mayCancel',
@@ -310,20 +321,20 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
           ],
           returnTypeInfo: _i1.ClassType<bool>(),
           invoke: _$invoke12,
-          annotations: [_i8.PreAuthorize("hasPermission(#order, 'cancel')")],
+          annotations: [_i9.PreAuthorize("hasPermission(#order, 'cancel')")],
         ),
         const _i1.IntrospectedMethod<_i2.OrderService>(
           r'anonymousOnly',
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke13,
-          annotations: [_i8.PreAuthorize(r'isAnonymous()')],
+          annotations: [_i9.PreAuthorize(r'isAnonymous()')],
         ),
         const _i1.IntrospectedMethod<_i2.OrderService>(
           r'staff',
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke14,
           annotations: [
-            _i8.PreAuthorize(
+            _i9.PreAuthorize(
               "hasAnyRole('ADMIN', 'SUPPORT') and isAuthenticated()",
             ),
           ],
@@ -332,13 +343,13 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
           r'shopping',
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke15,
-          annotations: [_i8.PreAuthorize(r'@shop.isOpen()')],
+          annotations: [_i9.PreAuthorize(r'@shop.isOpen()')],
         ),
         const _i1.IntrospectedMethod<_i2.OrderService>(
           r'broken',
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke16,
-          annotations: [_i8.PreAuthorize("'not a boolean'")],
+          annotations: [_i9.PreAuthorize("'not a boolean'")],
         ),
       ],
       annotations: const [_i1.Service()],
@@ -351,7 +362,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             parameterTypes: [r'Purchase'],
             parameterNames: [r'order'],
             annotations: [
-              _i8.PreAuthorize(
+              _i9.PreAuthorize(
                 "hasRole('ADMIN') or #order.owner == principal.username",
               ),
             ],
@@ -364,7 +375,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             parameterTypes: [r'Purchase'],
             parameterNames: [r'order'],
             annotations: [
-              _i8.PreAuthorize(
+              _i9.PreAuthorize(
                 "hasRole('ADMIN') or #order.owner == authentication.name",
               ),
             ],
@@ -377,7 +388,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'id'],
             annotations: [
-              _i8.PostAuthorize(r'returnObject.owner == authentication.name'),
+              _i9.PostAuthorize(r'returnObject.owner == authentication.name'),
             ],
             annotationTypes: [r'PostAuthorize'],
           ),
@@ -388,7 +399,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'id'],
             annotations: [
-              _i8.PostAuthorize(r'returnObject.owner == authentication.name'),
+              _i9.PostAuthorize(r'returnObject.owner == authentication.name'),
             ],
             annotationTypes: [r'PostAuthorize'],
           ),
@@ -399,7 +410,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'id'],
             annotations: [
-              _i8.Secured([r'ROLE_SUPPORT']),
+              _i9.Secured([r'ROLE_SUPPORT']),
             ],
             annotationTypes: [r'Secured'],
           ),
@@ -410,7 +421,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             parameterTypes: [r'List'],
             parameterNames: [r'orders'],
             annotations: [
-              _i8.PreFilter(r'filterObject.owner == authentication.name'),
+              _i9.PreFilter(r'filterObject.owner == authentication.name'),
             ],
             annotationTypes: [r'PreFilter'],
           ),
@@ -421,7 +432,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             parameterTypes: [r'List', r'List'],
             parameterNames: [r'mine', r'other'],
             annotations: [
-              _i8.PreFilter(
+              _i9.PreFilter(
                 r'filterObject.owner == authentication.name',
                 filterTarget: r'mine',
               ),
@@ -433,7 +444,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             _$target17,
             returnType: r'List',
             annotations: [
-              _i8.PostFilter(r'filterObject.owner == authentication.name'),
+              _i9.PostFilter(r'filterObject.owner == authentication.name'),
             ],
             annotationTypes: [r'PostFilter'],
           ),
@@ -442,7 +453,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             _$target17,
             returnType: r'Future',
             annotations: [
-              _i8.PostFilter(r'filterObject.owner == authentication.name'),
+              _i9.PostFilter(r'filterObject.owner == authentication.name'),
             ],
             annotationTypes: [r'PostFilter'],
           ),
@@ -452,7 +463,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             returnType: r'Map',
             resultMapTypes: _i1.MapTypes<String, String>(),
             annotations: [
-              _i8.PostFilter(r'filterObject.value == authentication.name'),
+              _i9.PostFilter(r'filterObject.value == authentication.name'),
             ],
             annotationTypes: [r'PostFilter'],
           ),
@@ -460,14 +471,14 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             r'open',
             _$target17,
             returnType: r'String',
-            annotations: [_i8.PreAuthorize(r'permitAll')],
+            annotations: [_i9.PreAuthorize(r'permitAll')],
             annotationTypes: [r'PreAuthorize'],
           ),
           _i1.MethodSignature.of(
             r'closed',
             _$target17,
             returnType: r'String',
-            annotations: [_i8.PreAuthorize(r'denyAll')],
+            annotations: [_i9.PreAuthorize(r'denyAll')],
             annotationTypes: [r'PreAuthorize'],
           ),
           _i1.MethodSignature.of(
@@ -476,14 +487,14 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             returnType: r'bool',
             parameterTypes: [r'Purchase'],
             parameterNames: [r'order'],
-            annotations: [_i8.PreAuthorize("hasPermission(#order, 'cancel')")],
+            annotations: [_i9.PreAuthorize("hasPermission(#order, 'cancel')")],
             annotationTypes: [r'PreAuthorize'],
           ),
           _i1.MethodSignature.of(
             r'anonymousOnly',
             _$target17,
             returnType: r'String',
-            annotations: [_i8.PreAuthorize(r'isAnonymous()')],
+            annotations: [_i9.PreAuthorize(r'isAnonymous()')],
             annotationTypes: [r'PreAuthorize'],
           ),
           _i1.MethodSignature.of(
@@ -491,7 +502,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             _$target17,
             returnType: r'String',
             annotations: [
-              _i8.PreAuthorize(
+              _i9.PreAuthorize(
                 "hasAnyRole('ADMIN', 'SUPPORT') and isAuthenticated()",
               ),
             ],
@@ -501,14 +512,14 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             r'shopping',
             _$target17,
             returnType: r'String',
-            annotations: [_i8.PreAuthorize(r'@shop.isOpen()')],
+            annotations: [_i9.PreAuthorize(r'@shop.isOpen()')],
             annotationTypes: [r'PreAuthorize'],
           ),
           _i1.MethodSignature.of(
             r'broken',
             _$target17,
             returnType: r'String',
-            annotations: [_i8.PreAuthorize("'not a boolean'")],
+            annotations: [_i9.PreAuthorize("'not a boolean'")],
             annotationTypes: [r'PreAuthorize'],
           ),
           _i1.MethodSignature.of(
@@ -543,10 +554,10 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
           r'status',
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke18,
-          annotations: [_i8.PreAuthorize(r'permitAll')],
+          annotations: [_i9.PreAuthorize(r'permitAll')],
         ),
       ],
-      annotations: const [_i1.Service(), _i8.PreAuthorize("hasRole('ADMIN')")],
+      annotations: const [_i1.Service(), _i9.PreAuthorize("hasRole('ADMIN')")],
       aopProxy: _i1.AopProxyFactory(
         signatures: const [
           _i1.MethodSignature.of(r'report', _$target19, returnType: r'String'),
@@ -554,7 +565,7 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             r'status',
             _$target19,
             returnType: r'String',
-            annotations: [_i8.PreAuthorize(r'permitAll')],
+            annotations: [_i9.PreAuthorize(r'permitAll')],
             annotationTypes: [r'PreAuthorize'],
           ),
         ],
@@ -580,8 +591,8 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
           returnTypeInfo: _i1.ClassType<String>(),
           invoke: _$invoke20,
           annotations: [
-            _i8.PreAuthorize("hasRole('ADMIN')"),
-            _i9.Cacheable(r'reports'),
+            _i9.PreAuthorize("hasRole('ADMIN')"),
+            _i10.Cacheable(r'reports'),
           ],
         ),
       ],
@@ -595,8 +606,8 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'id'],
             annotations: [
-              _i8.PreAuthorize("hasRole('ADMIN')"),
-              _i9.Cacheable(r'reports'),
+              _i9.PreAuthorize("hasRole('ADMIN')"),
+              _i10.Cacheable(r'reports'),
             ],
             annotationTypes: [r'PreAuthorize', r'Cacheable'],
           ),
@@ -727,6 +738,86 @@ _i1.BeanModule get $securityTestBeans => _i1.BeanModule(
         ),
       ),
     ),
+    _i1.BeanDefinition<_i8.RetriedOrders>(
+      name: r'retriedOrders',
+      source: r'asset:spring_security_core/test/app/retried_orders.dart#RetriedOrders',
+      create: (r) => _i8.RetriedOrders(),
+      annotatedMethods: [
+        const _i1.IntrospectedMethod<_i8.RetriedOrders>(
+          r'cancel',
+          parameterTypes: [String],
+          parameters: [
+            _i1.IntrospectedParameter(
+              r'id',
+              type: _i1.ClassType<String>(),
+              isRequired: true,
+            ),
+          ],
+          returnTypeInfo: _i1.ClassType<String>(),
+          isFuture: true,
+          invoke: _$invoke25,
+          annotations: [
+            _i9.PreAuthorize("hasRole('ADMIN')"),
+            _i1.Retryable(delay: Duration(milliseconds: 1)),
+          ],
+        ),
+        const _i1.IntrospectedMethod<_i8.RetriedOrders>(
+          r'owner',
+          parameterTypes: [String],
+          parameters: [
+            _i1.IntrospectedParameter(
+              r'id',
+              type: _i1.ClassType<String>(),
+              isRequired: true,
+            ),
+          ],
+          returnTypeInfo: _i1.ClassType<String>(),
+          isFuture: true,
+          invoke: _$invoke26,
+          annotations: [
+            _i9.PostAuthorize(r'returnObject == authentication.name'),
+            _i1.Retryable(delay: Duration(milliseconds: 1)),
+          ],
+        ),
+      ],
+      annotations: const [_i1.Service()],
+      aopProxy: _i1.AopProxyFactory(
+        signatures: const [
+          _i1.MethodSignature.of(
+            r'cancel',
+            _$target27,
+            returnType: r'Future',
+            parameterTypes: [r'String'],
+            parameterNames: [r'id'],
+            annotations: [
+              _i9.PreAuthorize("hasRole('ADMIN')"),
+              _i1.Retryable(delay: Duration(milliseconds: 1)),
+            ],
+            annotationTypes: [r'PreAuthorize', r'Retryable'],
+          ),
+          _i1.MethodSignature.of(
+            r'owner',
+            _$target27,
+            returnType: r'Future',
+            parameterTypes: [r'String'],
+            parameterNames: [r'id'],
+            annotations: [
+              _i9.PostAuthorize(r'returnObject == authentication.name'),
+              _i1.Retryable(delay: Duration(milliseconds: 1)),
+            ],
+            annotationTypes: [r'PostAuthorize', r'Retryable'],
+          ),
+          _i1.MethodSignature.of(
+            r'calls',
+            _$target27,
+            kind: _i1.MemberKind.getter,
+            returnType: r'List',
+          ),
+        ],
+        create: (target, invoker) =>
+            _$RetriedOrdersProxy((target as _i8.RetriedOrders), invoker),
+      ),
+    ),
   ],
-  introspections: [..._i10.$securityTestBeansIntrospections],
+  introspections: [..._i11.$securityTestBeansIntrospections],
 );

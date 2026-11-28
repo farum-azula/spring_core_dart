@@ -2,9 +2,9 @@ import 'package:spring_core_dart/core.dart' show SecretNames;
 
 /// The family's one rule for the HTTP headers and query or form parameters
 /// whose values a log never shows: the web starter's request log lines and
-/// the Feign client's `headers`/`full` logs ask it, so a name is masked in
-/// both or in neither. A redirect to another origin drops the same headers
-/// from a Feign call.
+/// the `RestClient`'s request log ask it, so a name is masked in both or
+/// in neither. A redirect to another origin drops the same headers from a
+/// client's call.
 ///
 /// A header is sensitive when it is one of [headers] (credentials, the
 /// DPoP proof, cookies) or its name looks secret to [SecretNames]

@@ -6,7 +6,7 @@ with Spring Boot's properties. Three parts:
 1. **`spring_boot_starter_oauth2_client`** (new, pure Dart: the VM,
    Flutter, the web): registrations and providers, discovery, PKCE, the
    token endpoint, refresh, the authorized clients, the users
-   (`OAuth2User`, `OidcUser`), tokens on Feign calls. Exactly Spring's
+   (`OAuth2User`, `OidcUser`), tokens on `RestClient` calls. Exactly Spring's
    `spring-security-oauth2-client` and `spring-boot-starter-oauth2-client`,
    nothing of the apps.
 2. **`oauth2Login()` in `spring_boot_starter_security`**: the server logs
@@ -62,8 +62,8 @@ Why, as the OAuth 2.0 Security BCP (RFC 9700), OAuth 2.0 for Native Apps
 
 Depends on `spring_boot_dart`, `spring_web_dart` (the HTTP transport),
 `spring_security_core` (`Authentication`, the security context, events),
-`spring_boot_starter_feign` (the token interceptor) and the logging
-starter. No JWT signature code here (that is in the security starter,
+`spring_boot_starter_restclient` (the token interceptor on its builders)
+and the logging starter. No JWT signature code here (that is in the security starter,
 with its third-party dependency): the default `OidcIdTokenDecoder`
 (`TokenEndpointOidcIdTokenDecoder`) trusts the ID token it got directly
 from the token endpoint over TLS, as OpenID Connect Core 3.1.3.7 allows;
@@ -123,21 +123,21 @@ client-credentials tokens.
 contains the client id, `azp`, `exp` and `iat` with the clock skew,
 `nonce`.
 
-**Feign:** `OAuth2AccessTokenInterceptor` adds `Authorization: Bearer`
-with a fresh token of the current user (or of the client, for client
-credentials), with Spring Cloud OpenFeign's properties
-`spring.cloud.openfeign.oauth2.enabled` and
-`spring.cloud.openfeign.oauth2.client-registration-id`. On a 401
-`OAuth2AccessTokenErrorDecoder` marks the token expired, so the next call
-refreshes it (the failed call is not repeated: Feign's interceptors do
-not see responses).
+**`RestClient`:** `OAuth2ClientHttpRequestInterceptor` (Spring Security
+7's) adds `Authorization: Bearer` (or `DPoP` and a proof) with a fresh
+token of the current user (or of the client, for client credentials) to
+the calls that name a registration (`@ClientRegistrationId` on an HTTP
+service interface, the request attribute), on every builder of the
+RestClient starter (`spring.security.oauth2.client.restclient.*`). On a
+401 it marks the token expired, so the next call refreshes it (the
+failed call is not repeated).
 
 **Auto-configuration**, as Spring Boot's `OAuth2ClientAutoConfiguration`
 and Spring Security's `OAuth2AuthorizedClientManagerRegistrar`: the
 repository when a registration is set, the in-memory authorized client
 service, the token clients, the `OidcIdTokenDecoder`, the user services
-and the manager with a repository, the Feign interceptor and error
-decoder when enabled. Another auto-configuration that replaces a
+and the manager with a repository, the `RestClient` interceptor when
+enabled. Another auto-configuration that replaces a
 default comes `before` this one (the security starter's decoder, the
 Flutter security package's authorized client service); the client names
 no other module.
@@ -293,8 +293,8 @@ needed.
   revocation and the end of Keycloak's session; the web navigates to the
   server's login and keeps only the session cookie
   (`FetchCredentials.include`, the CSRF cookie read from the page). The
-  tokens go on Feign calls through an interceptor of the app, not
-  `spring.cloud.openfeign.oauth2.enabled`: that one fails calls made
+  tokens go on the server's calls through an interceptor of the app, not
+  a default registration on every call: that one fails calls made
   without a user, and the catalog is public.
 - Checked end to end against Keycloak 26.8: the browser's login,
   session, CSRF and logout; bearer tokens of root (ADMIN) and ada (403);
@@ -325,7 +325,6 @@ needed.
   ([docs/security-spring-comparison.md](../docs/security-spring-comparison.md)):
   the token exchange grant (RFC 8693) and the JWT bearer grant
   (RFC 7523); client authentication with `private_key_jwt`,
-  `client_secret_jwt` and `tls_client_auth`; the registration chosen per
-  HTTP client (Spring 7's `@ClientRegistrationId`), not only per Feign
-  client name; an authorized client service in a database, with a data
+  `client_secret_jwt` and `tls_client_auth`; an authorized client
+  service in a database, with a data
   starter. The password grant stays out: Spring Security 7 removed it.

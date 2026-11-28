@@ -1,0 +1,601 @@
+{
+  "version": 1,
+  "package": "spring_boot_starter_restclient",
+  "properties": [
+    {
+      "name": "spring.http.clients.allowed-addresses",
+      "type": "List<String>",
+      "description": "The hosts and addresses the clients may call; **every other one is denied**, private networks and loopback included. Each entry is a host name (`api.neon.books`), its subdomains (`*.neon.books`), an address literal (`203.0.113.7`), a CIDR block (`10.20.0.0/16`), or `*` for any host with a public address. The hosts of the `spring.http.serviceclient.<group>.base-url` values are on it by themselves. A name opens only public addresses: list the block of a private network (or `localhost`) too. Cloud metadata (`169.254.169.254`) needs its own entry. In a browser only the host of the URL is checked. Default: empty.",
+      "default": [],
+      "deprecated": null,
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 67,
+      "class": "HttpClientsProperties"
+    },
+    {
+      "name": "spring.http.clients.connect-timeout",
+      "type": "Duration",
+      "description": "The longest wait for a connection to open. Default: `10s` (`0`: none). The transport's own; a group's `connect-timeout` may be longer, the transport then waits as long as the longest of them.",
+      "default": "10s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 46,
+      "class": "HttpClientsProperties"
+    },
+    {
+      "name": "spring.http.clients.read-timeout",
+      "type": "Duration",
+      "description": "The longest wait for data: for the response, then between two chunks of the body (not a limit of the whole call; the deadline of the enclosing request is that). Default: `60s` (`0`: none).",
+      "default": "60s",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 51,
+      "class": "HttpClientsProperties"
+    },
+    {
+      "name": "spring.http.clients.redirects",
+      "type": "HttpRedirects",
+      "description": "Whether redirects are followed: `follow-when-possible` (the default), `follow` or `dont-follow`.",
+      "default": "follow-when-possible",
+      "deprecated": null,
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 55,
+      "class": "HttpClientsProperties"
+    },
+    {
+      "name": "spring.http.serviceclient.*.base-url",
+      "type": "String?",
+      "description": "The base URL of the group's calls; its host is allowed by itself (see `spring.http.clients.allowed-addresses`). Default: none.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 101,
+      "class": "HttpServiceClientGroupProperties"
+    },
+    {
+      "name": "spring.http.serviceclient.*.connect-timeout",
+      "type": "Duration?",
+      "description": "The group's connect timeout. Default: `spring.http.clients`'.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 108,
+      "class": "HttpServiceClientGroupProperties"
+    },
+    {
+      "name": "spring.http.serviceclient.*.default-header.*",
+      "type": "List<String>",
+      "description": "Headers sent with every call of the group, by name; a comma list or an indexed list gives several values.",
+      "default": {},
+      "deprecated": null,
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 105,
+      "class": "HttpServiceClientGroupProperties"
+    },
+    {
+      "name": "spring.http.serviceclient.*.read-timeout",
+      "type": "Duration?",
+      "description": "The group's read timeout. Default: `spring.http.clients`'.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 111,
+      "class": "HttpServiceClientGroupProperties"
+    },
+    {
+      "name": "spring.http.serviceclient.*.redirects",
+      "type": "HttpRedirects?",
+      "description": "The group's redirects. Default: `spring.http.clients`'.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 114,
+      "class": "HttpServiceClientGroupProperties"
+    }
+  ],
+  "hints": [
+    {
+      "name": "spring.http.clients.redirects",
+      "values": [
+        {
+          "value": "follow-when-possible",
+          "description": "Follow them where the transport can (every platform follows; a browser by its own rules). The default."
+        },
+        {
+          "value": "follow",
+          "description": "Follow them."
+        },
+        {
+          "value": "dont-follow",
+          "description": "Do not follow them: the `3xx` is the answer (in a browser an opaque response with status 0)."
+        }
+      ]
+    },
+    {
+      "name": "spring.http.serviceclient.*.redirects",
+      "values": [
+        {
+          "value": "follow-when-possible",
+          "description": "Follow them where the transport can (every platform follows; a browser by its own rules). The default."
+        },
+        {
+          "value": "follow",
+          "description": "Follow them."
+        },
+        {
+          "value": "dont-follow",
+          "description": "Do not follow them: the `3xx` is the answer (in a browser an opaque response with status 0)."
+        }
+      ]
+    }
+  ],
+  "beans": [
+    {
+      "name": "eventStreamRetryAdapter",
+      "type": "EventStreamRetryAdapter",
+      "types": [
+        "EventStreamRetryAdapter",
+        "RetryStreamAdapter"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(EventStreamRetryAdapter)"
+      ],
+      "source": "package:spring_boot_starter_restclient/spring_auto_configuration.dart",
+      "line": 56,
+      "injects": [],
+      "members": [
+        {
+          "name": "adapt",
+          "kind": "method",
+          "type": "Stream<T>",
+          "parameters": [
+            "StreamAttempts<T> attempts"
+          ]
+        },
+        {
+          "name": "supports",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Stream<Object?> stream"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "httpClientAllowedAddresses",
+      "type": "AllowedAddresses",
+      "types": [
+        "AllowedAddresses"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(AllowedAddresses)"
+      ],
+      "source": "package:spring_boot_starter_restclient/src/rest_client_auto_configuration.dart",
+      "line": 41,
+      "injects": [],
+      "members": [
+        {
+          "name": "allowHostName",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "String host"
+          ]
+        },
+        {
+          "name": "allowedAddressesOf",
+          "kind": "method",
+          "type": "List<IpAddress>",
+          "parameters": [
+            "String host",
+            "Iterable<IpAddress> resolved"
+          ]
+        },
+        {
+          "name": "allowsHostName",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "String host"
+          ]
+        },
+        {
+          "name": "checkUrl",
+          "kind": "method",
+          "type": "void",
+          "parameters": [
+            "Uri url"
+          ]
+        },
+        {
+          "name": "filter",
+          "kind": "field",
+          "type": "InetAddressFilter?"
+        },
+        {
+          "name": "remedy",
+          "kind": "field",
+          "type": "String"
+        },
+        {
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "httpClientsProperties",
+      "type": "HttpClientsProperties",
+      "types": [
+        "HttpClientsProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 42,
+      "injects": [],
+      "members": [
+        {
+          "name": "allowedAddresses",
+          "kind": "field",
+          "type": "List<String>"
+        },
+        {
+          "name": "connectTimeout",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "readTimeout",
+          "kind": "field",
+          "type": "Duration"
+        },
+        {
+          "name": "redirects",
+          "kind": "field",
+          "type": "HttpRedirects"
+        }
+      ]
+    },
+    {
+      "name": "httpServiceClientProperties",
+      "type": "HttpServiceClientProperties",
+      "types": [
+        "HttpServiceClientProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 75,
+      "injects": [],
+      "members": [
+        {
+          "name": "serviceclient",
+          "kind": "field",
+          "type": "Map<String, HttpServiceClientGroupProperties>"
+        }
+      ]
+    },
+    {
+      "name": "httpServiceGroups",
+      "type": "HttpServiceGroups",
+      "types": [
+        "HttpServiceGroups"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(HttpServiceGroups)"
+      ],
+      "source": "package:spring_boot_starter_restclient/src/rest_client_auto_configuration.dart",
+      "line": 111,
+      "injects": [],
+      "members": [
+        {
+          "name": "group",
+          "kind": "method",
+          "type": "HttpServiceGroup",
+          "parameters": [
+            "String name"
+          ]
+        },
+        {
+          "name": "groupNames",
+          "kind": "getter",
+          "type": "Iterable<String>"
+        },
+        {
+          "name": "restClient",
+          "kind": "method",
+          "type": "RestClient",
+          "parameters": [
+            "String name"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "httpTransport",
+      "type": "HttpTransport",
+      "types": [
+        "HttpTransport"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(HttpTransport)"
+      ],
+      "source": "package:spring_boot_starter_restclient/src/rest_client_auto_configuration.dart",
+      "line": 58,
+      "injects": [],
+      "members": [
+        {
+          "name": "close",
+          "kind": "method",
+          "type": "void",
+          "parameters": []
+        },
+        {
+          "name": "send",
+          "kind": "method",
+          "type": "Future<HttpResponse>",
+          "parameters": [
+            "HttpRequest request"
+          ]
+        },
+        {
+          "name": "stream",
+          "kind": "method",
+          "type": "Future<StreamedHttpResponse>",
+          "parameters": [
+            "HttpRequest request"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "restClientBuilder",
+      "type": "RestClientBuilder",
+      "types": [
+        "RestClientBuilder"
+      ],
+      "scope": "prototype",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(RestClientBuilder)"
+      ],
+      "source": "package:spring_boot_starter_restclient/src/rest_client_auto_configuration.dart",
+      "line": 95,
+      "injects": [],
+      "members": [
+        {
+          "name": "apply",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "void Function(RestClientBuilder) configure"
+          ]
+        },
+        {
+          "name": "baseUrl",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "String? baseUrl"
+          ]
+        },
+        {
+          "name": "build",
+          "kind": "method",
+          "type": "RestClient",
+          "parameters": []
+        },
+        {
+          "name": "clone",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": []
+        },
+        {
+          "name": "configuredBaseUrl",
+          "kind": "getter",
+          "type": "String?"
+        },
+        {
+          "name": "connectTimeout",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "Duration? timeout"
+          ]
+        },
+        {
+          "name": "defaultCookie",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "String name",
+            "String value"
+          ]
+        },
+        {
+          "name": "defaultHeader",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "String name",
+            "String value"
+          ]
+        },
+        {
+          "name": "defaultHeaders",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "void Function(HttpHeaders) configure"
+          ]
+        },
+        {
+          "name": "defaultRequest",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "void Function(RequestHeadersSpec) initializer"
+          ]
+        },
+        {
+          "name": "defaultStatusHandler",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "bool Function(HttpStatusCode) predicate",
+            "FutureOr<void> Function(HttpRequest, HttpResponse) handler"
+          ]
+        },
+        {
+          "name": "defaultUriVariables",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "Map<String, Object?> variables"
+          ]
+        },
+        {
+          "name": "followRedirects",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "bool follow"
+          ]
+        },
+        {
+          "name": "messageConverters",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "void Function(List<HttpMessageConverter>) configure"
+          ]
+        },
+        {
+          "name": "objectMapper",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "ObjectMapper mapper"
+          ]
+        },
+        {
+          "name": "readTimeout",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "Duration? timeout"
+          ]
+        },
+        {
+          "name": "requestInterceptor",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "ClientHttpRequestInterceptor interceptor"
+          ]
+        },
+        {
+          "name": "requestInterceptors",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "void Function(List<ClientHttpRequestInterceptor>) configure"
+          ]
+        },
+        {
+          "name": "sensitiveHeaders",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "Iterable<String> names"
+          ]
+        },
+        {
+          "name": "transport",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "HttpTransport transport"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "restClientBuilderConfigurer",
+      "type": "RestClientBuilderConfigurer",
+      "types": [
+        "RestClientBuilderConfigurer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(RestClientBuilderConfigurer)"
+      ],
+      "source": "package:spring_boot_starter_restclient/src/rest_client_auto_configuration.dart",
+      "line": 77,
+      "injects": [],
+      "members": [
+        {
+          "name": "configure",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "RestClientBuilder builder"
+          ]
+        },
+        {
+          "name": "customizers",
+          "kind": "field",
+          "type": "List<RestClientCustomizer>"
+        },
+        {
+          "name": "mapper",
+          "kind": "field",
+          "type": "ObjectMapper"
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "HttpClientsProperties"
+        },
+        {
+          "name": "transport",
+          "kind": "field",
+          "type": "HttpTransport"
+        }
+      ]
+    }
+  ],
+  "profiles": []
+}

@@ -26,7 +26,8 @@ dependencies:
   spring_boot_actuator: ^0.10.0
   spring_boot_dart: ^0.10.0
   # oauth2Login(): the registrations, the token endpoint, the users and
-  # the authorized clients (re-exported, with the Feign starter it brings).
+  # the authorized clients (re-exported, with the RestClient starter it
+  # brings).
   spring_boot_starter_oauth2_client: ^0.10.0
   spring_boot_starter_web: ^0.10.0
   spring_security_core: ^0.10.0

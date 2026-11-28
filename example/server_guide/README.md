@@ -91,7 +91,7 @@ This is the contract between this server and the Flutter app.
 
 | Method | Path | Who | What |
 |---|---|---|---|
-| GET | `/api/books?q=&page=` | anyone | a page of the catalog (`Page`-like JSON: items, page, total), through `@RequestParam`s, cached |
+| GET | `/api/books?q=&page=` | anyone | a page of the catalog (`Page`-like JSON: items, page, total), through `@RequestParam` annotations, cached |
 | GET | `/api/books/{isbn}` | anyone | one book; a 404 ProblemDetail if unknown |
 | GET | `/api/books/{isbn}/cover` | anyone | the cover image (`Resource`, `Range`, `Cache-Control`) |
 | POST | `/api/books` | ADMIN | adds a book: a `@Valid` body (400 with field errors), 201 with `Location` |
@@ -111,7 +111,7 @@ applications share no Dart package.
 
 ### The JSON, as this server writes it
 
-Properties are written sorted by name, and `null`s are left out
+Properties are written sorted by name, and `null` values are left out
 (`spring.json.default-property-inclusion=non_null`). Unknown
 properties in requests are ignored.
 
@@ -155,8 +155,8 @@ point. The generator scans `lib/` and `bin/`, finds the starters in
 `lib/src/app.dart` is the `@ComponentScan` of `lib/src/`, so its
 generated file can hold the `log` getters of the `@Log` classes.
 
-`pubspec.yaml` lists the starters the server uses (web, security, Feign,
-WebSocket, cache, scheduling) and nothing they bring. The code imports
+`pubspec.yaml` lists the starters the server uses (web, security,
+RestClient, WebSocket, cache, scheduling) and nothing they bring. The code imports
 them, never the packages under them: `spring_core_dart`'s annotations,
 `spring_boot_dart` and `spring_web_dart` come through
 `package:spring_boot_starter_web/spring_boot_starter_web.dart`,
@@ -256,7 +256,7 @@ Tests: `test/web_test.dart` (MockMvc), `test/server_integration_test.dart`
 
 | Feature | Where |
 |---|---|
-| two `SecurityFilterChain`s: the supplier stub (`securityMatcher`, stateless, no CSRF) and the API | `lib/src/security/security_config.dart` |
+| two `SecurityFilterChain` instances: the supplier stub (`securityMatcher`, stateless, no CSRF) and the API | `lib/src/security/security_config.dart` |
 | request rules on path patterns: the first match decides, and no match is a denial | `SecurityConfig.apiChain` |
 | form login at `/api/login` with the application's own success and failure handlers (204 / 401), logout (204), a 401 instead of a login page | `lib/src/security/api_login.dart` |
 | CSRF in a cookie for the app (`CookieCsrfTokenRepository.withHttpOnlyFalse()` with `CsrfTokenRequestAttributeHandler`), sent with every response by a filter | `CsrfCookieFilter` |
@@ -382,7 +382,7 @@ socket with the session cookie). More:
 | `@EventListener` with `@Order` and a `condition`, `@Async`, a returned event (`LowStock`), `classes:` | `StockService`, `lib/src/orders/order_listeners.dart`, `ServerAnnouncer` |
 | an `ApplicationListener` bean | `ShippingNotifier` |
 | Spring Boot and web server events (`ApplicationReadyEvent`, `WebServerInitializedEvent`) | `ServerAnnouncer` |
-| `@Aspect` with a named `@Pointcut`, `within()` and `bean()`, `@Before` with `args()`, `@AfterReturning`, `@AfterThrowing`, `@After` (on the Feign clients), `@Around` for `@Timed`; the order of aspects | `lib/src/aop/aspects.dart` |
+| `@Aspect` with a named `@Pointcut`, `within()` and `bean()`, `@Before` with `args()`, `@AfterReturning`, `@AfterThrowing`, `@After` (on the HTTP service clients), `@Around` for `@Timed`; the order of aspects | `lib/src/aop/aspects.dart` |
 | a `PointcutAdvisor` bean with a `MethodInterceptor` | `lib/src/aop/handler_metrics.dart` |
 
 `@EventListener(condition:)` takes a function here, not a SpEL string:
@@ -408,7 +408,7 @@ Files: `lib/src/catalog/book_repository.dart`,
 | Feature | Where |
 |---|---|
 | `@Cacheable` with SpEL keys and `unless`, `@CachePut`, `@CacheEvict` (`@Caching`) | `lib/src/catalog/catalog_service.dart` |
-| `@Cacheable` on a Feign client method (asynchronous: the value is cached, not the `Future`) | `SupplierOffers.offer` |
+| `@Cacheable` on an HTTP service client method (asynchronous: the value is cached, not the `Future`) | `SupplierOffers.offer` |
 | `spring.cache.simple.*`: size and time limits, per cache | `application.properties` |
 | `@Scheduled` with a fixed delay and an initial delay from properties, and a cron | `lib/src/stock/restock_job.dart` |
 | a `TaskScheduler` in code (an order ships after `neon.orders.shipping-delay`) | `OrderService.place` |
@@ -420,26 +420,51 @@ Tests: `test/cache_scheduling_test.dart`. More:
 [`spring_boot_starter_cache`](../../spring_boot_starter_cache/README.md),
 [`spring_boot_starter_scheduling`](../../spring_boot_starter_scheduling/README.md).
 
-## 9. Feign
+## 9. HTTP service clients
 
-The supplier is another service, called through two `@FeignClient`s:
+The supplier is another service, called through two HTTP service
+interfaces (`@HttpExchange`), which `@ImportHttpServices` puts into the
+`supplier` group; the generator writes their `RestClient` calls:
 
-- **offers:** a path variable, a query parameter, `@Cacheable`, and
-  `FeignNotFound` for unknown books;
+- **offers:** a path variable, a query parameter, `@Cacheable`, and an
+  `HttpClientErrorException` (404) for unknown books;
 - **deliveries:** a POST answered with a `ResponseEntity`, a header from a
-  placeholder, and a fallback when the supplier is down.
+  placeholder, and `@Retryable` when the supplier cannot be reached
+  (`spring.resilience.enabled=true`).
 
-A `RequestInterceptor` adds the API key, a `Retryer` retries failed
-connections, and `spring.feign.client.config.*` sets the
-timeouts and the request log. In dev the supplier is a stub controller of
-this same server, under `/supplier/**`, so everything runs without
-internet.
+```dart
+@HttpExchange('/offers')
+abstract interface class SupplierOffers {
+  @GetExchange('/{isbn}')
+  @Cacheable('supplier-offers', key: "#isbn + '*' + #copies")
+  Future<Offer> offer(
+    @PathVariable() String isbn,
+    @RequestParam('copies') int copies,
+  );
+}
+
+@Configuration()
+@ImportHttpServices(
+  group: 'supplier',
+  types: [SupplierOffers, SupplierDeliveries],
+)
+class SupplierClientConfig { ... }
+```
+
+`spring.http.serviceclient.supplier.*` sets the group's base URL and
+timeouts; a `RestClientHttpServiceGroupConfigurer` bean puts an
+interceptor on the group's `RestClient` that adds the API key. The
+group's base URL is the one address the HTTP transport may call: every
+other one is denied until listed in `spring.http.clients.allowed-addresses`.
+When the supplier is down, the restock job logs it and tries again on its
+next run. In dev the supplier is a stub controller of this same server,
+under `/supplier/**`, so everything runs without internet.
 
 Files: `lib/src/supplier/`, and the job that uses them,
 `lib/src/stock/restock_job.dart`. Tests: `test/supplier_test.dart`
 (`MockHttpTransport`). More:
-[`spring_boot_starter_feign`](../../spring_boot_starter_feign/README.md).
-Feign's client side of server-sent events (`EventStream<T>`) and the
+[`spring_boot_starter_restclient`](../../spring_boot_starter_restclient/README.md#http-service-clients).
+The client side of server-sent events (`EventStream<T>`) and the
 declarative `@WebSocketClient` are in the [Flutter guide](../flutter_guide/README.md).
 
 ## 10. Validation and SpEL
@@ -465,7 +490,7 @@ More: [the root Guide](../../README.md#validation-and-data-binding),
 | fields on every line of a request or an order (`SpringLog.withFields`) | `RequestIdFilter`, `OrderService.place` |
 | the `LogBuffer` behind `/api/admin/logs` (filters by level, logger and text) | `lib/src/admin/log_service.dart` |
 
-Try: `LOGGING_LEVEL_FEIGN=info dart run bin/main.dart` (no request log);
+Try: `LOGGING_LEVEL_WEB_CLIENT=info dart run bin/main.dart` (no request log);
 `curl -b $J 'localhost:8080/api/admin/logs?level=warn'` when logged in as
 root.
 
@@ -484,7 +509,7 @@ Tests: `test/logging_test.dart`. More:
 | `BeanOverride` | `test/supplier_test.dart`, `test/cache_scheduling_test.dart`, `test/data_access_test.dart` |
 | `ApplicationContextRunner` | `test/configuration_test.dart` |
 | `captureLogs` | `test/events_aop_test.dart`, `test/security_test.dart` |
-| `MockHttpTransport` for Feign | `test/supplier_test.dart` |
+| `MockHttpTransport` for HTTP service clients | `test/supplier_test.dart` |
 | `MockMvc.webSocket` | `test/websocket_test.dart` |
 
 More: [`spring_boot_starter_test`](../../spring_boot_starter_test/README.md),

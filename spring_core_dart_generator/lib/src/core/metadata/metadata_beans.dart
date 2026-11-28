@@ -6,8 +6,8 @@ import 'package:spring_core_dart_generator/src/core/beans/bean_model.dart';
 import 'package:spring_core_dart_generator/src/core/metadata/metadata_locations.dart';
 
 /// The beans of `spring_metadata.json`: what the scan registers
-/// ([fromModel]) and the `BeanDefinition`s a package writes by hand, as
-/// the starters do in their auto-configurations ([BeanDefinitionReader]).
+/// ([fromModel]) and the `BeanDefinition` instances a package writes by hand,
+/// as the starters do in their auto-configurations ([BeanDefinitionReader]).
 abstract final class MetadataBeans {
   /// The entry of [bean] (see `roadmap/spring_metadata.md`) and the
   /// profiles it names.

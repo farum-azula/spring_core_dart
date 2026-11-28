@@ -523,6 +523,10 @@ class BeanScanner {
   // problem is reported already).
   final _beanClassesScanned = <ClassElement>[];
 
+  // The conditions of each bean class, its own and its importer's, in the
+  // group evaluated once for it (see [ModuleScan.beanClassConditions]).
+  final _beanClassConditions = <ClassElement, List<ConditionModel>>{};
+
   /// Which beans get a [ProxyModel] (build option `aop_proxies`).
   final ProxyMode proxyMode;
 
@@ -935,6 +939,7 @@ class BeanScanner {
     final classConditions = ownConditions.isEmpty
         ? const <ConditionModel>[]
         : [GroupConditionModel(source, ownConditions)];
+    _beanClassConditions.putIfAbsent(element, () => classConditions);
     for (final imported in _importedClasses(element)) {
       if (_importRegistrars.any((c) => c.isAssignableFrom(imported))) {
         _addRegistrar(imported, element, classConditions);
@@ -5146,7 +5151,7 @@ class BeanScanner {
 
   // `primary` of the `@InterfaceProxy()` on the class of one of
   // [element]'s annotations, or `null` when it has none. A `bool primary`
-  // field of the annotation itself wins (`@FeignClient(primary: false)`).
+  // field of the annotation itself wins (`@Remote(primary: false)`).
   bool? _interfaceProxyPrimary(ClassElement element) {
     for (final annotation in element.metadata.annotations) {
       final value = annotation.computeConstantValue();
@@ -5167,7 +5172,7 @@ class BeanScanner {
   }
 
   // The `List<String> qualifiers` field of [element]'s annotation marked
-  // `@InterfaceProxy()`, if it has one (`@FeignClient(qualifiers: [...])`).
+  // `@InterfaceProxy()`, if it has one (`@Remote(qualifiers: [...])`).
   Set<String> _interfaceProxyQualifiers(ClassElement element) {
     for (final annotation in element.metadata.annotations) {
       final value = annotation.computeConstantValue();
@@ -5278,7 +5283,7 @@ class BeanScanner {
       );
       // Request and response classes of the same package are introspected,
       // so they can be (de)serialized without annotations of their own (a
-      // Feign client's bodies): the answer is read in, the arguments are
+      // client's messages): the answer is read in, the arguments are
       // written out.
       final spel = _spelUse(member.annotations);
       if (spel.target) {
@@ -5339,7 +5344,11 @@ class BeanScanner {
 
   // The bean of [element], whose implementation a package's part
   // generates (see `ModuleScan.addGeneratedBean`).
-  void _addGeneratedBean(ClassElement element, PackageCreation creation) {
+  void _addGeneratedBean(
+    ClassElement element,
+    PackageCreation creation,
+    List<ConditionModel> conditions,
+  ) {
     final name = _requireName(element);
     _rejectUnreadDefinitionAnnotations(element);
     final source = '${element.library.uri}#$name';
@@ -5359,6 +5368,7 @@ class BeanScanner {
         qualifiers: _qualifiersOf(element),
         annotations: _beanAnnotations(element),
         conditions: [
+          ...conditions,
           if (_conditions(element) case final own when own.isNotEmpty)
             GroupConditionModel(source, own),
         ],

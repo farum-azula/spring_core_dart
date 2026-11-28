@@ -91,7 +91,7 @@ enum SupabaseOtpType {
 ///   other `redirectTo` is an [ArgumentError] before a request is made.
 /// - **Providers and links** use PKCE (S256): the code that comes back is
 ///   exchanged with a verifier that never left the application.
-/// - **Errors** are Spring Security's `AuthenticationException`s
+/// - **Errors** are Spring Security's `AuthenticationException` instances
 ///   ([SupabaseAuthErrors]) with Auth's error code
 ///   ([SupabaseAuthFailure]); no answer at all is a
 ///   `SupabaseUnavailableException`. No token, password or code is ever

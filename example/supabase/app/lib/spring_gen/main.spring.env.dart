@@ -443,18 +443,6 @@ const Map<String, String> _$dartDefines = {
     'SPRING_DEVTOOLS_RESTART_ENABLED': String.fromEnvironment(
       'SPRING_DEVTOOLS_RESTART_ENABLED',
     ),
-  if (bool.hasEnvironment('SPRING_FEIGN_CLIENT_DECODESLASH'))
-    'SPRING_FEIGN_CLIENT_DECODESLASH': String.fromEnvironment(
-      'SPRING_FEIGN_CLIENT_DECODESLASH',
-    ),
-  if (bool.hasEnvironment('SPRING_FEIGN_OAUTH2_CLIENTREGISTRATIONID'))
-    'SPRING_FEIGN_OAUTH2_CLIENTREGISTRATIONID': String.fromEnvironment(
-      'SPRING_FEIGN_OAUTH2_CLIENTREGISTRATIONID',
-    ),
-  if (bool.hasEnvironment('SPRING_FEIGN_OAUTH2_ENABLED'))
-    'SPRING_FEIGN_OAUTH2_ENABLED': String.fromEnvironment(
-      'SPRING_FEIGN_OAUTH2_ENABLED',
-    ),
   if (bool.hasEnvironment('SPRING_FLUTTER_APP_DEBUGBANNER'))
     'SPRING_FLUTTER_APP_DEBUGBANNER': String.fromEnvironment(
       'SPRING_FLUTTER_APP_DEBUGBANNER',
@@ -949,6 +937,22 @@ const Map<String, String> _$dartDefines = {
     'SPRING_FLUTTER_WEB_SEO_TITLE': String.fromEnvironment(
       'SPRING_FLUTTER_WEB_SEO_TITLE',
     ),
+  if (bool.hasEnvironment('SPRING_HTTP_CLIENTS_ALLOWEDADDRESSES'))
+    'SPRING_HTTP_CLIENTS_ALLOWEDADDRESSES': String.fromEnvironment(
+      'SPRING_HTTP_CLIENTS_ALLOWEDADDRESSES',
+    ),
+  if (bool.hasEnvironment('SPRING_HTTP_CLIENTS_CONNECTTIMEOUT'))
+    'SPRING_HTTP_CLIENTS_CONNECTTIMEOUT': String.fromEnvironment(
+      'SPRING_HTTP_CLIENTS_CONNECTTIMEOUT',
+    ),
+  if (bool.hasEnvironment('SPRING_HTTP_CLIENTS_READTIMEOUT'))
+    'SPRING_HTTP_CLIENTS_READTIMEOUT': String.fromEnvironment(
+      'SPRING_HTTP_CLIENTS_READTIMEOUT',
+    ),
+  if (bool.hasEnvironment('SPRING_HTTP_CLIENTS_REDIRECTS'))
+    'SPRING_HTTP_CLIENTS_REDIRECTS': String.fromEnvironment(
+      'SPRING_HTTP_CLIENTS_REDIRECTS',
+    ),
   if (bool.hasEnvironment('SPRING_INFO_BUILD_ENCODING'))
     'SPRING_INFO_BUILD_ENCODING': String.fromEnvironment(
       'SPRING_INFO_BUILD_ENCODING',
@@ -1154,6 +1158,10 @@ const Map<String, String> _$dartDefines = {
     'SPRING_REMOTE_ALLOWINSECURE': String.fromEnvironment(
       'SPRING_REMOTE_ALLOWINSECURE',
     ),
+  if (bool.hasEnvironment('SPRING_RESILIENCE_ENABLED'))
+    'SPRING_RESILIENCE_ENABLED': String.fromEnvironment(
+      'SPRING_RESILIENCE_ENABLED',
+    ),
   if (bool.hasEnvironment('SPRING_RESOURCES_EMBED_EXCLUDE'))
     'SPRING_RESOURCES_EMBED_EXCLUDE': String.fromEnvironment(
       'SPRING_RESOURCES_EMBED_EXCLUDE',
@@ -1169,6 +1177,17 @@ const Map<String, String> _$dartDefines = {
   if (bool.hasEnvironment('SPRING_RESOURCES_PREFETCH_STAGE'))
     'SPRING_RESOURCES_PREFETCH_STAGE': String.fromEnvironment(
       'SPRING_RESOURCES_PREFETCH_STAGE',
+    ),
+  if (bool.hasEnvironment(
+    'SPRING_SECURITY_OAUTH2_CLIENT_RESTCLIENT_CLIENTREGISTRATIONID',
+  ))
+    'SPRING_SECURITY_OAUTH2_CLIENT_RESTCLIENT_CLIENTREGISTRATIONID':
+        String.fromEnvironment(
+          'SPRING_SECURITY_OAUTH2_CLIENT_RESTCLIENT_CLIENTREGISTRATIONID',
+        ),
+  if (bool.hasEnvironment('SPRING_SECURITY_OAUTH2_CLIENT_RESTCLIENT_ENABLED'))
+    'SPRING_SECURITY_OAUTH2_CLIENT_RESTCLIENT_ENABLED': String.fromEnvironment(
+      'SPRING_SECURITY_OAUTH2_CLIENT_RESTCLIENT_ENABLED',
     ),
   if (bool.hasEnvironment('SPRING_SQL_INIT_CONTINUEONERROR'))
     'SPRING_SQL_INIT_CONTINUEONERROR': String.fromEnvironment(
@@ -1931,18 +1950,6 @@ const Map<String, String> _$dartDefines = {
     'spring.devtools.restart.enabled': String.fromEnvironment(
       'spring.devtools.restart.enabled',
     ),
-  if (bool.hasEnvironment('spring.feign.client.decode-slash'))
-    'spring.feign.client.decode-slash': String.fromEnvironment(
-      'spring.feign.client.decode-slash',
-    ),
-  if (bool.hasEnvironment('spring.feign.oauth2.client-registration-id'))
-    'spring.feign.oauth2.client-registration-id': String.fromEnvironment(
-      'spring.feign.oauth2.client-registration-id',
-    ),
-  if (bool.hasEnvironment('spring.feign.oauth2.enabled'))
-    'spring.feign.oauth2.enabled': String.fromEnvironment(
-      'spring.feign.oauth2.enabled',
-    ),
   if (bool.hasEnvironment('spring.flutter.app.debug-banner'))
     'spring.flutter.app.debug-banner': String.fromEnvironment(
       'spring.flutter.app.debug-banner',
@@ -2440,6 +2447,22 @@ const Map<String, String> _$dartDefines = {
     'spring.flutter.web.seo.title': String.fromEnvironment(
       'spring.flutter.web.seo.title',
     ),
+  if (bool.hasEnvironment('spring.http.clients.allowed-addresses'))
+    'spring.http.clients.allowed-addresses': String.fromEnvironment(
+      'spring.http.clients.allowed-addresses',
+    ),
+  if (bool.hasEnvironment('spring.http.clients.connect-timeout'))
+    'spring.http.clients.connect-timeout': String.fromEnvironment(
+      'spring.http.clients.connect-timeout',
+    ),
+  if (bool.hasEnvironment('spring.http.clients.read-timeout'))
+    'spring.http.clients.read-timeout': String.fromEnvironment(
+      'spring.http.clients.read-timeout',
+    ),
+  if (bool.hasEnvironment('spring.http.clients.redirects'))
+    'spring.http.clients.redirects': String.fromEnvironment(
+      'spring.http.clients.redirects',
+    ),
   if (bool.hasEnvironment('spring.info.build.encoding'))
     'spring.info.build.encoding': String.fromEnvironment(
       'spring.info.build.encoding',
@@ -2650,6 +2673,10 @@ const Map<String, String> _$dartDefines = {
     'spring.remote.allow-insecure': String.fromEnvironment(
       'spring.remote.allow-insecure',
     ),
+  if (bool.hasEnvironment('spring.resilience.enabled'))
+    'spring.resilience.enabled': String.fromEnvironment(
+      'spring.resilience.enabled',
+    ),
   if (bool.hasEnvironment('spring.resources.embed.exclude'))
     'spring.resources.embed.exclude': String.fromEnvironment(
       'spring.resources.embed.exclude',
@@ -2665,6 +2692,17 @@ const Map<String, String> _$dartDefines = {
   if (bool.hasEnvironment('spring.resources.prefetch.stage'))
     'spring.resources.prefetch.stage': String.fromEnvironment(
       'spring.resources.prefetch.stage',
+    ),
+  if (bool.hasEnvironment(
+    'spring.security.oauth2.client.restclient.client-registration-id',
+  ))
+    'spring.security.oauth2.client.restclient.client-registration-id':
+        String.fromEnvironment(
+          'spring.security.oauth2.client.restclient.client-registration-id',
+        ),
+  if (bool.hasEnvironment('spring.security.oauth2.client.restclient.enabled'))
+    'spring.security.oauth2.client.restclient.enabled': String.fromEnvironment(
+      'spring.security.oauth2.client.restclient.enabled',
     ),
   if (bool.hasEnvironment('spring.sql.init.continue-on-error'))
     'spring.sql.init.continue-on-error': String.fromEnvironment(

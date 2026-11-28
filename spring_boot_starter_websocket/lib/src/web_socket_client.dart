@@ -54,8 +54,9 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// }, "wss://chat.neon.books/ws");
 /// // or STOMP: new WebSocketStompClient(client).connectAsync(url, new StompSessionHandlerAdapter() { ... });
 /// ```
-/// This starter follows the `@FeignClient` style instead, so a socket is
-/// an injectable interface with typed streams.
+/// This starter follows the style of HTTP service interfaces
+/// (`@HttpExchange`) instead, so a socket is an injectable interface with
+/// typed streams.
 @InterfaceProxy(primary: true)
 class WebSocketClient {
   /// A client named [name], connecting to [url] (or to the configured

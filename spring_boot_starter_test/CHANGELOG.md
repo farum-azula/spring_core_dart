@@ -1,3 +1,7 @@
+## Unreleased
+
+- The documentation names `RestClient` as the client of `webEnvironment: randomPort` tests and of the fake transports.
+
 ## 0.10.0
 
 - No changes of its own; released with the family version 0.10.0.

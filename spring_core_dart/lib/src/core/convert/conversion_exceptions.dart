@@ -1,3 +1,5 @@
+import 'package:spring_core_dart/src/core/nested_exception.dart';
+
 /// The error a conversion service throws when a value cannot be turned
 /// into the requested type.
 ///
@@ -65,7 +67,8 @@ sealed class ConversionException implements Exception {
 ///   Throwable cause = ex.getCause();
 /// }
 /// ```
-final class ConversionFailedException extends ConversionException {
+final class ConversionFailedException extends ConversionException
+    implements NestedException {
   /// Creates the exception for converting [value] to [targetType], with
   /// the converter's error as [cause] when there was one.
   ConversionFailedException(this.value, this.targetType, [this.cause])
@@ -82,6 +85,7 @@ final class ConversionFailedException extends ConversionException {
 
   /// The error the converter threw, such as a [FormatException]; `null`
   /// when the conversion failed because the result was `null`.
+  @override
   final Object? cause;
 }
 

@@ -267,6 +267,24 @@ void main() {
       expect(transport.requests, hasLength(1));
     });
 
+    test('an unreachable provider is a ResourceAccessException', () {
+      final transport = MockHttpTransport()
+        ..when(
+          HttpMethod.get,
+          'https://sso.test/realms/neon/.well-known/openid-configuration',
+        ).fail(HttpTransportException('connection refused'));
+      expect(
+        ClientRegistrations.fromIssuerLocation(issuer, transport: transport),
+        throwsA(
+          isA<ResourceAccessException>().having(
+            (e) => e.cause,
+            'cause',
+            isA<HttpTransportException>(),
+          ),
+        ),
+      );
+    });
+
     test('metadata without a token endpoint is refused', () {
       final transport = MockHttpTransport()
         ..when(
@@ -381,6 +399,54 @@ void main() {
         keycloak.clientAuthenticationMethod,
         ClientAuthenticationMethod.none,
       );
+    });
+
+    test('the endpoint hosts a discovery names join the allow list, by name '
+        'only', () async {
+      final transport = MockHttpTransport()
+        ..when(
+          HttpMethod.get,
+          'https://accounts.test/.well-known/openid-configuration',
+        ).respond(
+          200,
+          json: {
+            'issuer': 'https://accounts.test',
+            'authorization_endpoint': 'https://accounts.test/auth',
+            'token_endpoint': 'https://oauth2.apis.test/token',
+            'jwks_uri': 'https://www.apis.test/certs',
+            'userinfo_endpoint': 'https://169.254.169.254/userinfo',
+            'revocation_endpoint': 'http://localhost:9/revoke',
+          },
+        );
+      final allowed = AllowedAddresses(['accounts.test']);
+      final suppliers = OAuth2ClientPropertiesMapper(
+        boundClientProperties(
+          environment({
+            '$_r.acc.client-id': 'c',
+            '$_p.acc.issuer-uri': 'https://accounts.test',
+          }),
+        ),
+        transport: transport,
+        allowedAddresses: allowed,
+      ).asClientRegistrations();
+      expect(
+        () => allowed.checkUrl(Uri.parse('https://oauth2.apis.test/token')),
+        throwsA(isA<FilteredHostException>()),
+      );
+      await suppliers['acc']!();
+      allowed
+        ..checkUrl(Uri.parse('https://oauth2.apis.test/token'))
+        ..checkUrl(Uri.parse('https://www.apis.test/certs'));
+      for (final refused in [
+        'https://169.254.169.254/userinfo',
+        'http://localhost:9/revoke',
+      ]) {
+        expect(
+          () => allowed.checkUrl(Uri.parse(refused)),
+          throwsA(isA<FilteredHostException>()),
+          reason: refused,
+        );
+      }
     });
 
     test('a missing client id fails the start', () {

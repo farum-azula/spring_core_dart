@@ -1,9 +1,8 @@
-// The authorized clients: the in-memory service, the manager (refresh
+// The authorized clients: the in-memory service and the manager (refresh
 // within the clock skew, single-flight, client credentials, removal on
-// invalid_grant) and the Feign interceptor.
+// invalid_grant). The token on calls: rest_client_interceptor_test.dart.
 import 'dart:async';
 
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 import 'package:test/test.dart';
 
@@ -180,100 +179,6 @@ void main() {
         ),
         throwsArgumentError,
       );
-    });
-  });
-
-  group('the Feign interceptor', () {
-    late OAuth2AccessTokenInterceptor interceptor;
-
-    setUp(() {
-      interceptor = OAuth2AccessTokenInterceptor(
-        fixture.manager,
-        clientRegistrationId: 'keycloak',
-        authorizedClientService: fixture.clients,
-        securityContextHolderStrategy: fixture.strategy,
-      );
-    });
-
-    RequestTemplate template([String client = 'orders']) => RequestTemplate(
-      method: HttpMethod.get,
-      url: Uri.parse('https://api.test/me'),
-      methodKey: 'Api#me()',
-      clientName: client,
-      headers: HttpHeaders({'Authorization': 'Basic old'}),
-    );
-
-    test("adds the current user's token, replacing any", () async {
-      await fixture.signIn();
-      final call = template();
-      await interceptor.apply(call);
-      final client = await fixture.clients.loadAuthorizedClient(
-        'keycloak',
-        'user-1',
-      );
-      expect(call.headers.getAll('Authorization'), [
-        'Bearer ${client!.accessToken.tokenValue}',
-      ]);
-    });
-
-    test('nobody logged in: the call fails', () {
-      expect(
-        interceptor.apply(template()),
-        throwsA(isA<ClientAuthorizationRequiredException>()),
-      );
-    });
-
-    test("without a registration id, the Feign client's name", () async {
-      final byName = OAuth2AccessTokenInterceptor(
-        fixture.manager,
-        clientRegistrationId: ' ',
-        securityContextHolderStrategy: fixture.strategy,
-      );
-      await fixture.signIn();
-      await byName.apply(template('keycloak'));
-      expect(
-        byName.apply(template()),
-        throwsArgumentError, // no registration "orders"
-      );
-    });
-
-    test('a 401 marks the token expired: the next call refreshes', () async {
-      await fixture.signIn();
-      final first = template();
-      await interceptor.apply(first);
-      final sent = first.headers['Authorization']!.substring(7);
-
-      // The API refuses the token although it has not expired.
-      fixture.provider.rejectedAccessTokens.add(sent);
-      final response = await fixture.provider.transport.send(
-        HttpRequest(
-          method: HttpMethod.get,
-          url: first.url,
-          headers: first.headers,
-        ),
-      );
-      expect(response.statusCode, 401);
-      final decoder = OAuth2AccessTokenErrorDecoder(
-        const DefaultErrorDecoder(),
-        interceptor,
-      );
-      expect(decoder.decode('Api#me()', response), isA<FeignUnauthorized>());
-
-      final second = template();
-      await interceptor.apply(second);
-      expect(second.headers['Authorization'], isNot('Bearer $sent'));
-      expect(
-        fixture.provider.tokenRequests.last['grant_type'],
-        'refresh_token',
-      );
-    });
-
-    test('a 401 for a token it did not send changes nothing', () async {
-      await fixture.signIn();
-      await interceptor.invalidate('someone-elses-token');
-      final before = fixture.provider.tokenRequests.length;
-      await interceptor.apply(template());
-      expect(fixture.provider.tokenRequests, hasLength(before));
     });
   });
 

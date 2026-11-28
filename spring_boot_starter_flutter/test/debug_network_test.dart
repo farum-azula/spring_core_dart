@@ -99,13 +99,13 @@ void main() {
 
       expect(delegate.requests.single, same(request));
       expect(response, same(delegate.responses.single));
-      final exchange = journal.entries.single as HttpExchange;
+      final exchange = journal.entries.single as HttpCall;
       expect(exchange.method, 'POST');
       expect('${exchange.url}', 'https://api.neon.books/books?page=2');
       expect(exchange.statusCode, 200);
       expect(exchange.status, '200');
       expect(exchange.statusClass, NetworkStatusClass.success);
-      expect(exchange.state, HttpExchangeState.done);
+      expect(exchange.state, HttpCallState.done);
       expect(exchange.isDone, isTrue);
       expect(exchange.requestSize, 16);
       expect(exchange.responseSize, 8);
@@ -135,8 +135,8 @@ void main() {
           transport.send(_get('https://api.neon.books/slow')),
           throwsA(same(failure)),
         );
-        final exchange = journal.entries.single as HttpExchange;
-        expect(exchange.state, HttpExchangeState.failed);
+        final exchange = journal.entries.single as HttpCall;
+        expect(exchange.state, HttpCallState.failed);
         expect(exchange.status, 'ERR');
         expect(exchange.statusClass, NetworkStatusClass.failed);
         expect(exchange.error, failure.message);
@@ -193,7 +193,7 @@ void main() {
         ),
       );
 
-      final exchange = journal.entries.single as HttpExchange;
+      final exchange = journal.entries.single as HttpCall;
       final sent = _headers(exchange.requestHeaders);
       final received = _headers(exchange.responseHeaders);
       for (final secret in [
@@ -276,7 +276,7 @@ void main() {
         transport.send(_get('https://api.neon.books/me')),
         throwsStateError,
       );
-      final failed = journal.entries.single as HttpExchange;
+      final failed = journal.entries.single as HttpCall;
       expect(failed.error, isNot(contains('t0k3n')));
       expect(failed.error, contains('token=******&page=2'));
 
@@ -325,7 +325,7 @@ void main() {
         journal,
       ).send(_get('https://api.neon.books/login'));
       final received = _headers(
-        (journal.entries.single as HttpExchange).responseHeaders,
+        (journal.entries.single as HttpCall).responseHeaders,
       );
       for (final secret in ['c0de', 'st&', ':pw@', 't0k']) {
         expect(received, isNot(contains(secret)));
@@ -378,7 +378,7 @@ void main() {
         ),
       );
 
-      final exchange = journal.entries.single as HttpExchange;
+      final exchange = journal.entries.single as HttpCall;
       expect(DebugNetworkJournal().bodies, isFalse);
       expect(const FlutterDebugNetworkProperties().bodies, isFalse);
       expect(
@@ -408,7 +408,7 @@ void main() {
           ),
         );
 
-        final exchange = journal.entries.single as HttpExchange;
+        final exchange = journal.entries.single as HttpCall;
         final request = exchange.requestBody!;
         expect(request.truncated, isFalse);
         expect(request.text, '{"a":1}');
@@ -436,7 +436,7 @@ void main() {
       );
       await transport.send(_get('https://api.neon.books/cover.png'));
 
-      final body = (journal.entries.single as HttpExchange).responseBody!;
+      final body = (journal.entries.single as HttpCall).responseBody!;
       expect(body.text, isNull);
       expect(body.length, 4);
     });
@@ -467,10 +467,10 @@ void main() {
       }
       List<int> kept() => [
         for (final entry in journal.entries)
-          (entry as HttpExchange).responseBody!.kept,
+          (entry as HttpCall).responseBody!.kept,
       ];
       expect(kept(), [100, 100, 0]);
-      expect((journal.entries.last as HttpExchange).responseSize, 100);
+      expect((journal.entries.last as HttpCall).responseSize, 100);
       journal.clear();
       await transport.send(_get('https://api.neon.books/d'));
       expect(kept(), [100]);
@@ -495,7 +495,7 @@ void main() {
       );
       await transport.send(_get('https://api.neon.books/a'));
       await transport.send(_get('https://api.neon.books/b'));
-      final kept = (journal.entries.single as HttpExchange).responseBody!;
+      final kept = (journal.entries.single as HttpCall).responseBody!;
       expect(kept.kept, 100, reason: 'the first one went with its body');
     });
   });
@@ -523,9 +523,9 @@ void main() {
       expect(response.statusCode, 200);
       expect(response.request, same(request));
       expect(response.headers.contentType, 'text/event-stream');
-      final exchange = journal.entries.single as HttpExchange;
+      final exchange = journal.entries.single as HttpCall;
       expect(exchange.streamed, isTrue);
-      expect(exchange.state, HttpExchangeState.receiving);
+      expect(exchange.state, HttpCallState.receiving);
       expect(exchange.headersTime, isNotNull);
       expect(exchange.totalTime, isNull);
       expect(source.hasListener, isFalse, reason: 'nobody reads it yet');
@@ -548,7 +548,7 @@ void main() {
       await source.close();
       await Future<void>.delayed(Duration.zero);
       expect(chunks, hasLength(2));
-      expect(exchange.state, HttpExchangeState.done);
+      expect(exchange.state, HttpCallState.done);
       expect(exchange.responseSize, 18);
       expect(exchange.totalTime, isNotNull);
       expect(exchange.responseBody, isNull, reason: 'bodies off');
@@ -578,8 +578,8 @@ void main() {
       await subscription.cancel();
 
       expect(cancelled, isTrue);
-      final exchange = journal.entries.single as HttpExchange;
-      expect(exchange.state, HttpExchangeState.cancelled);
+      final exchange = journal.entries.single as HttpCall;
+      expect(exchange.state, HttpCallState.cancelled);
       expect(exchange.responseSize, 8);
       expect(exchange.responseBody!.text, 'abcd');
       expect(exchange.responseBody!.truncated, isTrue);
@@ -606,8 +606,8 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         expect(errors.single, same(broken));
-        final exchange = journal.entries.single as HttpExchange;
-        expect(exchange.state, HttpExchangeState.failed);
+        final exchange = journal.entries.single as HttpCall;
+        expect(exchange.state, HttpCallState.failed);
         expect(exchange.error, 'connection reset');
         expect(exchange.status, '200');
       },

@@ -37,8 +37,9 @@ class SupabaseProperties {
   /// timeout applies to them; [timeout] limits each of them as a whole.
   Duration connectTimeout = const Duration(seconds: 10);
 
-  /// How long a call may take, the answer's body included. Downloads and
-  /// uploads of Storage are not limited by it.
+  /// How long a call may take, the answer's body included; a
+  /// `RequestDeadline` of the caller that ends earlier ends it earlier.
+  /// Downloads and uploads of Storage are not limited by it.
   Duration timeout = const Duration(seconds: 30);
 
   /// The database (`spring.supabase.db.*`).
@@ -168,7 +169,8 @@ class SupabaseFunctionsProperties {
   /// one when not set.
   String? region;
 
-  /// How long a function may take. Default: `spring.supabase.timeout`.
+  /// How long a call of a function may take, its retries included.
+  /// Default: `spring.supabase.timeout`.
   Duration? timeout;
 }
 

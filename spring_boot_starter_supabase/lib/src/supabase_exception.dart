@@ -1,8 +1,8 @@
 /// A call to Supabase that failed.
 ///
 /// The services have their own subclasses (`StorageException`, ...); the
-/// repositories throw the data starter's `DataAccessException`s and a
-/// failed login Spring Security's `AuthenticationException`s, so code
+/// repositories throw the data starter's `DataAccessException` instances and a
+/// failed login Spring Security's `AuthenticationException` instances, so code
 /// written against Spring's types does not change.
 ///
 /// ```dart

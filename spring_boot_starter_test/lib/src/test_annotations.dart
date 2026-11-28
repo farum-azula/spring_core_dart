@@ -466,7 +466,7 @@ final class Disabled {
 
 /// Tags a test method, or every test of a class or [Nested] group, so that
 /// a run can select or leave out those tests: `dart test --tags slow`,
-/// `dart test --exclude-tags slow`. Several `@Tag`s may be given.
+/// `dart test --exclude-tags slow`. Several `@Tag` annotations may be given.
 ///
 /// ```dart
 /// @Test()
@@ -617,7 +617,7 @@ final class CapturedOutput {
 /// test started.
 ///
 /// Use it with `@SpringBootTest(webEnvironment: WebEnvironment.randomPort)`
-/// to call the application over a socket, for example with a Feign client
+/// to call the application over a socket, for example with a `RestClient`
 /// or `HttpClient`. When no server runs, setting the field fails the test
 /// with a `StateError`.
 ///

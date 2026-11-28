@@ -40,8 +40,8 @@ const _log = SpringLog('spring.security.oauth2.client.dpop');
 /// registration that uses DPoP cannot log in.
 ///
 /// The package declares it as the `webCryptoDPoPKey` bean in spa mode, so
-/// the OAuth2 client's token requests and the Feign interceptor sign
-/// their proofs with it when a registration uses DPoP
+/// the OAuth2 client's token requests and the `RestClient` interceptor
+/// sign their proofs with it when a registration uses DPoP
 /// (`spring.security.oauth2.client.registration.<id>.dpop=auto` or
 /// `true`). The browser's WebCrypto is asynchronous, so the key is a
 /// [LoadableDPoPKey]: made or read at its first use (`DPoPProofBuilder`
@@ -179,7 +179,7 @@ abstract interface class BrowserKeyPair {
   Future<Uint8List> sign(Uint8List input);
 }
 
-/// What a [BrowserKeyVault] reads of a stored key pair's `CryptoKey`s
+/// What a [BrowserKeyVault] reads of a stored key pair's `CryptoKey` instances
 /// before it uses them: see [storedKeyPairUsable].
 typedef StoredKeyPair = ({
   bool privateExtractable,

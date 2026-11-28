@@ -10,16 +10,18 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart';
 import 'package:spring_boot_starter_oauth2_client/src/properties/properties_beans.dart';
 
-// The auto-configurations this starter builds on (Feign, the security
-// core, logging, and through them spring_boot_dart's), so a test of an
-// application that lists only this starter can name them.
-export 'package:spring_boot_starter_feign/spring_auto_configuration.dart';
+// The auto-configurations this starter builds on (RestClient, the
+// security core, logging, and through them spring_boot_dart's), so a test
+// of an application that lists only this starter can name them.
+export 'package:spring_boot_starter_restclient/spring_auto_configuration.dart';
 export 'package:spring_security_core/spring_auto_configuration.dart';
 
 /// The beans of OAuth 2.0 and OpenID Connect clients: the registrations of
 /// `spring.security.oauth2.client.*`, the authorized clients and their
-/// manager, the token endpoint clients, the user services and the Feign
-/// token interceptor (`oauth2ClientAutoConfiguration`).
+/// manager, the token endpoint clients, the user services, the token on
+/// `RestClient` calls (`OAuth2ClientHttpRequestInterceptor` on every
+/// builder, the providers' hosts on the transport's allow list;
+/// `oauth2ClientAutoConfiguration`).
 ///
 /// Another auto-configuration that replaces one of them (the security
 /// starter's signature-checking `OidcIdTokenDecoder`, the Flutter security

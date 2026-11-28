@@ -6,8 +6,8 @@
 /// Most applications never import this library. `platformHttpTransport()`
 /// and `platformWebSocketTransport()` from
 /// `package:spring_web_dart/spring_web_dart.dart` already pick these
-/// transports on the web, and the Feign and WebSocket starters call those
-/// functions. Import it when you want to create a browser transport
+/// transports on the web, and the RestClient and WebSocket starters call
+/// those functions. Import it when you want to create a browser transport
 /// yourself, for example to declare it as a bean.
 ///
 /// ```dart

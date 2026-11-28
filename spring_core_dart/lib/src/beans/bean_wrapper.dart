@@ -276,8 +276,8 @@ class PropertyBatchUpdateException extends BeansException {
 /// `orders[1].items[0].sku`. Written values are converted to the property
 /// type with the conversion service — also list elements and map keys and
 /// values, whose types come from the generated `TypeInfo` of the property
-/// (`scores[3]` of a `Map<int, double>` puts the key `3`). Plain `Map`s can
-/// be wrapped too (keys act as properties).
+/// (`scores[3]` of a `Map<int, double>` puts the key `3`). Plain `Map`
+/// instances can be wrapped too (keys act as properties).
 ///
 /// With [autoGrowNestedPaths], writes create what the path needs: `null`
 /// nested objects, lists and maps, and list elements up to the index
@@ -942,7 +942,7 @@ class BeanWrapper {
 
   /// Splits `a.b[0]['k'].c` into segments with index keys.
   ///
-  /// Each segment is a (possibly empty) name followed by `[key]`s; quotes
+  /// Each segment is a (possibly empty) name followed by `[key]` parts; quotes
   /// around keys are optional and removed. A segment with neither name
   /// nor keys (e.g. `a..b`) is invalid.
   static List<_Segment> _parse(String path) {

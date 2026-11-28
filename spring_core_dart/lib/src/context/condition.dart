@@ -219,12 +219,12 @@ abstract interface class ConditionEvaluationRecorder {
 /// The conditions of one configuration class, decided once for the whole
 /// class, so that the class is registered all or nothing.
 ///
-/// A class's conditions also guard its `@Bean` methods, its `@Import`s,
-/// the classes it imports and its `@PropertySource`s. Without the group, a
-/// class condition such as "no `Foo` bean yet" would be checked again for
-/// every `@Bean` method, and would drop the methods that come after the
-/// class's own `Foo`. The group is decided once per [ConfigurationPhase],
-/// as Spring decides per class.
+/// A class's conditions also guard its `@Bean` methods, its `@Import`
+/// annotations, the classes it imports and its `@PropertySource` annotations.
+/// Without the group, a class condition such as "no `Foo` bean yet" would be
+/// checked again for every `@Bean` method, and would drop the methods that come
+/// after the class's own `Foo`. The group is decided once per
+/// [ConfigurationPhase], as Spring decides per class.
 ///
 /// The generator wraps class conditions in a group keyed by the class;
 /// write one only for hand-written definitions that belong together.
@@ -297,8 +297,8 @@ class ConditionGroup implements Condition {
 /// Spring (Java): `ConfigurationCondition.ConfigurationPhase`.
 enum ConfigurationPhase {
   /// While the configuration is parsed: decides whether a configuration
-  /// class is used at all (its imports, `@PropertySource`s, selectors) and
-  /// whether a component is registered. Few beans are known yet.
+  /// class is used at all (its imports, `@PropertySource` annotations,
+  /// selectors) and whether a component is registered. Few beans are known yet.
   parseConfiguration,
 
   /// When the bean definitions of configuration classes (the class itself

@@ -1,3 +1,5 @@
+import 'package:spring_boot_dart/spring_boot_dart.dart'
+    show NestedException, NonRetryableException;
 import 'package:spring_security_core/src/core/authentication.dart';
 
 /// The base class of every "who are you?" failure: a login was refused, or
@@ -28,7 +30,8 @@ import 'package:spring_security_core/src/core/authentication.dart';
 /// ```
 ///
 /// Spring (Java): `AuthenticationException`, with the same subclasses.
-abstract class AuthenticationException implements Exception {
+abstract class AuthenticationException
+    implements Exception, NestedException, NonRetryableException {
   /// A failure described by [message], optionally caused by [cause].
   AuthenticationException(this.message, [this.cause]);
 
@@ -36,6 +39,7 @@ abstract class AuthenticationException implements Exception {
   final String message;
 
   /// The lower-level error that led to this one, or `null`.
+  @override
   final Object? cause;
 
   /// The login request that failed, set by `ProviderManager`; `null` when
@@ -232,7 +236,8 @@ class InternalAuthenticationServiceException
 /// ```
 ///
 /// Spring (Java): `AccessDeniedException`.
-class AccessDeniedException implements Exception {
+class AccessDeniedException
+    implements Exception, NestedException, NonRetryableException {
   /// A denial; [message] (for logs) defaults to `'Access Denied'`.
   AccessDeniedException([this.message = 'Access Denied', this.cause]);
 
@@ -240,6 +245,7 @@ class AccessDeniedException implements Exception {
   final String message;
 
   /// The lower-level error that led to this one, or `null`.
+  @override
   final Object? cause;
 
   @override

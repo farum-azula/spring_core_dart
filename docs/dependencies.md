@@ -59,7 +59,7 @@ an exception.
 **Stricter for what ships in applications.** The packages that end up in
 an application's `dependencies` (`spring_core_dart`, `spring_boot_dart`,
 `spring_web_dart`, `spring_security_core` and every runtime starter:
-logging, scheduling, cache, Feign, WebSocket, web, OAuth2 client,
+logging, scheduling, cache, RestClient, WebSocket, web, OAuth2 client,
 security, Flutter, Flutter Material, Flutter Cupertino, Flutter security,
 Flutter navigation, actuator) depend only on packages of this repository.
 Not even other Dart team packages are allowed there. Eight exceptions:
@@ -104,7 +104,7 @@ Dart as WebAssembly, faster than the JavaScript build, and the engine
 draws with Skwasm. One library that cannot be compiled to Wasm makes the
 whole app fall back to JavaScript, so the rule holds for every package an
 app can use there: `spring_core_dart`, `spring_boot_dart`, the logging,
-scheduling, cache, Feign, WebSocket, data and Supabase starters,
+scheduling, cache, RestClient, WebSocket, data and Supabase starters,
 `spring_security_core`, `spring_search_dart` and the five Flutter
 starters, and for every dependency they bring (a new one is checked the
 same way before it is added). The server's packages (the web, actuator,
@@ -271,27 +271,27 @@ in its `pubspec.yaml`.
 | `spring_boot_starter_scheduling` | `@Scheduled`, `TaskScheduler` | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `clock` | same as logging, plus `fake_async` |
 | `spring_boot_starter_cache` | `@Cacheable`, `@CachePut`, `@CacheEvict`, `CacheManager` | yes | `spring_boot_dart`, `spring_boot_starter_logging` | same as logging |
 | `spring_boot_starter_data` | Spring Data: entities, repositories, derived queries, transactions, locks, SQL databases (the driver is the application's), migrations | yes | `spring_boot_actuator` (the `db` health indicator), `spring_boot_dart`, `spring_boot_starter_logging` | same as logging, plus `spring_boot_starter_cache`, `postgres`, `sqlite3` |
-| `spring_boot_starter_feign` | `@FeignClient` HTTP clients | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | same as logging |
+| `spring_boot_starter_restclient` | `RestClient` from `spring.http.*`: the `RestClientBuilder` bean, HTTP service clients (`@HttpExchange`, `@ImportHttpServices`) in groups, the `httpTransport` bean with its allowed addresses | yes (from 0.10.1) | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | same as logging |
 | `spring_boot_starter_websocket` | `@WebSocketClient` clients, the Phoenix Channels client (`@PhoenixChannel`); `@WebSocketEndpoint` server endpoints (served by the web starter) | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | same as logging |
 | `spring_boot_actuator` | Spring Boot Actuator's endpoints and their model: `@Endpoint` beans, health with indicators and groups, info contributors, mappings; no HTTP (the data and security starters depend on it for the `db` health indicator, `EndpointRequest` and the roles of `when-authorized`) | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `test` |
 | `spring_boot_starter_web` | Spring MVC: `@RestController`, the `dart:io` server, `ProblemDetail`, SSE, filters, CORS | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `spring_boot_starter_websocket`, `test` |
 | `spring_boot_starter_actuator` | The actuator's endpoints over HTTP through the web starter: `/actuator/health` with probes and groups, `/actuator/info`, `/actuator/mappings`, exposure and discovery links | yes | `spring_boot_actuator`, `spring_boot_dart`, `spring_boot_starter_logging`, `spring_boot_starter_web`, `spring_web_dart` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_security`, `spring_boot_starter_test`, `test` |
-| `spring_security_core` | Spring Security's core: `SecurityContextHolder`, users and password encoders, `AuthenticationManager`, `@PreAuthorize` and the other method security annotations | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `pointycastle` (no web: it works in Flutter apps and Feign clients without a server) | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_cache`, `spring_boot_starter_test`, `test` |
-| `spring_boot_starter_oauth2_client` | OAuth 2.0 and OpenID Connect clients: registrations from `spring.security.oauth2.client.*`, discovery, the token endpoint of every grant, token refresh, Bearer tokens on Feign calls (pure Dart: no server, works in Flutter apps) | yes | `spring_boot_dart`, `spring_boot_starter_feign`, `spring_boot_starter_logging`, `spring_security_core`, `spring_web_dart`, `pointycastle` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `test` |
+| `spring_security_core` | Spring Security's core: `SecurityContextHolder`, users and password encoders, `AuthenticationManager`, `@PreAuthorize` and the other method security annotations | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `pointycastle` (no web: it works in Flutter apps and HTTP clients without a server) | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_cache`, `spring_boot_starter_test`, `test` |
+| `spring_boot_starter_oauth2_client` | OAuth 2.0 and OpenID Connect clients: registrations from `spring.security.oauth2.client.*`, discovery, the token endpoint of every grant, token refresh, Bearer and DPoP tokens on `RestClient` calls and HTTP service interfaces (pure Dart: no server, works in Flutter apps) | yes | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_boot_starter_restclient`, `spring_security_core`, `spring_web_dart`, `pointycastle` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `test` |
 | `spring_boot_starter_security` | Spring Security for the web starter: the filter chain, `HttpSecurity`, HTTP Basic, form login, OAuth 2.0 / OpenID Connect login (`oauth2Login`), JWT resource servers, CSRF, CORS, security headers | yes | `spring_boot_actuator` (`EndpointRequest` and the roles of `when-authorized`), `spring_boot_dart`, `spring_boot_starter_oauth2_client`, `spring_boot_starter_web`, `spring_security_core`, `spring_web_dart`, `pointycastle` | `build_runner`, `spring_core_dart_generator`, `spring_boot_starter_test`, `spring_boot_starter_websocket`, `test` |
 | `spring_boot_starter_flutter` | Flutter apps, with no design library: `SpringApplicationWidget`, beans in widgets, the themes of `spring.flutter.theme.*`, a `WidgetsApp` (`spring.flutter.app.type: widgets`, the type when no design starter is in the application; `material` and `cupertino` come with the two starters below, and the one listed sets the type), the directory of the SQLite databases (no platform code of its own) | yes | `flutter`, `flutter_localizations` (SDK), `markdown`, `path_provider`, `path_provider_platform_interface`, `spring_boot_dart`, `spring_boot_starter_logging`, `spring_web_dart` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `plugin_platform_interface`, `spring_boot_starter_test`, `lints`; for its tests and tools only, `spring_boot_starter_flutter_material`, `spring_boot_starter_flutter_cupertino`, `material_ui`, `cupertino_ui` |
 | `spring_boot_starter_flutter_material` | Material Design for Flutter apps: the `MaterialApp` of `spring.flutter.app.type: material`, the themes of `spring.flutter.theme.*` as Material's `ThemeData` with its component themes, palettes from a seed color, Material's page route for the navigation starter | yes | `flutter` (SDK), `material_ui`, `spring_boot_dart`, `spring_boot_starter_flutter` | `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
 | `spring_boot_starter_flutter_cupertino` | Cupertino for Flutter apps: the `CupertinoApp` of `spring.flutter.app.type: cupertino`, the themes of `spring.flutter.theme.*` as `CupertinoThemeData`, palettes from a seed color (`material_color_utilities`: Material's color math without its widgets), the iOS page route for the navigation starter | yes | `flutter` (SDK), `cupertino_ui`, `material_color_utilities`, `spring_boot_dart`, `spring_boot_starter_flutter` | `flutter_test` (SDK), `material_ui` (the test that the palette of a seed is Material's own), `spring_boot_starter_test`, `lints` |
-| `spring_boot_starter_flutter_security` | Security of Flutter apps, a plugin with its own platform code: the app login (`OAuth2LoginService`), `PlatformSecretStore` (Keychain, Keystore, DPAPI, libsecret), `PlatformAuthorizationWindow` and `LoopbackAuthorizationWindow` (the system's login window), `SecretTemplate`, `PrincipalNotifier` and the widgets that follow the user | yes | `flutter`, `flutter_web_plugins` (SDK), `spring_boot_dart`, `spring_boot_starter_feign`, `spring_boot_starter_flutter`, `spring_boot_starter_flutter_navigation`, `spring_boot_starter_oauth2_client`, `spring_security_core` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
+| `spring_boot_starter_flutter_security` | Security of Flutter apps, a plugin with its own platform code: the app login (`OAuth2LoginService`), `PlatformSecretStore` (Keychain, Keystore, DPAPI, libsecret), `PlatformAuthorizationWindow` and `LoopbackAuthorizationWindow` (the system's login window), `SecretTemplate`, `PrincipalNotifier` and the widgets that follow the user | yes | `flutter`, `flutter_web_plugins` (SDK), `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_boot_starter_flutter_navigation`, `spring_boot_starter_oauth2_client`, `spring_security_core` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
 | `spring_boot_starter_flutter_navigation` | Navigation of Flutter apps: `@ScreenRoute` screens, shells with a stack per branch, `RouteTemplate` and `context.route`, the browser's addresses, route and branch scopes, `RouteContentView` | yes | `flutter`, `flutter_web_plugins` (SDK), `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_web_dart` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
 | `spring_boot_starter_flutter_scene` | 3D scenes of Flutter apps on `flutter_scene`: `SpringSceneView` and `SceneBackdrop` (plain widgets where scenes do not draw), the engine's one start with the splash, the models of `spring.flutter.scene.models.*`, the application's scene, the scenes' tab of the debug panel | yes (from its first release, the one after 0.8.0) | `flutter` (SDK), `flutter_scene` (⚠️ third-party, [an exception](#2-exceptions)), `hooks` and `path` (for `build_hooks.dart`), `vector_math`, `clock` (a scene's time without its pauses), `spring_boot_dart`, `spring_boot_starter_flutter` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
 | `spring_boot_starter_flutter_signals` | Reactive state in the beans of Flutter apps: `@Signal` fields, `@Computed` values (also from a `Future` or a `Stream`), `@Effect` methods, widgets built again for the fields they read, the Signals tab of the debug panel | yes (from its first release, the one after 0.8.0) | `flutter` (SDK), `signals_core` (⚠️ third-party, [an exception](#2-exceptions)), `spring_boot_dart`, `spring_boot_starter_flutter` | `build_runner`, `spring_core_dart_generator`, `flutter_test` (SDK), `spring_boot_starter_test`, `lints` |
-| `spring_boot_starter_supabase` | Supabase: its database through Spring Data (the REST API, or SQL), its Auth through Spring Security, Realtime as streams, Storage as a template and as declared buckets, Edge Functions as declared interfaces; its own client, no third-party package | not yet (after its tests against the whole of Supabase; a git dependency until then) | `spring_boot_dart`, `spring_boot_starter_cache`, `spring_boot_starter_data`, `spring_boot_starter_feign`, `spring_boot_starter_logging`, `spring_boot_starter_websocket`, `spring_security_core`, `spring_web_dart` | same as logging |
+| `spring_boot_starter_supabase` | Supabase: its database through Spring Data (the REST API, or SQL), its Auth through Spring Security, Realtime as streams, Storage as a template and as declared buckets, Edge Functions as declared interfaces; its own client, no third-party package | not yet (after its tests against the whole of Supabase; a git dependency until then) | `spring_boot_dart`, `spring_boot_starter_cache`, `spring_boot_starter_data`, `spring_boot_starter_logging`, `spring_boot_starter_restclient`, `spring_boot_starter_websocket`, `spring_security_core`, `spring_web_dart` | same as logging |
 | `spring_boot_starter_edge` | The application as a function behind the fetch API: Supabase Edge Functions, Cloudflare Workers, AWS Lambda, Deno Deploy, Netlify, Vercel; the build to JavaScript or WebAssembly and the platforms' entry files | not yet (its first release is to be decided) | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_boot_starter_web`, `spring_web_dart` | `build_runner`, `spring_boot_starter_security`, `spring_boot_starter_test`, `spring_core_dart_generator`, `test` |
 | `spring_boot_starter_test` | Tests (`springBootTest`, `@SpringBootTest`) | yes | `spring_boot_dart`, `spring_web_dart`, `matcher`, `test_api` | `test` |
 | `dart_spring_language_server` (`extensions/language_server`) | Language server for the editor extensions | no | `spring_boot_dart`, `spring_core_dart`, `analyzer`, `yaml` | `test` |
-| `neon_books_server` (`example/server_guide`) | The server guide: a bookstore's server using every feature | no | the web, security, Feign, WebSocket, cache and scheduling starters (which bring the rest) | `build_runner`, `spring_boot_starter_test`, `spring_core_dart_generator`, `test` |
-| `neon_books_app` (`example/flutter_guide`) | The Flutter guide: the bookstore's app, a client of the server guide | no | `flutter` (SDK), `spring_boot_starter_flutter_security` (which brings the Flutter starter, the OAuth2 client and `spring_security_core`), the Feign, WebSocket, cache and scheduling starters | `build_runner`, `flutter_lints`, `flutter_test`, `integration_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator` |
+| `neon_books_server` (`example/server_guide`) | The server guide: a bookstore's server using every feature | no | the web, security, RestClient, WebSocket, cache and scheduling starters (which bring the rest) | `build_runner`, `spring_boot_starter_test`, `spring_core_dart_generator`, `test` |
+| `neon_books_app` (`example/flutter_guide`) | The Flutter guide: the bookstore's app, a client of the server guide | no | `flutter` (SDK), `spring_boot_starter_flutter_security` (which brings the Flutter starter, the OAuth2 client and `spring_security_core`), the RestClient, WebSocket, cache and scheduling starters | `build_runner`, `flutter_lints`, `flutter_test`, `integration_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator` |
 | `neon_ui` (`example/themes/neon_ui`) | The NEON design system: widgets and a YAML theme for apps of type `widgets` | no | `flutter` (SDK), `spring_boot_starter_flutter` | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_core_dart_generator` |
 | `theme_showcase_neon` (`example/themes/neon`) | The NEON theme showcase: an app of type `widgets` on `neon_ui` | no | `flutter` (SDK), `neon_ui`, `spring_boot_starter_flutter` | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_core_dart_generator` |
 | `theme_showcase_material` (`example/themes/material`) | The Material theme showcase: every part of the theme on a `MaterialApp` | no | `flutter` (SDK), `spring_boot_starter_flutter` | `build_runner`, `flutter_lints`, `flutter_test` (SDK), `spring_boot_starter_test`, `spring_core_dart_generator` |
@@ -307,6 +307,11 @@ in its `pubspec.yaml`.
 | `load_bench` (`tool/load_bench`) | The server the load tests measure (`tool/load.dart`, [Load testing](load-testing.md)): one endpoint per scenario | no | the web, security and data starters (which bring the rest), `crypto`, `postgres`, `sqlite3` | `build_runner`, `spring_core_dart_generator` |
 | `edge_checks` (`tool/edge_checks`) | The function the edge starter's tests run in every platform's runtime | no | the edge, security, cache and scheduling starters (which bring the rest) | `build_runner`, `spring_core_dart_generator` |
 | `spring_core_dart_workspace` (root) | The pub workspace | no | — | `lints`, `melos`, `path`, `test`, `very_good_analysis`, `yaml` |
+
+Discontinued, no longer part of the family: `spring_boot_starter_feign`,
+whose last version is 0.10.1 (see
+[discontinued packages](packages.md#discontinued-packages)). Its folder
+stays in the repository, outside CI; no package depends on it.
 
 **One resolution per Flutter package.** Everything except the Flutter
 packages is one pub workspace, with one `pubspec.lock` at the root. Each
@@ -331,7 +336,7 @@ graph TD
   logging[spring_boot_starter_logging]
   scheduling[spring_boot_starter_scheduling]
   cache[spring_boot_starter_cache]
-  feign[spring_boot_starter_feign]
+  restclient[spring_boot_starter_restclient]
   websocket[spring_boot_starter_websocket]
   actuator[spring_boot_actuator]
   webStarter[spring_boot_starter_web]
@@ -374,9 +379,9 @@ graph TD
   scheduling --> clock
   cache --> boot
   cache --> logging
-  feign --> boot
-  feign --> logging
-  feign --> web
+  restclient --> boot
+  restclient --> logging
+  restclient --> web
   websocket --> boot
   websocket --> logging
   websocket --> web
@@ -398,8 +403,8 @@ graph TD
   securityCore --> logging
   securityCore --> pointycastle
   oauth2Client --> boot
-  oauth2Client --> feign
   oauth2Client --> logging
+  oauth2Client --> restclient
   oauth2Client --> securityCore
   oauth2Client --> web
   oauth2Client --> pointycastle
@@ -439,8 +444,8 @@ graph TD
   supabase --> boot
   supabase --> cache
   supabase --> dataStarter
-  supabase --> feign
   supabase --> logging
+  supabase --> restclient
   supabase --> websocket
   supabase --> securityCore
   supabase --> web
@@ -462,15 +467,15 @@ spring_core_dart ─────────────── yaml
 │   ├── spring_boot_starter_logging
 │   │   ├── spring_boot_starter_scheduling   (+ spring_boot_dart, clock)
 │   │   ├── spring_boot_starter_cache        (+ spring_boot_dart)
-│   │   ├── spring_boot_starter_feign        (+ spring_boot_dart, spring_web_dart)
+│   │   ├── spring_boot_starter_restclient   (+ spring_boot_dart, spring_web_dart)
 │   │   ├── spring_boot_starter_websocket    (+ spring_boot_dart, spring_web_dart)
 │   │   ├── spring_boot_actuator             (+ spring_boot_dart, spring_web_dart)
 │   │   ├── spring_boot_starter_web          (+ spring_boot_dart, spring_web_dart)
 │   │   │   ├── spring_boot_starter_actuator (+ spring_boot_actuator)
 │   │   │   └── spring_boot_starter_security (+ spring_boot_actuator, the OAuth2 client, spring_security_core, ⚠️ pointycastle)
 │   │   ├── spring_security_core             (+ spring_boot_dart, ⚠️ pointycastle)
-│   │   │   ├── spring_boot_starter_oauth2_client (+ Feign, spring_web_dart, ⚠️ pointycastle)
-│   │   │   └── spring_boot_starter_supabase (+ the cache, data, Feign and WebSocket starters, spring_boot_dart, spring_web_dart)
+│   │   │   ├── spring_boot_starter_oauth2_client (+ the RestClient starter, spring_web_dart, ⚠️ pointycastle)
+│   │   │   └── spring_boot_starter_supabase (+ the cache, data, RestClient and WebSocket starters, spring_boot_dart, spring_web_dart)
 │   │   └── spring_boot_starter_flutter      (+ spring_boot_dart, Flutter SDK, path_provider)
 │   │       ├── spring_boot_starter_flutter_material (+ spring_boot_dart, material_ui)
 │   │       ├── spring_boot_starter_flutter_cupertino (+ spring_boot_dart, cupertino_ui, material_color_utilities)
@@ -487,14 +492,14 @@ spring_core_dart ─────────────── yaml
 application lists and imports only the starter it chooses:
 `spring_boot_dart` exports `spring_core_dart`; the logging starter
 exports `spring_boot_dart`; every other starter and
-`spring_security_core` export the logging starter; Feign, WebSocket and
-web also export `spring_web_dart`; `spring_boot_starter_actuator` exports
+`spring_security_core` export the logging starter; RestClient, WebSocket
+and web also export `spring_web_dart`; `spring_boot_starter_actuator` exports
 the web starter and `spring_boot_actuator` (which exports
 `MappingDescriptions` of `spring_web_dart`); `spring_boot_starter_security`
 exports the web starter, `spring_security_core` and the OAuth2 client
 (for `oauth2Login()`, so a server lists the security starter alone);
-the OAuth2 client exports the Feign starter and `spring_security_core`;
-the Supabase starter exports the cache, data, Feign and WebSocket
+the OAuth2 client exports the RestClient starter and `spring_security_core`;
+the Supabase starter exports the cache, data, RestClient and WebSocket
 starters, `spring_security_core` and `spring_web_dart`;
 `spring_boot_starter_flutter_material` and
 `spring_boot_starter_flutter_cupertino` export the Flutter starter (not
@@ -530,7 +535,7 @@ package of the family. Packages of the repository are left out.
 
 | The application lists | External packages at run time |
 |---|---|
-| `spring_core_dart`, `spring_boot_dart`, `spring_web_dart` or any Dart starter (logging, cache, Feign, WebSocket, web, actuator) | 6: `yaml` and its dependencies `collection`, `path`, `source_span`, `string_scanner`, `term_glyph` |
+| `spring_core_dart`, `spring_boot_dart`, `spring_web_dart` or any Dart starter (logging, cache, RestClient, WebSocket, web, actuator) | 6: `yaml` and its dependencies `collection`, `path`, `source_span`, `string_scanner`, `term_glyph` |
 | `spring_boot_starter_scheduling` | the 6 above, plus `clock` (no dependencies): 7 |
 | `spring_security_core`, `spring_boot_starter_oauth2_client`, `spring_boot_starter_security` or `spring_boot_starter_supabase` (through `spring_security_core`) | the 6 above, plus ⚠️ `pointycastle` (third-party, [to be removed](#pointycastle-third-party-to-be-removed)) and its `convert` and `typed_data` (`dart.dev`): 9 |
 | `spring_boot_starter_flutter` | the 6 above, plus the Flutter SDK (`flutter`, `flutter_localizations`, `sky_engine`) and what the SDK pins: `characters`, `clock`, `intl`, `listen`, `material_color_utilities`, `meta`, `vector_math`; and `path_provider` (`flutter.dev`) with its platform packages `path_provider_android`, `path_provider_foundation`, `path_provider_linux`, `path_provider_windows`, `path_provider_platform_interface`, `plugin_platform_interface`, `platform`, `xdg_directories`, the FFI packages `ffi`, `jni`, `jni_flutter`, `jni_util`, `objective_c` and, for their build hooks, `code_assets`, `hooks`, `record_use` (`dart.dev`) |
@@ -727,7 +732,7 @@ pub workspace and the Flutter packages). Columns:
 | `build` | `dart.dev` | codegen, tests | `analyzer`, `crypto`, `glob`, `logging`, `package_config`, `path` | `build_runner`, `build_test`, `source_gen`, `spring_core_dart_generator` |
 | `build_config` | `tools.dart.dev` | codegen, tests | `checked_yaml`, `json_annotation`, `path`, `pubspec_parse` | `build_runner`, `build_test` |
 | `build_daemon` | `tools.dart.dev` | codegen, tests | `built_collection`, `built_value`, `crypto`, `http_multi_server`, `logging`, `package_config`, `path`, `pool`, `pub_semver`, `shelf`, `shelf_web_socket`, `stream_transform`, `watcher`, `web_socket_channel`, `yaml` | `build_runner` |
-| `build_runner` | `tools.dart.dev` | codegen, tests | `analyzer`, `args`, `async`, `build`, `build_config`, `build_daemon`, `built_collection`, `built_value`, `collection`, `convert`, `crypto`, `dart_style`, `glob`, `graphs`, `http_multi_server`, `io`, `json_annotation`, `logging`, `meta`, `mime`, `package_config`, `path`, `pool`, `pub_semver`, `shelf`, `shelf_web_socket`, `stream_transform`, `watcher`, `web_socket_channel`, `yaml` | `build_test`, `neon_books_app` (dev), `spring_boot_actuator` (dev), `spring_boot_dart` (dev), `spring_boot_starter_actuator` (dev), `spring_boot_starter_cache` (dev), `spring_boot_starter_feign` (dev), `spring_boot_starter_flutter` (dev), `spring_boot_starter_logging` (dev), `spring_boot_starter_oauth2_client` (dev), `spring_boot_starter_scheduling` (dev), `spring_boot_starter_security` (dev), `spring_boot_starter_web` (dev), `spring_boot_starter_websocket` (dev), `spring_boot_starter_supabase` (dev), `spring_core_dart` (dev), `spring_security_core` (dev), `neon_books_server` (dev) |
+| `build_runner` | `tools.dart.dev` | codegen, tests | `analyzer`, `args`, `async`, `build`, `build_config`, `build_daemon`, `built_collection`, `built_value`, `collection`, `convert`, `crypto`, `dart_style`, `glob`, `graphs`, `http_multi_server`, `io`, `json_annotation`, `logging`, `meta`, `mime`, `package_config`, `path`, `pool`, `pub_semver`, `shelf`, `shelf_web_socket`, `stream_transform`, `watcher`, `web_socket_channel`, `yaml` | `build_test`, `neon_books_app` (dev), `spring_boot_actuator` (dev), `spring_boot_dart` (dev), `spring_boot_starter_actuator` (dev), `spring_boot_starter_cache` (dev), `spring_boot_starter_flutter` (dev), `spring_boot_starter_logging` (dev), `spring_boot_starter_oauth2_client` (dev), `spring_boot_starter_scheduling` (dev), `spring_boot_starter_security` (dev), `spring_boot_starter_web` (dev), `spring_boot_starter_websocket` (dev), `spring_boot_starter_supabase` (dev), `spring_core_dart` (dev), `spring_security_core` (dev), `neon_books_server` (dev) |
 | `build_test` | `tools.dart.dev` | tests | `build`, `build_config`, `build_runner`, `built_collection`, `crypto`, `glob`, `html`, `logging`, `matcher`, `package_config`, `path`, `stream_transform`, `test`, `test_core`, `watcher` | `spring_core_dart_generator` (dev) |
 | `built_collection` | `dart.dev` | codegen, tests | — | `build_daemon`, `build_runner`, `build_test`, `built_value`, `code_builder` |
 | `built_value` | `dart.dev` | codegen, tests | `built_collection`, `collection`, `fixnum`, `meta` | `build_daemon`, `build_runner`, `code_builder` |
@@ -823,7 +828,7 @@ pub workspace and the Flutter packages). Columns:
 | `stream_transform` | `tools.dart.dev` | codegen, tests | — | `build_daemon`, `build_runner`, `build_test` |
 | `string_scanner` | `tools.dart.dev` | app, codegen, tests, language server, melos | `source_span` | `boolean_selector`, `glob`, `http_parser`, `io`, `melos`, `test_api`, `yaml` |
 | `term_glyph` | `tools.dart.dev` | app, codegen, tests, language server, melos | — | `matcher`, `source_span`, `test_api` |
-| `test` | `dart.dev` | tests | `analyzer`, `async`, `boolean_selector`, `collection`, `coverage`, `http_multi_server`, `io`, `matcher`, `node_preamble`, `package_config`, `path`, `pool`, `shelf`, `shelf_packages_handler`, `shelf_static`, `shelf_web_socket`, `source_span`, `stack_trace`, `stream_channel`, `test_api`, `test_core`, `typed_data`, `web_socket_channel`, `webkit_inspection_protocol`, `yaml` | `build_test`, `dart_spring_language_server` (dev), `spring_boot_actuator` (dev), `spring_boot_dart` (dev), `spring_boot_starter_actuator` (dev), `spring_boot_starter_cache` (dev), `spring_boot_starter_feign` (dev), `spring_boot_starter_logging` (dev), `spring_boot_starter_oauth2_client` (dev), `spring_boot_starter_scheduling` (dev), `spring_boot_starter_security` (dev), `spring_boot_starter_test` (dev), `spring_boot_starter_web` (dev), `spring_boot_starter_websocket` (dev), `spring_boot_starter_supabase` (dev), `spring_core_dart` (dev), `spring_security_core` (dev), `neon_books_server` (dev), `spring_core_dart_generator` (dev), `spring_core_dart_workspace` (dev), `spring_web_dart` (dev) |
+| `test` | `dart.dev` | tests | `analyzer`, `async`, `boolean_selector`, `collection`, `coverage`, `http_multi_server`, `io`, `matcher`, `node_preamble`, `package_config`, `path`, `pool`, `shelf`, `shelf_packages_handler`, `shelf_static`, `shelf_web_socket`, `source_span`, `stack_trace`, `stream_channel`, `test_api`, `test_core`, `typed_data`, `web_socket_channel`, `webkit_inspection_protocol`, `yaml` | `build_test`, `dart_spring_language_server` (dev), `spring_boot_actuator` (dev), `spring_boot_dart` (dev), `spring_boot_starter_actuator` (dev), `spring_boot_starter_cache` (dev), `spring_boot_starter_logging` (dev), `spring_boot_starter_oauth2_client` (dev), `spring_boot_starter_scheduling` (dev), `spring_boot_starter_security` (dev), `spring_boot_starter_test` (dev), `spring_boot_starter_web` (dev), `spring_boot_starter_websocket` (dev), `spring_boot_starter_supabase` (dev), `spring_core_dart` (dev), `spring_security_core` (dev), `neon_books_server` (dev), `spring_core_dart_generator` (dev), `spring_core_dart_workspace` (dev), `spring_web_dart` (dev) |
 | `test_api` | `tools.dart.dev` | codegen, tests | `async`, `boolean_selector`, `collection`, `meta`, `source_span`, `stack_trace`, `stream_channel`, `string_scanner`, `term_glyph` | `flutter_test`, `matcher`, `spring_boot_starter_test`, `test`, `test_core` |
 | `test_core` | `tools.dart.dev` | tests | `analyzer`, `args`, `async`, `boolean_selector`, `collection`, `coverage`, `frontend_server_client`, `glob`, `io`, `meta`, `package_config`, `path`, `pool`, `source_map_stack_trace`, `source_maps`, `source_span`, `stack_trace`, `stream_channel`, `test_api`, `vm_service`, `yaml` | `build_test`, `test` |
 | `typed_data` | `dart.dev` | app (security), codegen, tests, language server, melos | `collection` | `convert`, `crypto`, `http_parser`, `sqlite3`, `test` |

@@ -7,6 +7,8 @@ import 'package:spring_boot_actuator/spring_boot_actuator.dart'
     show HealthContributor, HealthIndicator, PrincipalRoleChecker;
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
     show
+        AllowedAddresses,
+        AllowedAddressesContributor,
         ClientRegistrationRepository,
         DelegatingOAuth2TokenValidator,
         OAuth2AuthorizedClientService,
@@ -201,7 +203,12 @@ String _generatedPassword() {
 ///   page to come back to, the OAuth 2.0 authorization request). Without
 ///   it, a random key of the process signs them.
 /// - `jwtDecoder`, when `issuer-uri`, `jwk-set-uri` or `secret-key` is
-///   set and the application declares none. Beside the type, the
+///   set and the application declares none. The keys and the issuer's
+///   metadata come through the `httpTransport` bean (the RestClient
+///   starter's, with its allowed addresses), as the OAuth2 client's
+///   calls do; `resourceServerAllowedAddresses` allows the host of
+///   `jwk-set-uri`, or of `issuer-uri` and then of the `jwks_uri` its
+///   metadata names (by host name only). Beside the type, the
 ///   lifetime, the issuer and the audiences, every token must pass the
 ///   `required-claims` and every `OAuth2TokenValidator<Jwt>` bean of the
 ///   application. With `secret-key` the tokens are verified with that
@@ -295,18 +302,41 @@ final securityAutoConfiguration = <BeanDefinition<Object>>[
           validator: validator,
         );
       }
+      final fetcher = _jwkFetcher(r.optionalDependency<HttpTransport>());
       if (jwkSetUri != null) {
         return NimbusJwtDecoder.withJwkSetUri(
           Uri.parse(jwkSetUri),
           jwsAlgorithms: properties.jwsAlgorithms,
+          fetcher: fetcher,
           validator: validator,
         );
       }
       return JwtDecoders.fromIssuerLocation(
         issuer!,
+        fetcher: fetcher,
         audiences: audiences,
         validator: DelegatingOAuth2TokenValidator(additional),
+        allowedAddresses: r.optionalDependency<AllowedAddresses>(),
       );
+    },
+  ),
+  BeanDefinition<AllowedAddressesContributor>(
+    name: 'resourceServerAllowedAddresses',
+    factoryMethodName: 'resourceServerAllowedAddresses',
+    types: const [AllowedAddressesContributor],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.resourceServerAllowedAddresses', [
+        _OnResourceServerProperties(),
+      ]),
+    ],
+    // The address the decoder fetches from first: jwk-set-uri, else the
+    // issuer's metadata.
+    create: (r) {
+      final properties = r.dependency<SecurityProperties>();
+      return AllowedAddressesContributor.of([
+        ?(properties.jwkSetUri ?? properties.issuerUri),
+      ]);
     },
   ),
   BeanDefinition<JwtAuthenticationConverter>(
@@ -533,7 +563,7 @@ const _oauth2Source =
 /// - `oidcIdTokenDecoder`, when OAuth2 clients are configured (a
 ///   `spring.security.oauth2.client.registration.*` property or a
 ///   `ClientRegistrationRepository` bean of the application): an
-///   [OidcIdTokenDecoderFactory] on the `HttpTransport` bean, which checks
+///   [OidcIdTokenDecoderFactory] on the `httpTransport` bean, which checks
 ///   the signature of every ID token with the provider's JWK Set. The
 ///   OAuth2 client starter's default trusts the token endpoint's TLS
 ///   instead; on a server, the logins of `oauth2Login()` and the
@@ -556,9 +586,12 @@ final securityOAuth2ClientAutoConfiguration = <BeanDefinition<Object>>[
       ]),
     ],
     create: (r) => OidcIdTokenDecoderFactory(
-      fetcher: transportJwkFetcher(
-        r.optionalDependency<HttpTransport>() ?? platformHttpTransport(),
-      ),
+      fetcher: _jwkFetcher(r.optionalDependency<HttpTransport>()),
     ),
   ),
 ];
+
+// The fetcher of the keys on the application's transport; without one,
+// the default, which calls only the host of each URL it is given.
+JwkFetcher? _jwkFetcher(HttpTransport? transport) =>
+    transport == null ? null : transportJwkFetcher(transport);

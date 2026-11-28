@@ -14,56 +14,58 @@ import 'dart:async' as _i10;
 import 'dart:typed_data' as _i9;
 
 import 'package:flutter/widgets.dart';
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i24;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i25;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
     as _i2;
 import 'package:spring_boot_starter_data/spring_auto_configuration.dart' as _i3;
-import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i14;
-import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i25;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i13;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
     as _i4;
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart';
 import 'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart'
-    as _i17;
+    as _i18;
 import 'package:spring_boot_starter_flutter_material/spring_auto_configuration.dart'
     as _i26;
 import 'package:spring_boot_starter_flutter_material/src/material_theme_design.dart'
-    as _i33;
+    as _i34;
 import 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart'
     as _i5;
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
-    as _i20;
+    as _i21;
 import 'package:spring_boot_starter_flutter_security/spring_auto_configuration.dart'
     as _i27;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i28;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
     as _i29;
-import 'package:spring_boot_starter_supabase/spring_auto_configuration.dart'
+import 'package:spring_boot_starter_restclient/spring_auto_configuration.dart'
     as _i30;
-import 'package:spring_boot_starter_supabase/spring_boot_starter_supabase.dart'
-    as _i13;
-import 'package:spring_boot_starter_supabase/src/auth/supabase_auth.dart'
-    as _i18;
-import 'package:spring_boot_starter_supabase/src/functions/edge_functions.dart'
+import 'package:spring_boot_starter_restclient/spring_boot_starter_restclient.dart'
     as _i12;
+import 'package:spring_boot_starter_supabase/spring_auto_configuration.dart'
+    as _i31;
+import 'package:spring_boot_starter_supabase/spring_boot_starter_supabase.dart'
+    as _i16;
+import 'package:spring_boot_starter_supabase/src/auth/supabase_auth.dart'
+    as _i19;
+import 'package:spring_boot_starter_supabase/src/functions/edge_functions.dart'
+    as _i15;
 import 'package:spring_boot_starter_supabase/src/storage/storage_bucket.dart'
     as _i8;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
-    as _i31;
+    as _i32;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i7;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i32;
-import 'package:supabase_example_app/src/app/home_page.dart' as _i21;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i33;
+import 'package:supabase_example_app/src/app/home_page.dart' as _i22;
 import 'package:supabase_example_app/src/profile/avatars.dart' as _i6;
 import 'package:supabase_example_app/src/profile/functions.dart' as _i11;
-import 'package:supabase_example_app/src/profile/profile_card.dart' as _i19;
-import 'package:supabase_example_app/src/todos/todo.dart' as _i15;
-import 'package:supabase_example_app/src/todos/todo_list.dart' as _i16;
+import 'package:supabase_example_app/src/profile/profile_card.dart' as _i20;
+import 'package:supabase_example_app/src/todos/todo.dart' as _i14;
+import 'package:supabase_example_app/src/todos/todo_list.dart' as _i17;
 
-import 'main.spring.introspection.dart' as _i22;
-import 'main.spring.properties.dart' as _i23;
+import 'main.spring.introspection.dart' as _i23;
+import 'main.spring.properties.dart' as _i24;
 
 part 'main.spring.debug.dart';
 part 'main.spring.env.dart';
@@ -132,78 +134,49 @@ class _$AvatarsImpl implements _i6.Avatars {
   );
 }
 
-/// Implements `Functions` through an `InvocationHandler`.
-class _$FunctionsImpl implements _i11.Functions {
-  _$FunctionsImpl(this._handler, this._metadata);
+/// `Functions`: each method a call through the `RestClient` of the HTTP
+/// service group "supabase-functions".
+class _$FunctionsHttpService implements _i11.Functions {
+  _$FunctionsHttpService(this._rest);
 
-  final _i7.InvocationHandler _handler;
-
-  final _i7.InterfaceMetadata<_i11.Functions> _metadata;
-
-  static _$FunctionsImpl $create(_i7.DependencyResolver r) {
-    final metadata = _i7.InterfaceMetadata<_i11.Functions>(
-      typeName: r'Functions',
-      annotations: const [_i12.EdgeFunctions()],
-      methods: [
-        _i7.ProxyMethod(
-          r'sendInvite',
-          parameters: [
-            _i7.IntrospectedParameter(
-              r'invite',
-              type: const _i7.ClassType<_i11.Invite>(),
-              isRequired: true,
-              annotations: const [_i13.RequestBody()],
-            ),
-          ],
-          returnType: const _i7.ClassType<_i11.InviteResult>(),
-          isFuture: true,
-          annotations: const [_i12.EdgeFunction(r'api/send-invite')],
-          call: (target, arguments) => (target as _i11.Functions).sendInvite(
-            (arguments[0] as _i11.Invite),
-          ),
-        ),
-      ],
-    );
-    return _$FunctionsImpl(
-      _i7.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
+  final _i12.RestClient _rest;
 
   @override
-  _i10.Future<_i11.InviteResult> sendInvite(_i11.Invite invite) =>
-      _i7.retypeFuture<_i11.InviteResult>(
-        this._handler.invoke(this._metadata.methods[0], [invite]),
-      );
+  _i10.Future<_i11.InviteResult> sendInvite(_i11.Invite invite) => _rest
+      .post()
+      .uri(r'api/send-invite')
+      .body(invite)
+      .retrieve()
+      .body<_i11.InviteResult>();
 }
 
 /// Implements `Todos`: `SimpleRepository` has the CRUD methods.
-class _$TodosImpl extends _i14.SimpleRepository<_i15.Todo, int>
-    implements _i15.Todos {
+class _$TodosImpl extends _i13.SimpleRepository<_i14.Todo, int>
+    implements _i14.Todos {
   _$TodosImpl(super.operations);
 
-  static const _watchByListIdOrderByIdAsc = _i14.PartTree(
+  static const _watchByListIdOrderByIdAsc = _i13.PartTree(
     r'watchByListIdOrderByIdAsc',
     [
-      _i14.OrPart([_i14.Part(r'listId')]),
+      _i13.OrPart([_i13.Part(r'listId')]),
     ],
-    sort: _i14.Sort([_i14.SortOrder.asc(r'id')]),
+    sort: _i13.Sort([_i13.SortOrder.asc(r'id')]),
   );
 
   static _$TodosImpl $create(_i7.DependencyResolver r) => _$TodosImpl(
-    r.dependency<_i14.RepositoryFactory>().operations<_i15.Todo, int>(
+    r.dependency<_i13.RepositoryFactory>().operations<_i14.Todo, int>(
       r'Todos',
       requirements: const [
-        _i14.StoreRequirement(
+        _i13.StoreRequirement(
           r'watchByListIdOrderByIdAsc',
-          _i14.DataStoreCapability.changes,
+          _i13.DataStoreCapability.changes,
         ),
       ],
     ),
   );
 
   @override
-  _i10.Stream<List<_i15.Todo>> watchByListIdOrderByIdAsc(String listId) =>
+  _i10.Stream<List<_i14.Todo>> watchByListIdOrderByIdAsc(String listId) =>
       this.operations.watch(_watchByListIdOrderByIdAsc, [listId]);
 }
 
@@ -211,13 +184,13 @@ const _$knownAdvisors0 = {
   r'package:spring_boot_dart',
   r'package:spring_boot_starter_cache',
   r'package:spring_boot_starter_data',
-  r'package:spring_boot_starter_feign',
   r'package:spring_boot_starter_flutter',
   r'package:spring_boot_starter_flutter_material',
   r'package:spring_boot_starter_flutter_navigation',
   r'package:spring_boot_starter_flutter_security',
   r'package:spring_boot_starter_logging',
   r'package:spring_boot_starter_oauth2_client',
+  r'package:spring_boot_starter_restclient',
   r'package:spring_boot_starter_supabase',
   r'package:spring_boot_starter_websocket',
   r'package:spring_security_core',
@@ -230,6 +203,20 @@ Type _$typeOf<T>() => T;
 _i7.BeanModule get $application => _i7.BeanModule(
   r'application',
   [
+    _i7.BeanDefinition<_i11.Functions>(
+      name: r'functions',
+      source:
+          r'package:supabase_example_app/src/profile/functions.dart#Functions',
+      create: (r) => _$FunctionsHttpService(
+        r.dependency<_i12.HttpServiceGroups>().restClient(
+          r'supabase-functions',
+        ),
+      ),
+      annotations: const [_i15.EdgeFunctions()],
+      aopProxy: const _i7.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
+    ),
     _i7.BeanDefinition<_i6.Avatars>(
       name: r'avatars',
       source: r'package:supabase_example_app/src/profile/avatars.dart#Avatars',
@@ -249,79 +236,68 @@ _i7.BeanModule get $application => _i7.BeanModule(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i7.BeanDefinition<_i11.Functions>(
-      name: r'functions',
-      source:
-          r'package:supabase_example_app/src/profile/functions.dart#Functions',
-      primary: true,
-      create: (r) => _$FunctionsImpl.$create(r),
-      annotations: const [_i12.EdgeFunctions()],
-      aopProxy: const _i7.AopProxyFactory.pruned(
-        knownAdvisors: _$knownAdvisors0,
-      ),
-    ),
-    _i7.BeanDefinition<_i15.Todos>(
+    _i7.BeanDefinition<_i14.Todos>(
       name: r'todos',
       source: r'package:supabase_example_app/src/todos/todo.dart#Todos',
       types: const [
-        _i15.Todos,
-        _i13.ListCrudRepository<_i15.Todo, int>,
-        _i13.CrudRepository<_i15.Todo, int>,
-        _i13.DataRepository<_i15.Todo, int>,
-        _i13.ListCrudRepository<dynamic, dynamic>,
-        _i13.CrudRepository<dynamic, dynamic>,
-        _i13.DataRepository<dynamic, dynamic>,
+        _i14.Todos,
+        _i16.ListCrudRepository<_i14.Todo, int>,
+        _i16.CrudRepository<_i14.Todo, int>,
+        _i16.DataRepository<_i14.Todo, int>,
+        _i16.ListCrudRepository<dynamic, dynamic>,
+        _i16.CrudRepository<dynamic, dynamic>,
+        _i16.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$TodosImpl.$create(r),
       aopProxy: const _i7.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i7.BeanDefinition<_i16.TodoProperties>(
+    _i7.BeanDefinition<_i17.TodoProperties>(
       name: r'todoProperties',
       source: r'package:supabase_example_app/src/todos/todo_list.dart#TodoProperties',
-      create: (r) => _i16.TodoProperties(),
+      create: (r) => _i17.TodoProperties(),
       annotations: const [_i7.ConfigurationProperties(r'todos')],
       aopProxy: const _i7.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i7.BeanDefinition<_i17.SpringWidgetBindings>(
+    _i7.BeanDefinition<_i18.SpringWidgetBindings>(
       name: r'flutterSpringWidgetBindings#application',
       source: r'package:spring_boot_starter_flutter/spring_boot_starter_flutter.dart#SpringWidgetBindings',
       autowireCandidate: false,
-      create: (r) => _i17.SpringWidgetBindings([
-        _i17.SpringWidgetBinding(
+      create: (r) => _i18.SpringWidgetBindings([
+        _i18.SpringWidgetBinding(
           widget: r'package:supabase_example_app/src/account/login_page.dart#_LoginPageState',
-          beans: _$typeOf<(_i18.SupabaseAuth,)>(),
-          types: const [_i18.SupabaseAuth],
+          beans: _$typeOf<(_i19.SupabaseAuth,)>(),
+          types: const [_i19.SupabaseAuth],
           resolve: (f) =>
-              (_i17.SpringWidgetBinding.bean<_i18.SupabaseAuth>(f),),
+              (_i18.SpringWidgetBinding.bean<_i19.SupabaseAuth>(f),),
           values: (r) {
-            final v = (r as (_i18.SupabaseAuth,));
+            final v = (r as (_i19.SupabaseAuth,));
             return [v.$1];
           },
         ),
-        _i17.SpringWidgetBinding(
+        _i18.SpringWidgetBinding(
           widget: r'package:supabase_example_app/src/profile/profile_card.dart#_ProfileCardState',
-          beans: _i19.ProfileCardBeans,
+          beans: _i20.ProfileCardBeans,
           types: const [
-            _i18.SupabaseAuth,
+            _i19.SupabaseAuth,
             _i6.Avatars,
             _i6.AvatarPainter,
             _i11.Functions,
           ],
           resolve: (f) => (
-            _i17.SpringWidgetBinding.bean<_i18.SupabaseAuth>(f),
-            _i17.SpringWidgetBinding.bean<_i6.Avatars>(f),
-            _i17.SpringWidgetBinding.bean<_i6.AvatarPainter>(f),
-            _i17.SpringWidgetBinding.bean<_i11.Functions>(f),
+            _i18.SpringWidgetBinding.bean<_i19.SupabaseAuth>(f),
+            _i18.SpringWidgetBinding.bean<_i6.Avatars>(f),
+            _i18.SpringWidgetBinding.bean<_i6.AvatarPainter>(f),
+            _i18.SpringWidgetBinding.bean<_i11.Functions>(f),
           ),
           values: (r) {
             final v =
                 (r
                     as (
-                      _i18.SupabaseAuth,
+                      _i19.SupabaseAuth,
                       _i6.Avatars,
                       _i6.AvatarPainter,
                       _i11.Functions,
@@ -329,28 +305,28 @@ _i7.BeanModule get $application => _i7.BeanModule(
             return [v.$1, v.$2, v.$3, v.$4];
           },
         ),
-        _i17.SpringWidgetBinding(
+        _i18.SpringWidgetBinding(
           widget: r'package:supabase_example_app/src/todos/todo_list.dart#_TodoListState',
-          beans: _i16.TodoListBeans,
-          types: const [_i15.Todos, _i16.TodoProperties],
+          beans: _i17.TodoListBeans,
+          types: const [_i14.Todos, _i17.TodoProperties],
           resolve: (f) => (
-            _i17.SpringWidgetBinding.bean<_i15.Todos>(f),
-            _i17.SpringWidgetBinding.bean<_i16.TodoProperties>(f),
+            _i18.SpringWidgetBinding.bean<_i14.Todos>(f),
+            _i18.SpringWidgetBinding.bean<_i17.TodoProperties>(f),
           ),
           values: (r) {
-            final v = (r as (_i15.Todos, _i16.TodoProperties));
+            final v = (r as (_i14.Todos, _i17.TodoProperties));
             return [v.$1, v.$2];
           },
         ),
       ]),
     ),
-    _i7.BeanDefinition<_i20.ScreenRoutes>(
+    _i7.BeanDefinition<_i21.ScreenRoutes>(
       name: r'screenRoutes#application',
       source: r'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart#ScreenRoutes',
-      create: (r) => _i20.ScreenRoutes.route(source: r'application')
+      create: (r) => _i21.ScreenRoutes.route(source: r'application')
           .screen(
             r'/',
-            (r) => const _i21.HomePage(),
+            (r) => const _i22.HomePage(),
             name: r'home-page',
             title: r'Todos',
             source:
@@ -358,34 +334,43 @@ _i7.BeanModule get $application => _i7.BeanModule(
           )
           .build(),
     ),
-    _i7.BeanDefinition<_i14.EntityIntrospections>(
+    _i7.BeanDefinition<_i12.HttpServiceGroup>(
+      name: r'httpServiceGroup.supabase-functions#application',
+      source: r'package:spring_boot_starter_restclient#HttpServiceGroup.supabase-functions',
+      types: const [_i12.HttpServiceGroup],
+      create: (r) => const _i12.HttpServiceGroup(
+        r'supabase-functions',
+        types: [_i11.Functions],
+      ),
+    ),
+    _i7.BeanDefinition<_i13.EntityIntrospections>(
       name: r'entityIntrospections#application',
       source: r'package:spring_boot_starter_data#EntityIntrospections',
-      types: const [_i14.EntityIntrospections],
-      create: (r) => _i14.EntityIntrospections([
-        _i14.EntityIntrospection<_i15.Todo>(
+      types: const [_i13.EntityIntrospections],
+      create: (r) => _i13.EntityIntrospections([
+        _i13.EntityIntrospection<_i14.Todo>(
           r'Todo',
           const [
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'id',
               _i7.ClassType<int>(nullable: true),
-              annotations: [_i13.Id()],
+              annotations: [_i16.Id()],
               parameter: true,
               writable: true,
             ),
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'title',
               _i7.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'listId',
               _i7.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'done',
               _i7.ClassType<bool>(),
               parameter: true,
@@ -393,14 +378,14 @@ _i7.BeanModule get $application => _i7.BeanModule(
               hasDefaultValue: true,
               defaultValue: false,
             ),
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'createdAt',
               _i7.ClassType<DateTime>(nullable: true),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i13.Table(r'todos')],
+          annotations: const [_i16.Table(r'todos')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.title,
@@ -408,7 +393,7 @@ _i7.BeanModule get $application => _i7.BeanModule(
             3 => e.done,
             _ => e.createdAt,
           },
-          create: (v) => _i15.Todo(
+          create: (v) => _i14.Todo(
             title: v[1] as String,
             listId: v[2] as String,
             done: v[3] as bool,
@@ -433,8 +418,8 @@ _i7.BeanModule get $application => _i7.BeanModule(
     ),
   },
   introspections: [
-    ..._i22.$applicationIntrospections,
-    ..._i23.$applicationPropertiesIntrospections,
+    ..._i23.$applicationIntrospections,
+    ..._i24.$applicationPropertiesIntrospections,
   ],
 );
 
@@ -443,31 +428,31 @@ _i7.BeanModule get $application => _i7.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i24.springBootAutoConfiguration,
+    _i25.springBootAutoConfiguration,
     _i2.springBootStarterCacheAutoConfiguration,
     _i3.springBootStarterDataAutoConfiguration,
-    _i25.springBootStarterFeignAutoConfiguration,
     _i4.springBootStarterFlutterAutoConfiguration,
     _i26.springBootStarterFlutterMaterialAutoConfiguration,
     _i5.springBootStarterFlutterNavigationAutoConfiguration,
     _i27.springBootStarterFlutterSecurityAutoConfiguration,
     _i28.springBootStarterLoggingAutoConfiguration,
     _i29.springBootStarterOauth2ClientAutoConfiguration,
+    _i30.springBootStarterRestclientAutoConfiguration,
     if (((const bool.fromEnvironment('dart.library.io') &&
             !const bool.fromEnvironment('dart.library.ui')) ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
-      _i30.springBootStarterSupabaseAdminAutoConfiguration,
-    _i30.springBootStarterSupabaseAutoConfiguration,
-    _i30.springBootStarterSupabaseDataAutoConfiguration,
+      _i31.springBootStarterSupabaseAdminAutoConfiguration,
+    _i31.springBootStarterSupabaseAutoConfiguration,
+    _i31.springBootStarterSupabaseDataAutoConfiguration,
     if (((const bool.fromEnvironment('dart.library.io') &&
             !const bool.fromEnvironment('dart.library.ui')) ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
-      _i30.springBootStarterSupabaseServerAutoConfiguration,
-    _i31.springBootStarterWebsocketAutoConfiguration,
+      _i31.springBootStarterSupabaseServerAutoConfiguration,
+    _i32.springBootStarterWebsocketAutoConfiguration,
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
-      _i31.springBootStarterWebsocketServerAutoConfiguration,
-    _i32.springSecurityCoreAutoConfiguration,
+      _i32.springBootStarterWebsocketServerAutoConfiguration,
+    _i33.springSecurityCoreAutoConfiguration,
     if (!const bool.fromEnvironment('dart.vm.product') &&
         !const bool.fromEnvironment('dart.vm.profile'))
       ..._$debugAutoConfigurations,
@@ -475,33 +460,37 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
   autoConfigurationMetadata: {
     _i26.springBootStarterFlutterMaterialAutoConfiguration:
         const _i1.AutoConfigurationModule(
-          factories: [_i33.MaterialThemeDesign()],
+          factories: [_i34.MaterialThemeDesign()],
         ),
     _i27.springBootStarterFlutterSecurityAutoConfiguration:
         const _i1.AutoConfigurationModule(
           before: [
             r'springBootStarterOauth2ClientAutoConfiguration',
-            r'springBootStarterFeignAutoConfiguration',
+            r'springBootStarterRestclientAutoConfiguration',
           ],
           after: [r'springBootStarterFlutterNavigationAutoConfiguration'],
         ),
-    _i30.springBootStarterSupabaseAutoConfiguration:
+    _i30.springBootStarterRestclientAutoConfiguration:
+        const _i1.AutoConfigurationModule(
+          after: [r'springBootStarterFlutterSecurityAutoConfiguration'],
+        ),
+    _i31.springBootStarterSupabaseAutoConfiguration:
         const _i1.AutoConfigurationModule(
           after: [
-            r'springBootStarterFeignAutoConfiguration',
+            r'springBootStarterRestclientAutoConfiguration',
             r'springBootStarterWebsocketAutoConfiguration',
             r'springBootStarterDataAutoConfiguration',
             r'springSecurityCoreAutoConfiguration',
           ],
         ),
-    _i30.springBootStarterSupabaseDataAutoConfiguration:
+    _i31.springBootStarterSupabaseDataAutoConfiguration:
         const _i1.AutoConfigurationModule(
           before: [r'springBootStarterDataAutoConfiguration'],
         ),
     if (((const bool.fromEnvironment('dart.library.io') &&
             !const bool.fromEnvironment('dart.library.ui')) ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
-      _i30.springBootStarterSupabaseServerAutoConfiguration:
+      _i31.springBootStarterSupabaseServerAutoConfiguration:
           const _i1.AutoConfigurationModule(
             before: [
               r'springBootStarterSecurityAutoConfiguration',
@@ -534,7 +523,7 @@ Future<_i1.ConfigurableApplicationContext> runApplicationAsync(
 ) => springApplication.runAsync(args, hotReload: () => springApplication);
 
 /// The route of [HomePage]: its path, name, values and `to`.
-extension HomePageRoute on _i21.HomePage {
+extension HomePageRoute on _i22.HomePage {
   /// The path pattern.
   static const pattern = r'/';
 
@@ -542,5 +531,5 @@ extension HomePageRoute on _i21.HomePage {
   static const routeName = r'home-page';
 
   /// The location of this screen with these values.
-  static _i20.RouteLocation to() => _i20.RouteLocation.expand(pattern);
+  static _i21.RouteLocation to() => _i21.RouteLocation.expand(pattern);
 }

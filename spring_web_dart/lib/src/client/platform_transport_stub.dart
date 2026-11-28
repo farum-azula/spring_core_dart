@@ -1,3 +1,4 @@
+import 'package:spring_web_dart/src/client/address/allowed_addresses.dart';
 import 'package:spring_web_dart/src/client/http_transport.dart';
 
 /// Stands in for `platformHttpTransport` on a platform with neither
@@ -8,6 +9,7 @@ HttpTransport createTransport({
   Duration? connectTimeout,
   FetchCredentials credentials = FetchCredentials.sameOrigin,
   bool allowBadCertificates = false,
+  AllowedAddresses? allowedAddresses,
 }) => throw UnsupportedError(
   'No HTTP transport for this platform; pass your own HttpTransport',
 );

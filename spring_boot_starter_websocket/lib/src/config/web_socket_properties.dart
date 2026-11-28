@@ -2,9 +2,9 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 
 /// The `spring.websocket.client.*` properties.
 ///
-/// Differs from Spring: these keys are this project's own (shaped like
-/// `spring.feign.client.config.*`); Spring Boot has no properties for
-/// WebSocket clients.
+/// Differs from Spring: these keys are this project's own (one block per
+/// client, as `spring.http.serviceclient.<group>.*` is per group); Spring
+/// Boot has no properties for WebSocket clients.
 @ConfigurationProperties('spring.websocket.client')
 class WebSocketProperties {
   /// The largest text message a client reads, in UTF-8 bytes (Tomcat counts

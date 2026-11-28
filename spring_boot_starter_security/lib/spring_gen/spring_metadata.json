@@ -253,7 +253,7 @@
         "@ConditionalOnMissingBean(PrincipalRoleChecker)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 486,
+      "line": 516,
       "injects": [],
       "members": [
         {
@@ -282,7 +282,7 @@
         "@ConditionalOnMissingBean(OAuth2AuthorizedClientRepository)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 400,
+      "line": 430,
       "injects": [],
       "members": [
         {
@@ -334,7 +334,7 @@
         "@ConditionalOnMissingBean(CookieSigner)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 242,
+      "line": 249,
       "injects": [],
       "members": [
         {
@@ -374,7 +374,7 @@
         "@ConditionalOnMissingBean(SecurityFilterChain)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 373,
+      "line": 403,
       "injects": [],
       "members": [
         {
@@ -404,7 +404,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 227,
+      "line": 234,
       "injects": [],
       "members": [
         {
@@ -618,7 +618,7 @@
         "@_OnNoClientRegistrationsOrUserProperties()"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 324,
+      "line": 354,
       "injects": [],
       "members": [
         {
@@ -686,7 +686,7 @@
         "@ConditionalOnMissingBean(JwtAuthenticationConverter)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 312,
+      "line": 342,
       "injects": [],
       "members": [
         {
@@ -724,7 +724,7 @@
         "@_OnResourceServerProperties()"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 256,
+      "line": 263,
       "injects": [],
       "members": [
         {
@@ -750,7 +750,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 478,
+      "line": 508,
       "injects": [],
       "members": [
         {
@@ -778,7 +778,7 @@
         "@ConditionalOnMissingBean(OidcIdTokenDecoder)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 547,
+      "line": 577,
       "injects": [],
       "members": [
         {
@@ -807,7 +807,7 @@
         "@ConditionalOnMissingBean(ProgramWideAuthenticationMonitor)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 436,
+      "line": 466,
       "injects": [],
       "members": [
         {
@@ -829,6 +829,31 @@
       ]
     },
     {
+      "name": "resourceServerAllowedAddresses",
+      "type": "AllowedAddressesContributor",
+      "types": [
+        "AllowedAddressesContributor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnResourceServerProperties()"
+      ],
+      "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
+      "line": 323,
+      "injects": [],
+      "members": [
+        {
+          "name": "allowedAddresses",
+          "kind": "method",
+          "type": "Iterable<String>",
+          "parameters": []
+        }
+      ]
+    },
+    {
       "name": "securityContextHealthIndicator",
       "type": "SecurityContextHealthIndicator",
       "types": [
@@ -845,7 +870,7 @@
         "@ConditionalOnMissingBean(SecurityContextHealthIndicator)"
       ],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 448,
+      "line": 478,
       "injects": [],
       "members": [
         {
@@ -875,7 +900,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 418,
+      "line": 448,
       "injects": [],
       "members": [
         {
@@ -964,7 +989,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_security/src/config/security_auto_configuration.dart",
-      "line": 472,
+      "line": 502,
       "injects": [],
       "members": [
         {

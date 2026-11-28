@@ -15,7 +15,8 @@ class CorsProperties {
 @Configuration()
 class SecurityConfig {
   /// With the supplier stub only: it (`/supplier/**`) stands for another
-  /// service, called by this server's Feign clients without a session.
+  /// service, called by this server's HTTP service clients without a
+  /// session.
   /// `securityMatcher` limits this chain to those paths; `@Order(1)` puts
   /// it before the API chain, which matches every other request.
   @Bean()

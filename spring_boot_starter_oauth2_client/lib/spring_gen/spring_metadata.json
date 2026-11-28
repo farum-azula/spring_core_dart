@@ -3,26 +3,6 @@
   "package": "spring_boot_starter_oauth2_client",
   "properties": [
     {
-      "name": "spring.feign.oauth2.client-registration-id",
-      "type": "String?",
-      "description": "The registration whose token Feign clients send; without it the Feign client's name is the registration id.",
-      "default": null,
-      "deprecated": null,
-      "source": "package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart",
-      "line": 13,
-      "class": "FeignOAuth2Properties"
-    },
-    {
-      "name": "spring.feign.oauth2.enabled",
-      "type": "bool",
-      "description": "Whether Feign clients send the access token of an OAuth2 client registration.",
-      "default": false,
-      "deprecated": null,
-      "source": "package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart",
-      "line": 9,
-      "class": "FeignOAuth2Properties"
-    },
-    {
       "name": "spring.security.oauth2.client.provider.*.authorization-uri",
       "type": "String?",
       "description": "The provider's login page. Default: from the metadata.",
@@ -261,6 +241,26 @@
       "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart",
       "line": 60,
       "class": "OAuth2ClientRegistrationProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.restclient.client-registration-id",
+      "type": "String?",
+      "description": "The registration whose token calls that name none send. None by default: every call to any host would carry this token, so set it only when the application calls nothing else.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_rest_client_properties.dart",
+      "line": 17,
+      "class": "OAuth2RestClientProperties"
+    },
+    {
+      "name": "spring.security.oauth2.client.restclient.enabled",
+      "type": "bool",
+      "description": "Whether every `RestClientBuilder` of the RestClient starter (the injected builders and the HTTP service groups') gets the `OAuth2ClientHttpRequestInterceptor`. It sends a token only on the calls that name a registration (`@ClientRegistrationId`, the request attribute) or with [clientRegistrationId].",
+      "default": true,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_rest_client_properties.dart",
+      "line": 12,
+      "class": "OAuth2RestClientProperties"
     }
   ],
   "hints": [
@@ -390,6 +390,33 @@
       ]
     },
     {
+      "name": "OAuth2RestClientProperties",
+      "type": "OAuth2RestClientProperties",
+      "types": [
+        "OAuth2RestClientProperties"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_oauth2_client/src/properties/oauth2_rest_client_properties.dart",
+      "line": 6,
+      "injects": [],
+      "members": [
+        {
+          "name": "clientRegistrationId",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "enabled",
+          "kind": "field",
+          "type": "bool"
+        }
+      ]
+    },
+    {
       "name": "authorizationCodeTokenResponseClient",
       "type": "OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>",
       "types": [
@@ -404,7 +431,7 @@
         "@ConditionalOnMissingBean(OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>)"
       ],
       "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
-      "line": 188,
+      "line": 207,
       "injects": [],
       "members": [
         {
@@ -432,7 +459,7 @@
         "@ConditionalOnMissingBean(OAuth2AuthorizedClientManager)"
       ],
       "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
-      "line": 293,
+      "line": 312,
       "injects": [],
       "members": [
         {
@@ -460,7 +487,7 @@
         "@ConditionalOnMissingBean(OAuth2AuthorizedClientService)"
       ],
       "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
-      "line": 140,
+      "line": 159,
       "injects": [],
       "members": [
         {
@@ -507,7 +534,7 @@
         "@ConditionalOnMissingBean(OAuth2AccessTokenResponseClient<OAuth2ClientCredentialsGrantRequest>)"
       ],
       "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
-      "line": 228,
+      "line": 247,
       "injects": [],
       "members": [
         {
@@ -535,7 +562,7 @@
         "@ConditionalOnMissingBean(ClientRegistrationRepository)"
       ],
       "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
-      "line": 112,
+      "line": 130,
       "injects": [],
       "members": [
         {
@@ -564,7 +591,7 @@
         "@ConditionalOnMissingBean(OAuth2ClientSecretResolver)"
       ],
       "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
-      "line": 171,
+      "line": 190,
       "injects": [],
       "members": [
         {
@@ -592,7 +619,7 @@
         "@ConditionalOnMissingBean(DPoPKey)"
       ],
       "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
-      "line": 158,
+      "line": 177,
       "injects": [],
       "members": [
         {
@@ -621,101 +648,24 @@
       ]
     },
     {
-      "name": "feignOAuth2Properties",
-      "type": "FeignOAuth2Properties",
+      "name": "oauth2ClientHttpRequestInterceptor",
+      "type": "OAuth2ClientHttpRequestInterceptor",
       "types": [
-        "FeignOAuth2Properties"
-      ],
-      "scope": "singleton",
-      "primary": false,
-      "qualifiers": [],
-      "profiles": [],
-      "conditions": [],
-      "source": "package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart",
-      "line": 6,
-      "injects": [],
-      "members": [
-        {
-          "name": "clientRegistrationId",
-          "kind": "field",
-          "type": "String?"
-        },
-        {
-          "name": "enabled",
-          "kind": "field",
-          "type": "bool"
-        }
-      ]
-    },
-    {
-      "name": "oauth2AccessTokenErrorDecoder",
-      "type": "OAuth2AccessTokenErrorDecoder",
-      "types": [
-        "OAuth2AccessTokenErrorDecoder",
-        "ErrorDecoder"
+        "OAuth2ClientHttpRequestInterceptor",
+        "ClientHttpRequestInterceptor"
       ],
       "scope": "singleton",
       "primary": false,
       "qualifiers": [],
       "profiles": [],
       "conditions": [
-        "@ConditionalOnBooleanProperty('spring.feign.oauth2.enabled')",
-        "@ConditionalOnBean(OAuth2AccessTokenInterceptor)",
-        "@ConditionalOnMissingBean(ErrorDecoder)"
-      ],
-      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
-      "line": 354,
-      "injects": [],
-      "members": [
-        {
-          "name": "decode",
-          "kind": "method",
-          "type": "Exception",
-          "parameters": [
-            "String methodKey",
-            "HttpResponse response"
-          ]
-        },
-        {
-          "name": "delegate",
-          "kind": "field",
-          "type": "ErrorDecoder"
-        },
-        {
-          "name": "interceptor",
-          "kind": "field",
-          "type": "OAuth2AccessTokenInterceptor"
-        }
-      ]
-    },
-    {
-      "name": "oauth2AccessTokenInterceptor",
-      "type": "OAuth2AccessTokenInterceptor",
-      "types": [
-        "OAuth2AccessTokenInterceptor",
-        "RequestInterceptor"
-      ],
-      "scope": "singleton",
-      "primary": false,
-      "qualifiers": [],
-      "profiles": [],
-      "conditions": [
-        "@ConditionalOnBooleanProperty('spring.feign.oauth2.enabled')",
         "@ConditionalOnBean(OAuth2AuthorizedClientManager)",
-        "@ConditionalOnMissingBean(OAuth2AccessTokenInterceptor)"
+        "@ConditionalOnMissingBean(OAuth2ClientHttpRequestInterceptor)"
       ],
       "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
-      "line": 332,
+      "line": 364,
       "injects": [],
       "members": [
-        {
-          "name": "apply",
-          "kind": "method",
-          "type": "Future<void>",
-          "parameters": [
-            "RequestTemplate template"
-          ]
-        },
         {
           "name": "authorizedClientManager",
           "kind": "field",
@@ -727,9 +677,12 @@
           "type": "OAuth2AuthorizedClientService?"
         },
         {
-          "name": "clientRegistrationId",
-          "kind": "field",
-          "type": "String?"
+          "name": "clientRegistrationIdOf",
+          "kind": "method",
+          "type": "String?",
+          "parameters": [
+            "HttpRequest request"
+          ]
         },
         {
           "name": "dPoPKey",
@@ -737,19 +690,83 @@
           "type": "DPoPKey?"
         },
         {
-          "name": "invalidate",
+          "name": "defaultClientRegistrationId",
+          "kind": "field",
+          "type": "String?"
+        },
+        {
+          "name": "intercept",
           "kind": "method",
-          "type": "Future<void>",
+          "type": "Future<HttpResponse>",
           "parameters": [
-            "String tokenValue"
+            "HttpRequest request",
+            "List<int>? body",
+            "ClientHttpRequestExecution execution"
           ]
         },
         {
-          "name": "rememberDPoPNonce",
+          "name": "toString",
+          "kind": "method",
+          "type": "String",
+          "parameters": []
+        }
+      ]
+    },
+    {
+      "name": "oauth2ProviderAllowedAddresses",
+      "type": "OAuth2ProviderAllowedAddresses",
+      "types": [
+        "OAuth2ProviderAllowedAddresses",
+        "AllowedAddressesContributor"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@_OnClientsConfigured()"
+      ],
+      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
+      "line": 351,
+      "injects": [],
+      "members": [
+        {
+          "name": "allowedAddresses",
+          "kind": "method",
+          "type": "Iterable<String>",
+          "parameters": []
+        },
+        {
+          "name": "properties",
+          "kind": "field",
+          "type": "OAuth2ClientProperties"
+        }
+      ]
+    },
+    {
+      "name": "oauth2RestClientCustomizer",
+      "type": "RestClientCustomizer",
+      "types": [
+        "RestClientCustomizer"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnBooleanProperty('spring.security.oauth2.client.restclient.enabled', matchIfMissing: true)",
+        "@ConditionalOnBean(OAuth2ClientHttpRequestInterceptor)"
+      ],
+      "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
+      "line": 385,
+      "injects": [],
+      "members": [
+        {
+          "name": "customize",
           "kind": "method",
           "type": "void",
           "parameters": [
-            "HttpResponse response"
+            "RestClientBuilder builder"
           ]
         }
       ]
@@ -769,7 +786,7 @@
         "@ConditionalOnMissingBean(OAuth2UserService<OAuth2UserRequest, OAuth2User>)"
       ],
       "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
-      "line": 261,
+      "line": 280,
       "injects": [],
       "members": [
         {
@@ -797,7 +814,7 @@
         "@ConditionalOnMissingBean(OidcIdTokenDecoder)"
       ],
       "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
-      "line": 248,
+      "line": 267,
       "injects": [],
       "members": [
         {
@@ -826,7 +843,7 @@
         "@ConditionalOnMissingBean(OAuth2UserService<OidcUserRequest, OidcUser>)"
       ],
       "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
-      "line": 278,
+      "line": 297,
       "injects": [],
       "members": [
         {
@@ -854,7 +871,7 @@
         "@ConditionalOnMissingBean(OAuth2AccessTokenResponseClient<OAuth2RefreshTokenGrantRequest>)"
       ],
       "source": "package:spring_boot_starter_oauth2_client/src/oauth2_client_auto_configuration.dart",
-      "line": 208,
+      "line": 227,
       "injects": [],
       "members": [
         {

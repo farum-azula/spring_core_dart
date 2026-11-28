@@ -11,14 +11,15 @@
 /// - **Logins**: you write a `UserDetailsService` that loads your users;
 ///   the auto-configured `AuthenticationManager` checks passwords against
 ///   it and publishes success and failure events.
-/// - **Password hashing**: `PasswordEncoder`s for Argon2 (the default),
+/// - **Password hashing**: `PasswordEncoder` instances for Argon2 (the
+/// default),
 ///   PBKDF2 and scrypt in Spring's formats, so hashes move between Java
 ///   and Dart, behind a `DelegatingPasswordEncoder` that names the
 ///   algorithm in each hash (`{argon2}...`).
 /// - **Method security**: `@PreAuthorize`, `@PostAuthorize`, `@Secured`,
 ///   `@PreFilter` and `@PostFilter` on bean methods, checked in the bean's
 ///   proxy. Adding the dependency switches them on.
-/// - **Building blocks** for access rules: `AuthorizationManager`s for
+/// - **Building blocks** for access rules: `AuthorizationManager` instances for
 ///   roles, authorities and login kinds, and `RoleHierarchyImpl`.
 /// - **What a client application's login is made of**, as interfaces any
 ///   provider can implement: `LoginSession` (the current user, a fresh

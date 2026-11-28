@@ -5,7 +5,7 @@
 /// a model with Jackson-style annotations (`@JsonProperty`, `@JsonIgnore`,
 /// `@JsonInclude`, `@JsonFormat`, `@JsonTypeInfo`, ...), or to add a
 /// serializer for a type the mapper does not know. It is also exported by
-/// `package:spring_core_dart/spring_core_dart.dart`. The web and Feign
+/// `package:spring_core_dart/spring_core_dart.dart`. The web and RestClient
 /// starters use the same mapper for request and response bodies, so these
 /// annotations shape the HTTP JSON too. The mapper reads metadata that
 /// `spring_core_dart_generator` writes for classes marked

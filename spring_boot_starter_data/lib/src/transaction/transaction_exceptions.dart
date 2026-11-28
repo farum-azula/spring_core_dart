@@ -1,8 +1,11 @@
+import 'package:spring_boot_dart/spring_boot_dart.dart'
+    show NestedException, NonRetryableException;
+
 /// The root of the errors of transaction handling (not of the data access
-/// inside a transaction, which are `DataAccessException`s).
+/// inside a transaction, which are `DataAccessException` instances).
 ///
 /// Spring (Java): `org.springframework.transaction.TransactionException`.
-abstract class TransactionException implements Exception {
+abstract class TransactionException implements Exception, NestedException {
   /// An error described by [message], caused by [cause] when there is one.
   TransactionException(this.message, {this.cause});
 
@@ -10,6 +13,7 @@ abstract class TransactionException implements Exception {
   final String message;
 
   /// The error behind this one, if any.
+  @override
   final Object? cause;
 
   @override
@@ -43,7 +47,10 @@ class IllegalTransactionStateException extends TransactionException {
 ///
 /// Spring (Java):
 /// `org.springframework.transaction.UnexpectedRollbackException`.
-class UnexpectedRollbackException extends TransactionException {
+///
+/// It is never retried (a `NonRetryableException`): the transaction is gone.
+class UnexpectedRollbackException extends TransactionException
+    implements NonRetryableException {
   /// An unexpected rollback described by [message].
   UnexpectedRollbackException(super.message, {super.cause});
 }
@@ -51,7 +58,11 @@ class UnexpectedRollbackException extends TransactionException {
 /// The store failed to commit or roll back.
 ///
 /// Spring (Java): `org.springframework.transaction.TransactionSystemException`.
-class TransactionSystemException extends TransactionException {
+///
+/// It is never retried (a `NonRetryableException`): the commit may have
+/// happened.
+class TransactionSystemException extends TransactionException
+    implements NonRetryableException {
   /// A failure described by [message].
   TransactionSystemException(
     super.message, {

@@ -36,7 +36,7 @@ ApplicationContextRunner _runner(
     .withAutoConfiguration(springBootAutoConfiguration)
     .withAutoConfiguration(springBootStarterLoggingAutoConfiguration)
     .withAutoConfiguration(springBootStarterWebAutoConfiguration)
-    .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
+    .withAutoConfiguration(springBootStarterRestclientAutoConfiguration)
     .withAutoConfiguration(springSecurityCoreAutoConfiguration)
     .withAutoConfiguration(springBootStarterOauth2ClientAutoConfiguration)
     .withAutoConfiguration(

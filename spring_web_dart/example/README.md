@@ -3,15 +3,14 @@
 [`example.dart`](example.dart) shows the parts of `spring_web_dart` that
 work on their own, without a Spring application:
 
-1. the **mapping annotations** on an interface, as a Feign client
-   carries them;
+1. the **exchange annotations** on an HTTP service interface;
 2. a real HTTP request sent with the **platform transport** to a small
    local server;
 3. **`MockHttpTransport`** answering the same kind of request in a test,
    without any server.
 
-No code generation is needed for this package alone. Feign clients and
-controllers, which read the annotations, need
+No code generation is needed for this package alone. HTTP service
+clients and controllers, which read the annotations, need
 `spring_core_dart_generator`.
 
 ```yaml
@@ -39,19 +38,20 @@ without an application only warnings show):
 ## 1. Describe an API with annotations
 
 The annotations say which HTTP call each method stands for. Here they
-sit on a plain interface; with `@FeignClient` from
-`spring_boot_starter_feign` on the class, the generator turns it into a
-working HTTP client, and a `@RestController` uses the same annotations
-to answer the calls.
+sit on a plain interface; imported with `@ImportHttpServices` of
+`spring_boot_starter_restclient`, the generator turns it into a working
+HTTP client, and a `@RestController` answers the calls with the mapping
+annotations (`@GetMapping`, ...) and the same parameter annotations.
 
 ```dart
+@HttpExchange('/books')
 abstract interface class CatalogApi {
   // GET /books/978-0
-  @GetMapping('/books/{isbn}')
+  @GetExchange('/{isbn}')
   Future<Map<String, Object?>> find(@PathVariable('isbn') String isbn);
 
   // POST /books with a JSON body and a request id header.
-  @PostMapping.of(path: '/books', consumes: MediaType.applicationJson)
+  @PostExchange.of(contentType: MediaType.applicationJson)
   Future<ResponseEntity<Map<String, Object?>>> create(
     @RequestBody() Map<String, Object?> book,
     @RequestHeader('X-Request-Id') String requestId,
@@ -92,7 +92,7 @@ transport.close();
 records what was sent, so a test of code that calls a service needs no
 network. In a Spring Boot application, `spring_boot_starter_test`
 exports it, and `BeanOverride<HttpTransport>(mock)` puts it under the
-Feign clients.
+HTTP clients.
 
 ```dart
 import 'package:spring_web_dart/testing.dart';

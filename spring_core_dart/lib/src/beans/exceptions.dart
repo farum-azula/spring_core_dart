@@ -1,4 +1,5 @@
 import 'package:spring_core_dart/src/beans/factory_bean.dart';
+import 'package:spring_core_dart/src/core/nested_exception.dart';
 
 /// The common supertype of the errors the container throws: a missing or
 /// ambiguous bean, a failed creation, a clashing name, a bad property path.
@@ -25,7 +26,7 @@ import 'package:spring_core_dart/src/beans/factory_bean.dart';
 ///   log.error(e.getMessage());
 /// }
 /// ```
-abstract class BeansException implements Exception {
+abstract class BeansException implements Exception, NestedException {
   /// Creates an exception with [message] and an optional [cause].
   const BeansException(this.message, {this.cause});
 
@@ -34,6 +35,7 @@ abstract class BeansException implements Exception {
 
   /// The error that caused this one, if any: what a constructor threw, or
   /// the container error of a nested bean.
+  @override
   final Object? cause;
 
   /// The innermost cause: [cause] followed through nested container

@@ -10,7 +10,9 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
 /// client authenticates as at the token endpoint (`client_secret_basic`,
 /// `client_secret_post` or, for an app, `none`: only its `client_id`). A
 /// refusal is reported as an [OAuth2AuthorizationException]; the logout
-/// goes on anyway.
+/// goes on anyway. The request is sent by a `RestClient` on the
+/// transport (the `httpTransport` bean in an app), without following a
+/// redirect.
 ///
 /// ```dart
 /// await revocation.revoke(registration, authorizedClient.refreshToken!);
@@ -20,17 +22,25 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
 /// session).
 class OAuth2TokenRevocationClient {
   /// A client sending through [transport].
-  OAuth2TokenRevocationClient(this.transport);
+  OAuth2TokenRevocationClient(this.transport)
+    : _rest = RestClient.builder()
+          .transport(transport)
+          // Credentials never follow a redirect elsewhere.
+          .followRedirects(false)
+          .build();
 
-  /// The HTTP transport.
+  /// The HTTP transport the requests go through.
   final HttpTransport transport;
+
+  final RestClient _rest;
 
   /// Revokes [token] at the `revocation_endpoint` of [registration]; does
   /// nothing when the provider has none. Returns whether a request was
   /// sent and accepted (HTTP 200).
   ///
   /// Throws an [OAuth2AuthorizationException] when the provider refused
-  /// or could not be reached, or the registration's client
+  /// or could not be reached (then with the `RestClient`'s
+  /// `ResourceAccessException` as its cause), or the registration's client
   /// authentication method is not one of the three above.
   Future<bool> revoke(
     ClientRegistration registration,
@@ -53,17 +63,13 @@ class OAuth2TokenRevocationClient {
     };
     final HttpResponse response;
     try {
-      response = await transport.send(
-        HttpRequest(
-          method: HttpMethod.post,
-          url: Uri.parse(endpoint),
-          headers: headers,
-          body: utf8.encode(_formUrlEncode(form)),
-          // Credentials never follow a redirect elsewhere.
-          followRedirects: false,
-        ),
-      );
-    } on HttpTransportException catch (e) {
+      response = await _rest
+          .post()
+          .uri(Uri.parse(endpoint))
+          .headers((own) => own.addHeaders(headers))
+          .body(form)
+          .exchange((_, answer) => answer.response);
+    } on RestClientException catch (e) {
       throw OAuth2AuthorizationException(
         OAuth2Error(
           OAuth2ErrorCodes.serverError,
@@ -126,9 +132,4 @@ class OAuth2TokenRevocationClient {
       ),
     );
   }
-
-  static String _formUrlEncode(Map<String, String> form) => [
-    for (final MapEntry(:key, :value) in form.entries)
-      '${Uri.encodeQueryComponent(key)}=${Uri.encodeQueryComponent(value)}',
-  ].join('&');
 }

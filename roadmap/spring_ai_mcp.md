@@ -86,4 +86,4 @@ spring:
   pinned and listed in the README.
 
 Later, in the same package: an MCP client (the tools of other MCP servers
-as beans, like a Feign client, and as tools of the `ChatClient`).
+as beans, like an HTTP service client, and as tools of the `ChatClient`).

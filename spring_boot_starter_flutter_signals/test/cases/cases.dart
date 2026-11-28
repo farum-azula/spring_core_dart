@@ -1,7 +1,9 @@
 // Beans for the edges of followed state (signal_edges_test.dart): state
 // from a base class and a mixin, late and injected fields, scopes, a
-// method that throws, an effect that writes what it reads. The generator
+// method that throws, an effect that writes what it reads, a buffered
+// method that is retried. The generator
 // writes spring_gen/cases.spring.dart (`dart run build_runner build`).
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/widgets.dart';
@@ -465,4 +467,30 @@ class Reader {
 
   @Effect()
   void watch() => seen.add(vault.report);
+}
+
+/// A buffered method that is retried: the writes of a failed attempt are
+/// dropped with its buffer, so nobody sees them.
+@Component()
+class Restock {
+  @Signal()
+  int stock = 0;
+
+  int attempts = 0;
+
+  final List<int> seen = [];
+
+  @Effect()
+  void watch() => seen.add(stock);
+
+  @SignalBuffer()
+  @Retryable(delay: Duration.zero)
+  Future<void> refill(int amount) async {
+    attempts++;
+    stock += amount;
+    await Future<void>.delayed(Duration.zero);
+    if (attempts < 3) {
+      throw TimeoutException('the supplier is slow');
+    }
+  }
 }

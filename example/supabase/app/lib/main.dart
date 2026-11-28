@@ -10,8 +10,12 @@
 // app widget and its theme come from lib/resources/application.yml.
 import 'package:flutter/widgets.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
+import 'package:spring_boot_starter_supabase/spring_boot_starter_supabase.dart'
+    show EdgeFunctions, ImportHttpServices;
 import 'package:supabase_example_app/spring_gen/main.spring.dart';
+import 'package:supabase_example_app/src/profile/functions.dart';
 
 @SpringBootApplication()
+@ImportHttpServices(group: EdgeFunctions.group, types: [Functions])
 void main() =>
     runApp(SpringApplicationWidget(application: () => springApplication));

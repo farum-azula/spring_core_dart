@@ -26,6 +26,10 @@
 ///   that has no caller, as a scheduled task.
 /// - `deepEquals` and `deepHash`: equality and hash of collections by
 ///   content.
+/// - `RetryTemplate`, `RetryPolicy` and `RetryListener`: run an operation
+///   again when it fails; `RequestDeadline`, the time limit that follows a
+///   request through the code it calls; `NestedException`, the cause of an
+///   exception that wraps another.
 ///
 /// ```dart
 /// // A tool that reads the application's configuration without a
@@ -98,7 +102,14 @@ export 'package:spring_core_dart/src/core/isolate/primary_isolate.dart';
 export 'package:spring_core_dart/src/core/log.dart';
 export 'package:spring_core_dart/src/core/log_format.dart';
 export 'package:spring_core_dart/src/core/metrics/application_startup.dart';
+export 'package:spring_core_dart/src/core/nested_exception.dart';
 export 'package:spring_core_dart/src/core/order.dart';
 export 'package:spring_core_dart/src/core/principal.dart';
+export 'package:spring_core_dart/src/core/request_deadline.dart';
+export 'package:spring_core_dart/src/core/retry/back_off.dart';
+export 'package:spring_core_dart/src/core/retry/retry_exception.dart';
+export 'package:spring_core_dart/src/core/retry/retry_listener.dart';
+export 'package:spring_core_dart/src/core/retry/retry_policy.dart';
+export 'package:spring_core_dart/src/core/retry/retry_template.dart';
 export 'package:spring_core_dart/src/core/secret_names.dart';
 export 'package:spring_core_dart/src/core/transaction_lifecycle_registry.dart';

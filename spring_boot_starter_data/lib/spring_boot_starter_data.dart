@@ -129,6 +129,7 @@ export 'src/store/stored_aggregate.dart';
 export 'src/testing/data_test.dart';
 export 'src/transaction/abstract_platform_transaction_manager.dart';
 export 'src/transaction/data_transaction_lifecycle_registry.dart';
+export 'src/transaction/joined_transaction_retry_veto.dart';
 export 'src/transaction/platform_transaction_manager.dart';
 export 'src/transaction/transaction_definition.dart';
 export 'src/transaction/transaction_exceptions.dart';

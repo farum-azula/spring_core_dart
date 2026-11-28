@@ -4,22 +4,35 @@ The scope of the first major release, set by the owner on 26 November
 2026. Release 0.10 adds nothing more: it gets its full review, its checks
 and ships; everything below comes after it, before 1.0.0.
 
+Items 1 and 2 are release 0.10.1 (the owner, 27 November 2026), not
+1.0.0.
+
 1. **The new HTTP client**, as Spring Boot 4's `spring-boot-starter-restclient`
    ([rest_client.md](rest_client.md)): `RestClient` on the family's
    `HttpTransport` and `ObjectMapper`, `RestClient.Builder` and
    `RestClientCustomizer`, and HTTP service clients: `@HttpExchange` /
    `@GetExchange` / `@PostExchange` interfaces implemented by the
-   generator (much of Feign's generation reused), registered with
+   generator, registered with
    `@ImportHttpServices` and configured by groups. No `RestTemplate`:
    Spring Framework 7.1 deprecated it for removal.
-2. **Feign** ([spring_boot_starter_feign.md](spring_boot_starter_feign.md)):
-   Spring Cloud OpenFeign is feature-complete and points to HTTP service
-   clients. Once the new client shows what it covers, the Feign starter
-   goes to maintenance only, or is withdrawn (out of CI, marked no longer
-   supported, the docs pointing to the HTTP client; on pub.dev
-   `discontinued` with "Replaced by", since a package cannot be renamed or
-   removed). Undecided; a migration page from `@FeignClient` to
-   `@HttpExchange` either way.
+   - **The family's own calls move onto `RestClient`** (the owner, 27
+     November 2026): every place that builds a JSON request, checks the
+     status and reads a JSON answer by hand on the `HttpTransport` (some
+     10 files: the OAuth2 client's token
+     endpoint, user info, discovery and JWK set; the security starter's
+     JWT decoder; the Flutter security starter's token revocation and
+     server login; the Supabase starter's HTTP). What stays on the
+     transport: its decorators, which must see all the traffic (the
+     debug network recorder, the CSRF cookie and server credentials
+     transports), and the raw bytes and streams (the remote file cache,
+     theme images, scene models, server-sent events). Every hot path
+     measured before and after. See [rest_client.md](rest_client.md).
+2. **The Feign starter discontinued**
+   ([spring_boot_starter_feign.md](spring_boot_starter_feign.md), the plan
+   in [release_0_10_1.md](release_0_10_1.md)): Spring Cloud OpenFeign is
+   feature-complete and Spring points to HTTP service clients, so 0.10.1
+   is its last version and everything moves to `RestClient` and
+   `@HttpExchange`.
 3. **Redis in the data starter**
    ([spring_boot_starter_data.md](spring_boot_starter_data.md)): designed
    first (Spring Data Redis's templates and repositories, caching on
@@ -33,6 +46,16 @@ and ships; everything below comes after it, before 1.0.0.
 7. **Debug tools for databases**: a small explorer in the Flutter debug
    tools to see what the connected database holds (tables, rows, a query),
    with a build switch as every debug feature.
+8. **Flutter tests with annotations**, last (the owner, 28 November
+   2026): widget tests as test classes, `@WidgetTest` methods taking a
+   `WidgetTester` next to the `@SpringBootTest` classes the Dart test
+   starter has, with `pumpSpring` and `@TestBean` fakes in widget tests
+   ([spring_boot_starter_flutter_test.md](spring_boot_starter_flutter_test.md),
+   the specification in
+   [docs/flutter-testing.md](../docs/flutter-testing.md)). Where it lives
+   (a package of its own, or a `testing.dart` library of the Flutter
+   starter, as the security starter has) is decided when it starts;
+   `spring_boot_starter_test` stays free of Flutter.
 
 Maybe in 1.0.0, not decided (the owner, 26 November 2026): recording a
 debug session, with the canvas's video

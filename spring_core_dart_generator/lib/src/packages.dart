@@ -2,12 +2,12 @@ import 'package:spring_core_dart_generator/src/actuator/actuator_generation.dart
 import 'package:spring_core_dart_generator/src/cache/cache_generation.dart';
 import 'package:spring_core_dart_generator/src/core/builder/package_generation.dart';
 import 'package:spring_core_dart_generator/src/data/data_generation.dart';
-import 'package:spring_core_dart_generator/src/feign/feign_generation.dart';
 import 'package:spring_core_dart_generator/src/flutter/change_notifier_generation.dart';
 import 'package:spring_core_dart_generator/src/flutter/debug_console_generation.dart';
 import 'package:spring_core_dart_generator/src/flutter/debug_widget_fields_generation.dart';
 import 'package:spring_core_dart_generator/src/flutter/flutter_generation.dart';
 import 'package:spring_core_dart_generator/src/navigation/navigation_generation.dart';
+import 'package:spring_core_dart_generator/src/restclient/http_service_generation.dart';
 import 'package:spring_core_dart_generator/src/scheduling/scheduling_generation.dart';
 import 'package:spring_core_dart_generator/src/security/security_generation.dart';
 import 'package:spring_core_dart_generator/src/signals/signals_generation.dart';
@@ -30,6 +30,9 @@ import 'package:spring_core_dart_generator/src/websocket/websocket_generation.da
 /// entries; its module part comes last, so its beans (the entities'
 /// introspections, the drivers') follow the Flutter and navigation beans,
 /// and its checks of the module follow theirs.
+///
+/// The RestClient starter's part writes the class of each HTTP service
+/// interface (`@ImportHttpServices`) and the beans of their groups.
 ///
 /// The web, WebSocket, scheduling, security and cache parts write nothing:
 /// they say what their annotations do with the values of a bean's methods
@@ -54,6 +57,6 @@ const List<PackageGeneration> packageGenerations = [
   CacheGeneration(),
   ActuatorGeneration(),
   SupabaseGeneration(),
-  FeignGeneration(),
+  HttpServiceGeneration(),
   DataGeneration(),
 ];

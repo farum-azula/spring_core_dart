@@ -161,7 +161,7 @@ final class StringBasedJdbcQuery {
   /// [inTransaction] runs a `@Modifying` query in the repository's write
   /// transaction; [translateError] wraps what a stream fails with in a
   /// `DataAccessException`. [environment] resolves `${...}` and answers
-  /// SpEL's `@environment`; [beanFactory] gives SpEL its `@bean`s;
+  /// SpEL's `@environment`; [beanFactory] gives SpEL its `@bean` references;
   /// [introspector] lets SpEL read the properties of `@Introspected`
   /// arguments and maps `@Introspected` DTOs; [mappingContext] describes
   /// the other DTOs and the entities of `{Entity}` placeholders.

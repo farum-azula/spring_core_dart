@@ -12,21 +12,28 @@ annotations that describe an HTTP call, the types of HTTP itself
 clients that send HTTP and WebSocket requests on the VM, in Flutter and
 in the browser.
 
-You describe an HTTP endpoint once, with annotations on a Dart method:
+You describe HTTP calls with annotations on Dart methods, and two other
+packages read them from opposite sides:
 
 ```dart
+// A server answers GET /books/978-0 (spring_boot_starter_web).
 @GetMapping('/books/{isbn}')
+Future<Book> find(@PathVariable() String isbn) => books.find(isbn);
+
+// A client sends it and reads the answer into a Book
+// (spring_boot_starter_restclient).
+@GetExchange('/books/{isbn}')
 Future<Book> find(@PathVariable() String isbn);
 ```
 
-Two other packages read the same annotations from opposite sides:
-
 - [`spring_boot_starter_web`](https://pub.dev/packages/spring_boot_starter_web)
-  is a web server. On a `@RestController` class, the method above
-  answers `GET /books/978-0`.
-- [`spring_boot_starter_feign`](https://pub.dev/packages/spring_boot_starter_feign)
-  is an HTTP client. On a `@FeignClient` interface, the method above
-  sends `GET /books/978-0` and reads the answer into a `Book`.
+  is a web server. On a `@RestController` class, the mapping
+  annotations (`@GetMapping`, ...) say which requests a method answers.
+- [`spring_boot_starter_restclient`](https://pub.dev/packages/spring_boot_starter_restclient)
+  calls other services: [`RestClient`](#restclient) and HTTP service
+  interfaces, whose exchange annotations (`@GetExchange`, ...) say which
+  request calling a method sends. The parameter annotations
+  (`@PathVariable`, `@RequestParam`, ...) are the same on both sides.
 
 So most applications never add this package by hand: it comes with
 those starters, and with
@@ -69,59 +76,61 @@ Future<void> main() async {
 }
 ```
 
-In an application you rarely build requests yourself: a Feign client
-builds them from the annotations below.
+In an application you rarely build requests yourself: a `RestClient`
+([below](#restclient)) or an HTTP service client builds them.
 
 ## Request mapping annotations
 
 These annotations say which HTTP call a method stands for: the HTTP
 method, the path, and where each parameter goes (path, query string,
-header, cookie or body). A server uses them to route a request to the
-method; a client uses them to build the request.
+header, cookie or body). A server uses the mapping annotations to route
+a request to the method; a client (an HTTP service interface, see
+[RestClient](#restclient)) declares its calls with the exchange
+annotations and the same parameter annotations.
 
 ```dart
-// A client for a book catalog (`@FeignClient` comes from
-// spring_boot_starter_feign). A @RestController uses the same annotations.
-@FeignClient('catalog', url: r'${catalog.url}')
-abstract interface class CatalogClient {
+@RestController()
+@RequestMapping('/books')
+class CatalogController {
+  CatalogController(this.books);
+  final BookService books;
+
   // GET /books/978-0
-  @GetMapping('/books/{isbn}')
-  Future<Book> find(@PathVariable('isbn') String isbn);
+  @GetMapping('/{isbn}')
+  Future<Book> find(@PathVariable('isbn') String isbn) => books.find(isbn);
 
   // GET /books?q=dune&page=0: `page` is optional thanks to its default.
-  @GetMapping('/books')
-  Future<List<Book>> search(@RequestParam('q') String query, {@RequestParam() int page = 0});
+  @GetMapping()
+  Future<List<Book>> search(@RequestParam('q') String query, {@RequestParam() int page = 0}) =>
+      books.search(query, page);
 
-  // GET /books?author=...&year=...: one query parameter per map entry.
-  // The header is sent with every call.
-  @GetMapping.of(path: '/books', headers: ['X-Api-Version=2'])
-  Future<List<Book>> filter(@RequestParam() Map<String, Object?> filters);
+  // GET /books?author=...&year=...: every query parameter in one map. Only
+  // for a request that carries the header.
+  @GetMapping.of(path: '/filter', headers: ['X-Api-Version=2'])
+  Future<List<Book>> filter(@RequestParam() Map<String, String> filters) =>
+      books.filter(filters);
 
   // POST /books with the book as JSON, plus a request id for the logs.
-  @PostMapping.of(path: '/books', consumes: MediaType.applicationJson)
+  @PostMapping.of(consumes: MediaType.applicationJson)
   Future<ResponseEntity<Book>> create(
     @RequestBody() Book book,
     @RequestHeader('X-Request-Id') String requestId,
-  );
-
-  // No path: the client's base path itself (`${catalog.url}`).
-  @GetMapping()
-  Future<List<Book>> all({@RequestParam('sort') String sort = 'title'});
+  ) async => ResponseEntity.status(HttpStatus.created).body(await books.save(book));
 
   // Without a name, {isbn} is bound to the parameter called isbn.
-  @DeleteMapping('/books/{isbn}')
-  Future<void> delete(@PathVariable() String isbn);
+  @DeleteMapping('/{isbn}')
+  Future<void> delete(@PathVariable() String isbn) => books.delete(isbn);
 }
 ```
 
 | Annotation | On | Meaning |
 |---|---|---|
-| `@GetMapping([path])`, `@PostMapping`, `@PutMapping`, `@PatchMapping`, `@DeleteMapping` | method | The HTTP method and the path (`/books/{isbn}`). Without a path (`@GetMapping()`), the base path: the client's, or the controller class's. |
-| `@GetMapping.of({path, headers, produces, consumes})`, also `@PostMapping.of` and the others | method | The same, with every attribute by name. `headers` are `'Name=value'` entries, `produces` is the media type of the answer (`Accept`), `consumes` the media type of the body (`Content-Type`). |
+| `@GetMapping([path])`, `@PostMapping`, `@PutMapping`, `@PatchMapping`, `@DeleteMapping` | method | The HTTP method and the path (`/books/{isbn}`). Without a path (`@GetMapping()`), the base path: the controller class's. |
+| `@GetMapping.of({path, headers, produces, consumes})`, also `@PostMapping.of` and the others | method | The same, with every attribute by name. `headers` are conditions on the request's headers (`'Name=value'`, `'Name'`, `'!Name'`), `produces` the media types the answer may have (`Accept`), `consumes` those of the body (`Content-Type`). |
 | `@RequestMapping([path])`, `@RequestMapping.of({path, method, headers, produces, consumes})` | method, class | Any HTTP method (`method: HttpMethod.head`; `GET` by default). On a controller class: the path prefix of every method. |
 | `@PathVariable([name])` | parameter | Fills `{name}` in the path. A client percent-encodes the value. |
-| `@RequestParam([name])` | parameter | A query parameter. A `List` repeats it; a `Map` stands for all query parameters. |
-| `@RequestHeader([name])` | parameter | A header. A `List` gives several values; a `Map` stands for all headers. |
+| `@RequestParam([name])` | parameter | A query parameter. A `List` repeats it; on a server, a `Map` stands for all query parameters. |
+| `@RequestHeader([name])` | parameter | A header. A `List` gives several values; on a server, a `Map` stands for all headers. |
 | `@CookieValue([name])` | parameter | A cookie, sent in the `Cookie` header (`Cookie: name=value; ...`). |
 | `@RequestBody()` | parameter | The body, as JSON for an object. |
 | `@RequestPart([name])` | parameter | One part of a `multipart/form-data` body: a file (`MultipartFile`, `List<MultipartFile>`), a text field, or an object sent as a JSON part. |
@@ -134,8 +143,9 @@ generator keeps parameter names).
 `required` or `defaultValue` attribute:
 
 - a nullable parameter (`String? q`) is optional. A client leaves a
-  `null` argument out; for a path variable it writes an empty string. A
-  server passes `null` when the request has no value;
+  `null` argument out (a path variable of an HTTP service cannot be
+  nullable: the build fails). A server passes `null` when the request has
+  no value;
 - a parameter with a default value (`{int page = 0}`) is optional too,
   and the default is used when there is no value;
 - any other parameter is required. A server answers 400 when the value
@@ -263,7 +273,7 @@ problem.toJson();
 
 Uploads travel as `multipart/form-data`: one body made of parts, each a
 form field or a file. These types read and write such bodies; the
-server and the Feign clients both use them.
+server and the HTTP clients both use them.
 
 | Type | Spring | What |
 |---|---|---|
@@ -293,12 +303,175 @@ downloads are described in the web starter's
 section. `MockMultipartFile`, in `package:spring_web_dart/testing.dart`,
 is the test file for `MockMvc.multipart`.
 
+## RestClient
+
+`RestClient` calls an HTTP API and gives the answer back as objects:
+a fluent request (method, URI template, headers, body), then what to
+read from the response. It is Spring's `RestClient`, on the
+`HttpTransport` below; in an application, take the `RestClientBuilder`
+bean of
+[`spring_boot_starter_restclient`](https://pub.dev/packages/spring_boot_starter_restclient)
+instead of `RestClient.create`, so the configured transport, its allowed
+addresses and the `ObjectMapper` come with it.
+
+A client built without a transport (`RestClient.create(baseUrl)`,
+`RestClient.builder()...build()`) calls only the host of its base URL:
+giving the base URL is what allows that host. Any other address, and
+any address at all without a base URL, fails with a
+`ResourceAccessException` whose cause, a `FilteredHostException`, says
+how to allow it: give the builder a transport with the addresses it
+may call (`transport(platformHttpTransport(allowedAddresses:
+AllowedAddresses([...])))`), or, in an application, use the starter's
+builder and `spring.http.clients.allowed-addresses`. A host name of the
+base URL that resolves to loopback or a private network is denied too,
+unless it is `localhost` or the base URL gives the address
+(`http://10.0.0.5:8080`). Spring's `RestClient.create()` calls any
+address.
+
+```dart
+final rest = RestClient.builder()
+    .baseUrl('https://api.neon.books/v1')
+    .defaultHeader('X-Api-Version', '2')
+    .build();
+
+// GET /v1/books/978-0, the JSON answer read as a Book.
+final book = await rest.get()
+    .uri('/books/{isbn}', isbn)          // one value, a List, or a Map
+    .retrieve()
+    .body<Book>();
+
+// POST with a JSON body; the status and headers of the answer too.
+final created = await rest.post()
+    .uri('/books')
+    .body(book)
+    .retrieve()
+    .toEntity<Book>();
+log.info(created.headers.location);
+
+// A query built piece by piece; generic types through TypeInfo.
+final found = await rest.get()
+    .uri((UriBuilder uri) => uri
+        .path('/books')
+        .queryParam('author', author)
+        .queryParamIfPresent('year', year)  // left out when null
+        .build())
+    .retrieve()
+    .body(const ListType(ClassType<Book>()));
+```
+
+The same in Spring (Java):
+
+```java
+RestClient rest = RestClient.builder()
+    .baseUrl("https://api.neon.books/v1")
+    .defaultHeader("X-Api-Version", "2")
+    .build();
+Book book = rest.get().uri("/books/{isbn}", isbn).retrieve().body(Book.class);
+```
+
+**URI templates** are relative to the base URL unless they have a
+scheme. Variables come as a `List` (in order), a `Map` (by name, with the
+builder's `defaultUriVariables` for the names it lacks), or one value for
+a template with one variable. The template's own text keeps its `/`, `?`
+and `&`; a value is encoded strictly (`a/b` stays one path segment, `a&b`
+one query value), as Spring's default `TEMPLATE_AND_VALUES` mode. A
+missing value, one value too many (Spring ignores it) and a path variable
+`.` or `..` are an `ArgumentError`. A template is compiled the first time
+and kept by the client.
+
+**Bodies** go through the `HttpMessageConverter` chain: `Uint8List` and
+`String` as they are, a `MultipartBody` as `multipart/form-data`, a
+`Map` sent with `contentType(MediaType.applicationFormUrlencoded)` as a
+form, anything else as JSON through the `ObjectMapper`. Reading takes
+`String`, `Uint8List` or anything JSON can be read into; an empty body is
+`null` for a nullable type and an error otherwise. `get()`, `head()`,
+`delete()` and `options()` have no `body` at all.
+
+**Status handling.** A 4xx throws an `HttpClientErrorException`, a 5xx
+an `HttpServerErrorException` (both `HttpStatusCodeException` instances and
+`RestClientResponseException` instances, with the status, headers, body bytes and
+text, and `bodyAs<T>()`); no answer at all is a
+`ResourceAccessException`. `onStatus` on a call and
+`defaultStatusHandler` on the builder change that: the call's handlers
+come first, then the builder's, then the default; the first whose
+predicate matches handles the response, and one that returns lets it
+through as a success. `exchange` hands over the raw response with no
+status handling at all.
+
+```dart
+final book = await rest.get().uri('/books/{isbn}', isbn).retrieve()
+    .onStatus((status) => status == HttpStatus.notFound, (_, _) {
+      throw BookNotFound(isbn);
+    })
+    .body<Book>();
+```
+
+**Interceptors** (`ClientHttpRequestInterceptor`, the request, its body
+and the rest of the chain) run around every call in the order they were
+added; they may change the request, retry, or answer by themselves.
+
+**Request attributes** are values for the interceptors, never sent:
+`attribute(name, value)` (or `attributes((map) => ...)`) on a call, in
+`defaultRequest` for every call, and an interceptor reads them in
+`request.attributes`, as Spring's `HttpRequest.getAttributes()`. The
+OAuth2 client's interceptor reads the registration whose token it sends
+there (`ClientAttributes.clientRegistrationId('partner')`); an
+annotation that extends `HttpRequestAttribute` (its
+`@ClientRegistrationId`) sets one on every call of an HTTP service
+interface or method.
+
+```dart
+final rest = RestClient.builder()
+    .baseUrl('https://api.neon.books')
+    .defaultRequest((spec) => spec.attribute('tenant', 'neon'))
+    .requestInterceptor(ClientHttpRequestInterceptor.of(
+      (request, body, execution) {
+        request.headers.set('X-Tenant', '${request.attributes['tenant']}');
+        return execution.execute(request, body);
+      },
+    ))
+    .build();
+
+await rest.get().uri('/books').attribute('tenant', 'farum')
+    .retrieve().body<String>(); // X-Tenant: farum
+```
+
+**Server-sent events and downloads.** `retrieve().eventStream<T>()`
+reads `text/event-stream` as an `EventStream<T>` (each event's data as
+`T`, a lost connection opened again with `Last-Event-ID`);
+`retrieve().bodyStream()` gives the bytes of a large body as they
+arrive. A `@Retryable` method that returns an `EventStream` is retried
+into one `EventStream` by `EventStreamRetryAdapter`, which the web and
+RestClient starters declare with `spring.resilience.enabled: true`.
+
+**Time limits.** The builder's `readTimeout` and `connectTimeout` go
+into every request; a call made under a `RequestDeadline` is not sent
+when the deadline has passed and is given up when it passes.
+
+**Logging.** The logger `web.client.RestClient` writes each request
+and its status at debug level, the headers at trace level; credential
+headers (`HttpSecrets`, the builder's `sensitiveHeaders`) and credential
+query parameters are always `***`.
+
+**HTTP service interfaces.** The annotations `@HttpExchange`,
+`@GetExchange`, `@PostExchange`, `@PutExchange`, `@PatchExchange` and
+`@DeleteExchange` (in the main library, which the RestClient starter
+re-exports) describe calls on an interface, and
+`@ImportHttpServices(group: ..., types: [...])` puts interfaces into a
+group whose `RestClient` the RestClient starter configures. The
+parameters take the annotations a controller uses (`@PathVariable`,
+`@RequestParam`, `@RequestHeader`, `@CookieValue`, `@RequestBody`,
+`@RequestPart`). The generator writes the class of each interface,
+whose methods are the `RestClient` calls written out, and registers it
+as a bean: see
+[HTTP service clients](https://pub.dev/packages/spring_boot_starter_restclient#http-service-clients).
+
 ## HTTP transport
 
 An `HttpTransport` sends one `HttpRequest` and returns an `HttpResponse`
 with the status, the headers and the body bytes. It is the layer under
-the Feign clients, and you can replace it: a mock in tests, or your own
-on top of Dio or `package:http`.
+`RestClient` and the HTTP service clients, and you can replace it: a
+mock in tests, or your own on top of Dio or `package:http`.
 
 Every status code is a normal response, a 404 or a 500 included. Only
 network failures and timeouts throw an `HttpTransportException`
@@ -321,7 +494,7 @@ transport.close();
 
 A request has two optional timeouts. `readTimeout` is the longest wait
 for data: first for the response, then between two chunks of the body.
-It is the read timeout of Spring and Feign. `timeout` is a deadline for
+It is the read timeout of Spring's clients. `timeout` is a deadline for
 the whole exchange. When either runs out, the request is aborted with an
 `HttpTransportException` whose `isTimeout` is true. With
 `followRedirects: false`, a `3xx` response is returned instead of
@@ -358,6 +531,48 @@ redirect; `Authorization` and cookies follow the browser's own rules: it
 removes `Authorization` on another origin, and with
 `FetchCredentials.include` sends a host's cookies to its other ports too.
 
+### Outgoing addresses
+
+Give a transport `allowedAddresses` and it calls only those hosts and
+addresses; everything else is denied, private networks and loopback
+included, with a `FilteredHostException` (not retryable) that says why
+and what to change. The RestClient starter's `httpTransport` bean always
+has one.
+
+```dart
+final transport = platformHttpTransport(
+  allowedAddresses: AllowedAddresses([
+    'api.neon.books',     // a host name
+    '*.cdn.neon.books',   // its subdomains
+    'localhost',          // may resolve to loopback
+    '10.20.0.0/16',       // a private network, as a CIDR block
+  ]),
+);
+```
+
+- A host name on the list opens only public addresses. Loopback, private
+  networks, link-local, cloud metadata (`169.254.169.254`,
+  `fd00:ec2::254`), shared and other special-purpose addresses
+  (`AllowedAddresses.restrictedBlocks`) are opened only by an address or
+  a block that lies within their own block: `10.0.0.0/8` opens
+  `10.1.2.3`, `0.0.0.0/0` opens no private address, and the metadata
+  address needs an entry of its own. `localhost` may resolve to
+  loopback.
+- On `dart:io` (`IoHttpTransport`) the transport resolves the name
+  itself, checks every address and connects to an address it checked
+  (`HttpClient.connectionFactory`), so DNS rebinding cannot swap the
+  address between the check and the connection; every redirect is
+  checked again. IPv6 forms of IPv4 addresses (`::ffff:127.0.0.1`,
+  NAT64, 6to4) count as the IPv4 address.
+- In a browser and other `fetch` runtimes (`FetchHttpTransport`) names
+  cannot be resolved: only the host of the URL is checked (a name by the
+  list, a literal by address). A server runtime (Deno, workerd, Node)
+  hands every redirect to the transport, which checks it; a browser
+  follows redirects by itself, unseen.
+- An `InetAddressFilter` (Spring Boot 4.1's, with `of`, `and`, `or`,
+  `andNot`, `externalAddresses`, `internalAddresses`, ...) narrows the
+  list further: every address must match it too.
+
 ### Streaming responses
 
 For a large download or an endless response, `transport.stream(request)`
@@ -384,9 +599,9 @@ events (`ServerSentEvent<T>` with `data`, `id`, `event`, `retry`,
 `comment`).
 
 ```dart
-@FeignClient('orders', url: r'${orders.url}')
+@HttpExchange('/orders')
 abstract interface class OrdersClient {
-  @GetMapping('/orders/events')
+  @GetExchange('/events')
   EventStream<OrderEvent> events();
 }
 
@@ -405,8 +620,9 @@ listener opens its own connection, and cancelling (or `break` in
 `@RestController` method can return one too; the web starter then
 writes the events as the response.
 
-Under the Feign method, two pieces do the work, and both run on any
-`HttpTransport`:
+Under the HTTP service method (and `RestClient`'s
+`retrieve().eventStream()`), two pieces do the work, and both run on
+any `HttpTransport`:
 
 - `connectServerSentEvents` opens the connection and reconnects the way
   a browser's `EventSource` does. `SseReconnect` sets the rules: it
@@ -417,7 +633,7 @@ Under the Feign method, two pieces do the work, and both run on any
 
 > **Differs from Spring.** Spring has no `EventStream`: `WebClient` and
 > `@HttpExchange` interfaces return `Flux<ServerSentEvent<T>>` (or
-> `Flux<T>`), and Spring Cloud OpenFeign cannot stream at all. Here the
+> `Flux<T>`). Here the
 > event wrapper is folded into the stream type, and reconnection is
 > built in (in Spring it is `Flux.retryWhen`).
 
@@ -536,7 +752,7 @@ or a library that plugs into the server.
 | `HttpHandler`, `FunctionHttpHandler` | `HttpHandler` | Answers one request. The web starter's dispatcher is one. |
 | `HandlerMapping` | `HandlerMapping` | Finds the handler for a request (`getHandler`, or `null`). The web starter asks every `HandlerMapping` bean, in `@Order`. |
 | `RequestContextHolder` | `RequestContextHolder` | `currentRequest`: the request being handled, from anywhere in its handling. Each request runs in its own `Zone`. |
-| `RequestDeadline` | none (an extension) | A time limit for the total work of a request, found through the `Zone`: `RequestDeadline.run(budget, body)` / `runUntil(instant, body)` (a nested one ends at the earlier of the two, never later), `RequestDeadline.current` (`null` outside any), `remaining`, `isExpired`, `check()` (throws `RequestDeadlineExceededException`). The web starter runs requests under one (`server.request-timeout`) and the Feign starter's calls stop at it. It works in the browser too. |
+| `RequestDeadline` | none (an extension) | A time limit for the total work of a request, found through the `Zone`: `RequestDeadline.run(budget, body)` / `runUntil(instant, body)` (a nested one ends at the earlier of the two, never later), `RequestDeadline.current` (`null` outside any), `remaining`, `isExpired`, `check()` (throws `RequestDeadlineExceededException`). It lives in `spring_core_dart` (`core.dart`), so the method retries read it too, and this library re-exports it. The web starter runs requests under one (`server.request-timeout`); `RestClient` calls are not sent once it has passed and are given up when it passes, and a retry whose pause would end after it is not made. It works in the browser too. |
 | `PathPattern` | `PathPattern` | Path patterns such as `/books/{isbn}`, `{isbn:\d+}`, `{*rest}`, `*`, `?`, `**`: `match(path)?.variables`, `matches`, `combine`; `compareTo` sorts the most specific first. |
 
 ```dart
@@ -563,7 +779,7 @@ application gets them, with `MockMvc` on top, from
 ## Testing: `MockHttpTransport`
 
 A fake server for tests of code that calls HTTP services, such as a
-Feign client. It answers with responses prepared in advance, without a
+`RestClient` or an HTTP service client. It answers with responses prepared in advance, without a
 network, and records every request so the test can check what was
 sent. It plays the role of Spring's `MockRestServiceServer`. In a
 Spring Boot application, import it from `spring_boot_starter_test`,
@@ -584,11 +800,32 @@ transport
     .when(HttpMethod.post, '/books')
     .respondWith((request) => HttpResponse(201, body: request.body!, request: request));
 
-// In a Spring Boot test, the Feign clients then talk to the mock.
+// In a Spring Boot test, the HTTP clients then talk to the mock.
 final app = springBootTest(springApplication, overrides: [BeanOverride<HttpTransport>(transport)]);
 
 expect(transport.lastRequest.headers['Accept'], 'application/json');
 expect(transport.requests, hasLength(2));
+```
+
+In a Spring Boot test class, a `@TestBean` field puts the mock in place
+of the transport:
+
+```dart
+@SpringBootTest()
+class CatalogTest {
+  @TestBean(type: HttpTransport)
+  final transport = MockHttpTransport();
+
+  @Autowired()
+  late Catalog catalog;
+
+  @Test()
+  Future<void> readsABook() async {
+    transport.when(HttpMethod.get, '/books/1').respond(200, json: {'isbn': '1', 'title': 'Dune'});
+    expect((await catalog.find('1'))?.title, 'Dune');
+    expect('${transport.lastRequest.url}', 'https://catalog.neon.books/books/1');
+  }
+}
 ```
 
 Several answers for the same request are used in order, and the last
@@ -615,7 +852,8 @@ every connection the client opens.
 
 ```dart
 final sockets = MockWebSocketTransport();
-// In a Spring Boot test: overrides: [BeanOverride<WebSocketTransport>(sockets)]
+// In a Spring Boot test: overrides: [BeanOverride<WebSocketTransport>(sockets)],
+// or in a test class: @TestBean(type: WebSocketTransport) final sockets = MockWebSocketTransport();
 
 final server = await sockets.nextConnection;    // waits for the client to connect
 server.pushJson({'from': 'ann', 'text': 'hi'}); // server → client
@@ -631,10 +869,10 @@ any size is delivered.
 
 ## Differences from Spring
 
-- **Mapping `headers`** use Spring's `'Name=value'` syntax. A client
-  sends them; the entries that are only conditions for a server
-  (`'Name'`, `'!Name'`, `'Name!=value'`) are ignored, as Spring Cloud
-  OpenFeign does. Feign's own `'Name: value'` is rejected at startup.
+- **Mapping `headers`** use Spring's syntax: conditions on the
+  request's headers (`'Name=value'`, `'Name'`, `'!Name'`,
+  `'Name!=value'`). The `headers` of an exchange annotation are
+  `'Name=value'` entries sent with each call.
 - **Attributes next to a positional `path`** are written with the `.of`
   constructor. Dart cannot combine an optional positional parameter
   with named ones, so `@GetMapping('/books', produces: ...)` is
@@ -648,7 +886,7 @@ any size is delivered.
   none (`defaultValue`), any other parameter is required. So
   `@RequestParam(name = "page", defaultValue = "0") int page` is
   `@RequestParam('page') int page = 0`.
-- **`HttpStatus` constants are `int`s** (an extension type), not enum
+- **`HttpStatus` constants are `int` values** (an extension type), not enum
   values. They compare with status codes directly, `toString()` is the
   number (there is no `name()`), `100 Continue` is `HttpStatus.continue_`
   (as in `dart:io`), and the deprecated aliases (`PAYLOAD_TOO_LARGE`,
@@ -663,7 +901,7 @@ any size is delivered.
   one). `operator []` gives the first value and `getAll` all of them;
   `toMap()` joins several values with `, ` while `toSingleValueMap()`
   keeps the first.
-- **`MediaType` constants are `String`s** (Spring's `..._VALUE`
+- **`MediaType` constants are `String` values** (Spring's `..._VALUE`
   constants), so they work in annotations. `MediaType.parse` gives a
   `MediaType` object (Spring's `parseMediaType`) with `includes`,
   `isCompatibleWith`, `charset` and `qualityValue`. Parameters follow
@@ -688,11 +926,24 @@ any size is delivered.
 - **Timeouts:** an `HttpRequest` has a `readTimeout` (the longest wait
   for data, Spring's read timeout) and a `timeout` (a deadline for the
   whole exchange, which Spring's request factories do not have).
+- **`RestClient`**: `RestClient.Builder` is `RestClientBuilder`, and
+  the request factory is an `HttpTransport` (`transport(...)`).
+  `uri` takes a template, a `Uri` or a `UriBuilder` function in one
+  method, and its variables as a list, a map or one value; an extra
+  value is an error. `body<T>()` returns `null` only for a nullable `T`.
+  `HttpClientErrorException.NotFound` and the other per-status classes
+  are not there: compare `statusCode`. `eventStream` and `bodyStream`
+  have no `RestClient` counterpart in Spring (`WebClient` streams).
+  There is no `RestTemplate`.
+- **Outgoing addresses** (`AllowedAddresses`) are denied until allowed;
+  Spring Boot 4.1 allows every address until an `InetAddressFilter` is
+  set.
 - **`RequestDeadline`** has no Spring counterpart: Spring's timeouts are
   per call (read timeout, transaction timeout), and nothing limits the
   total time of a request and the calls it makes. Here a deadline is
-  carried in the `Zone` like a transaction, and the web and Feign
-  starters honour it.
+  carried in the `Zone` like a transaction (in `spring_core_dart`, re-exported
+  here); the web starter sets it, and `RestClient` calls and the retries
+  honour it.
 - **`WebSocketSession`** hands out the incoming messages as a `Stream`,
   where Spring calls a `WebSocketHandler`. `sendMessage` takes a
   `String` (text) or a `List<int>` (binary) instead of a `TextMessage` or

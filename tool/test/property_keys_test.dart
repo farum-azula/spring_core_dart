@@ -36,10 +36,6 @@ const _notProperties = <String, String>{
   'spring_boot_dart:logging.level':
       'the scalar logging.level is the root '
       'level; logging.level.* is described',
-  'spring_boot_dart:spring.cloud.openfeign':
-      'a renamed prefix '
-      '(renamed_properties.dart)',
-  'spring_boot_dart:spring.feign': 'a renamed prefix (renamed_properties.dart)',
   'spring_boot_dart:spring.jackson':
       'a renamed prefix '
       '(renamed_properties.dart)',

@@ -61,7 +61,10 @@ void main() {
     );
     expect(output, contains('springBootAutoConfiguration'));
     expect(output, isNot(contains('springBootStarterWebAutoConfiguration')));
-    expect(output, isNot(contains('springBootStarterFeignAutoConfiguration')));
+    expect(
+      output,
+      isNot(contains('springBootStarterRestclientAutoConfiguration')),
+    );
   });
 
   test('bin/: only lib/resources/ embedded', () async {

@@ -175,8 +175,8 @@ abstract interface class SecurityContextHolderStrategy {
 ///
 /// A Dart server handles many requests at once on one thread, switching
 /// between them at each `await`, so "the current user" cannot be a global
-/// variable. A `Zone` follows the work of one request across its `await`s,
-/// timers and streams; this strategy stores the context in it. The
+/// variable. A `Zone` follows the work of one request across its `await`
+/// expressions, timers and streams; this strategy stores the context in it. The
 /// security filter chain runs every request in its own scope, so a
 /// request sees only its user.
 ///

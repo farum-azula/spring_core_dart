@@ -26,7 +26,7 @@ void main() {
   // package's first.
   final modules = const ApplicationContextRunner()
       .withAutoConfiguration(springBootAutoConfiguration)
-      .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
+      .withAutoConfiguration(springBootStarterRestclientAutoConfiguration)
       .withAutoConfiguration(springSecurityCoreAutoConfiguration)
       .withAutoConfiguration(springBootStarterOauth2ClientAutoConfiguration)
       .withAutoConfiguration(
@@ -34,7 +34,7 @@ void main() {
         const AutoConfigurationModule(
           before: [
             'springBootStarterOauth2ClientAutoConfiguration',
-            'springBootStarterFeignAutoConfiguration',
+            'springBootStarterRestclientAutoConfiguration',
           ],
         ),
       );
@@ -218,7 +218,8 @@ void main() {
           'serverOAuth2LoginService',
         ]);
         expect(context, doesNotHaveBean<NativeOAuth2LoginService>());
-        // Feign's transport backs off: one, with the CSRF token.
+        // The RestClient starter's transport backs off: one, with the CSRF
+        // token, under every RestClient of the app.
         expect(context.getBeanNamesForType<HttpTransport>(), [
           'httpTransport',
         ]);
@@ -227,6 +228,13 @@ void main() {
         expect(
           (transport as CsrfCookieHttpTransport).server.toString(),
           'http://localhost:5050',
+        );
+        // Its allow list is the RestClient starter's, with the server.
+        final allowed = context.getBean<AllowedAddresses>()
+          ..checkUrl(Uri.parse('http://localhost:5050/user'));
+        expect(
+          () => allowed.checkUrl(Uri.parse('https://elsewhere.test/')),
+          throwsA(isA<FilteredHostException>()),
         );
         final login = context.getBean<ServerOAuth2LoginService>();
         expect(login.transport, same(transport));

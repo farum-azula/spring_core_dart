@@ -14,7 +14,7 @@ import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
 import 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart';
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart';
 import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
+import 'package:spring_boot_starter_restclient/spring_boot_starter_restclient.dart';
 import 'package:spring_boot_starter_websocket/spring_boot_starter_websocket.dart';
 import 'package:spring_boot_actuator/spring_boot_actuator.dart';
 import 'package:spring_boot_starter_supabase/spring_boot_starter_supabase.dart';

@@ -264,7 +264,7 @@ class UserProfile {
 ```
 
 The value is written and read by the application's `ObjectMapper` (the bean
-controllers and Feign clients use, so its settings and the `@Json...`
+controllers and HTTP clients use, so its settings and the `@Json...`
 annotations of the classes apply; without the bean, a mapper with the default
 settings). The build describes the classes of the property's type for it,
 nested ones too, the way it describes a controller's body: no `@Introspected`
@@ -398,6 +398,16 @@ class Checkout {
 The transaction lives in a `Zone`: it follows `await`, and work started
 in it without `await` that outlives it fails instead of running outside
 it.
+
+With `@Retryable` on the same method (`spring.resilience.enabled: true`)
+each attempt is a new transaction: the retry runs outside it. A call that
+runs inside a transaction it did not open is not retried, since its
+failure has marked that transaction rollback-only: the exception goes to
+the caller at once, and a debug build says so once per method. Put
+`@Retryable` on the method that opens the transaction, or give this one
+`@Transactional(propagation: Propagation.requiresNew)`. An
+`UnexpectedRollbackException` or a `TransactionSystemException` (the
+commit may have happened) is never retried.
 
 Packages that must not depend on this starter hear its transactions
 through the bean `transactionLifecycleRegistry` (spring_core_dart's
@@ -709,7 +719,7 @@ denied"), an `EmptyResultDataAccessException` with a 404, and a
 `InvalidDataArgumentException` ("Invalid request value": a text with a NUL
 character, a list longer than a statement binds, a `LIKE` pattern the
 database rejects; the caller's value, not a developer's mistake, so the
-other `InvalidDataAccessApiUsageException`s stay a 500) with a 400,
+other `InvalidDataAccessApiUsageException` instances stay a 500) with a 400,
 with a fixed detail that never shows the exception's message (the web
 starter logs these answers at debug); the starters do not depend on each
 other.

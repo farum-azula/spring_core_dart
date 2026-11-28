@@ -1,15 +1,14 @@
 import 'package:flutter/widgets.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// A failure as a sentence for the screen, from the messages files.
 String errorMessage(BuildContext context, Object error) => switch (error) {
-  RetryableException() => context.message('error.offline'),
+  ResourceAccessException() => context.message('error.offline'),
   AccessDeniedException() => context.message('error.denied'),
   AuthenticationException() => context.message('error.login'),
-  FeignException(:final status) => context.message(
+  RestClientResponseException(:final statusCode) => context.message(
     'error.status',
-    args: [status],
+    args: [statusCode],
   ),
   _ => '$error',
 };

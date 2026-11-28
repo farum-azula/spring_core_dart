@@ -247,8 +247,9 @@ class Made { Made(this.d); final Dep d; }
     implements CrudRepository<Book, int> {
   Future<List<Book>> findByTitle(String title);
 }
-@Qualifier('api') @FeignClient('svc', url: 'http://x')
-abstract interface class Api { @GetMapping('/x') Future<String> x(); }
+@Qualifier('api') @HttpExchange('/svc')
+abstract interface class Api { @GetExchange('/x') Future<String> x(); }
+@Configuration() @ImportHttpServices(types: [Api]) class Clients {}
 ''');
 
   test('@Order on an exported class another package may return', () async {

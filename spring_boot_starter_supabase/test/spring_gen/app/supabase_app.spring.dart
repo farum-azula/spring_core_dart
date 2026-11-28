@@ -20,23 +20,25 @@ import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
     as _i4;
 import 'package:spring_boot_starter_cache/src/annotations.dart' as _i19;
 import 'package:spring_boot_starter_data/spring_auto_configuration.dart' as _i5;
-import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i14;
-import 'package:spring_boot_starter_data/src/annotations.dart' as _i15;
-import 'package:spring_boot_starter_data/src/repository/page.dart' as _i16;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i13;
+import 'package:spring_boot_starter_data/src/annotations.dart' as _i14;
+import 'package:spring_boot_starter_data/src/repository/page.dart' as _i15;
 import 'package:spring_boot_starter_data/src/repository/repository.dart'
     as _i18;
-import 'package:spring_boot_starter_data/src/store/row_change.dart' as _i17;
-import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i26;
+import 'package:spring_boot_starter_data/src/store/row_change.dart' as _i16;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i27;
+    as _i26;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
+    as _i27;
+import 'package:spring_boot_starter_restclient/spring_auto_configuration.dart'
     as _i28;
+import 'package:spring_boot_starter_restclient/spring_boot_starter_restclient.dart'
+    as _i11;
 import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
     as _i29;
 import 'package:spring_boot_starter_supabase/src/config/config.dart' as _i21;
 import 'package:spring_boot_starter_supabase/src/functions/edge_functions.dart'
-    as _i11;
+    as _i17;
 import 'package:spring_boot_starter_supabase/src/realtime/realtime_channel.dart'
     as _i9;
 import 'package:spring_boot_starter_supabase/src/realtime/realtime_model.dart'
@@ -49,8 +51,7 @@ import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
     as _i31;
 import 'package:spring_security_core/spring_auto_configuration.dart' as _i32;
 import 'package:spring_web_dart/src/annotations.dart' as _i8;
-import 'package:spring_web_dart/src/http_method.dart' as _i12;
-import 'package:spring_web_dart/src/sse/event_stream.dart' as _i13;
+import 'package:spring_web_dart/src/sse/event_stream.dart' as _i12;
 
 import '../../app/supabase_app.dart' as _i2;
 import 'supabase_app.spring.introspection.dart' as _i22;
@@ -560,162 +561,77 @@ class _$RoomImpl implements _i2.Room {
           as _i3.Stream<_i10.RealtimeRowChange>);
 }
 
-/// Implements `Functions` through an `InvocationHandler`.
-class _$FunctionsImpl implements _i2.Functions {
-  _$FunctionsImpl(this._handler, this._metadata);
+/// `Functions`: each method a call through the `RestClient` of the HTTP
+/// service group "supabase-functions".
+class _$FunctionsHttpService implements _i2.Functions {
+  _$FunctionsHttpService(this._rest);
 
-  final _i1.InvocationHandler _handler;
-
-  final _i1.InterfaceMetadata<_i2.Functions> _metadata;
-
-  static _$FunctionsImpl $create(_i1.DependencyResolver r) {
-    final metadata = _i1.InterfaceMetadata<_i2.Functions>(
-      typeName: r'Functions',
-      annotations: const [_i11.EdgeFunctions()],
-      methods: [
-        _i1.ProxyMethod(
-          r'sendInvite',
-          parameters: [
-            _i1.IntrospectedParameter(
-              r'invite',
-              type: const _i1.ClassType<_i2.Invite>(),
-              isRequired: true,
-              annotations: const [_i8.RequestBody()],
-            ),
-          ],
-          returnType: const _i1.ClassType<_i2.InviteResult>(),
-          isFuture: true,
-          annotations: const [_i11.EdgeFunction(r'send-invite')],
-          call: (target, arguments) => (target as _i2.Functions).sendInvite(
-            (arguments[0] as _i2.Invite),
-          ),
-        ),
-        _i1.ProxyMethod(
-          r'stats',
-          parameters: [
-            _i1.IntrospectedParameter(
-              r'from',
-              type: const _i1.ClassType<String>(),
-              isRequired: true,
-              annotations: const [_i8.RequestParam(r'from')],
-            ),
-          ],
-          returnType: const _i1.MapType<String, dynamic>(
-            _i1.ClassType<String>(),
-            _i1.DynamicType(),
-          ),
-          isFuture: true,
-          annotations: const [
-            _i11.EdgeFunction(r'stats', method: _i12.HttpMethod.get),
-          ],
-          call: (target, arguments) =>
-              (target as _i2.Functions).stats((arguments[0] as String)),
-        ),
-        _i1.ProxyMethod(
-          r'report',
-          parameters: [
-            _i1.IntrospectedParameter(
-              r'year',
-              type: const _i1.ClassType<int>(),
-              isRequired: true,
-              annotations: const [_i8.PathVariable()],
-            ),
-          ],
-          returnType: const _i1.ClassType<String>(),
-          isFuture: true,
-          annotations: const [
-            _i11.EdgeFunction(r'reports/{year}', method: _i12.HttpMethod.get),
-          ],
-          call: (target, arguments) =>
-              (target as _i2.Functions).report((arguments[0] as int)),
-        ),
-        _i1.ProxyMethod(
-          r'progress',
-          returnType:
-              const _i1.GenericType<_i13.EventStream<Map<String, Object?>>>([
-                _i1.MapType<String, dynamic>(
-                  _i1.ClassType<String>(),
-                  _i1.DynamicType(),
-                ),
-              ]),
-          annotations: const [
-            _i11.EdgeFunction(r'progress', method: _i12.HttpMethod.get),
-          ],
-          call: (target, arguments) => (target as _i2.Functions).progress(),
-        ),
-        _i1.ProxyMethod(
-          r'export',
-          returnType: const _i1.ClassType<_i7.Uint8List>(),
-          isFuture: true,
-          annotations: const [
-            _i11.EdgeFunction(r'export', method: _i12.HttpMethod.get),
-          ],
-          call: (target, arguments) => (target as _i2.Functions).export(),
-        ),
-        _i1.ProxyMethod(
-          r'exportStream',
-          returnType: const _i1.GenericType<_i3.Stream<List<int>>>([
-            _i1.ListType<int>(_i1.ClassType<int>()),
-          ]),
-          annotations: const [
-            _i11.EdgeFunction(r'export', method: _i12.HttpMethod.get),
-          ],
-          call: (target, arguments) => (target as _i2.Functions).exportStream(),
-        ),
-      ],
-    );
-    return _$FunctionsImpl(
-      _i1.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
+  final _i11.RestClient _rest;
 
   @override
-  _i3.Future<_i2.InviteResult> sendInvite(_i2.Invite invite) =>
-      _i1.retypeFuture<_i2.InviteResult>(
-        this._handler.invoke(this._metadata.methods[0], [invite]),
+  _i3.Future<_i2.InviteResult> sendInvite(_i2.Invite invite) => _rest
+      .post()
+      .uri(r'send-invite')
+      .body(invite)
+      .retrieve()
+      .body<_i2.InviteResult>();
+
+  @override
+  _i3.Future<Map<String, Object?>> stats(String from) => _rest
+      .get()
+      .uri(
+        (_i11.UriBuilder uri) =>
+            uri.path(r'stats').queryParam(r'from', from).build(),
+      )
+      .retrieve()
+      .body<Map<String, Object?>>(
+        const _i1.MapType<String, dynamic>(
+          _i1.ClassType<String>(),
+          _i1.DynamicType(),
+        ),
       );
 
   @override
-  _i3.Future<Map<String, Object?>> stats(String from) =>
-      _i1.retypeFuture<Map<String, Object?>>(
-        this._handler.invoke(this._metadata.methods[1], [from]),
+  _i3.Future<String> report(int year) => _rest
+      .get()
+      .uri(r'reports/{year}', {r'year': year})
+      .retrieve()
+      .body<String>();
+
+  @override
+  _i12.EventStream<Map<String, Object?>> progress() => _rest
+      .get()
+      .uri(r'progress')
+      .retrieve()
+      .eventStream<Map<String, Object?>>(
+        type: const _i1.MapType<String, dynamic>(
+          _i1.ClassType<String>(),
+          _i1.DynamicType(),
+        ),
       );
 
   @override
-  _i3.Future<String> report(int year) => _i1.retypeFuture<String>(
-    this._handler.invoke(this._metadata.methods[2], [year]),
-  );
-
-  @override
-  _i13.EventStream<Map<String, Object?>> progress() =>
-      (this._handler.invoke(this._metadata.methods[3], const [])
-          as _i13.EventStream<Map<String, Object?>>);
-
-  @override
-  _i3.Future<_i7.Uint8List> export() => _i1.retypeFuture<_i7.Uint8List>(
-    this._handler.invoke(this._metadata.methods[4], const []),
-  );
+  _i3.Future<_i7.Uint8List> export() =>
+      _rest.get().uri(r'export').retrieve().body<_i7.Uint8List>();
 
   @override
   _i3.Stream<List<int>> exportStream() =>
-      (this._handler.invoke(this._metadata.methods[5], const [])
-          as _i3.Stream<List<int>>);
+      _rest.get().uri(r'export').retrieve().bodyStream();
 }
 
 /// Implements `Parcels`: `SimpleRepository` has the CRUD methods.
-class _$ParcelsImpl extends _i14.SimpleRepository<_i2.Parcel, int>
+class _$ParcelsImpl extends _i13.SimpleRepository<_i2.Parcel, int>
     implements _i2.Parcels {
   _$ParcelsImpl(super.operations);
 
-  static const _findByLabel = _i14.PartTree(r'findByLabel', [
-    _i14.OrPart([_i14.Part(r'label')]),
+  static const _findByLabel = _i13.PartTree(r'findByLabel', [
+    _i13.OrPart([_i13.Part(r'label')]),
   ]);
 
   static _$ParcelsImpl $create(_i1.DependencyResolver r) => _$ParcelsImpl(
-    r.dependency<_i14.RepositoryFactory>().operations<_i2.Parcel, int>(
+    r.dependency<_i13.RepositoryFactory>().operations<_i2.Parcel, int>(
       r'Parcels',
-      annotations: const [_i15.UseStore(r'supabase')],
+      annotations: const [_i14.UseStore(r'supabase')],
     ),
   );
 
@@ -725,99 +641,99 @@ class _$ParcelsImpl extends _i14.SimpleRepository<_i2.Parcel, int>
 }
 
 /// Implements `Todos`: `SimpleRepository` has the CRUD methods.
-class _$TodosImpl extends _i14.SimpleRepository<_i2.Todo, int>
+class _$TodosImpl extends _i13.SimpleRepository<_i2.Todo, int>
     implements _i2.Todos {
   _$TodosImpl(super.operations);
 
-  static const _findByDoneOrderByCreatedAtDesc = _i14.PartTree(
+  static const _findByDoneOrderByCreatedAtDesc = _i13.PartTree(
     r'findByDoneOrderByCreatedAtDesc',
     [
-      _i14.OrPart([_i14.Part(r'done')]),
+      _i13.OrPart([_i13.Part(r'done')]),
     ],
-    sort: _i14.Sort([_i14.SortOrder.desc(r'createdAt')]),
+    sort: _i13.Sort([_i13.SortOrder.desc(r'createdAt')]),
   );
 
-  static const _findByTitleStartingWithIgnoreCase = _i14.PartTree(
+  static const _findByTitleStartingWithIgnoreCase = _i13.PartTree(
     r'findByTitleStartingWithIgnoreCase',
     [
-      _i14.OrPart([_i14.Part(r'title', _i14.PartType.startingWith, true)]),
+      _i13.OrPart([_i13.Part(r'title', _i13.PartType.startingWith, true)]),
     ],
   );
 
-  static const _findByListIdAndDoneOrPriority = _i14.PartTree(
+  static const _findByListIdAndDoneOrPriority = _i13.PartTree(
     r'findByListIdAndDoneOrPriority',
     [
-      _i14.OrPart([_i14.Part(r'listId'), _i14.Part(r'done')]),
-      _i14.OrPart([_i14.Part(r'priority')]),
+      _i13.OrPart([_i13.Part(r'listId'), _i13.Part(r'done')]),
+      _i13.OrPart([_i13.Part(r'priority')]),
     ],
   );
 
-  static const _findByListId = _i14.PartTree(r'findByListId', [
-    _i14.OrPart([_i14.Part(r'listId')]),
+  static const _findByListId = _i13.PartTree(r'findByListId', [
+    _i13.OrPart([_i13.Part(r'listId')]),
   ]);
 
-  static const _findByIdIn = _i14.PartTree(r'findByIdIn', [
-    _i14.OrPart([_i14.Part(r'id', _i14.PartType.in_)]),
+  static const _findByIdIn = _i13.PartTree(r'findByIdIn', [
+    _i13.OrPart([_i13.Part(r'id', _i13.PartType.in_)]),
   ]);
 
-  static const _findByCreatedAtBetween = _i14.PartTree(
+  static const _findByCreatedAtBetween = _i13.PartTree(
     r'findByCreatedAtBetween',
     [
-      _i14.OrPart([_i14.Part(r'createdAt', _i14.PartType.between)]),
+      _i13.OrPart([_i13.Part(r'createdAt', _i13.PartType.between)]),
     ],
   );
 
-  static const _findFirstByListIdOrderByIdDesc = _i14.PartTree(
+  static const _findFirstByListIdOrderByIdDesc = _i13.PartTree(
     r'findFirstByListIdOrderByIdDesc',
     [
-      _i14.OrPart([_i14.Part(r'listId')]),
+      _i13.OrPart([_i13.Part(r'listId')]),
     ],
-    subject: _i14.Subject(_i14.SubjectKind.find, maxResults: 1),
-    sort: _i14.Sort([_i14.SortOrder.desc(r'id')]),
+    subject: _i13.Subject(_i13.SubjectKind.find, maxResults: 1),
+    sort: _i13.Sort([_i13.SortOrder.desc(r'id')]),
   );
 
-  static const _countByDone = _i14.PartTree(r'countByDone', [
-    _i14.OrPart([_i14.Part(r'done')]),
-  ], subject: _i14.Subject(_i14.SubjectKind.count));
+  static const _countByDone = _i13.PartTree(r'countByDone', [
+    _i13.OrPart([_i13.Part(r'done')]),
+  ], subject: _i13.Subject(_i13.SubjectKind.count));
 
-  static const _existsByTitle = _i14.PartTree(r'existsByTitle', [
-    _i14.OrPart([_i14.Part(r'title')]),
-  ], subject: _i14.Subject(_i14.SubjectKind.exists));
+  static const _existsByTitle = _i13.PartTree(r'existsByTitle', [
+    _i13.OrPart([_i13.Part(r'title')]),
+  ], subject: _i13.Subject(_i13.SubjectKind.exists));
 
-  static const _deleteByDone = _i14.PartTree(r'deleteByDone', [
-    _i14.OrPart([_i14.Part(r'done')]),
-  ], subject: _i14.Subject(_i14.SubjectKind.delete));
+  static const _deleteByDone = _i13.PartTree(r'deleteByDone', [
+    _i13.OrPart([_i13.Part(r'done')]),
+  ], subject: _i13.Subject(_i13.SubjectKind.delete));
 
-  static const _closeAll = _i14.ProcedureMethod(
+  static const _closeAll = _i13.ProcedureMethod(
     r'closeAll',
-    _i15.Procedure(r'close_all'),
+    _i14.Procedure(r'close_all'),
     parameters: [r'listId'],
-    shape: _i14.QueryShape.single,
+    shape: _i13.QueryShape.single,
     element: _i1.ClassType<int>(),
   );
 
-  static const _watchByListId = _i14.PartTree(r'watchByListId', [
-    _i14.OrPart([_i14.Part(r'listId')]),
+  static const _watchByListId = _i13.PartTree(r'watchByListId', [
+    _i13.OrPart([_i13.Part(r'listId')]),
   ]);
 
-  static const _changesByListId = _i14.PartTree(r'changesByListId', [
-    _i14.OrPart([_i14.Part(r'listId')]),
+  static const _changesByListId = _i13.PartTree(r'changesByListId', [
+    _i13.OrPart([_i13.Part(r'listId')]),
   ]);
 
   static _$TodosImpl $create(_i1.DependencyResolver r) => _$TodosImpl(
-    r.dependency<_i14.RepositoryFactory>().operations<_i2.Todo, int>(
+    r.dependency<_i13.RepositoryFactory>().operations<_i2.Todo, int>(
       r'Todos',
-      annotations: const [_i15.UseStore(r'supabase')],
+      annotations: const [_i14.UseStore(r'supabase')],
       functions: [_closeAll],
       requirements: const [
-        _i14.StoreRequirement(r'closeAll', _i14.DataStoreCapability.functions),
-        _i14.StoreRequirement(
+        _i13.StoreRequirement(r'closeAll', _i13.DataStoreCapability.functions),
+        _i13.StoreRequirement(
           r'watchByListId',
-          _i14.DataStoreCapability.changes,
+          _i13.DataStoreCapability.changes,
         ),
-        _i14.StoreRequirement(
+        _i13.StoreRequirement(
           r'changesByListId',
-          _i14.DataStoreCapability.changes,
+          _i13.DataStoreCapability.changes,
         ),
       ],
     ),
@@ -843,9 +759,9 @@ class _$TodosImpl extends _i14.SimpleRepository<_i2.Todo, int>
   ]);
 
   @override
-  _i3.Future<_i16.Page<_i2.Todo>> findByListId(
+  _i3.Future<_i15.Page<_i2.Todo>> findByListId(
     String listId,
-    _i16.Pageable pageable,
+    _i15.Pageable pageable,
   ) => this.operations.page(_findByListId, [listId], pageable);
 
   @override
@@ -883,19 +799,19 @@ class _$TodosImpl extends _i14.SimpleRepository<_i2.Todo, int>
       this.operations.watch(_watchByListId, [listId]);
 
   @override
-  _i3.Stream<_i17.RowChange<_i2.Todo>> changesByListId(String listId) =>
+  _i3.Stream<_i16.RowChange<_i2.Todo>> changesByListId(String listId) =>
       this.operations.changes(_changesByListId, [listId]);
 }
 
 /// Implements `Notes`: `SimpleRepository` has the CRUD methods.
-class _$NotesImpl extends _i14.SimpleRepository<_i2.Note, String>
+class _$NotesImpl extends _i13.SimpleRepository<_i2.Note, String>
     implements _i2.Notes {
   _$NotesImpl(super.operations);
 
   static _$NotesImpl $create(_i1.DependencyResolver r) => _$NotesImpl(
-    r.dependency<_i14.RepositoryFactory>().operations<_i2.Note, String>(
+    r.dependency<_i13.RepositoryFactory>().operations<_i2.Note, String>(
       r'Notes',
-      annotations: const [_i15.UseStore(r'supabase')],
+      annotations: const [_i14.UseStore(r'supabase')],
     ),
   );
 }
@@ -904,9 +820,9 @@ const _$knownAdvisors0 = {
   r'package:spring_boot_dart',
   r'package:spring_boot_starter_cache',
   r'package:spring_boot_starter_data',
-  r'package:spring_boot_starter_feign',
   r'package:spring_boot_starter_logging',
   r'package:spring_boot_starter_oauth2_client',
+  r'package:spring_boot_starter_restclient',
   r'package:spring_boot_starter_security',
   r'package:spring_boot_starter_supabase',
   r'package:spring_boot_starter_web',
@@ -924,6 +840,19 @@ const _$target1 = _i1.AopTarget(
 _i1.BeanModule get $application => _i1.BeanModule(
   r'application',
   [
+    _i1.BeanDefinition<_i2.Functions>(
+      name: r'functions',
+      source: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart#Functions',
+      create: (r) => _$FunctionsHttpService(
+        r.dependency<_i11.HttpServiceGroups>().restClient(
+          r'supabase-functions',
+        ),
+      ),
+      annotations: const [_i17.EdgeFunctions()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
+    ),
     _i1.BeanDefinition<_i2.Parcels>(
       name: r'parcels',
       source: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart#Parcels',
@@ -937,7 +866,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i18.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$ParcelsImpl.$create(r),
-      annotations: const [_i15.UseStore(r'supabase')],
+      annotations: const [_i14.UseStore(r'supabase')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
@@ -955,7 +884,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i18.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$TodosImpl.$create(r),
-      annotations: const [_i15.UseStore(r'supabase')],
+      annotations: const [_i14.UseStore(r'supabase')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
@@ -973,7 +902,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
         _i18.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$NotesImpl.$create(r),
-      annotations: const [_i15.UseStore(r'supabase')],
+      annotations: const [_i14.UseStore(r'supabase')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
@@ -995,16 +924,6 @@ _i1.BeanModule get $application => _i1.BeanModule(
       primary: true,
       create: (r) => _$RoomImpl.$create(r),
       annotations: const [_i9.RealtimeChannel(r'room:{id}')],
-      aopProxy: const _i1.AopProxyFactory.pruned(
-        knownAdvisors: _$knownAdvisors0,
-      ),
-    ),
-    _i1.BeanDefinition<_i2.Functions>(
-      name: r'functions',
-      source: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart#Functions',
-      primary: true,
-      create: (r) => _$FunctionsImpl.$create(r),
-      annotations: const [_i11.EdgeFunctions()],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors0,
       ),
@@ -1053,34 +972,43 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _$ReportsProxy((target as _i2.Reports), invoker),
       ),
     ),
-    _i1.BeanDefinition<_i14.EntityIntrospections>(
+    _i1.BeanDefinition<_i11.HttpServiceGroup>(
+      name: r'httpServiceGroup.supabase-functions#application',
+      source: r'package:spring_boot_starter_restclient#HttpServiceGroup.supabase-functions',
+      types: const [_i11.HttpServiceGroup],
+      create: (r) => const _i11.HttpServiceGroup(
+        r'supabase-functions',
+        types: [_i2.Functions],
+      ),
+    ),
+    _i1.BeanDefinition<_i13.EntityIntrospections>(
       name: r'entityIntrospections#application',
       source: r'package:spring_boot_starter_data#EntityIntrospections',
-      types: const [_i14.EntityIntrospections],
-      create: (r) => _i14.EntityIntrospections([
-        _i14.EntityIntrospection<_i2.Todo>(
+      types: const [_i13.EntityIntrospections],
+      create: (r) => _i13.EntityIntrospections([
+        _i13.EntityIntrospection<_i2.Todo>(
           r'Todo',
           const [
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i15.Id()],
+              annotations: [_i14.Id()],
               parameter: true,
               writable: true,
             ),
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'title',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'listId',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'done',
               _i1.ClassType<bool>(),
               parameter: true,
@@ -1088,7 +1016,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
               hasDefaultValue: true,
               defaultValue: false,
             ),
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'priority',
               _i1.EnumType<_i2.Priority>(_i2.Priority.values),
               parameter: true,
@@ -1096,21 +1024,21 @@ _i1.BeanModule get $application => _i1.BeanModule(
               hasDefaultValue: true,
               defaultValue: _i2.Priority.low,
             ),
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'createdAt',
               _i1.ClassType<DateTime>(nullable: true),
               parameter: true,
               writable: true,
             ),
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'version',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i15.Version()],
+              annotations: [_i14.Version()],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i15.Table(r'todos')],
+          annotations: const [_i14.Table(r'todos')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.title,
@@ -1140,24 +1068,24 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i14.EntityIntrospection<_i2.Note>(
+        _i13.EntityIntrospection<_i2.Note>(
           r'Note',
           const [
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'id',
               _i1.ClassType<String>(nullable: true),
-              annotations: [_i15.Id()],
+              annotations: [_i14.Id()],
               parameter: true,
               writable: true,
             ),
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'text',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i15.Table(r'notes')],
+          annotations: const [_i14.Table(r'notes')],
           get: (e, i) => switch (i) {
             0 => e.id,
             _ => e.text,
@@ -1169,40 +1097,40 @@ _i1.BeanModule get $application => _i1.BeanModule(
             _ => null,
           },
         ),
-        _i14.EntityIntrospection<_i2.Parcel>(
+        _i13.EntityIntrospection<_i2.Parcel>(
           r'Parcel',
           const [
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i15.Id()],
+              annotations: [_i14.Id()],
               parameter: true,
               writable: true,
             ),
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'label',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'packaging',
               _i1.ClassType<_i2.Packaging>(),
-              annotations: [_i15.Json()],
+              annotations: [_i14.Json()],
               parameter: true,
               writable: true,
             ),
-            _i14.EntityProperty(
+            _i13.EntityProperty(
               r'stops',
               _i1.ListType<_i2.Stop>(_i1.ClassType<_i2.Stop>()),
-              annotations: [_i15.Json()],
+              annotations: [_i14.Json()],
               parameter: true,
               writable: true,
               hasDefaultValue: true,
               defaultValue: <_i2.Stop>[],
             ),
           ],
-          annotations: const [_i15.Table(r'parcels')],
+          annotations: const [_i14.Table(r'parcels')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.label,
@@ -1225,11 +1153,11 @@ _i1.BeanModule get $application => _i1.BeanModule(
         ),
       ]),
     ),
-    _i1.BeanDefinition<_i14.JdbcDriver>(
+    _i1.BeanDefinition<_i13.JdbcDriver>(
       name: r'postgresJdbcDriver',
       source: r'package:spring_boot_starter_data#postgres',
-      types: const [_i14.JdbcDriver],
-      conditions: [_i14.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
+      types: const [_i13.JdbcDriver],
+      conditions: [_i13.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
       create: (r) => _$postgresJdbcDriver(),
     ),
     _i1.BeanDefinition<_i20.HandlerExceptionResolver>(
@@ -1237,7 +1165,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'package:spring_boot_starter_data#spring_boot_starter_web',
       types: const [_i20.HandlerExceptionResolver],
       conditions: [
-        _i14.ConditionalOnMissingBean.named(r'dataAccessExceptionResolver'),
+        _i13.ConditionalOnMissingBean.named(r'dataAccessExceptionResolver'),
       ],
       create: (r) => _$dataAccessExceptionResolver(),
     ),
@@ -1246,7 +1174,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
       source: r'package:spring_boot_starter_data#spring_boot_starter_web',
       types: const [_i20.WebMvcConfigurer],
       conditions: [
-        _i14.ConditionalOnMissingBean.named(r'pagingArgumentResolvers'),
+        _i13.ConditionalOnMissingBean.named(r'pagingArgumentResolvers'),
       ],
       create: (r) => _$pagingArgumentResolvers(r.dependency<_i1.Environment>()),
     ),
@@ -1255,11 +1183,11 @@ _i1.BeanModule get $application => _i1.BeanModule(
   introspections: [..._i22.$applicationIntrospections],
 );
 
-final class _$PostgresBinding implements _i14.PostgresBinding {
+final class _$PostgresBinding implements _i13.PostgresBinding {
   const _$PostgresBinding();
 
   @override
-  Future<_i14.PostgresSession> open(_i14.PostgresEndpoint endpoint) =>
+  Future<_i13.PostgresSession> open(_i13.PostgresEndpoint endpoint) =>
       _$postgresGuard(() async {
         final roots = endpoint.rootCertificate;
         return _$PostgresSession(
@@ -1273,9 +1201,9 @@ final class _$PostgresBinding implements _i14.PostgresBinding {
             ),
             settings: _i23.ConnectionSettings(
               sslMode: switch (endpoint.sslMode) {
-                _i14.PostgresSslMode.disable => _i23.SslMode.disable,
-                _i14.PostgresSslMode.require => _i23.SslMode.require,
-                _i14.PostgresSslMode.verifyFull => _i23.SslMode.verifyFull,
+                _i13.PostgresSslMode.disable => _i23.SslMode.disable,
+                _i13.PostgresSslMode.require => _i23.SslMode.require,
+                _i13.PostgresSslMode.verifyFull => _i23.SslMode.verifyFull,
               },
               securityContext: roots == null
                   ? null
@@ -1289,7 +1217,7 @@ final class _$PostgresBinding implements _i14.PostgresBinding {
       });
 }
 
-final class _$PostgresSession implements _i14.PostgresSession {
+final class _$PostgresSession implements _i13.PostgresSession {
   _$PostgresSession(this._connection);
 
   final _i23.Connection _connection;
@@ -1298,7 +1226,7 @@ final class _$PostgresSession implements _i14.PostgresSession {
   bool get isOpen => _connection.isOpen;
 
   @override
-  Future<_i14.PostgresResult> execute(
+  Future<_i13.PostgresResult> execute(
     String sql, {
     List<Object?> parameters = const [],
     bool simple = false,
@@ -1313,13 +1241,13 @@ final class _$PostgresSession implements _i14.PostgresSession {
       timeout: timeout,
     );
     final columns = _$postgresColumns(result.schema);
-    return _i14.PostgresResult(columns, [
+    return _i13.PostgresResult(columns, [
       for (final row in result) _$postgresValues(row),
     ], result.affectedRows);
   });
 
   @override
-  Stream<_i14.PostgresRow> stream(
+  Stream<_i13.PostgresRow> stream(
     String sql, {
     List<Object?> parameters = const [],
     Duration? timeout,
@@ -1331,7 +1259,7 @@ final class _$PostgresSession implements _i14.PostgresSession {
         for (final value in parameters) _$postgresParameter(value),
       ])) {
         columns ??= _$postgresColumns(row.schema);
-        yield _i14.PostgresRow(columns, _$postgresValues(row));
+        yield _i13.PostgresRow(columns, _$postgresValues(row));
       }
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(_$postgresError(error), stackTrace);
@@ -1372,7 +1300,7 @@ List<Object?> _$postgresValues(_i23.ResultRow row) => [
 // never the DETAIL line (it holds values) and never the exception itself.
 Object _$postgresError(Object error) {
   if (error is _i23.ServerException) {
-    return _i14.SqlError(
+    return _i13.SqlError(
       error.message,
       sqlState: error.code,
       constraint: error.constraintName,
@@ -1384,7 +1312,7 @@ Object _$postgresError(Object error) {
   if (error is _i23.PgException) {
     // The package names the value it cannot send.
     final inference = error.message.startsWith('Could not infer');
-    return _i14.SqlError(
+    return _i13.SqlError(
       inference
           ? 'A parameter value has a type the driver cannot send'
           : error.message,
@@ -1392,10 +1320,10 @@ Object _$postgresError(Object error) {
     );
   }
   if (error is _i24.SocketException || error is _i24.TlsException) {
-    return _i14.SqlError('$error', connectionLost: true);
+    return _i13.SqlError('$error', connectionLost: true);
   }
   if (error is _i3.TimeoutException) {
-    return _i14.SqlError(
+    return _i13.SqlError(
       error.message ?? 'The connection timed out',
       connectionLost: true,
     );
@@ -1411,8 +1339,8 @@ Future<T> _$postgresGuard<T>(Future<T> Function() action) async {
   }
 }
 
-_i14.JdbcDriver _$postgresJdbcDriver() =>
-    _i14.PostgresJdbcDriver(const _$PostgresBinding());
+_i13.JdbcDriver _$postgresJdbcDriver() =>
+    _i13.PostgresJdbcDriver(const _$PostgresBinding());
 
 final class _$DataAccessExceptionResolver
     implements _i20.HandlerExceptionResolver {
@@ -1424,37 +1352,37 @@ final class _$DataAccessExceptionResolver
     Object error, {
     _i20.HandlerMethod? handler,
   }) => switch (error) {
-    _i14.OptimisticLockingFailureException() => _i20.ResponseStatusException(
+    _i13.OptimisticLockingFailureException() => _i20.ResponseStatusException(
       _i20.HttpStatus.conflict,
       'The resource was changed by someone else',
       error,
     ),
-    _i14.DuplicateKeyException() => _i20.ResponseStatusException(
+    _i13.DuplicateKeyException() => _i20.ResponseStatusException(
       _i20.HttpStatus.conflict,
       'The resource already exists',
       error,
     ),
-    _i14.PermissionDeniedDataAccessException() => _i20.ResponseStatusException(
+    _i13.PermissionDeniedDataAccessException() => _i20.ResponseStatusException(
       _i20.HttpStatus.forbidden,
       'Access denied',
       error,
     ),
-    _i14.EmptyResultDataAccessException() => _i20.ResponseStatusException(
+    _i13.EmptyResultDataAccessException() => _i20.ResponseStatusException(
       _i20.HttpStatus.notFound,
       'Not found',
       error,
     ),
-    _i14.PropertyReferenceException() => _i20.ResponseStatusException(
+    _i13.PropertyReferenceException() => _i20.ResponseStatusException(
       _i20.HttpStatus.badRequest,
       'Invalid sort property',
       error,
     ),
-    _i14.InvalidPagingRequestException() => _i20.ResponseStatusException(
+    _i13.InvalidPagingRequestException() => _i20.ResponseStatusException(
       _i20.HttpStatus.badRequest,
       'Invalid page or sort request',
       error,
     ),
-    _i14.InvalidDataArgumentException() => _i20.ResponseStatusException(
+    _i13.InvalidDataArgumentException() => _i20.ResponseStatusException(
       _i20.HttpStatus.badRequest,
       'Invalid request value',
       error,
@@ -1470,17 +1398,17 @@ final class _$PagingArgumentResolver
     implements _i20.HandlerMethodArgumentResolver {
   const _$PagingArgumentResolver(this._paging);
 
-  final _i14.WebPaging _paging;
+  final _i13.WebPaging _paging;
 
   @override
   bool supportsParameter(_i20.MethodParameter parameter) {
     final type = parameter.type.type;
-    if (type == _i14.Pageable) {
+    if (type == _i13.Pageable) {
       // Spring: two Pageable parameters need a @Qualifier each, or they
       // would read the same query parameters.
       final unqualified = parameter.handler.parameters.where(
         (other) =>
-            other.type.type == _i14.Pageable && !other.has<_i14.Qualifier>(),
+            other.type.type == _i13.Pageable && !other.has<_i13.Qualifier>(),
       );
       if (unqualified.length > 1) {
         throw StateError(
@@ -1491,7 +1419,7 @@ final class _$PagingArgumentResolver
       }
       return true;
     }
-    return type == _i14.Sort;
+    return type == _i13.Sort;
   }
 
   @override
@@ -1500,15 +1428,15 @@ final class _$PagingArgumentResolver
     _i20.ServerHttpRequest request,
     _i20.ServerHttpResponse response,
   ) {
-    final qualifier = parameter.annotation<_i14.Qualifier>()?.value;
+    final qualifier = parameter.annotation<_i13.Qualifier>()?.value;
     final defaults = parameter.annotations
-        .whereType<_i14.SortDefault>()
+        .whereType<_i13.SortDefault>()
         .toList();
-    final allowed = parameter.annotation<_i14.AllowedSortProperties>();
-    return parameter.type.type == _i14.Pageable
+    final allowed = parameter.annotation<_i13.AllowedSortProperties>();
+    return parameter.type.type == _i13.Pageable
         ? _paging.pageable(
             request.queryParameters,
-            pageableDefault: parameter.annotation<_i14.PageableDefault>(),
+            pageableDefault: parameter.annotation<_i13.PageableDefault>(),
             sortDefaults: defaults,
             allowed: allowed,
             qualifier: qualifier,
@@ -1536,7 +1464,7 @@ final class _$PagingWebMvcConfigurer with _i20.WebMvcConfigurer {
 _i20.WebMvcConfigurer _$pagingArgumentResolvers(_i1.Environment environment) =>
     _$PagingWebMvcConfigurer(
       _$PagingArgumentResolver(
-        _i14.WebPaging(_i14.WebPagingProperties.of(environment)),
+        _i13.WebPaging(_i13.WebPagingProperties.of(environment)),
       ),
     );
 
@@ -1548,9 +1476,9 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     _i25.springBootAutoConfiguration,
     _i4.springBootStarterCacheAutoConfiguration,
     _i5.springBootStarterDataAutoConfiguration,
-    _i26.springBootStarterFeignAutoConfiguration,
-    _i27.springBootStarterLoggingAutoConfiguration,
-    _i28.springBootStarterOauth2ClientAutoConfiguration,
+    _i26.springBootStarterLoggingAutoConfiguration,
+    _i27.springBootStarterOauth2ClientAutoConfiguration,
+    _i28.springBootStarterRestclientAutoConfiguration,
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i29.springBootStarterSecurityAutoConfiguration,
@@ -1573,6 +1501,10 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
       ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
+    _i28.springBootStarterRestclientAutoConfiguration:
+        const _i1.AutoConfigurationModule(
+          after: [r'springBootStarterFlutterSecurityAutoConfiguration'],
+        ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i29.springBootStarterSecurityAutoConfiguration:

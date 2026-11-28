@@ -151,7 +151,7 @@ The options:
 | `systemEnvironment` | the environment variables the application sees; empty by default, so tests do not depend on the machine | none |
 | `resourceDirectories` | directories first on the classpath; default `['test/resources']` ([below](#test-configuration-testresources)) | the test classpath |
 | `overrides` | beans replaced by fakes or mocks ([below](#replacing-beans-beanoverride)) | `@MockitoBean`, `@TestBean` |
-| `initializers` | `ApplicationContextInitializer`s run on the context before it is refreshed | `@ContextConfiguration(initializers)` |
+| `initializers` | `ApplicationContextInitializer` instances run on the context before it is refreshed | `@ContextConfiguration(initializers)` |
 | `webEnvironment` | which web server starts; none by default ([below](#web-tests-mockmvc-and-webenvironment)) | `@SpringBootTest(webEnvironment)` |
 
 What the returned `SpringBootTestContext` offers:
@@ -374,7 +374,7 @@ failed expectation is never reported.
   `await mvc.webSocket('/ws/chat')` performs the handshake in memory and
   returns the client's `WebSocketSession`. A refused handshake throws a
   `WebSocketException` with the status and body.
-- **`RequestPostProcessor`s** change a request just before it is sent: a
+- **`RequestPostProcessor` instances** change a request just before it is sent: a
   logged-in user, a CSRF token, a header. Add one to a request with
   `builder.with_(processor)`, or to every request with
   `MockMvc(app.getBean<DispatcherHandler>(), defaultPostProcessors: [...])`.
@@ -389,8 +389,8 @@ mockMvc.perform(get("/api/books/1111"))
     .andExpect(jsonPath("$.title").value("Dune"));
 ```
 
-Some clients need a real socket: a Feign client, `dart:io`'s `HttpClient`,
-a WebSocket client. For them, start a real server on a free port:
+Some clients need a real socket: a `RestClient` or an HTTP service
+client, `dart:io`'s `HttpClient`, a WebSocket client. For them, start a real server on a free port:
 
 ```dart
 final app = springBootTest(springApplication, webEnvironment: WebEnvironment.randomPort);
@@ -644,8 +644,8 @@ Testcontainers.
   `@Autowired() late MockMvc mvc;` field) always works with the web
   starter. `andExpect` takes named checks (`status:`, `json:` with
   matchers) instead of `status().isOk()` and `jsonPath(...)`. There is no
-  `WebTestClient` or `TestRestTemplate`: use a Feign client or
-  `HttpClient` against `localServerPort`.
+  `WebTestClient`, `RestTestClient` or `TestRestTemplate`: use a
+  `RestClient` or `HttpClient` against `localServerPort`.
 - **`BeanOverride` takes a ready-made object** of your own, like
   `@TestBean`. There are no generated mocks or spies and no automatic
   reset between tests (`@MockitoBean(reset)`): use any mock library and

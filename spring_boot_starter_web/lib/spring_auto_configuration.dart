@@ -16,6 +16,7 @@ import 'package:spring_boot_starter_web/src/debug/request_rate.dart';
 import 'package:spring_boot_starter_web/src/dispatcher.dart';
 import 'package:spring_boot_starter_web/src/ratelimit/rate_limit_auto_configuration.dart';
 import 'package:spring_boot_starter_web/src/web_auto_configuration.dart';
+import 'package:spring_web_dart/spring_web_dart.dart';
 
 // The auto-configurations this starter builds on (logging, and through it
 // spring_boot_dart's), so a test of an application that lists only this
@@ -50,6 +51,41 @@ final BeanModule springBootStarterWebAutoConfiguration = BeanModule(
 final BeanModule springBootStarterWebRateLimitAutoConfiguration = BeanModule(
   'springBootStarterWebRateLimitAutoConfiguration',
   [...rateLimitAutoConfiguration],
+);
+
+const _resilience =
+    'package:spring_boot_starter_web#WebResilienceAutoConfiguration';
+
+/// The retries of `@Retryable` methods that return an `EventStream` (a
+/// service a controller streams from): the `eventStreamRetryAdapter`
+/// ([EventStreamRetryAdapter]), so the retried stream stays an
+/// `EventStream` with its whole events. The RestClient starter declares
+/// the same bean; the first one registered is kept.
+///
+/// In the build with `spring.resilience.enabled: true`, as the retries:
+/// without it the application has none of it.
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild(
+    'spring.resilience.enabled',
+    whenMissing: BuildInclusion.never,
+  ),
+  platform: ModulePlatform.native,
+)
+final BeanModule springBootStarterWebResilienceAutoConfiguration = BeanModule(
+  'springBootStarterWebResilienceAutoConfiguration',
+  [
+    BeanDefinition<EventStreamRetryAdapter>(
+      name: 'eventStreamRetryAdapter',
+      types: const [EventStreamRetryAdapter, RetryStreamAdapter],
+      source: _resilience,
+      conditions: const [
+        ConditionGroup('$_resilience.eventStreamRetryAdapter', [
+          ConditionalOnMissingBean(EventStreamRetryAdapter),
+        ]),
+      ],
+      create: (_) => const EventStreamRetryAdapter(),
+    ),
+  ],
 );
 
 const _qps = 'package:spring_boot_starter_web#RequestRateAutoConfiguration';

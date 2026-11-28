@@ -89,8 +89,8 @@ arm64 APK with `--analyze-size`.
 
 (Moved here from [spring_core_dart.md](spring_core_dart.md).) Today one
 `@ComponentScan` / `@SpringBootApplication` root produces one
-`<name>.spring.dart` with everything under it, so changing one class (a
-Feign client, say) re-runs the whole scan and rewrites the whole file; on a
+`<name>.spring.dart` with everything under it, so changing one class (an
+HTTP service client, say) re-runs the whole scan and rewrites the whole file; on a
 large project each change costs seconds.
 
 Plan: split the work like source_gen's `SharedPartBuilder` +
@@ -104,8 +104,8 @@ Plan: split the work like source_gen's `SharedPartBuilder` +
   lists) into `<name>.spring.dart`, cheap and with no analysis of unchanged
   libraries;
 - optionally, one generated file per starter / feature folder
-  (`feign.spring.dart`, `data.spring.dart`, ...) next to the root one, so a
-  change in the Feign clients rewrites only the Feign file.
+  (`restclient.spring.dart`, `data.spring.dart`, ...) next to the root
+  one, so a change in the HTTP service clients rewrites only their file.
 
 The editor metadata (`lib/spring_gen/spring_metadata.json`, see
 [spring_metadata.md](spring_metadata.md)) goes the same way: each
@@ -155,7 +155,7 @@ only its own branch.
 
 `docs/codegen.md`: one section per kind of generated code (beans and
 `@Bean` methods, `@ConfigurationProperties`, AOP proxies and their
-pruning, interface proxies (Feign, WebSocket clients), data repositories
+pruning, interface proxies (WebSocket clients), HTTP service clients, data repositories
 and `PartTree`, entities and `@Query` DTOs, `@Query` checks and compiled
 SpEL, introspection by use, controllers and WebSocket endpoints,
 `@Scheduled` and event listeners, Flutter widgets, `@Log`, resources and

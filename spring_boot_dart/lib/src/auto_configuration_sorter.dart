@@ -23,9 +23,9 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 /// class by its name (`CacheAutoConfiguration`) or full name
 /// (`package:x/src/y.dart#CacheAutoConfiguration`), found through the
 /// `source` of the bean definitions the class produced. Excluding a class
-/// removes its bean definitions, its `@Import`s (registrars and
-/// selectors) and its conditional `@PropertySource`s; excluding a module
-/// removes all of it. A [Type] in [excludeTypes] that matches nothing
+/// removes its bean definitions, its `@Import` annotations (registrars and
+/// selectors) and its conditional `@PropertySource` annotations; excluding a
+/// module removes all of it. A [Type] in [excludeTypes] that matches nothing
 /// throws a [StateError] (`... could not be excluded because they are not
 /// auto-configuration classes`); an unknown name is ignored, as Spring
 /// Boot ignores a class that is not on the classpath.

@@ -11,13 +11,11 @@
 
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
-import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i10;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i11;
-import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i12;
+    as _i10;
+import 'package:spring_boot_starter_web/spring_auto_configuration.dart' as _i11;
 import 'package:spring_boot_starter_websocket/spring_auto_configuration.dart'
-    as _i13;
+    as _i12;
 import 'package:spring_web_dart/src/annotations.dart' as _i3;
 import 'package:spring_web_dart/src/controller_annotations.dart' as _i7;
 import 'package:spring_web_dart/src/problem_detail.dart' as _i6;
@@ -32,7 +30,6 @@ part 'example.spring.env.dart';
 
 const _$knownAdvisors0 = {
   r'package:spring_boot_dart',
-  r'package:spring_boot_starter_feign',
   r'package:spring_boot_starter_logging',
   r'package:spring_boot_starter_web',
   r'package:spring_boot_starter_websocket',
@@ -146,23 +143,22 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
     _i9.springBootAutoConfiguration,
-    _i10.springBootStarterFeignAutoConfiguration,
-    _i11.springBootStarterLoggingAutoConfiguration,
+    _i10.springBootStarterLoggingAutoConfiguration,
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
-      _i12.springBootStarterWebAutoConfiguration,
+      _i11.springBootStarterWebAutoConfiguration,
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
-      _i12.springBootStarterWebRateLimitAutoConfiguration,
-    _i13.springBootStarterWebsocketAutoConfiguration,
+      _i11.springBootStarterWebRateLimitAutoConfiguration,
+    _i12.springBootStarterWebsocketAutoConfiguration,
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
-      _i13.springBootStarterWebsocketServerAutoConfiguration,
+      _i12.springBootStarterWebsocketServerAutoConfiguration,
   ],
   autoConfigurationMetadata: {
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
-      _i12.springBootStarterWebRateLimitAutoConfiguration:
+      _i11.springBootStarterWebRateLimitAutoConfiguration:
           const _i1.AutoConfigurationModule(
             after: [
               r'springBootStarterDataAutoConfiguration',

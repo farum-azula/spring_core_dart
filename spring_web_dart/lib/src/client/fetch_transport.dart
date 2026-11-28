@@ -3,6 +3,7 @@ import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
 import 'dart:typed_data';
 
+import 'package:spring_web_dart/src/client/address/allowed_addresses.dart';
 import 'package:spring_web_dart/src/client/http_redirects.dart';
 import 'package:spring_web_dart/src/client/http_request.dart';
 import 'package:spring_web_dart/src/client/http_response.dart';
@@ -45,6 +46,12 @@ import 'package:spring_web_dart/src/http_method.dart';
 /// - When `abort` completes before the status and headers arrive, the
 ///   request is aborted the same way and an [HttpTransportException] is
 ///   thrown.
+/// - With [allowedAddresses], the URL is checked before `fetch` is
+///   called: its host by name, an address literal by address (`fetch`
+///   cannot resolve names, see [AllowedAddresses]). In a server runtime
+///   the transport then follows every redirect itself and checks each;
+///   a browser follows them by itself and never shows them, so only the
+///   first URL is checked there.
 /// - Non-2xx responses are ordinary responses. Network failures,
 ///   including a request the browser blocks for CORS, throw an
 ///   [HttpTransportException].
@@ -66,11 +73,20 @@ class FetchHttpTransport implements HttpTransport {
   /// proxies and certificates; [credentials] says whether it sends its
   /// cookies, which a server that keeps the login in a session cookie
   /// needs when the API has another origin than the page.
-  FetchHttpTransport({this.credentials = FetchCredentials.sameOrigin});
+  ///
+  /// [allowedAddresses] limits the hosts and addresses it calls; `null`
+  /// (the default) calls any.
+  FetchHttpTransport({
+    this.credentials = FetchCredentials.sameOrigin,
+    this.allowedAddresses,
+  });
 
   /// Whether the browser sends cookies with the requests (the
   /// `credentials` option of `fetch`).
   final FetchCredentials credentials;
+
+  /// The hosts and addresses the transport may call, or `null` for any.
+  final AllowedAddresses? allowedAddresses;
 
   @override
   Future<HttpResponse> send(HttpRequest request) async {
@@ -197,6 +213,7 @@ class FetchHttpTransport implements HttpTransport {
       final sent = HttpHeaders()..addHeaders(request.headers);
       late _Response response;
       for (var redirects = 0; ; redirects++) {
+        allowedAddresses?.checkUrl(url);
         response = await _fetch(
           url.toString().toJS,
           _init(method, sent, body, controller.signal, followsItself),
@@ -271,6 +288,10 @@ class FetchHttpTransport implements HttpTransport {
   // nothing to protect, or a browser that protects all of it.
   bool _followsItself(HttpRequest request) {
     if (!request.followRedirects) {
+      return false;
+    }
+    // A server runtime shows its redirects: each is checked here.
+    if (allowedAddresses != null && !_guardsForbiddenHeaders) {
       return false;
     }
     final credentials = HttpRedirects.credentialHeaders(

@@ -22,7 +22,7 @@ const _log = SpringLog('spring.security.oauth2.client');
 ///   `no_key`;
 /// - `dpopDelete` (no arguments): removes the key; `null`.
 ///
-/// Errors are `PlatformException`s with the code `dpop_key` (or
+/// Errors are `PlatformException` instances with the code `dpop_key` (or
 /// `no_key`) and a message that says what failed, never key material.
 const dPoPKeyChannel = MethodChannel(
   'spring_boot_starter_flutter_security/dpop_key',

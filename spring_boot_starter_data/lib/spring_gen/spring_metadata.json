@@ -2505,6 +2505,32 @@
       ]
     },
     {
+      "name": "joinedTransactionRetryVeto",
+      "type": "JoinedTransactionRetryVeto",
+      "types": [
+        "JoinedTransactionRetryVeto",
+        "MethodRetryVeto"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [],
+      "source": "package:spring_boot_starter_data/spring_auto_configuration.dart",
+      "line": 107,
+      "injects": [],
+      "members": [
+        {
+          "name": "vetoRetry",
+          "kind": "method",
+          "type": "String?",
+          "parameters": [
+            "MethodInvocation invocation"
+          ]
+        }
+      ]
+    },
+    {
       "name": "namedDataSourcesProperties",
       "type": "NamedDataSourcesProperties",
       "types": [
@@ -3329,7 +3355,7 @@
         "@ConditionalOnMissingBean(TransactionTemplate)"
       ],
       "source": "package:spring_boot_starter_data/src/data_auto_configuration.dart",
-      "line": 377,
+      "line": 378,
       "injects": [],
       "members": [
         {

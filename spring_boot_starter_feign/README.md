@@ -1,8 +1,13 @@
 # spring_boot_starter_feign
 
-> **No backward compatibility before 1.0.** Any release may rename or
-> change APIs, properties and behaviour; the breaking changes are listed
-> in each package's CHANGELOG.
+> **Feature-complete, to be discontinued.** As Spring Cloud OpenFeign
+> does since Spring Cloud 2022.0.0, this starter gets no new features:
+> Spring now has its own declared clients, the
+> [HTTP service clients](https://docs.spring.io/spring-framework/reference/integration/rest-clients.html#rest-http-service-client)
+> on `RestClient`. The family follows: `RestClient` and `@HttpExchange`
+> interfaces come with `spring_web_dart` and `spring_boot_starter_restclient`,
+> and this package is discontinued after 0.10.1. Move your `@FeignClient`
+> interfaces to `@HttpExchange`.
 
 **Documentation:** [farum-azula.org/components/spring-boot-starter-feign](https://farum-azula.org/components/spring-boot-starter-feign)
 
@@ -395,7 +400,7 @@ spring.feign.client.decode-slash=false
 | `default-query-parameters.<name>` | — | a query parameter added to every request that has none of that name once the interceptors ran. `a,b` or a YAML list gives two values. The URL is in the logs and in exception messages, so send a secret API key as a header in `sensitive-headers` instead |
 | `retryer` | — | the client's `Retryer`: a bean name, or a class name matching exactly one bean (see [Per-client configuration](#per-client-configuration)) |
 | `error-decoder` | — | the client's `ErrorDecoder`, by bean name or class name |
-| `request-interceptors` | — | more `RequestInterceptor`s for the client: a list of bean names or class names, those under `default` first |
+| `request-interceptors` | — | more `RequestInterceptor` instances for the client: a list of bean names or class names, those under `default` first |
 | `follow-redirects` | `true` | whether redirects are followed; with `false`, a 3xx answer is an error status |
 | `sensitive-headers` | — | more headers that carry a credential, such as `X-Api-Key`: the `headers` and `full` logs show them as `***`, and a redirect to another origin drops them (in a browser the call fails on a redirect). A list, those under `default` first (see [Logging](#logging)) |
 | `spring.feign.client.decode-slash` | `true` | one setting for all clients: a `/` in a `@PathVariable` value stays a `/` (`false`: it is sent as `%2F`) |
@@ -521,7 +526,7 @@ called later. A `Retryer` bean tries such calls again, so the code around
 each call does not have to. As in Spring Cloud OpenFeign, nothing is
 retried by default.
 
-Only `RetryableException`s are retried: connection errors, timeouts, and
+Only `RetryableException` instances are retried: connection errors, timeouts, and
 responses with a `Retry-After` header (in seconds or as an HTTP date). An
 error status alone is not retried. Every attempt is built again from the
 arguments and goes through the interceptors, so a token refreshed in the
@@ -732,7 +737,7 @@ the responses.
 - The properties are `spring.feign.*`, not `spring.cloud.openfeign.*`
   (Spring Cloud means nothing in Dart); the old name stops the start and
   names the new one.
-- Methods return `Future`s, because HTTP is asynchronous in Dart.
+- Methods return `Future` values, because HTTP is asynchronous in Dart.
 - No service discovery or load balancing: every client needs a URL.
 - `connect-timeout` is one setting for all clients (`default`);
   `read-timeout` is per client.

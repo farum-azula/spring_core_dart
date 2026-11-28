@@ -8,7 +8,7 @@ import 'package:spring_boot_starter_flutter/src/spring_scope.dart';
 /// application: a bean with `context.bean<T>()`, a translated text with
 /// `context.message('key')`, and the context itself.
 ///
-/// These work in every widget, including plain `StatelessWidget`s and
+/// These work in every widget, including plain `StatelessWidget` instances and
 /// callbacks, so they suit one-off uses: a button that calls a service, a
 /// label from the messages files. They do not rebuild the widget when a
 /// state bean changes; for beans that a widget shows, declare them in a

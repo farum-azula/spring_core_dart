@@ -34,7 +34,8 @@ class AuditAspect {
   void failed(JoinPoint call, Exception error) =>
       log.warning('${call.toShortString()} failed: $error');
 
-  /// After every call of the supplier's Feign clients (also failed ones).
+  /// After every call of the supplier's HTTP service clients (also failed
+  /// ones).
   @After('bean(supplierOffers) || bean(supplierDeliveries)')
   void afterSupplierCall(JoinPoint call) =>
       log.debug('supplier call ${call.signature.name}${call.args}');

@@ -127,8 +127,9 @@ WebSocketStompClient stomp = new WebSocketStompClient(client);
 stomp.connectAsync(url, new StompSessionHandlerAdapter() { ... });
 ```
 
-This starter follows the style of `@FeignClient` instead: the socket is an
-interface with typed streams, created and configured by the container.
+This starter follows the style of HTTP service interfaces (`@HttpExchange`)
+instead: the socket is an interface with typed streams, created and
+configured by the container.
 `@WebSocketClient`, `@OnMessage`, `@SendMessage`,
 `WebSocketHandshakeInterceptor`, the `spring.websocket.client.config.*`
 properties and `spring.websocket.client.max-text-message-size` /
@@ -684,8 +685,8 @@ Differences from Spring:
 - `setAllowedOrigins`, `setAllowedOriginPatterns` and
   `setSupportedProtocols` add to the values set before; Spring's replace
   them.
-- `HandshakeInterceptor`s apply to the handlers of a configurer only, not
-  to `@WebSocketEndpoint`s; a web filter covers both.
+- `HandshakeInterceptor` instances apply to the handlers of a configurer only, not
+  to `@WebSocketEndpoint` annotations; a web filter covers both.
 - No `@EnableWebSocket` is needed.
 
 ### Origins
@@ -785,6 +786,35 @@ test('chats', () async {
 });
 ```
 
+The same test, declared with annotations:
+
+```dart
+@SpringBootTest(properties: {'chat.url': 'ws://chat.test/ws'})
+class ChatTest {
+  @TestBean(type: WebSocketTransport)
+  final sockets = MockWebSocketTransport();
+
+  @Autowired()
+  late ChatSocket chat;
+
+  @Test()
+  Future<void> chats() async {
+    final messages = <ChatMessage>[];
+    chat.messages().listen(messages.add);              // opens the connection
+
+    final server = await sockets.nextConnection;
+    server.pushJson({'from': 'ann', 'text': 'hi'});    // server → client
+    await chat.send(const ChatMessage(from: 'me', text: 'hello'));
+    expect(server.sentJson, [{'from': 'me', 'text': 'hello'}]);
+
+    await server.drop();                               // the connection is lost...
+    await sockets.nextConnection;                      // ...and the client reconnects
+  }
+}
+
+void main() => runSpringTests();
+```
+
 With an `ApplicationContextRunner`, register the mock with
 `.withBean<WebSocketTransport>(() => sockets)`.
 
@@ -825,6 +855,31 @@ test('acknowledges a message', () async {
 });
 ```
 
+In a test class, `MockMvc` is an `@Autowired()` field:
+
+```dart
+@SpringBootTest()
+class ChatEndpointTest {
+  @Autowired()
+  late MockMvc mvc;
+
+  @Test()
+  Future<void> acknowledgesAMessage() async {
+    final session = await mvc.webSocket('/ws/rooms/neon',
+        headers: {'Origin': 'https://chat.example'});
+    final replies = StreamIterator(session.messages);
+    session.sendMessage('{"from": "ann", "text": "hi"}');
+    // First the broadcast to the room, which includes this session...
+    expect(await replies.moveNext(), isTrue);
+    expect(jsonDecode(replies.current as String), {'from': 'ann', 'text': 'hi'});
+    // ...then the reply of @OnMessage.
+    expect(await replies.moveNext(), isTrue);
+    expect(jsonDecode(replies.current as String), {'room': 'neon', 'received': 'hi'});
+    await session.close();
+  }
+}
+```
+
 A refused handshake (by the origin check or an interceptor) throws a
 `WebSocketException` with the status. To test over a real socket, start
 the server on a free port and connect with the client transport:
@@ -837,4 +892,22 @@ test('over a socket', () async {
       .connect(Uri.parse('ws://127.0.0.1:${app.localServerPort}/ws/rooms/neon'));
   ...
 });
+```
+
+In a test class, the port is a `@LocalServerPort()` field:
+
+```dart
+@SpringBootTest(webEnvironment: WebEnvironment.randomPort)
+class ChatSocketTest {
+  @LocalServerPort()
+  late int port;
+
+  @Test()
+  Future<void> overASocket() async {
+    final session = await platformWebSocketTransport()
+        .connect(Uri.parse('ws://127.0.0.1:$port/ws/rooms/neon'));
+    session.sendMessage('{"from": "ann", "text": "hi"}');
+    await session.close();
+  }
+}
 ```

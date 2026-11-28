@@ -502,7 +502,7 @@ final class CorsRegistry {
 
   /// A source with one configuration per mapping, in the order they were
   /// added, with the defaults filled in. The starter calls it once all
-  /// `WebMvcConfigurer`s have run.
+  /// `WebMvcConfigurer` instances have run.
   UrlBasedCorsConfigurationSource toSource() {
     final source = UrlBasedCorsConfigurationSource();
     for (final registration in _registrations) {

@@ -48,7 +48,7 @@ const _log = SpringLog('spring.web.mvc');
 /// values from handlers; they do not call the writer. A filter or a
 /// handler mapping of your own may use it to answer the same way, for
 /// example with [writeError]. Spring spreads this work over its
-/// `HttpMessageConverter`s and return value handlers.
+/// `HttpMessageConverter` instances and return value handlers.
 final class ResponseWriter {
   /// A writer that writes JSON with [mapper]. [messageSource] resolves
   /// the messages of validation errors, [asyncTimeout] is the timeout of
@@ -648,7 +648,7 @@ final class ResponseWriter {
         );
       default:
         // An error that ends a request after its deadline passed is the
-        // timeout, whatever it says (a Feign call that gave up at the
+        // timeout, whatever it says (a RestClient call that gave up at the
         // deadline, a check of the deadline): a 503, not a 500 with a stack
         // trace. The slack covers timers that fire a moment apart.
         if (endsAtRequestDeadline(error)) {
@@ -713,7 +713,7 @@ final class ResponseWriter {
 
   // A response that becomes a stream lives longer than one request: the
   // request's deadline (server.request-timeout) ends, so that what the
-  // stream does later (an emitter's callbacks, a Feign call) is not cut
+  // stream does later (an emitter's callbacks, an HTTP call) is not cut
   // at it. The dispatcher does not answer a 503 for a streaming response
   // either (it is committed).
   static void _leaveRequestDeadline() => RequestDeadline.current?.release();

@@ -72,7 +72,7 @@ String _docText(String value) => value.replaceAllMapped(
 ///   (`partDeclarations`): `<library>.spring.debug.dart`, what only debug
 ///   builds use, which the library refers to only under `!dart.vm.product`
 ///   and `!dart.vm.profile`, and `<library>.spring.env.dart`, the values of the
-///   `--dart-define`s the application may read.
+///   `--dart-define` flags the application may read.
 ///
 /// The library itself contains, in this order:
 ///
@@ -1546,7 +1546,15 @@ class ModuleEmitter {
       if (_filters(proxy, member, _postFilter) &&
           _mapTypes(member.returnType, element) != null)
         'resultMapTypes': _mapTypes(member.returnType, element)!,
-      if (_filters(proxy, member, _preFilter) &&
+      // A stream a retry joins keeps its element type.
+      if (_filters(proxy, member, _retryable)
+              ? _streamElementCapture(member.returnType, element)
+              : null
+          case final capture?)
+        'returnTypeArguments': literalConstList([capture]),
+      // A filtered Map, or one each attempt of a retry gets a copy of.
+      if ((_filters(proxy, member, _preFilter) ||
+              _filters(proxy, member, _retryable)) &&
           member.parameters.any(
             (parameter) => _mapTypes(parameter.type, element) != null,
           ))
@@ -2016,7 +2024,7 @@ class ModuleEmitter {
 
   // The `ProxyMethod` that tells the starter of an interface method: its
   // parameters, result and annotations; [call] invokes the method on an
-  // implementation (a Feign fallback), left out where none can exist.
+  // implementation (a starter's fallback), left out where none can exist.
   Expression _interfaceProxyMethod(
     InterfaceMethodModel method,
     Element element, {
@@ -2534,6 +2542,9 @@ class ModuleEmitter {
   static const _preFilter = TypeChecker.fromUrl(
     'package:spring_security_core/src/method/annotations.dart#PreFilter',
   );
+  static const _retryable = TypeChecker.fromUrl(
+    'package:spring_core_dart/src/resilience/retryable.dart#Retryable',
+  );
 
   // Whether [checker]'s annotation applies to [member]: on it, on what it
   // overrides, or on its class.
@@ -2566,6 +2577,26 @@ class ModuleEmitter {
     return _spring('MapTypes').constInstance([], {}, [
       for (final argument in value.typeArguments) _anyType(argument, element),
     ]);
+  }
+
+  // `TypeCapture<E>()` for a `Stream<E>` or a subtype of one (an
+  // `EventStream<E>`); `null` for any other type, or an `E` that cannot be
+  // named here.
+  Expression? _streamElementCapture(DartType type, Element element) {
+    if (type is! InterfaceType ||
+        type.nullabilitySuffix != NullabilitySuffix.none) {
+      return null;
+    }
+    final stream = type.isDartAsyncStream
+        ? type
+        : type.allSupertypes.where((t) => t.isDartAsyncStream).firstOrNull;
+    final elementType = stream?.typeArguments.singleOrNull;
+    if (elementType == null || !_canCapture(elementType)) {
+      return null;
+    }
+    return _spring(
+      'TypeCapture',
+    ).constInstance([], {}, [_anyType(elementType, element)]);
   }
 
   bool _canCapture(DartType type) => switch (type) {
@@ -3166,6 +3197,11 @@ final class ModuleEmission {
   /// (`BeanDefinition`).
   Reference spring(String name) => _spring(name);
 
+  /// [condition], read on [element], as a bean definition's condition:
+  /// a `ProfileCondition`, a `ConditionGroup`, a condition annotation.
+  Expression condition(ConditionModel condition, Element element) =>
+      _emitter._condition(condition, element);
+
   /// A constructor taking the [parameters] of the bean constructor
   /// [constructorName] and forwarding them as `super.` parameters; [first]
   /// goes before them.
@@ -3257,7 +3293,7 @@ final class ModuleSources {
   /// ending ([applicationPartExtensions]): `<library>.spring.debug.dart`
   /// with what only debug builds use (the fingerprint of the
   /// generated code, the hot-reload functions), `<library>.spring.env.dart`
-  /// with the values of the `--dart-define`s. A part without declarations
+  /// with the values of the `--dart-define` flags. A part without declarations
   /// is not there.
   final Map<String, String> parts;
 

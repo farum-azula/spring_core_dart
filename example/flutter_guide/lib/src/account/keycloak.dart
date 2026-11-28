@@ -2,7 +2,6 @@
 // the realm's roles as Spring Security roles, the user's access token on
 // the server calls.
 import 'package:neon_books_app/src/account/sso_properties.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 @Configuration()
@@ -16,31 +15,36 @@ class KeycloakConfig {
   @Bean()
   GrantedAuthoritiesMapper keycloakRoles() => const KeycloakRolesMapper();
 
-  /// `Authorization: Bearer <access token>` on the Feign calls of a
-  /// Keycloak user, refreshed before it expires; when Keycloak binds the
-  /// token to the app's key (DPoP), `Authorization: DPoP <access token>`
-  /// and a proof per call, signed by the [DPoPKey] bean.
+  /// `Authorization: Bearer <access token>` on the calls of a Keycloak
+  /// user to the server (the `server` group of HTTP services), refreshed
+  /// before it expires; when Keycloak binds the token to the app's key
+  /// (DPoP), `Authorization: DPoP <access token>` and a proof per call,
+  /// signed by the [DPoPKey] bean. A 401 to a token that looked valid
+  /// (revoked at Keycloak, the realm's keys changed) marks it expired, so
+  /// the next call gets a fresh one.
   @Bean()
-  KeycloakTokenInterceptor keycloakTokens(
+  RestClientHttpServiceGroupConfigurer keycloakTokens(
     OAuth2AuthorizedClientManager manager,
     OAuth2AuthorizedClientService clients,
     SsoProperties sso,
     DPoPKey? dPoPKey,
-  ) => KeycloakTokenInterceptor(
-    OAuth2AccessTokenInterceptor(
-      manager,
-      clientRegistrationId: sso.registrationId,
-      authorizedClientService: clients,
-      dPoPKey: dPoPKey,
-    ),
-  );
-
-  /// A 401 to a token that looked valid (revoked at Keycloak, the realm's
-  /// keys changed) marks it expired, so the next call gets a fresh one.
-  /// Everything else as Feign's default decoder does.
-  @Bean()
-  ErrorDecoder errorDecoder(KeycloakTokenInterceptor tokens) =>
-      OAuth2AccessTokenErrorDecoder(const DefaultErrorDecoder(), tokens.tokens);
+  ) {
+    final tokens = KeycloakTokenInterceptor(
+      OAuth2ClientHttpRequestInterceptor(
+        manager,
+        defaultClientRegistrationId: sso.registrationId,
+        authorizedClientService: clients,
+        dPoPKey: dPoPKey,
+      ),
+    );
+    return RestClientHttpServiceGroupConfigurer.of(
+      (groups) => groups
+          .filterByName(['server'])
+          .forEachClient(
+            (group, builder) => builder.requestInterceptor(tokens),
+          ),
+    );
+  }
 }
 
 /// Adds `ROLE_<role>` for each entry of the `roles` claim of the user,
@@ -62,27 +66,32 @@ final class KeycloakRolesMapper implements GrantedAuthoritiesMapper {
   ];
 }
 
-/// The starter's [OAuth2AccessTokenInterceptor], while a Keycloak user is
-/// logged in.
+/// The starter's [OAuth2ClientHttpRequestInterceptor], while a Keycloak
+/// user is logged in.
 ///
-/// `spring.feign.oauth2.enabled=true` would put the starter's
-/// interceptor on every call, and as in Spring Cloud OpenFeign it fails a
-/// call made while nobody is logged in: right for an API that is all
-/// private, wrong here, where the catalog and the live stock are public.
-/// So this bean (every `RequestInterceptor` bean applies to all Feign
-/// clients) asks it for the token only when the security context holds a
+/// With `spring.security.oauth2.client.restclient.client-registration-id`
+/// the starter's own interceptor would send the token on every call, and
+/// as in Spring Security it fails a call made while nobody is logged in:
+/// right for an API that is all private, wrong here, where the catalog and
+/// the live stock are public. So this interceptor, on the `server` group
+/// only, asks it for the token only when the security context holds a
 /// Keycloak login; anonymous calls go out as they are.
-final class KeycloakTokenInterceptor implements RequestInterceptor {
+final class KeycloakTokenInterceptor implements ClientHttpRequestInterceptor {
   KeycloakTokenInterceptor(this.tokens);
 
   /// Gets the token (refreshing it when it expires within a minute).
-  final OAuth2AccessTokenInterceptor tokens;
+  final OAuth2ClientHttpRequestInterceptor tokens;
 
   @override
-  Future<void> apply(RequestTemplate template) async {
+  Future<HttpResponse> intercept(
+    HttpRequest request,
+    List<int>? body,
+    ClientHttpRequestExecution execution,
+  ) {
     final user = SecurityContextHolder.getContext().authentication;
     if (user is OAuth2AuthenticationToken) {
-      await tokens.apply(template);
+      return tokens.intercept(request, body, execution);
     }
+    return execution.execute(request, body);
   }
 }

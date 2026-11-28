@@ -66,7 +66,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart';
 /// }
 /// ```
 ///
-/// Differences: durations are `Duration`s instead of a number and a
+/// Differences: durations are `Duration` values instead of a number and a
 /// `timeUnit`; there is no `@EnableScheduling`, the dependency is enough.
 /// A returned `Future` is awaited with every kind of schedule, so a slow
 /// run delays the next one; Spring does not wait for a returned

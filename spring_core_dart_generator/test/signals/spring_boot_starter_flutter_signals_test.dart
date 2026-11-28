@@ -1150,14 +1150,18 @@ class Notes {
     test('an HTTP client', () async {
       expect(
         await _errors('''
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
+import 'package:spring_boot_starter_restclient/spring_boot_starter_restclient.dart';
 
-@FeignClient(name: 'books', url: 'http://localhost')
+@HttpExchange('/books')
 abstract interface class BooksClient {
   @Computed()
-  @GetMapping('/books')
+  @GetExchange()
   Future<List<String>> books();
 }
+
+@Configuration()
+@ImportHttpServices(types: [BooksClient])
+class Clients {}
 '''),
         allOf(
           contains('@Computed on the abstract method BooksClient.books'),
@@ -1310,6 +1314,115 @@ class Store<T> {
             'type parameters.',
           ),
           isNot(contains('add an interface')),
+        ),
+      );
+    });
+  });
+
+  group('@Retryable on a bean with followed state', () {
+    test('a buffered method may be retried', () async {
+      final result = await _build('''
+@Component()
+class Basket {
+  @Signal()
+  int count = 0;
+
+  @SignalBuffer()
+  @Retryable()
+  Future<void> fill() async => count++;
+}
+''', allowAdvice: true);
+      expect(result.errors, isEmpty);
+    });
+
+    test('every async method buffered: retried too', () async {
+      final result = await _build(
+        '''
+@Component()
+class Basket {
+  @Signal()
+  int count = 0;
+
+  @Retryable()
+  Future<void> fill() async => count++;
+}
+''',
+        config: '''
+spring:
+  flutter:
+    signals:
+      allow-advice: true
+      buffer:
+        async-methods: true
+''',
+      );
+      expect(result.errors, isEmpty);
+    });
+
+    for (final (name, source, expected) in [
+      (
+        'an unbuffered method',
+        '@Retryable()\n  Future<void> fill() async => count++;',
+        [
+          '@Retryable on Basket.fill, a method of a bean with @Signal',
+          'fields that runs without a buffer',
+          'Add @SignalBuffer() to Basket.fill',
+        ],
+      ),
+      (
+        'a method taken out of the buffer',
+        '@SignalBuffer(false)\n  @Retryable()\n'
+            '  Future<void> fill() async => count++;',
+        ['that runs without a buffer'],
+      ),
+      (
+        'a sync method',
+        '@Retryable(delay: Duration.zero)\n  void bump() => count++;',
+        [
+          'that is not async',
+          'Make it return a Future and add @SignalBuffer()',
+        ],
+      ),
+      (
+        'a @Computed',
+        '@Computed()\n  @Retryable()\n  Future<int> get total async => count;',
+        ['@Retryable on the @Computed Basket.total'],
+      ),
+      (
+        'an @Effect',
+        '@Effect()\n  @Retryable(delay: Duration.zero)\n  void log() => count;',
+        ['@Retryable on the @Effect Basket.log', 'let the @Effect follow it'],
+      ),
+    ]) {
+      test(name, () async {
+        final errors = await _errors('''
+@Component()
+class Basket {
+  @Signal()
+  int count = 0;
+
+  $source
+}
+''');
+        for (final message in expected) {
+          expect(errors, contains(message));
+        }
+      });
+    }
+
+    test('on the class', () async {
+      expect(
+        await _errors('''
+@Component()
+@Retryable()
+class Basket {
+  @Signal()
+  int count = 0;
+}
+'''),
+        contains(
+          '@Retryable on Basket, a bean with @Signal, @Computed or '
+          '@Effect members: on the class',
         ),
       );
     });

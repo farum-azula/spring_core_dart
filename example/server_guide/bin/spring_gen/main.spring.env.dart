@@ -74,8 +74,6 @@ const Map<String, String> _$dartDefines = {
     'LOGGING_INCLUDEAPPLICATIONNAME': String.fromEnvironment(
       'LOGGING_INCLUDEAPPLICATIONNAME',
     ),
-  if (bool.hasEnvironment('LOGGING_LEVEL_FEIGN'))
-    'LOGGING_LEVEL_FEIGN': String.fromEnvironment('LOGGING_LEVEL_FEIGN'),
   if (bool.hasEnvironment('LOGGING_LEVEL_ROOT'))
     'LOGGING_LEVEL_ROOT': String.fromEnvironment('LOGGING_LEVEL_ROOT'),
   if (bool.hasEnvironment('LOGGING_LEVEL_SHOP'))
@@ -83,6 +81,10 @@ const Map<String, String> _$dartDefines = {
   if (bool.hasEnvironment('LOGGING_LEVEL_SPRING_WEB_MVC'))
     'LOGGING_LEVEL_SPRING_WEB_MVC': String.fromEnvironment(
       'LOGGING_LEVEL_SPRING_WEB_MVC',
+    ),
+  if (bool.hasEnvironment('LOGGING_LEVEL_WEB_CLIENT'))
+    'LOGGING_LEVEL_WEB_CLIENT': String.fromEnvironment(
+      'LOGGING_LEVEL_WEB_CLIENT',
     ),
   if (bool.hasEnvironment('LOGGING_PATTERN_CONSOLE'))
     'LOGGING_PATTERN_CONSOLE': String.fromEnvironment(
@@ -546,43 +548,37 @@ const Map<String, String> _$dartDefines = {
     'SPRING_DEVTOOLS_RESTART_ENABLED': String.fromEnvironment(
       'SPRING_DEVTOOLS_RESTART_ENABLED',
     ),
-  if (bool.hasEnvironment('SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_CONNECTTIMEOUT'))
-    'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_CONNECTTIMEOUT': String.fromEnvironment(
-      'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_CONNECTTIMEOUT',
-    ),
-  if (bool.hasEnvironment('SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT'))
-    'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT': String.fromEnvironment(
-      'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT',
-    ),
-  if (bool.hasEnvironment(
-    'SPRING_FEIGN_CLIENT_CONFIG_SUPPLIERDELIVERIES_LOGGERLEVEL',
-  ))
-    'SPRING_FEIGN_CLIENT_CONFIG_SUPPLIERDELIVERIES_LOGGERLEVEL':
-        String.fromEnvironment(
-          'SPRING_FEIGN_CLIENT_CONFIG_SUPPLIERDELIVERIES_LOGGERLEVEL',
-        ),
-  if (bool.hasEnvironment(
-    'SPRING_FEIGN_CLIENT_CONFIG_SUPPLIEROFFERS_LOGGERLEVEL',
-  ))
-    'SPRING_FEIGN_CLIENT_CONFIG_SUPPLIEROFFERS_LOGGERLEVEL':
-        String.fromEnvironment(
-          'SPRING_FEIGN_CLIENT_CONFIG_SUPPLIEROFFERS_LOGGERLEVEL',
-        ),
-  if (bool.hasEnvironment('SPRING_FEIGN_CLIENT_DECODESLASH'))
-    'SPRING_FEIGN_CLIENT_DECODESLASH': String.fromEnvironment(
-      'SPRING_FEIGN_CLIENT_DECODESLASH',
-    ),
-  if (bool.hasEnvironment('SPRING_FEIGN_OAUTH2_CLIENTREGISTRATIONID'))
-    'SPRING_FEIGN_OAUTH2_CLIENTREGISTRATIONID': String.fromEnvironment(
-      'SPRING_FEIGN_OAUTH2_CLIENTREGISTRATIONID',
-    ),
-  if (bool.hasEnvironment('SPRING_FEIGN_OAUTH2_ENABLED'))
-    'SPRING_FEIGN_OAUTH2_ENABLED': String.fromEnvironment(
-      'SPRING_FEIGN_OAUTH2_ENABLED',
-    ),
   if (bool.hasEnvironment('SPRING_FLUTTER_SCANOSENVIRONMENT'))
     'SPRING_FLUTTER_SCANOSENVIRONMENT': String.fromEnvironment(
       'SPRING_FLUTTER_SCANOSENVIRONMENT',
+    ),
+  if (bool.hasEnvironment('SPRING_HTTP_CLIENTS_ALLOWEDADDRESSES'))
+    'SPRING_HTTP_CLIENTS_ALLOWEDADDRESSES': String.fromEnvironment(
+      'SPRING_HTTP_CLIENTS_ALLOWEDADDRESSES',
+    ),
+  if (bool.hasEnvironment('SPRING_HTTP_CLIENTS_CONNECTTIMEOUT'))
+    'SPRING_HTTP_CLIENTS_CONNECTTIMEOUT': String.fromEnvironment(
+      'SPRING_HTTP_CLIENTS_CONNECTTIMEOUT',
+    ),
+  if (bool.hasEnvironment('SPRING_HTTP_CLIENTS_READTIMEOUT'))
+    'SPRING_HTTP_CLIENTS_READTIMEOUT': String.fromEnvironment(
+      'SPRING_HTTP_CLIENTS_READTIMEOUT',
+    ),
+  if (bool.hasEnvironment('SPRING_HTTP_CLIENTS_REDIRECTS'))
+    'SPRING_HTTP_CLIENTS_REDIRECTS': String.fromEnvironment(
+      'SPRING_HTTP_CLIENTS_REDIRECTS',
+    ),
+  if (bool.hasEnvironment('SPRING_HTTP_SERVICECLIENT_SUPPLIER_BASEURL'))
+    'SPRING_HTTP_SERVICECLIENT_SUPPLIER_BASEURL': String.fromEnvironment(
+      'SPRING_HTTP_SERVICECLIENT_SUPPLIER_BASEURL',
+    ),
+  if (bool.hasEnvironment('SPRING_HTTP_SERVICECLIENT_SUPPLIER_CONNECTTIMEOUT'))
+    'SPRING_HTTP_SERVICECLIENT_SUPPLIER_CONNECTTIMEOUT': String.fromEnvironment(
+      'SPRING_HTTP_SERVICECLIENT_SUPPLIER_CONNECTTIMEOUT',
+    ),
+  if (bool.hasEnvironment('SPRING_HTTP_SERVICECLIENT_SUPPLIER_READTIMEOUT'))
+    'SPRING_HTTP_SERVICECLIENT_SUPPLIER_READTIMEOUT': String.fromEnvironment(
+      'SPRING_HTTP_SERVICECLIENT_SUPPLIER_READTIMEOUT',
     ),
   if (bool.hasEnvironment('SPRING_INFO_BUILD_ENCODING'))
     'SPRING_INFO_BUILD_ENCODING': String.fromEnvironment(
@@ -809,6 +805,10 @@ const Map<String, String> _$dartDefines = {
     'SPRING_REMOTE_ALLOWINSECURE': String.fromEnvironment(
       'SPRING_REMOTE_ALLOWINSECURE',
     ),
+  if (bool.hasEnvironment('SPRING_RESILIENCE_ENABLED'))
+    'SPRING_RESILIENCE_ENABLED': String.fromEnvironment(
+      'SPRING_RESILIENCE_ENABLED',
+    ),
   if (bool.hasEnvironment('SPRING_RESOURCES_EMBED_EXCLUDE'))
     'SPRING_RESOURCES_EMBED_EXCLUDE': String.fromEnvironment(
       'SPRING_RESOURCES_EMBED_EXCLUDE',
@@ -875,6 +875,17 @@ const Map<String, String> _$dartDefines = {
         String.fromEnvironment(
           'SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_SCOPE',
         ),
+  if (bool.hasEnvironment(
+    'SPRING_SECURITY_OAUTH2_CLIENT_RESTCLIENT_CLIENTREGISTRATIONID',
+  ))
+    'SPRING_SECURITY_OAUTH2_CLIENT_RESTCLIENT_CLIENTREGISTRATIONID':
+        String.fromEnvironment(
+          'SPRING_SECURITY_OAUTH2_CLIENT_RESTCLIENT_CLIENTREGISTRATIONID',
+        ),
+  if (bool.hasEnvironment('SPRING_SECURITY_OAUTH2_CLIENT_RESTCLIENT_ENABLED'))
+    'SPRING_SECURITY_OAUTH2_CLIENT_RESTCLIENT_ENABLED': String.fromEnvironment(
+      'SPRING_SECURITY_OAUTH2_CLIENT_RESTCLIENT_ENABLED',
+    ),
   if (bool.hasEnvironment(
     'SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES',
   ))
@@ -1266,8 +1277,6 @@ const Map<String, String> _$dartDefines = {
     'logging.include-application-name': String.fromEnvironment(
       'logging.include-application-name',
     ),
-  if (bool.hasEnvironment('logging.level.feign'))
-    'logging.level.feign': String.fromEnvironment('logging.level.feign'),
   if (bool.hasEnvironment('logging.level.root'))
     'logging.level.root': String.fromEnvironment('logging.level.root'),
   if (bool.hasEnvironment('logging.level.shop'))
@@ -1275,6 +1284,10 @@ const Map<String, String> _$dartDefines = {
   if (bool.hasEnvironment('logging.level.spring.web.mvc'))
     'logging.level.spring.web.mvc': String.fromEnvironment(
       'logging.level.spring.web.mvc',
+    ),
+  if (bool.hasEnvironment('logging.level.web.client'))
+    'logging.level.web.client': String.fromEnvironment(
+      'logging.level.web.client',
     ),
   if (bool.hasEnvironment('logging.pattern.console'))
     'logging.pattern.console': String.fromEnvironment(
@@ -1744,44 +1757,38 @@ const Map<String, String> _$dartDefines = {
     'spring.devtools.restart.enabled': String.fromEnvironment(
       'spring.devtools.restart.enabled',
     ),
-  if (bool.hasEnvironment('spring.feign.client.config.default.connect-timeout'))
-    'spring.feign.client.config.default.connect-timeout':
-        String.fromEnvironment(
-          'spring.feign.client.config.default.connect-timeout',
-        ),
-  if (bool.hasEnvironment('spring.feign.client.config.default.read-timeout'))
-    'spring.feign.client.config.default.read-timeout': String.fromEnvironment(
-      'spring.feign.client.config.default.read-timeout',
-    ),
-  if (bool.hasEnvironment(
-    'spring.feign.client.config.supplier-deliveries.logger-level',
-  ))
-    'spring.feign.client.config.supplier-deliveries.logger-level':
-        String.fromEnvironment(
-          'spring.feign.client.config.supplier-deliveries.logger-level',
-        ),
-  if (bool.hasEnvironment(
-    'spring.feign.client.config.supplier-offers.logger-level',
-  ))
-    'spring.feign.client.config.supplier-offers.logger-level':
-        String.fromEnvironment(
-          'spring.feign.client.config.supplier-offers.logger-level',
-        ),
-  if (bool.hasEnvironment('spring.feign.client.decode-slash'))
-    'spring.feign.client.decode-slash': String.fromEnvironment(
-      'spring.feign.client.decode-slash',
-    ),
-  if (bool.hasEnvironment('spring.feign.oauth2.client-registration-id'))
-    'spring.feign.oauth2.client-registration-id': String.fromEnvironment(
-      'spring.feign.oauth2.client-registration-id',
-    ),
-  if (bool.hasEnvironment('spring.feign.oauth2.enabled'))
-    'spring.feign.oauth2.enabled': String.fromEnvironment(
-      'spring.feign.oauth2.enabled',
-    ),
   if (bool.hasEnvironment('spring.flutter.scan-os-environment'))
     'spring.flutter.scan-os-environment': String.fromEnvironment(
       'spring.flutter.scan-os-environment',
+    ),
+  if (bool.hasEnvironment('spring.http.clients.allowed-addresses'))
+    'spring.http.clients.allowed-addresses': String.fromEnvironment(
+      'spring.http.clients.allowed-addresses',
+    ),
+  if (bool.hasEnvironment('spring.http.clients.connect-timeout'))
+    'spring.http.clients.connect-timeout': String.fromEnvironment(
+      'spring.http.clients.connect-timeout',
+    ),
+  if (bool.hasEnvironment('spring.http.clients.read-timeout'))
+    'spring.http.clients.read-timeout': String.fromEnvironment(
+      'spring.http.clients.read-timeout',
+    ),
+  if (bool.hasEnvironment('spring.http.clients.redirects'))
+    'spring.http.clients.redirects': String.fromEnvironment(
+      'spring.http.clients.redirects',
+    ),
+  if (bool.hasEnvironment('spring.http.serviceclient.supplier.base-url'))
+    'spring.http.serviceclient.supplier.base-url': String.fromEnvironment(
+      'spring.http.serviceclient.supplier.base-url',
+    ),
+  if (bool.hasEnvironment('spring.http.serviceclient.supplier.connect-timeout'))
+    'spring.http.serviceclient.supplier.connect-timeout':
+        String.fromEnvironment(
+          'spring.http.serviceclient.supplier.connect-timeout',
+        ),
+  if (bool.hasEnvironment('spring.http.serviceclient.supplier.read-timeout'))
+    'spring.http.serviceclient.supplier.read-timeout': String.fromEnvironment(
+      'spring.http.serviceclient.supplier.read-timeout',
     ),
   if (bool.hasEnvironment('spring.info.build.encoding'))
     'spring.info.build.encoding': String.fromEnvironment(
@@ -2013,6 +2020,10 @@ const Map<String, String> _$dartDefines = {
     'spring.remote.allow-insecure': String.fromEnvironment(
       'spring.remote.allow-insecure',
     ),
+  if (bool.hasEnvironment('spring.resilience.enabled'))
+    'spring.resilience.enabled': String.fromEnvironment(
+      'spring.resilience.enabled',
+    ),
   if (bool.hasEnvironment('spring.resources.embed.exclude'))
     'spring.resources.embed.exclude': String.fromEnvironment(
       'spring.resources.embed.exclude',
@@ -2079,6 +2090,17 @@ const Map<String, String> _$dartDefines = {
         String.fromEnvironment(
           'spring.security.oauth2.client.registration.keycloak.scope',
         ),
+  if (bool.hasEnvironment(
+    'spring.security.oauth2.client.restclient.client-registration-id',
+  ))
+    'spring.security.oauth2.client.restclient.client-registration-id':
+        String.fromEnvironment(
+          'spring.security.oauth2.client.restclient.client-registration-id',
+        ),
+  if (bool.hasEnvironment('spring.security.oauth2.client.restclient.enabled'))
+    'spring.security.oauth2.client.restclient.enabled': String.fromEnvironment(
+      'spring.security.oauth2.client.restclient.enabled',
+    ),
   if (bool.hasEnvironment(
     'spring.security.oauth2.resourceserver.jwt.audiences',
   ))

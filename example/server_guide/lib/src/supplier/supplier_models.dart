@@ -1,5 +1,5 @@
-// The supplier's JSON. Plain immutable classes: the Feign clients use
-// them, so the generator introspects them (no annotations).
+// The supplier's JSON. Plain immutable classes: the HTTP service clients
+// use them, so the generator introspects them (no annotations).
 
 /// What the supplier asks for a book and how many copies it has.
 class Offer {

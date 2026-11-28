@@ -1,3 +1,7 @@
+## Unreleased
+
+- `AuthenticationException` and `AccessDeniedException` are `NonRetryableException`s (never retried by `@Retryable` or a `RetryTemplate`) and `NestedException`s. `methodSecurityAdvisorOrder` is `AdvisorOrder.methodSecurity` (the same value): method security comes before the retries, so a denied call is checked once and never retried, unlike Spring.
+
 ## 0.10.0
 
 - `SecurityCallerContext` (`CallerContexts`), `ZoneSecurityContextHolderStrategy.captureCaller` and `runAsCaller`: code captured in a scope runs later with that scope's context, code captured outside every scope with the program-wide one, even when it runs inside another user's scope.

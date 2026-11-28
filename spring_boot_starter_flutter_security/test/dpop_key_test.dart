@@ -598,7 +598,7 @@ void main() {
     ];
     final runner = const ApplicationContextRunner()
         .withAutoConfiguration(springBootAutoConfiguration)
-        .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
+        .withAutoConfiguration(springBootStarterRestclientAutoConfiguration)
         .withAutoConfiguration(springSecurityCoreAutoConfiguration)
         .withAutoConfiguration(springBootStarterOauth2ClientAutoConfiguration)
         .withAutoConfiguration(
@@ -606,7 +606,7 @@ void main() {
           const AutoConfigurationModule(
             before: [
               'springBootStarterOauth2ClientAutoConfiguration',
-              'springBootStarterFeignAutoConfiguration',
+              'springBootStarterRestclientAutoConfiguration',
             ],
           ),
         )

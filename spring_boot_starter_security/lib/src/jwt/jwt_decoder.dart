@@ -3,10 +3,14 @@ import 'dart:convert';
 
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart'
     show
+        AllowedAddresses,
         ClientRegistrations,
         DelegatingOAuth2TokenValidator,
         OAuth2Error,
-        OAuth2TokenValidator;
+        OAuth2ProviderAllowedAddresses,
+        OAuth2TokenValidator,
+        RestClient,
+        RestClientBuilder;
 import 'package:spring_boot_starter_security/src/jwt/jose.dart';
 import 'package:spring_boot_starter_security/src/jwt/jwt.dart';
 import 'package:spring_boot_starter_security/src/jwt/since.dart';
@@ -200,22 +204,26 @@ VerificationKey? parseJwk(Map<String, Object?> jwk) {
 /// tests.
 typedef JwkFetcher = Future<String> Function(Uri uri);
 
-/// The default [JwkFetcher]: a `GET` of [uri] with the platform's HTTP
-/// client, with 10-second timeouts.
+/// The default [JwkFetcher]: a `GET` of [uri] with a `RestClient` of its
+/// own, which calls only the host of [uri] (its public addresses, or
+/// `localhost`, or the address [uri] names), with 10-second timeouts.
+/// Every decoder the starter builds uses the application's transport
+/// instead ([transportJwkFetcher]).
 ///
 /// Throws a [JwtException] for an answer other than 200 or a body over
-/// 1 MiB.
-Future<String> defaultJwkFetcher(Uri uri) => transportJwkFetcher(
-  platformHttpTransport(connectTimeout: const Duration(seconds: 10)),
-)(uri);
+/// 1 MiB, and the `RestClient`'s `ResourceAccessException` when there is
+/// no answer.
+Future<String> defaultJwkFetcher(Uri uri) =>
+    _fetchJwkSet(_jwkClient(RestClient.builder().baseUrl('$uri')), uri);
 
-/// A [JwkFetcher] sending its `GET` through [transport], with 10-second
-/// timeouts.
+/// A [JwkFetcher] sending its `GET` through [transport] with a
+/// `RestClient`, with 10-second timeouts.
 ///
-/// The OpenID Connect login uses it with the application's
-/// `HttpTransport` bean, so the provider's keys come through the same
-/// client (proxy, TLS settings) as its tokens, and tests can answer with
-/// a `MockHttpTransport`.
+/// The starter's decoders use it with the application's `HttpTransport`
+/// bean (the RestClient starter's, with its allowed addresses), so the
+/// provider's keys come through the same client (proxy, TLS settings,
+/// allow list) as its tokens, and tests can answer with a
+/// `MockHttpTransport`.
 ///
 /// ```dart
 /// final decoder = NimbusJwtDecoder.withJwkSetUri(
@@ -225,30 +233,40 @@ Future<String> defaultJwkFetcher(Uri uri) => transportJwkFetcher(
 /// ```
 ///
 /// The fetcher throws a [JwtException] for an answer other than 200 or a
-/// body over 1 MiB.
-JwkFetcher transportJwkFetcher(HttpTransport transport) => (uri) async {
-  final response = await transport.send(
-    HttpRequest(
-      method: HttpMethod.get,
-      url: uri,
-      headers: HttpHeaders()..set(HttpHeaders.acceptHeader, 'application/json'),
-      timeout: const Duration(seconds: 10),
-      readTimeout: const Duration(seconds: 10),
-    ),
-  );
-  _log.debug(
-    () =>
-        'The JWK Set endpoint ${_endpoint(uri)} answered '
-        '${response.statusCode.value}',
-  );
-  if (response.statusCode.value != 200) {
-    throw JwtException('$uri answered ${response.statusCode.value}');
-  }
-  if (response.bodyBytes.length > 1 << 20) {
-    throw JwtException('$uri answered more than 1 MiB');
-  }
-  return response.bodyText;
-};
+/// body over 1 MiB, and the `RestClient`'s `ResourceAccessException` when
+/// there is no answer.
+JwkFetcher transportJwkFetcher(HttpTransport transport) {
+  final rest = _jwkClient(RestClient.builder().transport(transport));
+  return (uri) => _fetchJwkSet(rest, uri);
+}
+
+const _jwkTimeout = Duration(seconds: 10);
+
+RestClient _jwkClient(RestClientBuilder builder) =>
+    builder.connectTimeout(_jwkTimeout).readTimeout(_jwkTimeout).build();
+
+// The whole call within the timeout too (or the caller's deadline, when it
+// ends sooner); the answer read whatever its status.
+Future<String> _fetchJwkSet(RestClient rest, Uri uri) =>
+    RequestDeadline.run(_jwkTimeout, () async {
+      final response = await rest
+          .get()
+          .uri(uri)
+          .accept(MediaType.applicationJson)
+          .exchange((_, answer) => answer.response);
+      _log.debug(
+        () =>
+            'The JWK Set endpoint ${_endpoint(uri)} answered '
+            '${response.statusCode.value}',
+      );
+      if (response.statusCode.value != 200) {
+        throw JwtException('$uri answered ${response.statusCode.value}');
+      }
+      if (response.bodyBytes.length > 1 << 20) {
+        throw JwtException('$uri answered more than 1 MiB');
+      }
+      return response.bodyText;
+    });
 
 /// A [JwkSource] that fetches the keys from the identity provider's JWK
 /// Set URL and caches them.
@@ -600,6 +618,10 @@ abstract final class JwtDecoders {
   /// `/.well-known/oauth-authorization-server<issuer path>`; a location
   /// [fetcher] cannot read moves to the next.
   ///
+  /// With [allowedAddresses] (the allow list of the transport [fetcher]
+  /// sends through), the host of the `jwks_uri` the metadata names joins
+  /// it, by host name only (`OAuth2ProviderAllowedAddresses.allowDiscovered`).
+  ///
   /// The metadata is fetched at the first token, not at startup, so the
   /// provider may start later. While it cannot be fetched, tokens fail
   /// with a [JwtException] (a 401); a failed lookup is made again
@@ -614,6 +636,7 @@ abstract final class JwtDecoders {
     OAuth2TokenValidator<Jwt>? validator,
     Duration retryInterval = const Duration(seconds: 30),
     DateTime Function()? clock,
+    AllowedAddresses? allowedAddresses,
   }) => _IssuerJwtDecoder(
     issuer,
     fetcher ?? defaultJwkFetcher,
@@ -621,6 +644,7 @@ abstract final class JwtDecoders {
     validator,
     retryInterval,
     clock ?? DateTime.now,
+    allowedAddresses,
   );
 }
 
@@ -632,6 +656,7 @@ final class _IssuerJwtDecoder implements JwtDecoder {
     this.validator,
     this.retryInterval,
     this.clock,
+    this.allowedAddresses,
   );
 
   final String issuer;
@@ -640,6 +665,7 @@ final class _IssuerJwtDecoder implements JwtDecoder {
   final OAuth2TokenValidator<Jwt>? validator;
   final Duration retryInterval;
   final DateTime Function() clock;
+  final AllowedAddresses? allowedAddresses;
   Future<JwtDecoder>? _delegate;
   // The last failed lookup: when (on a monotonic stopwatch too, so a
   // wall clock set back does not stretch the pause), and why.
@@ -696,6 +722,9 @@ final class _IssuerJwtDecoder implements JwtDecoder {
     final jwksUri = configuration.metadata['jwks_uri'];
     if (jwksUri is! String) {
       throw JwtException('The issuer metadata has no jwks_uri');
+    }
+    if (allowedAddresses case final allowed?) {
+      OAuth2ProviderAllowedAddresses.allowDiscovered(allowed, [jwksUri]);
     }
     return NimbusJwtDecoder.withJwkSource(
       RemoteJwkSource(Uri.parse(jwksUri), fetcher: fetcher, clock: clock),

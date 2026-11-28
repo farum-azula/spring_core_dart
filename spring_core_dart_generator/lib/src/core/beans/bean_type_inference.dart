@@ -84,7 +84,7 @@ extension _BeanTypeInference on BeanScanner {
   /// body returns, when that is more specific than [declared]; otherwise
   /// [declared].
   ///
-  /// Several `return`s give their least upper bound, and `throw` is
+  /// Several `return` statements give their least upper bound, and `throw` is
   /// ignored. The inference gives up and returns [declared] when the body
   /// was not resolved, has a bare `return;`, returns a nullable or
   /// non-class type, or returns a type the generated code cannot name

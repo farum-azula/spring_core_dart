@@ -102,7 +102,6 @@ The same comment, rewritten:
 |---|---|
 | `spring_web_dart` | October 2026 |
 | `spring_boot_starter_web` | October 2026 |
-| `spring_boot_starter_feign` | October 2026 |
 | `spring_boot_starter_websocket` | October 2026 |
 | `spring_boot_starter_logging` | October 2026 |
 | `spring_boot_starter_scheduling` | October 2026 |

@@ -29,7 +29,7 @@ flutter run                      # desktop; -d chrome for the web (port 1010)
 
 Each page is a screen of `spring_boot_starter_flutter_navigation` with its
 own address: `@ScreenRoute('/components')` on the page's widget. The
-`Shell` (`@RouteShell`) holds the logo, the `NeonChip`s and the theme
+`Shell` (`@RouteShell`) holds the logo, the `NeonChip` instances and the theme
 switcher; each page is one of its branches, so a page keeps its state
 while another one is shown. `/` opens `/overview`
 (`spring.flutter.navigation.initial`), an unknown address shows
@@ -38,7 +38,7 @@ address (`/states`, `/themes`). A chip calls `ShellState.select`, which
 switches pages at once, without a transition; code anywhere calls
 `context.route.go('/logs')`.
 
-The navigation is built from `NeonChip`s; each page shows a capability, the
+The navigation is built from `NeonChip` instances; each page shows a capability, the
 lines of YAML that make it (`NeonCode` boxes: a block of Markdown, split by
 the languages of [`themes/code.yml`](lib/resources/themes/code.yml), imported
 next to the library's theme, and colored by the `styles.code` of `neon_ui`'s

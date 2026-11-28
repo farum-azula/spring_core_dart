@@ -312,7 +312,7 @@
         "@ConditionalOnBean(CacheInterceptor)"
       ],
       "source": "package:spring_boot_starter_cache/src/cache_auto_configuration.dart",
-      "line": 393,
+      "line": 394,
       "injects": [],
       "members": [
         {

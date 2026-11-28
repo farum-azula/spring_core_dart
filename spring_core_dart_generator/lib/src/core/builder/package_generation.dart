@@ -210,6 +210,14 @@ abstract class PackageGeneration {
   /// independent check, so the build lists them all.
   void scanClass(ClassElement element, ModuleScan scan) {}
 
+  /// Reads what needs every library of the module scanned first, after
+  /// the last one is and before the core checks the beans' names: which
+  /// classes are beans, and under which conditions
+  /// ([ModuleScan.beanClassConditions]). The RestClient starter's part
+  /// imports there the HTTP services of each bean class's
+  /// `@ImportHttpServices`.
+  void scanModule(ModuleScan scan) {}
+
   /// Reads [element], a mixin of a scanned library, as [scanClass] does a
   /// class.
   void scanMixin(MixinElement element, ModuleScan scan) {}
@@ -438,7 +446,7 @@ final class ModuleParts {
   /// The libraries the parts use, each as `url` or `url as prefix`.
   final List<String> imports;
 
-  /// The names of the lists of `Introspection`s the parts declare, which
+  /// The names of the lists of `Introspection` values the parts declare, which
   /// the module's `introspections:` spreads after its own
   /// (`_$jsonSchemaIntrospections`).
   final List<String> introspections;

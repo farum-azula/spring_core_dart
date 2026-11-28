@@ -147,6 +147,10 @@ void main() {
       'redirectPost303': 'GET -|-|-|-|plain',
       // After the most redirects, the last 3xx is the answer.
       'redirectLoop': 302,
+      'allowedRedirect': 'there',
+      'deniedRedirect': 'denied localhost',
+      'deniedDirect': 'denied 169.254.169.254',
+      'restClient': 'there',
       'refused': 'error',
       'events': ['1:tick 1', '2:tick 2', '3:tick 3'],
       'readTimeout': 'timeout',

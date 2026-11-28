@@ -18,7 +18,7 @@ import 'package:spring_core_dart/src/observation/observation_handler.dart';
 /// ```
 ///
 /// An observation created while another one is current (inside its
-/// [observe] or [scoped], across `await`s too, since the current
+/// [observe] or [scoped], across `await` expressions too, since the current
 /// observation is kept in a `Zone`) has that one as its parent.
 ///
 /// Spring (Java): `io.micrometer.observation.Observation`.

@@ -22,7 +22,7 @@
 /// - Check logging: `captureLogs` records what `SpringLog` logged during
 ///   each test.
 /// - Fake remote services: `MockHttpTransport` and `MockWebSocketTransport`
-///   (from `spring_web_dart`) give prepared answers to Feign and WebSocket
+///   (from `spring_web_dart`) give prepared answers to HTTP and WebSocket
 ///   clients, like Spring's `MockRestServiceServer`.
 /// - Containers (Docker) for the tests, with `@Container()` and
 ///   `@ServiceConnection()`, `GenericContainer`, `PostgresContainer` and

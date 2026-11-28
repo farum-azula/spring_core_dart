@@ -6,7 +6,7 @@
 /// `@GetMapping`, `@PostMapping`, ... methods to paths, binds path
 /// variables, query parameters, headers and JSON bodies to their
 /// parameters, validates `@Valid()` bodies, writes results as JSON, and
-/// answers errors as `ProblemDetail`s (customized with
+/// answers errors as `ProblemDetail` instances (customized with
 /// `@ExceptionHandler`). It also covers server-sent events (`EventStream`,
 /// `SseEmitter`), file uploads and downloads, static resources (files
 /// and a built web app), sessions, filters, interceptors and CORS. The

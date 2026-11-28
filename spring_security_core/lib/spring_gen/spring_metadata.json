@@ -39,7 +39,7 @@
         "@ConditionalOnMissingBean(AuthenticationEventPublisher)"
       ],
       "source": "package:spring_security_core/src/security_core_auto_configuration.dart",
-      "line": 174,
+      "line": 178,
       "injects": [],
       "members": [
         {
@@ -76,7 +76,7 @@
         "@_OnAuthenticationSources()"
       ],
       "source": "package:spring_security_core/src/security_core_auto_configuration.dart",
-      "line": 187,
+      "line": 191,
       "injects": [],
       "members": [
         {
@@ -104,7 +104,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_security_core/src/security_core_auto_configuration.dart",
-      "line": 164,
+      "line": 168,
       "injects": [],
       "members": [
         {
@@ -144,7 +144,7 @@
         "@ConditionalOnMissingBean(MethodSecurityExpressionHandler)"
       ],
       "source": "package:spring_security_core/src/security_core_auto_configuration.dart",
-      "line": 115,
+      "line": 119,
       "injects": [],
       "members": [
         {
@@ -233,7 +233,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_security_core/src/security_core_auto_configuration.dart",
-      "line": 140,
+      "line": 144,
       "injects": [],
       "members": [
         {
@@ -288,7 +288,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_security_core/src/security_core_auto_configuration.dart",
-      "line": 148,
+      "line": 152,
       "injects": [],
       "members": [
         {
@@ -343,7 +343,7 @@
         "@ConditionalOnMissingBean(PasswordCheckLimiter)"
       ],
       "source": "package:spring_security_core/src/security_core_auto_configuration.dart",
-      "line": 98,
+      "line": 102,
       "injects": [],
       "members": [
         {

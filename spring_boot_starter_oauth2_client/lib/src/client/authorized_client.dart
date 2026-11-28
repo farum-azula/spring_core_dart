@@ -70,7 +70,7 @@ final class OAuth2AuthorizedClient {
 /// elsewhere (a database).
 ///
 /// Spring (Java): `OAuth2AuthorizedClientService`; the methods return
-/// `Future`s here.
+/// `Future` values here.
 abstract interface class OAuth2AuthorizedClientService {
   /// The client of [principalName] for [clientRegistrationId], or `null`.
   Future<OAuth2AuthorizedClient?> loadAuthorizedClient(

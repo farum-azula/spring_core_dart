@@ -12,9 +12,9 @@
 import 'dart:async' as _i3;
 import 'dart:collection' as _i12;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i15;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i16;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
-import 'package:spring_boot_dart/src/annotations.dart' as _i14;
+import 'package:spring_boot_dart/src/annotations.dart' as _i15;
 import 'package:spring_boot_dart/src/properties/boot_properties.dart' as _i4;
 import 'package:spring_boot_starter_flutter/spring_auto_configuration.dart'
     as _i6;
@@ -27,11 +27,13 @@ import 'package:spring_boot_starter_flutter_signals/src/annotations.dart'
 import 'package:spring_boot_starter_flutter_signals/src/debug/signals_section.dart'
     as _i8;
 import 'package:spring_boot_starter_flutter_signals/src/properties/properties_beans.dart'
+    as _i14;
+import 'package:spring_boot_starter_flutter_signals/src/signal_buffer.dart'
     as _i13;
 import 'package:spring_boot_starter_flutter_signals/src/widgets/watch.dart'
     as _i9;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i16;
+    as _i17;
 import 'package:spring_boot_starter_logging/src/properties/logging_properties.dart'
     as _i5;
 
@@ -124,13 +126,24 @@ Object? _$invoke14(_i2.Reader bean, List<Object?> arguments) {
   return null;
 }
 
-const _$target15 = _i1.AopTarget(
+Object? _$invoke15(_i2.Restock bean, List<Object?> arguments) {
+  bean.watch();
+  return null;
+}
+
+const _$target16 = _i1.AopTarget(
+  r'Restock',
+  types: [r'Restock'],
+  annotations: [_i1.Component()],
+  annotationTypes: [r'Component'],
+);
+const _$target17 = _i1.AopTarget(
   r'MessagesProperties',
   types: [r'MessagesProperties'],
   annotations: [_i1.ConfigurationProperties(r'spring.messages')],
   annotationTypes: [r'ConfigurationProperties'],
 );
-const _$target16 = _i1.AopTarget(
+const _$target18 = _i1.AopTarget(
   r'LoggingProperties',
   types: [r'LoggingProperties'],
   annotations: [_i1.ConfigurationProperties(r'logging')],
@@ -681,14 +694,47 @@ _i1.BeanModule get $application => _i1.BeanModule(
         knownAdvisors: _$knownAdvisors1,
       ),
     ),
+    _i1.BeanDefinition<_i2.Restock>(
+      name: r'restock',
+      source: r'asset:spring_boot_starter_flutter_signals/test/cases/cases.dart#Restock',
+      create: (r) => _$RestockSignals(),
+      annotatedMethods: [
+        const _i1.IntrospectedMethod<_i2.Restock>(
+          r'watch',
+          isVoid: true,
+          invoke: _$invoke15,
+          annotations: [_i11.Effect()],
+        ),
+      ],
+      annotations: const [_i1.Component()],
+      aopProxy: _i1.AopProxyFactory(
+        signatures: const [
+          _i1.MethodSignature.of(
+            r'refill',
+            _$target16,
+            returnType: r'Future',
+            parameterTypes: [r'int'],
+            parameterNames: [r'amount'],
+            annotations: [
+              _i13.SignalBuffer(),
+              _i1.Retryable(delay: Duration.zero),
+            ],
+            annotationTypes: [r'SignalBuffer', r'Retryable'],
+          ),
+        ],
+        knownAdvisors: _$knownAdvisors1,
+        create: (target, invoker) =>
+            _$RestockProxy((target as _i2.Restock), invoker),
+      ),
+    ),
     if (!const bool.fromEnvironment('dart.vm.product') &&
         !const bool.fromEnvironment('dart.vm.profile'))
       ..._$debugWidgetFields,
   ],
-  imports: [_i13.signalsConfigBeans],
+  imports: [_i14.signalsConfigBeans],
   resources: const {
     r'application.yml': _i1.EmbeddedResource.text(
-      'spring:\n  flutter:\n    signals:\n      allow-advice: true\n      queue:\n        flush: immediate\n',
+      'spring:\n  flutter:\n    signals:\n      allow-advice: true\n      queue:\n        flush: immediate\n  resilience:\n    enabled: true\n',
     ),
   },
   aopProxies: {
@@ -697,18 +743,18 @@ _i1.BeanModule get $application => _i1.BeanModule(
           signatures: const [
             _i1.MethodSignature.of(
               r'cacheDuration',
-              _$target15,
+              _$target17,
               kind: _i1.MemberKind.getter,
               returnType: r'Duration',
-              annotations: [_i14.DurationUnit(_i1.ChronoUnit.seconds)],
+              annotations: [_i15.DurationUnit(_i1.ChronoUnit.seconds)],
               annotationTypes: [r'DurationUnit'],
             ),
             _i1.MethodSignature.of(
               r'cacheDuration',
-              _$target15,
+              _$target17,
               kind: _i1.MemberKind.setter,
               returnType: r'Duration',
-              annotations: [_i14.DurationUnit(_i1.ChronoUnit.seconds)],
+              annotations: [_i15.DurationUnit(_i1.ChronoUnit.seconds)],
               annotationTypes: [r'DurationUnit'],
             ),
           ],
@@ -723,18 +769,18 @@ _i1.BeanModule get $application => _i1.BeanModule(
           signatures: const [
             _i1.MethodSignature.of(
               r'exceptionConversionWord',
-              _$target16,
+              _$target18,
               kind: _i1.MemberKind.getter,
               returnType: r'String',
-              annotations: [_i14.RawValue()],
+              annotations: [_i15.RawValue()],
               annotationTypes: [r'RawValue'],
             ),
             _i1.MethodSignature.of(
               r'exceptionConversionWord',
-              _$target16,
+              _$target18,
               kind: _i1.MemberKind.setter,
               returnType: r'String',
-              annotations: [_i14.RawValue()],
+              annotations: [_i15.RawValue()],
               annotationTypes: [r'RawValue'],
             ),
           ],
@@ -752,9 +798,10 @@ _i1.BeanModule get $application => _i1.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i15.springBootAutoConfiguration,
+    _i16.springBootAutoConfiguration,
+    _i16.springBootResilienceAutoConfiguration,
     _i6.springBootStarterFlutterAutoConfiguration,
-    _i16.springBootStarterLoggingAutoConfiguration,
+    _i17.springBootStarterLoggingAutoConfiguration,
     if (!const bool.fromEnvironment('dart.vm.product') &&
         !const bool.fromEnvironment('dart.vm.profile'))
       ..._$debugAutoConfigurations,

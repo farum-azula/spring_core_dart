@@ -262,7 +262,7 @@ Starters:
 | Prefix | Inserts |
 |---|---|
 | `sprest`, `spget`, `sppostmapping` | a `@RestController`, a `@GetMapping` / `@PostMapping` method (web) |
-| `spfeign` | a `@FeignClient` interface (feign) |
+| `sphttpservice` | an `@HttpExchange` interface, an HTTP service client (restclient) |
 | `spentity`, `spdatarepo`, `sptransactional` | a `@Table` entity, a `ListCrudRepository` interface, a `@Transactional` method (data) |
 | `sppreauthorize`, `spsecured` | a `@PreAuthorize` / `@Secured` method (security) |
 | `spscheduled`, `spcron` | a `@Scheduled` method, its interval or cron from the configuration (scheduling) |

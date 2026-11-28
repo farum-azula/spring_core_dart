@@ -1,20 +1,28 @@
 // The documentation has properties lines, which cannot be wrapped.
 // ignore_for_file: lines_longer_than_80_chars
 
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
+import 'package:spring_boot_dart/spring_boot_dart.dart';
 import 'package:spring_boot_starter_oauth2_client/src/client/authorized_client.dart';
 import 'package:spring_boot_starter_oauth2_client/src/client/authorized_client_manager.dart';
 import 'package:spring_boot_starter_oauth2_client/src/dpop/dpop_key.dart';
 import 'package:spring_boot_starter_oauth2_client/src/endpoint/jwt_client_secret.dart';
 import 'package:spring_boot_starter_oauth2_client/src/endpoint/token_response_clients.dart';
-import 'package:spring_boot_starter_oauth2_client/src/feign/oauth2_access_token_interceptor.dart';
 import 'package:spring_boot_starter_oauth2_client/src/oidc/oidc_id_token_decoder.dart';
-import 'package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart';
 import 'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart';
+import 'package:spring_boot_starter_oauth2_client/src/properties/oauth2_rest_client_properties.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/client_registration_repository.dart';
 import 'package:spring_boot_starter_oauth2_client/src/registration/oauth2_client_properties.dart';
 import 'package:spring_boot_starter_oauth2_client/src/user/oauth2_user.dart';
 import 'package:spring_boot_starter_oauth2_client/src/user/user_services.dart';
+import 'package:spring_boot_starter_oauth2_client/src/web/oauth2_client_http_request_interceptor.dart';
+import 'package:spring_boot_starter_oauth2_client/src/web/oauth2_provider_addresses.dart';
+import 'package:spring_boot_starter_oauth2_client/src/web/oauth2_rest_client_http_service_group_configurer.dart';
+import 'package:spring_boot_starter_restclient/spring_boot_starter_restclient.dart'
+    show
+        AllowedAddresses,
+        AllowedAddressesContributor,
+        HttpTransport,
+        RestClientCustomizer;
 
 const _source =
     'package:spring_boot_starter_oauth2_client#OAuth2ClientAutoConfiguration';
@@ -40,8 +48,9 @@ final class _OnClientSecretJwt implements Condition {
 }
 
 const _clients = ConditionalOnBean(ClientRegistrationRepository);
-const _feign = ConditionalOnBooleanProperty(
-  'spring.feign.oauth2.enabled',
+const _restClient = ConditionalOnBooleanProperty(
+  'spring.security.oauth2.client.restclient.enabled',
+  matchIfMissing: true,
 );
 
 /// The bean definitions the OAuth2 client starter adds to every
@@ -57,7 +66,10 @@ const _feign = ConditionalOnBooleanProperty(
 /// - `clientRegistrationRepository`, an
 ///   [InMemoryClientRegistrationRepository] of the properties
 ///   ([OAuth2ClientPropertiesMapper]; providers with an `issuer-uri` are
-///   discovered at their first use);
+///   discovered at their first use, through the `httpTransport` bean, and
+///   the hosts of the token, JWK Set, user-info and revocation endpoints
+///   their discovery documents name join its allow list,
+///   `httpClientAllowedAddresses`);
 /// - `authorizedClientService`, an
 ///   [InMemoryOAuth2AuthorizedClientService];
 ///
@@ -76,37 +88,43 @@ const _feign = ConditionalOnBooleanProperty(
 ///   wants; not in Spring);
 /// - `authorizationCodeTokenResponseClient`,
 ///   `refreshTokenTokenResponseClient` and
-///   `clientCredentialsTokenResponseClient`, on the `httpTransport` bean
-///   (the Feign starter's), with the `dPoPKey` and the
-///   `clientSecretResolver`;
+///   `clientCredentialsTokenResponseClient`, `RestClient` instances on the
+///   `httpTransport` bean (the RestClient starter's), with the `dPoPKey`
+///   and the `clientSecretResolver`;
 /// - `oidcIdTokenDecoder`, a [TokenEndpointOidcIdTokenDecoder], for the
 ///   ID tokens the token endpoint returns (the security starter replaces
 ///   it with one that checks signatures);
 /// - `oauth2UserService` ([DefaultOAuth2UserService]) and
-///   `oidcUserService` ([OidcUserService]), with the `dPoPKey`;
+///   `oidcUserService` ([OidcUserService]), on the `httpTransport` bean
+///   too, with the `dPoPKey`;
 /// - `authorizedClientManager`, an
 ///   [AuthorizedClientServiceOAuth2AuthorizedClientManager] for the
 ///   `authorization_code`, `refresh_token` and `client_credentials`
 ///   grants;
 ///
-/// and with `spring.feign.oauth2.enabled=true` (Spring Cloud
-/// OpenFeign's `FeignAutoConfiguration.Oauth2FeignConfiguration`):
+/// for `RestClient` calls and HTTP service interfaces (with the RestClient
+/// starter, which this one depends on):
 ///
-/// - `oauth2AccessTokenInterceptor`, the [OAuth2AccessTokenInterceptor]
-///   of every Feign client, for the registration
-///   `spring.feign.oauth2.client-registration-id` (else the
-///   Feign client's name), with the `dPoPKey`;
-/// - `oauth2AccessTokenErrorDecoder`, the [OAuth2AccessTokenErrorDecoder]
-///   that renews a token rejected with 401, unless the application has an
-///   `ErrorDecoder`.
+/// - `oauth2ProviderAllowedAddresses`, an [OAuth2ProviderAllowedAddresses]:
+///   the hosts of the providers' endpoints the properties name join the
+///   allow list of the RestClient starter's transport, which every token,
+///   discovery and user-info call goes through;
+/// - `oauth2ClientHttpRequestInterceptor`, the
+///   [OAuth2ClientHttpRequestInterceptor] (Spring Security 7's), with the
+///   `dPoPKey` and `spring.security.oauth2.client.restclient.client-registration-id`;
+/// - `oauth2RestClientCustomizer`, a `RestClientCustomizer` that adds it to
+///   every `RestClientBuilder` the RestClient starter makes (the injected
+///   ones and the HTTP service groups'), unless
+///   `spring.security.oauth2.client.restclient.enabled=false`; it sends a
+///   token only on the calls that name a registration
+///   (`@ClientRegistrationId`, `ClientAttributes.clientRegistrationId`).
 ///
 /// ```properties
 /// spring.security.oauth2.client.registration.partner.client-id=shop
 /// spring.security.oauth2.client.registration.partner.client-secret=${PARTNER_SECRET}
 /// spring.security.oauth2.client.registration.partner.authorization-grant-type=client_credentials
 /// spring.security.oauth2.client.provider.partner.token-uri=https://id.partner.example/oauth2/token
-/// spring.feign.oauth2.enabled=true
-/// spring.feign.oauth2.client-registration-id=partner
+/// spring.http.serviceclient.orders.base-url=https://api.partner.example
 /// ```
 final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
   BeanDefinition<ClientRegistrationRepository>(
@@ -128,6 +146,7 @@ final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
         OAuth2ClientPropertiesMapper(
           r.dependency<OAuth2ClientProperties>(),
           transport: r.optionalDependency<HttpTransport>(),
+          allowedAddresses: r.optionalDependency<AllowedAddresses>(),
         ).asClientRegistrations(),
       );
       _log.debug(
@@ -329,43 +348,59 @@ final oauth2ClientAutoConfiguration = <BeanDefinition<Object>>[
           .build(),
     ),
   ),
-  BeanDefinition<OAuth2AccessTokenInterceptor>(
-    name: 'oauth2AccessTokenInterceptor',
-    factoryMethodName: 'oauth2AccessTokenInterceptor',
-    types: const [OAuth2AccessTokenInterceptor, RequestInterceptor],
+  BeanDefinition<OAuth2ProviderAllowedAddresses>(
+    name: 'oauth2ProviderAllowedAddresses',
+    factoryMethodName: 'oauth2ProviderAllowedAddresses',
+    types: const [OAuth2ProviderAllowedAddresses, AllowedAddressesContributor],
     source: _source,
     conditions: const [
-      ConditionGroup('$_source.oauth2AccessTokenInterceptor', [
-        _feign,
-        ConditionalOnBean(OAuth2AuthorizedClientManager),
-        ConditionalOnMissingBean(OAuth2AccessTokenInterceptor),
+      ConditionGroup('$_source.oauth2ProviderAllowedAddresses', [
+        _OnClientsConfigured(),
       ]),
     ],
-    create: (r) => OAuth2AccessTokenInterceptor(
+    create: (r) =>
+        OAuth2ProviderAllowedAddresses(r.dependency<OAuth2ClientProperties>()),
+  ),
+  BeanDefinition<OAuth2ClientHttpRequestInterceptor>(
+    name: 'oauth2ClientHttpRequestInterceptor',
+    factoryMethodName: 'oauth2ClientHttpRequestInterceptor',
+    types: const [OAuth2ClientHttpRequestInterceptor],
+    source: _source,
+    conditions: const [
+      ConditionGroup('$_source.oauth2ClientHttpRequestInterceptor', [
+        ConditionalOnBean(OAuth2AuthorizedClientManager),
+        ConditionalOnMissingBean(OAuth2ClientHttpRequestInterceptor),
+      ]),
+    ],
+    create: (r) => OAuth2ClientHttpRequestInterceptor(
       r.dependency<OAuth2AuthorizedClientManager>(),
-      clientRegistrationId: r
-          .dependency<FeignOAuth2Properties>()
+      defaultClientRegistrationId: r
+          .dependency<OAuth2RestClientProperties>()
           .clientRegistrationId,
       authorizedClientService: r
           .optionalDependency<OAuth2AuthorizedClientService>(),
       dPoPKey: r.optionalDependency<DPoPKey>(),
     ),
   ),
-  BeanDefinition<OAuth2AccessTokenErrorDecoder>(
-    name: 'oauth2AccessTokenErrorDecoder',
-    factoryMethodName: 'oauth2AccessTokenErrorDecoder',
-    types: const [OAuth2AccessTokenErrorDecoder, ErrorDecoder],
+  BeanDefinition<RestClientCustomizer>(
+    name: 'oauth2RestClientCustomizer',
+    factoryMethodName: 'oauth2RestClientCustomizer',
+    types: const [RestClientCustomizer],
     source: _source,
     conditions: const [
-      ConditionGroup('$_source.oauth2AccessTokenErrorDecoder', [
-        _feign,
-        ConditionalOnBean(OAuth2AccessTokenInterceptor),
-        ConditionalOnMissingBean(ErrorDecoder),
+      ConditionGroup('$_source.oauth2RestClientCustomizer', [
+        _restClient,
+        ConditionalOnBean(OAuth2ClientHttpRequestInterceptor),
       ]),
     ],
-    create: (r) => OAuth2AccessTokenErrorDecoder(
-      const DefaultErrorDecoder(),
-      r.dependency<OAuth2AccessTokenInterceptor>(),
-    ),
+    create: (r) {
+      final interceptor = r.dependency<OAuth2ClientHttpRequestInterceptor>();
+      return RestClientCustomizer.of(
+        (builder) => OAuth2RestClientHttpServiceGroupConfigurer.addInterceptor(
+          builder,
+          interceptor,
+        ),
+      );
+    },
   ),
 ];

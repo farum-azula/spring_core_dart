@@ -8,10 +8,11 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_synchroniza
 /// Runs code in a transaction without annotations: the code commits when
 /// its `Future` completes and rolls back when it fails.
 ///
-/// Each call opens its own scope, so the transaction follows the `await`s
-/// of the code and never leaks into a call running at the same time. A call
-/// made inside another one's action follows the [TransactionDefinition]'s
-/// propagation (joins the running transaction by default).
+/// Each call opens its own scope, so the transaction follows the `await`
+/// expressions of the code and never leaks into a call running at the same
+/// time. A call made inside another one's action follows the
+/// [TransactionDefinition]'s propagation (joins the running transaction by
+/// default).
 ///
 /// Any exception or error thrown by the action rolls the transaction back
 /// and is thrown again. When the rollback itself fails, a

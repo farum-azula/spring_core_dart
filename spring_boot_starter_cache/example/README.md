@@ -176,6 +176,16 @@ final app = springBootTest(
 );
 ```
 
+Or, declared with annotations on a test class:
+
+```dart
+@SpringBootTest(properties: {'spring.cache.type': 'none'})
+class BooksTest {
+  @Autowired()
+  late Books books;
+}
+```
+
 Every annotation option, key expressions, cache resolvers and the
 differences from Spring are in the package
 [README](https://pub.dev/packages/spring_boot_starter_cache).

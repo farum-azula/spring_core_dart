@@ -52,11 +52,13 @@ final class ServerCredentialsHttpTransport implements HttpTransport {
   /// A transport for the page at [page] and its server [server]: the
   /// browser's `fetch` with `FetchCredentials.include` for the server
   /// and `FetchCredentials.sameOrigin` for the rest ([create] makes
-  /// them: `platformHttpTransport` with [connectTimeout] by default).
+  /// them: `platformHttpTransport` with [connectTimeout] and
+  /// [allowedAddresses] by default).
   factory ServerCredentialsHttpTransport.forPage({
     required BrowserPage page,
     required Uri server,
     Duration? connectTimeout,
+    AllowedAddresses? allowedAddresses,
     HttpTransport Function(FetchCredentials credentials)? create,
   }) {
     final make =
@@ -64,6 +66,7 @@ final class ServerCredentialsHttpTransport implements HttpTransport {
         (credentials) => platformHttpTransport(
           connectTimeout: connectTimeout,
           credentials: credentials,
+          allowedAddresses: allowedAddresses,
         );
     return ServerCredentialsHttpTransport(
       serverTransport: make(FetchCredentials.include),

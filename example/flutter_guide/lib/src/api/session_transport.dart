@@ -1,5 +1,5 @@
 import 'package:neon_books_app/src/api/cookie_jar.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 const _unsafe = {
   HttpMethod.post,
@@ -16,8 +16,8 @@ const _unsafe = {
 /// (Spring Security's recipe for single-page apps).
 ///
 /// A decorator: the requests go on to [_network], the platform's
-/// transport. Every Feign client uses it, because it is the primary
-/// `HttpTransport` bean (see `ApiConfig`). Tests replace only the network
+/// transport. Every HTTP service client uses it, because it is the
+/// primary `HttpTransport` bean (see `ApiConfig`). Tests replace only the network
 /// below it with a `MockHttpTransport`, so the cookies are tested too.
 ///
 /// Not on the web: there the browser keeps the cookies (the session

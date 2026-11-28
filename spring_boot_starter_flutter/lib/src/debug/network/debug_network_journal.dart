@@ -159,7 +159,7 @@ class DebugNetworkJournal extends ChangeNotifier {
             when !isDone && entry.error == null:
           sockets++;
           socketLatency = lastLatency ?? socketLatency;
-        case HttpExchange(:final isDone) when !isDone:
+        case HttpCall(:final isDone) when !isDone:
           requestsInFlight++;
         default:
       }
@@ -245,7 +245,7 @@ class DebugNetworkJournal extends ChangeNotifier {
   }
 
   static int _keptBy(NetworkEntry entry) => switch (entry) {
-    HttpExchange(:final requestBody, :final responseBody) =>
+    HttpCall(:final requestBody, :final responseBody) =>
       (requestBody?.kept ?? 0) + (responseBody?.kept ?? 0),
     WebSocketConnection(:final frames) => frames.fold(
       0,

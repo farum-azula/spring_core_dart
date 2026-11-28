@@ -21,7 +21,7 @@
 ///   part the library refers to only under `!dart.vm.product` and
 ///   `!dart.vm.profile`, so a profile or a release build leaves it out;
 ///   and `*.spring.env.dart`, a part with
-///   the constant map of the `--dart-define`s it may read
+///   the constant map of the `--dart-define` flags it may read
 ///   (`String.fromEnvironment` of each property and environment variable),
 ///   which `springApplication` passes as `dartDefines`.
 /// - A test file with `@SpringBootTest` classes gets a

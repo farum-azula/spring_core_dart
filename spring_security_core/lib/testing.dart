@@ -95,8 +95,8 @@ Future<T> withAnonymousUser<T>(FutureOr<T> Function() body) =>
 /// give what its own user may see, whatever the other calls do meanwhile.
 /// The calls start a few turns of the event loop apart, in a pattern that
 /// changes from call to call, so they overtake each other at their
-/// `await`s the way requests of a busy server do. What it finds: a bean
-/// that remembers the user in a field, a cache whose key has no user in
+/// `await` expressions the way requests of a busy server do. What it finds: a
+/// bean that remembers the user in a field, a cache whose key has no user in
 /// it, a result shared between callers, an authentication set outside
 /// every scope.
 ///

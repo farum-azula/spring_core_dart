@@ -2,9 +2,9 @@
 // vectors, JWK round trip), DER to raw R || S, the proofs (structure as in
 // RFC 9449 §4, signatures checked with pointycastle directly), the token
 // response clients (proofs, nonce retry, token types, auto / true / false
-// per registration), the user services, the Feign interceptor and error
-// decoder, the auto-configured key, and no key, proof or token in logs or
-// toString.
+// per registration), the user services, the auto-configured key, and no
+// key, proof or token in logs or toString. The proofs of RestClient calls:
+// rest_client_interceptor_test.dart.
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -16,7 +16,6 @@ import 'package:pointycastle/export.dart'
         ECSignature,
         PublicKeyParameter,
         SHA256Digest;
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
@@ -170,16 +169,6 @@ Uint8List _der(List<int> raw) {
 
   final body = [...integer(raw.sublist(0, 32)), ...integer(raw.sublist(32))];
   return Uint8List.fromList([0x30, body.length, ...body]);
-}
-
-final class _FixedManager implements OAuth2AuthorizedClientManager {
-  _FixedManager(this.client);
-  OAuth2AuthorizedClient client;
-
-  @override
-  Future<OAuth2AuthorizedClient?> authorize(
-    OAuth2AuthorizeRequest authorizeRequest,
-  ) async => client;
 }
 
 void main() {
@@ -953,164 +942,10 @@ void main() {
     });
   });
 
-  group('the Feign interceptor', () {
-    final key = SoftwareDPoPKey.generate();
-    final registration = _registration(dpop: DPoPMode.enabled);
-
-    OAuth2AuthorizedClient authorized(TokenType type, String value) =>
-        OAuth2AuthorizedClient(
-          registration,
-          'anonymousUser',
-          OAuth2AccessToken(type, value),
-        );
-
-    RequestTemplate template({String url = 'https://api.test/orders?page=2'}) =>
-        RequestTemplate(
-          method: HttpMethod.delete,
-          url: Uri.parse(url),
-          methodKey: 'Orders#delete()',
-          clientName: 'partner',
-          headers: HttpHeaders({'DPoP': 'stale', 'Authorization': 'old'}),
-        );
-
-    test(
-      'a DPoP token: DPoP <token> and a fresh proof for this call',
-      () async {
-        final interceptor = OAuth2AccessTokenInterceptor(
-          _FixedManager(authorized(TokenType.dpop, 'dpop-token')),
-          dPoPKey: key,
-        );
-        final call = template();
-        await interceptor.apply(call);
-        expect(call.headers.getAll('Authorization'), ['DPoP dpop-token']);
-        final proofs = call.headers.getAll('DPoP');
-        expect(proofs, hasLength(1));
-        final (header, claims) = _open(proofs.single);
-        expect(header['jwk'], key.publicJwk);
-        expect(claims['htm'], 'DELETE');
-        expect(claims['htu'], 'https://api.test/orders');
-        expect(claims['ath'], sha256Base64Url('dpop-token'));
-        expect(claims, isNot(contains('nonce')));
-
-        final again = template();
-        await interceptor.apply(again);
-        expect(
-          _open(again.headers['DPoP']!).$2['jti'],
-          isNot(claims['jti']),
-        );
-      },
-    );
-
-    test('a Bearer token: Bearer and no proof', () async {
-      final interceptor = OAuth2AccessTokenInterceptor(
-        _FixedManager(authorized(TokenType.bearer, 'bearer-token')),
-        dPoPKey: key,
-      );
-      final call = template();
-      await interceptor.apply(call);
-      expect(call.headers.getAll('Authorization'), ['Bearer bearer-token']);
-      expect(call.headers['DPoP'], isNull);
-    });
-
-    test('a DPoP token without a key fails the call', () {
-      final interceptor = OAuth2AccessTokenInterceptor(
-        _FixedManager(authorized(TokenType.dpop, 'dpop-token')),
-      );
-      expect(interceptor.apply(template()), throwsStateError);
-    });
-
-    test('a DPoP-Nonce of an error answer goes into the next proof, per '
-        'server', () async {
-      final interceptor = OAuth2AccessTokenInterceptor(
-        _FixedManager(authorized(TokenType.dpop, 'dpop-token')),
-        dPoPKey: key,
-        authorizedClientService: InMemoryOAuth2AuthorizedClientService(
-          InMemoryClientRegistrationRepository([registration]),
-        ),
-      );
-      final decoder = OAuth2AccessTokenErrorDecoder(
-        const DefaultErrorDecoder(),
-        interceptor,
-      );
-      final first = template();
-      await interceptor.apply(first);
-      final response = HttpResponse(
-        401,
-        headers: HttpHeaders({
-          'WWW-Authenticate':
-              'DPoP error="use_dpop_nonce", '
-              'error_description="Resource server requires nonce"',
-          'DPoP-Nonce': 'api-nonce',
-        }),
-        request: HttpRequest(
-          method: first.method,
-          url: first.url,
-          headers: first.headers,
-        ),
-      );
-      expect(
-        decoder.decode('Orders#delete()', response),
-        isA<FeignUnauthorized>(),
-      );
-
-      final second = template(url: 'https://api.test/other');
-      await interceptor.apply(second);
-      expect(_open(second.headers['DPoP']!).$2['nonce'], 'api-nonce');
-      final elsewhere = template(url: 'https://other.test/orders');
-      await interceptor.apply(elsewhere);
-      expect(_open(elsewhere.headers['DPoP']!).$2, isNot(contains('nonce')));
-    });
-
-    test('a 401 that only asks for a nonce keeps the token', () async {
-      final repository = InMemoryClientRegistrationRepository([registration]);
-      final service = InMemoryOAuth2AuthorizedClientService(repository);
-      final stored = authorized(TokenType.dpop, 'dpop-token');
-      await service.saveAuthorizedClient(stored, anonymousAuthentication);
-      final interceptor = OAuth2AccessTokenInterceptor(
-        _FixedManager(stored),
-        dPoPKey: key,
-        authorizedClientService: service,
-      );
-      final decoder = OAuth2AccessTokenErrorDecoder(
-        const DefaultErrorDecoder(),
-        interceptor,
-      );
-      final call = template();
-      await interceptor.apply(call);
-      HttpResponse refused(String challenge) => HttpResponse(
-        401,
-        headers: HttpHeaders({'WWW-Authenticate': challenge}),
-        request: HttpRequest(
-          method: call.method,
-          url: call.url,
-          headers: call.headers,
-        ),
-      );
-      decoder.decode('k', refused('DPoP error="use_dpop_nonce"'));
-      await interceptor.apply(template()); // waits for pending work
-      expect(
-        (await service.loadAuthorizedClient(
-          'partner',
-          'anonymousUser',
-        ))!.accessToken.expiresAt,
-        isNull,
-      );
-      decoder.decode('k', refused('DPoP error="invalid_token"'));
-      await interceptor.apply(template());
-      expect(
-        (await service.loadAuthorizedClient(
-          'partner',
-          'anonymousUser',
-        ))!.accessToken.expiresAt,
-        DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-      );
-    });
-  });
-
   group('auto-configuration', () {
     final runner = const ApplicationContextRunner()
         .withAutoConfiguration(springBootAutoConfiguration)
-        .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
+        .withAutoConfiguration(springBootStarterRestclientAutoConfiguration)
         .withAutoConfiguration(springSecurityCoreAutoConfiguration)
         .withAutoConfiguration(springBootStarterOauth2ClientAutoConfiguration)
         .withBean<HttpTransport>(MockHttpTransport.new);

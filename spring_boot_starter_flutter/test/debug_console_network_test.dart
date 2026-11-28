@@ -36,7 +36,7 @@ final class _Transport implements HttpTransport {
 
 final _t0 = DateTime(2026, 11, 25, 12);
 
-HttpExchange _exchange(
+HttpCall _exchange(
   DebugNetworkJournal journal,
   String path, {
   String method = 'GET',
@@ -45,7 +45,7 @@ HttpExchange _exchange(
   int size = 1229,
   bool failed = false,
 }) => journal.add(
-  HttpExchange(
+  HttpCall(
       id: journal.nextId(),
       url: Uri.parse('https://api.neon.books$path'),
       started: _t0,
@@ -58,10 +58,10 @@ HttpExchange _exchange(
     ..responseSize = size
     ..error = failed ? 'connection failed: refused' : null
     ..state = failed
-        ? HttpExchangeState.failed
+        ? HttpCallState.failed
         : total == null
-        ? HttpExchangeState.waiting
-        : HttpExchangeState.done,
+        ? HttpCallState.waiting
+        : HttpCallState.done,
 );
 
 DebugNetworkJournal _journal() =>

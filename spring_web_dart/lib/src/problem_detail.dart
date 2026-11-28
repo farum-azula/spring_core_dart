@@ -120,8 +120,8 @@ class ProblemDetail {
       title ?? HttpStatus.resolve(status)?.reasonPhrase;
 
   /// The JSON object: [type], [effectiveTitle], [status], [detail] and
-  /// [instance] (leaving out `null`s), then [properties]. A property with a
-  /// standard name replaces that member.
+  /// [instance] (leaving out `null` values), then [properties]. A property with
+  /// a standard name replaces that member.
   Map<String, Object?> toJson() => {
     'type': type.toString(),
     'title': ?effectiveTitle,

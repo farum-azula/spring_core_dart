@@ -25,7 +25,7 @@ import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 /// `OAuth2AuthorizedClientService` bean.
 ///
 /// Spring (Java): `OAuth2AuthorizedClientRepository`; the methods return
-/// `Future`s here.
+/// `Future` values here.
 abstract interface class OAuth2AuthorizedClientRepository {
   /// The client of [principal] for [clientRegistrationId], or `null`.
   Future<OAuth2AuthorizedClient?> loadAuthorizedClient(
@@ -124,7 +124,7 @@ final class HttpSessionOAuth2AuthorizedClientRepository
 /// of anonymous users to the session.
 ///
 /// Through the service, code without a request (a scheduled job, the
-/// Feign interceptor) finds the tokens of a user too.
+/// `RestClient` interceptor) finds the tokens of a user too.
 ///
 /// Spring (Java): `AuthenticatedPrincipalOAuth2AuthorizedClientRepository`.
 final class AuthenticatedPrincipalOAuth2AuthorizedClientRepository

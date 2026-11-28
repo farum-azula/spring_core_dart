@@ -21,7 +21,7 @@ Reference _spring(String name) => refer(name, _springUrl);
 Expression _str(String value) => literalString(value, raw: true);
 
 /// Writes the descriptions of a module's classes ([IntrospectionModel]s)
-/// as `Introspection`s, with only the parts the build saw used
+/// as `Introspection` instances, with only the parts the build saw used
 /// ([IntrospectionModel.need]), and the type descriptions (`TypeInfo`)
 /// other generated code writes too.
 ///
@@ -29,8 +29,8 @@ Expression _str(String value) => literalString(value, raw: true);
 /// descriptions go into: the module's `<library>.spring.introspection.dart`,
 /// and its `<library>.spring.properties.dart` for the descriptions only the
 /// binder of `@ConfigurationProperties` classes uses (see [onlyForBinding]);
-/// the module's own library writes the `TypeInfo`s of its beans' methods with
-/// one of its own. [library] writes such a library.
+/// the module's own library writes the `TypeInfo` instances of its beans'
+/// methods with one of its own. [library] writes such a library.
 ///
 /// ```dart
 /// // Input:
@@ -126,7 +126,7 @@ final class IntrospectionEmitter {
   /// A generic class `Page<T>` is written with `T` erased
   /// (`Introspection<Page<dynamic>>`), plus, when its type parameters
   /// have no bounds, `specialize`: the introspection of `Page<X>` for the
-  /// `TypeInfo`s of the type arguments, captured as type parameters:
+  /// `TypeInfo` instances of the type arguments, captured as type parameters:
   ///
   /// ```dart
   /// specialize: (arguments) => arguments[0].capture(

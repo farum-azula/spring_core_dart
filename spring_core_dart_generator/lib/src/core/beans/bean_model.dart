@@ -374,7 +374,7 @@ class ConstructorAlternative {
 }
 
 /// A bean that is a generated implementation of an annotated interface,
-/// such as a `@FeignClient`: `_$XImpl.$create(r)`.
+/// such as a `@WebSocketClient`: `_$XImpl.$create(r)`.
 ///
 /// The interface has no class to construct, so the generator writes one
 /// whose methods forward every call to an `InvocationHandler`. It gets the
@@ -383,10 +383,10 @@ class ConstructorAlternative {
 ///
 /// ```dart
 /// // Input:
-/// @FeignClient('catalog')
-/// abstract interface class CatalogClient { ... }
+/// @WebSocketClient('support')
+/// abstract interface class SupportSocket { ... }
 /// // Output:
-/// create: (r) => _$CatalogClientImpl.$create(r),
+/// create: (r) => _$SupportSocketImpl.$create(r),
 /// ```
 class InterfaceProxyCreation extends Creation {
   /// Creates the interface proxy of [model].
@@ -928,7 +928,7 @@ class TypeConditionModel extends ConditionModel {
 }
 
 /// The conditions of a configuration class, evaluated once for the class,
-/// its `@Bean` methods and its `@PropertySource`s.
+/// its `@Bean` methods and its `@PropertySource` annotations.
 ///
 /// Without the group, every `@Bean` method would evaluate the class's
 /// conditions again, and they could disagree (a condition that looks at
@@ -1400,11 +1400,11 @@ class ForeignAdvice {
 
   /// Whether another module declares an advisor bean whose pointcut the
   /// build cannot read, which may match anything, or may register advice
-  /// in code (an `@Import`ed registrar, a `BeanFactoryPostProcessor`
+  /// in code (a registrar imported with `@Import`, a `BeanFactoryPostProcessor`
   /// bean); nothing is pruned then.
   bool advisors = false;
 
-  /// The `source`s of the aspect and advisor beans of the other modules,
+  /// The `source` values of the aspect and advisor beans of the other modules,
   /// and `package:<name>` for each auto-configuration package whose advice
   /// the build read: the pruned proxies list them
   /// (`AopProxyFactory.knownAdvisors`), and the context fails at startup
@@ -2541,7 +2541,8 @@ class ModuleModel {
   /// The `@PropertySource` declarations of scanned and imported classes.
   final propertySources = <PropertySourceModel>[];
 
-  /// The `@Import`ed registrars and selectors (`BeanModule.registrars`).
+  /// The registrars and selectors imported with `@Import`
+  /// (`BeanModule.registrars`).
   final registrars = <RegistrarModel>[];
 
   /// The module variables of nested `@ComponentScan` roots, registered
@@ -2557,7 +2558,7 @@ class ModuleModel {
   /// `@SpringBootApplication` output has some.
   final foreignProxies = <ForeignProxyModel>[];
 
-  /// The `source`s of the aspect and advisor beans the build knew of when
+  /// The `source` values of the aspect and advisor beans the build knew of when
   /// it pruned proxies of the module (see [ForeignAdvice.knownSources]);
   /// `null` when it pruned none. `analyzeAop` sets it.
   Set<String>? knownAdvisors;
@@ -2793,28 +2794,29 @@ class AnnotatedMethodModel {
 }
 
 /// An abstract class with an annotation marked `@InterfaceProxy()` (such
-/// as `@FeignClient`), and the implementation the generator writes for it.
+/// as `@WebSocketClient`), and the implementation the generator writes for
+/// it.
 ///
 /// The application declares only the interface. The generated class
 /// forwards every method call, with its metadata and arguments, to an
-/// `InvocationHandler` that the starter provides: an HTTP client for
-/// `@FeignClient`, for example.
+/// `InvocationHandler` that the starter provides: a WebSocket connection
+/// for `@WebSocketClient`, for example.
 ///
 /// ```dart
 /// // Input:
-/// @FeignClient('catalog')
-/// abstract interface class CatalogClient {
-///   @GetMapping('/books/{isbn}')
-///   Future<Book> find(@PathVariable() String isbn);
+/// @WebSocketClient('chat', url: r'${chat.url}')
+/// abstract interface class ChatSocket {
+///   @SendMessage()
+///   Future<void> send(ChatMessage message);
 /// }
 ///
 /// // Output:
-/// class _$CatalogClientImpl implements CatalogClient {
-///   _$CatalogClientImpl(this._handler, this._metadata);
-///   static _$CatalogClientImpl $create(DependencyResolver r) { ... }
+/// class _$ChatSocketImpl implements ChatSocket {
+///   _$ChatSocketImpl(this._handler, this._metadata);
+///   static _$ChatSocketImpl $create(DependencyResolver r) { ... }
 ///   @override
-///   Future<Book> find(String isbn) => retypeFuture<Book>(
-///       _handler.invoke(_metadata.methods[0], [isbn]));
+///   Future<void> send(ChatMessage message) => retypeFuture<void>(
+///       _handler.invoke(_metadata.methods[0], [message]));
 /// }
 /// ```
 class InterfaceProxyModel {
@@ -2841,7 +2843,7 @@ class InterfaceProxyModel {
   final List<InterfaceMethodModel> methods;
 
   /// The user annotations on the interface, which the handler reads
-  /// (`@FeignClient('catalog')`).
+  /// (`@WebSocketClient('support')`).
   final List<DartObject> annotations;
 }
 

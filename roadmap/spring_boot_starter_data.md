@@ -1020,7 +1020,6 @@ defaults):
 
 | Now | New |
 |---|---|
-| `spring.cloud.openfeign.*` | `spring.feign.*` |
 | `spring.jackson.*` | `spring.json.*` |
 | `spring.servlet.multipart.*` | `spring.web.multipart.*` |
 | `server.servlet.context-path`, `server.servlet.session.*` | `server.context-path`, `server.session.*` |

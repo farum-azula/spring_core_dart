@@ -1,6 +1,6 @@
 // server.request-timeout: the total time of a request's filters and
-// handler, as a RequestDeadline the code it calls can read (a Feign call),
-// and a 503 when it passes. Over real sockets, with handlers written
+// handler, as a RequestDeadline the code it calls can read (a RestClient
+// call), and a 503 when it passes. Over real sockets, with handlers written
 // inline, so the tests need no code generation.
 @Tags(['integration'])
 library;
@@ -10,17 +10,12 @@ import 'dart:convert';
 import 'dart:io' as io;
 import 'dart:typed_data';
 
-import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as feign;
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
-    show FeignCallTimeoutException;
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:spring_boot_starter_web/io.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:test/test.dart';
 
 import 'support.dart';
-import 'upstream_client.dart';
 
 typedef _Route = FutureOr<void> Function(ServerHttpRequest, ServerHttpResponse);
 
@@ -607,11 +602,12 @@ void main() {
     });
   });
 
-  group('a controller calls a slow Feign client inside a request with '
-      'server.request-timeout', () {
+  group('a controller calls a slow service through a RestClient inside a '
+      'request with server.request-timeout', () {
     late IoWebServer upstream;
     late int upstreamRequests;
     late Duration upstreamDelay;
+    late RestClient client;
 
     setUp(() async {
       upstreamRequests = 0;
@@ -625,32 +621,28 @@ void main() {
         const ServerProperties(port: 0, address: '127.0.0.1'),
       );
       await upstream.start();
+      // Its default transport calls the host of the base URL only.
+      client = RestClient.create('http://127.0.0.1:${upstream.port}');
     });
 
     tearDown(() => upstream.stop(timeout: Duration.zero));
 
-    ApplicationContextRunner runner(List<String> properties) =>
-        webRunner([
-              'spring.feign.client.config.upstream.url=http://127.0.0.1:${upstream.port}',
-              ...properties,
-            ])
-            .withAutoConfiguration(
-              feign.springBootStarterFeignAutoConfiguration,
-            )
-            .withUserConfiguration(upstreamModule);
+    Future<String> work() =>
+        client.get().uri('/work').retrieve().body<String>();
 
     test('the call fails fast at the request deadline: a 503, not the '
-        "Feign client's read timeout", () async {
+        "client's read timeout", () async {
       Object? failure;
       Duration? budget;
-      await runner(['server.request-timeout=500ms']).runAsync((context) async {
-        final client = context.context.getBean<UpstreamClient>();
+      await webRunner(['server.request-timeout=500ms']).runAsync((
+        context,
+      ) async {
         final served = await _serveRoutes(context.context, {
           '/report': (request, response) async {
             budget = RequestDeadline.current!.budget;
             try {
-              final work = await client.work();
-              await response.send(200, work);
+              final done = await work();
+              await response.send(200, done);
             } on Object catch (error) {
               failure = error;
               rethrow;
@@ -660,7 +652,7 @@ void main() {
         try {
           final watch = Stopwatch()..start();
           final reply = await Client(served.port).get('/report');
-          // The default read timeout is 60 s; the answer came at 500 ms.
+          // The upstream takes 5 s; the answer came at 500 ms.
           expect(watch.elapsed, lessThan(const Duration(seconds: 3)));
           expect(reply.status, 503);
           expect(
@@ -673,11 +665,13 @@ void main() {
           expect(budget, const Duration(milliseconds: 500));
           expect(
             failure,
-            isA<FeignCallTimeoutException>().having(
-              (e) => e.enclosingDeadline,
-              'enclosingDeadline',
-              isTrue,
-            ),
+            isA<ResourceAccessException>()
+                .having((e) => e.isTimeout, 'isTimeout', isTrue)
+                .having(
+                  (e) => e.message,
+                  'message',
+                  contains('the deadline of the enclosing request'),
+                ),
           );
         } finally {
           await served.server.stop();
@@ -687,12 +681,11 @@ void main() {
 
     test('a call that fits in the budget answers as usual', () async {
       upstreamDelay = const Duration(milliseconds: 50);
-      await runner(['server.request-timeout=2s']).runAsync((context) async {
-        final client = context.context.getBean<UpstreamClient>();
+      await webRunner(['server.request-timeout=2s']).runAsync((context) async {
         final served = await _serveRoutes(context.context, {
           '/report': (request, response) async {
-            final work = await client.work();
-            await response.send(200, 'report: $work');
+            final done = await work();
+            await response.send(200, 'report: $done');
           },
         });
         try {
@@ -708,12 +701,11 @@ void main() {
     test('with server.request-timeout=0 the call is limited by its own '
         'timeouts only', () async {
       upstreamDelay = const Duration(milliseconds: 100);
-      await runner(['server.request-timeout=0']).runAsync((context) async {
-        final client = context.context.getBean<UpstreamClient>();
+      await webRunner(['server.request-timeout=0']).runAsync((context) async {
         final served = await _serveRoutes(context.context, {
           '/report': (request, response) async {
-            final work = await client.work();
-            await response.send(200, work);
+            final done = await work();
+            await response.send(200, done);
           },
         });
         try {

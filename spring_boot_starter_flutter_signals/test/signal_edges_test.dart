@@ -1,7 +1,8 @@
 // The edges of followed state, on beans made for them (cases/cases.dart,
 // as generated): state from a base class and a mixin, late and injected
 // fields, a constructor and @PostConstruct, scopes, a method that throws,
-// an asynchronous one, effects that write or fail, a cycle.
+// an asynchronous one, effects that write or fail, a cycle, a retried
+// buffered method.
 import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
@@ -52,6 +53,7 @@ void main() {
         springBootAutoConfiguration,
         springBootStarterFlutterAutoConfiguration,
         springBootStarterFlutterSignalsAutoConfiguration,
+        springBootResilienceAutoConfiguration,
       ],
     ),
   );
@@ -494,5 +496,14 @@ void main() {
     addTearDown(stop);
     app.context.publishEvent(Ping(bean));
     expect(heard, [0, 1]);
+  });
+
+  test('a retried buffered method tells only the writes of the attempt '
+      'that succeeds', () async {
+    final restock = app.getBean<Restock>();
+    await restock.refill(5);
+    expect(restock.attempts, 3);
+    expect(restock.stock, 5);
+    expect(restock.seen, [0, 5]);
   });
 }

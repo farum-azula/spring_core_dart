@@ -98,26 +98,35 @@ main library and their main libraries come with it.
 | `spring_boot_starter_scheduling` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_core_dart` | `@Scheduled` |
 | `spring_boot_starter_data` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_core_dart` | Repositories and SQL databases. `testing.dart` is a library of its own |
 | `spring_security_core` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_core_dart` | Users, password encoders, method security. `testing.dart` is a library of its own |
-| `spring_boot_starter_feign` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | `@FeignClient` |
+| `spring_boot_starter_restclient` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | `RestClient`: the `RestClientBuilder` bean, HTTP service clients (`@HttpExchange`, `@ImportHttpServices`) in groups, the transport's allowed addresses |
 | `spring_boot_starter_websocket` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | `@WebSocketClient`, `@WebSocketEndpoint` |
-| `spring_boot_starter_supabase` | `spring_boot_dart`, `spring_boot_starter_cache`, `spring_boot_starter_data`, `spring_boot_starter_feign`, `spring_boot_starter_logging`, `spring_boot_starter_websocket`, `spring_core_dart`, `spring_security_core`, `spring_web_dart` | Supabase: repositories over its REST API or SQL, `SupabaseAuth`, `StorageTemplate`, `@StorageBucket`, `@EdgeFunctions`, `@RealtimeChannel` |
+| `spring_boot_starter_supabase` | `spring_boot_dart`, `spring_boot_starter_cache`, `spring_boot_starter_data`, `spring_boot_starter_logging`, `spring_boot_starter_restclient`, `spring_boot_starter_websocket`, `spring_core_dart`, `spring_security_core`, `spring_web_dart` | Supabase: repositories over its REST API or SQL, `SupabaseAuth`, `StorageTemplate`, `@StorageBucket`, `@EdgeFunctions`, `@RealtimeChannel` |
 | `spring_boot_starter_web` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | The server. `io.dart` (the `dart:io` server factory) is a library of its own |
 | `spring_boot_starter_edge` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_boot_starter_web`, `spring_core_dart`, `spring_web_dart` | The application as a function: Supabase Edge Functions, Cloudflare Workers, AWS Lambda. `build.dart` (the build, `dart:io`) is a library of its own |
 | `spring_boot_actuator` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | The actuator's endpoints, without HTTP |
 | `spring_boot_starter_actuator` | `spring_boot_actuator`, `spring_boot_dart`, `spring_boot_starter_logging`, `spring_boot_starter_web`, `spring_core_dart`, `spring_web_dart` | The endpoints over HTTP |
-| `spring_boot_starter_oauth2_client` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_security_core`, `spring_web_dart` | OAuth 2.0 and OpenID Connect clients. Not the Feign starter: the access token on Feign calls (`OAuth2AccessTokenInterceptor`) is for apps with Feign clients, which list Feign |
-| `spring_boot_starter_security` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_boot_starter_oauth2_client`, `spring_boot_starter_web`, `spring_core_dart`, `spring_security_core`, `spring_web_dart` | The security filter chain. Its `testing.dart` re-exports `spring_security_core`'s, with `user()` and `csrf()` for MockMvc |
+| `spring_boot_starter_oauth2_client` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_boot_starter_restclient`, `spring_core_dart`, `spring_security_core`, `spring_web_dart` | OAuth 2.0 and OpenID Connect clients, and the token on `RestClient` calls and HTTP service interfaces (`@ClientRegistrationId`) |
+| `spring_boot_starter_security` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_boot_starter_oauth2_client`, `spring_boot_starter_restclient`, `spring_boot_starter_web`, `spring_core_dart`, `spring_security_core`, `spring_web_dart` | The security filter chain. Its `testing.dart` re-exports `spring_security_core`'s, with `user()` and `csrf()` for MockMvc |
 | `spring_boot_starter_flutter` | `spring_boot_dart`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | Flutter apps, with no design library: `spring.flutter.app.type`, when not set, is the type of the one design starter listed, else `widgets` (a `WidgetsApp`), and must be set when both are; `spring_web_dart` because the starter's API takes an `HttpTransport` (`RemoteCache`, the theme's network images) |
 | `spring_boot_starter_flutter_material` | `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | Material Design: the `MaterialApp` of `spring.flutter.app.type: material`, the themes as `ThemeData`. Not `material_ui`: an app lists it for the widgets it uses |
 | `spring_boot_starter_flutter_cupertino` | `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | Cupertino: the `CupertinoApp` of `spring.flutter.app.type: cupertino`, the themes as `CupertinoThemeData`. Not `cupertino_ui`: an app lists it for the widgets it uses |
 | `spring_boot_starter_flutter_navigation` | `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | Screens, routes, the browser's addresses |
 | `spring_boot_starter_flutter_scene` | `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | 3D scenes on `flutter_scene`: `SpringSceneView`, the models of `spring.flutter.scene.models`, the application's scene. Not `flutter_scene`: an app lists it itself to use the engine's scene widgets. `build_hooks.dart` (the shader bundle for an app's `hook/build.dart`, `dart:io`) is a library of its own |
 | `spring_boot_starter_flutter_signals` | `signals_core`, `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_boot_starter_logging`, `spring_core_dart`, `spring_web_dart` | Reactive state in beans: `@Signal`, `@Computed`, `@Effect`, `Watch`, `AsyncView`. Of the third-party signals package only two functions, for a read that is not followed and for several changes told as one |
-| `spring_boot_starter_flutter_security` | `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_boot_starter_flutter_navigation`, `spring_boot_starter_logging`, `spring_boot_starter_oauth2_client`, `spring_core_dart`, `spring_security_core`, `spring_web_dart` | The app's login and its secrets. Its `testing.dart` re-exports `spring_security_core`'s (`withMockUser`) |
+| `spring_boot_starter_flutter_security` | `spring_boot_dart`, `spring_boot_starter_flutter`, `spring_boot_starter_flutter_navigation`, `spring_boot_starter_logging`, `spring_boot_starter_oauth2_client`, `spring_boot_starter_restclient`, `spring_core_dart`, `spring_security_core`, `spring_web_dart` | The app's login and its secrets. Its `testing.dart` re-exports `spring_security_core`'s (`withMockUser`) |
 | `spring_boot_starter_test` | `spring_boot_dart`, `spring_core_dart` | Dev dependency. It also re-exports `spring_web_dart`'s `testing.dart` (the fake transports) |
 
 A test in the repository (`tool/test/docs_packages_test.dart`) checks this
 table against the `export` directives of the packages.
+
+## Discontinued packages
+
+Packages the family no longer develops. Their last version stays on
+pub.dev, marked discontinued; no package of the family depends on them.
+
+| Package | Last version | Why, and what to use |
+|---|---|---|
+| `spring_boot_starter_feign` | 0.10.1 | Spring Cloud OpenFeign is feature-complete, and Spring points to its HTTP service clients instead. The family follows Spring as closely as it can, so it no longer supports Feign. Use `spring_boot_starter_restclient`: `RestClient`, and `@HttpExchange` interfaces imported with `@ImportHttpServices` (the generator writes their calls). |
 
 ## Libraries that come with no starter
 
@@ -140,8 +149,8 @@ The rules the packages follow:
   `spring_core_dart`, the logging starter exports `spring_boot_dart`, every
   starter exports the logging starter.
 - **The types of its API.** A package whose public API takes or returns
-  another package's types re-exports that package: web, Feign, WebSocket,
-  the actuator, the OAuth2 client and the Flutter starter export
+  another package's types re-exports that package: web, RestClient,
+  WebSocket, the actuator, the OAuth2 client and the Flutter starter export
   `spring_web_dart` (`HttpRequest`, `ResponseEntity`, `HttpTransport`).
 - **Another starter only when its API is built on it.** The security
   starter re-exports the web starter (`HttpSecurity` secures its requests)
@@ -150,10 +159,11 @@ The rules the packages follow:
   widgets and route guards) and the OAuth2 client; the Material and
   Cupertino starters the Flutter starter (their themes and app widgets
   are its `SpringThemes` and `SpringApplicationWidget`). An optional integration
-  does not count: the OAuth2 client works with Feign clients when there
-  are some, but does not re-export Feign. An application that writes
-  Feign clients lists the Feign starter, whatever else brings it (rule 1),
-  so it does not break the day a starter stops using Feign.
+  does not count: the Flutter starter points the data starter's SQLite
+  database at the app's directory when the app has the data starter, but
+  does not re-export it. An application that writes HTTP service clients
+  lists the RestClient starter, whatever else brings it (rule 1), so it
+  does not break the day a starter stops using it.
 - **Test code apart.** Fakes and test helpers live in a `testing.dart`
   library, re-exported by `spring_boot_starter_test` or by the starter's
   own `testing.dart`, never by a main library.

@@ -6,7 +6,9 @@
 //   dart run example/example.dart
 //
 // It starts a local server standing in for the project, so it runs
-// anywhere. With a real project, set spring.supabase.url and
+// anywhere: the application's HTTP transport calls only allowed
+// addresses, and the host of spring.supabase.url is allowed by the
+// starter. With a real project, set spring.supabase.url and
 // spring.supabase.anon-key instead (see the README).
 
 import 'dart:convert';
@@ -43,7 +45,8 @@ abstract interface class Avatars {
   Uri link(String userId);
 }
 
-/// The Edge Functions of the project (`/functions/v1`), a Feign client.
+/// The Edge Functions of the project (`/functions/v1`): an HTTP service
+/// interface of the group `supabase-functions`, imported on `main`.
 @EdgeFunctions()
 abstract interface class Functions {
   @EdgeFunction('hello')
@@ -75,6 +78,7 @@ class Tour implements CommandLineRunner {
 }
 
 @SpringBootApplication()
+@ImportHttpServices(group: EdgeFunctions.group, types: [Functions])
 Future<void> main(List<String> args) async {
   final project = await _project();
   final context = await springApplication.runAsync(

@@ -73,7 +73,7 @@ final class NetworkWaterfall {
   /// The scale of [entries] at [now].
   factory NetworkWaterfall(Iterable<NetworkEntry> entries, DateTime now) {
     final all = entries.toList(growable: false);
-    final requests = all.whereType<HttpExchange>().toList(growable: false);
+    final requests = all.whereType<HttpCall>().toList(growable: false);
     final scaled = requests.isEmpty ? all : requests;
     if (scaled.isEmpty) {
       return NetworkWaterfall._(now, Duration.zero, now);
@@ -129,7 +129,7 @@ final class NetworkWaterfall {
     final ends = _end(entry, now);
     final elapsed = ends.difference(entry.started);
     final Duration? firstByte = switch (entry) {
-      final HttpExchange exchange => exchange.firstByte,
+      final HttpCall exchange => exchange.firstByte,
       final WebSocketConnection connection => connection.connectTime,
     };
     var from = _at(entry.started);
@@ -149,7 +149,7 @@ final class NetworkWaterfall {
       firstByte: mark,
       end: to,
       inFlight: !entry.isDone,
-      slow: entry is HttpExchange && elapsed >= slowAfter,
+      slow: entry is HttpCall && elapsed >= slowAfter,
       failed: entry.statusClass == NetworkStatusClass.failed,
       clipped: span > Duration.zero && ends.isAfter(start.add(span)),
     );

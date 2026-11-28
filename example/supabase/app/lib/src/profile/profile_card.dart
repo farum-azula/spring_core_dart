@@ -4,7 +4,11 @@ import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 import 'package:spring_boot_starter_supabase/spring_boot_starter_supabase.dart'
-    show FeignException, StorageException, SupabaseAuth;
+    show
+        ResourceAccessException,
+        RestClientResponseException,
+        StorageException,
+        SupabaseAuth;
 import 'package:supabase_example_app/src/profile/avatars.dart';
 import 'package:supabase_example_app/src/profile/functions.dart';
 
@@ -70,8 +74,10 @@ class _ProfileCardState extends SpringState<ProfileCard, ProfileCardBeans> {
         const Invite(email: 'friend@example.com'),
       );
       _say(messenger, 'Invited: ${result.id}');
-    } on FeignException catch (error) {
-      _say(messenger, 'The function failed (${error.status})');
+    } on RestClientResponseException catch (error) {
+      _say(messenger, 'The function failed (${error.statusCode.value})');
+    } on ResourceAccessException {
+      _say(messenger, 'The function did not answer');
     }
   }
 

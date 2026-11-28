@@ -1,8 +1,8 @@
 import 'package:neon_books_app/src/api/models.dart';
 import 'package:spring_boot_starter_websocket/spring_boot_starter_websocket.dart';
 
-/// The support chat, a WebSocket (`/ws/support`) described like a Feign
-/// client: incoming messages as a stream, sending as a method. One
+/// The support chat, a WebSocket (`/ws/support`) described like an HTTP
+/// service interface: incoming messages as a stream, sending as a method. One
 /// connection for both; it opens on the first listener and reconnects.
 /// The server lets only logged-in users in: `SupportHandshake` adds the
 /// session cookie to every handshake.

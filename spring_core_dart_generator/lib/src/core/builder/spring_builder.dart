@@ -478,6 +478,9 @@ class SpringBuilder implements Builder {
       started,
     );
     await _scanLibraries(buildStep, scanner, assets);
+    for (final generation in started) {
+      generation.scanModule(build);
+    }
     scanner.collectErrors(() => _checkUniqueNames(module.beans));
     await _checkModule(build, started);
     scanner.throwErrors();
@@ -975,6 +978,9 @@ class SpringBuilder implements Builder {
       started,
     );
     await _scanLibraries(buildStep, scanner, assets);
+    for (final generation in started) {
+      generation.scanModule(build);
+    }
     scanner.collectErrors(() => _checkUniqueNames(module.beans));
     await _checkModule(build, started);
     scanner.throwErrors();

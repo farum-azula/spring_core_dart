@@ -635,8 +635,8 @@ bool _isConstantNode(SpelNode node) => switch (node) {
 /// A property read or written on the active object: `name`, `a.name`,
 /// `a?.name`.
 ///
-/// Properties of `SpelType`s are static fields (`T(Math).PI`); otherwise
-/// the context's property accessors are asked in order. Without
+/// Properties of `SpelType` instances are static fields (`T(Math).PI`);
+/// otherwise the context's property accessors are asked in order. Without
 /// reflection, user classes need an accessor such as
 /// `FunctionPropertyAccessor` or `IntrospectionPropertyAccessor`.
 ///
@@ -809,7 +809,7 @@ final class PropertyOrFieldReference extends SpelNode {
 /// `a?.name(args)`.
 ///
 /// Arguments are evaluated against the scope root (not the target);
-/// static methods of `SpelType`s are tried first, then the context's
+/// static methods of `SpelType` instances are tried first, then the context's
 /// method resolvers in order. Exceptions thrown by the method propagate
 /// unchanged, like Spring; an `AccessException` from an executor is
 /// reported as [SpelMessage.exceptionDuringMethodInvocation], and
@@ -1120,11 +1120,11 @@ final class FunctionReference extends SpelNode {
 ///
 /// The index is evaluated against the root object, like Spring. Lists and
 /// maps are readable and writable; strings are read-only; other targets
-/// go to the context's `IndexAccessor`s, then iterables (read-only), then
-/// a string index on any other object reads that property. An unquoted
+/// go to the context's `IndexAccessor` instances, then iterables (read-only),
+/// then a string index on any other object reads that property. An unquoted
 /// name indexing a map is the key itself. With
 /// `SpelParserConfiguration.autoGrowCollections`, lists grow (with
-/// `null`s) when indexed past their end.
+/// `null` values) when indexed past their end.
 ///
 /// ```dart
 /// SpelExpressionParser()

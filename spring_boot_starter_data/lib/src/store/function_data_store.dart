@@ -33,7 +33,8 @@ abstract interface class FunctionDataStore implements DataStore {
   /// transaction of the store when there is one. The values of the rows
   /// are as the database gives them (see [RowReadingDataStore]).
   ///
-  /// Failures are `DataAccessException`s, as for every method of a store.
+  /// Failures are `DataAccessException` instances, as for every method of a
+  /// store.
   Future<List<Map<String, Object?>>> callFunction(
     String name,
     Map<String, Object?> arguments,

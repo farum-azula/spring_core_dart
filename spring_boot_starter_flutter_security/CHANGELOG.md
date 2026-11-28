@@ -1,3 +1,9 @@
+## Unreleased
+
+- **Breaking: no Feign.** The package no longer depends on `spring_boot_starter_feign`: Spring Cloud OpenFeign is feature-complete and Spring points to its HTTP service clients, so the family no longer supports Feign. An app declares its APIs as HTTP service interfaces (`@HttpExchange`, `@ClientRegistrationId` for the access token) or calls them with a `RestClient`, both re-exported through the OAuth2 client and the RestClient starter.
+- In a browser logged in by its server (`spring.flutter.security.web.mode=server`), the `httpTransport` bean (the CSRF token, the server's cookies) is the transport of every `RestClient` and HTTP service of the app; the module comes before the RestClient starter's, whose transport backs off. **Security:** it now calls only the addresses of that starter's allow list (`spring.http.clients.allowed-addresses`; in a browser the hosts of the URLs), which `webServerAllowedAddresses` opens to the app's server, and takes its connect timeout from `spring.http.clients.connect-timeout`. `ServerCredentialsHttpTransport.forPage` takes `allowedAddresses`.
+- `OAuth2TokenRevocationClient` and `ServerOAuth2LoginService` send their requests with a `RestClient` on the transport they are given; their exceptions and results stay. A revocation endpoint that cannot be reached is an `OAuth2AuthorizationException` whose cause is the `RestClient`'s `ResourceAccessException`.
+
 ## 0.10.0
 
 - **Security:** `CsrfCookieHttpTransport` keeps the request's `sensitiveHeaders`. It lost them, so with a custom `headerName` a browser could carry a Feign client's `sensitive-headers` through a redirect to another origin.

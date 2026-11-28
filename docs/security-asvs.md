@@ -27,7 +27,7 @@ Where the tests are: `core` is `spring_security_core/test/`, `starter` is
 | 2.1.2 passwords of 64+ characters allowed | done | Argon2, PBKDF2 and scrypt have no length limit (BCrypt's 72 bytes do not apply); `core/password_encoder_test.dart` ("long passwords are hashed whole") |
 | 2.1.3 no truncation | done | the whole UTF-8 password is hashed; `core/password_encoder_test.dart` ("long passwords are hashed whole": a changed last character and a prefix both fail) |
 | 2.1.4 any printable Unicode | done | `core/password_encoder_test.dart` ("hashes written by Spring Security": `pässwörd ✓`, both ways), `starter/web_attacks_test.dart` (`a:b:ü✓` over Basic) |
-| 2.2.1 anti-automation | app | failures are published as `AbstractAuthenticationFailureEvent`s, which the application can count; lockout and rate limits belong to the application or its proxy ([security.md](security.md)) |
+| 2.2.1 anti-automation | app | failures are published as `AbstractAuthenticationFailureEvent` instances, which the application can count; lockout and rate limits belong to the application or its proxy ([security.md](security.md)) |
 | 2.4.1 salted, approved key derivation | done | Argon2id by default, PBKDF2, scrypt (Bouncy Castle); `core/password_encoder_test.dart` |
 | 2.4.2 salts of 32+ bits, unique | done | 16 random bytes (`Random.secure`) per hash; `core/password_encoder_test.dart` ("a new salt every time") |
 | 2.4.3 PBKDF2 with 100 000+ iterations | done | 310 000 (`Pbkdf2PasswordEncoder.defaultsForSpringSecurity`) |

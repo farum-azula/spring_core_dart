@@ -15,7 +15,8 @@ import 'package:spring_web_dart/src/sse/server_sent_event.dart';
 /// sent.
 ///
 /// It replaces the real [HttpTransport] under the code being tested,
-/// typically a Feign client, so a test decides what the remote service
+/// typically a `RestClient` or an HTTP service client, so a test decides
+/// what the remote service
 /// answers (data, errors, failures, event streams) and checks what the
 /// client sent. Prepare an answer with [when] for a method and a path.
 /// Several answers prepared for the same request are used in order, and
@@ -23,7 +24,8 @@ import 'package:spring_web_dart/src/sse/server_sent_event.dart';
 /// `StateError` that lists the prepared ones.
 ///
 /// ```dart
-/// // The catalog service a Feign client calls is played by the mock.
+/// // The catalog service an HTTP service client calls is played by the
+/// // mock.
 /// final catalog = MockHttpTransport()
 ///   ..when(HttpMethod.get, '/books/978-0')
 ///       .respond(200, json: {'isbn': '978-0', 'title': 'Dune'})

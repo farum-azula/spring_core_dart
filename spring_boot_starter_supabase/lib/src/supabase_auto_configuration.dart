@@ -1,12 +1,13 @@
 import 'package:spring_boot_starter_cache/spring_boot_starter_cache.dart';
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
+import 'package:spring_boot_starter_restclient/spring_boot_starter_restclient.dart';
 import 'package:spring_boot_starter_supabase/src/cache/supabase_cache.dart';
 import 'package:spring_boot_starter_supabase/src/config/supabase_properties.dart';
 import 'package:spring_boot_starter_supabase/src/data/postgrest_data_store.dart';
 import 'package:spring_boot_starter_supabase/src/data/supabase_rls.dart';
 import 'package:spring_boot_starter_supabase/src/expression/call_template.dart';
 import 'package:spring_boot_starter_supabase/src/functions/edge_functions.dart';
+import 'package:spring_boot_starter_supabase/src/http/supabase_allowed_addresses.dart';
 import 'package:spring_boot_starter_supabase/src/http/supabase_http.dart';
 import 'package:spring_boot_starter_supabase/src/ratelimit/supabase_rate_limit_store.dart';
 import 'package:spring_boot_starter_supabase/src/realtime/realtime_model.dart';
@@ -89,8 +90,15 @@ final supabaseAutoConfiguration = <BeanDefinition<Object>>[
       properties: r.dependency<SupabaseProperties>(),
       transport: r.dependency<HttpTransport>(),
       credentials: r.dependency<SupabaseCredentials>(),
+      restClientBuilder: r.optionalDependency<RestClientBuilder>(),
       observations: r.optionalDependency<ObservationRegistry>(),
     ),
+  ),
+  BeanDefinition<SupabaseAllowedAddresses>(
+    name: 'supabaseAllowedAddresses',
+    source: _source,
+    types: const [SupabaseAllowedAddresses, AllowedAddressesContributor],
+    create: (r) => SupabaseAllowedAddresses(r.dependency<SupabaseProperties>()),
   ),
   BeanDefinition<PostgrestDataStore>(
     name: 'supabaseDataStore',
@@ -202,34 +210,21 @@ final supabaseAutoConfiguration = <BeanDefinition<Object>>[
           const <StorageBucketOperation>[],
     ),
   ),
-  BeanDefinition<EdgeFunctionsInterceptor>(
-    name: 'edgeFunctionsInterceptor',
+  BeanDefinition<EdgeFunctionsGroupConfigurer>(
+    name: 'edgeFunctionsGroupConfigurer',
+    factoryMethodName: 'edgeFunctionsGroupConfigurer',
     source: _source,
-    // Not a RequestInterceptor bean of the context: it must not run for
-    // the application's other Feign clients.
-    types: const [EdgeFunctionsInterceptor],
-    create: (r) => EdgeFunctionsInterceptor(
-      credentials: r.dependency<SupabaseCredentials>(),
-      properties: r.dependency<SupabaseProperties>().functions,
-    ),
-  ),
-  BeanDefinition<EdgeFunctionsFactory>(
-    name: 'edgeFunctionsFactory',
-    source: _source,
-    types: const [EdgeFunctionsFactory, InvocationHandlerFactory],
-    create: (r) => EdgeFunctionsFactory(
+    types: const [
+      EdgeFunctionsGroupConfigurer,
+      RestClientHttpServiceGroupConfigurer,
+    ],
+    conditions: const [
+      ConditionGroup('$_source.edgeFunctionsGroupConfigurer', [
+        ConditionalOnMissingBean(EdgeFunctionsGroupConfigurer),
+      ]),
+    ],
+    create: (r) => EdgeFunctionsGroupConfigurer(
       http: r.dependency<SupabaseHttp>(),
-      environment: r.dependency<Environment>(),
-      feign: r.dependency<FeignProperties>(),
-      mapper: _mapper(r),
-      transport: r.dependency<HttpTransport>(),
-      interceptor: r.dependency<EdgeFunctionsInterceptor>(),
-      interceptors:
-          r.optionalDependencyList<RequestInterceptor>() ??
-          const <RequestInterceptor>[],
-      errorDecoder:
-          r.provider<ErrorDecoder>().getIfUnique() ??
-          const DefaultErrorDecoder(),
       observations: r.optionalDependency<ObservationRegistry>(),
     ),
   ),

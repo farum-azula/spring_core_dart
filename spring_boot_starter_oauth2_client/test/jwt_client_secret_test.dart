@@ -319,7 +319,7 @@ void main() {
       const r = 'spring.security.oauth2.client.registration.apple';
       await const ApplicationContextRunner()
           .withAutoConfiguration(springBootAutoConfiguration)
-          .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
+          .withAutoConfiguration(springBootStarterRestclientAutoConfiguration)
           .withAutoConfiguration(springSecurityCoreAutoConfiguration)
           .withAutoConfiguration(
             springBootStarterOauth2ClientAutoConfiguration,
@@ -395,7 +395,7 @@ void main() {
     test('without client-secret-jwt properties: no resolver', () async {
       await const ApplicationContextRunner()
           .withAutoConfiguration(springBootAutoConfiguration)
-          .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
+          .withAutoConfiguration(springBootStarterRestclientAutoConfiguration)
           .withAutoConfiguration(springSecurityCoreAutoConfiguration)
           .withAutoConfiguration(
             springBootStarterOauth2ClientAutoConfiguration,

@@ -32,6 +32,7 @@
 library;
 
 export 'package:spring_core_dart/src/aop/advisor.dart';
+export 'package:spring_core_dart/src/aop/advisor_order.dart';
 export 'package:spring_core_dart/src/aop/annotations.dart';
 export 'package:spring_core_dart/src/aop/aop_context.dart' show AopContext;
 export 'package:spring_core_dart/src/aop/aop_pointcut.dart';

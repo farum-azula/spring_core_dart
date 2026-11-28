@@ -261,7 +261,7 @@ The generator fails the build, naming the member and what to change, for:
   post-processor), an enum, an extension, a top-level variable or
   function;
 - any of them on an abstract member: the method of a repository
-  (`DataRepository`) or of an HTTP client (`@FeignClient`) is written by
+  (`DataRepository`) or of an HTTP service client (`@HttpExchange`) is written by
   the generator and is not followed (read it in a `@Computed` getter of a
   component instead);
 - a member that overrides a followed one without repeating its
@@ -408,6 +408,27 @@ test('another genre loads other books', () async {
 });
 ```
 
+The same test, declared with annotations:
+
+```dart
+@SpringBootTest()
+class CatalogTest {
+  @TestBean(type: CatalogClient)
+  final client = FakeCatalog();
+
+  @Autowired()
+  late Catalog catalog;
+
+  @Test()
+  Future<void> anotherGenreLoadsOtherBooks() async {
+    catalog.genre = 'poetry';
+    expect((await catalog.books).first.title, 'poetry one');
+  }
+}
+
+void main() => runSpringTests();
+```
+
 The beans are the container's (their proxies), so the state is followed
 in a test as in the app. An instance made by hand (`Basket(storage)`) is
 a plain object: its fields work, nothing follows them.
@@ -423,6 +444,13 @@ a plain object: its fields work, nothing follows them.
 - **Writes are told by a queue** (`@Signal(queue: ...)`, the default one
   tells them in a microtask), and **a transaction holds them** in a
   `SignalBuffer` until its commit; a rollback drops them.
+- **A retried method runs in a buffer.** `@Retryable` on such a bean goes
+  on a method with `@SignalBuffer()` (or with
+  `buffer.async-methods: true`): each attempt's writes are dropped with
+  its buffer when it fails, so nobody sees them and no effect runs for
+  them. Elsewhere it fails the build: on a method without a buffer, on an
+  `@Effect` or a `@Computed` (they run again by themselves), and on the
+  class.
 - **A guard protects the member it is on, not what is under it.** With
   `@PreAuthorize` on a `@Computed` getter and a plain `@Signal` field
   under it, anybody reads and assigns the field: guard the field's

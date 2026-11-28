@@ -1,3 +1,5 @@
+import 'package:spring_core_dart/src/core/nested_exception.dart';
+
 /// The error the JSON mapper throws when JSON cannot be turned into the
 /// requested type, or a value cannot be written as JSON.
 ///
@@ -20,7 +22,7 @@
 /// ```java
 /// catch (JsonMappingException e) { e.getPathReference(); }
 /// ```
-class JsonMappingException implements Exception {
+class JsonMappingException implements Exception, NestedException {
   /// A problem described by [message] at [path] (empty for the root),
   /// caused by [cause].
   JsonMappingException(this.message, {this.path = '', this.cause});
@@ -34,6 +36,7 @@ class JsonMappingException implements Exception {
 
   /// The underlying error, such as a `FormatException` for invalid JSON or
   /// what a constructor threw; `null` when there is none.
+  @override
   final Object? cause;
 
   @override

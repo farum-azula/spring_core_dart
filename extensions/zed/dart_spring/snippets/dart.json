@@ -564,14 +564,14 @@
       "}"
     ]
   },
-  "Feign client": {
-    "prefix": "spfeign",
-    "description": "@FeignClient interface: an HTTP client generated from its methods (spring_boot_starter_feign)",
+  "HTTP service client": {
+    "prefix": "sphttpservice",
+    "description": "@HttpExchange interface: an HTTP client generated from its methods; list it in an @ImportHttpServices (spring_boot_starter_restclient)",
     "body": [
-      "@FeignClient('${1:offers}', url: r'\\${${2:app.offers.url}}')",
-      "abstract interface class ${3:Offers} {",
-      "  @GetMapping('/${4:offers}/{${5:id}}')",
-      "  Future<${6:Offer}> ${7:find}(@PathVariable() String ${5:id});$0",
+      "@HttpExchange('/${1:offers}')",
+      "abstract interface class ${2:Offers} {",
+      "  @GetExchange('/{${3:id}}')",
+      "  Future<${4:Offer}> ${5:find}(@PathVariable() String ${3:id});$0",
       "}"
     ]
   },

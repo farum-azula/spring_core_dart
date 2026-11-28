@@ -1,4 +1,5 @@
 import 'package:spring_core_dart/src/aop/advisor.dart';
+import 'package:spring_core_dart/src/aop/advisor_order.dart';
 import 'package:spring_core_dart/src/aop/aop_pointcut.dart';
 import 'package:spring_core_dart/src/aop/join_point.dart';
 import 'package:spring_core_dart/src/core/order.dart';
@@ -210,11 +211,12 @@ final class MethodValidationPostProcessor implements PointcutAdvisor, Ordered {
   @override
   AnnotationPointcut get pointcut => _ValidatedPointcut(excludeFilters);
 
-  /// [Ordered.lowestPrecedence]: validation runs innermost, after other
-  /// advice such as caching, like Spring's validation advisor, which is
-  /// added after the existing ones.
+  /// [AdvisorOrder.methodValidation]: validation runs right before the
+  /// method, inside the framework's other advice (caching, transactions,
+  /// retries), like Spring's validation advisor, which is added after the
+  /// existing ones.
   @override
-  int get order => Ordered.lowestPrecedence;
+  int get order => AdvisorOrder.methodValidation;
 
   @override
   String toString() => 'MethodValidationPostProcessor';

@@ -25,11 +25,11 @@ import 'package:spring_boot_starter_edge/src/cloudflare/cloudflare.dart'
 import 'package:spring_boot_starter_edge/src/edge_runtime.dart' as _i8;
 import 'package:spring_boot_starter_edge/src/edge_scheduled.dart' as _i13;
 import 'package:spring_boot_starter_edge/src/edge_warnings.dart' as _i15;
-import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i19;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i20;
+    as _i19;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
+    as _i20;
+import 'package:spring_boot_starter_restclient/spring_auto_configuration.dart'
     as _i21;
 import 'package:spring_boot_starter_scheduling/spring_auto_configuration.dart'
     as _i22;
@@ -127,9 +127,9 @@ const _$knownAdvisors18 = {
   r'package:spring_boot_dart',
   r'package:spring_boot_starter_cache',
   r'package:spring_boot_starter_edge',
-  r'package:spring_boot_starter_feign',
   r'package:spring_boot_starter_logging',
   r'package:spring_boot_starter_oauth2_client',
+  r'package:spring_boot_starter_restclient',
   r'package:spring_boot_starter_scheduling',
   r'package:spring_boot_starter_security',
   r'package:spring_boot_starter_web',
@@ -693,9 +693,9 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
     _i17.springBootStarterCacheStartupChecksAutoConfiguration,
     _i18.springBootStarterEdgeAutoConfiguration,
     _i18.springBootStarterEdgeStartupChecksAutoConfiguration,
-    _i19.springBootStarterFeignAutoConfiguration,
-    _i20.springBootStarterLoggingAutoConfiguration,
-    _i21.springBootStarterOauth2ClientAutoConfiguration,
+    _i19.springBootStarterLoggingAutoConfiguration,
+    _i20.springBootStarterOauth2ClientAutoConfiguration,
+    _i21.springBootStarterRestclientAutoConfiguration,
     _i22.springBootStarterSchedulingAutoConfiguration,
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
@@ -724,6 +724,10 @@ _i3.SpringApplication get springApplication => _i3.SpringApplication(
             r'springBootStarterSupabaseAutoConfiguration',
             r'springBootStarterSupabaseServerAutoConfiguration',
           ],
+        ),
+    _i21.springBootStarterRestclientAutoConfiguration:
+        const _i3.AutoConfigurationModule(
+          after: [r'springBootStarterFlutterSecurityAutoConfiguration'],
         ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))

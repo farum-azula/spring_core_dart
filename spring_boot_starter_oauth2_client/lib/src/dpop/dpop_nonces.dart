@@ -12,8 +12,8 @@ const dPoPHeader = 'DPoP';
 
 /// The last DPoP nonce each server (scheme, host and port) sent, to put
 /// into the next proof for it (RFC 9449 §8 and §9). Internal: the token
-/// response clients, the user services and the Feign interceptor keep
-/// one each.
+/// response clients, the user services and the `RestClient` interceptor
+/// keep one each.
 final class DPoPNonces {
   final Map<String, String> _byOrigin = {};
   static const _remembered = 64;

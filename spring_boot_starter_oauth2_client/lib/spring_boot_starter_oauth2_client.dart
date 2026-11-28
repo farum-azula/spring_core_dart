@@ -7,8 +7,9 @@
 /// provider discovery, the token endpoint of every grant
 /// (`authorization_code` with PKCE, `refresh_token`,
 /// `client_credentials`), authorized clients that refresh themselves, the
-/// users of OAuth 2.0 and OpenID Connect, and the access token on every
-/// Feign call.
+/// users of OAuth 2.0 and OpenID Connect, and the access token (Bearer or
+/// DPoP) on `RestClient` calls and HTTP service interfaces
+/// (`@ClientRegistrationId`).
 ///
 /// Configure a registration with Spring Boot's properties; the starter
 /// does the rest:
@@ -18,16 +19,16 @@
 /// spring.security.oauth2.client.registration.partner.client-secret=${PARTNER_SECRET}
 /// spring.security.oauth2.client.registration.partner.authorization-grant-type=client_credentials
 /// spring.security.oauth2.client.provider.partner.token-uri=https://id.partner.example/oauth2/token
-/// spring.feign.oauth2.enabled=true
-/// spring.feign.oauth2.client-registration-id=partner
+/// spring.http.serviceclient.orders.base-url=https://api.partner.example
 /// ```
 ///
 /// ```dart
 /// // Every call carries the partner's access token, renewed before it
 /// // expires.
-/// @FeignClient('orders', url: r'${partner.url}')
-/// abstract class OrdersClient {
-///   @GetMapping('/orders')
+/// @HttpExchange('/orders')
+/// @ClientRegistrationId('partner')
+/// abstract interface class OrderService {
+///   @GetExchange()
 ///   Future<List<Order>> orders();
 /// }
 /// ```
@@ -35,18 +36,17 @@
 /// A server logs browsers in with these registrations through the
 /// security starter's `oauth2Login()`; a Flutter app logs its user in
 /// with `spring_boot_starter_flutter_security`. This import re-exports
-/// `spring_security_core` and `spring_web_dart` (the clients take an
+/// `spring_security_core` and `spring_boot_starter_restclient` (with
+/// `spring_web_dart`: the clients are `RestClient` instances on an
 /// `HttpTransport`) and, through them, `spring_boot_dart` and the logging
-/// starter. It does not re-export the Feign starter: the access token on
-/// Feign calls (`OAuth2AccessTokenInterceptor`) is for applications that
-/// write Feign clients, and those list `spring_boot_starter_feign`
-/// themselves. It is the Dart version of Spring Boot's
+/// starter. It is the Dart version of Spring Boot's
 /// `spring-boot-starter-oauth2-client` (Spring Security's
 /// `spring-security-oauth2-client` and `-oauth2-core`).
 library;
 
-// The security core and the web client, whose types the clients take.
-// Not Feign: an application with Feign clients lists it (docs/packages.md).
+// The security core and the RestClient starter (with spring_web_dart),
+// whose types the clients take.
+export 'package:spring_boot_starter_restclient/spring_boot_starter_restclient.dart';
 export 'package:spring_security_core/spring_security_core.dart';
 export 'package:spring_web_dart/spring_web_dart.dart';
 
@@ -66,14 +66,13 @@ export 'src/endpoint/access_token_response.dart';
 export 'src/endpoint/authorization_request.dart';
 export 'src/endpoint/jwt_client_secret.dart';
 export 'src/endpoint/token_response_clients.dart' hide clientAuthentication;
-export 'src/feign/oauth2_access_token_interceptor.dart';
 export 'src/oidc/claims.dart';
 export 'src/oidc/jwk_set_oidc_id_token_decoder.dart';
 export 'src/oidc/oidc_id_token.dart';
 export 'src/oidc/oidc_id_token_decoder.dart';
 export 'src/oidc/oidc_id_token_validator.dart';
-export 'src/properties/feign_oauth2_properties.dart';
 export 'src/properties/oauth2_client_properties.dart';
+export 'src/properties/oauth2_rest_client_properties.dart';
 export 'src/properties/properties_beans.dart' show bindOAuth2ClientProperties;
 export 'src/registration/client_registration.dart';
 export 'src/registration/client_registration_repository.dart';
@@ -81,4 +80,8 @@ export 'src/registration/client_registrations.dart';
 export 'src/registration/common_oauth2_provider.dart';
 export 'src/registration/oauth2_client_properties.dart';
 export 'src/user/oauth2_user.dart';
-export 'src/user/user_services.dart' hide loadUserAttributes;
+export 'src/user/user_services.dart' hide loadUserAttributes, userInfoClient;
+export 'src/web/client_attributes.dart';
+export 'src/web/oauth2_client_http_request_interceptor.dart';
+export 'src/web/oauth2_provider_addresses.dart';
+export 'src/web/oauth2_rest_client_http_service_group_configurer.dart';

@@ -67,7 +67,7 @@ const signalsExtension = '.spring.signals.dart';
 /// build leaves it out.
 const debugExtension = '.spring.debug.dart';
 
-/// The ending of the values of the `--dart-define`s an application may
+/// The ending of the values of the `--dart-define` flags an application may
 /// read (`bin/spring_gen/main.spring.env.dart`): a part of the
 /// `@SpringBootApplication`'s `.spring.dart` with one constant map, a
 /// `String.fromEnvironment` for each property and environment variable the

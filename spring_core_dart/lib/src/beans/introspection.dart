@@ -559,7 +559,8 @@ final class IntrospectedConstructor<T extends Object> {
 /// use, see [IntrospectionPart]) and the module registers it in an
 /// [Introspector]; you write one by hand only for a class the generator
 /// cannot see. It describes a class, not a bean: the container's beans are
-/// `BeanDefinition`s. Micronaut's `BeanIntrospection` is the same idea.
+/// `BeanDefinition` instances. Micronaut's `BeanIntrospection` is the same
+/// idea.
 ///
 /// ```dart
 /// // A hand-written introspection of Address, then used by name.

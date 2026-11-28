@@ -1,5 +1,5 @@
 name: neon_books_server
-description: "NEON Books, the bookstore's server: a guide to Spring Boot in Dart (web, security, WebSocket, Feign, cache, scheduling, logging, testing)."
+description: "NEON Books, the bookstore's server: a guide to Spring Boot in Dart (web, security, WebSocket, HTTP clients, cache, scheduling, logging, testing)."
 publish_to: none
 
 environment:
@@ -13,7 +13,7 @@ resolution: workspace
 # testing.dart through package:spring_boot_starter_security/testing.dart).
 dependencies:
   spring_boot_starter_cache: ^0.10.0
-  spring_boot_starter_feign: ^0.10.0
+  spring_boot_starter_restclient: ^0.10.0
   spring_boot_starter_scheduling: ^0.10.0
   spring_boot_starter_security: ^0.10.0
   spring_boot_starter_web: ^0.10.0

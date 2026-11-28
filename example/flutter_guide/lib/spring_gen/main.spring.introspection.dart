@@ -12,19 +12,12 @@
 import 'package:neon_books_app/src/api/models.dart' as _i1;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i2;
 
-Object? _$get0(_i1.Me object) => object.name;
-Object? _$get1(_i1.Me object) => object.roles;
-_i1.Me _$create2(List<Object?> positional, Map<Symbol, Object?> named) =>
-    _i1.Me(
-      name: (named[#name] as String),
-      roles: named.argumentOr(#roles, const <String>[]),
-    );
-Object? _$get3(_i1.Book object) => object.isbn;
-Object? _$get4(_i1.Book object) => object.title;
-Object? _$get5(_i1.Book object) => object.author;
-Object? _$get6(_i1.Book object) => object.price;
-Object? _$get7(_i1.Book object) => object.available;
-_i1.Book _$create8(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get0(_i1.Book object) => object.isbn;
+Object? _$get1(_i1.Book object) => object.title;
+Object? _$get2(_i1.Book object) => object.author;
+Object? _$get3(_i1.Book object) => object.price;
+Object? _$get4(_i1.Book object) => object.available;
+_i1.Book _$create5(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i1.Book(
       isbn: (named[#isbn] as String),
       title: (named[#title] as String),
@@ -32,26 +25,12 @@ _i1.Book _$create8(List<Object?> positional, Map<Symbol, Object?> named) =>
       price: named.argumentOr(#price, 0.0),
       available: named.argumentOr(#available, 0),
     );
-Object? _$get9(_i1.NewBook object) => object.isbn;
-void _$set10(_i1.NewBook object, Object? value) =>
-    object.isbn = (value as String);
-Object? _$get11(_i1.NewBook object) => object.title;
-void _$set12(_i1.NewBook object, Object? value) =>
-    object.title = (value as String);
-Object? _$get13(_i1.NewBook object) => object.author;
-void _$set14(_i1.NewBook object, Object? value) =>
-    object.author = (value as String);
-Object? _$get15(_i1.NewBook object) => object.price;
-void _$set16(_i1.NewBook object, Object? value) =>
-    object.price = (value as double);
-_i1.NewBook _$create17(List<Object?> positional, Map<Symbol, Object?> named) =>
-    _i1.NewBook();
-Object? _$get18(_i1.PageOfBooks object) => object.items;
-Object? _$get19(_i1.PageOfBooks object) => object.page;
-Object? _$get20(_i1.PageOfBooks object) => object.size;
-Object? _$get21(_i1.PageOfBooks object) => object.total;
-Object? _$get22(_i1.PageOfBooks object) => object.pages;
-_i1.PageOfBooks _$create23(
+Object? _$get6(_i1.PageOfBooks object) => object.items;
+Object? _$get7(_i1.PageOfBooks object) => object.page;
+Object? _$get8(_i1.PageOfBooks object) => object.size;
+Object? _$get9(_i1.PageOfBooks object) => object.total;
+Object? _$get10(_i1.PageOfBooks object) => object.pages;
+_i1.PageOfBooks _$create11(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.PageOfBooks(
@@ -60,15 +39,36 @@ _i1.PageOfBooks _$create23(
   size: named.argumentOr(#size, 0),
   total: named.argumentOr(#total, 0),
 );
-Object? _$get24(_i1.StockChanged object) => object.isbn;
-Object? _$get25(_i1.StockChanged object) => object.available;
-_i1.StockChanged _$create26(
+Object? _$get12(_i1.NewBook object) => object.isbn;
+void _$set13(_i1.NewBook object, Object? value) =>
+    object.isbn = (value as String);
+Object? _$get14(_i1.NewBook object) => object.title;
+void _$set15(_i1.NewBook object, Object? value) =>
+    object.title = (value as String);
+Object? _$get16(_i1.NewBook object) => object.author;
+void _$set17(_i1.NewBook object, Object? value) =>
+    object.author = (value as String);
+Object? _$get18(_i1.NewBook object) => object.price;
+void _$set19(_i1.NewBook object, Object? value) =>
+    object.price = (value as double);
+_i1.NewBook _$create20(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i1.NewBook();
+Object? _$get21(_i1.StockChanged object) => object.isbn;
+Object? _$get22(_i1.StockChanged object) => object.available;
+_i1.StockChanged _$create23(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.StockChanged(
   isbn: (named[#isbn] as String),
   available: (named[#available] as int),
 );
+Object? _$get24(_i1.Me object) => object.name;
+Object? _$get25(_i1.Me object) => object.roles;
+_i1.Me _$create26(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i1.Me(
+      name: (named[#name] as String),
+      roles: named.argumentOr(#roles, const <String>[]),
+    );
 Object? _$get27(_i1.BasketLine object) => object.isbn;
 Object? _$get28(_i1.BasketLine object) => object.title;
 Object? _$get29(_i1.BasketLine object) => object.quantity;
@@ -121,67 +121,33 @@ _i1.ChatMessage _$create44(
 /// name. The module hands them to the context; a unit test registers them
 /// without one (`Introspector.shared.registerAll(...)`).
 List<_i2.Introspection<Object>> get $applicationIntrospections => [
-  const _i2.Introspection<_i1.Me>(
-    className: r'Me',
-    properties: [
-      _i2.IntrospectedProperty<_i1.Me>(
-        r'name',
-        typeInfo: _i2.ClassType<String>(),
-        get: _$get0,
-      ),
-      _i2.IntrospectedProperty<_i1.Me>(
-        r'roles',
-        typeInfo: _i2.ListType<String>(_i2.ClassType<String>()),
-        get: _$get1,
-      ),
-    ],
-    library: r'package:neon_books_app/src/api/models.dart',
-    constructor: _i2.IntrospectedConstructor<_i1.Me>(
-      parameters: [
-        _i2.IntrospectedParameter(
-          r'name',
-          type: _i2.ClassType<String>(),
-          symbol: #name,
-          isRequired: true,
-        ),
-        _i2.IntrospectedParameter(
-          r'roles',
-          type: _i2.ListType<String>(_i2.ClassType<String>()),
-          symbol: #roles,
-          hasDefaultValue: true,
-          defaultValue: <String>[],
-        ),
-      ],
-      create: _$create2,
-    ),
-  ),
   const _i2.Introspection<_i1.Book>(
     className: r'Book',
     properties: [
       _i2.IntrospectedProperty<_i1.Book>(
         r'isbn',
         typeInfo: _i2.ClassType<String>(),
-        get: _$get3,
+        get: _$get0,
       ),
       _i2.IntrospectedProperty<_i1.Book>(
         r'title',
         typeInfo: _i2.ClassType<String>(),
-        get: _$get4,
+        get: _$get1,
       ),
       _i2.IntrospectedProperty<_i1.Book>(
         r'author',
         typeInfo: _i2.ClassType<String>(),
-        get: _$get5,
+        get: _$get2,
       ),
       _i2.IntrospectedProperty<_i1.Book>(
         r'price',
         typeInfo: _i2.ClassType<double>(),
-        get: _$get6,
+        get: _$get3,
       ),
       _i2.IntrospectedProperty<_i1.Book>(
         r'available',
         typeInfo: _i2.ClassType<int>(),
-        get: _$get7,
+        get: _$get4,
       ),
     ],
     library: r'package:neon_books_app/src/api/models.dart',
@@ -221,46 +187,7 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
           defaultValue: 0,
         ),
       ],
-      create: _$create8,
-    ),
-  ),
-  const _i2.Introspection<_i1.NewBook>(
-    className: r'NewBook',
-    properties: [
-      _i2.IntrospectedProperty<_i1.NewBook>(
-        r'isbn',
-        typeInfo: _i2.ClassType<String>(),
-        get: _$get9,
-        set: _$set10,
-        annotations: [_i2.NotBlank(), _i2.Matches(r'^97[89]\d{10}$')],
-      ),
-      _i2.IntrospectedProperty<_i1.NewBook>(
-        r'title',
-        typeInfo: _i2.ClassType<String>(),
-        get: _$get11,
-        set: _$set12,
-        annotations: [_i2.NotBlank(), _i2.Size(max: 120)],
-      ),
-      _i2.IntrospectedProperty<_i1.NewBook>(
-        r'author',
-        typeInfo: _i2.ClassType<String>(),
-        get: _$get13,
-        set: _$set14,
-        annotations: [_i2.NotBlank(), _i2.Size(max: 80)],
-      ),
-      _i2.IntrospectedProperty<_i1.NewBook>(
-        r'price',
-        typeInfo: _i2.ClassType<double>(),
-        get: _$get15,
-        set: _$set16,
-        annotations: [_i2.Positive(), _i2.Max(1000)],
-      ),
-    ],
-    library: r'package:neon_books_app/src/api/models.dart',
-    instantiate: _i1.NewBook.new,
-    constructor: _i2.IntrospectedConstructor<_i1.NewBook>(
-      parameters: [],
-      create: _$create17,
+      create: _$create5,
     ),
   ),
   const _i2.Introspection<_i1.PageOfBooks>(
@@ -269,27 +196,27 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
       _i2.IntrospectedProperty<_i1.PageOfBooks>(
         r'items',
         typeInfo: _i2.ListType<_i1.Book>(_i2.ClassType<_i1.Book>()),
-        get: _$get18,
+        get: _$get6,
       ),
       _i2.IntrospectedProperty<_i1.PageOfBooks>(
         r'page',
         typeInfo: _i2.ClassType<int>(),
-        get: _$get19,
+        get: _$get7,
       ),
       _i2.IntrospectedProperty<_i1.PageOfBooks>(
         r'size',
         typeInfo: _i2.ClassType<int>(),
-        get: _$get20,
+        get: _$get8,
       ),
       _i2.IntrospectedProperty<_i1.PageOfBooks>(
         r'total',
         typeInfo: _i2.ClassType<int>(),
-        get: _$get21,
+        get: _$get9,
       ),
       _i2.IntrospectedProperty<_i1.PageOfBooks>(
         r'pages',
         typeInfo: _i2.ClassType<int>(),
-        get: _$get22,
+        get: _$get10,
       ),
     ],
     library: r'package:neon_books_app/src/api/models.dart',
@@ -325,7 +252,54 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
           defaultValue: 0,
         ),
       ],
-      create: _$create23,
+      create: _$create11,
+    ),
+  ),
+  const _i2.Introspection<_i1.NewBook>(
+    className: r'NewBook',
+    properties: [
+      _i2.IntrospectedProperty<_i1.NewBook>(
+        r'isbn',
+        typeInfo: _i2.ClassType<String>(),
+        hasInitialValue: true,
+        initialValue: r'',
+        get: _$get12,
+        set: _$set13,
+        annotations: [_i2.NotBlank(), _i2.Matches(r'^97[89]\d{10}$')],
+      ),
+      _i2.IntrospectedProperty<_i1.NewBook>(
+        r'title',
+        typeInfo: _i2.ClassType<String>(),
+        hasInitialValue: true,
+        initialValue: r'',
+        get: _$get14,
+        set: _$set15,
+        annotations: [_i2.NotBlank(), _i2.Size(max: 120)],
+      ),
+      _i2.IntrospectedProperty<_i1.NewBook>(
+        r'author',
+        typeInfo: _i2.ClassType<String>(),
+        hasInitialValue: true,
+        initialValue: r'',
+        get: _$get16,
+        set: _$set17,
+        annotations: [_i2.NotBlank(), _i2.Size(max: 80)],
+      ),
+      _i2.IntrospectedProperty<_i1.NewBook>(
+        r'price',
+        typeInfo: _i2.ClassType<double>(),
+        hasInitialValue: true,
+        initialValue: 0.0,
+        get: _$get18,
+        set: _$set19,
+        annotations: [_i2.Positive(), _i2.Max(1000)],
+      ),
+    ],
+    library: r'package:neon_books_app/src/api/models.dart',
+    instantiate: _i1.NewBook.new,
+    constructor: _i2.IntrospectedConstructor<_i1.NewBook>(
+      parameters: [],
+      create: _$create20,
     ),
   ),
   const _i2.Introspection<_i1.StockChanged>(
@@ -334,12 +308,12 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
       _i2.IntrospectedProperty<_i1.StockChanged>(
         r'isbn',
         typeInfo: _i2.ClassType<String>(),
-        get: _$get24,
+        get: _$get21,
       ),
       _i2.IntrospectedProperty<_i1.StockChanged>(
         r'available',
         typeInfo: _i2.ClassType<int>(),
-        get: _$get25,
+        get: _$get22,
       ),
     ],
     library: r'package:neon_books_app/src/api/models.dart',
@@ -356,6 +330,40 @@ List<_i2.Introspection<Object>> get $applicationIntrospections => [
           type: _i2.ClassType<int>(),
           symbol: #available,
           isRequired: true,
+        ),
+      ],
+      create: _$create23,
+    ),
+  ),
+  const _i2.Introspection<_i1.Me>(
+    className: r'Me',
+    properties: [
+      _i2.IntrospectedProperty<_i1.Me>(
+        r'name',
+        typeInfo: _i2.ClassType<String>(),
+        get: _$get24,
+      ),
+      _i2.IntrospectedProperty<_i1.Me>(
+        r'roles',
+        typeInfo: _i2.ListType<String>(_i2.ClassType<String>()),
+        get: _$get25,
+      ),
+    ],
+    library: r'package:neon_books_app/src/api/models.dart',
+    constructor: _i2.IntrospectedConstructor<_i1.Me>(
+      parameters: [
+        _i2.IntrospectedParameter(
+          r'name',
+          type: _i2.ClassType<String>(),
+          symbol: #name,
+          isRequired: true,
+        ),
+        _i2.IntrospectedParameter(
+          r'roles',
+          type: _i2.ListType<String>(_i2.ClassType<String>()),
+          symbol: #roles,
+          hasDefaultValue: true,
+          defaultValue: <String>[],
         ),
       ],
       create: _$create26,

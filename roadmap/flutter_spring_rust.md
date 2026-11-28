@@ -8,7 +8,7 @@ starter. Part of the [Flutter plan](spring_boot_starter_flutter.md).
 Rust code as beans, for work that should run at native speed off the UI
 isolate — image and video processing, compression, cryptography, parsing
 large files, search indexes, ML inference — and for Rust crates the Dart
-world lacks. Declarative like `@FeignClient`: a Dart interface whose
+world lacks. Declarative like `@HttpExchange`: a Dart interface whose
 implementation runs in Rust.
 
 ```dart

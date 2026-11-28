@@ -15,21 +15,21 @@ import 'package:spring_boot_starter_supabase/src/realtime/realtime_model.dart'
 
 import '../../app/supabase_app.dart' as _i1;
 
-Object? _$get0(_i1.Settings object) => object.theme;
-Object? _$get1(_i1.Settings object) => object.fontSize;
-_i1.Settings _$create2(List<Object?> positional, Map<Symbol, Object?> named) =>
+Object? _$get0(_i1.InviteResult object) => object.id;
+_i1.InviteResult _$create1(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.InviteResult(id: (named[#id] as String));
+Object? _$get2(_i1.Invite object) => object.email;
+_i1.Invite _$create3(List<Object?> positional, Map<Symbol, Object?> named) =>
+    _i1.Invite(email: (named[#email] as String));
+Object? _$get4(_i1.Settings object) => object.theme;
+Object? _$get5(_i1.Settings object) => object.fontSize;
+_i1.Settings _$create6(List<Object?> positional, Map<Symbol, Object?> named) =>
     _i1.Settings(
       theme: (named[#theme] as String),
       fontSize: named.argumentOr(#fontSize, 14),
     );
-Object? _$get3(_i1.Invite object) => object.email;
-_i1.Invite _$create4(List<Object?> positional, Map<Symbol, Object?> named) =>
-    _i1.Invite(email: (named[#email] as String));
-Object? _$get5(_i1.InviteResult object) => object.id;
-_i1.InviteResult _$create6(
-  List<Object?> positional,
-  Map<Symbol, Object?> named,
-) => _i1.InviteResult(id: (named[#id] as String));
 Object? _$get7(_i1.Packaging object) => object.box;
 void _$set8(_i1.Packaging object, Object? value) =>
     object.box = (value as String);
@@ -91,18 +91,62 @@ _i2.RealtimeRowChange _$create30(
 /// name. The module hands them to the context; a unit test registers them
 /// without one (`Introspector.shared.registerAll(...)`).
 List<_i3.Introspection<Object>> get $applicationIntrospections => [
+  const _i3.Introspection<_i1.InviteResult>(
+    className: r'InviteResult',
+    properties: [
+      _i3.IntrospectedProperty<_i1.InviteResult>(
+        r'id',
+        typeInfo: _i3.ClassType<String>(),
+        get: _$get0,
+      ),
+    ],
+    library: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart',
+    constructor: _i3.IntrospectedConstructor<_i1.InviteResult>(
+      parameters: [
+        _i3.IntrospectedParameter(
+          r'id',
+          type: _i3.ClassType<String>(),
+          symbol: #id,
+          isRequired: true,
+        ),
+      ],
+      create: _$create1,
+    ),
+  ),
+  const _i3.Introspection<_i1.Invite>(
+    className: r'Invite',
+    properties: [
+      _i3.IntrospectedProperty<_i1.Invite>(
+        r'email',
+        typeInfo: _i3.ClassType<String>(),
+        get: _$get2,
+      ),
+    ],
+    library: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart',
+    constructor: _i3.IntrospectedConstructor<_i1.Invite>(
+      parameters: [
+        _i3.IntrospectedParameter(
+          r'email',
+          type: _i3.ClassType<String>(),
+          symbol: #email,
+          isRequired: true,
+        ),
+      ],
+      create: _$create3,
+    ),
+  ),
   const _i3.Introspection<_i1.Settings>(
     className: r'Settings',
     properties: [
       _i3.IntrospectedProperty<_i1.Settings>(
         r'theme',
         typeInfo: _i3.ClassType<String>(),
-        get: _$get0,
+        get: _$get4,
       ),
       _i3.IntrospectedProperty<_i1.Settings>(
         r'fontSize',
         typeInfo: _i3.ClassType<int>(),
-        get: _$get1,
+        get: _$get5,
       ),
     ],
     library: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart',
@@ -120,50 +164,6 @@ List<_i3.Introspection<Object>> get $applicationIntrospections => [
           symbol: #fontSize,
           hasDefaultValue: true,
           defaultValue: 14,
-        ),
-      ],
-      create: _$create2,
-    ),
-  ),
-  const _i3.Introspection<_i1.Invite>(
-    className: r'Invite',
-    properties: [
-      _i3.IntrospectedProperty<_i1.Invite>(
-        r'email',
-        typeInfo: _i3.ClassType<String>(),
-        get: _$get3,
-      ),
-    ],
-    library: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart',
-    constructor: _i3.IntrospectedConstructor<_i1.Invite>(
-      parameters: [
-        _i3.IntrospectedParameter(
-          r'email',
-          type: _i3.ClassType<String>(),
-          symbol: #email,
-          isRequired: true,
-        ),
-      ],
-      create: _$create4,
-    ),
-  ),
-  const _i3.Introspection<_i1.InviteResult>(
-    className: r'InviteResult',
-    properties: [
-      _i3.IntrospectedProperty<_i1.InviteResult>(
-        r'id',
-        typeInfo: _i3.ClassType<String>(),
-        get: _$get5,
-      ),
-    ],
-    library: r'asset:spring_boot_starter_supabase/test/app/supabase_app.dart',
-    constructor: _i3.IntrospectedConstructor<_i1.InviteResult>(
-      parameters: [
-        _i3.IntrospectedParameter(
-          r'id',
-          type: _i3.ClassType<String>(),
-          symbol: #id,
-          isRequired: true,
         ),
       ],
       create: _$create6,

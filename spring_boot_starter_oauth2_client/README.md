@@ -24,8 +24,9 @@ expires (once, even when ten calls ask at the same time), the token
 renewed after the API rejects it, and for logins PKCE, `state`, `nonce`
 and the checks of the ID token. This starter does all of it from Spring
 Boot's `spring.security.oauth2.client.*` properties; the application's
-Feign clients just work. It is pure Dart and runs wherever
-`spring_boot_dart` runs: the VM, Flutter, the web.
+HTTP service interfaces and `RestClient` calls just work. It is pure
+Dart and runs wherever `spring_boot_dart` runs: the VM, Flutter, the
+web.
 
 ```properties
 # lib/resources/application.properties
@@ -35,30 +36,34 @@ spring.security.oauth2.client.registration.partner.authorization-grant-type=clie
 spring.security.oauth2.client.registration.partner.scope=orders.read
 spring.security.oauth2.client.provider.partner.token-uri=https://id.partner.example/oauth2/token
 
-# Every Feign call carries the token.
-spring.feign.oauth2.enabled=true
-spring.feign.oauth2.client-registration-id=partner
+# The partner's API, an HTTP service group.
+spring.http.serviceclient.orders.base-url=https://api.partner.example
 ```
 
 ```dart
-@FeignClient('orders', url: r'${partner.url}')
+// Every call carries the partner's token.
+@HttpExchange('/orders')
+@ClientRegistrationId('partner')
 abstract interface class OrdersClient {
-  @GetMapping('/orders')
+  @GetExchange()
   Future<List<Order>> orders(); // Authorization: Bearer <token>
 }
+
+@SpringBootApplication()
+@ImportHttpServices(group: 'orders', types: [OrdersClient])
+Future<void> main(List<String> args) => springApplication.runAsync(args);
 ```
 
 It is the Dart counterpart of `spring-boot-starter-oauth2-client` (Spring
 Security's `spring-security-oauth2-client` and `-oauth2-core`), with
-Spring Cloud OpenFeign's OAuth2 interceptor.
+Spring Security 7's `OAuth2ClientHttpRequestInterceptor` and
+`@ClientRegistrationId` on Spring Boot 4's `spring-boot-starter-restclient`.
 
 ## Setup
 
 ```yaml
 dependencies:
   spring_boot_starter_oauth2_client: ^0.10.0
-  # Only for Feign clients that carry the token, as above.
-  spring_boot_starter_feign: ^0.10.0
 
 dev_dependencies:
   build_runner: ^2.17.0
@@ -71,11 +76,9 @@ dart run build_runner build
 
 One import is enough:
 `package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart`
-re-exports `spring_security_core` and `spring_web_dart` (and through them
-`spring_boot_dart` and logging). It does not re-export the Feign starter:
-an application with Feign clients lists `spring_boot_starter_feign` and
-imports it where it declares them
-([the packages an application lists](../docs/packages.md)).
+re-exports `spring_security_core` and `spring_boot_starter_restclient`
+(with `spring_web_dart`: `RestClient`, `@HttpExchange` and
+`@ImportHttpServices`; and through them `spring_boot_dart` and logging).
 
 ## Which flow where
 
@@ -211,30 +214,97 @@ in any case, blank or none, as the security starter's
 `JwtTypeValidator.jwt()`: a `logout+jwt`, `at+jwt` or `secevent+jwt`
 token signed with the same keys is refused), then the claims.
 
-## Tokens on Feign calls
+## Tokens on RestClient calls and HTTP service interfaces
 
-With `spring.feign.oauth2.enabled=true`, every Feign client gets
-the `OAuth2AccessTokenInterceptor`: `Authorization: Bearer <token>` of
-the user of the security context (or, for a `client_credentials`
-registration, of the client), refreshed through the `OAuth2AuthorizedClientManager` when it
-expires within a minute. The registration is
-`spring.feign.oauth2.client-registration-id`, else the Feign
-client's name, as in Spring Cloud OpenFeign. A DPoP-bound token goes as
-`Authorization: DPoP <token>` with a proof
-([below](#dpop-tokens-bound-to-the-apps-key)).
+The starter depends on
+[`spring_boot_starter_restclient`](../spring_boot_starter_restclient)
+and puts `OAuth2ClientHttpRequestInterceptor` (Spring Security 7's) on
+every `RestClientBuilder` that starter makes: the injected builders and
+the builders of the HTTP service groups. It sends a token only on the
+calls that name a registration, so a client that also calls public
+endpoints needs nothing more:
 
-When the API answers 401 to a token that looked valid, the
-`OAuth2AccessTokenErrorDecoder` marks it expired, so the next call
-refreshes it. The failed call itself is not repeated: Feign's
-interceptors do not see responses, and its `ErrorDecoder` and `Retryer`
-belong to the application. The starter declares the decoder only when the
-application has no `ErrorDecoder`; wrap yours to keep the behaviour:
+```dart
+// Every call of the interface carries the partner's token.
+@HttpExchange('/orders')
+@ClientRegistrationId('partner')
+abstract interface class OrderService {
+  @GetExchange()
+  Future<List<Order>> orders(); // Authorization: Bearer <token>
+}
+
+// One call, by hand.
+final orders = await rest.get()
+    .uri('/orders')
+    .attributes(ClientAttributes.clientRegistrationId('partner'))
+    .retrieve()
+    .body<String>();
+```
+
+`@ClientRegistrationId` goes on the interface (every method) or on a
+method; it is a request attribute (`HttpRequestAttribute`), which the
+generated call sets. The token is the one of the user of the security
+context, or, for a `client_credentials` registration, of the client;
+it comes from the `OAuth2AuthorizedClientManager` at each call, so it is
+refreshed when it expires within a minute. A registration that does not
+exist, or a login that is needed, fails the call before it is sent.
+
+| Property | Default | |
+|---|---|---|
+| `spring.security.oauth2.client.restclient.enabled` | `true` | Whether the starter's builders get the interceptor |
+| `spring.security.oauth2.client.restclient.client-registration-id` | none | The registration of the calls that name none. Every such call, to any host, then carries this token: set it only when the application calls nothing else |
+
+After the answer:
+
+- a DPoP-bound token goes as `Authorization: DPoP <token>` with a fresh
+  proof ([below](#dpop-tokens-bound-to-the-apps-key)); a `DPoP-Nonce` of
+  any answer goes into the next proof for that server, and a `401` that
+  asks for one (`WWW-Authenticate: DPoP error="use_dpop_nonce"`) is sent
+  once more with it;
+- another `401` marks the token expired, so the next call refreshes it;
+  the call itself is not repeated.
+
+To put the interceptor on the HTTP service groups alone (with
+`restclient.enabled=false`), or with a manager of your own, declare the
+group configurer:
 
 ```dart
 @Bean()
-ErrorDecoder errorDecoder(OAuth2AccessTokenInterceptor tokens) =>
-    OAuth2AccessTokenErrorDecoder(MyErrorDecoder(), tokens);
+OAuth2RestClientHttpServiceGroupConfigurer oauth2Groups(
+  OAuth2AuthorizedClientManager manager,
+) => OAuth2RestClientHttpServiceGroupConfigurer.from(manager);
 ```
+
+**Allowed addresses.** The RestClient starter's transport, which the
+token, discovery, JWK Set and user-info calls go through too, calls only
+the addresses allowed by hand. The hosts of the providers' endpoints the
+properties name (`issuer-uri`, `authorization-uri`, `token-uri`,
+`user-info-uri`, `jwk-set-uri`, and the endpoints of `google`,
+`github`, `facebook` and `apple`) are allowed with them. When a
+provider is discovered from its `issuer-uri`, the hosts of the token,
+JWK Set, user-info and revocation endpoints its document names join the
+list once the document's issuer is checked (Google's
+`oauth2.googleapis.com`, Microsoft Entra ID's `graph.microsoft.com`), so
+a configured provider just works. They are taken by host name only, so
+they open public addresses only: an endpoint the document names by an
+address or a `localhost` name, a host that resolves to a private
+network (a provider in the same Docker network), and the APIs the
+application calls with the token go on
+`spring.http.clients.allowed-addresses` (or are the `base-url` of an
+HTTP service group). A denied call fails with a
+`ResourceAccessException` whose `FilteredHostException` names the host
+and the property.
+
+**The starter's own calls.** The token response clients, the user
+services, discovery and `JwkSetOidcIdTokenDecoder` are `RestClient` instances on
+the `httpTransport` bean, as Spring Security 7's are `RestClient` instances:
+they follow no redirect, and a provider that cannot be reached is a
+`ResourceAccessException` behind the exception each promises
+(`OAuth2AuthorizationException` with `invalid_token_response`,
+`OAuth2AuthenticationException` with `invalid_user_info_response` or
+`invalid_id_token`). They are built on the transport, not on the
+`RestClientBuilder` bean, so the application's customizers and
+interceptors do not apply to them.
 
 ## Tokens anywhere else
 
@@ -288,14 +358,11 @@ When a registration uses DPoP:
   `Bearer` (RFC 9449 allows it), and the token stays `Bearer`. A `DPoP`
   token for a request without a proof is refused. The refresh of a DPoP
   token always carries a proof: its refresh token is bound too;
-- the Feign interceptor sends `Authorization: DPoP <token>` and a fresh
-  proof for each call (`htm` the method, `htu` the URL without query and
-  fragment, `ath` the token's hash). The error decoder remembers the
-  `DPoP-Nonce` of an error answer per server for the next proofs, and a
-  401 that only asks for a nonce leaves the token alone. The call that
-  got `use_dpop_nonce` is not repeated (Feign gives interceptors no
-  answer, and the `Retryer` is the application's), and a nonce in a
-  successful answer is not seen; the next call carries the nonce;
+- the `RestClient` interceptor sends `Authorization: DPoP <token>` and
+  a fresh proof for each call (`htm` the method, `htu` the URL without
+  query and fragment, `ath` the token's hash). It remembers the
+  `DPoP-Nonce` of any answer per server for the next proofs; a 401 that
+  asks for a nonce is sent once more with it and leaves the token alone;
 - the user services send DPoP tokens to the user-info endpoint the same
   way, a nonce answered once.
 
@@ -316,7 +383,7 @@ stored it. A key whose public part is known only once the platform
 answered implements `LoadableDPoPKey`: `DPoPProofBuilder` awaits its
 `load()` first. `toJwk` holds the
 private key: never log it. Nothing in the starter logs a key, a proof or
-a token, and Feign's `headers` log masks the `DPoP` header like
+a token, and the `RestClient` log masks the `DPoP` header like
 `Authorization`.
 
 For a request the starter does not make (an `HttpTransport` call of
@@ -378,7 +445,7 @@ its type: `ClientRegistrationRepository`, `OAuth2AuthorizedClientService`,
 `OAuth2AccessTokenResponseClient<...>`, `OidcIdTokenDecoder`,
 `OAuth2UserService<OAuth2UserRequest, OAuth2User>`,
 `OAuth2UserService<OidcUserRequest, OidcUser>`,
-`OAuth2AccessTokenInterceptor`, `ErrorDecoder` and `DPoPKey`.
+`OAuth2ClientHttpRequestInterceptor` and `DPoPKey`.
 
 Another auto-configuration replaces them the same way, provided its
 module is registered first:
@@ -390,10 +457,12 @@ package for the `OAuth2AuthorizedClientService` (and, next, the
 
 ## Differences from Spring
 
-- **Renamed Feign properties.** `spring.feign.oauth2.enabled` and
-  `spring.feign.oauth2.client-registration-id` are Spring Cloud's
-  `spring.cloud.openfeign.oauth2.*` without Spring Cloud; the old names
-  stop the start and name the new ones.
+- **Tokens on `RestClient` calls.** Spring Security's
+  `OAuth2ClientHttpRequestInterceptor` has no default registration and
+  no DPoP, removes the authorized client after a `401` (here the token
+  is marked expired, so a refresh token survives) and is put on a
+  builder by hand or by `OAuth2RestClientHttpServiceGroupConfigurer`;
+  here the starter puts it on every builder of the RestClient starter.
 - **What the starter brings.** In Spring, `spring-boot-starter-oauth2-client`
   brings web security and `oauth2Login()` too. Here this package is the
   client only, because it must also run in Flutter apps and browsers,
@@ -403,7 +472,7 @@ package for the `OAuth2AuthorizedClientService` (and, next, the
   `spring_boot_starter_flutter_security`, which adds the app login.
 - `ClientRegistrationRepository.findByRegistrationId`, the authorized
   client service, the manager, the token clients and the user services
-  return `Future`s.
+  return `Future` values.
 - Issuer discovery happens at the first use of a registration, not at
   startup; a failure is retried at a use 10 seconds later or more. Its
   metadata lookup is
@@ -417,11 +486,12 @@ package for the `OAuth2AuthorizedClientService` (and, next, the
   even for a common provider that says `client_secret_basic`.
 - PKCE is on for every `authorization_code` registration, confidential
   clients included, as in Spring Security 7.1.
-- The token response clients run on the `HttpTransport` of
-  `spring_web_dart`: `DefaultAuthorizationCodeTokenResponseClient`,
+- The token response clients are `RestClient` instances on the `HttpTransport`
+  they are given: `DefaultAuthorizationCodeTokenResponseClient`,
   `DefaultRefreshTokenTokenResponseClient`,
   `DefaultClientCredentialsTokenResponseClient` (Spring 7's
-  `RestClient*TokenResponseClient`).
+  `RestClient*TokenResponseClient`, whose `RestClient` is set with
+  `setRestClient`).
 - `AuthorizedClientServiceOAuth2AuthorizedClientManager` needs its
   provider (Spring defaults to client credentials alone), runs one
   authorization at a time per registration and principal, and removes
@@ -458,12 +528,11 @@ package for the `OAuth2AuthorizedClientService` (and, next, the
   `dpop` registration property, `ClientRegistration.dpop` (`DPoPMode`),
   `DPoPKey`, `SoftwareDPoPKey`, `DPoPProofBuilder`,
   `ECDSA.transcodeSignatureToConcat` (Nimbus' name), the `DPoPKey` bean
-  and the DPoP parts of the token clients, user services and Feign
+  and the DPoP parts of the token clients, user services and `RestClient`
   interceptor are this port's; `OAuth2AccessTokenResponse` reads
   `token_type: DPoP` as Spring Security 6.5 does.
 - Not there yet: the token exchange (RFC 8693) and JWT bearer
-  (RFC 7523) grants, `tls_client_auth`, `@ClientRegistrationId` on HTTP
-  clients, a database-backed authorized client service; a WebCrypto DPoP
-  key on the web (the Flutter security package's), the retry of a Feign
-  call answered `use_dpop_nonce`. The full list:
+  (RFC 7523) grants, `tls_client_auth`, a database-backed authorized
+  client service; a WebCrypto DPoP key on the web (the Flutter security
+  package's). The full list:
   [docs/security-spring-comparison.md](../docs/security-spring-comparison.md).

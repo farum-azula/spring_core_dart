@@ -13,11 +13,11 @@ import 'dart:async' as _i3;
 
 import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i13;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i2;
-import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i14;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i15;
+    as _i14;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
+    as _i15;
+import 'package:spring_boot_starter_restclient/spring_auto_configuration.dart'
     as _i16;
 import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
     as _i17;
@@ -109,9 +109,9 @@ const _$target1 = _i2.AopTarget(
 );
 const _$knownAdvisors2 = {
   r'package:spring_boot_dart',
-  r'package:spring_boot_starter_feign',
   r'package:spring_boot_starter_logging',
   r'package:spring_boot_starter_oauth2_client',
+  r'package:spring_boot_starter_restclient',
   r'package:spring_boot_starter_security',
   r'package:spring_boot_starter_web',
   r'package:spring_boot_starter_websocket',
@@ -311,9 +311,9 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
   [$application],
   autoConfigurations: [
     _i13.springBootAutoConfiguration,
-    _i14.springBootStarterFeignAutoConfiguration,
-    _i15.springBootStarterLoggingAutoConfiguration,
-    _i16.springBootStarterOauth2ClientAutoConfiguration,
+    _i14.springBootStarterLoggingAutoConfiguration,
+    _i15.springBootStarterOauth2ClientAutoConfiguration,
+    _i16.springBootStarterRestclientAutoConfiguration,
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i17.springBootStarterSecurityAutoConfiguration,
@@ -333,6 +333,10 @@ _i2.SpringApplication get springApplication => _i2.SpringApplication(
     _i20.springSecurityCoreAutoConfiguration,
   ],
   autoConfigurationMetadata: {
+    _i16.springBootStarterRestclientAutoConfiguration:
+        const _i2.AutoConfigurationModule(
+          after: [r'springBootStarterFlutterSecurityAutoConfiguration'],
+        ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i17.springBootStarterSecurityAutoConfiguration:

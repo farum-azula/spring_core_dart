@@ -9,8 +9,8 @@ resolution: workspace
 
 # The web starter (the REST API), the security starter (the resource
 # server that checks the project's tokens, @PreAuthorize) and the Supabase
-# starter, which brings and exports the data, Feign, cache and WebSocket
-# starters. The SQL path (spring.supabase.db.url) needs one more: `postgres`,
+# starter, which brings and exports the data, RestClient, cache and
+# WebSocket starters. The SQL path (spring.supabase.db.url) needs one more: `postgres`,
 # the driver, which an application lists itself (the generator writes the
 # driver's glue for it, and the web starter's answers to data errors, the
 # data starter being reached through the Supabase starter).

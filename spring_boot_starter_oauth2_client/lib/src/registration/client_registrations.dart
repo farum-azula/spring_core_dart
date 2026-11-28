@@ -39,14 +39,17 @@ const int _maxMetadataBytes = 1 << 20;
 /// one asked for, or the call fails: otherwise a provider could pass
 /// tokens off as another's.
 ///
-/// Spring (Java): `ClientRegistrations`. The result is a `Future` (the
-/// metadata comes over the network) and the transport is a parameter.
+/// Spring (Java): `ClientRegistrations`, which reads the documents with a
+/// `RestClient` too. The result is a `Future` (the metadata comes over the
+/// network) and the transport is a parameter; an unreachable provider is
+/// the `ResourceAccessException` itself, not an `IllegalArgumentException`
+/// around it.
 abstract final class ClientRegistrations {
   /// A builder filled from the OpenID Connect metadata of [issuer]
   /// (`<issuer>/.well-known/openid-configuration`).
   ///
   /// Throws an [ArgumentError] when the metadata cannot be found, does
-  /// not name [issuer], or lacks an endpoint; an [HttpTransportException]
+  /// not name [issuer], or lacks an endpoint; a [ResourceAccessException]
   /// when the provider cannot be reached.
   static Future<ClientRegistrationBuilder> fromOidcIssuerLocation(
     String issuer, {
@@ -70,8 +73,13 @@ abstract final class ClientRegistrations {
   /// provider supports (`client_secret_basic` first). The registration id
   /// is the issuer's host until you set it.
   ///
+  /// The documents are read with a `RestClient` on [transport] (the
+  /// `httpTransport` bean in an application); without one, on the
+  /// `RestClient`'s own, which calls only the issuer's host (its public
+  /// addresses, or `localhost`, or the address the issuer names).
+  ///
   /// Throws an [ArgumentError] when no metadata is found, it does not
-  /// name [issuer], or it lacks an endpoint; an [HttpTransportException]
+  /// name [issuer], or it lacks an endpoint; a [ResourceAccessException]
   /// when the provider cannot be reached.
   static Future<ClientRegistrationBuilder> fromIssuerLocation(
     String issuer, {
@@ -165,57 +173,57 @@ abstract final class ClientRegistrations {
 
   static Future<ClientRegistrationBuilder> _fromConfiguration(
     String issuer,
-    HttpTransport? given, {
+    HttpTransport? transport, {
     required bool openIdConnectOnly,
   }) async {
-    final transport = given ?? platformHttpTransport();
-    try {
-      final configuration = await configurationForIssuerLocation(
-        issuer,
-        fetch: (uri) => _fetch(transport, issuer, uri),
-        openIdConnectOnly: openIdConnectOnly,
+    // Without a transport, the RestClient's own: the issuer's host only.
+    final rest =
+        (transport == null
+                ? RestClient.builder().baseUrl(issuer)
+                : RestClient.builder().transport(transport))
+            .build();
+    final configuration = await configurationForIssuerLocation(
+      issuer,
+      fetch: (uri) => _fetch(rest, issuer, uri),
+      openIdConnectOnly: openIdConnectOnly,
+    );
+    if (configuration == null) {
+      throw ArgumentError(
+        'Unable to resolve Configuration with the provided Issuer of '
+        '"$issuer"',
       );
-      if (configuration == null) {
-        throw ArgumentError(
-          'Unable to resolve Configuration with the provided Issuer of '
-          '"$issuer"',
-        );
-      }
-      final (:metadata, :openIdConnect) = configuration;
-      final builder = _withProviderConfiguration(metadata, issuer);
-      if (openIdConnect) {
-        builder.jwkSetUri(_required(metadata, 'jwks_uri', issuer));
-      } else if (metadata['jwks_uri'] case final String jwks
-          when jwks.isNotEmpty) {
-        builder.jwkSetUri(jwks);
-      }
-      final userInfo = metadata['userinfo_endpoint'];
-      if (userInfo is String && userInfo.isNotEmpty) {
-        builder.userInfoUri(userInfo);
-      }
-      return builder;
-    } finally {
-      if (given == null) {
-        transport.close();
-      }
     }
+    final (:metadata, :openIdConnect) = configuration;
+    final builder = _withProviderConfiguration(metadata, issuer);
+    if (openIdConnect) {
+      builder.jwkSetUri(_required(metadata, 'jwks_uri', issuer));
+    } else if (metadata['jwks_uri'] case final String jwks
+        when jwks.isNotEmpty) {
+      builder.jwkSetUri(jwks);
+    }
+    final userInfo = metadata['userinfo_endpoint'];
+    if (userInfo is String && userInfo.isNotEmpty) {
+      builder.userInfoUri(userInfo);
+    }
+    return builder;
   }
 
   // One location's document; `null` for a 4xx (the next location).
   static Future<Map<String, Object?>?> _fetch(
-    HttpTransport transport,
+    RestClient rest,
     String issuer,
     Uri uri,
-  ) async {
-    final response = await transport.send(
-      HttpRequest(
-        method: HttpMethod.get,
-        url: uri,
-        headers: HttpHeaders({
-          HttpHeaders.acceptHeader: MediaType.applicationJson,
-        }),
-      ),
-    );
+  ) => rest
+      .get()
+      .uri(uri)
+      .accept(MediaType.applicationJson)
+      .exchange((_, answer) => _metadataOf(answer.response, issuer, uri));
+
+  static Map<String, Object?>? _metadataOf(
+    HttpResponse response,
+    String issuer,
+    Uri uri,
+  ) {
     final status = response.statusCode;
     _log.debug(
       () => 'The metadata location ${logEndpoint(uri)} answered $status',

@@ -1,7 +1,7 @@
 // spring_web_dart on its own: the HTTP transport of the platform against a
 // small local server, and MockHttpTransport as used in tests. In an
-// application you rarely call the transport yourself: Feign clients
-// (spring_boot_starter_feign) build requests from the mapping annotations.
+// application you rarely call the transport yourself: RestClient and the
+// HTTP service clients (spring_boot_starter_restclient) build the requests.
 
 import 'dart:convert';
 import 'dart:io' as io;
@@ -10,13 +10,14 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:spring_web_dart/spring_web_dart.dart';
 import 'package:spring_web_dart/testing.dart';
 
-/// The annotations a Feign client interface carries (with @FeignClient
-/// from spring_boot_starter_feign on the class).
+/// The calls of an HTTP service interface (with @ImportHttpServices of
+/// spring_boot_starter_restclient, the generator writes its client).
+@HttpExchange('/books')
 abstract interface class CatalogApi {
-  @GetMapping('/books/{isbn}')
+  @GetExchange('/{isbn}')
   Future<Map<String, Object?>> find(@PathVariable('isbn') String isbn);
 
-  @PostMapping.of(path: '/books', consumes: MediaType.applicationJson)
+  @PostExchange.of(contentType: MediaType.applicationJson)
   Future<ResponseEntity<Map<String, Object?>>> create(
     @RequestBody() Map<String, Object?> book,
     @RequestHeader('X-Request-Id') String requestId,

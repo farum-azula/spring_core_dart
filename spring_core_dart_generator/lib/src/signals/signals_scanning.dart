@@ -6,6 +6,8 @@ import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
+import 'package:spring_core_dart_generator/src/core/beans/resilience_placements.dart'
+    show retryableChecker;
 import 'package:spring_core_dart_generator/src/core/builder/closest_name.dart';
 
 const _annotations =
@@ -56,8 +58,10 @@ Never _fail(String message, Element element) =>
 ///
 /// The proxy is a generated subclass in another library: it overrides
 /// public instance members that have a body, and only those. [element] is
-/// a class or a mixin.
-void checkSignals(InterfaceElement element) {
+/// a class or a mixin. [bufferAsyncMethods] is
+/// `spring.flutter.signals.buffer.async-methods`: every async method runs
+/// in a buffer.
+void checkSignals(InterfaceElement element, {bool bufferAsyncMethods = false}) {
   final owner = element.name ?? '?';
   var any = false;
 
@@ -234,6 +238,79 @@ void checkSignals(InterfaceElement element) {
   _checkOverrides(element, owner);
   _checkWatches(element, owner);
   _checkBuffers(element, owner);
+  _checkRetries(element, owner, bufferAsyncMethods: bufferAsyncMethods);
+}
+
+// `@Retryable` on a bean with followed state: a failed attempt must not
+// publish what it wrote, nor run effects. So not on a @Computed or an
+// @Effect (they run again by themselves), and only on a method whose
+// writes a buffer holds until it succeeds.
+void _checkRetries(
+  InterfaceElement element,
+  String owner, {
+  required bool bufferAsyncMethods,
+}) {
+  if (_followedNames(element).isEmpty &&
+      !element.methods.any(effectChecker.hasAnnotationOfExact)) {
+    return;
+  }
+  if (retryableChecker.hasAnnotationOf(element)) {
+    _fail(
+      '@Retryable on $owner, a bean with @Signal, @Computed or @Effect '
+      'members: on the class it would retry every method, the computed '
+      'values and the effects too, and a failed attempt of a method '
+      'without a buffer would publish what it wrote. Put @Retryable on the '
+      'methods to retry, each with @SignalBuffer().',
+      element,
+    );
+  }
+  for (final member in <ExecutableElement>[
+    ...element.methods,
+    ...element.getters.where((getter) => !getter.isOriginVariable),
+  ]) {
+    if (!retryableChecker.hasAnnotationOf(member)) {
+      continue;
+    }
+    final name = '$owner.${member.name}';
+    for (final (checker, label) in [
+      (computedChecker, '@Computed'),
+      (effectChecker, '@Effect'),
+    ]) {
+      if (checker.hasAnnotationOfExact(member)) {
+        _fail(
+          '@Retryable on the $label $name: a computed value is made again '
+          'and an effect runs again by themselves when what they read '
+          'changes, so a retry would run one twice and tell what a failed '
+          'attempt left. Retry the method that loads what it reads (with '
+          '@SignalBuffer()), and let the $label follow it.',
+          member,
+        );
+      }
+    }
+    final returns = member.returnType;
+    final async = returns is InterfaceType && returns.isDartAsyncFuture;
+    final marked = signalBufferChecker.firstAnnotationOfExact(member);
+    final buffered =
+        async &&
+        (marked?.getField('enabled')?.toBoolValue() ?? bufferAsyncMethods);
+    if (buffered) {
+      continue;
+    }
+    _fail(
+      async
+          ? '@Retryable on $name, a method of a bean with @Signal fields '
+                'that runs without a buffer: a failed attempt would tell '
+                'what it wrote before it failed, and the next attempt would '
+                'start from it. Add @SignalBuffer() to $name (or set '
+                'spring.flutter.signals.buffer.async-methods: true), so the '
+                'writes of an attempt are told only when it succeeds.'
+          : '@Retryable on $name, a method of a bean with @Signal fields '
+                'that is not async: its writes cannot be held in a buffer, '
+                'so a failed attempt would tell what it wrote before it '
+                'failed. Make it return a Future and add @SignalBuffer().',
+      member,
+    );
+  }
 }
 
 // `@SignalBuffer`: on an async method (a `Future`, not a stream) of a

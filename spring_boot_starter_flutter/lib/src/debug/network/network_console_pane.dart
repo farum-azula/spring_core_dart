@@ -184,7 +184,7 @@ class _NetworkConsoleViewState extends State<NetworkConsoleView> {
   // A line tapped, in one line.
   String _detail(NetworkEntry entry, DateTime now) {
     final parts = switch (entry) {
-      final HttpExchange exchange => [
+      final HttpCall exchange => [
         '${exchange.method} ${exchange.url}',
         exchange.status,
         if (exchange.firstByte case final firstByte?)

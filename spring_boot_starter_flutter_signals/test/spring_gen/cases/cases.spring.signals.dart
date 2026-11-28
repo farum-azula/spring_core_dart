@@ -1071,3 +1071,48 @@ class _$ReaderSignals extends _i2.Reader implements _i10.SignalBeanHolder {
   @override
   int get view => (_viewComputed.read() as int);
 }
+
+/// `Restock` on signals: its followed members go straight to their signals.
+class _$RestockSignals extends _i2.Restock implements _i10.SignalBeanHolder {
+  _$RestockSignals();
+
+  @override
+  final _i10.SignalBean signalBean =
+      (!const bool.fromEnvironment('dart.vm.product') &&
+          !const bool.fromEnvironment('dart.vm.profile'))
+      ? _i10.ProbedSignalBean('Restock')
+      : _i10.SignalBean('Restock');
+
+  late final _i10.ValueMember _stockSignal = signalBean.field(
+    'stock',
+    () => super.stock,
+    type: 'int',
+    options: const _i11.Signal(),
+  );
+
+  @override
+  Map<String, _i10.SignalMember Function()> get signalMembers => {
+    'stock': () => _stockSignal,
+  };
+
+  @override
+  List<String> get eagerSignals => const [];
+
+  @override
+  List<String> get signalQueues => const [];
+
+  @override
+  void watch() => signalBean.effectBody('watch', () => super.watch());
+
+  @override
+  _i3.Future<void> refill(int amount) =>
+      signalBean.buffered(() => super.refill(amount));
+
+  @override
+  int get stock => (_stockSignal.read() as int);
+
+  @override
+  set stock(int value) {
+    _stockSignal.write(value);
+  }
+}

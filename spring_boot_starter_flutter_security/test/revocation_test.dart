@@ -63,6 +63,43 @@ void main() {
     );
   });
 
+  // On RestClient: the form as before, no redirect followed, and no answer
+  // is the RestClient's ResourceAccessException behind the OAuth2 error.
+  test('the form urlencoded, no redirect; an unreachable endpoint is a '
+      'server_error caused by a ResourceAccessException', () async {
+    final transport = MockHttpTransport()
+      ..when(HttpMethod.post, 'https://sso.test/revoke').respond(200);
+    await OAuth2TokenRevocationClient(
+      transport,
+    ).revoke(registration, OAuth2AccessToken(TokenType.bearer, 'a b+c'));
+    final sent = transport.lastRequest;
+    expect(sent.followRedirects, isFalse);
+    expect(
+      sent.headers['Content-Type'],
+      'application/x-www-form-urlencoded;charset=UTF-8',
+    );
+    expect(
+      utf8.decode(sent.body!),
+      'token=a+b%2Bc&token_type_hint=access_token&client_id=neon-app',
+    );
+
+    final down = MockHttpTransport()
+      ..when(
+        HttpMethod.post,
+        'https://sso.test/revoke',
+      ).fail(HttpTransportException('connection refused'));
+    await expectLater(
+      OAuth2TokenRevocationClient(
+        down,
+      ).revoke(registration, OAuth2RefreshToken('rt')),
+      throwsA(
+        isA<OAuth2AuthorizationException>()
+            .having((e) => e.error.errorCode, 'code', 'server_error')
+            .having((e) => e.cause, 'cause', isA<ResourceAccessException>()),
+      ),
+    );
+  });
+
   test('nothing without an endpoint', () async {
     expect(
       await OAuth2TokenRevocationClient(MockHttpTransport()).revoke(

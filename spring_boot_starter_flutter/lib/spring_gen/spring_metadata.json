@@ -1995,7 +1995,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 176,
+      "line": 177,
       "injects": [],
       "members": [
         {
@@ -2036,7 +2036,7 @@
         "@ConditionalOnMissingBean(BeansGraphLayer)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1391,
+      "line": 1393,
       "injects": [],
       "members": [
         {
@@ -2225,7 +2225,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1775,
+      "line": 1777,
       "injects": [],
       "members": [
         {
@@ -2275,7 +2275,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 358,
+      "line": 360,
       "injects": [],
       "members": [
         {
@@ -2309,7 +2309,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1069,
+      "line": 1071,
       "injects": [],
       "members": [
         {
@@ -2418,7 +2418,7 @@
         "@ConditionalOnMissingBean(DebugBeanGraph)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1368,
+      "line": 1370,
       "injects": [],
       "members": [
         {
@@ -2552,7 +2552,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 494,
+      "line": 496,
       "injects": [],
       "members": [
         {
@@ -2607,7 +2607,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 485,
+      "line": 487,
       "injects": [],
       "members": [
         {
@@ -2668,7 +2668,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 717,
+      "line": 719,
       "injects": [],
       "members": [
         {
@@ -2915,7 +2915,7 @@
         "@ConditionalOnMissingBean(FrameStats)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 780,
+      "line": 782,
       "injects": [],
       "members": [
         {
@@ -2995,7 +2995,7 @@
         "@ConditionalOnBean(DebugPanel)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1167,
+      "line": 1169,
       "injects": [],
       "members": [
         {
@@ -3045,7 +3045,7 @@
         "@ConditionalOnMissingBean(DebugDockCustomizer)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 638,
+      "line": 640,
       "injects": [],
       "members": [
         {
@@ -3095,7 +3095,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1789,
+      "line": 1791,
       "injects": [],
       "members": [
         {
@@ -3136,7 +3136,7 @@
         "@ConditionalOnBean(DebugPanel)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1472,
+      "line": 1474,
       "injects": [],
       "members": [
         {
@@ -3238,7 +3238,7 @@
         "@ConditionalOnBean(DebugPanel)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1480,
+      "line": 1482,
       "injects": [],
       "members": [
         {
@@ -3278,7 +3278,7 @@
         "@ConditionalOnBean(DebugPanel)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1492,
+      "line": 1494,
       "injects": [],
       "members": [
         {
@@ -3333,7 +3333,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 615,
+      "line": 617,
       "injects": [],
       "members": [
         {
@@ -3454,7 +3454,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 460,
+      "line": 462,
       "injects": [],
       "members": [
         {
@@ -3505,7 +3505,7 @@
         "@ConditionalOnMissingBean(DebugGraphFitAction)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1894,
+      "line": 1896,
       "injects": [],
       "members": [
         {
@@ -3577,7 +3577,7 @@
         "@ConditionalOnMissingBean.named('debugGraphPane')"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1873,
+      "line": 1875,
       "injects": [],
       "members": [
         {
@@ -3662,7 +3662,7 @@
         "@ConditionalOnMissingBean(DebugGraphRoutes)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1917,
+      "line": 1919,
       "injects": [],
       "members": [
         {
@@ -3779,7 +3779,7 @@
         "@ConditionalOnMissingBean.named('debugGraphSection')"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1848,
+      "line": 1850,
       "injects": [],
       "members": [
         {
@@ -3829,7 +3829,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1435,
+      "line": 1437,
       "injects": [],
       "members": [
         {
@@ -3865,7 +3865,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1445,
+      "line": 1447,
       "injects": [],
       "members": [
         {
@@ -3911,7 +3911,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1796,
+      "line": 1798,
       "injects": [],
       "members": [
         {
@@ -3992,7 +3992,7 @@
         "@ConditionalOnMissingBean(DebugLogFilter)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 675,
+      "line": 677,
       "injects": [],
       "members": [
         {
@@ -4065,7 +4065,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 447,
+      "line": 449,
       "injects": [],
       "members": [
         {
@@ -4129,7 +4129,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1189,
+      "line": 1191,
       "injects": [],
       "members": [
         {
@@ -4203,7 +4203,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1202,
+      "line": 1204,
       "injects": [],
       "members": [
         {
@@ -4238,7 +4238,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 478,
+      "line": 480,
       "injects": [],
       "members": [
         {
@@ -4287,7 +4287,7 @@
         "@ConditionalOnMissingBean(DebugNetworkJournal)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1643,
+      "line": 1645,
       "injects": [],
       "members": [
         {
@@ -4458,7 +4458,7 @@
         "@ConditionalOnMissingBean(DebugNetworkRecorder)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1671,
+      "line": 1673,
       "injects": [],
       "members": [
         {
@@ -4511,7 +4511,7 @@
         "@ConditionalOnBean(DebugPanel)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1529,
+      "line": 1531,
       "injects": [],
       "members": [
         {
@@ -4564,7 +4564,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1225,
+      "line": 1227,
       "injects": [],
       "members": [
         {
@@ -4660,7 +4660,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 468,
+      "line": 470,
       "injects": [],
       "members": [
         {
@@ -4716,7 +4716,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 434,
+      "line": 436,
       "injects": [],
       "members": [
         {
@@ -4810,7 +4810,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 519,
+      "line": 521,
       "injects": [],
       "members": [
         {
@@ -4855,7 +4855,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 512,
+      "line": 514,
       "injects": [],
       "members": [
         {
@@ -4904,7 +4904,7 @@
         "@ConditionalOnMissingBean(DebugThemeCustomizer)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 581,
+      "line": 583,
       "injects": [],
       "members": [
         {
@@ -4944,7 +4944,7 @@
         "@ConditionalOnProperty('spring.flutter.debug.enabled', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 501,
+      "line": 503,
       "injects": [],
       "members": [
         {
@@ -5004,7 +5004,7 @@
         "@ConditionalOnMissingBean(DebugThemes)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 555,
+      "line": 557,
       "injects": [],
       "members": [
         {
@@ -5077,7 +5077,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1271,
+      "line": 1273,
       "injects": [],
       "members": [
         {
@@ -5118,7 +5118,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1283,
+      "line": 1285,
       "injects": [],
       "members": [
         {
@@ -5167,7 +5167,7 @@
         "@ConditionalOnMissingBean(DefaultDebugTheme)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 543,
+      "line": 545,
       "injects": [],
       "members": [
         {
@@ -5246,7 +5246,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1782,
+      "line": 1784,
       "injects": [],
       "members": [
         {
@@ -5294,7 +5294,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1133,
+      "line": 1135,
       "injects": [],
       "members": [
         {
@@ -5346,7 +5346,7 @@
         "@ConditionalOnMissingBean(CacheStore)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 327,
+      "line": 329,
       "injects": [],
       "members": [
         {
@@ -5406,7 +5406,7 @@
         "@ConditionalOnMissingBean(FileTemplate)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 368,
+      "line": 370,
       "injects": [],
       "members": [
         {
@@ -5538,7 +5538,7 @@
         "@ConditionalOnMissingBean(ThemeChoiceStore)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 294,
+      "line": 296,
       "injects": [],
       "members": [
         {
@@ -5570,7 +5570,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 879,
+      "line": 881,
       "injects": [],
       "members": [
         {
@@ -5790,7 +5790,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1427,
+      "line": 1429,
       "injects": [],
       "members": [
         {
@@ -6324,7 +6324,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 816,
+      "line": 818,
       "injects": [],
       "members": [
         {
@@ -6366,7 +6366,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 848,
+      "line": 850,
       "injects": [],
       "members": [
         {
@@ -6408,7 +6408,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1092,
+      "line": 1094,
       "injects": [],
       "members": [
         {
@@ -6449,7 +6449,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 914,
+      "line": 916,
       "injects": [],
       "members": [
         {
@@ -6492,7 +6492,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1768,
+      "line": 1770,
       "injects": [],
       "members": [
         {
@@ -6536,7 +6536,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 185,
+      "line": 187,
       "injects": [],
       "members": [
         {
@@ -6638,7 +6638,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 196,
+      "line": 198,
       "injects": [],
       "members": [
         {
@@ -6671,7 +6671,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1024,
+      "line": 1026,
       "injects": [],
       "members": [
         {
@@ -6819,7 +6819,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 951,
+      "line": 953,
       "injects": [],
       "members": [
         {
@@ -6863,7 +6863,7 @@
         "@ConditionalOnBean(DebugNetworkJournal)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1571,
+      "line": 1573,
       "injects": [],
       "members": [
         {
@@ -6942,7 +6942,7 @@
         "@ConditionalOnBean(DebugNetworkJournal)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1619,
+      "line": 1621,
       "injects": [],
       "members": [
         {
@@ -7026,7 +7026,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1756,
+      "line": 1758,
       "injects": [],
       "members": [
         {
@@ -7073,7 +7073,7 @@
         "@ConditionalOnMissingBean(FileStore)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 316,
+      "line": 318,
       "injects": [],
       "members": [
         {
@@ -7165,7 +7165,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 338,
+      "line": 340,
       "injects": [],
       "members": [
         {
@@ -7244,7 +7244,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 210,
+      "line": 212,
       "injects": [],
       "members": [
         {
@@ -7335,7 +7335,7 @@
         "@ConditionalOnProperty('spring.flutter.splash.warm-up.text.enabled', havingValue: 'true')"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 222,
+      "line": 224,
       "injects": [],
       "members": [
         {
@@ -7434,7 +7434,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 270,
+      "line": 272,
       "injects": [],
       "members": [
         {
@@ -7575,7 +7575,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 204,
+      "line": 206,
       "injects": [],
       "members": [
         {
@@ -7616,7 +7616,7 @@
         "@ConditionalOnProperty('spring.flutter.splash.warm-up.text.enabled', havingValue: 'true')"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 235,
+      "line": 237,
       "injects": [],
       "members": [
         {
@@ -7739,7 +7739,7 @@
         "@ConditionalOnProperty('spring.flutter.theme.remember', havingValue: 'true', matchIfMissing: true)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 306,
+      "line": 308,
       "injects": [],
       "members": [
         {
@@ -7780,7 +7780,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 394,
+      "line": 396,
       "injects": [],
       "members": [
         {
@@ -7844,7 +7844,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 285,
+      "line": 287,
       "injects": [],
       "members": [
         {
@@ -7949,7 +7949,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 382,
+      "line": 384,
       "injects": [],
       "members": [
         {
@@ -8019,7 +8019,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1259,
+      "line": 1261,
       "injects": [],
       "members": [
         {
@@ -8144,7 +8144,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 984,
+      "line": 986,
       "injects": [],
       "members": [
         {
@@ -8188,7 +8188,7 @@
         "@ConditionalOnMissingBean(WidgetsGraphLayer)"
       ],
       "source": "package:spring_boot_starter_flutter/spring_auto_configuration.dart",
-      "line": 1937,
+      "line": 1939,
       "injects": [],
       "members": [
         {

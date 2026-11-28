@@ -19,8 +19,8 @@ uses. No code is needed: the generator finds the starter, and a
 `LoggingSystem` is installed behind `SpringLog` when the application
 starts.
 
-Every application that logs wants it; the other starters (web, Feign,
-WebSocket, scheduling, cache) bring it along. It is the Dart counterpart
+Every application that logs wants it; the other starters (web,
+RestClient, WebSocket, scheduling, cache) bring it along. It is the Dart counterpart
 of `spring-boot-starter-logging`, with Logback's pattern syntax.
 
 ## Install

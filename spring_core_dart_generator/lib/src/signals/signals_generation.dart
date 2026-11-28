@@ -71,12 +71,17 @@ final class SignalsGeneration extends PackageGeneration {
   }
 
   @override
-  void scanClass(ClassElement element, ModuleScan scan) =>
-      scan.collectErrors(() => checkSignals(element));
+  void scanClass(ClassElement element, ModuleScan scan) => scan.collectErrors(
+    () => checkSignals(element, bufferAsyncMethods: _bufferAsync(scan)),
+  );
 
   @override
-  void scanMixin(MixinElement element, ModuleScan scan) =>
-      scan.collectErrors(() => checkSignals(element));
+  void scanMixin(MixinElement element, ModuleScan scan) => scan.collectErrors(
+    () => checkSignals(element, bufferAsyncMethods: _bufferAsync(scan)),
+  );
+
+  static bool _bufferAsync(ModuleScan scan) =>
+      scan.module.packageModel(SignalsModuleModel.new).bufferAsyncMethods;
 
   @override
   Map<String, Iterable<Spec>> partFiles(ModuleEmission emission) {

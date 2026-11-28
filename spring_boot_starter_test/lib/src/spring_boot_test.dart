@@ -142,7 +142,7 @@ SpringBootTestContext springBootTest(
 /// Most web tests keep the default, [mock]: no socket, and requests go
 /// through [SpringBootTestContext.mockMvc], fast and without port
 /// conflicts. Choose [randomPort] when the client under test needs a real
-/// connection, such as a Feign client, `HttpClient` or a WebSocket client.
+/// connection, such as a `RestClient`, `HttpClient` or a WebSocket client.
 /// The value reaches the web starter as the property
 /// `spring.test.web-environment`.
 ///

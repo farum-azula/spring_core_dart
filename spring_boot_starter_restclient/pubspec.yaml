@@ -1,0 +1,29 @@
+name: spring_boot_starter_restclient
+description: >-
+  RestClient for spring_boot_dart: a RestClient.Builder bean from spring.http.* properties, HTTP service groups, and outgoing addresses denied until allowed.
+version: 0.10.0
+repository: https://github.com/farum-azula/spring_core_dart/tree/main/spring_boot_starter_restclient
+documentation: https://farum-azula.org/components
+issue_tracker: https://github.com/farum-azula/spring_core_dart/issues
+topics:
+  - http
+  - rest
+  - spring
+
+environment:
+  sdk: ^3.13.0
+
+resolution: workspace
+
+dependencies:
+  spring_boot_dart: ^0.10.0
+  # Like every Spring Boot starter: logging comes with it.
+  spring_boot_starter_logging: ^0.10.0
+  spring_web_dart: ^0.10.0
+
+dev_dependencies:
+  # For example/: the generator writes example/spring_gen/example.spring.dart.
+  build_runner: ^2.17.0
+  spring_boot_starter_test: ^0.10.0
+  spring_core_dart_generator: ^0.10.0
+  test: ^1.33.0

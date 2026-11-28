@@ -110,8 +110,8 @@ The places:
   member of one;
 - the class a `@Bean` method returns, and the `@Bean` method itself;
 - a `@Configuration` class and a `@ConfigurationProperties` class;
-- an interface whose implementation is generated: a `DataRepository`, a
-  `@FeignClient`;
+- an interface whose implementation is generated: a `DataRepository`, an
+  HTTP service interface (`@HttpExchange`);
 - a bean the container does not proxy: an `@Aspect`, a
   `BeanPostProcessor`, a `BeanFactoryPostProcessor`, an `Advisor`, a
   `FactoryBean`;
@@ -139,8 +139,8 @@ The annotations, by package (every one the package exports, these first):
   `@Observed`, `@Log`;
 - security: `@PreAuthorize`, `@PostAuthorize`, `@Secured`,
   `@PreFilter`, `@PostFilter`;
-- web, Feign and WebSocket: the mapping annotations outside a controller
-  or a client, the parameter annotations outside a handler,
+- web, HTTP service and WebSocket clients: the mapping annotations
+  outside a controller or a client, the parameter annotations outside a handler,
   `@ControllerAdvice` members, `@OnMessage`;
 - data: `@Query`, `@Modifying`, `@Procedure`, `@Lock`, `@Table` and the
   column annotations outside an entity, `@Version`;
@@ -709,10 +709,6 @@ items are under "After 0.5.0". By the review rule nothing is left, but the owner
   never ends (Tomcat's 30 s default in Spring; not in Differences);
   `@ControllerAdvice` cannot be scoped (not in Differences); dart:io
   accepts both Content-Length and Transfer-Encoding (document, SDK).
-- Feign: the `headers` log shows `Cookie`, `Set-Cookie`,
-  `Proxy-Authorization`, API-key headers; `Retry-After` negative or huge
-  gives a zero delay; `FeignException.toString()` carries the whole body;
-  a path variable `..` / `.` changes the target URL.
 - WebSocket: the client logs `?token=` in URLs and exception texts;
   `@PathVariable() int` on an endpoint passes the startup check and fails
   every connection.
@@ -890,7 +886,6 @@ brackets.
 | Annotations, generator | 92% (92) | 83% (80) | 77% (77) |
 | `spring_boot_dart` | 74% (73) | 87% (86) | 64% (63) |
 | `spring_web_dart` | 79% (79) | 80% (80) | 51% (51) |
-| Feign starter | 80% (80) | 80% (79) | 57% (57) |
 | WebSocket starter (declarative by design) | 64% (64) | 80% (79) | 59% (59) |
 | Logging starter | 78% (78) | 81% (81) | 58% (58) |
 | Scheduling starter | 76% (76) | 87% (86) | 62% (62) |
@@ -1019,8 +1014,6 @@ Found while rewriting the READMEs and `docs/` (October 2026):
   dots (`i18n.messages`) finds no locale files, while Boot's
   `MessagesBundleCondition` reads both; after a hot-reload restart missing
   font families are not logged again.
-- A non-numeric Feign `event-stream.max-attempts` fails with a
-  `FormatException` that does not name the property.
 - Test classes: an `@Autowired() Map<String, T>` field ignores
   `@Qualifier` (`test_builder.dart`).
 - Not verified: `@Log` in a Boot app without `@ComponentScan` generates the
@@ -1031,23 +1024,23 @@ Found by the reviews, not blocking:
 
 - Tenth review: unconditional `@Bean` methods are registered while parsing, not in the reader in class order (earlier bean conditions see them; registration order `[h2, h1]` vs Spring's `[h1, h2]` affects unordered `List<T>` injection) — document or defer; plain (non-`ConfigurationCondition`) conditions on `@Bean` methods evaluated while parsing; a component's `@ConditionalOnMissingBean` of its own type; `@ConditionalOnBean(B)` on a component when B is a later conditional component; `@ConditionalOnMissingBean()` without arguments on a class should fail like Boot; `UrlResource.existsAsync()` status rules (204, 500 with a body); `@Bean` products with private members get interface-only proxies (`BeanNotOfRequiredTypeException` when injected by class; README should say subclass proxies are for component classes); operators (`[]`) on subclass proxies aren't advised; a `*String` delay resolving to whitespace.
 
-- Ninth review: excluding an auto-configuration doesn't exclude the configuration classes it `@Import`s (inlined under their own source); a registrar / selector `@Import`ed by two generated classes uses only the first importer's conditions; a user `DeferredImportSelector`'s beans make auto-configurations back off (Boot runs it after `AutoConfigurationImportSelector`); `SpringLogHold.release()` of a non-innermost hold; blank per-client Feign flags vs `config.default`; the condition report shows a whole auto-configuration as not matched for one backed-off bean; `max-history=0` with `total-size-cap`.
+- Ninth review: excluding an auto-configuration doesn't exclude the configuration classes it `@Import`s (inlined under their own source); a registrar / selector `@Import`ed by two generated classes uses only the first importer's conditions; a user `DeferredImportSelector`'s beans make auto-configurations back off (Boot runs it after `AutoConfigurationImportSelector`); `SpringLogHold.release()` of a non-innermost hold; the condition report shows a whole auto-configuration as not matched for one backed-off bean; `max-history=0` with `total-size-cap`.
 
 - Eighth review: several `TaskScheduler` beans without a primary or `taskScheduler` fail the start (Spring falls back to a local scheduler); the example tour closes with sync `close()` (use `closeAsync()`); SpEL on the web `{{2.0}}.toString()` and `'' + {2.0}`; JSON `intValue()` of `1e20`; README row for list-gap padding; a private default value leaves a subclass-proxy method unadvised.
 
 - Seventh review: `@CacheConfig` on an implemented interface; `initialDelay` with a blank `initialDelayString`; `reconnect.delay=0` with jitter; `DataBinder` / `BeanWrapper` writing into a `const []` default (copy to a growable list or record a field error); 64-bit overflowing indexes; `@Configuration` classes are never AOP proxy candidates (Spring advises them; at least document); `mergedAnnotations` order (interfaces before superclasses); enum names accepted next to `@JsonValue`; `DataBinder.construct` shifting elements after a failed conversion; `#x = 2.0` not `instanceof T(Double)` on the web (document).
 
-- Sixth review: `DataBinder.bind` drops a write into a gap of a `List<int>` silently (document); `BeanWrapper` appending at the grow limit; concurrent `runAsync` holds interleave; held lines of a failed start filtered at WARN; superclass and interface `@Cacheable` together; `@Scheduled` on an overridden superclass method; `default.reconnect.*` errors reported under the client key; empty client-level Feign flags; Feign example README "Dart 3.9.0"; SpEL `{-1, 2}` unmodifiable and quote escaping in AST text; `BeanWrapper` gap exception types.
+- Sixth review: `DataBinder.bind` drops a write into a gap of a `List<int>` silently (document); `BeanWrapper` appending at the grow limit; concurrent `runAsync` holds interleave; held lines of a failed start filtered at WARN; superclass and interface `@Cacheable` together; `@Scheduled` on an overridden superclass method; `default.reconnect.*` errors reported under the client key; SpEL `{-1, 2}` unmodifiable and quote escaping in AST text; `BeanWrapper` gap exception types.
 
-- Fifth review: `@Scheduled(initialDelay:)` with a blank `initialDelayString`; Feign query spaces as `+` (OpenFeign `%20`); held early lines reach the console in the default format; `DataBinder.construct` gaps in `List<String>` should be `''` like `BeanWrapper`; parameter constraints added on an override should be rejected (`ConstraintDeclarationException`); SpEL real literal `toString` on the web, `Assign` spacing; `StringNode(" 3").asInt()`; `on-profile` inside a profile-specific file should fail; `BeanWrapper` index above the grow limit should raise `InvalidPropertyException` out of `bind()`.
+- Fifth review: `@Scheduled(initialDelay:)` with a blank `initialDelayString`; held early lines reach the console in the default format; `DataBinder.construct` gaps in `List<String>` should be `''` like `BeanWrapper`; parameter constraints added on an override should be rejected (`ConstraintDeclarationException`); SpEL real literal `toString` on the web, `Assign` spacing; `StringNode(" 3").asInt()`; `on-profile` inside a profile-specific file should fail; `BeanWrapper` index above the grow limit should raise `InvalidPropertyException` out of `bind()`.
 
-- Fourth review: the lazy-listener stand-in ignores `Ordered.order` and doesn't retry a failed creation; empty comma-list elements (`1,,2`) should bind null; `ignoreInvalidFields` on indexed lists stops at the bad index in Boot; `UrlResource.existsAsync()` and `Content-Length`; document that `SpringLog.hold()` is isolate-wide and that the `--debug` report is INFO; blank resolved `cron` should count as unset; `clean-history-on-start` with `max-history=0`; a connect in flight when the last WebSocket listener cancels; sync `close()` with an open WebSocket logs a not-awaited warning; Feign example README omits timestamps; `JoinPoint` declaring type for interface methods under subclass proxies (CGLIB reports the class); the `@Lazy` through-proxy flag after an unadvised inherited member.
+- Fourth review: the lazy-listener stand-in ignores `Ordered.order` and doesn't retry a failed creation; empty comma-list elements (`1,,2`) should bind null; `ignoreInvalidFields` on indexed lists stops at the bad index in Boot; `UrlResource.existsAsync()` and `Content-Length`; document that `SpringLog.hold()` is isolate-wide and that the `--debug` report is INFO; blank resolved `cron` should count as unset; `clean-history-on-start` with `max-history=0`; a connect in flight when the last WebSocket listener cancels; sync `close()` with an open WebSocket logs a not-awaited warning; `JoinPoint` declaring type for interface methods under subclass proxies (CGLIB reports the class); the `@Lazy` through-proxy flag after an unadvised inherited member.
 
 - Context / Boot: `@EventListener` results by runtime class; YAML hex integers beyond 64 bits; nested generic conversion (`Map<String, List<String>>`), `Encoding` aliases (`UTF8`), `canConvert(map, List<int>)`; `AbstractFailureAnalyzer` over the cause chain; `ResourceBanner` `${AnsiColor.*}` / `${application.*}`; `ApplicationAvailability` / `LivenessState`; `methodValidationPostProcessor` with `search: current`; log a throwing exit code generator; async `common-messages`; a class `@Import`ed by two generated classes skipped only when both are (selected modules are); `supportsAsyncExecution()`, `Scope.resolveContextualObject`, `BeanRegistry` spec options.
 - SpEL: regex `replaceAll` / `replaceFirst`; `char` arithmetic; 32-bit int literals and overflow; `T(Arrays)`, `Collections`, `UUID`, `LocalDate`, `Duration`, `BigDecimal`; `.class`; conversion on writes to typed map / list elements.
 - JSON: `1.0` written as `1` on the web (document); timestamp fraction digits; Dart enum names next to `@JsonValue` values; JSON Pointer `01`; `JsonNode.from(nan)`; `findValue(s)`, `findParent`, `required`, `withObject` / `withArray`, `setAll`; constructor properties first when sorting is off; `1` → `true`.
 - Validation: message EL beyond `${validatedValue}`; default message only for `{0}`; canonical `requiredFields`.
 - AOP / generator: `(A || B).*`, `@Ann *` in `execution`; `@Pointcut` holder classes turning pruning off; error wording.
-- Web / Feign: custom `HttpMethod`s; body-less `ResponseEntity.ok()` builder, `allow` / `cacheControl` / `varyBy`; multipart, `@SpringQueryMap`, `FallbackFactory`, streamed downloads, placeholders in client names, `default.url` per client only; empty `id:` SSE events.
+- Web: custom `HttpMethod`s; body-less `ResponseEntity.ok()` builder, `allow` / `cacheControl` / `varyBy`; empty `id:` SSE events.
 - WebSocket: STOMP client, ping / keep-alive, send-time / buffer / message-size limits, session details, handshake failure status.
 - Cache: `Cache.get(key, valueLoader)`, async `retrieve()`; interface vs implementation cache annotations. Scheduling: `SchedulingConfigurer` / `ScheduledTaskRegistrar`, README on ignored `pool.size` / `thread-name-prefix`. Test starter: `prepare()`, `withBean` customizers, output capture. Logging: `logging.structured.*`, time-based rolling and `.gz`, `web` / `sql` groups.

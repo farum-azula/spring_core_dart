@@ -1,3 +1,7 @@
+## Unreleased
+
+- The documentation compares `@WebSocketClient`, `@PhoenixChannel` and the `spring.websocket.client.config.*` keys with HTTP service interfaces and `spring.http.serviceclient.*`.
+
 ## 0.10.0
 
 - No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.10.0.

@@ -262,7 +262,7 @@ What a method returns decides the response:
 | `Resource` (`FileSystemResource`, `ByteArrayResource`) | a download: the media type from the file name, `Content-Length`, `Range` and `Last-Modified`; see [Files](#files-uploads-and-downloads) |
 | `Stream<Uint8List>`, `Stream<List<int>>` | raw bytes as they come (`application/octet-stream`, or `produces`) |
 | `StreamingResponseBody` | bytes the handler writes itself |
-| `ResponseEntity<T>` | its status, headers and body (`ResponseEntity.ok(x)`, `.created(uri).body(x)`, `.notFound().build()`); with an `ETag` or `Last-Modified`, conditional `GET`s and `HEAD`s get a 304 (see below) |
+| `ResponseEntity<T>` | its status, headers and body (`ResponseEntity.ok(x)`, `.created(uri).body(x)`, `.notFound().build()`); with an `ETag` or `Last-Modified`, conditional `GET` requests and `HEAD` requests get a 304 (see below) |
 | `ProblemDetail`, an `ErrorResponse` | `application/problem+json` with its status |
 | `EventStream<T>`, `Stream<T>` (other than bytes) | server-sent events (`text/event-stream`); NDJSON with `produces: 'application/x-ndjson'` |
 | `SseEmitter` | server-sent events sent from anywhere |
@@ -533,8 +533,8 @@ closed.
 
 ### Uploads: `multipart/form-data`
 
-A browser form with `enctype="multipart/form-data"`, `curl -F` or a
-Feign client sends files as a multipart request. The starter reads it
+A browser form with `enctype="multipart/form-data"`, `curl -F` or an
+HTTP client sends files as a multipart request. The starter reads it
 once per request and binds its parts to the handler's parameters:
 
 ```dart
@@ -604,8 +604,10 @@ spring.web.multipart.enabled=false            # don't parse multipart requests
   open (`0700`), with random names. Without `dart:io` (on the web),
   files stay in memory.
 
-To send files from a client, see the Feign starter's
-[Files and multipart](../spring_boot_starter_feign/README.md#files-and-multipart).
+To send files from a client, see `spring_web_dart`'s
+[Multipart and files](../spring_web_dart/README.md#multipart-and-files)
+(a `MultipartBody` as the body of a `RestClient` call) and `@RequestPart`
+on [HTTP service clients](../spring_boot_starter_restclient/README.md#http-service-clients).
 
 ### Downloads: `Resource`
 
@@ -856,7 +858,7 @@ Sessions live in memory by default (`InMemoryHttpSessionRepository`):
 they are lost when the process stops and are not shared between
 several instances of the application. To keep them in a database or
 Redis, declare your own `HttpSessionRepository` bean; the in-memory one
-then backs off. When a repository answers with `Future`s, use
+then backs off. When a repository answers with `Future` values, use
 `request.getSessionAsync()`.
 
 Spring (Java), where the session can also be a handler parameter:
@@ -908,7 +910,7 @@ one member (the path, the headers, the principal).
 
 Every request runs in its own `Zone`, so
 `RequestContextHolder.currentRequest` is the request anywhere in its
-handling, across `await`s.
+handling, across `await` expressions.
 
 ## Rate limiting
 
@@ -1347,15 +1349,16 @@ minute.
 
 The request runs under a `RequestDeadline` of that length, which the code
 it calls can read through `RequestDeadline.current` (`remaining`,
-`isExpired`, `check()`), and which the Feign starter honours: a call a
-controller makes through a Feign client stops at the request's deadline, so
-it never outlives the request (see the Feign starter's
-[`call-timeout`](../spring_boot_starter_feign/README.md#a-limit-for-the-whole-call-call-timeout)).
+`isExpired`, `check()`), and which `RestClient` honours: a call a
+controller makes through it (or through an HTTP service interface) is not
+sent once the deadline has passed and is given up when it passes, so it
+never outlives the request (see `spring_web_dart`'s
+[RestClient](../spring_web_dart/README.md#restclient)).
 
 ```dart
 @GetMapping('/report')
 Future<Report> report() async {
-  final sales = await sales.totals();      // a Feign client, limited by the request
+  final sales = await sales.totals();      // an HTTP service client, limited by the request
   RequestDeadline.current?.check();        // between steps: stop when nobody waits
   return Report(sales, await stock.levels());
 }
@@ -1564,7 +1567,7 @@ synchronous work in a handler does: move it into `Isolate.run`.
   `INTERNET` in the release manifest; on iOS, binding beyond localhost
   asks for local network access (`NSLocalNetworkUsageDescription`).
 - **The web** has no server sockets: the application fails at startup
-  with an error that says so. Use the clients (Feign, WebSocket) there,
+  with an error that says so. Use the clients (`RestClient`, WebSocket) there,
   or set `spring.main.web-application-type=none`.
 
 ## WebSocket endpoints
@@ -1657,7 +1660,7 @@ void main() {
 
 `springBootTest(springApplication, webEnvironment: WebEnvironment.randomPort)`
 starts the real server on a free port (`app.localServerPort`), for a
-Feign client or `dart:io`'s `HttpClient` to call. In a test class:
+`RestClient` or `dart:io`'s `HttpClient` to call. In a test class:
 `@SpringBootTest(webEnvironment: ...)`, `@Autowired() late MockMvc mvc;`,
 `@LocalServerPort() late int port;`. Web tests are described in full in
 [docs/testing.md](../docs/testing.md#17-web-tests-mockmvc).
@@ -1767,7 +1770,7 @@ the bean as the context holds it, so AOP advice on a controller
   `Cache-Control` on a `304` too, and `application/json` for
   `apple-app-site-association`. A path without a file is the
   dispatcher's 404 (`No endpoint GET /x.`), where Spring 6.1 answers
-  `No static resource x.`. `HandlerInterceptor`s do not run for them
+  `No static resource x.`. `HandlerInterceptor` instances do not run for them
   (they are for controller methods). `spring.web.resources.spa-fallback`
   is not in Spring Boot; `spring.web.resources.chain.enabled`, `cache`
   and the version strategies, and the webjars mapping are not

@@ -12,10 +12,11 @@ import 'package:spring_web_dart/src/media_type.dart';
 ///
 /// `HttpTransport.send` returns it. A transport only reports what the
 /// server answered: a `404` or a `500` is an ordinary response here, not
-/// an error. Deciding what a status means is left to the caller. Feign
-/// clients, for example, turn a non-2xx response into an exception with
-/// their `ErrorDecoder`. Most applications meet this type only there, or
-/// as the return type of a Feign method that wants the raw response.
+/// an error. Deciding what a status means is left to the caller.
+/// `RestClient`, for example, turns a 4xx or 5xx response into a
+/// `RestClientResponseException` (its status handlers decide). Most
+/// applications meet this type only in a `ClientHttpRequestInterceptor`
+/// or a transport decorator.
 ///
 /// ```dart
 /// // `transport` is the application's `HttpTransport` bean.

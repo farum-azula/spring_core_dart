@@ -158,10 +158,10 @@ final class FeignClientConfig {
   /// the same name.
   ///
   /// The URL with its query is in the log lines (`logger-level` `basic`
-  /// and up) and in the messages of `FeignException`s and
-  /// `RetryableException`s, so an API key sent here shows there: prefer a
-  /// header named in [sensitiveHeaders] (through `default-request-headers`)
-  /// for a secret.
+  /// and up) and in the messages of `FeignException` instances and
+  /// `RetryableException` instances, so an API key sent here shows there:
+  /// prefer a header named in [sensitiveHeaders] (through
+  /// `default-request-headers`) for a secret.
   final Map<String, List<String>> defaultQueryParameters;
 
   /// Whether the transport follows redirects (`follow-redirects`); `true`

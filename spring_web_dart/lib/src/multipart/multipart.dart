@@ -20,7 +20,7 @@ import 'package:spring_web_dart/src/media_type.dart';
 /// deleted when the request ends. Keep the content with [transferTo] or
 /// by reading it during the request.
 ///
-/// A Feign client sends a `MultipartFile` argument as a file part.
+/// An HTTP service client sends a `MultipartFile` argument as a file part.
 ///
 /// ```dart
 /// // Saves an uploaded cover under its original name.
@@ -80,13 +80,13 @@ abstract interface class MultipartFile {
 
 /// A [MultipartFile] whose content is a list of bytes in memory.
 ///
-/// Use it to pass a file to a controller method or a Feign client from
+/// Use it to pass a file to a controller method or an HTTP service client from
 /// code (a test, a file produced on the fly), where no upload took place.
 /// Tests usually use `MockMultipartFile`, which extends it with Spring's
 /// argument order.
 ///
 /// ```dart
-/// // A Feign client uploads a generated report.
+/// // An HTTP service client uploads a generated report.
 /// await archive.store(InMemoryMultipartFile.fromString(
 ///   'report',
 ///   csv,
@@ -564,9 +564,9 @@ final class _ByteReader {
 /// One part of a multipart body to send: a form field, a file or a JSON
 /// value, with its headers.
 ///
-/// Parts are put together into a [MultipartBody]. A Feign client builds
-/// them from its `@RequestPart` parameters; build them yourself only to
-/// send a multipart body by hand.
+/// Parts are put together into a [MultipartBody]. An HTTP service client
+/// builds them from its `@RequestPart` parameters; build them yourself
+/// only to send a multipart body by hand.
 ///
 /// ```dart
 /// final parts = [
@@ -633,9 +633,10 @@ final class MultipartBodyPart {
 /// A `multipart/form-data` body to send: the parts and the boundary that
 /// separates them, encoded into bytes by [encode].
 ///
-/// It is how a client uploads files together with form fields. Feign
-/// clients and `MockMvc.multipart` build one for you; use it directly to
-/// send an upload through an `HttpTransport`.
+/// It is how a client uploads files together with form fields. HTTP
+/// service clients and `MockMvc.multipart` build one for you; use it
+/// directly to send an upload through a `RestClient` or an
+/// `HttpTransport`.
 ///
 /// ```dart
 /// // Uploads a book with its cover to another service.

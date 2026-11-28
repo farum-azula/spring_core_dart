@@ -30,9 +30,9 @@ import 'package:spring_boot_starter_websocket/src/config/web_socket_properties.d
 /// spring.websocket.client.config.feed.max-text-message-size=1MB
 /// ```
 ///
-/// Differs from Spring: these keys are this project's own (shaped like
-/// `spring.feign.client.config.*`); Spring Boot has no
-/// properties for WebSocket clients.
+/// Differs from Spring: these keys are this project's own (one block per
+/// client, as `spring.http.serviceclient.<group>.*` is per group); Spring
+/// Boot has no properties for WebSocket clients.
 final class WebSocketClientConfig {
   /// Settings with these values; the defaults are those of a client
   /// without any property.

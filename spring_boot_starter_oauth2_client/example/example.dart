@@ -1,7 +1,8 @@
 // A service that calls a partner's API with its own access token (the
 // client_credentials grant): the starter gets the token from the
-// provider's token endpoint, keeps it while it is valid, and the Feign
-// interceptor sends it with every call. The generator writes
+// provider's token endpoint, keeps it while it is valid, and its
+// RestClient interceptor sends it with every call of the HTTP service
+// interface marked @ClientRegistrationId. The generator writes
 // example.spring.dart (`dart run build_runner build`).
 //
 //   dart run example/example.dart
@@ -12,17 +13,18 @@
 import 'dart:convert';
 import 'dart:io' as io;
 
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_client.dart';
 
 import 'spring_gen/example.spring.dart';
 
-/// The partner's API. The starter's interceptor adds
-/// `Authorization: Bearer <token>` to every call
-/// (`spring.feign.oauth2.enabled=true`).
-@FeignClient('orders', url: r'${partner.url}')
+/// The partner's API, an HTTP service of the group `orders`
+/// (`spring.http.serviceclient.orders.base-url`). The starter's
+/// interceptor adds `Authorization: Bearer <token>` of the registration
+/// `partner` to every call.
+@HttpExchange('/orders')
+@ClientRegistrationId('partner')
 abstract interface class OrdersClient {
-  @GetMapping('/orders')
+  @GetExchange()
   Future<List<Object?>> orders();
 }
 
@@ -56,6 +58,7 @@ class OrdersTour implements CommandLineRunner {
 }
 
 @SpringBootApplication()
+@ImportHttpServices(group: 'orders', types: [OrdersClient])
 Future<void> main(List<String> args) async {
   final partner = await _partner();
   final base = 'http://127.0.0.1:${partner.port}';
@@ -69,9 +72,7 @@ Future<void> main(List<String> args) async {
       '$registration.scope': 'orders.read',
       'spring.security.oauth2.client.provider.partner.token-uri':
           '$base/oauth2/token',
-      'spring.feign.oauth2.enabled': 'true',
-      'spring.feign.oauth2.client-registration-id': 'partner',
-      'partner.url': base,
+      'spring.http.serviceclient.orders.base-url': base,
     },
   );
 

@@ -17,7 +17,7 @@ neon:
 logging:
   level:
     shop: info
-    feign: info
+    web.client: info
   file:
     name: build/logs/neon-books.log
     rolling-policy:

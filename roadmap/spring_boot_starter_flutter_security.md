@@ -11,7 +11,7 @@ section 3).
 ## Why a package of its own
 
 Since SSO, every app with `spring_boot_starter_flutter` gets the OAuth2
-client, Feign, `spring_security_core` and the plugin's native code
+client, the HTTP client, `spring_security_core` and the plugin's native code
 (Swift, Kotlin, `androidx.browser`, two activities in the Android
 manifest), even an app without any login. Tree shaking does not remove
 it: the generated `spring_gen/main.spring.dart` lists the OAuth2 client's
@@ -20,7 +20,7 @@ conditions are decided at run time; native code is always built in. As
 in Spring, an app adds security when it needs it:
 
 - `spring_boot_starter_flutter`: back to widgets, beans, themes, profiles;
-  no platform code, no OAuth2 client, Feign or security dependency.
+  no platform code, no OAuth2 client, HTTP client or security dependency.
 - `spring_boot_starter_flutter_security`: depends on (and re-exports)
   `spring_boot_starter_flutter`, `spring_boot_starter_oauth2_client` and
   `spring_security_core`, so an app lists only this one package.
@@ -334,7 +334,7 @@ What was planned:
 A browser has no secure storage, but web apps log in all the same, so the
 web gets the app login too, provider-agnostic, chosen by one property;
 the code is the same as on phones (`login(registrationId)`, `restore()`,
-`logout()`, `PrincipalBuilder`, Feign clients), no `kIsWeb` in the app.
+`logout()`, `PrincipalBuilder`, HTTP service clients), no `kIsWeb` in the app.
 
 ```yaml
 spring:
@@ -372,8 +372,8 @@ spring:
   logout answer: `{"logoutUrl"}` (the server guide's) or a `Location` on a
   `2xx` (`202 Accepted`), `http(s)` only; a script cannot follow Spring's
   redirect to the provider. `CsrfCookieHttpTransport` and the
-  `httpTransport` bean (before Feign's; backs off for an application's
-  own), `BrowserPage` behind an interface so all of it is tested on the
+  `httpTransport` bean (before the RestClient starter's; backs off for an
+  application's own), `BrowserPage` behind an interface so all of it is tested on the
   VM. `flutter_guide` lost its `BrowserPage`, `BrowserSessionTransport`
   and its web restore; `/api/me` of the server guide answers
   `authorities` and `registrationId` too. Not done: a test in a real
@@ -494,7 +494,7 @@ it), `DPoPProofBuilder`, `ECDSA.transcodeSignatureToConcat` (DER to raw
 `R || S`, for the native keys); proofs on the token requests (code,
 refresh, client credentials) with `use_dpop_nonce` answered once,
 `token_type: DPoP` read (`Bearer` kept when the provider issues it); the
-Feign interceptor's `DPoP <token>` and proof per call, nonces remembered
+`RestClient` interceptor's `DPoP <token>` and proof per call, nonces remembered
 per server from error answers; the user services' DPoP calls; the
 registration's `dpop` property (`auto`, the default since the native
 keys, the stored DPoP tokens and the handshake proofs below: on when the
@@ -526,8 +526,8 @@ dropped at load (the user logs in again); records without a type read
 as `Bearer`. Logout deletes the key (a key per login); `restore()`
 treats `invalid_dpop_proof` as a refused login. Proofs on WebSocket
 handshakes and calls of the app's own: `OAuth2AccessTokenHeaders` in the
-client (`ws(s)` URLs become `http(s)` in `htu`), used by the Feign
-interceptor and the example's `SupportHandshake` (browsers send the
+client (`ws(s)` URLs become `http(s)` in `htu`), used by the
+`RestClient` interceptor and the example's `SupportHandshake` (browsers send the
 session cookie instead). Tests: `test/dpop_key_test.dart` (mocked
 channel), `example/flutter_guide/integration_test/dpop_key_test.dart`
 run on macOS (the Keychain key of a debug build), the iOS 27 simulator
@@ -536,9 +536,7 @@ without secure hardware), each proof checked with pointycastle.
 
 Not done: a run on a StrongBox phone, on Windows and Linux, and end to
 end against Keycloak with DPoP on a phone (the web's spa login is tested
-against Keycloak with DPoP); proofs on `RestClient` calls (when it exists); the retry of a
-Feign call answered `use_dpop_nonce` and nonces from successful answers
-(Feign shows neither to the interceptor).
+against Keycloak with DPoP).
 
 Providers: Keycloak, Okta, Auth0, Ping, Curity and Spring Authorization
 Server support it; Google, Apple, GitHub and Microsoft Entra ID (which has
@@ -656,9 +654,9 @@ final class DPoPProofBuilder {
   `SecretStore`, signed in Dart.
 - The token response clients add `DPoP` to code and refresh requests and
   answer a `use_dpop_nonce` error once with the nonce (done).
-- The Feign / `RestClient` interceptors send `DPoP <token>` and a fresh
-  proof with `ath` for DPoP tokens; nonces remembered per server (Feign
-  done; `RestClient` when it exists).
+- The `RestClient` interceptor sends `DPoP <token>` and a fresh proof
+  with `ath` for DPoP tokens; nonces remembered per server, a
+  `use_dpop_nonce` answer retried once (done).
 - On by itself when the discovery has `dpop_signing_alg_values_supported`,
   or with `spring.security.oauth2.client.registration.<id>.dpop=true|false`
   (done).

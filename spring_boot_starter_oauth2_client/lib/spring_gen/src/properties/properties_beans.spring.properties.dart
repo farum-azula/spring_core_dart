@@ -10,88 +10,61 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i3;
-import 'package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart'
-    as _i1;
 import 'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart'
+    as _i1;
+import 'package:spring_boot_starter_oauth2_client/src/properties/oauth2_rest_client_properties.dart'
     as _i2;
 
-Object? _$get0(_i1.FeignOAuth2Properties object) => object.enabled;
-void _$set1(_i1.FeignOAuth2Properties object, Object? value) =>
-    object.enabled = (value as bool);
-Object? _$get2(_i1.FeignOAuth2Properties object) => object.clientRegistrationId;
-void _$set3(_i1.FeignOAuth2Properties object, Object? value) =>
-    object.clientRegistrationId = (value as String?);
-_i1.FeignOAuth2Properties _$create4(
+Object? _$get0(_i1.OAuth2ClientProperties object) => object.registration;
+Object? _$get1(_i1.OAuth2ClientProperties object) => object.provider;
+_i1.OAuth2ClientProperties _$create2(
   List<Object?> positional,
   Map<Symbol, Object?> named,
-) => _i1.FeignOAuth2Properties();
-Object? _$get5(_i2.OAuth2ClientProperties object) => object.registration;
-Object? _$get6(_i2.OAuth2ClientProperties object) => object.provider;
-_i2.OAuth2ClientProperties _$create7(
-  List<Object?> positional,
-  Map<Symbol, Object?> named,
-) => _i2.OAuth2ClientProperties(
+) => _i1.OAuth2ClientProperties(
   registration: named.argumentOr(
     #registration,
-    const <String, _i2.OAuth2ClientRegistrationProperties>{},
+    const <String, _i1.OAuth2ClientRegistrationProperties>{},
   ),
   provider: named.argumentOr(
     #provider,
-    const <String, _i2.OAuth2ClientProviderProperties>{},
+    const <String, _i1.OAuth2ClientProviderProperties>{},
   ),
 );
+Object? _$get3(_i2.OAuth2RestClientProperties object) => object.enabled;
+void _$set4(_i2.OAuth2RestClientProperties object, Object? value) =>
+    object.enabled = (value as bool);
+Object? _$get5(_i2.OAuth2RestClientProperties object) =>
+    object.clientRegistrationId;
+void _$set6(_i2.OAuth2RestClientProperties object, Object? value) =>
+    object.clientRegistrationId = (value as String?);
+_i2.OAuth2RestClientProperties _$create7(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i2.OAuth2RestClientProperties();
 
 /// The binding of the `@ConfigurationProperties` classes of the module
 /// `oauth2ClientConfigBeans`: the descriptions only its binder uses. The module
 /// hands them to the context.
 List<_i3.Introspection<Object>>
 get $oauth2ClientConfigBeansPropertiesIntrospections => [
-  const _i3.Introspection<_i1.FeignOAuth2Properties>(
-    className: r'FeignOAuth2Properties',
-    properties: [
-      _i3.IntrospectedProperty<_i1.FeignOAuth2Properties>(
-        r'enabled',
-        typeInfo: _i3.ClassType<bool>(),
-        hasInitialValue: true,
-        initialValue: false,
-        get: _$get0,
-        set: _$set1,
-      ),
-      _i3.IntrospectedProperty<_i1.FeignOAuth2Properties>(
-        r'clientRegistrationId',
-        nullable: true,
-        typeInfo: _i3.ClassType<String>(nullable: true),
-        get: _$get2,
-        set: _$set3,
-      ),
-    ],
-    annotations: [_i3.ConfigurationProperties(r'spring.feign.oauth2')],
-    library: r'package:spring_boot_starter_oauth2_client/src/properties/feign_oauth2_properties.dart',
-    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
-    instantiate: _i1.FeignOAuth2Properties.new,
-    constructor: _i3.IntrospectedConstructor<_i1.FeignOAuth2Properties>(
-      parameters: [],
-      create: _$create4,
-    ),
-  ),
-  const _i3.Introspection<_i2.OAuth2ClientProperties>(
+  const _i3.Introspection<_i1.OAuth2ClientProperties>(
     className: r'OAuth2ClientProperties',
     properties: [
-      _i3.IntrospectedProperty<_i2.OAuth2ClientProperties>(
+      _i3.IntrospectedProperty<_i1.OAuth2ClientProperties>(
         r'registration',
-        typeInfo: _i3.MapType<String, _i2.OAuth2ClientRegistrationProperties>(
+        typeInfo: _i3.MapType<String, _i1.OAuth2ClientRegistrationProperties>(
           _i3.ClassType<String>(),
-          _i3.ClassType<_i2.OAuth2ClientRegistrationProperties>(),
+          _i3.ClassType<_i1.OAuth2ClientRegistrationProperties>(),
         ),
-        get: _$get5,
+        get: _$get0,
       ),
-      _i3.IntrospectedProperty<_i2.OAuth2ClientProperties>(
+      _i3.IntrospectedProperty<_i1.OAuth2ClientProperties>(
         r'provider',
-        typeInfo: _i3.MapType<String, _i2.OAuth2ClientProviderProperties>(
+        typeInfo: _i3.MapType<String, _i1.OAuth2ClientProviderProperties>(
           _i3.ClassType<String>(),
-          _i3.ClassType<_i2.OAuth2ClientProviderProperties>(),
+          _i3.ClassType<_i1.OAuth2ClientProviderProperties>(),
         ),
-        get: _$get6,
+        get: _$get1,
       ),
     ],
     annotations: [
@@ -99,30 +72,60 @@ get $oauth2ClientConfigBeansPropertiesIntrospections => [
     ],
     library: r'package:spring_boot_starter_oauth2_client/src/properties/oauth2_client_properties.dart',
     parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
-    instantiate: _i2.OAuth2ClientProperties.new,
-    constructor: _i3.IntrospectedConstructor<_i2.OAuth2ClientProperties>(
+    instantiate: _i1.OAuth2ClientProperties.new,
+    constructor: _i3.IntrospectedConstructor<_i1.OAuth2ClientProperties>(
       parameters: [
         _i3.IntrospectedParameter(
           r'registration',
-          type: _i3.MapType<String, _i2.OAuth2ClientRegistrationProperties>(
+          type: _i3.MapType<String, _i1.OAuth2ClientRegistrationProperties>(
             _i3.ClassType<String>(),
-            _i3.ClassType<_i2.OAuth2ClientRegistrationProperties>(),
+            _i3.ClassType<_i1.OAuth2ClientRegistrationProperties>(),
           ),
           symbol: #registration,
           hasDefaultValue: true,
-          defaultValue: <String, _i2.OAuth2ClientRegistrationProperties>{},
+          defaultValue: <String, _i1.OAuth2ClientRegistrationProperties>{},
         ),
         _i3.IntrospectedParameter(
           r'provider',
-          type: _i3.MapType<String, _i2.OAuth2ClientProviderProperties>(
+          type: _i3.MapType<String, _i1.OAuth2ClientProviderProperties>(
             _i3.ClassType<String>(),
-            _i3.ClassType<_i2.OAuth2ClientProviderProperties>(),
+            _i3.ClassType<_i1.OAuth2ClientProviderProperties>(),
           ),
           symbol: #provider,
           hasDefaultValue: true,
-          defaultValue: <String, _i2.OAuth2ClientProviderProperties>{},
+          defaultValue: <String, _i1.OAuth2ClientProviderProperties>{},
         ),
       ],
+      create: _$create2,
+    ),
+  ),
+  const _i3.Introspection<_i2.OAuth2RestClientProperties>(
+    className: r'OAuth2RestClientProperties',
+    properties: [
+      _i3.IntrospectedProperty<_i2.OAuth2RestClientProperties>(
+        r'enabled',
+        typeInfo: _i3.ClassType<bool>(),
+        hasInitialValue: true,
+        initialValue: true,
+        get: _$get3,
+        set: _$set4,
+      ),
+      _i3.IntrospectedProperty<_i2.OAuth2RestClientProperties>(
+        r'clientRegistrationId',
+        nullable: true,
+        typeInfo: _i3.ClassType<String>(nullable: true),
+        get: _$get5,
+        set: _$set6,
+      ),
+    ],
+    annotations: [
+      _i3.ConfigurationProperties(r'spring.security.oauth2.client.restclient'),
+    ],
+    library: r'package:spring_boot_starter_oauth2_client/src/properties/oauth2_rest_client_properties.dart',
+    parts: {_i3.IntrospectionPart.read, _i3.IntrospectionPart.write},
+    instantiate: _i2.OAuth2RestClientProperties.new,
+    constructor: _i3.IntrospectedConstructor<_i2.OAuth2RestClientProperties>(
+      parameters: [],
       create: _$create7,
     ),
   ),

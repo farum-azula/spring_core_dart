@@ -372,6 +372,7 @@ final dataAutoConfiguration = <BeanDefinition<Object>>[
     create: (r) => DefaultPointcutAdvisor(
       const TransactionAnnotationPointcut(),
       r.dependency<TransactionInterceptor>(),
+      order: AdvisorOrder.transaction,
     ),
   ),
   BeanDefinition<TransactionTemplate>(

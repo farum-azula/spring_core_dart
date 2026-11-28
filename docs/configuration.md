@@ -40,7 +40,7 @@ The differences are listed where they apply and again at the
 12. [Reference: logging](#12-reference-logging)
 13. [Reference: scheduling](#13-reference-scheduling)
 14. [Reference: caching](#14-reference-caching)
-15. [Reference: Feign clients](#15-reference-feign-clients)
+15. [Reference: HTTP clients (RestClient, HTTP service interfaces)](#15-reference-http-clients)
 16. [Reference: WebSocket clients](#16-reference-websocket-clients)
 17. [Reference: Flutter](#17-reference-flutter)
 18. [Reference: web server](#18-reference-web-server)
@@ -982,8 +982,9 @@ SPRING_APPLICATION_JSON='{"shop":{"max-basket-size":30}}' dart run bin/main.dart
 
 `SpringApplication(defaultProperties: {...})` gives values that sit below
 the config files: fallbacks that any file can override.
-`run(properties: ...)` (and `springBootTest(properties: ...)` in tests)
-gives values that sit above everything.
+`run(properties: ...)` (and, in tests, `springBootTest(properties: ...)`
+or `@SpringBootTest(properties: ...)` on a test class) gives values that
+sit above everything.
 
 ---
 
@@ -993,6 +994,8 @@ When several sources set the same key, the highest one wins. From the
 highest:
 
 1. `run(properties: ...)` and `springBootTest(properties: ...)`
+   (`@SpringBootTest(properties: ...)` and
+   `@TestPropertySource(properties: ...)` on a test class)
 2. Command-line arguments
 3. `--dart-define` values
 4. `SPRING_APPLICATION_JSON`
@@ -1849,15 +1852,16 @@ other stores.
 
 ---
 
-## 15. Reference: Feign clients
+## 15. Reference: HTTP clients
 
-`spring_boot_starter_feign` turns an annotated interface into an HTTP
-client. These keys set each client's URL, timeouts, logging and default
-headers, so they can differ per environment without code.
+### RestClient and HTTP service interfaces
 
-`<client>` is the client's `contextId`, or else its name, as in
-`@FeignClient('catalog')`. The entry `default` applies to every client;
-a client's own entry wins over it.
+`spring_boot_starter_restclient` sets up the `RestClientBuilder` bean
+and the HTTP service groups from these keys. `spring.http.clients.*`
+applies to every client; `spring.http.serviceclient.<group>.*` to the
+`RestClient` of one group (the `group` of `@ImportHttpServices`,
+`default` without one), whatever it leaves out coming from
+`spring.http.clients.*`.
 
 <table>
 <tr><th>YAML</th><th>.properties</th></tr>
@@ -1865,81 +1869,53 @@ a client's own entry wins over it.
 
 ```yaml
 spring:
-  feign:
-    client:
-      decode-slash: true
-      config:
-        default:
-          connect-timeout: 5s
-          read-timeout: 30s
-          call-timeout: 45s
-          logger-level: basic
-        catalog:
-          url: https://api.neon.books
-          read-timeout: 10s
-          dismiss404: true
-          default-request-headers:
-            X-Client: [shop]
-          default-query-parameters:
-            lang: [en]
-          retryer: catalogRetryer
-          request-interceptors: [authInterceptor]
-          event-stream:
-            reconnect-delay: 2s
+  http:
+    clients:
+      connect-timeout: 2s
+      read-timeout: 10s
+      allowed-addresses:
+        - api.neon.books
+        - 10.20.0.0/16
+    serviceclient:
+      catalog:
+        base-url: https://catalog.neon.books
+        default-header:
+          X-Api-Version: 2
+        read-timeout: 5s
 ```
 
 </td><td>
 
 ```properties
-spring.feign.client.decode-slash=true
-spring.feign.client.config.default.connect-timeout=5s
-spring.feign.client.config.default.read-timeout=30s
-spring.feign.client.config.default.call-timeout=45s
-spring.feign.client.config.default.logger-level=basic
-spring.feign.client.config.catalog.url=https://api.neon.books
-spring.feign.client.config.catalog.read-timeout=10s
-spring.feign.client.config.catalog.dismiss404=true
-spring.feign.client.config.catalog.default-request-headers.X-Client=shop
-spring.feign.client.config.catalog.default-query-parameters.lang=en
-spring.feign.client.config.catalog.retryer=catalogRetryer
-spring.feign.client.config.catalog.request-interceptors=authInterceptor
-spring.feign.client.config.catalog.event-stream.reconnect-delay=2s
+spring.http.clients.connect-timeout=2s
+spring.http.clients.read-timeout=10s
+spring.http.clients.allowed-addresses=api.neon.books,10.20.0.0/16
+spring.http.serviceclient.catalog.base-url=https://catalog.neon.books
+spring.http.serviceclient.catalog.default-header.X-Api-Version=2
+spring.http.serviceclient.catalog.read-timeout=5s
 ```
 
 </td></tr>
 </table>
 
-The keys under `spring.feign.client.config.<client>.`:
-
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `url` | URL | — | The base URL when `@FeignClient(url:)` is empty; `http://` is added when the scheme is missing |
-| `read-timeout` | duration | `60s` (`0`: none) | The longest wait for the response, then between two chunks of the body; not a limit for the whole call |
-| `connect-timeout` | duration | `10s` (`0`: none) | **Under `default` only**: the connect timeout of the transport all clients share |
-| `call-timeout` | duration | none (`0` or less: none) | The longest one call may take **in all**: every attempt, the pauses of the `Retryer` and the wait for the answer. When it passes, the call throws `FeignCallTimeoutException` (not retried, whatever the retryer says; a pause that would end past the limit ends the call at once); the client's `fallback` still answers. It is the earlier of this and the `RequestDeadline` the call runs under (a web request with `server.request-timeout`, [section 18](#deadlines-one-limit-for-a-request-and-the-calls-it-makes)), and the connect and read timeouts of each attempt are capped by what remains. For an `EventStream<T>` method it limits establishing each connection (up to the status and headers), not the stream's life. This starter's own key: Spring Cloud OpenFeign has only `connect-timeout` and `read-timeout` |
-| `logger-level` | `none` / `basic` / `headers` / `full` | `none` | How much of each call is logged, under the logger `feign.<Interface>` at debug level |
-| `dismiss404` | bool | `false` | A 404 gives `null` (or a `ResponseEntity`) instead of an exception; `void` methods still throw |
-| `default-request-headers.<Header>` | list | — | Headers sent when the request has none of that name; `default`'s and the client's are merged |
-| `default-query-parameters.<param>` | list | — | The same for query parameters |
-| `follow-redirects` | bool | `true` | Follows redirects; with `false` a 3xx answer is an error |
-| `retryer` | bean or class name | never retries | The client's `Retryer` |
-| `error-decoder` | bean or class name | `DefaultErrorDecoder` | The client's `ErrorDecoder` |
-| `request-interceptors` | list of bean or class names | — | More interceptors: `default`'s, then the client's, after those the client has anyway |
-| `event-stream.reconnect` | bool | `true` | An `EventStream<T>` method connects again when the connection ends |
-| `event-stream.reconnect-delay` | duration | `3s`, or the server's `retry:` | The wait before connecting again |
-| `event-stream.max-attempts` | int | no limit | How many connections in a row may end without an event before the stream gives up |
+| `spring.http.clients.allowed-addresses` | list | empty | The hosts and addresses the transport may call; **every other one is denied**, private networks and loopback included. An entry is a host (`api.neon.books`), its subdomains (`*.neon.books`), an address (`203.0.113.7`), a CIDR block (`10.20.0.0/16`), a URL whose host is taken, or `*` for any host with a public address. The groups' `base-url` hosts and the OAuth2 providers' configured endpoints are on it by themselves. A name opens only public addresses: list the block of a private network (or `localhost`) too; cloud metadata (`169.254.169.254`) needs its own entry. In a browser only the URL's host is checked. Not in Spring Boot |
+| `spring.http.clients.connect-timeout` | duration | `10s` | The longest wait for a connection; `0`: none |
+| `spring.http.clients.read-timeout` | duration | `60s` | The longest wait for data (the response, then between two chunks of the body); `0`: none |
+| `spring.http.clients.redirects` | `follow-when-possible`, `follow`, `dont-follow` | `follow-when-possible` | Whether redirects are followed |
+| `spring.http.serviceclient.<group>.base-url` | URL | none | The base of the group's calls; its host is allowed |
+| `spring.http.serviceclient.<group>.default-header.<name>` | list | none | Headers sent with every call of the group |
+| `spring.http.serviceclient.<group>.connect-timeout` | duration | `spring.http.clients`' | The group's connect timeout |
+| `spring.http.serviceclient.<group>.read-timeout` | duration | `spring.http.clients`' | The group's read timeout |
+| `spring.http.serviceclient.<group>.redirects` | as above | `spring.http.clients`' | The group's redirects |
 
-| Global key | Type | Default | Meaning |
-|---|---|---|---|
-| `spring.feign.client.decode-slash` | bool | `true` | `false` encodes `/` in path variables as `%2F` |
-
-`retryer`, `error-decoder` and `request-interceptors` name beans. Spring
-takes class names and creates the class; here a class name must match
-exactly one bean. The `event-stream.*` keys are this starter's own, as
-Spring Cloud OpenFeign cannot stream, and so is `call-timeout`. Not supported: service discovery
-and load balancing (every client needs a URL), circuit breakers, a
-per-client `connect-timeout`, compression, and the `encoder`, `decoder`,
-`contract` and `capabilities` keys.
+An `InetAddressFilter` bean narrows the allow list further (every
+address must match it too), and an `AllowedAddressesContributor` bean
+adds what another starter was given by hand. There is no key to switch
+the filter off. The OAuth2 client's keys for `RestClient` calls
+(`spring.security.oauth2.client.restclient.*`) are in
+[section 19](#19-reference-oauth2-clients).
 
 ---
 
@@ -2674,7 +2650,7 @@ class RemoteThemes {
   RemoteThemes(this.themes, this.selection, this.api);
   final SpringThemes themes;
   final ThemeSelection selection;
-  final ThemesApi api;                       // for example a @FeignClient
+  final ThemesApi api;                       // for example an @HttpExchange interface
 
   Future<void> refresh() async {
     themes.loadYaml(await api.themesYaml());  // themes: { winter: { seed-color: lightBlue } }
@@ -3679,7 +3655,7 @@ spring:
 | `spring.flutter.debug.isolates.enabled` | `true` / `false` | not set | The same as `debug.enabled`, for the task manager of the isolates and the engine's threads (`springBootStarterFlutterDebugIsolatesAutoConfiguration`): the panel's Isolates tab ([below](#the-isolates-tab)), with the app's memory and, on the web, what the page downloaded, and the console's `isolates` and `memory` segments |
 | `spring.flutter.debug.isolates.interval` | duration | `1s` | How often it reads the loads and the memory while its tab or the `isolates` or `memory` segment shows; nothing is read, and the VM service is not connected to, while none does |
 | `spring.flutter.debug.timeline.enabled` | `true` / `false` | not set | The same as `debug.enabled`, for the timeline of the start and the observations (`springBootStarterFlutterDebugTimelineAutoConfiguration`): the panel's Timeline tab and the console's `timeline` segment |
-| `spring.flutter.debug.network.enabled` | `true` / `false` | not set | The network recorder and the panel's Network tab, a module of its own (`springBootStarterFlutterDebugNetworkAutoConfiguration`; beans `debugNetworkRecorder`, `debugNetworkJournal`, `debugNetworkSection`): only `true` puts it in the build, and only as far as the panel's switch (`spring.flutter.debug.enabled`, its parent) does, so with the panel not set it is in debug builds only and without the panel nowhere, unless the console has its `network` pane or `net` segment (modules `springBootStarterFlutterDebugConsoleNetworkPaneAutoConfiguration`, `springBootStarterFlutterDebugConsoleNetworkSegmentAutoConfiguration`, inside the console's switch instead of the panel's); not set or `false`, the app has none of its code. The recorder, a post-processor, wraps every `HttpTransport` and `WebSocketTransport` bean registered as that type alone (one injected by its own class too, such as a test's `MockHttpTransport`, is left as it is): the requests and frames pass through unchanged, and a copy goes to the journal, the `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`, `DPoP` and token headers, a Feign client's `sensitive-headers`, the secret query parameters and an address's password masked as `******`. The tab ([below](#the-network-tab)) lists them. Set to `false` in a profile, it turns the recorder off in a running app whose build has it |
+| `spring.flutter.debug.network.enabled` | `true` / `false` | not set | The network recorder and the panel's Network tab, a module of its own (`springBootStarterFlutterDebugNetworkAutoConfiguration`; beans `debugNetworkRecorder`, `debugNetworkJournal`, `debugNetworkSection`): only `true` puts it in the build, and only as far as the panel's switch (`spring.flutter.debug.enabled`, its parent) does, so with the panel not set it is in debug builds only and without the panel nowhere, unless the console has its `network` pane or `net` segment (modules `springBootStarterFlutterDebugConsoleNetworkPaneAutoConfiguration`, `springBootStarterFlutterDebugConsoleNetworkSegmentAutoConfiguration`, inside the console's switch instead of the panel's); not set or `false`, the app has none of its code. The recorder, a post-processor, wraps every `HttpTransport` and `WebSocketTransport` bean registered as that type alone (one injected by its own class too, such as a test's `MockHttpTransport`, is left as it is): the requests and frames pass through unchanged, and a copy goes to the journal, the `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`, `DPoP` and token headers, a `RestClientBuilder`'s `sensitiveHeaders`, the secret query parameters and an address's password masked as `******`. The tab ([below](#the-network-tab)) lists them. Set to `false` in a profile, it turns the recorder off in a running app whose build has it |
 | `spring.flutter.debug.network.bodies` | `true` / `false` | `false` | Whether request and response bodies and WebSocket payloads are kept, cut at `body-limit`, the values of JSON keys that look secret (`password`, `access_token`, `apiKey`) and the secret parameters of a form masked. Off: their sizes only |
 | `spring.flutter.debug.network.body-limit` | size | `64KB` | The most bytes of a body or a payload kept; a streamed body's first bytes, the rest only counted. At most `1MB`: a larger value is taken as `1MB` |
 | `spring.flutter.debug.network.body-budget` | size | `4MB` | The most bytes of bodies and payloads kept in all, with `bodies`: past it, a new one keeps its size only, until old requests leave the journal (`max-entries`, Clear) |
@@ -4173,8 +4149,8 @@ in a profile or a release build without it set, none of this is in the app.
 With `spring.flutter.debug.network.enabled: true` (in a build with the
 panel), the debug panel has a Network group with one tab. It lists the
 requests of the app's `HttpTransport` beans and the connections of its
-`WebSocketTransport` beans, newest first: the Feign clients, the OAuth2
-client, Supabase, the WebSocket starter's clients and Phoenix channels,
+`WebSocketTransport` beans, newest first: `RestClient` and the HTTP
+service clients, the OAuth2 client, Supabase, the WebSocket starter's clients and Phoenix channels,
 the themes and resources downloaded from a URL, and the app's own calls
 through those beans. No client is changed: a post-processor puts a
 recording decorator around each transport bean.
@@ -4258,8 +4234,8 @@ What is masked before anything is kept: the headers by
 `HttpSecrets.isSensitiveHeader` (`Authorization`, `Proxy-Authorization`,
 `Cookie`, `Set-Cookie`, `DPoP`, `X-Amz-Security-Token`, a name with
 `session`, a name `SecretNames` finds secret such as `X-Api-Token` or
-`apikey`) and the request's own `sensitiveHeaders` (a Feign client's
-`sensitive-headers`); an address's password and its query parameters by
+`apikey`) and the request's own `sensitiveHeaders` (a `RestClientBuilder`'s
+`sensitiveHeaders`); an address's password and its query parameters by
 `HttpSecrets.isSensitiveParameter` (`code`, `state`, `access_token`,
 `apikey`, `signature`...); in a body kept, the values of JSON keys that
 look secret and the secret parameters of a form. A `NetworkBodyMasker`
@@ -4556,8 +4532,8 @@ of a widget has the id `DebugGraphWidgets.idOf(element)`
 `DebugGraphWidgets.springWidgets()` lists the Spring widgets in the tree
 with their `beansType`, walking it only when called. The view's
 steps are chains too: `DebugGraphAssembler(filters: [...], folds: [...])`
-takes `DebugGraphFilter`s (the built-in scope, group and live filters) and
-`DebugGraphFold`s (a collapsed lane, repeats).
+takes `DebugGraphFilter` instances (the built-in scope, group and live filters) and
+`DebugGraphFold` instances (a collapsed lane, repeats).
 
 ```dart
 // The routes of the app as a layer: each page a node, an edge from a page
@@ -4648,7 +4624,7 @@ application's widgets as a tree from top to bottom
   when what its `build` makes is created in the application's files
   (Flutter's creation locations, there in a debug run; the files are those
   of the package of the widget given to `runApp`, not its dependencies'),
-  and Flutter's builders (`Builder`, `LayoutBuilder`, the `…Builder`s,
+  and Flutter's builders (`Builder`, `LayoutBuilder`, the `…Builder` classes,
   `KeyedSubtree`, `Visibility`, the signals starter's `Watch`) never are.
   Flutter's wrappers (`Padding`, `Align`, `Container`, `Text`) fold into
   the application's widget above them. A Spring widget always counts.
@@ -6085,7 +6061,7 @@ spring.web.multipart.location=/var/tmp/shop-uploads
 | `spring.web.rate-limit.rules[n].limit` | `<count>/<duration>` | — (required) | The limit: `5/1m`, `120/1m`, `10/s`. A token bucket: `count` requests at once, refilled evenly over the duration |
 | `spring.web.rate-limit.rules[n].burst` | int | the count of `limit` | The most requests at once, when it is not the count |
 | `spring.web.rate-limit.rules[n].on-store-failure` | `deny` / `allow` | `spring.web.rate-limit.on-store-failure` | The same for this rule |
-| `spring.test.web-environment` | `mock` / `random-port` / `defined-port` / `none` | not set: a server starts | Set by `springBootTest(webEnvironment:)` (`mock` by default) and by `ApplicationContextRunner` (`mock`). In tests only `random-port` (port `0`) and `defined-port` start a server |
+| `spring.test.web-environment` | `mock` / `random-port` / `defined-port` / `none` | not set: a server starts | Set by `springBootTest(webEnvironment:)` and `@SpringBootTest(webEnvironment:)` (`mock` by default) and by `ApplicationContextRunner` (`mock`). In tests only `random-port` (port `0`) and `defined-port` start a server |
 | `local.server.port` | int, **written by the server** | — | The port the server listens on, set once it listens (also in `WebServerInitializedEvent`). Read it; do not set it |
 
 The static resources (the starter's
@@ -6155,13 +6131,13 @@ a timer: the request runs under a
 A deadline started inside another ends at the earlier of the two, never
 later, and `RequestDeadline.run(budget, body)` starts one in code of your own.
 
-The Feign starter honours it. A call a controller makes through a Feign
-client never outlives the request: the effective limit of the call is the
-earlier of its `call-timeout` ([section 15](#15-reference-feign-clients))
-and what remains of the request's deadline, and the connect and read
-timeouts of each attempt are capped by what remains. When the time is gone,
-the call throws `FeignCallTimeoutException`, which is not retried, and the
-request is answered with the 503. Nothing else is interrupted: Dart cannot
+`RestClient` honours it, and so do the HTTP service clients
+([section 15](#15-reference-http-clients)). A call a controller makes
+never outlives the request: it is not sent when the deadline has passed,
+its connect and read timeouts are capped by what remains, and it is given
+up when the time is gone (a `ResourceAccessException`); a `@Retryable`
+pause that would end past the deadline is not made, and the request is
+answered with the 503. Nothing else is interrupted: Dart cannot
 stop running code, so a handler that never looks at the deadline runs on,
 with its late answer dropped.
 
@@ -6231,7 +6207,7 @@ Not supported:
 - `server.max-http-request-header-size`;
 - key stores and SSL bundles (`server.ssl.key-store`, `server.ssl.bundle`);
 - `server.error.*` and `spring.mvc.problemdetails.enabled`: errors are
-  `ProblemDetail`s (except the plain-text answers Spring gives too: a
+  `ProblemDetail` instances (except the plain-text answers Spring gives too: a
   refused CORS request or WebSocket handshake);
 - `spring.web.cors.*`;
 - the `server.tomcat.*`, `jetty`, `undertow` and `netty` keys; there is
@@ -6480,12 +6456,13 @@ The keys under `spring.security.oauth2.client.provider.<id>.`:
 | `user-name-attribute` | string | `sub` with `issuer-uri` | The attribute that names the user |
 | `jwk-set-uri` | URL | from the metadata | The provider's public keys; a server checks ID token signatures with them |
 
-Two keys with Spring Cloud OpenFeign's names, read by this starter, add
-the token of a registration to every Feign call:
-`spring.feign.oauth2.enabled` (`false`) and
-`spring.feign.oauth2.client-registration-id` (else the Feign
-client's name); [section 15](#15-reference-feign-clients) has the other
-Feign keys.
+Two keys put the token of a registration on `RestClient` calls and HTTP
+service interfaces:
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `spring.security.oauth2.client.restclient.enabled` | bool | `true` | Whether every `RestClientBuilder` of the RestClient starter gets the `OAuth2ClientHttpRequestInterceptor`; it sends a token only on the calls that name a registration (`@ClientRegistrationId`, the request attribute). Not in Spring Boot |
+| `spring.security.oauth2.client.restclient.client-registration-id` | string | none | The registration of the calls that name none: every such call, to any host, then carries its token. Not in Spring Boot |
 
 Differences from Spring Boot: providers with `issuer-uri` are discovered
 at the first use of their registrations, not at startup, so an app starts
@@ -6834,7 +6811,7 @@ spring.supabase.cache.shared=catalog
 | `spring.supabase.realtime.max-message-size` | data size | `4MB` | The largest message read from Realtime; a larger one closes the connection; `…supabase-realtime.max-text-message-size` wins |
 | `spring.supabase.storage.signed-url-expiry` | duration | `1h` | How long a signed URL is valid when the call does not say |
 | `spring.supabase.functions.region` | string | none | The region the Edge Functions run in (the `x-region` header) |
-| `spring.supabase.functions.timeout` | duration | `spring.supabase.timeout` | How long a function may take; `spring.feign.client.config.supabase-functions.call-timeout` wins |
+| `spring.supabase.functions.timeout` | duration | `spring.supabase.timeout` | How long a function may take |
 | `spring.supabase.cache.shared` | list | empty | The caches whose entries are the same for every user; every other cache keeps the entries of each caller (the anon key, each user, the service role) apart |
 | `spring.supabase.rate-limit.function` | name of a database function | `rate_limit_acquire` | The function the rate limiter's store calls for an acquisition (`spring.web.rate-limit.store: procedure`, the default of an application on the REST path with the rate limiter on), as the service role. The table and the function come from a migration: the package's `sql/rate_limit.sql` |
 
@@ -6857,9 +6834,10 @@ On a server, with `spring.supabase.url` set and `auth.enabled` not
 
 The Realtime connection is the WebSocket client `supabase-realtime`
 ([section 16](#16-reference-websocket-clients); its `url` is not read,
-the address is always the project's) and the Edge Functions are the Feign
-client `supabase-functions` ([section 15](#15-reference-feign-clients);
-it never follows a redirect).
+the address is always the project's), and the Edge Functions are the HTTP
+service group `supabase-functions`
+([section 15](#15-reference-http-clients); its base URL is the
+project's, and it never follows a redirect).
 
 ## 21. Tests
 
@@ -6878,24 +6856,43 @@ final app = springBootTest(
 );
 ```
 
-- `profiles` replaces the config files' `spring.profiles.active`.
-- `properties` wins over every other source, the command line and
-  `propertyFiles` included. `dynamicProperties` wins even over
-  `properties`: use it for values known only once the tests run, such as
-  the port of a server started in `setUpAll`.
-- `propertyFiles` are resource locations of `.properties` files; a later
-  file wins. A plain path is a classpath location, and `test/resources/`
-  is on the classpath. A missing file fails the start.
+The same configuration, declared with annotations on a test class:
+
+```dart
+@SpringBootTest(properties: {'shop.max-basket-size': 3})         // above every other source
+@ActiveProfiles(['test'])                                        // spring.profiles.active
+@TestPropertySource(locations: ['resources:extra.properties'])  // just below properties
+class ShopTest {
+  @DynamicPropertySource()
+  static void shopUrl(DynamicPropertyRegistry registry) =>
+      registry.add('shop.url', () => server.url);                // read on every access
+}
+```
+
+- `profiles` (`@ActiveProfiles`) replaces the config files'
+  `spring.profiles.active`.
+- `properties` (`@SpringBootTest(properties:)` and
+  `@TestPropertySource(properties:)`) wins over every other source, the
+  command line and `propertyFiles` included. `dynamicProperties`
+  (`@DynamicPropertySource` methods) wins even over `properties`: use it
+  for values known only once the tests run, such as the port of a server
+  started in `setUpAll` (`@BeforeAll`).
+- `propertyFiles` (`@TestPropertySource(locations:)`) are resource
+  locations of `.properties` files; a later file wins. A plain path is a
+  classpath location, and `test/resources/` is on the classpath. A
+  missing file fails the start.
 - `test/resources/` comes first on the classpath, so
   `test/resources/application-test.yml` is the `test` profile's file, and
   a file there replaces a packaged file with the same path.
-- The OS environment is not visible (`systemEnvironment: {}` by default),
-  so tests do not depend on the machine they run on.
+- The OS environment is not visible (`systemEnvironment: {}` by default,
+  `@TestEnvironment` to set it), so tests do not depend on the machine
+  they run on.
 - Log levels set by a test's configuration are restored afterwards.
 - `const ApplicationContextRunner().withPropertyValues(['shop.beta=true'])`
   is for auto-configuration tests. It reads no config files.
 - With `spring_boot_starter_web`, a test starts no server unless it asks
-  for one: `springBootTest(webEnvironment: WebEnvironment.randomPort)`
+  for one: `springBootTest(webEnvironment: WebEnvironment.randomPort)` or
+  `@SpringBootTest(webEnvironment: WebEnvironment.randomPort)`
   (`server.port` becomes `0`; the real port is `local.server.port`), or
   `spring.test.web-environment=random-port` with an
   `ApplicationContextRunner` (see [section 18](#18-reference-web-server)).
@@ -6945,13 +6942,12 @@ Two limits of SpEL expressions are compile-time defines (`-D` or
 ### Renamed properties
 
 Spring Boot's names for a few properties carry Java history that means
-nothing in Dart: there is no servlet container, no Jackson, no Spring
-Cloud, no Logback and no Flyway here. These properties have the names
+nothing in Dart: there is no servlet container, no Jackson, no Logback
+and no Flyway here. These properties have the names
 below instead, and the rest of Spring Boot's names are kept.
 
 | Spring Boot | Here |
 |---|---|
-| `spring.cloud.openfeign.*` | `spring.feign.*` |
 | `spring.jackson.*` | `spring.json.*` |
 | `spring.servlet.multipart.*` | `spring.web.multipart.*` |
 | `server.servlet.context-path`, `server.servlet.session.*` | `server.context-path`, `server.session.*` |
@@ -6960,7 +6956,7 @@ below instead, and the rest of Spring Boot's names are kept.
 
 An old name does not work silently: `spring_boot_dart` stops the start
 (`APPLICATION FAILED TO START`) when any property source holds a key
-under an old name (in a file, on the command line, in `--dart-define`s or
+under an old name (in a file, on the command line, in `--dart-define` flags or
 as an environment variable such as `SPRING_JACKSON_TIME_ZONE`) and lists
 each key with its new name, for example
 `spring.jackson.default-property-inclusion is now
@@ -7079,8 +7075,8 @@ generator's build-time readers.
   environment never does.
 - These keys are this project's own: `spring.messages.default-locale`,
   `spring.cache.simple.*`, every `spring.websocket.client.*` and
-  `spring.flutter.*` key, the Feign `event-stream.*` keys and
-  `call-timeout`, `server.max-http-request-body-size`,
+  `spring.flutter.*` key, `spring.http.clients.allowed-addresses`,
+  `server.max-http-request-body-size`,
   `server.request-timeout`, `server.connection-timeout` (a
   Spring Boot 2.0 key), `server.websocket.*`,
   `spring.web.multipart.max-part-count` and
@@ -7092,16 +7088,14 @@ generator's build-time readers.
   there is no servlet container. There is no HTTP/2, no forwarded
   headers, no key stores, no `server.error.*` and no server-specific keys
   such as `server.tomcat.*`. `server.ssl.*` takes PEM file paths. Errors
-  are `ProblemDetail`s, except the plain-text answers Spring gives too
+  are `ProblemDetail` instances, except the plain-text answers Spring gives too
   (a refused CORS request, a refused WebSocket handshake).
 - A request can have a deadline: `server.request-timeout` times the
-  filters and the handler, and the Feign calls inside it stop at what
-  remains of it (`RequestDeadline`; see
+  filters and the handler, and the `RestClient` calls inside it stop at
+  what remains of it (`RequestDeadline`; see
   [Deadlines](#deadlines-one-limit-for-a-request-and-the-calls-it-makes)).
   Spring has no timeout for a synchronous request, and none that follows a
-  request into the calls it makes; its Feign has only `connect-timeout` and
-  `read-timeout` per attempt, where `call-timeout` limits a call with its
-  retries.
+  request into the calls it makes.
 - `spring.main.web-application-type` knows only `none` (no server).
 - Not read: `allow-circular-references`, `keep-alive`,
   `spring.task.execution.*`, `spring.task.scheduling.pool.*`,

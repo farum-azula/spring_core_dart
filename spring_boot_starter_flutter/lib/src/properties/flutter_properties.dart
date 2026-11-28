@@ -139,7 +139,7 @@ final class FlutterDebugProperties {
 
   /// The network recorder, the panel's Network tab and the console's
   /// `network` pane and `net` segment: every request of the app's
-  /// `HttpTransport` and `WebSocketTransport` beans (Feign, the OAuth2
+  /// `HttpTransport` and `WebSocketTransport` beans (`RestClient`, the OAuth2
   /// client, Supabase, the WebSocket starter...), masked. In the build
   /// only when enabled, and only with a view: the panel, or the console
   /// with the pane or the segment.

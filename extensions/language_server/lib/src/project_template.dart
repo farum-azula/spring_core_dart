@@ -83,7 +83,7 @@ environment:
   sdk: ^3.13.0
 
 # The base starter: spring_boot_dart, spring_core_dart and logging. Add
-# others (spring_boot_starter_feign, ..._cache, ...) the same way; each
+# others (spring_boot_starter_restclient, ..._cache, ...) the same way; each
 # brings what it needs.
 dependencies:
   spring_boot_starter_logging: ^__VERSION__

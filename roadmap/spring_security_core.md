@@ -6,7 +6,7 @@ Spring Security, split like Spring itself into halves that work alone:
 |---|---|---|
 | `spring_security_core` (this file) | who is logged in, users and passwords, `@PreAuthorize` on beans | done ([README](../spring_security_core/README.md)) |
 | [`spring_boot_starter_security`](spring_boot_starter_security.md) | incoming requests: filter chain, Basic, form login, sessions, JWT resource server | done |
-| [`spring_boot_starter_oauth2_client`](spring_boot_starter_oauth2_client.md) | outgoing requests: tokens for Feign, WebSocket and HTTP clients, login with PKCE in Flutter | planned |
+| [`spring_boot_starter_oauth2_client`](spring_boot_starter_oauth2_client.md) | outgoing requests: tokens for `RestClient`, HTTP service and WebSocket clients, login with PKCE in Flutter | planned |
 
 A server takes the security starter (it brings the core); a Flutter app
 takes the core and, later, the OAuth2 client; `@PreAuthorize` and the

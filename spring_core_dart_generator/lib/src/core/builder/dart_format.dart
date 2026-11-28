@@ -11,8 +11,8 @@ import 'package:yaml/yaml.dart';
 /// the package's language version (from its package config; the
 /// formatter's latest without one), and the `formatter:` options of the
 /// `analysis_options.yaml` nearest to the file (`page_width`,
-/// `trailing_commas`, its `include:`s followed as `dart format` follows
-/// them).
+/// `trailing_commas`, the files its `include:` names followed as `dart format`
+/// follows them).
 ///
 /// The code is first formatted with the trailing commas automated, so the
 /// output does not depend on where the code writer put commas, then, in a

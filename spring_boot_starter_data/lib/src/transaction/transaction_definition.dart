@@ -145,8 +145,8 @@ class TransactionDefinition {
 /// `Future` (the transaction covers it until it completes); a synchronous
 /// method, or one returning a `Stream`, stops the start.
 ///
-/// The transaction follows the method's `await`s (it lives in a `Zone`).
-/// Work the method starts without awaiting it, still running after the
+/// The transaction follows the method's `await` expressions (it lives in a
+/// `Zone`). Work the method starts without awaiting it, still running after the
 /// transaction ended, fails when it uses the database
 /// (`IllegalTransactionStateException`) instead of running outside it.
 ///

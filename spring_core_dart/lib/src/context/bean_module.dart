@@ -247,11 +247,11 @@ final class BeanModule {
   /// configuration classes or of nested `@ComponentScan` directories.
   final List<BeanModule> imports;
 
-  /// The `@Import`ed `BeanRegistrar`, `ImportSelector` and
-  /// `ImportBeanDefinitionRegistrar` classes. A selector's modules are read
-  /// before the importing class, registrars run right after its `@Bean`
-  /// methods, and all are decided with the importing class (see
-  /// [ImportDeclaration]).
+  /// The `BeanRegistrar`, `ImportSelector` and
+  /// `ImportBeanDefinitionRegistrar` classes imported with `@Import`. A
+  /// selector's modules are read before the importing class, registrars run
+  /// right after its `@Bean` methods, and all are decided with the importing
+  /// class (see [ImportDeclaration]).
   final List<ImportDeclaration> registrars;
 
   /// The generated injectors of the `@Configurable` classes, keyed by

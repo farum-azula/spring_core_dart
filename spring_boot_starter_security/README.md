@@ -315,6 +315,15 @@ With `jwk-set-uri`, the issuer (when `issuer-uri` is set too) and the
 audiences are checked. With `issuer-uri` alone, `jws-algorithms` is not
 used: the algorithms are those the provider's keys allow.
 
+The keys and the issuer's metadata are fetched with a `RestClient` on
+the `httpTransport` bean of `spring_boot_starter_restclient` (which the
+OAuth2 client brings), like the OAuth2 client's own calls, so its allow
+list applies: the host of `jwk-set-uri`, or of `issuer-uri`, is allowed
+by the starter, and the host of the `jwks_uri` the issuer's metadata
+names joins it once discovered (by host name, so public addresses only).
+A provider on a private network (`http://keycloak:8080` in a Docker
+network) needs its block on `spring.http.clients.allowed-addresses`.
+
 **A shared secret.** Some providers sign their tokens with a secret they
 share with the API (HS256) instead of a key pair. `secret-key` is that
 secret, used as its UTF-8 bytes:
@@ -644,7 +653,7 @@ response split between the query and the body.
   filter (the provider's page has no CSRF token of this site); the
   `state`, bound to the browser by the signed authorization request
   cookie, is that callback's CSRF protection (RFC 6749 §10.12). Other
-  `POST`s keep it.
+  `POST` requests keep it.
 - **The cookie:** the provider's post is a cross-site `POST`, which
   carries only `SameSite=None; Secure` cookies. For a form post login
   the authorization request cookie is made so over HTTPS (directly, or

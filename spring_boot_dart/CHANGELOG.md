@@ -1,5 +1,8 @@
 ## Unreleased
 
+- **Breaking:** `spring.cloud.openfeign.*` is no longer reported as renamed to `spring.feign.*` (the Feign starter is discontinued; HTTP clients are `spring_boot_starter_restclient`'s, `spring.http.serviceclient.*`).
+- `springBootResilienceAutoConfiguration`, in the build only with `spring.resilience.enabled: true` (`ResilienceProperties`, in the editor metadata): the `concurrencyLimitAdvisor` and the `retryAdvisor`, which put `@ConcurrencyLimit` and `@Retryable` into effect, with the placeholders filled from the environment, a `MethodRetryEvent` for each failure, every `RetryListener` bean told and the `RetryStreamAdapter` and `MethodRetryVeto` beans of the other starters. Without the switch the beans that carry the annotations get no proxy (Spring: `@EnableResilientMethods`).
+- The `observedAdvisor` is at `AdvisorOrder.observation` (was `Ordered.lowestPrecedence`): one observation for the whole call, outside the retries and the transaction.
 - The documentation of `spring.main.startup-checks.enabled` (`MainStartupChecksProperties.enabled`) says what the 0.10.0 build does: not set, the startup checks are in debug builds only, so a profile or a release build ships none of their code.
 
 ## 0.10.0

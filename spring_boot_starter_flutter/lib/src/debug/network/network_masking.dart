@@ -10,8 +10,8 @@ import 'package:spring_web_dart/spring_web_dart.dart'
 /// - a header by `HttpSecrets.isSensitiveHeader` (`Authorization`,
 ///   `Proxy-Authorization`, `Cookie`, `Set-Cookie`, `DPoP`, names with
 ///   `session`, names that look secret by `SecretNames`), and the
-///   request's own `sensitiveHeaders` (a Feign client's
-///   `sensitive-headers`);
+///   request's own `sensitiveHeaders` (a `RestClientBuilder`'s
+///   `sensitiveHeaders`);
 /// - an address's user-info password, and each query parameter by
 ///   `HttpSecrets.isSensitiveParameter` (`code`, `state`, `token`,
 ///   `apikey`, `signature`...): the request's, every address in the

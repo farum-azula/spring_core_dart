@@ -324,7 +324,7 @@ ApplicationContextRunner serverRunner(
           platform: ModulePlatform.native,
         ),
       )
-      .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
+      .withAutoConfiguration(springBootStarterRestclientAutoConfiguration)
       .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
       .withAutoConfiguration(springBootStarterDataAutoConfiguration)
       .withAutoConfiguration(springBootStarterCacheAutoConfiguration)
@@ -338,7 +338,7 @@ ApplicationContextRunner serverRunner(
         springBootStarterSupabaseAutoConfiguration,
         const AutoConfigurationModule(
           after: [
-            'springBootStarterFeignAutoConfiguration',
+            'springBootStarterRestclientAutoConfiguration',
             'springBootStarterWebsocketAutoConfiguration',
             'springBootStarterDataAutoConfiguration',
             'springSecurityCoreAutoConfiguration',
@@ -367,7 +367,9 @@ ApplicationContextRunner serverRunner(
         'spring.supabase.service-role-key=$serviceRoleKey',
         ...properties,
       ])
-      .withBean<HttpTransport>(() => transport);
+      .withBean<HttpTransport>(
+        () => _ProjectTransport(transport, Uri.parse(projectUrl)),
+      );
   for (final configuration in configurations) {
     runner = runner.withUserConfiguration(configuration);
   }
@@ -430,4 +432,32 @@ void expectRefused(Answer answer, {String? because, String? reason}) {
     ]),
     reason: reason,
   );
+}
+
+// The application's transport in these tests: the public keys (and any
+// other host, such as an attacker's) over HTTP, as in production; the
+// project's REST API to [mock].
+final class _ProjectTransport implements HttpTransport {
+  _ProjectTransport(this.mock, this.project);
+
+  final MockHttpTransport mock;
+  final Uri project;
+  final HttpTransport network = platformHttpTransport();
+
+  HttpTransport _of(HttpRequest request) {
+    final url = request.url;
+    final keys = url.path.endsWith('/.well-known/jwks.json');
+    final elsewhere = url.host != project.host || url.port != project.port;
+    return keys || elsewhere ? network : mock;
+  }
+
+  @override
+  Future<HttpResponse> send(HttpRequest request) => _of(request).send(request);
+
+  @override
+  Future<StreamedHttpResponse> stream(HttpRequest request) =>
+      _of(request).stream(request);
+
+  @override
+  void close() => network.close();
 }

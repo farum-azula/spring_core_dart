@@ -845,7 +845,9 @@ class _$SupplierDeliveriesProxy
   @override
   String toString() => _target.toString();
 
-  /// order: `@After AuditAspect.afterSupplierCall`
+  /// order:
+  /// `@Retryable(includes: [ResourceAccessException], maxRetries: 2, delay: Duration(milliseconds: 100))`,
+  /// `@After AuditAspect.afterSupplierCall`
   @override
   _i9.Future<_i27.ResponseEntity<_i26.Delivery>> order(
     _i26.DeliveryRequest request,

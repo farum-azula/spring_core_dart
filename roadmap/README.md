@@ -30,18 +30,23 @@ Rules every plan follows:
   re-exported, so its code is usable without listing it and the analyzer
   never asks for it (`depend_on_referenced_packages`): nobody adds
   `spring_core_dart` next to `spring_boot_dart`, or `spring_web_dart` next
-  to Feign. See [dependencies.md](dependencies.md).
+  to the RestClient starter. See [dependencies.md](dependencies.md).
 
 ## Priorities
 
+**Release 0.10.1 (the owner, 27 November 2026):**
+[release_0_10_1.md](release_0_10_1.md) — `RestClient` and the
+`@HttpExchange` service clients (`spring_boot_starter_restclient`, no
+`RestTemplate`), `@Retryable` and `RetryTemplate` in core, and the
+discontinued Feign starter replaced by them everywhere.
+
 **Release 1.0.0 (the owner, 26 November 2026)**, after 0.10 ships with
-its full review: [release_1_0.md](release_1_0.md) — the new HTTP client
-(`RestClient` and `@HttpExchange` service clients, no `RestTemplate`),
-Feign to maintenance or withdrawn, Redis in the data starter, Spring AI,
+its full review: [release_1_0.md](release_1_0.md) — Redis in the data starter, Spring AI,
 a full security check and code review with the docs brought up to date,
 the site's performance and its move to the released framework, a
-database explorer in the Flutter debug tools; maybe, not decided, the
-recording of a debug session.
+database explorer in the Flutter debug tools, and last Flutter tests
+with annotations (`@WidgetTest`); maybe, not decided, the recording of a
+debug session.
 
 **First, as soon as possible (the owner, November 2026): the generator,
 one module per starter** ([generator_by_starter.md](generator_by_starter.md)):
@@ -78,9 +83,9 @@ What comes next, in order:
 1. ~~**Files on the web starter:** multipart uploads (`MultipartFile`,
    `@RequestPart`), `Resource` responses (`ByteArrayResource`,
    `FileSystemResource`, `Range` requests), byte streams and
-   `StreamingResponseBody`, `MockMvc.multipart`, multipart bodies in
-   Feign.~~ Done; what is left (byte-range lists, `ETag`, streamed Feign
-   uploads) is in [spring_boot_starter_web.md](spring_boot_starter_web.md#files-multipart-resources-byte-streams).
+   `StreamingResponseBody`, `MockMvc.multipart`, multipart bodies of
+   the HTTP clients.~~ Done; what is left (byte-range lists, `ETag`,
+   streamed uploads) is in [spring_boot_starter_web.md](spring_boot_starter_web.md#files-multipart-resources-byte-streams).
 2. ~~**Spring Security** ([spring_security_core](spring_security_core.md),
    [spring_boot_starter_security](spring_boot_starter_security.md)), with
    the verification plan of [security_verification.md](security_verification.md):
@@ -220,9 +225,10 @@ What comes next, in order:
    choosing by content negotiation like Spring MVC (`Accept:
    text/markdown` → Markdown, a crawler → HTML, a browser → the app).
 11. **RestClient** ([rest_client.md](rest_client.md); no `RestTemplate`,
-   deprecated in Spring 7.1) in
-   `spring_web_dart`, the `RestClient.Builder` bean in `spring_boot_dart`;
-   `@HttpExchange` later.
+   deprecated in Spring 7.1) in `spring_web_dart`, the `RestClientBuilder`
+   bean and the HTTP service groups in `spring_boot_starter_restclient`,
+   `@HttpExchange` interfaces implemented by the generator: in 0.10.1
+   ([release_0_10_1.md](release_0_10_1.md)).
 12. ~~**Logging like Spring's**~~ Done after 0.5.0 (October 2026,
    unreleased; the owner moved it up): INFO by default without the logging
    starter, the framework's debug and trace lines with Spring's texts
@@ -297,7 +303,7 @@ What comes next, in order:
 | [security_verification.md](security_verification.md) | security packages | done except coverage in CI: threat model, attack catalog as tests, differential tests against Spring Security, fuzzing, test vectors, mutation testing, ASVS checklist, the ZAP baseline scan in CI |
 | [spring_ai.md](spring_ai.md) | `spring_boot_starter_ai` | planned: `ChatClient`, the model providers in one package, streaming, tool calling, structured output, chat memory, embeddings |
 | [spring_ai_mcp.md](spring_ai_mcp.md) | `spring_boot_starter_ai` | MCP, later (low priority); the web starter's prerequisites exist: MCP servers from beans (`@McpTool`, `@McpResource`, `@McpPrompt`), Streamable HTTP and stdio |
-| [spring_boot_starter_oauth2_client.md](spring_boot_starter_oauth2_client.md) | `spring_boot_starter_oauth2_client` | done: Spring's OAuth2 client: registrations from `spring.security.oauth2.client.*`, discovery, the token endpoint of every grant with PKCE, authorized clients and their refresh, users, Bearer and DPoP tokens on Feign (DPoP `auto` by default), the token headers of WebSocket handshakes (`OAuth2AccessTokenHeaders`), the hardening (the plain `http://` warning, one discovery with the resource server, differential and mutation tests); next: runs on devices |
+| [spring_boot_starter_oauth2_client.md](spring_boot_starter_oauth2_client.md) | `spring_boot_starter_oauth2_client` | done: Spring's OAuth2 client: registrations from `spring.security.oauth2.client.*`, discovery, the token endpoint of every grant with PKCE, authorized clients and their refresh, users, Bearer and DPoP tokens on `RestClient` calls and HTTP service interfaces (DPoP `auto` by default), the token headers of WebSocket handshakes (`OAuth2AccessTokenHeaders`), the hardening (the plain `http://` warning, one discovery with the resource server, differential and mutation tests); next: runs on devices |
 | [spring_boot_starter_data.md](spring_boot_starter_data.md) | `spring_boot_starter_data` | done, in 0.6.0: Spring Data JDBC's model, one starter without drivers (the application's `postgres` / `sqlite3` wired by the generator), SQLite and PostgreSQL (Redis postponed indefinitely), `@Transactional` compared with Spring's propagation and isolation matrix, `@Version`, `@Lock`, SpEL in `@Query` compiled by the build, migrations, `@DataTest`, `JdbcTemplate` and `JdbcClient`; what is left is in the file |
 | [release_0_6.md](release_0_6.md) | all packages | the checklist of the 0.6.0 release: what was verified, what remains before the Release button |
 | [spring_boot_starter_supabase.md](spring_boot_starter_supabase.md) | `spring_boot_starter_supabase` | planned after the generator's split by starter: our own client, Spring Data (SQL by `db.url`, else PostgREST), Spring Security front and back, Realtime as streams, `StorageTemplate`, Edge Functions; nothing about Supabase in the generator |
@@ -305,8 +311,9 @@ What comes next, in order:
 | [review_0_10.md](review_0_10.md) | all packages | the review after 0.9.0 (November 2026): bugs, Spring parity, security, every annotation where it does not belong; what stayed open |
 | [review_0_5.md](review_0_5.md) | all packages | planned: the review before 0.5.0 (bugs and differences from Spring, security, vulnerabilities), then the minor release |
 | [serverless.md](serverless.md) | `spring_boot_starter_edge` | built (November 2026): Spring Boot for Dart applications on Supabase Edge Functions, Cloudflare Workers, AWS Lambda, Deno Deploy, Netlify and Vercel, as JavaScript or WebAssembly, with a deploy workflow; not yet: more Cloudflare bindings, Azure and Google Cloud Functions |
-| [rest_client.md](rest_client.md) | `spring_web_dart`, `spring_boot_dart` | planned: `RestClient` (no package of its own; no `RestTemplate`, deprecated in Spring 7.1), later `@HttpExchange` |
-| [spring_boot_starter_feign.md](spring_boot_starter_feign.md) | `spring_boot_starter_feign` | next steps: files and forms, `FallbackFactory`, circuit breaker |
+| [rest_client.md](rest_client.md) | `spring_web_dart`, `spring_boot_starter_restclient` | 0.10.1: `RestClient`, the RestClient starter, `@HttpExchange` service clients written by the generator, the family's own calls on `RestClient`; no `RestTemplate` (deprecated in Spring 7.1) |
+| [release_0_10_1.md](release_0_10_1.md) | all packages | the plan of 0.10.1: `RestClient` and HTTP service clients, `@Retryable` in core, the Feign starter discontinued |
+| [spring_boot_starter_feign.md](spring_boot_starter_feign.md) | `spring_boot_starter_feign` | discontinued in 0.10.1, its last version: Spring Cloud OpenFeign is feature-complete and Spring points to HTTP service clients; use `spring_boot_starter_restclient` |
 | [spring_boot_starter_websocket.md](spring_boot_starter_websocket.md) | `spring_boot_starter_websocket` | clients and server endpoints (on the web starter) done; next: STOMP, connection state |
 | [spring_boot_starter_scheduling.md](spring_boot_starter_scheduling.md) | `spring_boot_starter_scheduling` | next: `TaskExecutor` (a pool of worker isolates), `@Async` on it |
 | [spring_boot_starter_cache.md](spring_boot_starter_cache.md) | `spring_boot_starter_cache` | next: persistent stores |

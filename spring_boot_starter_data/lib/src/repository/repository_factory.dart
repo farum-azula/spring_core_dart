@@ -64,7 +64,7 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_definition.
 /// What the build cannot know is checked here, when the repository is
 /// created: the store and the data source, the entity, the `@Query` and
 /// `@Procedure` methods, and what the methods need of the store
-/// (`StoreRequirement`s against the store's `DataStoreCapabilities`: a
+/// (`StoreRequirement` instances against the store's `DataStoreCapabilities`: a
 /// `@Lock` on a store without locks, a `@Transactional` on one without
 /// transactions, a stream of changes from a store that reports none).
 /// Every mistake is collected and reported together, so the application

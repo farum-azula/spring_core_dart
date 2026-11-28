@@ -1,5 +1,5 @@
-// Chapter 6, "Server access": the Feign clients and the WebSocket client
-// against the server's API, played by a MockHttpTransport and a
+// Chapter 6, "Server access": the HTTP service clients and the WebSocket
+// client against the server's API, played by a MockHttpTransport and a
 // MockWebSocketTransport (no server needed). The session transport below
 // the clients keeps the cookies and sends the CSRF token.
 import 'dart:convert';
@@ -16,9 +16,17 @@ import 'package:neon_books_app/src/api/models.dart';
 import 'package:neon_books_app/src/basket/basket.dart';
 import 'package:neon_books_app/src/catalog/book_page.dart';
 import 'package:neon_books_app/src/orders/order_service.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart'
-    show LogBuffer, SecurityContextHolder;
+    show
+        HttpClientErrorException,
+        HttpHeaders,
+        HttpMethod,
+        HttpResponse,
+        HttpStatus,
+        HttpTransportException,
+        LogBuffer,
+        SecurityContextHolder,
+        ServerSentEvent;
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 
 import 'support/app.dart';
@@ -35,7 +43,7 @@ void main() {
   });
   tearDown(SecurityContextHolder.clearContext);
 
-  group('Feign clients', () {
+  group('HTTP service clients', () {
     test('a page of the catalog: query parameters and JSON', () async {
       server.http
         ..reset()
@@ -63,10 +71,9 @@ void main() {
         request.url.toString(),
         'http://localhost:8080/api/books?q=dune&page=1',
       );
-      expect(request.headers['Accept'], 'application/json');
     });
 
-    test('a lost connection is tried again (Retryer)', () async {
+    test('a lost connection is tried again (@Retryable)', () async {
       server.http
         ..reset()
         ..when(
@@ -84,7 +91,7 @@ void main() {
       expect(server.http.requests, hasLength(2));
     });
 
-    test('a 404 is a FeignNotFound', () async {
+    test('a 404 is an HttpClientErrorException', () async {
       server.http
           .when(HttpMethod.get, '/api/books/0')
           .respond(
@@ -94,7 +101,13 @@ void main() {
           );
       await expectLater(
         app.getBean<CatalogClient>().find('0'),
-        throwsA(isA<FeignNotFound>()),
+        throwsA(
+          isA<HttpClientErrorException>().having(
+            (error) => error.statusCode,
+            'statusCode',
+            HttpStatus.notFound,
+          ),
+        ),
       );
     });
   });
@@ -215,7 +228,7 @@ void main() {
     expect(find.text('2 in stock'), findsOneWidget);
   });
 
-  testWidgets('FeignNotFound: an unknown book', (tester) async {
+  testWidgets('a 404: an unknown book', (tester) async {
     server.http
       ..when(HttpMethod.get, '/api/books/0').respond(404)
       ..when(HttpMethod.get, '/api/books/0/cover').respond(404);

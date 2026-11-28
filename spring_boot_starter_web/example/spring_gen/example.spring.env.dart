@@ -282,10 +282,6 @@ const Map<String, String> _$dartDefines = {
     'SPRING_DEVTOOLS_RESTART_ENABLED': String.fromEnvironment(
       'SPRING_DEVTOOLS_RESTART_ENABLED',
     ),
-  if (bool.hasEnvironment('SPRING_FEIGN_CLIENT_DECODESLASH'))
-    'SPRING_FEIGN_CLIENT_DECODESLASH': String.fromEnvironment(
-      'SPRING_FEIGN_CLIENT_DECODESLASH',
-    ),
   if (bool.hasEnvironment('SPRING_FLUTTER_SCANOSENVIRONMENT'))
     'SPRING_FLUTTER_SCANOSENVIRONMENT': String.fromEnvironment(
       'SPRING_FLUTTER_SCANOSENVIRONMENT',
@@ -494,6 +490,10 @@ const Map<String, String> _$dartDefines = {
   if (bool.hasEnvironment('SPRING_REMOTE_ALLOWINSECURE'))
     'SPRING_REMOTE_ALLOWINSECURE': String.fromEnvironment(
       'SPRING_REMOTE_ALLOWINSECURE',
+    ),
+  if (bool.hasEnvironment('SPRING_RESILIENCE_ENABLED'))
+    'SPRING_RESILIENCE_ENABLED': String.fromEnvironment(
+      'SPRING_RESILIENCE_ENABLED',
     ),
   if (bool.hasEnvironment('SPRING_RESOURCES_EMBED_EXCLUDE'))
     'SPRING_RESOURCES_EMBED_EXCLUDE': String.fromEnvironment(
@@ -993,10 +993,6 @@ const Map<String, String> _$dartDefines = {
     'spring.devtools.restart.enabled': String.fromEnvironment(
       'spring.devtools.restart.enabled',
     ),
-  if (bool.hasEnvironment('spring.feign.client.decode-slash'))
-    'spring.feign.client.decode-slash': String.fromEnvironment(
-      'spring.feign.client.decode-slash',
-    ),
   if (bool.hasEnvironment('spring.flutter.scan-os-environment'))
     'spring.flutter.scan-os-environment': String.fromEnvironment(
       'spring.flutter.scan-os-environment',
@@ -1210,6 +1206,10 @@ const Map<String, String> _$dartDefines = {
   if (bool.hasEnvironment('spring.remote.allow-insecure'))
     'spring.remote.allow-insecure': String.fromEnvironment(
       'spring.remote.allow-insecure',
+    ),
+  if (bool.hasEnvironment('spring.resilience.enabled'))
+    'spring.resilience.enabled': String.fromEnvironment(
+      'spring.resilience.enabled',
     ),
   if (bool.hasEnvironment('spring.resources.embed.exclude'))
     'spring.resources.embed.exclude': String.fromEnvironment(

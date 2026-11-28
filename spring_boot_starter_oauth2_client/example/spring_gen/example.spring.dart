@@ -9,67 +9,52 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
-import 'dart:async' as _i5;
+import 'dart:async' as _i4;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i8;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i9;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
-import 'package:spring_boot_dart/src/runners.dart' as _i6;
-import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i9;
-import 'package:spring_boot_starter_feign/src/feign_client.dart' as _i3;
+import 'package:spring_boot_dart/src/runners.dart' as _i7;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
     as _i10;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
     as _i11;
 import 'package:spring_boot_starter_oauth2_client/src/client/authorized_client_manager.dart'
-    as _i7;
-import 'package:spring_security_core/spring_auto_configuration.dart' as _i12;
-import 'package:spring_web_dart/src/annotations.dart' as _i4;
+    as _i8;
+import 'package:spring_boot_starter_oauth2_client/src/web/client_attributes.dart'
+    as _i6;
+import 'package:spring_boot_starter_restclient/spring_auto_configuration.dart'
+    as _i12;
+import 'package:spring_boot_starter_restclient/spring_boot_starter_restclient.dart'
+    as _i3;
+import 'package:spring_security_core/spring_auto_configuration.dart' as _i13;
+import 'package:spring_web_dart/src/service/http_exchange.dart' as _i5;
 
 import '../example.dart' as _i2;
 
 part 'example.spring.debug.dart';
 part 'example.spring.env.dart';
 
-/// Implements `OrdersClient` through an `InvocationHandler`.
-class _$OrdersClientImpl implements _i2.OrdersClient {
-  _$OrdersClientImpl(this._handler, this._metadata);
+/// `OrdersClient`: each method a call through the `RestClient` of the HTTP
+/// service group "orders".
+class _$OrdersClientHttpService implements _i2.OrdersClient {
+  _$OrdersClientHttpService(this._rest);
 
-  final _i1.InvocationHandler _handler;
-
-  final _i1.InterfaceMetadata<_i2.OrdersClient> _metadata;
-
-  static _$OrdersClientImpl $create(_i1.DependencyResolver r) {
-    final metadata = _i1.InterfaceMetadata<_i2.OrdersClient>(
-      typeName: r'OrdersClient',
-      annotations: const [_i3.FeignClient(r'orders', url: r'${partner.url}')],
-      methods: [
-        _i1.ProxyMethod(
-          r'orders',
-          returnType: const _i1.ListType<dynamic>(_i1.DynamicType()),
-          isFuture: true,
-          annotations: const [_i4.GetMapping(r'/orders')],
-          call: (target, arguments) => (target as _i2.OrdersClient).orders(),
-        ),
-      ],
-    );
-    return _$OrdersClientImpl(
-      _i1.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
+  final _i3.RestClient _rest;
 
   @override
-  _i5.Future<List<Object?>> orders() => _i1.retypeFuture<List<Object?>>(
-    this._handler.invoke(this._metadata.methods[0], const []),
-  );
+  _i4.Future<List<Object?>> orders() => _rest
+      .get()
+      .uri(r'/orders')
+      .attribute(r'ClientRegistration.clientRegistrationId', r'partner')
+      .retrieve()
+      .body<List<Object?>>(const _i1.ListType<dynamic>(_i1.DynamicType()));
 }
 
 const _$knownAdvisors0 = {
   r'package:spring_boot_dart',
-  r'package:spring_boot_starter_feign',
   r'package:spring_boot_starter_logging',
   r'package:spring_boot_starter_oauth2_client',
+  r'package:spring_boot_starter_restclient',
   r'package:spring_security_core',
 };
 
@@ -78,25 +63,29 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
   _i1.BeanDefinition<_i2.OrdersClient>(
     name: r'ordersClient',
     source: r'asset:spring_boot_starter_oauth2_client/example/example.dart#OrdersClient',
-    primary: true,
-    create: (r) => _$OrdersClientImpl.$create(r),
-    annotations: const [_i3.FeignClient(r'orders', url: r'${partner.url}')],
+    create: (r) => _$OrdersClientHttpService(
+      r.dependency<_i3.HttpServiceGroups>().restClient(r'orders'),
+    ),
+    annotations: const [
+      _i5.HttpExchange(r'/orders'),
+      _i6.ClientRegistrationId(r'partner'),
+    ],
     aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
   _i1.BeanDefinition<_i2.OrdersTour>(
     name: r'ordersTour',
     source: r'asset:spring_boot_starter_oauth2_client/example/example.dart#OrdersTour',
-    types: const [_i2.OrdersTour, _i6.CommandLineRunner],
+    types: const [_i2.OrdersTour, _i7.CommandLineRunner],
     dependencies: const [
       _i1.Dependency(_i2.OrdersClient, name: r'orders'),
       _i1.Dependency(
-        _i7.OAuth2AuthorizedClientManager,
+        _i8.OAuth2AuthorizedClientManager,
         name: r'authorizedClients',
       ),
     ],
     create: (r) => _i2.OrdersTour(
       r.dependency<_i2.OrdersClient>(name: r'orders'),
-      r.dependency<_i7.OAuth2AuthorizedClientManager>(
+      r.dependency<_i8.OAuth2AuthorizedClientManager>(
         name: r'authorizedClients',
       ),
     ),
@@ -106,6 +95,13 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
     ],
     aopProxy: const _i1.AopProxyFactory.pruned(knownAdvisors: _$knownAdvisors0),
   ),
+  _i1.BeanDefinition<_i3.HttpServiceGroup>(
+    name: r'httpServiceGroup.orders#application',
+    source: r'package:spring_boot_starter_restclient#HttpServiceGroup.orders',
+    types: const [_i3.HttpServiceGroup],
+    create: (r) =>
+        const _i3.HttpServiceGroup(r'orders', types: [_i2.OrdersClient]),
+  ),
 ]);
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
@@ -113,12 +109,18 @@ _i1.BeanModule get $application => _i1.BeanModule(r'application', [
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i8.springBootAutoConfiguration,
-    _i9.springBootStarterFeignAutoConfiguration,
+    _i9.springBootAutoConfiguration,
     _i10.springBootStarterLoggingAutoConfiguration,
     _i11.springBootStarterOauth2ClientAutoConfiguration,
-    _i12.springSecurityCoreAutoConfiguration,
+    _i12.springBootStarterRestclientAutoConfiguration,
+    _i13.springSecurityCoreAutoConfiguration,
   ],
+  autoConfigurationMetadata: {
+    _i12.springBootStarterRestclientAutoConfiguration:
+        const _i1.AutoConfigurationModule(
+          after: [r'springBootStarterFlutterSecurityAutoConfiguration'],
+        ),
+  },
   dartDefines: _$dartDefines,
   fingerprint:
       !const bool.fromEnvironment('dart.vm.product') &&

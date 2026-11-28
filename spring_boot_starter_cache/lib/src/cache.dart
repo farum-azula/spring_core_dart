@@ -250,8 +250,8 @@ abstract interface class CacheManagerCustomizer {
 /// A [CacheManager] that holds a fixed list of caches you build yourself.
 ///
 /// It is the way to put caches of your own (or a mix of yours and
-/// `InMemoryCache`s) behind the annotations. It never creates a cache: an
-/// unknown name gives `null`, so `@Cacheable('other')` fails the call with
+/// `InMemoryCache` instances) behind the annotations. It never creates a cache:
+/// an unknown name gives `null`, so `@Cacheable('other')` fails the call with
 /// "Cannot find cache named 'other'". The starter also uses it for
 /// `spring.cache.type=generic`, with the `Cache` beans of the application.
 ///

@@ -84,7 +84,7 @@ final class SpelType {
 
   /// A type for the Dart type [T], named [name] in expressions: the
   /// instance test is `is T`, and `new Name[n]` builds a list of `T`
-  /// (`List<T?>` while it holds `null`s).
+  /// (`List<T?>` while it holds `null` values).
   ///
   /// ```dart
   /// SpelType.of<User>('User', constructors: {'': User.new});

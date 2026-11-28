@@ -46,14 +46,12 @@ final class RenamedPropertiesEnvironmentPostProcessor
   ///
   /// | Spring Boot | Here |
   /// |---|---|
-  /// | `spring.cloud.openfeign` | `spring.feign` |
   /// | `spring.jackson` | `spring.json` |
   /// | `spring.servlet.multipart` | `spring.web.multipart` |
   /// | `server.servlet` | `server` |
   /// | `logging.logback.rollingpolicy` | `logging.file.rolling-policy` |
   /// | `spring.flyway` | `spring.sql.migration` |
   static const Map<String, String> renamed = {
-    'spring.cloud.openfeign': 'spring.feign',
     'spring.jackson': 'spring.json',
     'spring.servlet.multipart': 'spring.web.multipart',
     'server.servlet': 'server',

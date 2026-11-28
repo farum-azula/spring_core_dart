@@ -17,8 +17,8 @@ import 'package:spring_boot_starter_supabase/src/supabase_auto_configuration.dar
 
 export 'package:spring_boot_starter_cache/spring_auto_configuration.dart';
 export 'package:spring_boot_starter_data/spring_auto_configuration.dart';
-export 'package:spring_boot_starter_feign/spring_auto_configuration.dart';
 export 'package:spring_boot_starter_logging/spring_auto_configuration.dart';
+export 'package:spring_boot_starter_restclient/spring_auto_configuration.dart';
 export 'package:spring_boot_starter_websocket/spring_auto_configuration.dart';
 export 'package:spring_security_core/spring_auto_configuration.dart';
 
@@ -98,7 +98,7 @@ final BeanModule springBootStarterSupabaseDataAutoConfiguration = BeanModule(
 /// client, the data store, Storage, Edge Functions, the cache keys.
 @AutoConfigurationModule(
   after: [
-    'springBootStarterFeignAutoConfiguration',
+    'springBootStarterRestclientAutoConfiguration',
     'springBootStarterWebsocketAutoConfiguration',
     'springBootStarterDataAutoConfiguration',
     'springSecurityCoreAutoConfiguration',

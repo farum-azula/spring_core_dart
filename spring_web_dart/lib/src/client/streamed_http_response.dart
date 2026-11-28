@@ -15,8 +15,8 @@ import 'package:spring_web_dart/src/http_status.dart';
 /// progress reports. The caller looks at the status first, then reads the
 /// body chunk by chunk as the server sends it. The body holds the
 /// connection open: read it to the end, cancel its subscription, or call
-/// [discard], otherwise the connection stays busy. Feign clients use it
-/// for methods that return an `EventStream`; applications rarely see it.
+/// [discard], otherwise the connection stays busy. `RestClient` uses it
+/// for event streams and byte streams; applications rarely see it.
 ///
 /// ```dart
 /// final response = await transport.stream(request);

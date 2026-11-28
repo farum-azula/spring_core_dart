@@ -1,3 +1,8 @@
+## Unreleased
+
+- **Discontinued after this version.** Spring Cloud OpenFeign is feature-complete and Spring points to its HTTP service clients instead; the family follows Spring as closely as it can, so it no longer supports Feign either. Its replacement is `RestClient` with `@HttpExchange` interfaces (`spring_web_dart`, `spring_boot_starter_restclient`), as Spring's HTTP service clients. No other package of the family depends on it any more, and the repository's CI no longer tests it.
+- Its module is registered after the RestClient starter's (`after: ['springBootStarterRestclientAutoConfiguration']`): in an application with both, that starter's `httpTransport`, with its allowed addresses, is the one, and Feign's backs off. The RestClient starter no longer names Feign.
+
 ## 0.10.0
 
 - **Breaking:** `FeignClientConfig.alwaysSensitiveHeaders` is gone: the logs mask the headers of `HttpSecrets.isSensitiveHeader` (spring_web_dart's rule, shared with the web starter: also names that look secret, such as `X-Api-Key`) and those of `sensitive-headers`.

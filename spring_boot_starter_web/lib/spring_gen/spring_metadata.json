@@ -1040,6 +1040,42 @@
       ]
     },
     {
+      "name": "eventStreamRetryAdapter",
+      "type": "EventStreamRetryAdapter",
+      "types": [
+        "EventStreamRetryAdapter",
+        "RetryStreamAdapter"
+      ],
+      "scope": "singleton",
+      "primary": false,
+      "qualifiers": [],
+      "profiles": [],
+      "conditions": [
+        "@ConditionalOnMissingBean(EventStreamRetryAdapter)"
+      ],
+      "source": "package:spring_boot_starter_web/spring_auto_configuration.dart",
+      "line": 77,
+      "injects": [],
+      "members": [
+        {
+          "name": "adapt",
+          "kind": "method",
+          "type": "Stream<T>",
+          "parameters": [
+            "StreamAttempts<T> attempts"
+          ]
+        },
+        {
+          "name": "supports",
+          "kind": "method",
+          "type": "bool",
+          "parameters": [
+            "Stream<Object?> stream"
+          ]
+        }
+      ]
+    },
+    {
       "name": "forwardedHeaderFilter",
       "type": "ForwardedHeaderFilter",
       "types": [
@@ -1938,7 +1974,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:spring_boot_starter_web/spring_auto_configuration.dart",
-      "line": 77,
+      "line": 113,
       "injects": [],
       "members": [
         {
@@ -2075,7 +2111,7 @@
         "@ConditionalOnPrimaryIsolate()"
       ],
       "source": "package:spring_boot_starter_web/spring_auto_configuration.dart",
-      "line": 83,
+      "line": 119,
       "injects": [],
       "members": [
         {

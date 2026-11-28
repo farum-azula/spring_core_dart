@@ -19,6 +19,7 @@ import 'package:spring_boot_starter_data/src/data_auto_configuration.dart';
 import 'package:spring_boot_starter_data/src/data_source_auto_configuration.dart';
 import 'package:spring_boot_starter_data/src/data_startup_checks.dart';
 import 'package:spring_boot_starter_data/src/properties/properties_beans.dart';
+import 'package:spring_boot_starter_data/src/transaction/joined_transaction_retry_veto.dart';
 
 // The auto-configurations this starter builds on (logging, and through it
 // spring_boot_dart's), so a test of an application that lists only this
@@ -87,4 +88,28 @@ final BeanModule springBootStarterDataStartupChecksAutoConfiguration =
 final BeanModule springBootStarterDataSqlLoggingAutoConfiguration = BeanModule(
   'springBootStarterDataSqlLoggingAutoConfiguration',
   sqlLoggingAutoConfiguration,
+);
+
+/// The transactions' part in the retries of `@Retryable`: the
+/// `joinedTransactionRetryVeto` ([JoinedTransactionRetryVeto]), so a call
+/// that runs inside a transaction it did not open is not retried.
+///
+/// In the build with `spring.resilience.enabled: true`, as the retries.
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild(
+    'spring.resilience.enabled',
+    whenMissing: BuildInclusion.never,
+  ),
+)
+final BeanModule springBootStarterDataResilienceAutoConfiguration = BeanModule(
+  'springBootStarterDataResilienceAutoConfiguration',
+  [
+    BeanDefinition<JoinedTransactionRetryVeto>(
+      name: 'joinedTransactionRetryVeto',
+      types: const [JoinedTransactionRetryVeto, MethodRetryVeto],
+      source:
+          'package:spring_boot_starter_data#DataResilienceAutoConfiguration',
+      create: (_) => const JoinedTransactionRetryVeto(),
+    ),
+  ],
 );

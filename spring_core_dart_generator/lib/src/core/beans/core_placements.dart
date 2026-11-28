@@ -3,6 +3,7 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/core/beans/annotation_placement.dart';
 import 'package:spring_core_dart_generator/src/core/beans/bean_model.dart';
+import 'package:spring_core_dart_generator/src/core/beans/resilience_placements.dart';
 
 // Where the container's own annotations may go, declared as a part
 // declares its own (PackageGeneration.placements); they are asked after
@@ -27,7 +28,8 @@ final TypeChecker _introspected = _spring('Introspected');
 
 final List<TypeChecker> _injection = [_autowired, _resource, _value];
 
-/// The core's placements: the advice of `@Observed` and `@Validated`, the
+/// The core's placements: the advice of `@Observed`, `@Retryable`,
+/// `@ConcurrencyLimit` and `@Validated`, the
 /// methods the container calls (lifecycle, listeners, every
 /// `@BeanMethodAnnotation` no part places itself), the injection
 /// annotations, the definition annotations of a class or `@Bean` method,
@@ -36,6 +38,8 @@ final List<AnnotationPlacement> corePlacements = [
   AdvicePlacement([
     _spring('Observed'),
   ], effect: 'no observation would be recorded'),
+  const RetryablePlacement(),
+  const ConcurrencyLimitPlacement(),
   // Spring Boot's binding of a third-party class: on a class, or on the
   // @Bean method that returns it. It implements `Introspected`, so it comes
   // before the placement of that annotation.

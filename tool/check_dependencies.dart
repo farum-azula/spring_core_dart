@@ -40,7 +40,7 @@ const repositoryOnly = {
   'spring_boot_starter_data',
   'spring_web_dart',
   'spring_search_dart',
-  'spring_boot_starter_feign',
+  'spring_boot_starter_restclient',
   'spring_boot_starter_websocket',
   'spring_boot_starter_supabase',
   'spring_boot_starter_web',

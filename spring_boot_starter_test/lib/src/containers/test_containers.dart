@@ -32,7 +32,7 @@ import 'package:spring_boot_starter_test/src/dynamic_property_registry.dart';
 /// ```
 ///
 /// Spring: `TestcontainersExtension` of `@Testcontainers`, and the
-/// `ContainerConnectionDetailsFactory`s behind `@ServiceConnection`.
+/// `ContainerConnectionDetailsFactory` instances behind `@ServiceConnection`.
 final class TestContainers {
   /// The containers by name (`Class.field`, for the error messages), and
   /// the names of those that are service connections.

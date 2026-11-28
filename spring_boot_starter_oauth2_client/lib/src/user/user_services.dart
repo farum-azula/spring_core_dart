@@ -120,15 +120,23 @@ final class _FunctionUserService<
 /// (RFC 9449 §7.1); a `use_dpop_nonce` answer is retried once with the
 /// endpoint's nonce.
 ///
-/// Spring (Java): `DefaultOAuth2UserService` (without DPoP).
+/// The endpoint is called by a `RestClient` on [transport] (the
+/// `httpTransport` bean in an application), without following redirects:
+/// the token never goes elsewhere.
+///
+/// Spring (Java): `DefaultOAuth2UserService` (without DPoP), on a
+/// `RestClient` since Spring Security 7.
 class DefaultOAuth2UserService
     implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
   /// A service calling the endpoint through [transport]; [dPoPKey] signs
   /// the proofs of DPoP-bound tokens.
-  DefaultOAuth2UserService(this.transport, {this.dPoPKey});
+  DefaultOAuth2UserService(this.transport, {this.dPoPKey})
+    : _rest = userInfoClient(transport);
 
-  /// The HTTP transport.
+  /// The HTTP transport the requests go through.
   final HttpTransport transport;
+
+  final RestClient _rest;
 
   /// The key of the DPoP proofs, or `null` when the tokens are `Bearer`.
   final DPoPKey? dPoPKey;
@@ -159,7 +167,7 @@ class DefaultOAuth2UserService
       );
     }
     final attributes = await loadUserAttributes(
-      transport,
+      _rest,
       userRequest,
       dPoPKey: dPoPKey,
       nonces: _nonces,
@@ -186,14 +194,20 @@ class DefaultOAuth2UserService
   }
 }
 
-/// The attributes the user-info endpoint of [userRequest] returns; a DPoP
-/// token is sent with a proof of [dPoPKey], with the nonces of [nonces].
+/// The `RestClient` of the user-info calls on [transport]: redirects not
+/// followed.
+RestClient userInfoClient(HttpTransport transport) =>
+    RestClient.builder().transport(transport).followRedirects(false).build();
+
+/// The attributes the user-info endpoint of [userRequest] returns, read
+/// with [rest] ([userInfoClient]); a DPoP token is sent with a proof of
+/// [dPoPKey], with the nonces of [nonces].
 ///
 /// Throws an [OAuth2AuthenticationException] (`invalid_user_info_response`)
 /// when the endpoint fails or answers with something other than a JSON
 /// object, or the token is DPoP-bound and there is no [dPoPKey].
 Future<Map<String, Object?>> loadUserAttributes(
-  HttpTransport transport,
+  RestClient rest,
   OAuth2UserRequest userRequest, {
   DPoPKey? dPoPKey,
   DPoPNonces? nonces,
@@ -215,78 +229,62 @@ Future<Map<String, Object?>> loadUserAttributes(
   }
   final proofs = dPoP ? DPoPProofBuilder(dPoPKey!) : null;
   final remembered = nonces ?? DPoPNonces();
-  Future<HttpRequest> request(String? nonce) async {
-    final headers = HttpHeaders({
-      HttpHeaders.acceptHeader: MediaType.applicationJson,
-    });
+  // The request as the token's type and the endpoint's method want it;
+  // the answer read whatever its status.
+  Future<HttpResponse> send(String? nonce) async {
+    final RequestHeadersSpec spec;
     if (proofs != null) {
       // RFC 9449 §7.1: a DPoP token goes in the Authorization header.
-      headers
-        ..set(HttpHeaders.authorizationHeader, 'DPoP $token')
-        ..set(
-          dPoPHeader,
-          await proofs.build(
-            method: 'GET',
-            url: uri,
-            accessToken: token,
-            nonce: nonce,
-          ),
-        );
-      return HttpRequest(
-        method: HttpMethod.get,
-        url: uri,
-        headers: headers,
-        followRedirects: false,
-      );
-    }
-    if (endpoint.authenticationMethod == AuthenticationMethod.form) {
-      headers.set(
-        HttpHeaders.contentTypeHeader,
-        '${MediaType.applicationFormUrlencoded};charset=UTF-8',
-      );
-      return HttpRequest(
-        method: HttpMethod.post,
-        url: uri,
-        headers: headers,
-        body: utf8.encode(
-          formUrlEncodeAll({OAuth2ParameterNames.accessToken: token}),
-        ),
-        followRedirects: false,
-      );
-    }
-    if (endpoint.authenticationMethod == AuthenticationMethod.query) {
-      return HttpRequest(
-        method: HttpMethod.get,
-        url: uri.replace(
+      spec = rest
+          .get()
+          .uri(uri)
+          .header(HttpHeaders.authorizationHeader, 'DPoP $token')
+          .header(
+            dPoPHeader,
+            await proofs.build(
+              method: 'GET',
+              url: uri,
+              accessToken: token,
+              nonce: nonce,
+            ),
+          );
+    } else if (endpoint.authenticationMethod == AuthenticationMethod.form) {
+      spec = rest
+          .post()
+          .uri(uri)
+          .contentType('${MediaType.applicationFormUrlencoded};charset=UTF-8')
+          .body(formUrlEncodeAll({OAuth2ParameterNames.accessToken: token}));
+    } else if (endpoint.authenticationMethod == AuthenticationMethod.query) {
+      spec = rest.get().uri(
+        uri.replace(
           queryParameters: {
             ...uri.queryParameters,
             OAuth2ParameterNames.accessToken: token,
           },
         ),
-        headers: headers,
-        followRedirects: false,
       );
+    } else {
+      spec = rest
+          .get()
+          .uri(uri)
+          .header(HttpHeaders.authorizationHeader, 'Bearer $token');
     }
-    headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
-    return HttpRequest(
-      method: HttpMethod.get,
-      url: uri,
-      headers: headers,
-      followRedirects: false,
-    );
+    return await spec
+        .accept(MediaType.applicationJson)
+        .exchange((_, answer) => answer.response);
   }
 
   HttpResponse response;
   try {
-    response = await transport.send(await request(remembered.of(uri)));
+    response = await send(remembered.of(uri));
     if (proofs != null) {
       final nonce = remembered.remember(uri, response.headers);
       if (nonce != null && resourceServerWantsNonce(response)) {
-        response = await transport.send(await request(nonce));
+        response = await send(nonce);
         remembered.remember(uri, response.headers);
       }
     }
-  } on HttpTransportException catch (e) {
+  } on RestClientException catch (e) {
     fail(e.message);
   }
   if (!response.isSuccess) {
@@ -335,10 +333,12 @@ class OidcUserService implements OAuth2UserService<OidcUserRequest, OidcUser> {
     this.transport, {
     this.accessibleScopes = const {'profile', 'email', 'address', 'phone'},
     this.dPoPKey,
-  });
+  }) : _rest = userInfoClient(transport);
 
-  /// The HTTP transport.
+  /// The HTTP transport the requests go through.
   final HttpTransport transport;
+
+  final RestClient _rest;
 
   /// The key of the DPoP proofs, or `null` when the tokens are `Bearer`;
   /// as for [DefaultOAuth2UserService].
@@ -355,7 +355,7 @@ class OidcUserService implements OAuth2UserService<OidcUserRequest, OidcUser> {
     OidcUserInfo? userInfo;
     if (_shouldRetrieveUserInfo(userRequest)) {
       final claims = await loadUserAttributes(
-        transport,
+        _rest,
         userRequest,
         dPoPKey: dPoPKey,
         nonces: _nonces,

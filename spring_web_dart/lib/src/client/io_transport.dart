@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io' as io;
 import 'dart:typed_data';
 
+import 'package:spring_web_dart/src/client/address/address_connector_io.dart';
+import 'package:spring_web_dart/src/client/address/allowed_addresses.dart';
 import 'package:spring_web_dart/src/client/http_redirects.dart';
 import 'package:spring_web_dart/src/client/http_request.dart';
 import 'package:spring_web_dart/src/client/http_response.dart';
@@ -15,7 +17,8 @@ import 'package:spring_web_dart/src/http_headers.dart';
 /// `platformHttpTransport()` returns one on these platforms, so you create
 /// it yourself only to configure the `HttpClient`: a proxy, trusted
 /// certificates, a user agent. Declare it as an `HttpTransport` bean and
-/// the Feign starter uses it.
+/// the RestClient starter's clients use it (with your
+/// `allowedAddresses`: the starter's check is then yours to keep).
 ///
 /// How it treats an [HttpRequest]:
 ///
@@ -38,13 +41,25 @@ import 'package:spring_web_dart/src/http_headers.dart';
 ///   [HttpTransportException] is thrown.
 /// - Socket and other I/O errors become an [HttpTransportException]
 ///   whose `cause` is the original error.
+/// - `connectTimeout` of the request limits how long opening its
+///   connection may take, within the transport's own `connectTimeout`
+///   (`HttpClient.connectionTimeout`), which still applies: a request
+///   cannot wait longer than it.
+/// - With [allowedAddresses], every URL (the request's and each
+///   redirect's) is checked before anything is sent, and a host name is
+///   resolved by the transport, checked address by address and connected
+///   to at an address it checked (`HttpClient.connectionFactory`, so DNS
+///   rebinding cannot swap the address). A denied call fails with a
+///   `FilteredHostException`. The TLS handshake is then the transport's:
+///   give it `securityContext` and `allowBadCertificates` rather than
+///   setting them on the `HttpClient`.
 ///
 /// ```dart
 /// import 'dart:io';
 ///
 /// import 'package:spring_web_dart/io.dart';
 ///
-/// // Feign calls go through the company proxy.
+/// // The HTTP clients' calls go through the company proxy.
 /// @Configuration()
 /// class HttpSetup {
 ///   @Bean()
@@ -67,14 +82,44 @@ class IoHttpTransport implements HttpTransport {
   /// `HttpClient` when none is given. [connectTimeout], when set, becomes
   /// the client's `connectionTimeout`: the longest wait for a connection
   /// to open. [close] closes the client, also one passed in.
-  IoHttpTransport({Duration? connectTimeout, io.HttpClient? client})
-    : _client = client ?? io.HttpClient() {
+  ///
+  /// [allowedAddresses] limits the hosts and addresses it calls (see
+  /// [AllowedAddresses]); `null` (the default) calls any. It replaces the
+  /// client's `connectionFactory`. [allowBadCertificates] accepts a
+  /// certificate that is expired, self-signed or for another host: for
+  /// development servers only, never for an API. [securityContext] is the
+  /// TLS context of the connections the transport secures itself (with
+  /// [allowedAddresses]). [lookup] resolves host names for
+  /// [allowedAddresses] (`InternetAddress.lookup` by default): a resolver
+  /// of your own, such as DNS over HTTPS, or a fixed table in a test.
+  IoHttpTransport({
+    Duration? connectTimeout,
+    io.HttpClient? client,
+    this.allowedAddresses,
+    io.SecurityContext? securityContext,
+    bool allowBadCertificates = false,
+    Future<List<io.InternetAddress>> Function(String host)? lookup,
+  }) : _client = client ?? io.HttpClient(context: securityContext) {
     if (connectTimeout != null) {
       _client.connectionTimeout = connectTimeout;
+    }
+    if (allowBadCertificates) {
+      _client.badCertificateCallback = (_, _, _) => true;
+    }
+    if (allowedAddresses case final allowed?) {
+      _client.connectionFactory = checkedConnectionFactory(
+        allowed,
+        context: securityContext,
+        onBadCertificate: allowBadCertificates ? (_, _, _) => true : null,
+        lookup: lookup,
+      );
     }
   }
 
   final io.HttpClient _client;
+
+  /// The hosts and addresses the transport may call, or `null` for any.
+  final AllowedAddresses? allowedAddresses;
 
   @override
   Future<HttpResponse> send(HttpRequest request) =>
@@ -166,9 +211,18 @@ class IoHttpTransport implements HttpTransport {
       final headers = HttpHeaders()..addHeaders(request.headers);
       for (var redirects = 0; ; redirects++) {
         // Redirects are followed here, not by HttpClient: a hop to another
-        // origin must drop the credentials.
-        final outgoing = (pending = await _client.openUrl(method.value, url))
-          ..followRedirects = false;
+        // origin must drop the credentials, and each hop is checked.
+        allowedAddresses?.checkUrl(url);
+        final opening = _client.openUrl(method.value, url);
+        final connectTimeout = request.connectTimeout;
+        final outgoing =
+            (pending = connectTimeout == null
+                  ? await opening
+                  : await opening.timeout(
+                      connectTimeout,
+                      onTimeout: () => throw _ConnectTimeout(connectTimeout),
+                    ))
+              ..followRedirects = false;
         if (aborted) {
           // Given up while the connection was opening: nothing is sent.
           outgoing.abort(const _Aborted());
@@ -234,6 +288,14 @@ class IoHttpTransport implements HttpTransport {
         cause: error,
         isTimeout: true,
       );
+    } on _ConnectTimeout catch (error) {
+      throw HttpTransportException(
+        'no connection within ${error.timeout.inMilliseconds} ms '
+        '(connect timeout)',
+        request: request,
+        cause: error,
+        isTimeout: true,
+      );
     } on _Aborted catch (error) {
       throw HttpTransportException(
         'request aborted',
@@ -287,6 +349,17 @@ final class _Aborted implements Exception {
 
   @override
   String toString() => 'the request was aborted by its caller';
+}
+
+/// The connect timeout of a request ran out: no connection within
+/// [timeout].
+final class _ConnectTimeout implements Exception {
+  _ConnectTimeout(this.timeout);
+
+  final Duration timeout;
+
+  @override
+  String toString() => 'no connection within ${timeout.inMilliseconds} ms';
 }
 
 /// The read timeout of a request ran out: no data for [timeout].

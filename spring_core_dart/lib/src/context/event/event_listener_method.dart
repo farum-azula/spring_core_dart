@@ -142,7 +142,7 @@ final class EventListenerMethod<T extends Object> {
   /// [condition] filters the event.
   ///
   /// The generator uses it for `@EventListener` methods (and
-  /// `ApplicationListener`s) of a `PayloadApplicationEvent<P>`:
+  /// `ApplicationListener` instances) of a `PayloadApplicationEvent<P>`:
   ///
   /// ```dart
   /// EventListenerMethod.forPayload<Audit, OrderPlaced>(

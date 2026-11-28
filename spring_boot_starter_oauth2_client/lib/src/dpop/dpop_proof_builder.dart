@@ -17,9 +17,10 @@ const _privateMembers = {'d', 'p', 'q', 'dp', 'dq', 'qi', 'oth', 'k'};
 /// a one-time id and, on API calls, the hash of the access token it goes
 /// with; the server checks all of it and that the signature matches the
 /// public key in the proof's header. Each request needs a new proof. The
-/// token response clients, the user services and the Feign interceptor
-/// of this starter build them; build one yourself for a call they do not
-/// make (an `HttpTransport` request of your own, a WebSocket handshake).
+/// token response clients, the user services and the `RestClient`
+/// interceptor of this starter build them; build one yourself for a call
+/// they do not make (an `HttpTransport` request of your own, a WebSocket
+/// handshake).
 ///
 /// ```dart
 /// // A call with a DPoP token: Authorization and a proof for it.

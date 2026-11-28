@@ -20,7 +20,7 @@ import 'package:spring_boot_starter_edge/src/fetch/fetch_runtime_stub.dart'
 /// opens no socket: it gives the platform's entry file a handler, starts
 /// the context once per instance, with the platform's environment
 /// variables as the environment, and answers every request through the
-/// dispatcher. Controllers, filters, security and Feign clients are those
+/// dispatcher. Controllers, filters, security and HTTP clients are those
 /// of a server.
 ///
 /// Run on the Dart VM (`dart run bin/main.dart`), the same `main` starts

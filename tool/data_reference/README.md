@@ -41,7 +41,7 @@ side has the same ids and keys (`scenarios.dart`).
   (`Outer` calls `Inner`, one method per propagation), `Methods` the other
   settings (rollback rules, read only, timeouts); a scenario's code only
   calls them.
-- Two transactions side by side are `Session`s, each on a thread of its own,
+- Two transactions side by side are `Session` instances, each on a thread of its own,
   driven step by step. A statement that must wait for a lock is started
   without waiting, then `Env.awaitBlocked` polls `pg_stat_activity` until a
   backend waits for a lock (no sleeps), then the other transaction ends.

@@ -304,6 +304,23 @@ test('the application is up', () async {
 });
 ```
 
+The same test, declared with annotations:
+
+```dart
+@SpringBootTest()
+class HealthTest {
+  @Autowired()
+  late MockMvc mvc;
+
+  @Test('the application is up')
+  Future<void> up() => mvc
+      .get('/actuator/health')
+      .andExpect(status: 200, json: {'status': 'UP'});
+}
+
+void main() => runSpringTests();
+```
+
 ## Differences from Spring Boot
 
 - **Endpoints of the first part:** `health`, `info` and `mappings`.

@@ -50,7 +50,7 @@ abstract interface class Provider<T extends Object> {
 /// annotation `jakarta.annotation.Resource`.
 ///
 /// Where `@Autowired()` chooses by type, `@Resource` chooses by name, which
-/// helps when many beans share a type (several `DataSource`s, say).
+/// helps when many beans share a type (several `DataSource` instances, say).
 /// Without [name] the field or setter name is the bean name; when no bean
 /// has that name the point is injected by type like `@Autowired` (Spring's
 /// `fallbackToDefaultTypeMatch`). An explicit [name] must name a bean (an

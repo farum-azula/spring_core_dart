@@ -297,8 +297,8 @@ class RepositoryModel {
 
   /// What the methods (and the interface) need of the store, in
   /// declaration order: `@Lock`, `@Query`, `@Procedure`, a stream of changes,
-  /// `@Transactional`. Written as `StoreRequirement`s, which the starter
-  /// checks against the store when the repository is created.
+  /// `@Transactional`. Written as `StoreRequirement` instances, which the
+  /// starter checks against the store when the repository is created.
   final List<StoreNeed> requirements;
 }
 

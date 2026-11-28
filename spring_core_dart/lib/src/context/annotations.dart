@@ -966,8 +966,8 @@ class Import {
   /// Imports the classes [value].
   const Import(this.value);
 
-  /// Configuration or component classes, `BeanRegistrar`s,
-  /// `ImportSelector`s and `ImportBeanDefinitionRegistrar`s.
+  /// Configuration or component classes, `BeanRegistrar` instances,
+  /// `ImportSelector` instances and `ImportBeanDefinitionRegistrar` instances.
   final List<Type> value;
 }
 

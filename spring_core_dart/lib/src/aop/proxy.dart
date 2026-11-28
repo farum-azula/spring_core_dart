@@ -471,7 +471,7 @@ final class AopProxyFactory {
   final bool isDeferred;
 
   /// For a factory the build pruned ([AopProxyFactory.pruned], or a
-  /// partial proxy class, [isPartial]): the `source`s of the aspect and
+  /// partial proxy class, [isPartial]): the `source` values of the aspect and
   /// advisor bean definitions it knew of. An entry without `#` stands for
   /// a whole package (`package:spring_boot_starter_data`): the
   /// definitions whose source starts with it and `/` or `#`. `null` for

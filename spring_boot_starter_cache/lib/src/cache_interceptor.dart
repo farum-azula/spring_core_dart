@@ -65,7 +65,8 @@ final class CacheAnnotationPointcut implements AnnotationPointcut {
 ///    forces the call);
 /// 3. otherwise runs the method, stores the result for `@Cacheable` (unless
 ///    its `unless` says no) and for `@CachePut`;
-/// 4. removes the entries of the other `@CacheEvict`s, after a hit too.
+/// 4. removes the entries of the other `@CacheEvict` annotations, after a hit
+/// too.
 ///
 /// For a method returning a `Future`, the value is stored when the future
 /// completes (errors are never stored) and a hit returns a completed

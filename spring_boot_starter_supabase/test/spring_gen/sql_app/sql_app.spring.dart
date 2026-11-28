@@ -23,11 +23,11 @@ import 'package:spring_boot_starter_data/src/annotations.dart' as _i7;
 import 'package:spring_boot_starter_data/src/repository/repository.dart' as _i8;
 import 'package:spring_boot_starter_data/src/transaction/transaction_definition.dart'
     as _i9;
-import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i15;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i16;
+    as _i15;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
+    as _i16;
+import 'package:spring_boot_starter_restclient/spring_auto_configuration.dart'
     as _i17;
 import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
     as _i18;
@@ -101,9 +101,9 @@ const _$knownAdvisors0 = {
   r'package:spring_boot_dart',
   r'package:spring_boot_starter_cache',
   r'package:spring_boot_starter_data',
-  r'package:spring_boot_starter_feign',
   r'package:spring_boot_starter_logging',
   r'package:spring_boot_starter_oauth2_client',
+  r'package:spring_boot_starter_restclient',
   r'package:spring_boot_starter_security',
   r'package:spring_boot_starter_supabase',
   r'package:spring_boot_starter_web',
@@ -561,9 +561,9 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     _i14.springBootAutoConfiguration,
     _i4.springBootStarterCacheAutoConfiguration,
     _i5.springBootStarterDataAutoConfiguration,
-    _i15.springBootStarterFeignAutoConfiguration,
-    _i16.springBootStarterLoggingAutoConfiguration,
-    _i17.springBootStarterOauth2ClientAutoConfiguration,
+    _i15.springBootStarterLoggingAutoConfiguration,
+    _i16.springBootStarterOauth2ClientAutoConfiguration,
+    _i17.springBootStarterRestclientAutoConfiguration,
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i18.springBootStarterSecurityAutoConfiguration,
@@ -586,6 +586,10 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
       ..._$debugAutoConfigurations,
   ],
   autoConfigurationMetadata: {
+    _i17.springBootStarterRestclientAutoConfiguration:
+        const _i1.AutoConfigurationModule(
+          after: [r'springBootStarterFlutterSecurityAutoConfiguration'],
+        ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i18.springBootStarterSecurityAutoConfiguration:

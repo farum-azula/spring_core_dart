@@ -37,7 +37,8 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_template.da
 ///
 /// - `@Query` needs a store that runs SQL and is refused with the
 ///   in-memory store; `@Procedure` needs a store with database functions;
-/// - what the other methods need of the store (their `StoreRequirement`s:
+/// - what the other methods need of the store (their `StoreRequirement`
+/// instances:
 ///   locks for `@Lock`, transactions for `@Transactional`, changes for a
 ///   stream of them) must be among its `DataStoreCapabilities`;
 /// - the entity needs an `@Id` property.
@@ -89,8 +90,8 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_template.da
 /// emitted when the stream is listened to and again after every such
 /// change.
 ///
-/// What the store throws (all `DataAccessException`s) reaches the caller
-/// unchanged; any other error is wrapped in one with the original as its
+/// What the store throws (all `DataAccessException` instances) reaches the
+/// caller unchanged; any other error is wrapped in one with the original as its
 /// cause (`InvalidDataAccessApiUsageException` for a misuse such as an
 /// entity without an id, `DataAccessResourceFailureException` otherwise).
 ///
@@ -728,7 +729,7 @@ final class RepositoryOperations<T extends Object, ID extends Object> {
   /// The store filters as far as it can; what it cannot apply
   /// (`ChangeStreamDataStore.filtersChanges`) is applied here, with a
   /// [CriteriaMatcher]. Errors of the store are forwarded (as
-  /// `DataAccessException`s) and do not end the stream.
+  /// `DataAccessException` instances) and do not end the stream.
   ///
   /// Throws an `InvalidDataAccessApiUsageException` when the store reports
   /// no changes (a `StoreRequirement` of

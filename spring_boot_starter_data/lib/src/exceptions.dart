@@ -1,4 +1,5 @@
-import 'package:spring_boot_dart/spring_boot_dart.dart' show LogFormatUtils;
+import 'package:spring_boot_dart/spring_boot_dart.dart'
+    show LogFormatUtils, NestedException;
 
 /// The root of the errors of data access: every store (in memory, SQLite,
 /// PostgreSQL, Redis, Supabase) translates its driver's errors into this one
@@ -9,7 +10,7 @@ import 'package:spring_boot_dart/spring_boot_dart.dart' show LogFormatUtils;
 /// parameters are not.
 ///
 /// Spring (Java): `org.springframework.dao.DataAccessException`.
-abstract class DataAccessException implements Exception {
+abstract class DataAccessException implements Exception, NestedException {
   /// An error described by [message], caused by [cause] when there is one.
   DataAccessException(this.message, {this.cause, this.sql});
 
@@ -17,6 +18,7 @@ abstract class DataAccessException implements Exception {
   final String message;
 
   /// The driver's error behind this one, if any.
+  @override
   final Object? cause;
 
   /// The statement that failed, with its placeholders and without its

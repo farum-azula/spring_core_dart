@@ -7,8 +7,10 @@ name: 'Release: publish to pub.dev'
 #   tests → spring_core_dart → spring_core_dart_generator, spring_boot_dart,
 #           spring_web_dart
 #         → spring_boot_starter_logging, spring_boot_starter_scheduling,
-#           spring_boot_starter_cache, spring_boot_starter_feign,
-#           spring_boot_starter_websocket, spring_boot_actuator,
+#           spring_boot_starter_cache, spring_boot_starter_restclient,
+#           spring_boot_starter_feign (0.10.1 only: its last version,
+#           discontinued; remove after), spring_boot_starter_websocket,
+#           spring_boot_actuator,
 #           spring_boot_starter_web, spring_boot_starter_test
 #         → spring_boot_starter_actuator (after the web starter and
 #           spring_boot_actuator)
@@ -157,6 +159,9 @@ jobs:
           - spring_boot_starter_logging
           - spring_boot_starter_scheduling
           - spring_boot_starter_cache
+          - spring_boot_starter_restclient
+          # Discontinued: published one last time in 0.10.1, then removed
+          # from this list (and from tool/version.dart's family).
           - spring_boot_starter_feign
           - spring_boot_starter_websocket
           - spring_boot_actuator
@@ -206,7 +211,8 @@ jobs:
       - run: dart run tool/publish.dart --package spring_boot_starter_data
 
   # spring_security_core needs the logging starter,
-  # spring_boot_starter_oauth2_client Feign and spring_security_core,
+  # spring_boot_starter_oauth2_client the RestClient starter and
+  # spring_security_core,
   # spring_boot_starter_security the web starter, spring_boot_actuator,
   # spring_security_core and the OAuth2 client: one after the other.
   security:
@@ -226,7 +232,7 @@ jobs:
       - run: dart run tool/publish.dart --package spring_boot_starter_security
 
   # spring_boot_starter_supabase needs the data starter (with the cache,
-  # Feign and WebSocket starters) and spring_security_core.
+  # RestClient and WebSocket starters) and spring_security_core.
   supabase:
     name: Publish spring_boot_starter_supabase
     needs: [data, security]

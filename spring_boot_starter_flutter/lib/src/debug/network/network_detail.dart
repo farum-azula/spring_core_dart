@@ -66,7 +66,7 @@ class NetworkDetail extends StatelessWidget {
         Expanded(
           child: ListView(
             children: switch (entry) {
-              final HttpExchange exchange => _http(exchange, style, now),
+              final HttpCall exchange => _http(exchange, style, now),
               final WebSocketConnection connection => _webSocket(
                 connection,
                 style,
@@ -79,7 +79,7 @@ class NetworkDetail extends StatelessWidget {
     );
   }
 
-  List<Widget> _http(HttpExchange exchange, DebugStyle style, DateTime now) {
+  List<Widget> _http(HttpCall exchange, DebugStyle style, DateTime now) {
     final browser = exchange.resourceTiming;
     final phases = exchange.phases(now);
     return [

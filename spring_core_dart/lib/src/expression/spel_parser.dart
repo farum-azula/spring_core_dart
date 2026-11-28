@@ -40,8 +40,8 @@ import 'package:spring_core_dart/src/expression/tokenizer.dart';
 /// in `T(...)` / `new` must be registered in a `StandardTypeLocator`;
 /// properties and methods of your classes need `@Introspected` or an
 /// accessor; `matches` and the String methods are Dart's. Integer and
-/// long literals are both Dart `int`s, and `f` / `d` real literals both
-/// `double`s.
+/// long literals are both Dart `int` values, and `f` / `d` real literals both
+/// `double` values.
 class SpelExpressionParser implements ExpressionParser {
   /// Creates a parser with [configuration]
   /// (`SpelParserConfiguration.withDefaults()` when omitted).

@@ -13,7 +13,7 @@ import 'package:spring_boot_starter_data/src/transaction/transaction_definition.
 ///
 /// Spring (Java):
 /// `org.springframework.transaction.PlatformTransactionManager`. The
-/// methods return `Future`s: beginning, committing and rolling back talk
+/// methods return `Future` values: beginning, committing and rolling back talk
 /// to the database.
 abstract interface class PlatformTransactionManager {
   /// Returns the transaction for [definition] (by default

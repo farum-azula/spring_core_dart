@@ -1,4 +1,3 @@
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// Where the server is: `api.*` of `lib/resources/application*.properties`,
@@ -16,7 +15,8 @@ class ApiProperties {
   @NotBlank()
   String host = 'localhost:8080';
 
-  /// `http://${api.host}`: the Feign clients' URL.
+  /// `http://${api.host}`: the base URL of the `server` group of HTTP
+  /// services (`spring.http.serviceclient.server.base-url`).
   @Matches(r'https?://.+')
   String baseUrl = 'http://localhost:8080';
 

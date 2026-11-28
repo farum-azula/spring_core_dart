@@ -228,7 +228,7 @@ final class Dependency {
 /// `postProcessBeforeInitialization` → `postConstruct` →
 /// `InitializingBean.afterPropertiesSet` → `initMethod` →
 /// `postProcessAfterInitialization`. On destruction:
-/// `DestructionAwareBeanPostProcessor`s → `preDestroy` →
+/// `DestructionAwareBeanPostProcessor` instances → `preDestroy` →
 /// `DisposableBean.destroy` → `destroyMethod`.
 ///
 /// ```dart

@@ -16,7 +16,7 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
 /// user logged in. The package's auto-configuration declares it as the
 /// app's `DPoPKey` bean (`platformDPoPKey`) wherever a registration is
 /// configured, except on the web; the token clients, the user services
-/// and the Feign interceptor use it. Most apps never touch it.
+/// and the `RestClient` interceptor use it. Most apps never touch it.
 ///
 /// Where the key lives:
 ///

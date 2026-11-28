@@ -96,8 +96,8 @@ final class TokenType {
 /// It comes from the provider's token endpoint after a login or a client
 /// credentials request, lives a few minutes, and is renewed with the
 /// refresh token. Applications rarely build one: the authorized client
-/// manager hands out a fresh one, and the Feign interceptor adds it to
-/// calls.
+/// manager hands out a fresh one, and the `RestClient` interceptor adds
+/// it to calls.
 ///
 /// ```dart
 /// // The token of the logged-in user, refreshed when it expires soon.

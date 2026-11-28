@@ -15,9 +15,10 @@ import 'package:spring_web_dart/src/sse/server_sent_event.dart';
 ///
 /// It is used in two places:
 ///
-/// - As the return type of a Feign client method, which then opens the
-///   connection, reads each event's data as `T` (JSON for a class) and
-///   reconnects after a lost connection.
+/// - As the return type of an HTTP service method (or of a `RestClient`
+///   call's `eventStream`), which then opens the connection, reads each
+///   event's data as `T` (JSON for a class) and reconnects after a lost
+///   connection.
 /// - As the return type of a `@RestController` method, whose events the
 ///   web starter writes as a `text/event-stream` response.
 ///
@@ -26,9 +27,9 @@ import 'package:spring_web_dart/src/sse/server_sent_event.dart';
 /// `await for`) closes that connection.
 ///
 /// ```dart
-/// @FeignClient('orders', url: r'${orders.url}')
+/// @HttpExchange('/orders')
 /// abstract interface class OrdersClient {
-///   @GetMapping('/orders/events')
+///   @GetExchange('/events')
 ///   EventStream<OrderEvent> events();
 /// }
 ///
@@ -45,9 +46,8 @@ import 'package:spring_web_dart/src/sse/server_sent_event.dart';
 ///
 /// Spring (Java): there is no such type. Spring returns
 /// `Flux<ServerSentEvent<OrderEvent>>` (or `Flux<OrderEvent>`) from
-/// `WebClient` and `@HttpExchange` interfaces; OpenFeign cannot stream at
-/// all. `EventStream<T>` folds the event wrapper into the stream so the
-/// usual case stays short.
+/// `WebClient` and `@HttpExchange` interfaces. `EventStream<T>` folds the
+/// event wrapper into the stream so the usual case stays short.
 final class EventStream<T> extends Stream<T> {
   /// A stream whose every listener gets the events of a new [open] call.
   /// [open] usually opens a connection, so each listener has its own.
@@ -68,7 +68,7 @@ final class EventStream<T> extends Stream<T> {
     : _open = (() => data.map(ServerSentEvent<T>.new));
 
   /// Events carrying [values], with no id or name; every listener gets
-  /// them all. For a Feign fallback or a test.
+  /// them all. For a fallback or a test.
   EventStream.fromIterable(Iterable<T> values)
     : _open = (() => Stream.fromIterable(values).map(ServerSentEvent<T>.new));
 
@@ -90,8 +90,8 @@ final class EventStream<T> extends Stream<T> {
   });
 
   /// The id of the last event that carried one, received by any listener
-  /// of this object; `null` before that. A Feign client already sends it
-  /// back by itself when it reconnects.
+  /// of this object; `null` before that. A client already sends it back by
+  /// itself when it reconnects.
   String? get lastEventId => _lastEventId;
 
   @override

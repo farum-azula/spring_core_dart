@@ -373,7 +373,7 @@ abstract interface class TypeConverter {
 /// `between`.
 ///
 /// The default, [StandardTypeComparator], orders numbers, strings, dates,
-/// durations, booleans, enums and other `Comparable`s. Replace it in a
+/// durations, booleans, enums and other `Comparable` instances. Replace it in a
 /// `StandardEvaluationContext` when expressions must compare values of
 /// your own type that the default does not order the way you need, such
 /// as version numbers kept as strings.
@@ -678,14 +678,14 @@ final class StandardTypeConverter implements TypeConverter {
 }
 
 /// The default [TypeComparator]: it orders numbers, strings, dates,
-/// durations, booleans, enums and other `Comparable`s, with `null` before
-/// everything.
+/// durations, booleans, enums and other `Comparable` instances, with `null`
+/// before everything.
 ///
 /// Numbers compare by value across `int` and `double`; booleans with
 /// `false < true` (Java's `Boolean` is `Comparable`); values of one enum
 /// type by their index (like Java enums, which are `Comparable` by
-/// ordinal); other `Comparable`s only with values of the same kind, so a
-/// string never compares with a date. Every context uses it unless you
+/// ordinal); other `Comparable` instances only with values of the same kind, so
+/// a string never compares with a date. Every context uses it unless you
 /// set another comparator; you rarely call it yourself.
 ///
 /// ```dart

@@ -334,7 +334,7 @@ in the application's `CacheStore`: a Flutter app's `cache` place
 elsewhere (`spring.cache.disk.directory`, `.spring/cache` by default). The
 value goes through the application's `ObjectMapper`, so a cached class needs
 `@Introspected()` or a JSON serializer; a `Resource` with an address is kept
-as its address. The store answers later, so the caches are `AsyncCache`s:
+as its address. The store answers later, so the caches are `AsyncCache` instances:
 the methods return a `Future` (a method that does not is a start-up error
 naming it).
 
@@ -711,8 +711,19 @@ final app = springBootTest(
 );
 ```
 
+Or, declared with annotations on a test class:
+
+```dart
+@SpringBootTest(properties: {'spring.cache.type': 'none'})
+class BooksTest {
+  @Autowired()
+  late Books books;
+}
+```
+
 Or keep it on and check the cache through the `CacheManager` bean:
-`app.getBean<CacheManager>().getCache('books')!.get('978-0')`.
+`app.getBean<CacheManager>().getCache('books')!.get('978-0')`, or an
+`@Autowired() late CacheManager cacheManager;` field in a test class.
 
 ### Time to live in tests
 

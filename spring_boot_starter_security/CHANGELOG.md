@@ -1,3 +1,8 @@
+## Unreleased
+
+- **Security:** the resource server's keys and its issuer's metadata come through the `httpTransport` bean (the RestClient starter's, which the OAuth2 client brings, with its allowed addresses), with a `RestClient`, as the OAuth2 client's calls do; before, the auto-configured `jwtDecoder` opened a platform transport of its own for each fetch, which called any address and was never closed. `resourceServerAllowedAddresses` allows the host of `jwk-set-uri`, or of `issuer-uri`; the host of the `jwks_uri` the issuer's metadata names joins the list once discovered, by host name only (`JwtDecoders.fromIssuerLocation(allowedAddresses:)`). A provider on a private network needs its block on `spring.http.clients.allowed-addresses`.
+- `transportJwkFetcher` and `defaultJwkFetcher` send their `GET` with a `RestClient`; `defaultJwkFetcher` (a decoder built by hand without a fetcher) calls only the host of the URL it is given instead of any address. A key server that cannot be reached is the `RestClient`'s `ResourceAccessException` (inside the `JwtException`, as before). The `oidcIdTokenDecoder` bean and `oauth2Login()` without a transport bean use that default instead of a platform transport.
+
 ## 0.10.0
 
 - No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.10.0.

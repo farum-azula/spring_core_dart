@@ -54,9 +54,10 @@ const _log = SpringLog('spring.security.oauth2.client.oidc');
 /// the registration's JWK Set URI per registration), of which this is
 /// the part an app needs.
 final class JwkSetOidcIdTokenDecoder implements OidcIdTokenDecoder {
-  /// A decoder fetching the keys through [transport], accepting
-  /// [algorithms] (`RS256` and `ES256` are known); [clockSkew] and
-  /// [clock] go to the claim checks.
+  /// A decoder fetching the keys through [transport] (with a
+  /// `RestClient`, redirects not followed), accepting [algorithms]
+  /// (`RS256` and `ES256` are known); [clockSkew] and [clock] go to the
+  /// claim checks.
   ///
   /// Throws an [ArgumentError] for an empty or unknown algorithm.
   JwkSetOidcIdTokenDecoder(
@@ -65,7 +66,11 @@ final class JwkSetOidcIdTokenDecoder implements OidcIdTokenDecoder {
     this.clockSkew = const Duration(seconds: 60),
     DateTime Function()? clock,
   }) : algorithms = Set.unmodifiable(algorithms),
-       _clock = clock ?? DateTime.now {
+       _clock = clock ?? DateTime.now,
+       _rest = RestClient.builder()
+           .transport(transport)
+           .followRedirects(false)
+           .build() {
     if (algorithms.isEmpty ||
         algorithms.any((a) => a != 'RS256' && a != 'ES256')) {
       throw ArgumentError.value(
@@ -78,6 +83,8 @@ final class JwkSetOidcIdTokenDecoder implements OidcIdTokenDecoder {
 
   /// The transport of the JWK Set requests.
   final HttpTransport transport;
+
+  final RestClient _rest;
 
   /// The signature algorithms accepted.
   final Set<String> algorithms;
@@ -201,18 +208,12 @@ final class JwkSetOidcIdTokenDecoder implements OidcIdTokenDecoder {
     );
     final HttpResponse response;
     try {
-      response = await transport.send(
-        HttpRequest(
-          method: HttpMethod.get,
-          url: Uri.parse(jwkSetUri),
-          headers: HttpHeaders({
-            HttpHeaders.acceptHeader:
-                'application/json, application/jwk-set+json',
-          }),
-          followRedirects: false,
-        ),
-      );
-    } on HttpTransportException catch (e) {
+      response = await _rest
+          .get()
+          .uri(Uri.parse(jwkSetUri))
+          .accept('application/json, application/jwk-set+json')
+          .exchange((_, answer) => answer.response);
+    } on RestClientException catch (e) {
       fail('The JWK Set could not be fetched: ${e.message}');
     }
     _log.debug(

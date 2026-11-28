@@ -112,6 +112,37 @@ Future<void> main() async {
   result['redirectLoop'] = (await transport.send(
     withCredentials('/loop'),
   )).statusCode;
+  // Allowed addresses: node shows its redirects, so each is checked.
+  final guarded = FetchHttpTransport(
+    allowedAddresses: AllowedAddresses(['127.0.0.1']),
+  );
+  Future<String> denied(String url) async {
+    try {
+      await guarded.send(
+        HttpRequest(method: HttpMethod.get, url: Uri.parse(url)),
+      );
+      return 'allowed';
+    } on FilteredHostException catch (error) {
+      return 'denied ${error.host}';
+    }
+  }
+
+  result['allowedRedirect'] = (await guarded.send(
+    HttpRequest(
+      method: HttpMethod.get,
+      url: Uri.parse('http://$host/redirect'),
+    ),
+  )).bodyText;
+  result['deniedRedirect'] = await denied('http://$host/hop?to=$other');
+  result['deniedDirect'] = await denied('http://169.254.169.254/latest');
+  result['restClient'] = await RestClient.builder()
+      .baseUrl('http://$host')
+      .transport(guarded)
+      .build()
+      .get()
+      .uri('/{path}', ['redirect'])
+      .retrieve()
+      .body<String>();
   try {
     await transport.send(
       HttpRequest(

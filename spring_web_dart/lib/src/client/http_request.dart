@@ -4,15 +4,16 @@ import 'package:spring_web_dart/src/http_method.dart';
 /// One outgoing HTTP request, complete and ready to send: method, URL,
 /// headers, body bytes and timeouts.
 ///
-/// It is what an `HttpTransport` sends. Feign clients build one for every
-/// call of an interface method, so most applications never create it.
+/// It is what an `HttpTransport` sends. `RestClient` builds one for every
+/// call (an HTTP service client's too), so most applications never create
+/// it.
 /// You write one when you call a transport directly, or when you
 /// implement a transport and read it.
 ///
 /// There are two timeouts, both off by default. [readTimeout] is the
 /// longest wait for data: for the response to start, then between two
-/// chunks of the body. It is an idle timeout, the read timeout of Spring
-/// and Feign (`SO_TIMEOUT`). [timeout] is a deadline for the whole
+/// chunks of the body. It is an idle timeout, the read timeout of
+/// Spring's clients (`SO_TIMEOUT`). [timeout] is a deadline for the whole
 /// exchange, however steadily the data arrives.
 ///
 /// ```dart
@@ -42,8 +43,10 @@ final class HttpRequest {
   /// A request for [method] on [url]. Without [headers] it starts with an
   /// empty, writable set. [timeout] covers sending the request and reading
   /// the whole response; [readTimeout] covers each wait for data. Both
-  /// are `null` (no limit) by default, and redirects are followed. [abort]
+  /// are `null` (no limit) by default, and redirects are followed.
+  /// [connectTimeout] limits opening the connection. [abort]
   /// lets the caller give the request up while it waits for the response.
+  /// [attributes] are for the code around the request, never sent.
   HttpRequest({
     required this.method,
     required this.url,
@@ -51,9 +54,11 @@ final class HttpRequest {
     this.body,
     this.timeout,
     this.readTimeout,
+    this.connectTimeout,
     this.followRedirects = true,
     this.sensitiveHeaders = const {},
     this.abort,
+    this.attributes = const {},
   }) : headers = headers ?? HttpHeaders();
 
   /// The HTTP method, such as [HttpMethod.get].
@@ -80,16 +85,22 @@ final class HttpRequest {
   /// never runs out of it. `null` for none.
   final Duration? readTimeout;
 
+  /// The longest wait for the connection to open, for this request only;
+  /// `null`: the transport's own connect timeout. On `dart:io` the
+  /// transport's timeout still applies too, so this one can only be
+  /// shorter in effect; `fetch` has no connect timeout and ignores it.
+  final Duration? connectTimeout;
+
   /// Whether the transport follows redirects (a `3xx` with `Location`) by
   /// itself; `true` by default. When `false`, the `3xx` response is
-  /// returned (in a browser: an opaque response with status 0). Feign's
-  /// `Request.Options.isFollowRedirects()`.
+  /// returned (in a browser: an opaque response with status 0). Spring
+  /// Boot's `spring.http.clients.redirects`.
   final bool followRedirects;
 
   /// More headers, in lower case, that carry a credential: a redirect to
   /// another origin drops them, with those of
-  /// `HttpSecrets.isSensitiveHeader` (a Feign client's
-  /// `sensitive-headers`). In a browser, which hides the target of a
+  /// `HttpSecrets.isSensitiveHeader` (a `RestClientBuilder`'s
+  /// `sensitiveHeaders`). In a browser, which hides the target of a
   /// redirect, a request with one of them fails on a redirect instead.
   final Set<String> sensitiveHeaders;
 
@@ -119,6 +130,16 @@ final class HttpRequest {
   /// In a browser this is the `signal` of `fetch`, an `AbortSignal`.
   final Future<void>? abort;
 
+  /// Values attached to the request for the code that handles it on the
+  /// way out, never sent: a `RestClient` call's `attribute(name, value)`
+  /// and its annotations (`@ClientRegistrationId` names the OAuth2
+  /// registration whose token an interceptor adds). Empty and read-only
+  /// by default; a `RestClient` gives each request its own map, which its
+  /// interceptors may change.
+  ///
+  /// Spring (Java): `HttpRequest.getAttributes()`.
+  final Map<String, Object?> attributes;
+
   /// This request with [headers] instead of its own, everything else kept.
   /// A transport that wraps another and changes the headers uses it, so
   /// that what the request says about them ([sensitiveHeaders]) stays.
@@ -129,9 +150,11 @@ final class HttpRequest {
     body: body,
     timeout: timeout,
     readTimeout: readTimeout,
+    connectTimeout: connectTimeout,
     followRedirects: followRedirects,
     sensitiveHeaders: sensitiveHeaders,
     abort: abort,
+    attributes: attributes,
   );
 
   @override

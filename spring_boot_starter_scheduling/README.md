@@ -14,7 +14,7 @@ run, or at cron times such as "9:00 on working days".
 
 Some work nobody calls: refreshing a cache, syncing with a server,
 sending a daily digest, deleting old files. Without this starter you
-would start `Timer`s yourself, keep them, handle their errors and cancel
+would start `Timer` instances yourself, keep them, handle their errors and cancel
 them on shutdown. With it you annotate the method; the tasks start once
 the application is ready and stop when it closes. The `TaskScheduler`
 bean also lets code schedule work decided at runtime, such as a reminder
@@ -374,6 +374,21 @@ final app = springBootTest(
 test('refresh', () => app.getBean<Reports>().refreshCache());
 ```
 
+The same test, declared with annotations:
+
+```dart
+@SpringBootTest(properties: {'spring.task.scheduling.enabled': false})
+class ReportsTest {
+  @Autowired()
+  late Reports reports;
+
+  @Test()
+  Future<void> refresh() => reports.refreshCache();
+}
+
+void main() => runSpringTests();
+```
+
 Or let the test move time. Flutter widget tests (`tester.pump`) and
 `fake_async` fake the timers and the current time of `package:clock`,
 which the scheduler reads by default: a 5-minute schedule runs without
@@ -440,7 +455,7 @@ code.
 - No `@EnableScheduling`: the dependency switches scheduling on;
   `spring.task.scheduling.enabled=false` switches it off.
 - Time zones: local time or UTC only (Dart has no time zone database).
-- Durations are `Duration`s instead of numbers plus `timeUnit`.
+- Durations are `Duration` values instead of numbers plus `timeUnit`.
 - `TaskScheduler.schedule(task, Instant)` is `scheduleAt(task, DateTime)`
   (Dart has no overloads).
 - A `PeriodicTrigger` given to `schedule(task, trigger)` runs as

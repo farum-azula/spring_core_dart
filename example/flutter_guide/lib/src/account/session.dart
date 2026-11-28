@@ -2,7 +2,6 @@ import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/account/sso_properties.dart';
 import 'package:neon_books_app/src/api/account_client.dart';
 import 'package:neon_books_app/src/api/cookie_jar.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// Published after a login, a payload event (any object can be one).
@@ -34,8 +33,8 @@ class LoggedOut {
 /// - [signInWithKeycloak] with the `sso` profile, through the starter's
 ///   `OAuth2LoginService`, the same call everywhere: a native app logs in
 ///   itself in the system's login window, keeps its tokens in the
-///   platform's secure storage and sends the access token with its Feign
-///   calls; the web app leaves for the server, which logs it in at
+///   platform's secure storage and sends the access token with its calls
+///   to the server; the web app leaves for the server, which logs it in at
 ///   Keycloak and sends it back with a session cookie, and [restore]
 ///   finds the user when it starts again.
 /// - [restore] at startup: a native app's stored Keycloak login, or, on
@@ -176,7 +175,7 @@ class Session {
     } else {
       try {
         await _account.logout();
-      } on FeignException catch (error) {
+      } on RestClientException catch (error) {
         log.warning('logout failed on the server: $error');
       }
     }

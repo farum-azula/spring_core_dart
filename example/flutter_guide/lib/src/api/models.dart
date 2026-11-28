@@ -3,7 +3,7 @@ import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter
 // The JSON of the server's API (see "API" in the README). The app and the
 // server share no Dart package: these classes are the app's own view of
 // the contract. `@Introspected()` gives the ObjectMapper what it needs to
-// read and write them (no fromJson / toJson); the Feign clients'
+// read and write them (no fromJson / toJson); the HTTP service clients'
 // parameter and result types are introspected anyway.
 
 /// A book of the catalog:

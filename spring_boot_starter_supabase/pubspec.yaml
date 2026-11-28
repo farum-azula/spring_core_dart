@@ -20,9 +20,11 @@ dependencies:
   spring_boot_dart: ^0.10.0
   spring_boot_starter_cache: ^0.10.0
   spring_boot_starter_data: ^0.10.0
-  spring_boot_starter_feign: ^0.10.0
   # Like every starter: logging comes with it.
   spring_boot_starter_logging: ^0.10.0
+  # The HTTP calls (RestClient, the transport and its allowed addresses)
+  # and Edge Functions as HTTP service interfaces.
+  spring_boot_starter_restclient: ^0.10.0
   spring_boot_starter_websocket: ^0.10.0
   spring_security_core: ^0.10.0
   spring_web_dart: ^0.10.0

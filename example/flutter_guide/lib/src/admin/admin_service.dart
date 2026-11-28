@@ -19,8 +19,9 @@ class AdminService {
   final AdminClient _admin;
   final CatalogService _catalog;
 
-  /// Adds [book]; a 400 from the server throws `FeignBadRequest` with the
-  /// field errors in its ProblemDetail (see `fieldErrorsOf`).
+  /// Adds [book]; a 400 from the server throws an
+  /// `HttpClientErrorException` with the field errors in its ProblemDetail
+  /// (see `fieldErrorsOf`).
   @PreAuthorize("hasRole('ADMIN')")
   Future<Book> addBook(NewBook book) async {
     final response = await _admin.addBook(book);

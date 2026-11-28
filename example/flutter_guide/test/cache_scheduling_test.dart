@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/catalog/catalog_service.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
+import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart'
     show HttpMethod;
 import 'package:spring_boot_starter_scheduling/spring_boot_starter_scheduling.dart'
     show CronExpression, CronTrigger, TimerTaskScheduler;

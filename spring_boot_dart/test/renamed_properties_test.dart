@@ -39,8 +39,6 @@ void main() {
   group('the old name of a property stops the start', () {
     // Every renamed prefix, with a key below it and the key it is now.
     const cases = {
-      'spring.cloud.openfeign.client.config.default.read-timeout':
-          'spring.feign.client.config.default.read-timeout',
       'spring.jackson.default-property-inclusion':
           'spring.json.default-property-inclusion',
       'spring.servlet.multipart.max-file-size':
@@ -76,7 +74,6 @@ void main() {
         properties: {
           'spring.jackson.time-zone': 'UTC',
           'server.servlet.session.timeout': '15m',
-          'spring.cloud.openfeign.oauth2.enabled': 'true',
           'logging.logback.rollingpolicy.max-history': '3',
           'spring.json.indent-output': 'true',
           'server.port': '0',
@@ -88,8 +85,6 @@ void main() {
         '  - logging.logback.rollingpolicy.max-history is now '
             'logging.file.rolling-policy.max-history',
         '  - server.servlet.session.timeout is now server.session.timeout',
-        '  - spring.cloud.openfeign.oauth2.enabled is now '
-            'spring.feign.oauth2.enabled',
         '  - spring.jackson.time-zone is now spring.json.time-zone',
       ]);
     });
@@ -118,7 +113,6 @@ void main() {
       final report = _failure(
         environment: {
           'SPRING_JACKSON_TIMEZONE': 'UTC',
-          'SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT': '5s',
           'SPRING_SERVLET_MULTIPART_MAXFILESIZE': '5MB',
           'SERVER_SERVLET_SESSION_TIMEOUT': '15m',
           'LOGGING_LOGBACK_ROLLINGPOLICY_MAXHISTORY': '3',
@@ -130,8 +124,6 @@ void main() {
         '  - LOGGING_LOGBACK_ROLLINGPOLICY_MAXHISTORY is now '
             'LOGGING_FILE_ROLLINGPOLICY_MAXHISTORY',
         '  - SERVER_SERVLET_SESSION_TIMEOUT is now SERVER_SESSION_TIMEOUT',
-        '  - SPRING_CLOUD_OPENFEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT is now '
-            'SPRING_FEIGN_CLIENT_CONFIG_DEFAULT_READTIMEOUT',
         '  - SPRING_FLYWAY_LOCATIONS is now SPRING_SQL_MIGRATION_LOCATIONS',
         '  - SPRING_JACKSON_TIMEZONE is now SPRING_JSON_TIMEZONE',
         '  - SPRING_SERVLET_MULTIPART_MAXFILESIZE is now '
@@ -217,12 +209,12 @@ void main() {
           args: ['--spring.json.time-zone=UTC'],
           environment: const {
             'SPRING_JSON_TIMEZONE': 'UTC',
-            'SPRING_FEIGN_CLIENT_DECODESLASH': 'true',
+            'SPRING_HTTP_CLIENTS_READTIMEOUT': '5s',
             'SERVER_SESSION_TIMEOUT': '15m',
             'LOGGING_FILE_ROLLINGPOLICY_MAXHISTORY': '3',
           },
           properties: const {
-            'spring.feign.client.config.default.read-timeout': '5s',
+            'spring.http.serviceclient.catalog.read-timeout': '5s',
             'spring.web.multipart.max-file-size': '5MB',
             'server.context-path': '/shop',
             'server.session.cookie.same-site': 'lax',

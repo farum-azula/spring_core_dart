@@ -6,14 +6,14 @@ chooses — and never one that only comes with them.
 | The user wants | `dependencies` | `dev_dependencies` |
 |---|---|---|
 | Spring Boot | `spring_boot_starter_logging` (the base starter: `spring_boot_dart` with logging; `spring_boot_dart` alone has no log output) | `build_runner`, `spring_core_dart_generator` |
-| Spring Boot with Feign (or cache, scheduling, ...) | the starter(s) only | `build_runner`, `spring_core_dart_generator` |
+| Spring Boot with `RestClient` (or cache, scheduling, ...) | the starter(s) only | `build_runner`, `spring_core_dart_generator` |
 | A Flutter app | `spring_boot_starter_flutter` | `build_runner`, `spring_core_dart_generator` |
 | Tests | — | `spring_boot_starter_test` (+ `test` / `flutter_test`) |
 | Only the container, without Boot | `spring_core_dart` | `build_runner`, `spring_core_dart_generator` |
 
 Like Spring Boot's starters (`spring-boot-starter-web` brings
 `spring-boot-starter`, logging and Spring MVC): `spring_core_dart` comes
-with `spring_boot_dart`, `spring_web_dart` with Feign, logging with every
+with `spring_boot_dart`, `spring_web_dart` with the RestClient starter, logging with every
 starter. The user should not have to know they exist.
 
 ## Without the analyzer complaining
@@ -26,7 +26,7 @@ application does list.
 - **Re-export.** A package re-exports the public libraries of what it
   builds on that its users write code against: `spring_boot_dart` exports
   `spring_core_dart`; each starter exports `spring_boot_starter_logging`
-  (and through it `spring_boot_dart`); Feign and WebSocket export
+  (and through it `spring_boot_dart`); RestClient and WebSocket export
   `spring_web_dart`. One import of the chosen package gives everything.
 - **Every library, not only the main one.** A library outside the main one
   (`jakarta.dart`, `io.dart`) gets a re-exporting library of the same name
@@ -55,7 +55,7 @@ application does list.
 
 ## Done
 
-- Each starter (cache, feign, scheduling, websocket, flutter) depends on and
+- Each starter (cache, restclient, scheduling, websocket, flutter) depends on and
   re-exports `spring_boot_starter_logging`, so it is the only dependency.
 - Each starter's `spring_auto_configuration.dart` re-exports the
   auto-configurations it builds on (logging's, Boot's).
@@ -83,12 +83,13 @@ application does list.
    if they stay.
 2. **`spring_web_dart`'s platform libraries.** `io.dart` and `browser.dart`
    (`IoHttpTransport`, `IoWebSocketTransport`, the fetch transport) are not
-   re-exported by Feign and WebSocket. Add `io.dart` / `browser.dart` to
+   re-exported by the RestClient and WebSocket starters. Add `io.dart` / `browser.dart` to
    both starters (not into their main library: `dart:io` would break the
    web).
 3. **`spring_boot_starter_test`** re-exports `spring_boot_dart` and the
-   transport mocks, not the starter it tests: a test of a Feign app imports
-   the Feign starter anyway (a dependency the app has), so nothing to add;
+   transport mocks, not the starter it tests: a test of a RestClient app
+   imports the RestClient starter anyway (a dependency the app has), so
+   nothing to add;
    check it in the analyzer test below.
 4. **The analyzer test** — done (`tool/check_app_dependencies.dart`, in
    CI). Not yet for the Flutter starter (it needs the Flutter SDK).
@@ -102,12 +103,9 @@ What a package may re-export ([docs/packages.md](../docs/packages.md#which-packa
 1. **A starter re-exports another starter only when its own API is built
    on it.** The security starter keeps the web starter and the OAuth2
    client; the Flutter security starter the Flutter and navigation
-   starters and the OAuth2 client. The OAuth2 client no longer re-exports
-   Feign: its interceptor is an optional integration, and an application
-   with Feign clients lists Feign (the Flutter guide and the server guide
-   do, and import it where they use it). The Flutter security starter now
-   depends on Feign itself (its web transport reads the Feign clients'
-   connect timeout) without re-exporting it.
+   starters and the OAuth2 client. An application that writes HTTP service
+   clients lists the RestClient starter, whatever else brings it (the
+   Flutter guide and the server guide do).
 2. **The Flutter starter re-exports `spring_web_dart`**: its API takes an
    `HttpTransport` (`RemoteCache`, the theme's network images), and an app
    sending its own requests needs no other dependency.

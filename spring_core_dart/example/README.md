@@ -48,7 +48,7 @@ late final Duration deliveryTime;  // Duration(days: 2) in the field
 ```
 
 **3. Different behaviour for development, tests and production, without
-`if`s.**
+`if` statements.**
 
 ```dart
 @Service() @Profile(['dev'])

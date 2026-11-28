@@ -37,7 +37,7 @@ Future<void> main() async {
       'spring.main.register-shutdown-hook': false,
       'logging.level.root': 'warn',
       'logging.level.shop': 'warn',
-      'logging.level.feign': 'warn',
+      'logging.level.web.client': 'warn',
       // TimingAspect writes at debug level.
       'logging.level.neon.timing': 'debug',
       'logging.threshold.console': 'warn',

@@ -1,3 +1,8 @@
+## Unreleased
+
+- The docs of `server.request-timeout`, uploads and tests name `RestClient` (and HTTP service interfaces) as the client whose calls stop at the request's deadline; the tests call their slow service through a `RestClient`, and the package has no development dependency on another HTTP client starter any more. Nothing changes for its users.
+- With `spring.resilience.enabled: true`, the `eventStreamRetryAdapter` bean (`springBootStarterWebResilienceAutoConfiguration`): a `@Retryable` method that returns an `EventStream` stays an `EventStream` when retried. Without the switch the build has none of it.
+
 ## 0.10.0
 
 - **Fixed:** a request with two `Host` headers is answered 400 and its connection closes, as Tomcat does (RFC 9112 §3.2); it was served for the last one. `dart:io` drops the first before the server sees it, so the server reads the request heads in the bytes of each connection, plain or TLS (`RequestHeadScanner`): the same chunks, unchanged and unbuffered, on the socket's own subscription; bodies are skipped by their length, also chunked ones, and an upgraded connection is not read. It costs about 2% of requests per second on a minimal handler.

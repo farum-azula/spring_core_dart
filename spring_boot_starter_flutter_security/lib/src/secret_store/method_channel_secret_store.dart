@@ -13,7 +13,7 @@ import 'package:spring_security_core/spring_security_core.dart'
 /// - `keys` (no arguments): the list of keys that have a value;
 /// - `deleteAll` (no arguments): `null`.
 ///
-/// Errors are `PlatformException`s whose code names the storage
+/// Errors are `PlatformException` instances whose code names the storage
 /// (`keychain`, `keystore`) and whose message says what failed.
 const secretStoreChannel = MethodChannel(
   'spring_boot_starter_flutter_security/secret_store',

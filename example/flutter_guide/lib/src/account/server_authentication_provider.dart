@@ -2,7 +2,6 @@ import 'package:neon_books_app/spring_gen/main.spring.dart';
 import 'package:neon_books_app/src/api/account_client.dart';
 import 'package:neon_books_app/src/api/cookie_jar.dart';
 import 'package:neon_books_app/src/api/models.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// Checks a user name and password with the server, like a Spring
@@ -35,13 +34,14 @@ class ServerAuthenticationProvider implements AuthenticationProvider {
         // starter's transport sends it: one extra GET.)
         await _probe();
       }
-      await _account.login({'username': username, 'password': password});
+      await _account.login(username, password);
       final me = await _account.me();
       log.info('logged in', fields: {'user': me.name, 'roles': me.roles});
       return _authenticated(me);
-    } on FeignUnauthorized {
-      throw BadCredentialsException();
-    } on FeignException catch (error) {
+    } on RestClientResponseException catch (error) {
+      if (error.statusCode == HttpStatus.unauthorized) {
+        throw BadCredentialsException();
+      }
       throw AuthenticationServiceException('The server answered $error', error);
     }
   }
@@ -57,7 +57,10 @@ class ServerAuthenticationProvider implements AuthenticationProvider {
   Future<void> _probe() async {
     try {
       await _account.me();
-    } on FeignUnauthorized {
+    } on HttpClientErrorException catch (error) {
+      if (error.statusCode != HttpStatus.unauthorized) {
+        rethrow;
+      }
       // expected: nobody is logged in yet
     }
   }

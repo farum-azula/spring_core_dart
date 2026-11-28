@@ -21,8 +21,8 @@ import 'package:spring_core_dart/src/json/schema/json_schema_source.dart';
 /// The mapper instead reads metadata the generator writes for classes
 /// marked `@Introspected()`, so it also works in AOT, Flutter, the web and
 /// minified builds. Use it wherever JSON crosses a boundary: files,
-/// message queues, caches, HTTP clients written by hand. The web and Feign
-/// starters already use it for request and response bodies, so a
+/// message queues, caches, HTTP clients written by hand. The web and
+/// RestClient starters already use it for request and response bodies, so a
 /// controller or client only declares the model types. In Spring Boot the
 /// mapper is a bean configured from `spring.json.*`: inject it rather
 /// than creating one, so every part of the application writes the same

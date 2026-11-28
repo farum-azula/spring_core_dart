@@ -227,6 +227,9 @@ targets:
         'extensions/language_server',
         // Its typed properties are generated (lib/src/config/).
         'spring_search_dart',
+        // Its test applications are generated: the HTTP service interfaces
+        // of @ImportHttpServices, written as RestClient calls.
+        'spring_boot_starter_restclient',
         // Its test applications are generated, and it depends on the data,
         // WebSocket and security packages above.
         'spring_boot_starter_supabase',

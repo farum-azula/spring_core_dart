@@ -16,10 +16,9 @@ import 'package:spring_web_dart/src/sse/sse_decoder.dart';
 /// the delay the server sent in a `retry:` field, and sends the last event
 /// id in `Last-Event-ID` so the server can resume.
 ///
-/// Feign clients build one from their configuration (the
-/// `event-stream.reconnect`, `event-stream.reconnect-delay` and
-/// `event-stream.max-attempts` keys), so applications set properties
-/// rather than create it. You write one when you call
+/// A `RestClient` call takes one (the `reconnect` of
+/// `retrieve().eventStream`); an HTTP service method that returns an
+/// `EventStream<T>` uses the defaults. You write one when you call
 /// [connectServerSentEvents] yourself.
 ///
 /// ```dart
@@ -80,8 +79,9 @@ final class SseReconnect {
 /// a new one and goes on.
 ///
 /// This is the client side of an event stream, the job a browser's
-/// `EventSource` does. Feign clients use it for methods that return an
-/// `EventStream<T>`, so applications rarely call it. Call it to read an
+/// `EventSource` does. `RestClient` uses it for `eventStream`, and so do
+/// HTTP service methods that return an `EventStream<T>`, so applications
+/// rarely call it. Call it to read an
 /// event stream with a bare [HttpTransport].
 ///
 /// [connect] opens one connection. It gets the id of the last event

@@ -14,7 +14,7 @@ signals (reactive state) and a Rust bridge.
 | Usually | With `spring_boot_starter_flutter` |
 |---|---|
 | `get_it`, `provider`, `riverpod` (dependency injection) | beans, constructor injection, `context.basket` / `SpringStatelessWidget<(...)>` in widgets, a bean scope per route |
-| `dio`, `http`, `retrofit`, `web_socket_channel` | `spring_web_dart` transports, `@FeignClient`, `EventStream<T>`, `@WebSocketClient` (done) |
+| `dio`, `http`, `retrofit`, `web_socket_channel` | `spring_web_dart` transports, `RestClient` and `@HttpExchange` interfaces, `EventStream<T>`, `@WebSocketClient` (done) |
 | `json_serializable`, `freezed` (JSON) | `ObjectMapper` on generated metadata (done) |
 | `bloc`, `getx`, `mobx` (state) | beans with `@Signal` fields (`flutter_spring_signals`), application events, `@EventListener` |
 | `go_router`, `auto_route` (navigation) | `@Route` widgets and a generated router on the Flutter SDK's `Router` |
@@ -1255,8 +1255,9 @@ desktop, the iOS simulator and an Android emulator
 (`example/flutter_guide/integration_test`); the Windows and Linux stores
 are untested on a device.
 
-Next: the token on Feign and WebSocket interceptors (the OAuth2 client's
-`OAuth2AccessTokenInterceptor`), the Windows and Linux stores run on CI.
+Next: the token on `RestClient` and WebSocket interceptors (the OAuth2
+client's `OAuth2ClientHttpRequestInterceptor`), the Windows and Linux
+stores run on CI.
 
 ## Hot reload without code
 

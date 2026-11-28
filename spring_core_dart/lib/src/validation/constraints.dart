@@ -1,3 +1,4 @@
+import 'package:spring_core_dart/src/core/retry/retry_policy.dart';
 import 'package:spring_core_dart/src/validation/message_escapes.dart';
 
 /// The validation group of every constraint declared without `groups`.
@@ -382,7 +383,7 @@ final class ConstraintViolationBuilder {
 /// ```java
 /// } catch (jakarta.validation.ValidationException e) { ... }
 /// ```
-class ValidationException implements Exception {
+class ValidationException implements Exception, NonRetryableException {
   /// An exception explaining the problem in [message].
   const ValidationException(this.message);
 
@@ -1736,7 +1737,7 @@ class Email extends Constraint {
 ///
 /// Use it when the value must fit a fixed-point column or format, such as
 /// amounts with at most 6 integer and 2 fraction digits. Numbers and
-/// `BigInt`s are counted without trailing zeros (`1.50` has one fraction
+/// `BigInt` values are counted without trailing zeros (`1.50` has one fraction
 /// digit, `1000` four integer digits); numeric strings as written (`'1.50'`
 /// has two, like `new BigDecimal("1.50")`), and a string that is not a
 /// number fails. `null` passes. The arguments of a field error are

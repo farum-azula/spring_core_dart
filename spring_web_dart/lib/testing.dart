@@ -4,8 +4,8 @@
 /// Import it in tests only. It holds what a test needs to run web code
 /// without a network:
 /// - `MockHttpTransport` replaces the HTTP connection of a client (a
-///   Feign client): it answers with prepared responses, event streams or
-///   failures, and records what was sent;
+///   `RestClient`, an HTTP service client): it answers with prepared
+///   responses, event streams or failures, and records what was sent;
 /// - `MockWebSocketTransport` replaces the WebSocket connection of a
 ///   client, and the test plays the server;
 /// - `MockServerHttpRequest`, `MockServerHttpResponse` and

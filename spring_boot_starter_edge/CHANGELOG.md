@@ -1,3 +1,8 @@
+## Unreleased
+
+- `NOTICE` names this package (it named another one); the documentation says HTTP clients where the application's clients are meant.
+- `ConcurrencyLimitEdgeWarning` (bean `concurrencyLimitEdgeWarning`): each bean with a `@ConcurrencyLimit` is among what works differently in a function, as the limit counts the calls of one instance.
+
 ## 0.10.0
 
 - The edge build is a release build for the build switches (`-Ddart.vm.product=true`, which `dart compile js` and `wasm` do not define): the debug part (the startup checks, the statement logging a profile could turn on, the hot-reload entry points) is left out. `--debug` (`EdgeBuild.debug`) keeps it.

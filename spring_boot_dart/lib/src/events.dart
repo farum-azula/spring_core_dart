@@ -164,7 +164,7 @@ class ApplicationPreparedEvent extends SpringApplicationEvent {
 }
 
 /// Published once every bean is created and the `Started ...` line is
-/// logged, just before the `ApplicationRunner`s are called.
+/// logged, just before the `ApplicationRunner` instances are called.
 ///
 /// It goes through the context, so `@EventListener` methods receive it.
 /// Most code that waits for the start should listen to

@@ -34,7 +34,7 @@ void main() {
         .withUserConfiguration(roomModule)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springSecurityCoreAutoConfiguration)
-        .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
+        .withAutoConfiguration(springBootStarterRestclientAutoConfiguration)
         .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
         .withAutoConfiguration(springBootStarterDataAutoConfiguration)
         .withAutoConfiguration(springBootStarterCacheAutoConfiguration)

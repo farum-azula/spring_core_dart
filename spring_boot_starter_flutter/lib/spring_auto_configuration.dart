@@ -171,6 +171,7 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
       create: (_) => DefaultPointcutAdvisor(
         const NotifyListenersPointcut(),
         const NotifyListenersInterceptor(),
+        order: AdvisorOrder.notifyListeners,
       ),
     ),
     BeanDefinition<DefaultPointcutAdvisor>(
@@ -180,6 +181,7 @@ final BeanModule springBootStarterFlutterAutoConfiguration = BeanModule(
       create: (_) => DefaultPointcutAdvisor(
         const BeanReadsPointcut(),
         const BeanReadsInterceptor(),
+        order: AdvisorOrder.beanReads,
       ),
     ),
     BeanDefinition<KeyboardShortcuts>(
@@ -1508,8 +1510,8 @@ final List<Condition> _flutterToolsOn = [
 /// The network recorder and the debug panel's Network tab
 /// (`debugNetworkSection`): `debugNetworkRecorder`, a post-processor, puts
 /// a recording decorator around every `HttpTransport` and
-/// `WebSocketTransport` bean, so the requests of Feign, the OAuth2 client,
-/// Supabase, the WebSocket starter and the app's own go into
+/// `WebSocketTransport` bean, so the requests of `RestClient`, the OAuth2
+/// client, Supabase, the WebSocket starter and the app's own go into
 /// `debugNetworkJournal` (the last `max-entries`, headers masked, bodies
 /// only with `bodies`) while passing through unchanged. The generator puts
 /// this module into the app only with

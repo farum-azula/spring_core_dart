@@ -162,7 +162,7 @@
           "kind": "method",
           "type": "ProblemDetail",
           "parameters": [
-            "FeignException error"
+            "RestClientException error"
           ]
         },
         {
@@ -203,31 +203,6 @@
           "kind": "method",
           "type": "Future<Uri>",
           "parameters": []
-        }
-      ]
-    },
-    {
-      "name": "functions",
-      "type": "Functions",
-      "types": [
-        "Functions"
-      ],
-      "scope": "singleton",
-      "primary": true,
-      "qualifiers": [],
-      "profiles": [],
-      "conditions": [],
-      "source": "package:supabase_example_server/src/project/functions.dart",
-      "line": 8,
-      "injects": [],
-      "members": [
-        {
-          "name": "stats",
-          "kind": "method",
-          "type": "Future<Map<String, Object?>>",
-          "parameters": [
-            "String from"
-          ]
         }
       ]
     },

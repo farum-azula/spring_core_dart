@@ -179,7 +179,7 @@
       "default": "0 0 6 * * *",
       "deprecated": null,
       "source": "package:neon_books_server/src/stock/restock_job.dart",
-      "line": 66,
+      "line": 73,
       "class": "StockReport"
     },
     {
@@ -209,7 +209,7 @@
       "default": "",
       "deprecated": null,
       "source": "package:neon_books_server/src/supplier/supplier_config.dart",
-      "line": 11,
+      "line": 13,
       "class": "SupplierProperties"
     },
     {
@@ -219,7 +219,7 @@
       "default": "",
       "deprecated": null,
       "source": "package:neon_books_server/src/supplier/supplier_config.dart",
-      "line": 10,
+      "line": 12,
       "class": "SupplierProperties"
     },
     {
@@ -239,7 +239,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:neon_books_server/src/supplier/supplier_config.dart",
-      "line": 19,
+      "line": 27,
       "class": "supplierHeaders"
     }
   ],
@@ -426,7 +426,7 @@
       ],
       "conditions": [],
       "source": "package:neon_books_server/src/security/security_config.dart",
-      "line": 42,
+      "line": 43,
       "injects": [
         {
           "parameter": "http",
@@ -462,7 +462,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_server/src/web/api_errors.dart",
-      "line": 13,
+      "line": 11,
       "injects": [
         {
           "parameter": "messages",
@@ -514,7 +514,7 @@
           "kind": "method",
           "type": "ProblemDetail",
           "parameters": [
-            "FeignException error"
+            "RestClientException error"
           ]
         }
       ]
@@ -1278,7 +1278,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_server/src/security/security_config.dart",
-      "line": 177,
+      "line": 178,
       "injects": [
         {
           "parameter": "cors",
@@ -2054,32 +2054,6 @@
       ]
     },
     {
-      "name": "noDeliveries",
-      "type": "NoDeliveries",
-      "types": [
-        "NoDeliveries",
-        "SupplierDeliveries"
-      ],
-      "scope": "singleton",
-      "primary": false,
-      "qualifiers": [],
-      "profiles": [],
-      "conditions": [],
-      "source": "package:neon_books_server/src/supplier/supplier_clients.dart",
-      "line": 42,
-      "injects": [],
-      "members": [
-        {
-          "name": "order",
-          "kind": "method",
-          "type": "Future<ResponseEntity<Delivery>>",
-          "parameters": [
-            "DeliveryRequest request"
-          ]
-        }
-      ]
-    },
-    {
       "name": "offline",
       "type": "OfflineGateway",
       "types": [
@@ -2246,7 +2220,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_server/src/security/security_config.dart",
-      "line": 194,
+      "line": 195,
       "injects": [],
       "members": [
         {
@@ -2661,7 +2635,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_server/src/security/security_config.dart",
-      "line": 171,
+      "line": 172,
       "injects": [],
       "members": [
         {
@@ -3158,7 +3132,7 @@
       ],
       "conditions": [],
       "source": "package:neon_books_server/src/security/security_config.dart",
-      "line": 84,
+      "line": 85,
       "injects": [
         {
           "parameter": "http",
@@ -3406,7 +3380,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_server/src/stock/restock_job.dart",
-      "line": 60,
+      "line": 67,
       "injects": [
         {
           "parameter": "_stock",
@@ -3486,57 +3460,25 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_server/src/supplier/supplier_config.dart",
-      "line": 15,
+      "line": 21,
       "injects": [],
       "members": [
         {
           "name": "supplierHeaders",
           "kind": "method",
-          "type": "RequestInterceptor",
+          "type": "RestClientHttpServiceGroupConfigurer",
           "parameters": [
             "SupplierProperties supplier",
             "String application"
-          ]
-        },
-        {
-          "name": "supplierRetryer",
-          "kind": "method",
-          "type": "Retryer",
-          "parameters": []
-        }
-      ]
-    },
-    {
-      "name": "supplierDeliveries",
-      "type": "SupplierDeliveries",
-      "types": [
-        "SupplierDeliveries"
-      ],
-      "scope": "singleton",
-      "primary": true,
-      "qualifiers": [],
-      "profiles": [],
-      "conditions": [],
-      "source": "package:neon_books_server/src/supplier/supplier_clients.dart",
-      "line": 32,
-      "injects": [],
-      "members": [
-        {
-          "name": "order",
-          "kind": "method",
-          "type": "Future<ResponseEntity<Delivery>>",
-          "parameters": [
-            "DeliveryRequest request"
           ]
         }
       ]
     },
     {
       "name": "supplierHeaders",
-      "type": "SupplierHeaders",
+      "type": "RestClientHttpServiceGroupConfigurer",
       "types": [
-        "SupplierHeaders",
-        "RequestInterceptor"
+        "RestClientHttpServiceGroupConfigurer"
       ],
       "scope": "singleton",
       "primary": false,
@@ -3544,7 +3486,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_server/src/supplier/supplier_config.dart",
-      "line": 17,
+      "line": 25,
       "injects": [
         {
           "parameter": "supplier",
@@ -3554,47 +3496,11 @@
       ],
       "members": [
         {
-          "name": "apiKey",
-          "kind": "field",
-          "type": "String"
-        },
-        {
-          "name": "application",
-          "kind": "field",
-          "type": "String"
-        },
-        {
-          "name": "apply",
+          "name": "configureGroups",
           "kind": "method",
           "type": "void",
           "parameters": [
-            "RequestTemplate template"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "supplierOffers",
-      "type": "SupplierOffers",
-      "types": [
-        "SupplierOffers"
-      ],
-      "scope": "singleton",
-      "primary": true,
-      "qualifiers": [],
-      "profiles": [],
-      "conditions": [],
-      "source": "package:neon_books_server/src/supplier/supplier_clients.dart",
-      "line": 13,
-      "injects": [],
-      "members": [
-        {
-          "name": "offer",
-          "kind": "method",
-          "type": "Future<Offer>",
-          "parameters": [
-            "String isbn",
-            "int copies"
+            "HttpServiceGroupBuilders groups"
           ]
         }
       ]
@@ -3611,7 +3517,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_server/src/supplier/supplier_config.dart",
-      "line": 9,
+      "line": 11,
       "injects": [],
       "members": [
         {
@@ -3623,48 +3529,6 @@
           "name": "url",
           "kind": "field",
           "type": "String"
-        }
-      ]
-    },
-    {
-      "name": "supplierRetryer",
-      "type": "DefaultRetryer",
-      "types": [
-        "DefaultRetryer",
-        "Retryer"
-      ],
-      "scope": "singleton",
-      "primary": false,
-      "qualifiers": [],
-      "profiles": [],
-      "conditions": [],
-      "source": "package:neon_books_server/src/supplier/supplier_config.dart",
-      "line": 24,
-      "injects": [],
-      "members": [
-        {
-          "name": "maxAttempts",
-          "kind": "field",
-          "type": "int"
-        },
-        {
-          "name": "maxPeriod",
-          "kind": "field",
-          "type": "Duration"
-        },
-        {
-          "name": "nextDelay",
-          "kind": "method",
-          "type": "Duration?",
-          "parameters": [
-            "int attempt",
-            "RetryableException error"
-          ]
-        },
-        {
-          "name": "period",
-          "kind": "field",
-          "type": "Duration"
         }
       ]
     },
@@ -3725,7 +3589,7 @@
       ],
       "conditions": [],
       "source": "package:neon_books_server/src/security/security_config.dart",
-      "line": 24,
+      "line": 25,
       "injects": [
         {
           "parameter": "http",
@@ -3939,7 +3803,7 @@
       "profiles": [],
       "conditions": [],
       "source": "package:neon_books_server/src/aop/aspects.dart",
-      "line": 47,
+      "line": 48,
       "injects": [],
       "members": [
         {

@@ -4,20 +4,20 @@ This starter gives a
 [`spring_boot_dart`](https://pub.dev/packages/spring_boot_dart)
 application Spring Security's OAuth 2.0 client: registrations from
 Spring Boot's properties, tokens from the provider's token endpoint, and
-the token on every Feign call.
+the token on the calls of `RestClient` and HTTP service interfaces.
 
 [`example.dart`](example.dart) is a small Spring Boot application, a
 service that calls a partner's API with its own access token (the
 `client_credentials` grant). It starts a local server playing the
-partner's identity provider and API, calls the API twice through a Feign
-client, and asks the authorized client manager what it holds.
+partner's identity provider and API, calls the API twice through an
+HTTP service interface, and asks the authorized client manager what it
+holds.
 
 ## Run it
 
 ```yaml
 dependencies:
-  spring_boot_starter_oauth2_client: ^0.10.0
-  spring_boot_starter_feign: ^0.10.0     # the Feign client of the example
+  spring_boot_starter_oauth2_client: ^0.10.0   # brings the RestClient starter
 
 dev_dependencies:
   build_runner: ^2.17.0
@@ -58,25 +58,39 @@ The secret goes to the token endpoint with HTTP Basic
 (`client_secret_basic`, the default). In a real application it comes
 from the environment (`${PARTNER_SECRET}`), never from the sources.
 
-## 2. The token on Feign calls
+## 2. The token on HTTP service calls
 
 ```properties
-spring.feign.oauth2.enabled=true
-spring.feign.oauth2.client-registration-id=partner
+spring.http.serviceclient.orders.base-url=http://127.0.0.1:<port>
 ```
 
 ```dart
-@FeignClient('orders', url: r'${partner.url}')
+@HttpExchange('/orders')
+@ClientRegistrationId('partner')
 abstract interface class OrdersClient {
-  @GetMapping('/orders')
+  @GetExchange()
   Future<List<Object?>> orders();
 }
+
+@SpringBootApplication()
+@ImportHttpServices(group: 'orders', types: [OrdersClient])
+Future<void> main(List<String> args) async { ... }
 ```
 
-Each call carries `Authorization: Bearer <token>`. The first call gets
-the token; the next ones reuse it until it expires within a minute, then
-the manager gets a new one. A 401 of the API marks the token expired, so
-the next call gets a new one too.
+The generator implements the interface with calls of the group's
+`RestClient`, and the starter's `OAuth2ClientHttpRequestInterceptor`
+(on every `RestClientBuilder` of the RestClient starter) sends the
+token of the registration `@ClientRegistrationId` names: each call
+carries `Authorization: Bearer <token>`. The first call gets the token;
+the next ones reuse it until it expires within a minute, then the
+manager gets a new one. A 401 of the API marks the token expired, so the
+next call gets a new one too. A call of a client built by hand names the
+registration with
+`.attributes(ClientAttributes.clientRegistrationId('partner'))`.
+
+The transport calls only the addresses allowed: the token endpoint is
+allowed because the registration's provider names it, the API because it
+is the group's base URL.
 
 ## 3. The authorized client manager
 

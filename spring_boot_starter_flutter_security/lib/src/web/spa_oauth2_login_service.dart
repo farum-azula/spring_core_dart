@@ -19,7 +19,7 @@ const _log = SpringLog('spring.security.oauth2.client.login');
 /// This mode is for apps that call APIs of others (or their own API,
 /// which accepts the provider's tokens) straight from the browser. The
 /// app's code is the same as on phones: `login(registrationId)`,
-/// `restore()`, `logout()`, the Feign clients with the access token.
+/// `restore()`, `logout()`, the HTTP services with the access token.
 ///
 /// - [login] builds the authorization request of the registration (PKCE
 ///   `S256`, `state`, `nonce`, the client's
@@ -525,7 +525,7 @@ class SpaOAuth2LoginService implements OAuth2LoginService {
     } on OAuth2AuthorizationException catch (e) {
       throw OAuth2AuthenticationException(
         e.error,
-        e.cause is HttpTransportException
+        e.cause is ResourceAccessException
             ? 'The token endpoint of registration $registrationId could not '
                   'be reached from the page: in '
                   '${FlutterWebSecurityProperties.prefix}.mode=spa the '

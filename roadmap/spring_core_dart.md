@@ -25,7 +25,7 @@ Left:
   parameters={}`, `Mapped to BookController#list()`, `Completed 200 OK`),
   security (`Securing GET /api/books`, `Secured GET /api/books`, `Set
   SecurityContextHolder to anonymous`, the chain's filters at startup),
-  cache, scheduling, Feign, WebSocket, the OAuth2 client.
+  cache, scheduling, `RestClient`, WebSocket, the OAuth2 client.
 - **More container lines**, where Spring has them: autowiring by type at
   trace, `Filtered N auto configuration class`, the property lookups of
   `PropertySourcesPropertyResolver` (`Found key 'x' in PropertySource 'y'

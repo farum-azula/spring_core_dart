@@ -10,26 +10,28 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'dart:async' as _i3;
-import 'dart:io' as _i24;
+import 'dart:io' as _i25;
 
-import 'package:postgres/postgres.dart' as _i23;
-import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i12;
+import 'package:postgres/postgres.dart' as _i24;
+import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i11;
+import 'package:spring_boot_starter_restclient/spring_boot_starter_restclient.dart'
+    as _i10;
 import 'package:spring_boot_starter_security/spring_boot_starter_security.dart'
     as _i16;
 import 'package:spring_boot_starter_security/src/config/http_security.dart'
     as _i15;
 import 'package:spring_boot_starter_security/src/web/filter_chain.dart' as _i14;
 import 'package:spring_boot_starter_supabase/spring_boot_starter_supabase.dart'
-    as _i11;
+    as _i12;
 import 'package:spring_boot_starter_supabase/src/functions/edge_functions.dart'
-    as _i10;
+    as _i21;
 import 'package:spring_boot_starter_supabase/src/storage/storage_bucket.dart'
     as _i8;
 import 'package:spring_boot_starter_supabase/src/storage/storage_exception.dart'
     as _i20;
 import 'package:spring_boot_starter_supabase/src/supabase_credentials.dart'
     as _i5;
-import 'package:spring_boot_starter_web/spring_boot_starter_web.dart' as _i21;
+import 'package:spring_boot_starter_web/spring_boot_starter_web.dart' as _i22;
 import 'package:spring_core_dart/spring_core_dart.dart' as _i1;
 import 'package:supabase_example_server/src/account/account_controller.dart'
     as _i2;
@@ -43,7 +45,7 @@ import 'package:supabase_example_server/src/todos/todo_lists.dart' as _i6;
 import 'package:supabase_example_server/src/web/api_errors.dart' as _i19;
 import 'package:supabase_example_server/src/web/security_config.dart' as _i13;
 
-import 'app.spring.introspection.dart' as _i22;
+import 'app.spring.introspection.dart' as _i23;
 
 part 'app.spring.proxies.dart';
 
@@ -86,82 +88,56 @@ class _$AvatarsImpl implements _i7.Avatars {
   );
 }
 
-/// Implements `Functions` through an `InvocationHandler`.
-class _$FunctionsImpl implements _i9.Functions {
-  _$FunctionsImpl(this._handler, this._metadata);
+/// `Functions`: each method a call through the `RestClient` of the HTTP
+/// service group "supabase-functions".
+class _$FunctionsHttpService implements _i9.Functions {
+  _$FunctionsHttpService(this._rest);
 
-  final _i1.InvocationHandler _handler;
-
-  final _i1.InterfaceMetadata<_i9.Functions> _metadata;
-
-  static _$FunctionsImpl $create(_i1.DependencyResolver r) {
-    final metadata = _i1.InterfaceMetadata<_i9.Functions>(
-      typeName: r'Functions',
-      annotations: const [_i10.EdgeFunctions()],
-      methods: [
-        _i1.ProxyMethod(
-          r'stats',
-          parameters: [
-            _i1.IntrospectedParameter(
-              r'from',
-              type: const _i1.ClassType<String>(),
-              isRequired: true,
-              annotations: const [_i11.RequestParam(r'from')],
-            ),
-          ],
-          returnType: const _i1.MapType<String, dynamic>(
-            _i1.ClassType<String>(),
-            _i1.DynamicType(),
-          ),
-          isFuture: true,
-          annotations: const [
-            _i10.EdgeFunction(r'api/stats', method: _i11.HttpMethod.get),
-          ],
-          call: (target, arguments) =>
-              (target as _i9.Functions).stats((arguments[0] as String)),
-        ),
-      ],
-    );
-    return _$FunctionsImpl(
-      _i1.InterfaceProxies.handlerFor(r, metadata),
-      metadata,
-    );
-  }
+  final _i10.RestClient _rest;
 
   @override
-  _i3.Future<Map<String, Object?>> stats(String from) =>
-      _i1.retypeFuture<Map<String, Object?>>(
-        this._handler.invoke(this._metadata.methods[0], [from]),
+  _i3.Future<Map<String, Object?>> stats(String from) => _rest
+      .get()
+      .uri(
+        (_i10.UriBuilder uri) =>
+            uri.path(r'api/stats').queryParam(r'from', from).build(),
+      )
+      .retrieve()
+      .body<Map<String, Object?>>(
+        const _i1.MapType<String, dynamic>(
+          _i1.ClassType<String>(),
+          _i1.DynamicType(),
+        ),
       );
 }
 
 /// Implements `Todos`: `SimpleRepository` has the CRUD methods.
-class _$TodosImpl extends _i12.SimpleRepository<_i4.Todo, int>
+class _$TodosImpl extends _i11.SimpleRepository<_i4.Todo, int>
     implements _i4.Todos {
   _$TodosImpl(super.operations);
 
-  static const _findByListIdOrderById = _i12.PartTree(
+  static const _findByListIdOrderById = _i11.PartTree(
     r'findByListIdOrderById',
     [
-      _i12.OrPart([_i12.Part(r'listId')]),
+      _i11.OrPart([_i11.Part(r'listId')]),
     ],
-    sort: _i12.Sort([_i12.SortOrder.asc(r'id')]),
+    sort: _i11.Sort([_i11.SortOrder.asc(r'id')]),
   );
 
-  static const _closeAll = _i12.ProcedureMethod(
+  static const _closeAll = _i11.ProcedureMethod(
     r'closeAll',
-    _i11.Procedure(r'close_all'),
+    _i12.Procedure(r'close_all'),
     parameters: [r'listId'],
-    shape: _i12.QueryShape.single,
+    shape: _i11.QueryShape.single,
     element: _i1.ClassType<int>(),
   );
 
   static _$TodosImpl $create(_i1.DependencyResolver r) => _$TodosImpl(
-    r.dependency<_i12.RepositoryFactory>().operations<_i4.Todo, int>(
+    r.dependency<_i11.RepositoryFactory>().operations<_i4.Todo, int>(
       r'Todos',
       functions: [_closeAll],
       requirements: const [
-        _i12.StoreRequirement(r'closeAll', _i12.DataStoreCapability.functions),
+        _i11.StoreRequirement(r'closeAll', _i11.DataStoreCapability.functions),
       ],
     ),
   );
@@ -205,27 +181,27 @@ class _$SecurityConfigConfiguration extends _i13.SecurityConfig {
   }
 }
 
-Object? _$invoke0(_i2.AdminReports bean, List<Object?> arguments) =>
-    bean.report();
-const _$target1 = _i1.AopTarget(
-  r'AdminReports',
-  types: [r'AdminReports'],
-  annotations: [_i1.Service()],
-  annotationTypes: [r'Service'],
-);
-const _$knownAdvisors2 = {
+const _$knownAdvisors0 = {
   r'package:spring_boot_dart',
   r'package:spring_boot_starter_cache',
   r'package:spring_boot_starter_data',
-  r'package:spring_boot_starter_feign',
   r'package:spring_boot_starter_logging',
   r'package:spring_boot_starter_oauth2_client',
+  r'package:spring_boot_starter_restclient',
   r'package:spring_boot_starter_security',
   r'package:spring_boot_starter_supabase',
   r'package:spring_boot_starter_web',
   r'package:spring_boot_starter_websocket',
   r'package:spring_security_core',
 };
+Object? _$invoke1(_i2.AdminReports bean, List<Object?> arguments) =>
+    bean.report();
+const _$target2 = _i1.AopTarget(
+  r'AdminReports',
+  types: [r'AdminReports'],
+  annotations: [_i1.Service()],
+  annotationTypes: [r'Service'],
+);
 Object? _$invoke3(_i2.AccountController bean, List<Object?> arguments) =>
     bean.me((arguments[0] as _i16.Authentication));
 Object? _$invoke4(_i2.AccountController bean, List<Object?> arguments) =>
@@ -265,18 +241,31 @@ const _$target15 = _i1.AopTarget(
 Object? _$invoke16(_i19.ApiErrors bean, List<Object?> arguments) =>
     bean.invalid((arguments[0] as ArgumentError));
 Object? _$invoke17(_i19.ApiErrors bean, List<Object?> arguments) =>
-    bean.denied((arguments[0] as _i11.PermissionDeniedDataAccessException));
+    bean.denied((arguments[0] as _i12.PermissionDeniedDataAccessException));
 Object? _$invoke18(_i19.ApiErrors bean, List<Object?> arguments) =>
-    bean.changed((arguments[0] as _i11.OptimisticLockingFailureException));
+    bean.changed((arguments[0] as _i12.OptimisticLockingFailureException));
 Object? _$invoke19(_i19.ApiErrors bean, List<Object?> arguments) =>
     bean.noObject((arguments[0] as _i20.StorageObjectNotFoundException));
 Object? _$invoke20(_i19.ApiErrors bean, List<Object?> arguments) =>
-    bean.functionFailed((arguments[0] as _i11.FeignException));
+    bean.functionFailed((arguments[0] as _i12.RestClientException));
 
 /// Beans found by `@ComponentScan` in `lib/src`.
 _i1.BeanModule get $appBeans => _i1.BeanModule(
   r'appBeans',
   [
+    _i1.BeanDefinition<_i9.Functions>(
+      name: r'functions',
+      source: r'package:supabase_example_server/src/project/functions.dart#Functions',
+      create: (r) => _$FunctionsHttpService(
+        r.dependency<_i10.HttpServiceGroups>().restClient(
+          r'supabase-functions',
+        ),
+      ),
+      annotations: const [_i21.EdgeFunctions()],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors0,
+      ),
+    ),
     _i1.BeanDefinition<_i2.AdminReports>(
       name: r'adminReports',
       source: r'package:supabase_example_server/src/account/account_controller.dart#AdminReports',
@@ -293,7 +282,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           r'report',
           returnTypeInfo: _i1.ClassType<_i2.Report>(),
           isFuture: true,
-          invoke: _$invoke0,
+          invoke: _$invoke1,
           annotations: [_i16.PreAuthorize("hasRole('ADMIN')")],
         ),
       ],
@@ -302,13 +291,13 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         signatures: const [
           _i1.MethodSignature.of(
             r'report',
-            _$target1,
+            _$target2,
             returnType: r'Future',
             annotations: [_i16.PreAuthorize("hasRole('ADMIN')")],
             annotationTypes: [r'PreAuthorize'],
           ),
         ],
-        knownAdvisors: _$knownAdvisors2,
+        knownAdvisors: _$knownAdvisors0,
         create: (target, invoker) =>
             _$AdminReportsProxy((target as _i2.AdminReports), invoker),
       ),
@@ -345,7 +334,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       ],
       annotations: const [_i16.RestController(), _i16.RequestMapping(r'/api')],
       aopProxy: const _i1.AopProxyFactory.pruned(
-        knownAdvisors: _$knownAdvisors2,
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i1.BeanDefinition<_i7.Avatars>(
@@ -356,17 +345,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       create: (r) => _$AvatarsImpl.$create(r),
       annotations: const [_i8.StorageBucket(r'avatars')],
       aopProxy: const _i1.AopProxyFactory.pruned(
-        knownAdvisors: _$knownAdvisors2,
-      ),
-    ),
-    _i1.BeanDefinition<_i9.Functions>(
-      name: r'functions',
-      source: r'package:supabase_example_server/src/project/functions.dart#Functions',
-      primary: true,
-      create: (r) => _$FunctionsImpl.$create(r),
-      annotations: const [_i10.EdgeFunctions()],
-      aopProxy: const _i1.AopProxyFactory.pruned(
-        knownAdvisors: _$knownAdvisors2,
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i1.BeanDefinition<_i17.ProjectController>(
@@ -388,7 +367,7 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               r'from',
               type: _i1.ClassType<String>(),
               symbol: #from,
-              annotations: [_i21.RequestParam(r'from')],
+              annotations: [_i22.RequestParam(r'from')],
             ),
           ],
           returnTypeInfo: _i1.MapType<String, dynamic>(
@@ -398,19 +377,19 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
           isFuture: true,
           invoke: _$invoke5,
           invokeNamed: _$invokeNamed6,
-          annotations: [_i21.GetMapping(r'/stats')],
+          annotations: [_i22.GetMapping(r'/stats')],
         ),
         const _i1.IntrospectedMethod<_i17.ProjectController>(
           r'avatar',
           returnTypeInfo: _i1.ClassType<_i17.AvatarLink>(),
           isFuture: true,
           invoke: _$invoke7,
-          annotations: [_i21.GetMapping(r'/avatar')],
+          annotations: [_i22.GetMapping(r'/avatar')],
         ),
       ],
-      annotations: const [_i21.RestController(), _i21.RequestMapping(r'/api')],
+      annotations: const [_i22.RestController(), _i22.RequestMapping(r'/api')],
       aopProxy: const _i1.AopProxyFactory.pruned(
-        knownAdvisors: _$knownAdvisors2,
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i1.BeanDefinition<_i4.Todos>(
@@ -418,16 +397,16 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       source: r'package:supabase_example_server/src/todos/todo.dart#Todos',
       types: const [
         _i4.Todos,
-        _i11.ListCrudRepository<_i4.Todo, int>,
-        _i11.CrudRepository<_i4.Todo, int>,
-        _i11.DataRepository<_i4.Todo, int>,
-        _i11.ListCrudRepository<dynamic, dynamic>,
-        _i11.CrudRepository<dynamic, dynamic>,
-        _i11.DataRepository<dynamic, dynamic>,
+        _i12.ListCrudRepository<_i4.Todo, int>,
+        _i12.CrudRepository<_i4.Todo, int>,
+        _i12.DataRepository<_i4.Todo, int>,
+        _i12.ListCrudRepository<dynamic, dynamic>,
+        _i12.CrudRepository<dynamic, dynamic>,
+        _i12.DataRepository<dynamic, dynamic>,
       ],
       create: (r) => _$TodosImpl.$create(r),
       aopProxy: const _i1.AopProxyFactory.pruned(
-        knownAdvisors: _$knownAdvisors2,
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i1.BeanDefinition<_i18.TodoController>(
@@ -450,13 +429,13 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               r'listId',
               type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: [_i21.RequestParam(r'list')],
+              annotations: [_i22.RequestParam(r'list')],
             ),
           ],
           returnTypeInfo: _i1.ListType<_i4.Todo>(_i1.ClassType<_i4.Todo>()),
           isFuture: true,
           invoke: _$invoke8,
-          annotations: [_i21.GetMapping()],
+          annotations: [_i22.GetMapping()],
         ),
         const _i1.IntrospectedMethod<_i18.TodoController>(
           r'add',
@@ -466,13 +445,13 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               r'todo',
               type: _i1.ClassType<_i18.NewTodo>(),
               isRequired: true,
-              annotations: [_i21.RequestBody(), _i1.Valid()],
+              annotations: [_i22.RequestBody(), _i1.Valid()],
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i4.Todo>(),
           isFuture: true,
           invoke: _$invoke9,
-          annotations: [_i21.PostMapping(), _i21.ResponseStatus(201)],
+          annotations: [_i22.PostMapping(), _i22.ResponseStatus(201)],
         ),
         const _i1.IntrospectedMethod<_i18.TodoController>(
           r'addPair',
@@ -482,13 +461,13 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               r'pair',
               type: _i1.ClassType<_i18.NewPair>(),
               isRequired: true,
-              annotations: [_i21.RequestBody(), _i1.Valid()],
+              annotations: [_i22.RequestBody(), _i1.Valid()],
             ),
           ],
           returnTypeInfo: _i1.ListType<_i4.Todo>(_i1.ClassType<_i4.Todo>()),
           isFuture: true,
           invoke: _$invoke10,
-          annotations: [_i21.PostMapping(r'/pair'), _i21.ResponseStatus(201)],
+          annotations: [_i22.PostMapping(r'/pair'), _i22.ResponseStatus(201)],
         ),
         const _i1.IntrospectedMethod<_i18.TodoController>(
           r'setDone',
@@ -498,20 +477,20 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               r'id',
               type: _i1.ClassType<int>(),
               isRequired: true,
-              annotations: [_i21.PathVariable()],
+              annotations: [_i22.PathVariable()],
             ),
             _i1.IntrospectedParameter(
               r'done',
               type: _i1.ClassType<bool>(),
               symbol: #done,
-              annotations: [_i21.RequestParam(r'value')],
+              annotations: [_i22.RequestParam(r'value')],
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i4.Todo>(),
           isFuture: true,
           invoke: _$invoke11,
           invokeNamed: _$invokeNamed12,
-          annotations: [_i21.PutMapping(r'/{id}/done')],
+          annotations: [_i22.PutMapping(r'/{id}/done')],
         ),
         const _i1.IntrospectedMethod<_i18.TodoController>(
           r'close',
@@ -521,13 +500,13 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               r'listId',
               type: _i1.ClassType<String>(),
               isRequired: true,
-              annotations: [_i21.RequestParam(r'list')],
+              annotations: [_i22.RequestParam(r'list')],
             ),
           ],
           returnTypeInfo: _i1.ClassType<_i18.Closed>(),
           isFuture: true,
           invoke: _$invoke13,
-          annotations: [_i21.PostMapping(r'/close')],
+          annotations: [_i22.PostMapping(r'/close')],
         ),
         const _i1.IntrospectedMethod<_i18.TodoController>(
           r'delete',
@@ -537,21 +516,21 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               r'id',
               type: _i1.ClassType<int>(),
               isRequired: true,
-              annotations: [_i21.PathVariable()],
+              annotations: [_i22.PathVariable()],
             ),
           ],
           isFuture: true,
           isVoid: true,
           invoke: _$invoke14,
-          annotations: [_i21.DeleteMapping(r'/{id}'), _i21.ResponseStatus(204)],
+          annotations: [_i22.DeleteMapping(r'/{id}'), _i22.ResponseStatus(204)],
         ),
       ],
       annotations: const [
-        _i21.RestController(),
-        _i21.RequestMapping(r'/api/todos'),
+        _i22.RestController(),
+        _i22.RequestMapping(r'/api/todos'),
       ],
       aopProxy: const _i1.AopProxyFactory.pruned(
-        knownAdvisors: _$knownAdvisors2,
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i1.BeanDefinition<_i6.TodoLists>(
@@ -568,11 +547,11 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
             returnType: r'Future',
             parameterTypes: [r'String', r'String', r'String'],
             parameterNames: [r'listId', r'first', r'second'],
-            annotations: [_i11.Transactional()],
+            annotations: [_i12.Transactional()],
             annotationTypes: [r'Transactional'],
           ),
         ],
-        knownAdvisors: _$knownAdvisors2,
+        knownAdvisors: _$knownAdvisors0,
         create: (target, invoker) =>
             _$TodoListsProxy((target as _i6.TodoLists), invoker),
       ),
@@ -593,37 +572,37 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               isRequired: true,
             ),
           ],
-          returnTypeInfo: _i1.ClassType<_i11.ProblemDetail>(),
+          returnTypeInfo: _i1.ClassType<_i12.ProblemDetail>(),
           invoke: _$invoke16,
-          annotations: [_i11.ExceptionHandler()],
+          annotations: [_i12.ExceptionHandler()],
         ),
         const _i1.IntrospectedMethod<_i19.ApiErrors>(
           r'denied',
-          parameterTypes: [_i11.PermissionDeniedDataAccessException],
+          parameterTypes: [_i12.PermissionDeniedDataAccessException],
           parameters: [
             _i1.IntrospectedParameter(
               r'error',
-              type: _i1.ClassType<_i11.PermissionDeniedDataAccessException>(),
+              type: _i1.ClassType<_i12.PermissionDeniedDataAccessException>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: _i1.ClassType<_i11.ProblemDetail>(),
+          returnTypeInfo: _i1.ClassType<_i12.ProblemDetail>(),
           invoke: _$invoke17,
-          annotations: [_i11.ExceptionHandler()],
+          annotations: [_i12.ExceptionHandler()],
         ),
         const _i1.IntrospectedMethod<_i19.ApiErrors>(
           r'changed',
-          parameterTypes: [_i11.OptimisticLockingFailureException],
+          parameterTypes: [_i12.OptimisticLockingFailureException],
           parameters: [
             _i1.IntrospectedParameter(
               r'error',
-              type: _i1.ClassType<_i11.OptimisticLockingFailureException>(),
+              type: _i1.ClassType<_i12.OptimisticLockingFailureException>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: _i1.ClassType<_i11.ProblemDetail>(),
+          returnTypeInfo: _i1.ClassType<_i12.ProblemDetail>(),
           invoke: _$invoke18,
-          annotations: [_i11.ExceptionHandler()],
+          annotations: [_i12.ExceptionHandler()],
         ),
         const _i1.IntrospectedMethod<_i19.ApiErrors>(
           r'noObject',
@@ -635,28 +614,28 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               isRequired: true,
             ),
           ],
-          returnTypeInfo: _i1.ClassType<_i11.ProblemDetail>(),
+          returnTypeInfo: _i1.ClassType<_i12.ProblemDetail>(),
           invoke: _$invoke19,
-          annotations: [_i11.ExceptionHandler()],
+          annotations: [_i12.ExceptionHandler()],
         ),
         const _i1.IntrospectedMethod<_i19.ApiErrors>(
           r'functionFailed',
-          parameterTypes: [_i11.FeignException],
+          parameterTypes: [_i12.RestClientException],
           parameters: [
             _i1.IntrospectedParameter(
               r'error',
-              type: _i1.ClassType<_i11.FeignException>(),
+              type: _i1.ClassType<_i12.RestClientException>(),
               isRequired: true,
             ),
           ],
-          returnTypeInfo: _i1.ClassType<_i11.ProblemDetail>(),
+          returnTypeInfo: _i1.ClassType<_i12.ProblemDetail>(),
           invoke: _$invoke20,
-          annotations: [_i11.ExceptionHandler()],
+          annotations: [_i12.ExceptionHandler()],
         ),
       ],
-      annotations: const [_i11.RestControllerAdvice(), _i1.Log()],
+      annotations: const [_i12.RestControllerAdvice(), _i1.Log()],
       aopProxy: const _i1.AopProxyFactory.pruned(
-        knownAdvisors: _$knownAdvisors2,
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
     _i1.BeanDefinition<_i13.SecurityConfig>(
@@ -679,37 +658,46 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       ) as _$SecurityConfigConfiguration)._$apiChain(r),
       annotations: const [_i1.Bean()],
       aopProxy: const _i1.AopProxyFactory.pruned(
-        knownAdvisors: _$knownAdvisors2,
+        knownAdvisors: _$knownAdvisors0,
       ),
     ),
-    _i1.BeanDefinition<_i12.EntityIntrospections>(
+    _i1.BeanDefinition<_i10.HttpServiceGroup>(
+      name: r'httpServiceGroup.supabase-functions#appBeans',
+      source: r'package:spring_boot_starter_restclient#HttpServiceGroup.supabase-functions',
+      types: const [_i10.HttpServiceGroup],
+      create: (r) => const _i10.HttpServiceGroup(
+        r'supabase-functions',
+        types: [_i9.Functions],
+      ),
+    ),
+    _i1.BeanDefinition<_i11.EntityIntrospections>(
       name: r'entityIntrospections#appBeans',
       source: r'package:spring_boot_starter_data#EntityIntrospections',
-      types: const [_i12.EntityIntrospections],
-      create: (r) => _i12.EntityIntrospections([
-        _i12.EntityIntrospection<_i4.Todo>(
+      types: const [_i11.EntityIntrospections],
+      create: (r) => _i11.EntityIntrospections([
+        _i11.EntityIntrospection<_i4.Todo>(
           r'Todo',
           const [
-            _i12.EntityProperty(
+            _i11.EntityProperty(
               r'id',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i11.Id()],
+              annotations: [_i12.Id()],
               parameter: true,
               writable: true,
             ),
-            _i12.EntityProperty(
+            _i11.EntityProperty(
               r'title',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i12.EntityProperty(
+            _i11.EntityProperty(
               r'listId',
               _i1.ClassType<String>(),
               parameter: true,
               writable: true,
             ),
-            _i12.EntityProperty(
+            _i11.EntityProperty(
               r'done',
               _i1.ClassType<bool>(),
               parameter: true,
@@ -717,21 +705,21 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
               hasDefaultValue: true,
               defaultValue: false,
             ),
-            _i12.EntityProperty(
+            _i11.EntityProperty(
               r'createdAt',
               _i1.ClassType<DateTime>(nullable: true),
               parameter: true,
               writable: true,
             ),
-            _i12.EntityProperty(
+            _i11.EntityProperty(
               r'version',
               _i1.ClassType<int>(nullable: true),
-              annotations: [_i11.Version()],
+              annotations: [_i12.Version()],
               parameter: true,
               writable: true,
             ),
           ],
-          annotations: const [_i11.Table(r'todos')],
+          annotations: const [_i12.Table(r'todos')],
           get: (e, i) => switch (i) {
             0 => e.id,
             1 => e.title,
@@ -760,28 +748,28 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
         ),
       ]),
     ),
-    _i1.BeanDefinition<_i12.JdbcDriver>(
+    _i1.BeanDefinition<_i11.JdbcDriver>(
       name: r'postgresJdbcDriver',
       source: r'package:spring_boot_starter_data#postgres',
-      types: const [_i12.JdbcDriver],
-      conditions: [_i12.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
+      types: const [_i11.JdbcDriver],
+      conditions: [_i11.ConditionalOnMissingBean.named(r'postgresJdbcDriver')],
       create: (r) => _$postgresJdbcDriver(),
     ),
-    _i1.BeanDefinition<_i21.HandlerExceptionResolver>(
+    _i1.BeanDefinition<_i22.HandlerExceptionResolver>(
       name: r'dataAccessExceptionResolver',
       source: r'package:spring_boot_starter_data#spring_boot_starter_web',
-      types: const [_i21.HandlerExceptionResolver],
+      types: const [_i22.HandlerExceptionResolver],
       conditions: [
-        _i12.ConditionalOnMissingBean.named(r'dataAccessExceptionResolver'),
+        _i11.ConditionalOnMissingBean.named(r'dataAccessExceptionResolver'),
       ],
       create: (r) => _$dataAccessExceptionResolver(),
     ),
-    _i1.BeanDefinition<_i21.WebMvcConfigurer>(
+    _i1.BeanDefinition<_i22.WebMvcConfigurer>(
       name: r'pagingArgumentResolvers',
       source: r'package:spring_boot_starter_data#spring_boot_starter_web',
-      types: const [_i21.WebMvcConfigurer],
+      types: const [_i22.WebMvcConfigurer],
       conditions: [
-        _i12.ConditionalOnMissingBean.named(r'pagingArgumentResolvers'),
+        _i11.ConditionalOnMissingBean.named(r'pagingArgumentResolvers'),
       ],
       create: (r) => _$pagingArgumentResolvers(r.dependency<_i1.Environment>()),
     ),
@@ -791,34 +779,34 @@ _i1.BeanModule get $appBeans => _i1.BeanModule(
       '# The server of the Supabase example. Nothing of a project is written\n# here: its address and keys come from the environment (the variables\n# `supabase status -o env` gives, see ../../README.md), and the start fails\n# with the name of the variable that is missing.\nspring:\n  application:\n    name: supabase-example\n  main:\n    # Close the context on Ctrl+C / SIGTERM.\n    register-shutdown-hook: true\n  supabase:\n    # The local stack unless SUPABASE_URL says otherwise.\n    url: \${SUPABASE_URL:http://127.0.0.1:54321}\n    anon-key: \${SUPABASE_ANON_KEY}\n    # Only inside SupabaseCredentials.asServiceRole (AdminReports).\n    service-role-key: \${SUPABASE_SERVICE_ROLE_KEY}\n    db:\n      # Set: the repositories use SQL over the project\'s database, so\n      # @Transactional works (TodoLists.addPair).\n      url: \${SUPABASE_DB_URL}\n      # Every transaction, and every statement outside one, runs as the\n      # caller: the role `authenticated` and the claims of their token, so\n      # auth.uid() and the policies of the project see who asks.\n      rls: user\n  datasource:\n    postgresql:\n      # The local stack\'s database has no TLS; a hosted project\'s has\n      # (SUPABASE_DB_SSLMODE=require).\n      sslmode: \${SUPABASE_DB_SSLMODE:disable}\n  data:\n    jdbc:\n      # The tables are the project\'s (../../supabase/migrations): nothing\n      # is created or checked at startup.\n      schema: none\n\n# The project\'s access tokens are accepted as bearer tokens with the\n# starter\'s defaults (spring.security.oauth2.resourceserver.jwt.*): signed\n# by one of the project\'s keys (ES256 or RS256, read from\n# <url>/auth/v1/.well-known/jwks.json), its issuer, the audience and the\n# role `authenticated`, roles from app_metadata.roles. A project that still\n# signs with its legacy secret (HS256) sets\n# spring.supabase.auth.jwt-secret (SPRING_SUPABASE_AUTH_JWT_SECRET).\n\nserver:\n  port: 8082\n  shutdown: graceful\n',
     ),
   },
-  introspections: [..._i22.$appBeansIntrospections],
+  introspections: [..._i23.$appBeansIntrospections],
 );
 
-final class _$PostgresBinding implements _i12.PostgresBinding {
+final class _$PostgresBinding implements _i11.PostgresBinding {
   const _$PostgresBinding();
 
   @override
-  Future<_i12.PostgresSession> open(_i12.PostgresEndpoint endpoint) =>
+  Future<_i11.PostgresSession> open(_i11.PostgresEndpoint endpoint) =>
       _$postgresGuard(() async {
         final roots = endpoint.rootCertificate;
         return _$PostgresSession(
-          await _i23.Connection.open(
-            _i23.Endpoint(
+          await _i24.Connection.open(
+            _i24.Endpoint(
               host: endpoint.host,
               port: endpoint.port,
               database: endpoint.database,
               username: endpoint.username,
               password: endpoint.password,
             ),
-            settings: _i23.ConnectionSettings(
+            settings: _i24.ConnectionSettings(
               sslMode: switch (endpoint.sslMode) {
-                _i12.PostgresSslMode.disable => _i23.SslMode.disable,
-                _i12.PostgresSslMode.require => _i23.SslMode.require,
-                _i12.PostgresSslMode.verifyFull => _i23.SslMode.verifyFull,
+                _i11.PostgresSslMode.disable => _i24.SslMode.disable,
+                _i11.PostgresSslMode.require => _i24.SslMode.require,
+                _i11.PostgresSslMode.verifyFull => _i24.SslMode.verifyFull,
               },
               securityContext: roots == null
                   ? null
-                  : (_i24.SecurityContext(withTrustedRoots: false)
+                  : (_i25.SecurityContext(withTrustedRoots: false)
                       ..setTrustedCertificates(roots)),
               connectTimeout: endpoint.connectTimeout,
               applicationName: endpoint.applicationName,
@@ -828,16 +816,16 @@ final class _$PostgresBinding implements _i12.PostgresBinding {
       });
 }
 
-final class _$PostgresSession implements _i12.PostgresSession {
+final class _$PostgresSession implements _i11.PostgresSession {
   _$PostgresSession(this._connection);
 
-  final _i23.Connection _connection;
+  final _i24.Connection _connection;
 
   @override
   bool get isOpen => _connection.isOpen;
 
   @override
-  Future<_i12.PostgresResult> execute(
+  Future<_i11.PostgresResult> execute(
     String sql, {
     List<Object?> parameters = const [],
     bool simple = false,
@@ -848,17 +836,17 @@ final class _$PostgresSession implements _i12.PostgresSession {
       parameters: parameters.isEmpty
           ? null
           : [for (final value in parameters) _$postgresParameter(value)],
-      queryMode: simple ? _i23.QueryMode.simple : null,
+      queryMode: simple ? _i24.QueryMode.simple : null,
       timeout: timeout,
     );
     final columns = _$postgresColumns(result.schema);
-    return _i12.PostgresResult(columns, [
+    return _i11.PostgresResult(columns, [
       for (final row in result) _$postgresValues(row),
     ], result.affectedRows);
   });
 
   @override
-  Stream<_i12.PostgresRow> stream(
+  Stream<_i11.PostgresRow> stream(
     String sql, {
     List<Object?> parameters = const [],
     Duration? timeout,
@@ -870,7 +858,7 @@ final class _$PostgresSession implements _i12.PostgresSession {
         for (final value in parameters) _$postgresParameter(value),
       ])) {
         columns ??= _$postgresColumns(row.schema);
-        yield _i12.PostgresRow(columns, _$postgresValues(row));
+        yield _i11.PostgresRow(columns, _$postgresValues(row));
       }
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(_$postgresError(error), stackTrace);
@@ -890,18 +878,18 @@ final class _$PostgresSession implements _i12.PostgresSession {
 // The package writes a double that is not finite (`Infinity`, `NaN`) as a
 // quoted text the server refuses, unless it knows the type.
 Object? _$postgresParameter(Object? value) => value is double && !value.isFinite
-    ? _i23.TypedValue(_i23.Type.double, value)
+    ? _i24.TypedValue(_i24.Type.double, value)
     : value;
 
-List<String> _$postgresColumns(_i23.ResultSchema schema) => [
+List<String> _$postgresColumns(_i24.ResultSchema schema) => [
   for (final column in schema.columns) column.columnName ?? '',
 ];
 
 // A value of a type the package does not decode (an enum, `citext`...) as
 // its text or bytes.
-List<Object?> _$postgresValues(_i23.ResultRow row) => [
+List<Object?> _$postgresValues(_i24.ResultRow row) => [
   for (final value in row)
-    value is _i23.UndecodedBytes
+    value is _i24.UndecodedBytes
         ? (value.isBinary ? value.bytes : value.asString)
         : value,
 ];
@@ -910,31 +898,31 @@ List<Object?> _$postgresValues(_i23.ResultRow row) => [
 // driver understands: the message, the SQL state, the constraint's name;
 // never the DETAIL line (it holds values) and never the exception itself.
 Object _$postgresError(Object error) {
-  if (error is _i23.ServerException) {
-    return _i12.SqlError(
+  if (error is _i24.ServerException) {
+    return _i11.SqlError(
       error.message,
       sqlState: error.code,
       constraint: error.constraintName,
       connectionLost:
-          error.severity == _i23.Severity.fatal ||
-          error.severity == _i23.Severity.panic,
+          error.severity == _i24.Severity.fatal ||
+          error.severity == _i24.Severity.panic,
     );
   }
-  if (error is _i23.PgException) {
+  if (error is _i24.PgException) {
     // The package names the value it cannot send.
     final inference = error.message.startsWith('Could not infer');
-    return _i12.SqlError(
+    return _i11.SqlError(
       inference
           ? 'A parameter value has a type the driver cannot send'
           : error.message,
       connectionLost: !inference,
     );
   }
-  if (error is _i24.SocketException || error is _i24.TlsException) {
-    return _i12.SqlError('$error', connectionLost: true);
+  if (error is _i25.SocketException || error is _i25.TlsException) {
+    return _i11.SqlError('$error', connectionLost: true);
   }
   if (error is _i3.TimeoutException) {
-    return _i12.SqlError(
+    return _i11.SqlError(
       error.message ?? 'The connection timed out',
       connectionLost: true,
     );
@@ -950,51 +938,51 @@ Future<T> _$postgresGuard<T>(Future<T> Function() action) async {
   }
 }
 
-_i12.JdbcDriver _$postgresJdbcDriver() =>
-    _i12.PostgresJdbcDriver(const _$PostgresBinding());
+_i11.JdbcDriver _$postgresJdbcDriver() =>
+    _i11.PostgresJdbcDriver(const _$PostgresBinding());
 
 final class _$DataAccessExceptionResolver
-    implements _i21.HandlerExceptionResolver {
+    implements _i22.HandlerExceptionResolver {
   const _$DataAccessExceptionResolver();
 
   @override
-  _i21.ErrorResponse? resolveException(
-    _i21.ServerHttpRequest request,
+  _i22.ErrorResponse? resolveException(
+    _i22.ServerHttpRequest request,
     Object error, {
-    _i21.HandlerMethod? handler,
+    _i22.HandlerMethod? handler,
   }) => switch (error) {
-    _i12.OptimisticLockingFailureException() => _i21.ResponseStatusException(
-      _i21.HttpStatus.conflict,
+    _i11.OptimisticLockingFailureException() => _i22.ResponseStatusException(
+      _i22.HttpStatus.conflict,
       'The resource was changed by someone else',
       error,
     ),
-    _i12.DuplicateKeyException() => _i21.ResponseStatusException(
-      _i21.HttpStatus.conflict,
+    _i11.DuplicateKeyException() => _i22.ResponseStatusException(
+      _i22.HttpStatus.conflict,
       'The resource already exists',
       error,
     ),
-    _i12.PermissionDeniedDataAccessException() => _i21.ResponseStatusException(
-      _i21.HttpStatus.forbidden,
+    _i11.PermissionDeniedDataAccessException() => _i22.ResponseStatusException(
+      _i22.HttpStatus.forbidden,
       'Access denied',
       error,
     ),
-    _i12.EmptyResultDataAccessException() => _i21.ResponseStatusException(
-      _i21.HttpStatus.notFound,
+    _i11.EmptyResultDataAccessException() => _i22.ResponseStatusException(
+      _i22.HttpStatus.notFound,
       'Not found',
       error,
     ),
-    _i12.PropertyReferenceException() => _i21.ResponseStatusException(
-      _i21.HttpStatus.badRequest,
+    _i11.PropertyReferenceException() => _i22.ResponseStatusException(
+      _i22.HttpStatus.badRequest,
       'Invalid sort property',
       error,
     ),
-    _i12.InvalidPagingRequestException() => _i21.ResponseStatusException(
-      _i21.HttpStatus.badRequest,
+    _i11.InvalidPagingRequestException() => _i22.ResponseStatusException(
+      _i22.HttpStatus.badRequest,
       'Invalid page or sort request',
       error,
     ),
-    _i12.InvalidDataArgumentException() => _i21.ResponseStatusException(
-      _i21.HttpStatus.badRequest,
+    _i11.InvalidDataArgumentException() => _i22.ResponseStatusException(
+      _i22.HttpStatus.badRequest,
       'Invalid request value',
       error,
     ),
@@ -1002,24 +990,24 @@ final class _$DataAccessExceptionResolver
   };
 }
 
-_i21.HandlerExceptionResolver _$dataAccessExceptionResolver() =>
+_i22.HandlerExceptionResolver _$dataAccessExceptionResolver() =>
     const _$DataAccessExceptionResolver();
 
 final class _$PagingArgumentResolver
-    implements _i21.HandlerMethodArgumentResolver {
+    implements _i22.HandlerMethodArgumentResolver {
   const _$PagingArgumentResolver(this._paging);
 
-  final _i12.WebPaging _paging;
+  final _i11.WebPaging _paging;
 
   @override
-  bool supportsParameter(_i21.MethodParameter parameter) {
+  bool supportsParameter(_i22.MethodParameter parameter) {
     final type = parameter.type.type;
-    if (type == _i12.Pageable) {
+    if (type == _i11.Pageable) {
       // Spring: two Pageable parameters need a @Qualifier each, or they
       // would read the same query parameters.
       final unqualified = parameter.handler.parameters.where(
         (other) =>
-            other.type.type == _i12.Pageable && !other.has<_i12.Qualifier>(),
+            other.type.type == _i11.Pageable && !other.has<_i11.Qualifier>(),
       );
       if (unqualified.length > 1) {
         throw StateError(
@@ -1030,24 +1018,24 @@ final class _$PagingArgumentResolver
       }
       return true;
     }
-    return type == _i12.Sort;
+    return type == _i11.Sort;
   }
 
   @override
   Object? resolveArgument(
-    _i21.MethodParameter parameter,
-    _i21.ServerHttpRequest request,
-    _i21.ServerHttpResponse response,
+    _i22.MethodParameter parameter,
+    _i22.ServerHttpRequest request,
+    _i22.ServerHttpResponse response,
   ) {
-    final qualifier = parameter.annotation<_i12.Qualifier>()?.value;
+    final qualifier = parameter.annotation<_i11.Qualifier>()?.value;
     final defaults = parameter.annotations
-        .whereType<_i12.SortDefault>()
+        .whereType<_i11.SortDefault>()
         .toList();
-    final allowed = parameter.annotation<_i12.AllowedSortProperties>();
-    return parameter.type.type == _i12.Pageable
+    final allowed = parameter.annotation<_i11.AllowedSortProperties>();
+    return parameter.type.type == _i11.Pageable
         ? _paging.pageable(
             request.queryParameters,
-            pageableDefault: parameter.annotation<_i12.PageableDefault>(),
+            pageableDefault: parameter.annotation<_i11.PageableDefault>(),
             sortDefaults: defaults,
             allowed: allowed,
             qualifier: qualifier,
@@ -1061,21 +1049,21 @@ final class _$PagingArgumentResolver
   }
 }
 
-final class _$PagingWebMvcConfigurer with _i21.WebMvcConfigurer {
+final class _$PagingWebMvcConfigurer with _i22.WebMvcConfigurer {
   const _$PagingWebMvcConfigurer(this._resolver);
 
   final _$PagingArgumentResolver _resolver;
 
   @override
   void addArgumentResolvers(
-    List<_i21.HandlerMethodArgumentResolver> resolvers,
+    List<_i22.HandlerMethodArgumentResolver> resolvers,
   ) => resolvers.add(_resolver);
 }
 
-_i21.WebMvcConfigurer _$pagingArgumentResolvers(_i1.Environment environment) =>
+_i22.WebMvcConfigurer _$pagingArgumentResolvers(_i1.Environment environment) =>
     _$PagingWebMvcConfigurer(
       _$PagingArgumentResolver(
-        _i12.WebPaging(_i12.WebPagingProperties.of(environment)),
+        _i11.WebPaging(_i11.WebPagingProperties.of(environment)),
       ),
     );
 

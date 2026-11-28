@@ -1,5 +1,8 @@
 ## Unreleased
 
+- The documentation of the network recorder names `RestClient` and the `RestClientBuilder`'s `sensitiveHeaders` as what it records and masks.
+- **Renamed:** the debug network recorder's HTTP entry `HttpExchange` is `HttpCall`, and its `HttpExchangeState` is `HttpCallState` (beside `WebSocketConnection`), so that the starter, which re-exports `spring_web_dart`, does not clash with the `@HttpExchange` annotation of HTTP service interfaces. Code that reads the journal's entries (`entry is HttpExchange`) changes the name; nothing else changes.
+- The `notifyListenersAdvisor` and the `beanReadsAdvisor` are at `AdvisorOrder.notifyListeners` and `AdvisorOrder.beanReads` (were `Ordered.lowestPrecedence`): outside the retries, so listeners hear once for a retried call.
 - The documentation says what 0.10.0 does: the Logs tab lists the oldest record first and the newest at the bottom (the dartdoc of `debugLogsSection`), and the console bean's dartdoc names the Console tab beside the Overlays tab.
 
 ## 0.10.0

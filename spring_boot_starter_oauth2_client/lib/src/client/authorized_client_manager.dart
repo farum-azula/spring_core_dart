@@ -534,11 +534,12 @@ final class OAuth2AuthorizedClientProviderBuilder {
 /// Hands out valid tokens: it loads the stored client, renews it when it
 /// expires soon, gets client-credentials tokens, and saves the result.
 ///
-/// Everything that calls an API with a token goes through it (the Feign
-/// interceptor does), so a token is refreshed in one place. Two callers
-/// asking for the same registration and principal at the same time share
-/// one call to the provider: a refresh token is never sent twice (many
-/// providers rotate it, and the second use would log the user out).
+/// Everything that calls an API with a token goes through it (the
+/// `RestClient` interceptor does), so a token is refreshed in one place.
+/// Two callers asking for the same registration and principal at the same
+/// time share one call to the provider: a refresh token is never sent
+/// twice (many providers rotate it, and the second use would log the user
+/// out).
 ///
 /// Spring (Java): `OAuth2AuthorizedClientManager`.
 abstract interface class OAuth2AuthorizedClientManager {

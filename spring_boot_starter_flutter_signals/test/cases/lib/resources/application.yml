@@ -4,3 +4,5 @@ spring:
       allow-advice: true
       queue:
         flush: immediate
+  resilience:
+    enabled: true

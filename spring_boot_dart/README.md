@@ -86,7 +86,7 @@ goes through these steps:
    `Started neon-books in 0.07 seconds`; `spring.main.log-startup-info=false`
    turns it off). If the start fails, an `APPLICATION FAILED TO START`
    report explains a missing bean, an ambiguity, a cycle, an unresolved
-   placeholder or invalid properties. Your own `FailureAnalyzer`s, as
+   placeholder or invalid properties. Your own `FailureAnalyzer` instances, as
    beans or in `SpringApplication(failureAnalyzers:)`, are asked first.
 6. **The runners:** `ApplicationRunner` and `CommandLineRunner` beans run
    one after another.
@@ -384,7 +384,7 @@ Spring's `ApplicationStartup`; nothing is recorded by default
 from an address (`https://...`, `github:owner/repo/path@ref`). Each is
 read by the `RemoteAddresses` chain (the `remoteAddresses` bean):
 `SpringApplication(addressResolvers: [...])` adds the application's
-`RemoteAddressResolver`s, asked before the built-in ones, for a new kind
+`RemoteAddressResolver` instances, asked before the built-in ones, for a new kind
 of address such as `cdn:`. An insecure address (`http://`) stops the
 start with `InsecureConnectionException`, naming it and its property,
 unless `spring.remote.allow-insecure=true`, which logs a warning listing
@@ -523,10 +523,10 @@ Bean conditions (`@ConditionalOnBean`, `@ConditionalOnMissingBean`,
 `@ConditionalOnSingleCandidate`) depend on what was registered before
 them, so their timing matters. As with Boot's `OnBeanCondition`, they
 are decided when the configuration class is read (Spring's
-`registerBean` phase), class by class. A scanned `@Component` and an
-`@Import`ed class count as classes too, at their place in that order. By
-then every earlier class has registered its `@Bean` methods and run its
-`@Import`ed `BeanRegistrar` or `ImportBeanDefinitionRegistrar`, so a
+`registerBean` phase), class by class. A scanned `@Component` and a class
+imported with `@Import` count as classes too, at their place in that order. By
+then every earlier class has registered its `@Bean` methods and run the
+`BeanRegistrar` or `ImportBeanDefinitionRegistrar` it imports with `@Import`, so a
 bean registered in any of those ways counts. A component declared
 before the class whose bean it looks for is decided first, as in
 Spring.
@@ -536,7 +536,7 @@ imports at once, all or nothing, as in Spring. A skipped class runs no
 registrar, and what it selects is not registered. A class whose
 condition looks for the bean its own imported class defines stays
 registered (Boot's `PooledDataSourceConfiguration` pattern). Its
-`@PropertySource`s load anyway, because they are read while parsing, as
+`@PropertySource` annotations load anyway, because they are read while parsing, as
 in Spring.
 
 Like Boot 3.4+, beans declared with `autowireCandidate: false` or
@@ -582,8 +582,8 @@ conditions run:
   YAML list) adds to them.
 
 Excluding a class removes its beans, its imported registrars and
-selectors, and its conditional `@PropertySource`s; configuration classes
-it `@Import`s stay. Excluding a module removes all of it. Excluding a type that is no auto-configuration stops
+selectors, and its conditional `@PropertySource` annotations; configuration classes
+it imports with `@Import` stay. Excluding a module removes all of it. Excluding a type that is no auto-configuration stops
 the start; an unknown name is ignored. The built-in ones are
 `MessageSourceAutoConfiguration`, `JacksonAutoConfiguration`,
 `ValidationAutoConfiguration` and `LifecycleAutoConfiguration`:
@@ -614,12 +614,12 @@ It reads `spring.messages.encoding`, `use-code-as-default-message`,
 | [`spring_boot_starter_logging`](../spring_boot_starter_logging/README.md) | Console output with patterns, log files with rollover, `logging.*` properties, an in-memory `LogBuffer` for an in-app log screen. |
 | [`spring_boot_starter_web`](../spring_boot_starter_web/README.md) | A web server: `@RestController` classes, JSON bodies, `@Valid`, `ProblemDetail` errors, server-sent events, filters, CORS. |
 | [`spring_boot_starter_security`](../spring_boot_starter_security/README.md) | Security for the web starter: a filter chain configured with `HttpSecurity`, HTTP Basic, form login, `oauth2Login()`, sessions, CSRF, JWT and DPoP resource servers. |
-| [`spring_boot_starter_feign`](../spring_boot_starter_feign/README.md) | HTTP clients from annotated interfaces (`@FeignClient`), with interceptors, retries and fallbacks. |
+| [`spring_boot_starter_restclient`](../spring_boot_starter_restclient/README.md) | `RestClient` and HTTP service clients from annotated interfaces (`@HttpExchange` with `@ImportHttpServices`), outgoing addresses denied until allowed. |
 | [`spring_boot_starter_websocket`](../spring_boot_starter_websocket/README.md) | WebSocket clients from annotated interfaces (`@WebSocketClient`), and endpoints with the web starter. |
 | [`spring_boot_starter_cache`](../spring_boot_starter_cache/README.md) | `@Cacheable`, `@CachePut`, `@CacheEvict` on bean methods, a `CacheManager` with TTL and size limits. |
 | [`spring_boot_starter_scheduling`](../spring_boot_starter_scheduling/README.md) | `@Scheduled` methods (fixed rate, fixed delay, cron) and a `TaskScheduler` bean. |
 | [`spring_boot_starter_data`](../spring_boot_starter_data/README.md) | Repositories (Spring Data JDBC's model) in memory, on SQLite or PostgreSQL, `@Transactional`, migrations, `@DataTest`. |
-| [`spring_boot_starter_oauth2_client`](../spring_boot_starter_oauth2_client/README.md) | OAuth 2.0 and OpenID Connect clients: registrations, client-credentials tokens on Feign calls, the base of the logins. |
+| [`spring_boot_starter_oauth2_client`](../spring_boot_starter_oauth2_client/README.md) | OAuth 2.0 and OpenID Connect clients: registrations, client-credentials tokens on `RestClient` calls and HTTP service clients, the base of the logins. |
 | [`spring_boot_starter_actuator`](../spring_boot_starter_actuator/README.md) | `/actuator/health` (with Kubernetes probes), `/actuator/info`, `/actuator/mappings` and endpoints of your own, over the web starter. |
 | [`spring_boot_starter_flutter`](../spring_boot_starter_flutter/README.md) | Flutter apps: `SpringApplicationWidget`, beans in widgets, the app lifecycle, platform profiles. |
 | [`spring_boot_starter_test`](../spring_boot_starter_test/README.md) (dev) | `springBootTest` (`@SpringBootTest`), `BeanOverride` (`@MockitoBean`), `ApplicationContextRunner`, bean matchers, `captureLogs`. |
@@ -648,7 +648,7 @@ final BeanModule neonCacheAutoConfiguration = $neonCacheBeans;
 
 **2. Describe the beans**, either with the generator (`@AutoConfiguration`,
 `@Bean` and conditions, scanned by a `@ComponentScan` in the starter) or
-as hand-written `BeanDefinition`s, as the starters of this repository
+as hand-written `BeanDefinition` instances, as the starters of this repository
 do:
 
 ```dart
@@ -706,8 +706,8 @@ Good to know:
 - **Registration order:** application classes first, then
   auto-configuration in Boot's order. Bean conditions are decided class
   by class in that order, so `@ConditionalOnMissingBean` sees what the
-  application declared, including the beans of its `@Import`ed
-  registrars. A hand-written auto-configuration bean needs a `source`
+  application declared, including the beans of the registrars
+  it imports with `@Import`. A hand-written auto-configuration bean needs a `source`
   (its class, `library#Class`, as the generator sets it) or a
   `factoryMethodName` (a `@Bean` method) for its bean conditions to be
   decided in that order too; a definition with neither is decided at
@@ -832,7 +832,7 @@ records at `info` and above.
 These hooks change the context before it is filled; tests use them most.
 
 - `SpringApplication(..., initializers: [...])` runs
-  `ApplicationContextInitializer`s before the refresh, sorted by
+  `ApplicationContextInitializer` instances before the refresh, sorted by
   `Ordered`: a class implementing `initialize`, or
   `ApplicationContextInitializer.of((context) => ...)`.
 - `run(args, properties: {...})` adds properties above every other
@@ -939,7 +939,7 @@ the family consistent and making incompatibilities readable:
 
 A Flutter app has no command line, and on phones and in browsers no
 useful environment variables. Values chosen when the app is built come
-in as `--dart-define`s instead (`-DKEY=value` for `dart run` and
+in as `--dart-define` flags instead (`-DKEY=value` for `dart run` and
 `dart compile`). They become a property source right below the
 command-line arguments, above the OS environment and the config files:
 
@@ -1134,7 +1134,7 @@ starter does this for you and starts the application from a widget.
 
 | Spring Boot | Here | Why |
 |---|---|---|
-| `spring.cloud.openfeign.*`, `spring.jackson.*`, `spring.servlet.multipart.*`, `server.servlet.*`, `logging.logback.rollingpolicy.*`, `spring.flyway.*` | `spring.feign.*`, `spring.json.*`, `spring.web.multipart.*`, `server.*`, `logging.file.rolling-policy.*`, `spring.sql.migration.*`; an old name stops the start and names the new one (`RenamedPropertiesEnvironmentPostProcessor`, in every `SpringApplication`) | Servlet, Jackson, Spring Cloud, Logback and Flyway mean nothing in Dart; `spring-boot-properties-migrator` only warns, and an ignored old name would silently leave a setting at its default |
+| `spring.jackson.*`, `spring.servlet.multipart.*`, `server.servlet.*`, `logging.logback.rollingpolicy.*`, `spring.flyway.*` | `spring.json.*`, `spring.web.multipart.*`, `server.*`, `logging.file.rolling-policy.*`, `spring.sql.migration.*`; an old name stops the start and names the new one (`RenamedPropertiesEnvironmentPostProcessor`, in every `SpringApplication`) | Servlet, Jackson, Logback and Flyway mean nothing in Dart; `spring-boot-properties-migrator` only warns, and an ignored old name would silently leave a setting at its default |
 | Constructor binding passes `null` for a missing property without `@DefaultValue` | A missing non-nullable scalar stops the start; a missing collection is empty and a missing nested object is created with its own defaults (what Boot does with an empty `@DefaultValue`) | Dart's non-nullable types |
 | `@ConstructorBinding` picks one of several constructors | Constructor binding only for a class whose only public generative constructor has parameters | Not implemented yet |
 | `.properties` config files are read as ISO-8859-1 | UTF-8 (pass `PropertiesPropertySourceLoader(encoding: latin1)` to `ConfigDataEnvironment` for ISO-8859-1, or name one file's encoding where it is named, `resources:legacy.properties[encoding=iso-8859-1]`, as in Boot 4.1) | Dart files are UTF-8 |
@@ -1142,7 +1142,7 @@ starter does this for you and starts the application from a widget.
 | No `spring.messages.default-locale` | `spring.messages.default-locale`: the locale tried before the system locale | Apps (Flutter) often have no meaningful system locale |
 | `Started app in 0.07 seconds (process running for 0.3)` | Without the process uptime; logged at INFO, which `SpringLog` shows by default (`spring.main.log-startup-info=false` turns it off) | Dart has no process start time |
 | The shutdown hook is registered by default and runs when the JVM exits | Off by default (`spring.main.register-shutdown-hook=true` turns it on); only on SIGINT and SIGTERM (then `exit(130)` or `exit(143)`); the listener keeps the process alive until the context closes | Dart has no exit hooks, and a signal listener is an open handle that would keep a finished program running |
-| `EnvironmentPostProcessor`s listed in `META-INF/spring.factories` | `SpringApplication(environmentPostProcessors: [...])`, ordered by `Ordered` around config data (`EnvironmentPostProcessor.configDataOrder`) | No class path to scan |
+| `EnvironmentPostProcessor` instances listed in `META-INF/spring.factories` | `SpringApplication(environmentPostProcessors: [...])`, ordered by `Ordered` around config data (`EnvironmentPostProcessor.configDataOrder`) | No class path to scan |
 | `@DurationUnit(ChronoUnit.X)`, `@DataSizeUnit(DataUnit.X)` | The same with Dart enums (`ChronoUnit.seconds`, `DataUnit.megabytes`; no months or years) | Dart naming; `Duration` has no calendar units |
 | `BindHandler.onFailure` returns a replacement value or rethrows | `onFailure(name, error)` returns whether the failure counts (`false` leaves the property unbound) | Errors are collected and reported together |
 | `JsonMapperBuilderCustomizer` gets Jackson's `JsonMapper.Builder` | It gets the core `JsonMapperBuilder` (naming, inclusion, time zone, features, serializers, modules); Jackson's other builder methods are missing | Only what the Dart mapper supports |

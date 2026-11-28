@@ -18,7 +18,7 @@ ApplicationContextRunner supabaseRunner(BeanModule application) =>
         .withUserConfiguration(application)
         .withAutoConfiguration(springBootAutoConfiguration)
         .withAutoConfiguration(springSecurityCoreAutoConfiguration)
-        .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
+        .withAutoConfiguration(springBootStarterRestclientAutoConfiguration)
         .withAutoConfiguration(springBootStarterWebsocketAutoConfiguration)
         .withAutoConfiguration(
           springBootStarterSupabaseDataAutoConfiguration,
@@ -32,7 +32,7 @@ ApplicationContextRunner supabaseRunner(BeanModule application) =>
           springBootStarterSupabaseAutoConfiguration,
           const AutoConfigurationModule(
             after: [
-              'springBootStarterFeignAutoConfiguration',
+              'springBootStarterRestclientAutoConfiguration',
               'springBootStarterWebsocketAutoConfiguration',
               'springBootStarterDataAutoConfiguration',
               'springSecurityCoreAutoConfiguration',

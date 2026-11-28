@@ -24,7 +24,7 @@ have the details:
 [`spring_boot_starter_flutter`](../../spring_boot_starter_flutter/README.md),
 [`spring_boot_starter_flutter_material`](../../spring_boot_starter_flutter_material/README.md),
 [`spring_boot_starter_flutter_security`](../../spring_boot_starter_flutter_security/README.md),
-[`spring_boot_starter_feign`](../../spring_boot_starter_feign/README.md),
+[`spring_boot_starter_restclient`](../../spring_boot_starter_restclient/README.md),
 [`spring_boot_starter_websocket`](../../spring_boot_starter_websocket/README.md),
 [`spring_security_core`](../../spring_security_core/README.md),
 [`spring_boot_starter_cache`](../../spring_boot_starter_cache/README.md),
@@ -109,13 +109,13 @@ flutter test --tags golden                   # the screenshots (macOS only, see 
 lib/
   main.dart                    @SpringBootApplication, SpringApplicationWidget
   spring_gen/                  generated, do not edit
-    main.spring.dart           the beans, proxies, Feign clients, context getters, `log`
+    main.spring.dart           the beans, proxies, HTTP service clients, context getters, `log`
     theme.spring.keys.dart          typed context.theme
     messages.spring.keys.dart       typed context.messages
   resources/                   the resources: application*.properties, application.yml,
                                themes/*.yml, messages*.properties
   src/app/                     the home (sections), app properties, language, lifecycle and route logs
-  src/api/                     the server's API: models, Feign clients, the WebSocket client,
+  src/api/                     the server's API: models, HTTP service clients, the WebSocket client,
                                the session transports, the cookie jar, the browser page,
                                ProblemDetail helpers
   src/account/                 Session, the AuthenticationProvider, Login screen, account button,
@@ -396,7 +396,7 @@ Test: `test/texts_test.dart`; the screenshots `japanese.png` and
 ## 5. Assets
 
 `AppAssets` (`lib/src/about/app_assets.dart`) gets the app's assets
-injected as `Resource`s:
+injected as `Resource` values:
 
 ```dart
 @Component()
@@ -430,22 +430,31 @@ The server's API (see [API](#api)) is written as Dart interfaces; the
 generator writes the HTTP and WebSocket code:
 
 ```dart
-@FeignClient('catalog', url: r'${api.base-url}', path: '/api/books')
+@HttpExchange('/api/books')
 abstract interface class CatalogClient {
   /// `GET /api/books?q=dune&page=0`; a `null` query is left out.
-  @GetMapping()
+  @GetExchange()
   Future<PageOfBooks> page({
     @RequestParam('q') String? query,
     @RequestParam('page') int? page,
   });
   ...
 }
+
+@Configuration()
+@ImportHttpServices(group: 'server', types: [AccountClient, CatalogClient, ...])
+class ApiConfig { ... }
 ```
+
+The interfaces are HTTP service clients, as in Spring: `@ImportHttpServices`
+puts them into the `server` group, whose `RestClient` has the base URL
+and the read timeout of `spring.http.serviceclient.server.*`, and the
+generator writes each call on it.
 
 | Client | File | Shows |
 |---|---|---|
-| `CatalogClient` | `lib/src/api/catalog_client.dart` | `@FeignClient(url: r'${api.base-url}', path:)`, `@RequestParam`s left out when `null`, `@PathVariable`, bytes (`Future<Uint8List>`) |
-| `AccountClient` | `lib/src/api/account_client.dart` | a form body (`consumes: applicationFormUrlencoded`), `Future<ResponseEntity<void>>` |
+| `CatalogClient` | `lib/src/api/catalog_client.dart` | `@HttpExchange('/api/books')`, `@RequestParam` annotations left out when `null`, `@PathVariable`, bytes (`Future<Uint8List>`, `accept: ['image/*']`), `@Retryable` on the interface |
+| `AccountClient` | `lib/src/api/account_client.dart` | a form body (`contentType: applicationFormUrlencoded`, its fields `@RequestParam` annotations), `Future<ResponseEntity<void>>` |
 | `ShopClient` | `lib/src/api/shop_client.dart` | `PUT` with a JSON body, `Future<ResponseEntity<ShopOrder>>` (status, `Location`) |
 | `AdminClient` | `lib/src/api/admin_client.dart` | a multipart upload (`@RequestPart('file') MultipartFile`), `DELETE`, raw JSON |
 | `StockClient` | `lib/src/api/stock_client.dart` | `EventStream<StockChanged>`: server-sent events, reconnecting with `Last-Event-ID` |
@@ -460,7 +469,10 @@ abstract interface class CatalogClient {
   `X-XSRF-TOKEN` header. `ApiConfig` (`lib/src/api/api_config.dart`)
   declares the platform's transport as the bean `networkTransport`, and
   the session transport as the `@Primary` `HttpTransport` that every
-  Feign client uses. Only requests to the server (`api.base-url`) get
+  HTTP service client uses. The network transport takes the starter's
+  `AllowedAddresses`: it calls only the `server` group's base URL and the
+  Keycloak issuer, every other address is denied. Only requests to the
+  server (`api.base-url`) get
   the session: the Keycloak login of chapter 7 goes through the same
   bean, and the server's cookies are none of Keycloak's business.
 - **The session in a browser: the starter's.** The browser keeps the
@@ -478,27 +490,31 @@ abstract interface class CatalogClient {
 - **The chat's handshake** carries the session cookie:
   `SupportHandshake` (`lib/src/api/support_handshake.dart`) is a
   `WebSocketHandshakeInterceptor` bean.
-- **Retries.** A `Retryer` bean (`DefaultRetryer(maxAttempts: 3)`) tries
-  again what failed without an answer (no connection, a timeout); a
-  `POST` that got an answer is never sent twice. The Logs screen shows
-  the `---> RETRYING` lines when the server is down.
-- **Errors.** `CatalogService.find` turns a 404 (`FeignNotFound`) into
-  `null`, and the screen says "There is no book ...". The Admin form
-  shows the field errors of a 400 ProblemDetail under its fields
-  (`fieldErrorsOf`, `lib/src/api/problems.dart`). `errorMessage`
+- **Retries.** `@Retryable` on `CatalogClient`
+  (`spring.resilience.enabled=true`) tries a catalog read twice more when
+  it failed without an answer (`ResourceAccessException`: no connection,
+  a timeout); a call that got an answer is never sent again. The Logs
+  screen shows each attempt (`---> GET ...`) when the server is down.
+- **Errors.** A 4xx answer is an `HttpClientErrorException`, a 5xx an
+  `HttpServerErrorException`, no answer a `ResourceAccessException`.
+  `CatalogService.find` turns a 404 into `null`, and the screen says
+  "There is no book ...". The Admin form shows the field errors of a 400
+  ProblemDetail under its fields (`fieldErrorsOf`,
+  `lib/src/api/problems.dart`). `errorMessage`
   (`lib/src/app/messages.dart`) says "The server cannot be reached" for
-  a `RetryableException`.
-- **Properties.** The read timeout, the logger level, the event stream's
-  reconnect delay and attempts, and the socket's reconnect back-off are
-  `spring.feign.client.config.*` and
-  `spring.websocket.client.config.*` in `application.properties`.
+  a `ResourceAccessException`.
+- **Properties.** The group's base URL and read timeout, the logger
+  level and the socket's reconnect back-off are
+  `spring.http.serviceclient.server.*`, `logging.level.web.client` and
+  `spring.websocket.client.config.*` in `application.properties`; the
+  event stream reconnects after 3 s, with `Last-Event-ID`.
 
 Try: with the server running, open Live stock while the server's restock
 job runs; open a book; stop the server and watch the catalog's error and
 the retries in Logs.
 
-Test: `test/server_access_test.dart` (query parameters and JSON, the
-`Retryer`, `FeignNotFound`, cookies and the CSRF header, logout,
+Test: `test/server_access_test.dart` (query parameters and JSON,
+`@Retryable`, a 404, cookies and the CSRF header, logout,
 `ResponseEntity` with `Location`, the multipart upload, the event stream
 on screen, the chat with the session cookie, the server's field errors in
 the Admin form).
@@ -511,9 +527,9 @@ it brings and re-exports the Flutter and navigation starters, the OAuth2
 client and `spring_security_core`, and adds the platform code of logins
 and secrets (an app without a login lists only the Flutter starter and
 carries none of it). Its `testing.dart` gives the tests `withMockUser`.
-The Feign starter is listed on its own: the app writes Feign clients
-(chapter 6), and the files that use Feign's types import
-`package:spring_boot_starter_feign/spring_boot_starter_feign.dart`
+The RestClient starter is listed on its own: the app writes HTTP service
+clients (chapter 6), and an app lists every starter whose feature it
+uses, even one another starter brings
 ([the packages an application lists](../../docs/packages.md)).
 
 - **Logging in.** The Login screen (`lib/src/account/login_page.dart`)
@@ -607,20 +623,24 @@ full: [the roadmap](../../roadmap/spring_boot_starter_oauth2_client.md#which-flo
   turns the realm roles of the `roles` claim into `ROLE_USER` and
   `ROLE_ADMIN`.
 - **Tokens on the calls.** `KeycloakTokenInterceptor`, a
-  `RequestInterceptor` bean, puts the token (refreshed a minute before
-  it expires) on every Feign call of a Keycloak user. Keycloak announces
+  `ClientHttpRequestInterceptor` that a
+  `RestClientHttpServiceGroupConfigurer` bean puts on the `server`
+  group, has the starter's `OAuth2ClientHttpRequestInterceptor` put the
+  token (refreshed a minute before it expires) on every call of a
+  Keycloak user. Keycloak announces
   DPoP in its metadata, and the registration's `dpop` is `auto` by
   default, so the tokens are bound to the app's key (the `DPoPKey` bean
   of `spring_boot_starter_flutter_security`: the Secure Enclave, the
   Android Keystore, the `SecretStore` on desktops): each call carries
   `Authorization: DPoP <token>` and a fresh proof, and a stolen token is
-  useless without the device. Not `spring.feign.oauth2.enabled`: its
-  interceptor, as Spring Cloud OpenFeign's, fails every call made while
+  useless without the device. Not a default registration for every call
+  (`spring.security.oauth2.client.restclient.client-registration-id`):
+  as in Spring Security, the interceptor then fails every call made while
   nobody is logged in, and the catalog is public. The support chat's
   handshake carries the token too (`SupportHandshake`, with
   `OAuth2AccessTokenHeaders`: a DPoP token gets a proof for `GET` of the
   `http(s)` form of the `ws://` URL). A 401 to a token
-  that looked valid marks it expired (`OAuth2AccessTokenErrorDecoder`).
+  that looked valid marks it expired (the interceptor does it).
   The logout deletes the DPoP key; the next login makes a new one.
 - **Restarts.** `Session.restore` runs at `ApplicationReadyEvent` and
   calls `OAuth2LoginService.restore`: a native app brings the user back
@@ -783,7 +803,8 @@ languages, the form showing them without a request); the screenshot
 
 The app logs through `SpringLog`: the `@Log` getters, with structured
 fields (`log.info('order placed', fields: {...})`). `logging.*` in
-`application.properties` sets the levels (`neon` and `feign` at debug).
+`application.properties` sets the levels (`neon` and `web.client`, the
+`RestClient` calls, at debug).
 The logging starter writes Spring Boot's console lines, which
 `flutter run` shows, and keeps the last 500 records in the `LogBuffer`
 bean. The Logs screen (`lib/src/logs/logs_page.dart`) is a
@@ -791,7 +812,7 @@ bean. The Logs screen (`lib/src/logs/logs_page.dart`) is a
 `buffer.watch(LogQuery(minLevel: ...))`, filtered by level. The Admin
 screen shows the server's own log (`GET /api/admin/logs`).
 
-Try: More → Logs, Debug: the Feign calls (`---> GET ...`), the screens
+Try: More → Logs, Debug: the server calls (`---> GET ...`), the screens
 opened, the cookies stored.
 
 The starter's debug panel is in the debug builds (no
@@ -808,7 +829,7 @@ filter).
 The tests need no server, except the end-to-end ones.
 `test/support/fake_server.dart` plays the server with a
 `MockHttpTransport` and a `MockWebSocketTransport`. They replace the
-app's network through `BeanOverride`s, below the app's own session
+app's network through `BeanOverride` instances, below the app's own session
 transport (`BeanOverride<HttpTransport>(http, name: 'networkTransport')`),
 so the cookies and the CSRF header are tested too.
 
@@ -817,7 +838,7 @@ so the cookies and the CSRF header are tested too.
   overrides; `setUp(app.markDirty)` gives every test a fresh context.
   A screen is shown under `SpringScope` and `SpringApp` (`showPage`,
   `test/support/app.dart`), or the whole app on the navigation's first
-  screen (`showApp`); services are tested with plain `test`s.
+  screen (`showApp`); services are tested with plain `test` cases.
 - **The whole app: `SpringApplicationWidget`.** Some tests start the app
   as `flutter run` does (`startApp`): the profiles, the lifecycle, the
   fonts, a failed start. `SpringApplicationWidget` takes no overrides
@@ -921,7 +942,7 @@ else `204`.
 
 | Method | Path | Who | What |
 |---|---|---|---|
-| GET | `/api/books?q=&page=` | anyone | catalog page (`Page`-like JSON: items, page, total), `@RequestParam`s, cached |
+| GET | `/api/books?q=&page=` | anyone | catalog page (`Page`-like JSON: items, page, total), `@RequestParam` annotations, cached |
 | GET | `/api/books/{isbn}` | anyone | one book, 404 ProblemDetail if unknown |
 | GET | `/api/books/{isbn}/cover` | anyone | the cover image (`Resource`, `Range`, `Cache-Control`) |
 | POST | `/api/books` | ADMIN | add a book, `@Valid` body (400 with field errors), 201 + `Location` |

@@ -27,7 +27,7 @@ final BeanModule springBootStarterWebsocketAutoConfiguration = BeanModule(
 /// The server side: the open sessions and the mapping of the endpoints'
 /// handshakes, which the web starter's dispatcher asks. Only where a
 /// server can run ([ModulePlatform.native]): a Flutter web app that uses
-/// the starter for its `@WebSocketClient`s carries none of it.
+/// the starter for its `@WebSocketClient` annotations carries none of it.
 @AutoConfigurationModule(platform: ModulePlatform.native)
 final BeanModule springBootStarterWebsocketServerAutoConfiguration = BeanModule(
   'springBootStarterWebsocketServerAutoConfiguration',

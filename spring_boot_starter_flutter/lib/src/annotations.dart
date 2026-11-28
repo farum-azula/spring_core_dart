@@ -2,7 +2,7 @@
 /// `BuildContext`, such as `context.basket`.
 ///
 /// Use it for the few beans that many widgets need, often in plain
-/// `StatelessWidget`s or deep in the tree: a basket, a session, the
+/// `StatelessWidget` instances or deep in the tree: a basket, a session, the
 /// current user. `context.basket` is shorter than `context.bean<Basket>()`
 /// and typed, and nothing has to be passed through constructors. For the
 /// beans of one widget, the `beans` record of a `SpringStatelessWidget` is

@@ -71,7 +71,7 @@
 ///
 /// This import re-exports `spring_boot_starter_flutter` (and through it
 /// `spring_boot_dart` and logging), `spring_boot_starter_oauth2_client`
-/// (the registrations, the authorized clients, Feign) and
+/// (the registrations, the authorized clients, the RestClient starter) and
 /// `spring_security_core` (`SecurityContextHolder`, `@PreAuthorize`), so
 /// an app lists and imports only this package. As in the Flutter starter,
 /// Boot's `Banner` and the constraint `Size` are left out (they clash

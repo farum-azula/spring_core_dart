@@ -437,7 +437,7 @@ final class ResourceHttpRequestHandler {
 /// CORS rules are the global ones (`addCorsMappings`, or the
 /// `corsConfigurationSource` bean), as Spring applies them to its
 /// resource handler mapping. Filters, the security filter chain among
-/// them, run before it as before any handler; `HandlerInterceptor`s do
+/// them, run before it as before any handler; `HandlerInterceptor` instances do
 /// not, as they are for controller methods.
 ///
 /// The starter declares it as the `resourceHandlerMapping` bean; an

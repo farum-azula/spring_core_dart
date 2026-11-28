@@ -100,7 +100,7 @@ class JsonIgnore {
 }
 
 /// Decides which values of a property, or of every property of a class,
-/// are written: for example, leave out `null`s.
+/// are written: for example, leave out `null` values.
 ///
 /// Use it to keep responses small or to send partial updates, where a
 /// missing property means "unchanged". It wins over the mapper's

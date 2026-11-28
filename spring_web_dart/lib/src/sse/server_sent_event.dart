@@ -23,7 +23,7 @@
 ///   (order) => ServerSentEvent(order, id: order.id, event: 'order-updated'),
 /// );
 ///
-/// // Client: a Feign method returning EventStream<Order>.
+/// // Client: an HTTP service method returning EventStream<Order>.
 /// client.events().events.listen((ServerSentEvent<Order> e) {
 ///   log.info('${e.id} ${e.event}: ${e.data.status}');
 /// });

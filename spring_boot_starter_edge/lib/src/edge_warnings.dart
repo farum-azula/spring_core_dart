@@ -89,6 +89,31 @@ final class InstanceStateEdgeWarning implements EdgeWarningContributor {
   }
 }
 
+/// The beans whose methods carry `@ConcurrencyLimit`, a line for each: the
+/// limit counts the calls of one instance, and a platform runs many, so it
+/// is not one limit (as the in-memory state of [InstanceStateEdgeWarning]).
+final class ConcurrencyLimitEdgeWarning implements EdgeWarningContributor {
+  /// The contributor over the beans of [beans].
+  const ConcurrencyLimitEdgeWarning(this.beans);
+
+  /// The bean factory of the application.
+  final ConfigurableListableBeanFactory beans;
+
+  @override
+  Iterable<String> warnings(ApplicationContext context) sync* {
+    for (final name in beans.singletonNames) {
+      if (beans.getSingleton(name) case final Advised bean
+          when bean.aopAdvisors.any(
+            (advisor) => advisor.pointcut is ConcurrencyLimitPointcut,
+          )) {
+        yield "@ConcurrencyLimit (bean '$name'): counts the calls of each "
+            'short-lived instance, not of all of them; limit the calls where '
+            'they are shared (a queue, the database)';
+      }
+    }
+  }
+}
+
 /// Logs once, when a function starts, what its [EdgeWarningContributor]
 /// beans found (the bean `edgeWarnings`); nothing found, nothing logged.
 /// `spring.edge.warnings: false` turns it off.

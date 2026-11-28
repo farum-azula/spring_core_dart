@@ -37,7 +37,7 @@ final class IntrospectionNeed {
   static const read = IntrospectionNeed._(1);
 
   /// Instances are created and filled: the constructor, `instantiate`, the
-  /// setters and `fromJson` (a request body, a Feign response, a message
+  /// setters and `fromJson` (a request body, an HTTP response, a message
   /// read in, configuration binding).
   static const write = IntrospectionNeed._(2);
 

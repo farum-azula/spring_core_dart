@@ -373,6 +373,7 @@ final cacheAutoConfiguration = <BeanDefinition<Object>>[
     create: (r) => DefaultPointcutAdvisor(
       const CacheAnnotationPointcut(),
       r.dependency<CacheInterceptor>(),
+      order: AdvisorOrder.cache,
     ),
   ),
 ];

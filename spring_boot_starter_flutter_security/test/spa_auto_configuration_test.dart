@@ -24,7 +24,7 @@ const _registration = [
 void main() {
   final spa = const ApplicationContextRunner()
       .withAutoConfiguration(springBootAutoConfiguration)
-      .withAutoConfiguration(springBootStarterFeignAutoConfiguration)
+      .withAutoConfiguration(springBootStarterRestclientAutoConfiguration)
       .withAutoConfiguration(springSecurityCoreAutoConfiguration)
       .withAutoConfiguration(springBootStarterOauth2ClientAutoConfiguration)
       .withAutoConfiguration(
@@ -32,7 +32,7 @@ void main() {
         const AutoConfigurationModule(
           before: [
             'springBootStarterOauth2ClientAutoConfiguration',
-            'springBootStarterFeignAutoConfiguration',
+            'springBootStarterRestclientAutoConfiguration',
           ],
         ),
       )
@@ -71,7 +71,8 @@ void main() {
         context,
         doesNotHaveBean<SecretStoreOAuth2AuthorizedClientService>(),
       );
-      // Feign's transport (the application's here), no cookies, no CSRF.
+      // The RestClient starter's transport (the application's here), no
+      // cookies, no CSRF.
       expect(context.getBean<HttpTransport>(), isA<MockHttpTransport>());
       // The page is the spa page; no second one.
       expect(context.getBeanNamesForType<BrowserPage>(), isEmpty);

@@ -210,7 +210,7 @@ class LifecycleLog {
 ```
 
 **The other starters stay separate**, as in Spring Boot: add
-`spring_boot_starter_feign`, `spring_boot_starter_scheduling`,
+`spring_boot_starter_restclient`, `spring_boot_starter_scheduling`,
 `spring_boot_starter_cache`, ... when the app uses them. An app that
 logs its user in or keeps secrets lists
 [`spring_boot_starter_flutter_security`](https://pub.dev/packages/spring_boot_starter_flutter_security)
@@ -441,7 +441,7 @@ Read `beans` in `build` and in the callbacks made there (`onPressed`).
 A widget is immutable, and one `const` instance may be built in several
 places, so after `build` it holds the beans of its latest build. A widget
 built under two application contexts at once (rare: two
-`SpringScope`s) takes them into locals in `build`, as above.
+`SpringScope` instances) takes them into locals in `build`, as above.
 
 A record with named fields (`({Clock utc})`, read as `beans.utc`) works
 too. When several beans have a field's type, the field's name picks one,
@@ -960,7 +960,7 @@ The theme is always cached in the app's directory (through
 
 The typed theme keys come from the build: a downloaded file changes values,
 it does not add keys. The HTTP client is the `HttpTransport` bean if the app
-has one (the Feign starter declares it), else `spring_web_dart`'s client
+has one (the RestClient starter declares it), else `spring_web_dart`'s client
 (`dart:io`, the browser's `fetch`).
 
 ### Themes without Dart
@@ -1606,8 +1606,8 @@ whatever its own key says.
 
 **The network.** With `spring.flutter.debug.network.enabled: true`, the
 panel's Network tab lists what the app sent and received, newest first:
-every request of an `HttpTransport` bean (the Feign clients, the OAuth2
-client, Supabase, the themes and resources from a URL, the app's own)
+every request of an `HttpTransport` bean (`RestClient` and the HTTP
+service clients, the OAuth2 client, Supabase, the themes and resources from a URL, the app's own)
 and every WebSocket connection of a `WebSocketTransport` bean (the
 WebSocket starter, Phoenix channels), each a row with its method (read
 methods in one color, write methods in another), path, status (green,
@@ -1630,7 +1630,7 @@ change its timeouts. No client changes: a
 post-processor wraps the transport beans, so a request and its answer
 pass through as they were. Credentials never reach the list: the
 `Authorization`, `Cookie`, `Set-Cookie` and token headers, the headers a
-Feign client marks `sensitive-headers`, the secret query parameters and
+`RestClientBuilder` marks `sensitiveHeaders`, the secret query parameters and
 the password of an address are `******`; bodies are off by default, and
 with `bodies` on they are cut at `body-limit` (64 KB) with their secret
 JSON keys and form parameters masked. A streamed body is counted, not
@@ -2058,9 +2058,9 @@ new fingerprint, and the widget:
 1. closes the running context (`@PreDestroy` methods run, lifecycle
    beans stop, `ContextClosedEvent`);
 2. starts the application again with the new beans and config files. The
-   `ApplicationRunner`s do not run again, unless
+   `ApplicationRunner` instances do not run again, unless
    `rerunRunnersOnReload: true`: the app did not really start again;
-3. builds the widgets below it afresh, their `State`s included, so no
+3. builds the widgets below it afresh, their `State` instances included, so no
    widget keeps a bean of the closed context. Navigation and scroll
    positions start over, as after a hot restart, but the app process
    (and anything outside the context) stays.

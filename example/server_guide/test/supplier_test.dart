@@ -1,7 +1,7 @@
-// Chapter 9, the supplier's Feign clients against MockHttpTransport (the
-// application's own configuration, no server): URLs and headers, JSON,
-// FeignNotFound, retries, the fallback, @Cacheable on a client, and the
-// restock job that uses them.
+// Chapter 9, the supplier's HTTP service clients against MockHttpTransport
+// (the application's own configuration, no server): URLs and headers, JSON,
+// a 404 as an HttpClientErrorException, @Retryable, @Cacheable on a client,
+// and the restock job that uses them.
 @TestOn('vm')
 library;
 
@@ -11,8 +11,6 @@ import 'package:neon_books_server/src/catalog/catalog_service.dart';
 import 'package:neon_books_server/src/stock/restock_job.dart';
 import 'package:neon_books_server/src/supplier/supplier_clients.dart';
 import 'package:neon_books_server/src/supplier/supplier_models.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
-    show FeignNotFound, HttpTransport, HttpTransportException;
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:spring_boot_starter_web/spring_boot_starter_web.dart';
 import 'package:test/test.dart';
@@ -57,13 +55,19 @@ void main() {
     expect(supplier.requests, hasLength(1));
   });
 
-  test('404 → FeignNotFound', () async {
+  test('404 → HttpClientErrorException', () async {
     supplier
         .when(HttpMethod.get, '/supplier/offers/9790000000000?copies=1')
         .respond(404, json: {'status': 404});
     await expectLater(
       app.getBean<SupplierOffers>().offer('9790000000000', 1),
-      throwsA(isA<FeignNotFound>()),
+      throwsA(
+        isA<HttpClientErrorException>().having(
+          (error) => error.statusCode,
+          'statusCode',
+          HttpStatus.notFound,
+        ),
+      ),
     );
   });
 
@@ -87,17 +91,18 @@ void main() {
   });
 
   test(
-    'a supplier down: 3 attempts (the Retryer), then the fallback',
+    'a supplier down: 3 attempts (@Retryable), then the failure',
     () async {
       supplier
           .when(HttpMethod.post, '/supplier/deliveries')
           .fail(HttpTransportException('connection refused'));
-      final delivery = await app.getBean<SupplierDeliveries>().order(
-        const DeliveryRequest(isbn: littlePrince, copies: 2),
+      await expectLater(
+        app.getBean<SupplierDeliveries>().order(
+          const DeliveryRequest(isbn: littlePrince, copies: 2),
+        ),
+        throwsA(isA<ResourceAccessException>()),
       );
       expect(supplier.requests, hasLength(3));
-      expect(delivery.statusCode, 503); // NoDeliveries
-      expect(delivery.body!.copies, 0);
     },
   );
 

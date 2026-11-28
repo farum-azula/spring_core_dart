@@ -254,8 +254,7 @@ class A {
         'the field A.f',
       ),
       'a client': (
-        "@Mark() @FeignClient('svc', url: 'http://x') "
-            'abstract interface class Api {}',
+        "@Mark() @HttpExchange('/svc') abstract interface class Api {}",
         'class Api',
       ),
       'a repository': (

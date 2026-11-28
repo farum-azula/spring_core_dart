@@ -7,8 +7,6 @@
 library;
 
 import 'package:flutter/foundation.dart' show ChangeNotifier, Listenable;
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart'
-    show FeignClientConfig, FeignProperties;
 import 'package:spring_boot_starter_flutter_navigation/spring_boot_starter_flutter_navigation.dart'
     show
         NavigationProperties,
@@ -42,9 +40,9 @@ import 'package:spring_boot_starter_oauth2_client/spring_boot_starter_oauth2_cli
     hide Banner, Size;
 
 // The auto-configurations this package builds on (the Flutter starter's,
-// the OAuth2 client's and, through them, logging, Feign, the security
-// core and spring_boot_dart's), so a test of an application that lists
-// only this package can name them.
+// the OAuth2 client's and, through them, logging, the RestClient starter,
+// the security core and spring_boot_dart's), so a test of an application
+// that lists only this package can name them.
 export 'package:spring_boot_starter_flutter_navigation/spring_auto_configuration.dart';
 export 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart';
 
@@ -215,14 +213,17 @@ final class _OnClientRegistrations implements Condition {
 /// (`spring.flutter.security.web.mode=server`, the default):
 ///
 /// - `browserPage`, the [BrowserPage] the app runs in;
-/// - `httpTransport`, the Feign clients' transport: a
-///   [CsrfCookieHttpTransport] (the CSRF token of the `XSRF-TOKEN`
-///   cookie on unsafe requests to the server) around the browser's
-///   `fetch`; when the server is on another origin, a
+/// - `httpTransport`, the transport of every `RestClient` and HTTP
+///   service of the app: a [CsrfCookieHttpTransport] (the CSRF token of
+///   the `XSRF-TOKEN` cookie on unsafe requests to the server) around the
+///   browser's `fetch`; when the server is on another origin, a
 ///   [ServerCredentialsHttpTransport] sends the cookies with the requests
 ///   to the server only (`FetchCredentials.include`), every other request
-///   without them; it comes before the Feign starter's, which then backs
-///   off;
+///   without them. It calls only the addresses of the RestClient
+///   starter's allow list (`httpClientAllowedAddresses`) and its
+///   `spring.http.clients.connect-timeout`; it comes before that
+///   starter's `httpTransport`, which then backs off;
+/// - `webServerAllowedAddresses`, the server's host on that allow list;
 /// - `serverOAuth2LoginService`, the [ServerOAuth2LoginService] of the
 ///   app;
 ///
@@ -245,13 +246,13 @@ final class _OnClientRegistrations implements Condition {
 /// Each backs off when the application declares a bean of its type. The
 /// module is registered before the OAuth2 client's (`before`), so its
 /// `OAuth2AuthorizedClientService` replaces the client's in-memory one
-/// and its `DPoPKey` the client's key of one run,
-/// and before Feign's, so its `httpTransport` replaces Feign's in a
-/// browser.
+/// and its `DPoPKey` the client's key of one run, and before the
+/// RestClient starter's, so its `httpTransport` replaces that starter's
+/// in a browser.
 @AutoConfigurationModule(
   before: [
     'springBootStarterOauth2ClientAutoConfiguration',
-    'springBootStarterFeignAutoConfiguration',
+    'springBootStarterRestclientAutoConfiguration',
   ],
   // The navigation's beans are known when the guards' conditions run.
   after: ['springBootStarterFlutterNavigationAutoConfiguration'],
@@ -573,8 +574,12 @@ final BeanModule springBootStarterFlutterSecurityAutoConfiguration = BeanModule(
         final page = r.dependency<BrowserPage>();
         final location = page.location;
         final server = properties.server(location);
-        final connectTimeout = FeignClientConfig.connectTimeout(
-          r.dependency<FeignProperties>(),
+        // The RestClient starter's settings: its allow list (in a
+        // browser, the hosts of the URLs) and connect timeout.
+        final allowedAddresses = r.optionalDependency<AllowedAddresses>();
+        final connectTimeout = transportConnectTimeout(
+          r.dependency<HttpClientsProperties>(),
+          r.dependency<HttpServiceClientProperties>(),
         );
         return CsrfCookieHttpTransport(
           // fetch sends cookies to the page's own origin by itself; a
@@ -585,13 +590,38 @@ final BeanModule springBootStarterFlutterSecurityAutoConfiguration = BeanModule(
                   page: page,
                   server: server,
                   connectTimeout: connectTimeout,
+                  allowedAddresses: allowedAddresses,
                 )
-              : platformHttpTransport(connectTimeout: connectTimeout),
+              : platformHttpTransport(
+                  connectTimeout: connectTimeout,
+                  allowedAddresses: allowedAddresses,
+                ),
           page: page,
           server: server,
         );
       },
       destroyMethod: (transport) => transport.close(),
+    ),
+    BeanDefinition<AllowedAddressesContributor>(
+      name: 'webServerAllowedAddresses',
+      factoryMethodName: 'webServerAllowedAddresses',
+      types: const [AllowedAddressesContributor],
+      source: _source,
+      conditions: const [
+        ConditionGroup('$_source.webServerAllowedAddresses', [
+          _OnWeb(),
+          _OnServerMode(),
+        ]),
+      ],
+      // The app's server (server-url, or the page's own origin): the web
+      // login and the app's calls go there.
+      create: (r) {
+        final host = r
+            .dependency<FlutterWebSecurityProperties>()
+            .server(r.dependency<BrowserPage>().location)
+            .host;
+        return AllowedAddressesContributor.of([if (host.isNotEmpty) host]);
+      },
     ),
     BeanDefinition<ServerOAuth2LoginService>(
       name: 'serverOAuth2LoginService',

@@ -39,7 +39,7 @@ class ApiErrors {
 
   /// An Edge Function answered an error, or did not answer: 502.
   @ExceptionHandler()
-  ProblemDetail functionFailed(FeignException error) {
+  ProblemDetail functionFailed(RestClientException error) {
     log.warning('an Edge Function failed: $error');
     return ProblemDetail.forStatusAndDetail(
       HttpStatus.badGateway,

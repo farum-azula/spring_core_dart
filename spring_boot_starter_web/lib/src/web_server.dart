@@ -496,7 +496,7 @@ final class ServerProperties {
   /// the answer starts, the request is answered with a 503 (an
   /// `AsyncRequestTimeoutException`) and what the handler returns later is
   /// dropped. The request runs under a `RequestDeadline` of this length,
-  /// so the Feign calls it makes stop at it.
+  /// so the HTTP client calls it makes (`RestClient`) stop at it.
   ///
   /// It does not apply to a response that became a stream (server-sent
   /// events, a streamed body: `spring.mvc.async.request-timeout` limits an

@@ -16,11 +16,11 @@ import 'package:spring_boot_starter_cache/spring_auto_configuration.dart'
 import 'package:spring_boot_starter_data/spring_auto_configuration.dart' as _i3;
 import 'package:spring_boot_starter_data/spring_boot_starter_data.dart' as _i7;
 import 'package:spring_boot_starter_edge/spring_auto_configuration.dart' as _i4;
-import 'package:spring_boot_starter_feign/spring_auto_configuration.dart'
-    as _i10;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i11;
+    as _i10;
 import 'package:spring_boot_starter_oauth2_client/spring_auto_configuration.dart'
+    as _i11;
+import 'package:spring_boot_starter_restclient/spring_auto_configuration.dart'
     as _i12;
 import 'package:spring_boot_starter_security/spring_auto_configuration.dart'
     as _i13;
@@ -203,9 +203,9 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     _i2.springBootStarterCacheAutoConfiguration,
     _i3.springBootStarterDataAutoConfiguration,
     _i4.springBootStarterEdgeAutoConfiguration,
-    _i10.springBootStarterFeignAutoConfiguration,
-    _i11.springBootStarterLoggingAutoConfiguration,
-    _i12.springBootStarterOauth2ClientAutoConfiguration,
+    _i10.springBootStarterLoggingAutoConfiguration,
+    _i11.springBootStarterOauth2ClientAutoConfiguration,
+    _i12.springBootStarterRestclientAutoConfiguration,
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i13.springBootStarterSecurityAutoConfiguration,
@@ -247,6 +247,10 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
             r'springBootStarterSupabaseServerAutoConfiguration',
           ],
         ),
+    _i12.springBootStarterRestclientAutoConfiguration:
+        const _i1.AutoConfigurationModule(
+          after: [r'springBootStarterFlutterSecurityAutoConfiguration'],
+        ),
     if ((const bool.fromEnvironment('dart.library.io') ||
         const bool.fromEnvironment('SPRING_ALL_PLATFORMS')))
       _i13.springBootStarterSecurityAutoConfiguration:
@@ -262,7 +266,7 @@ _i1.SpringApplication get springApplication => _i1.SpringApplication(
     _i14.springBootStarterSupabaseAutoConfiguration:
         const _i1.AutoConfigurationModule(
           after: [
-            r'springBootStarterFeignAutoConfiguration',
+            r'springBootStarterRestclientAutoConfiguration',
             r'springBootStarterWebsocketAutoConfiguration',
             r'springBootStarterDataAutoConfiguration',
             r'springSecurityCoreAutoConfiguration',

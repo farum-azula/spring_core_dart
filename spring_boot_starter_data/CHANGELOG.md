@@ -1,3 +1,10 @@
+## Unreleased
+
+- The documentation of `@Json` names the `ObjectMapper` of controllers and HTTP clients.
+- `JoinedTransactionRetryVeto` (bean `joinedTransactionRetryVeto`, in `springBootStarterDataResilienceAutoConfiguration` with `spring.resilience.enabled: true`): a `@Retryable` call that runs inside a transaction it did not open is not retried (its failure has marked that transaction rollback-only); a method whose own `@Transactional` is `requiresNew`, `nested` or `notSupported` is. A debug build says so once per method.
+- `UnexpectedRollbackException` and `TransactionSystemException` are `NonRetryableException`s; `TransactionException` and `DataAccessException` are `NestedException`s, so the retries match along their causes.
+- The `transactionAdvisor` is at `AdvisorOrder.transaction` (was `Ordered.lowestPrecedence`): inside the retries, so each attempt is a new transaction, and outside the cache and method validation.
+
 ## 0.10.0
 
 - **Breaking:** `DataTransactionSynchronizationRegistry` (bean `transactionSynchronizationRegistry`) is `DataTransactionLifecycleRegistry` (bean `transactionLifecycleRegistry`), after core's rename; a transaction that ends without a commit, rolled back or with an unknown end, calls the listener's `afterRollbackOrUnknown`.

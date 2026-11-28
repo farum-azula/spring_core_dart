@@ -5,7 +5,6 @@ import 'package:neon_books_app/src/account/session.dart';
 import 'package:neon_books_app/src/app/messages.dart';
 import 'package:neon_books_app/src/basket/basket.dart';
 import 'package:neon_books_app/src/orders/order_service.dart';
-import 'package:spring_boot_starter_feign/spring_boot_starter_feign.dart';
 import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';
 
 /// The beans of [BasketPage].
@@ -102,7 +101,7 @@ class _OrderButtonState extends State<_OrderButton> {
     try {
       final order = await widget.orders.placeOrder();
       text = mounted ? context.messages.basket.ordered(order.id) : '';
-    } on FeignException catch (error) {
+    } on RestClientException catch (error) {
       text = mounted ? errorMessage(context, error) : '';
     } finally {
       if (mounted) {

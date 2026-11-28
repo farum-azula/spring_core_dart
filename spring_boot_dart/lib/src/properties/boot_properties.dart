@@ -152,6 +152,18 @@ class ObservationsAnnotationsProperties {
   bool enabled = false;
 }
 
+/// Method retries and concurrency limits: `spring.resilience.*`.
+///
+/// Spring (Java): `@EnableResilientMethods`; Spring Boot has no property.
+@ConfigurationProperties('spring.resilience')
+class ResilienceProperties {
+  /// Whether `@Retryable` and `@ConcurrencyLimit` work: with `true` the
+  /// build has the advisors that put them into effect and writes a proxy
+  /// for each bean that carries one; without it, no proxy at all, and the
+  /// methods run once, without limit. Read by the generator.
+  bool enabled = false;
+}
+
 /// The pool of the `isolateTaskExecutor`:
 /// `spring.task.execution.isolates.*`.
 ///

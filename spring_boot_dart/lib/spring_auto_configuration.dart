@@ -18,6 +18,7 @@ import 'package:spring_boot_dart/src/autoconfigure/json_schema_auto_configuratio
 import 'package:spring_boot_dart/src/autoconfigure/lifecycle_auto_configuration.dart';
 import 'package:spring_boot_dart/src/autoconfigure/message_source_auto_configuration.dart';
 import 'package:spring_boot_dart/src/autoconfigure/observation_auto_configuration.dart';
+import 'package:spring_boot_dart/src/autoconfigure/resilience_auto_configuration.dart';
 import 'package:spring_boot_dart/src/autoconfigure/validation_auto_configuration.dart';
 
 /// The auto-configuration of `spring_boot_dart`:
@@ -73,7 +74,79 @@ final BeanModule springBootObservedAnnotationsAutoConfiguration = BeanModule(
       create: (r) => DefaultPointcutAdvisor(
         const ObservedPointcut(),
         ObservedInterceptor(r.dependency<ObservationRegistry>()),
+        order: AdvisorOrder.observation,
       ),
+    ),
+  ],
+);
+
+/// `@Retryable` and `@ConcurrencyLimit` put into effect
+/// (`ResilienceAutoConfiguration`): in the build only with
+/// `spring.resilience.enabled: true`, so without it no proxy is written for
+/// the beans that carry them, and they cost nothing.
+///
+/// - `concurrencyLimitAdvisor`, at `AdvisorOrder.concurrencyLimit`: the
+///   limits, with the placeholders of `limitString` filled from the
+///   environment;
+/// - `retryAdvisor`, at `AdvisorOrder.retry`, inside it: the retries, with
+///   the placeholders of the `*String` attributes filled, a
+///   `MethodRetryEvent` published for each failure, every `RetryListener`
+///   bean told (found at the first retry), and the `RetryStreamAdapter` and
+///   `MethodRetryVeto` beans of the other starters.
+///
+/// Spring (Java): `@EnableResilientMethods`; Spring Boot adds nothing.
+@AutoConfigurationModule(
+  build: AutoConfigurationBuild(
+    'spring.resilience.enabled',
+    whenMissing: BuildInclusion.never,
+  ),
+)
+// The advisors are written here, in the module, as the one of @Observed.
+final BeanModule springBootResilienceAutoConfiguration = BeanModule(
+  'springBootResilienceAutoConfiguration',
+  [
+    BeanDefinition<DefaultPointcutAdvisor>(
+      name: 'concurrencyLimitAdvisor',
+      types: const [
+        DefaultPointcutAdvisor,
+        PointcutAdvisor,
+        Advisor,
+        Ordered,
+      ],
+      source: resilienceSource,
+      create: (r) => DefaultPointcutAdvisor(
+        const ConcurrencyLimitPointcut(),
+        ConcurrencyLimitInterceptor(
+          environment: r.dependency<ConfigurableEnvironment>(),
+        ),
+        order: AdvisorOrder.concurrencyLimit,
+      ),
+    ),
+    BeanDefinition<DefaultPointcutAdvisor>(
+      name: 'retryAdvisor',
+      types: const [
+        DefaultPointcutAdvisor,
+        PointcutAdvisor,
+        Advisor,
+        Ordered,
+      ],
+      source: resilienceSource,
+      create: (r) {
+        final listeners = r.provider<RetryListener>();
+        return DefaultPointcutAdvisor(
+          const RetryablePointcut(),
+          RetryInterceptor(
+            environment: r.dependency<ConfigurableEnvironment>(),
+            introspector: r.dependency<Introspector>(),
+            eventPublisher: r.dependency<ApplicationEventPublisher>(),
+            retryListener: CompositeRetryListener.lazy(listeners.orderedList),
+            streamAdapters:
+                r.optionalDependencyList<RetryStreamAdapter>() ?? const [],
+            vetoes: r.optionalDependencyList<MethodRetryVeto>() ?? const [],
+          ),
+          order: AdvisorOrder.retry,
+        );
+      },
     ),
   ],
 );

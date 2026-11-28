@@ -115,12 +115,12 @@ dev_dependencies:
 `spring_boot_starter_flutter` (with `spring_boot_dart` and logging),
 `spring_boot_starter_flutter_navigation` (the routes and their guards),
 `spring_boot_starter_oauth2_client` (the registrations, the authorized
-clients) and `spring_security_core`
+clients, and with them `spring_boot_starter_restclient`: `RestClient`,
+`@HttpExchange` and `@ClientRegistrationId`) and `spring_security_core`
 (`SecurityContextHolder`, `@PreAuthorize`): list this package instead of
 the Flutter starter, and
 `import 'package:spring_boot_starter_flutter_security/spring_boot_starter_flutter_security.dart';`
-gives all of them. Feign is not re-exported: an app with Feign clients
-lists `spring_boot_starter_feign` and imports it. Tests import
+gives all of them. Tests import
 `package:spring_boot_starter_flutter_security/testing.dart` for
 `withMockUser`, `withAuthentication` and `withAnonymousUser`. Everything
 else (the generator, `SpringApplicationWidget`, themes) is as in the
@@ -243,7 +243,7 @@ read. This is the backend-for-frontend pattern, the strongest choice for
 a web app, and the default (`spring.flutter.security.web.mode=server`).
 
 The app's code is the same as on phones: `login('keycloak')`,
-`restore()`, `logout()`, `PrincipalBuilder`, the Feign clients. No
+`restore()`, `logout()`, `PrincipalBuilder`, the HTTP services. No
 `kIsWeb`, no provider in the code: the registration ids are the
 server's (`spring.security.oauth2.client.registration.<id>` there), and
 the app has no registration of its own on the web.
@@ -365,7 +365,8 @@ Only `http` and `https` URLs are followed. A `403` means the CSRF token
 was missing; the app logs out locally all the same.
 
 **Cookies and the CSRF token.** In a browser the package declares the
-`httpTransport` bean (the Feign starter's backs off): the browser's
+`httpTransport` bean (the RestClient starter's backs off), the
+transport of every `RestClient` and HTTP service of the app: the browser's
 `fetch`, wrapped in `CsrfCookieHttpTransport`, which copies the server's
 `XSRF-TOKEN` cookie into the `X-XSRF-TOKEN` header of `POST`, `PUT`,
 `PATCH` and `DELETE` requests to that server, never to another origin.
@@ -376,11 +377,16 @@ the server's origin go with the cookies (`FetchCredentials.include`),
 every other request (a public API, the provider) without them, so an API
 answering `Access-Control-Allow-Origin: *` keeps working and never sees
 the user's cookies. The login service sends its own requests through it
-too. An application that declares its own `HttpTransport` keeps it (as
-in Spring Boot, the auto-configuration backs off); it then builds the
-same with `ServerCredentialsHttpTransport.forPage(page: page, server:
-server)` and wraps it in `CsrfCookieHttpTransport` for its Feign calls
-(the login service wraps its transport for its own requests anyway).
+too, with a `RestClient`. The transport keeps the RestClient starter's
+allow list (`spring.http.clients.allowed-addresses`; in a browser the
+hosts of the URLs are checked) and connect timeout, and the package adds
+the server's host to that list (`webServerAllowedAddresses`). An
+application that declares its own `HttpTransport` keeps it (as in Spring
+Boot, the auto-configuration backs off); it then builds the same with
+`ServerCredentialsHttpTransport.forPage(page: page, server: server,
+allowedAddresses: allowed)` and wraps it in `CsrfCookieHttpTransport` for
+its `RestClient` calls (the login service wraps its transport for its
+own requests anyway).
 
 **The server's side** (`spring_boot_starter_security`), as in the
 [server guide](https://github.com/farum-azula/spring_core_dart/tree/main/example/server_guide)'s
@@ -430,7 +436,8 @@ the app has a server: there no token ever reaches the page, which this
 mode cannot promise.
 
 The app's code is still the same: `login('keycloak')`, `restore()`,
-`logout()`, `PrincipalBuilder`, the Feign clients with the access token.
+`logout()`, `PrincipalBuilder`, the HTTP services with the access token
+(`@ClientRegistrationId`).
 The registrations are the app's own (as on phones), with the page as the
 redirect URI:
 
@@ -1050,7 +1057,7 @@ see the [client's README](https://github.com/farum-azula/spring_core_dart/tree/m
 The key must live as long as the tokens, or a restart would mean a new
 login. This package declares it as the app's `DPoPKey` bean
 (`platformDPoPKey`, a `PlatformDPoPKey`), in the safest place each
-platform has; the token clients, the user services and the Feign
+platform has; the token clients, the user services and the `RestClient`
 interceptor use it. It is made at the first proof, not at startup.
 
 | Platform | Where the key lives | Who signs |
@@ -1120,8 +1127,10 @@ next load and fetched again. `SecretStore.deleteAll()` removes the
 desktop key (it is a value of the store), not the Secure Enclave's or
 the Keystore's; call `PlatformDPoPKey.delete()` for those.
 
-**WebSocket handshakes and calls of your own.** The Feign interceptor
-sends `Authorization: DPoP <token>` and a proof by itself. For a request
+**WebSocket handshakes and calls of your own.** The `RestClient`
+interceptor (`OAuth2ClientHttpRequestInterceptor`, on every HTTP service
+marked `@ClientRegistrationId`) sends `Authorization: DPoP <token>` and a
+proof by itself. For a request
 the framework does not make, `OAuth2AccessTokenHeaders` of the OAuth2
 client writes the headers by the token's type; for a WebSocket handshake
 the proof's `htu` is the `http(s)` form of the `ws(s)` URL (the handshake
@@ -1515,7 +1524,8 @@ runner (DPAPI) and Linux runner (GNOME Keyring through libsecret).
 Measured with Flutter 3.47 (October 2026): a minimal app (a
 `SpringApplicationWidget` showing a text) built twice, once with
 `spring_boot_starter_flutter` and once with this package instead, which
-adds the OAuth2 client, Feign, `spring_security_core` and this plugin.
+adds the OAuth2 client (with the HTTP client it builds on),
+`spring_security_core` and this plugin.
 The app uses none of it; the generated `spring_gen/main.spring.dart` lists their
 auto-configurations, whose beans keep the code in the build (tree shaking
 cannot remove it).

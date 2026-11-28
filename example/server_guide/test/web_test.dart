@@ -207,7 +207,7 @@ void main() {
       final part = await app.mockMvc
           .get(
             '/api/books/$dune/cover',
-            // What the app's Feign client sends (produces: 'image/*').
+            // What the Flutter app's client sends (accept: image/*).
             headers: {'Range': 'bytes=0-7', 'Accept': 'image/*'},
           )
           .andExpect(

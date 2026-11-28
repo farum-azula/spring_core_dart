@@ -154,8 +154,9 @@ final edgeAutoConfiguration = <BeanDefinition<Object>>[
 /// - `edgeWarnings` ([EdgeWarnings]), the list of what works differently
 ///   in a function, logged once at start, unless `spring.edge.warnings` is
 ///   `false`;
-/// - its contributors `rateLimitStoreEdgeWarning`, `timerWorkEdgeWarning`
-///   and `instanceStateEdgeWarning` ([EdgeWarningContributor]).
+/// - its contributors `rateLimitStoreEdgeWarning`, `timerWorkEdgeWarning`,
+///   `instanceStateEdgeWarning` and `concurrencyLimitEdgeWarning`
+///   ([EdgeWarningContributor]).
 ///
 /// No other bean depends on them (one that reads the list takes it as
 /// optional). They keep the source of `EdgeAutoConfiguration`, so
@@ -173,6 +174,12 @@ final edgeStartupChecks = <BeanDefinition<Object>>[
         (
           'instanceStateEdgeWarning',
           (r) => InstanceStateEdgeWarning(
+            r.dependency<ConfigurableListableBeanFactory>(),
+          ),
+        ),
+        (
+          'concurrencyLimitEdgeWarning',
+          (r) => ConcurrencyLimitEdgeWarning(
             r.dependency<ConfigurableListableBeanFactory>(),
           ),
         ),

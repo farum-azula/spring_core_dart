@@ -13,10 +13,12 @@ void main() {
     final result = await buildPackage({
       'lib/src/beans.dart': scanRoot,
       'lib/src/service.dart':
-          "$starterImports@FeignClient('svc', url: 'http://x') "
+          "$starterImports@HttpExchange('/svc') "
           'abstract interface class Api { '
-          "@PreAuthorize('this.ping() != null') @GetMapping('/a') "
-          "Future<String> a(); @GetMapping('/p') Future<String> ping(); }",
+          "@PreAuthorize('this.ping() != null') @GetExchange('/a') "
+          "Future<String> a(); @GetExchange('/p') Future<String> ping(); } "
+          '@Configuration() @ImportHttpServices(types: [Api]) '
+          'class Clients {}',
     }, proxyMode: ProxyMode.all);
     expect(result.errors, isEmpty);
     expect(

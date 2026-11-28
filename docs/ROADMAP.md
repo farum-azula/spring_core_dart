@@ -26,7 +26,7 @@ one topic per page.
 | Logging | Planned (its properties are in Configuration) |
 | Scheduling, caching | Planned |
 | Data | Planned: repositories, derived queries, `@Query`, transactions, migrations, SQLite and PostgreSQL. Today: the [data starter's README](../spring_boot_starter_data/README.md), the properties in [Configuration](configuration.md#20-reference-sql-databases) and the tests in [Testing](testing.md#19-data-tests-datatest) |
-| HTTP, Feign, WebSocket | Planned |
+| HTTP clients (`RestClient`, HTTP service interfaces), WebSocket | Planned |
 | Flutter | Planned: the app widget, beans in widgets, themes, fonts, assets, lifecycle, platform profiles, hot reload |
 | Code generation | Planned: what the generator writes, its options (`build.yaml`), its build errors |
 | Editor support | Planned: the Zed extensions, the language server, snippets |

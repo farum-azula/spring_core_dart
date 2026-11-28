@@ -21,7 +21,7 @@ import 'package:spring_core_dart_generator/src/core/metadata/spring_metadata.dar
 ///
 /// It runs for a package with Spring code: a `@ComponentScan`,
 /// `@SpringBootApplication`, `@AutoConfigurationModule`,
-/// `@ConfigurationProperties` or hand-written `BeanDefinition`s in `lib/` or
+/// `@ConfigurationProperties` or hand-written `BeanDefinition` instances in `lib/` or
 /// `bin/`, or a marker of a package's part
 /// ([PackageGeneration.markers]). Everything is derived from the code:
 /// nothing is written by hand.

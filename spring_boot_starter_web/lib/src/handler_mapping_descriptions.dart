@@ -15,7 +15,7 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// ];
 /// ```
 ///
-/// Spring Boot (Java): the `HandlerMappingDescriptionProvider`s of
+/// Spring Boot (Java): the `HandlerMappingDescriptionProvider` instances of
 /// `DispatcherHandlersMappingDescriptionProvider`.
 abstract interface class DescribableHandlerMapping {
   /// One map per handler, in Spring WebFlux's shape: `predicate`,

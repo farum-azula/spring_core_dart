@@ -97,10 +97,25 @@ base class ModuleScan {
   /// class whose implementation the part generates, made by [creation]: a
   /// bean as any other, named by its `@Component(name:)` or after the
   /// class (`BookRepository` → `bookRepository`), looked up by the class
-  /// and its supertypes, with its `@Primary`, `@Qualifier`s, conditions
-  /// and annotations; and a proxy (`_$BookRepositoryProxy`) unless the
-  /// build's proxies are off, so advice (`@Transactional` on its methods)
-  /// wraps it.
-  void addGeneratedBean(ClassElement element, PackageCreation creation) =>
-      _scanner._addGeneratedBean(element, creation);
+  /// and its supertypes, with its `@Primary` and `@Qualifier` annotations,
+  /// conditions and other annotations; and a proxy
+  /// (`_$BookRepositoryProxy`) unless the build's proxies are off, so
+  /// advice (`@Transactional` on its methods) wraps it. [conditions] come
+  /// before the class's own: those of the bean class that declares it
+  /// ([beanClassConditions]).
+  void addGeneratedBean(
+    ClassElement element,
+    PackageCreation creation, {
+    List<ConditionModel> conditions = const [],
+  }) => _scanner._addGeneratedBean(element, creation, conditions);
+
+  /// The conditions under which [element] is a bean of the module: its
+  /// own and those of the class importing it with `@Import`, in the one
+  /// group evaluated for the class, its `@Bean` methods and its imports
+  /// (empty for an unconditional bean); `null` when the core made no bean
+  /// of [element]. Ask once every library is scanned
+  /// ([PackageGeneration.scanModule]): a class that a configuration
+  /// scanned later imports is a bean only from then.
+  List<ConditionModel>? beanClassConditions(ClassElement element) =>
+      _scanner._beanClassConditions[element];
 }

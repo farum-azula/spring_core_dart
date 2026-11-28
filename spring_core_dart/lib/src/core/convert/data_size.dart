@@ -3,7 +3,7 @@
 ///
 /// It exists so configuration can say `10MB` instead of `10485760`. The
 /// default conversion service turns strings such as `10MB`, `512KB` or
-/// `100` (bytes) and plain `int`s (bytes) into a `DataSize`, so an
+/// `100` (bytes) and plain `int` values (bytes) into a `DataSize`, so an
 /// application declares a `@ConfigurationProperties` field or a `@Value`
 /// parameter of this type and reads the result. Units are powers of 1024.
 ///

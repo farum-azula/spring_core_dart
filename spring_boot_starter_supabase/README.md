@@ -13,8 +13,9 @@ through Spring Data repositories, its Auth through Spring Security,
 Realtime as streams, Storage as a template and as declared buckets, Edge
 Functions as declared interfaces.
 
-The client is the starter's own, over the `HttpTransport` of
-`spring_web_dart` and the WebSocket starter: it adds no third-party
+The client is the starter's own, on the `RestClient` of
+[`spring_boot_starter_restclient`](../spring_boot_starter_restclient/README.md)
+and the WebSocket starter: it adds no third-party
 package (none of Supabase's; `spring_security_core` brings the family's
 one temporary exception, `pointycastle`), and it compiles to
 WebAssembly. Every call is made as the same user: one
@@ -39,7 +40,7 @@ dart run build_runner build
 
 One import is enough:
 `package:spring_boot_starter_supabase/spring_boot_starter_supabase.dart`
-re-exports the data, cache, Feign, WebSocket and logging starters,
+re-exports the data, cache, RestClient, WebSocket and logging starters,
 `spring_security_core` and `spring_web_dart`. The starter does not depend
 on the security starters: a server that accepts the project's tokens adds
 `spring_boot_starter_security`, a Flutter app that opens a provider's
@@ -129,7 +130,7 @@ spring:
 | `spring.supabase.anon-key` | string | none | The anon (publishable) key: `apikey` of every call, and the bearer token while nobody is signed in. Meant to be public |
 | `spring.supabase.service-role-key` | string | none | The service role (secret) key, used only inside `SupabaseCredentials.asServiceRole`. It passes row-level security: keep it on a server |
 | `spring.supabase.connect-timeout` | duration | `10s` | How long the Realtime connection may take to open, unless the WebSocket client `supabase-realtime` (or `default`) sets its own `connect-timeout`. An HTTP call is limited by `timeout` |
-| `spring.supabase.timeout` | duration | `30s` | How long a call may take, the answer's body included. The bodies of Storage downloads are not limited by it |
+| `spring.supabase.timeout` | duration | `30s` | How long a call may take, the answer's body included; a `RequestDeadline` of the caller that ends earlier (a server's `server.request-timeout`) ends it earlier. The bodies of Storage downloads are not limited by it |
 | `spring.supabase.db.url` | string | none | The PostgreSQL address of the project (`postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres`, or a pooler's). Set: the repositories use SQL over it. Not set: they use the REST API |
 | `spring.supabase.db.rls` | `off`, `user` | `off` | As whom SQL runs: the user of `db.url` (`off`), or the current user, with the role `authenticated` (or `anon`) and the token's claims (`user`) |
 | `spring.supabase.db.schema` | string | the API's (`public`) | The schema the REST API reads and writes (`Accept-Profile` / `Content-Profile`) |
@@ -146,7 +147,7 @@ spring:
 | `spring.supabase.realtime.max-message-size` | data size | `4MB` | The largest message read from Realtime; a larger one closes the connection |
 | `spring.supabase.storage.signed-url-expiry` | duration | `1h` | How long a signed URL is valid when the call does not say |
 | `spring.supabase.functions.region` | string | none | The region the functions run in (the `x-region` header); the nearest one when not set |
-| `spring.supabase.functions.timeout` | duration | `spring.supabase.timeout` | How long a function may take |
+| `spring.supabase.functions.timeout` | duration | `spring.supabase.timeout` | How long a call of a function may take, its retries included |
 | `spring.supabase.cache.shared` | list | empty | The caches whose entries are the same for every user; every other cache keeps the entries of each caller apart |
 
 Two more places take settings of the starter's parts:
@@ -154,9 +155,17 @@ Two more places take settings of the starter's parts:
 - `spring.websocket.client.config.supabase-realtime.*` tunes the Realtime
   connection (`reconnect.*`, `connect-timeout`, `max-text-message-size`,
   `phoenix.*`); what is set there wins over `spring.supabase.realtime.*`.
-- `spring.feign.client.config.supabase-functions.*` tunes the Edge
-  Functions clients (the name of `@EdgeFunctions(name:)`), except
-  `follow-redirects`: they never follow a redirect.
+- `spring.http.serviceclient.supabase-functions.*` tunes the Edge
+  Functions interfaces (their HTTP service group): `read-timeout`,
+  `connect-timeout`, `default-header`; not `base-url` (the project's,
+  always) or `redirects` (never followed).
+- `spring.http.clients.*` (the RestClient starter) applies to every call:
+  `connect-timeout`, `read-timeout`. Its transport calls only the
+  addresses allowed by hand, and the host of `spring.supabase.url` is
+  allowed by the starter itself (the bean `supabaseAllowedAddresses`, an
+  `AllowedAddressesContributor`), so a configured project needs nothing in
+  `spring.http.clients.allowed-addresses`; any other host the application
+  calls does.
 
 At startup the starter says once how the repositories reach the database,
 without any password:
@@ -361,7 +370,7 @@ The SQL store reports no changes: with `db.url`, such a repository takes
 
 ### Errors
 
-Errors are the data starter's `DataAccessException`s, the same as on the
+Errors are the data starter's `DataAccessException` instances, the same as on the
 SQL path:
 
 | Answer | Exception |
@@ -639,7 +648,7 @@ await auth.logout();
   between. One login waits at a time.
 - **Logout** never depends on the network: the user is signed out here
   first, then the session is revoked at Auth.
-- **Errors** are Spring Security's `AuthenticationException`s with Auth's
+- **Errors** are Spring Security's `AuthenticationException` instances with Auth's
   error code (`SupabaseAuthFailure.errorCode`, `statusCode`):
   `BadCredentialsException` (`invalid_credentials`, `otp_expired`, …),
   `DisabledException` (`email_not_confirmed`, …), `LockedException`
@@ -822,7 +831,7 @@ its folder. `StorageTemplate` checks again: a path with an empty, `.` or
 `..` segment is an `ArgumentError`. A wrongly declared interface stops
 the start, with every problem of the interface in one message.
 
-**Errors** are `StorageException`s (a `SupabaseException`):
+**Errors** are `StorageException` instances (a `SupabaseException`):
 `StorageObjectNotFoundException` (or the caller may not see it),
 `StorageObjectAlreadyExistsException`,
 `StoragePermissionDeniedException`, `StorageObjectTooLargeException`.
@@ -844,13 +853,27 @@ abstract interface class Functions {
   @EdgeFunction('reports/{year}', method: HttpMethod.get)
   Future<String> report(@PathVariable() int year);
 }
+
+@SpringBootApplication()
+@ImportHttpServices(group: EdgeFunctions.group, types: [Functions])
+void main(List<String> args) => runApplication(args);
 ```
 
-An `@EdgeFunctions` interface is a Feign client of
-`<spring.supabase.url>/functions/v1` with the key and the token of
-`SupabaseCredentials`: parameters (`@RequestBody`, `@RequestParam`,
-`@RequestHeader`, `@PathVariable`), results and errors (`FeignException`)
-are Feign's. A method without `@EdgeFunction` stops the start.
+An `@EdgeFunctions` interface is an HTTP service interface of the
+RestClient starter, imported into the group `supabase-functions`
+(`EdgeFunctions.group`; `@ImportHttpServices` goes on the application,
+its `main`, a `@Configuration()` class or a `@ComponentScan` variable).
+The generator writes its bean as direct `RestClient` calls, and the
+starter points the group at `<spring.supabase.url>/functions/v1` with the
+key and the token of `SupabaseCredentials` (the bean
+`edgeFunctionsGroupConfigurer`). Parameters (`@RequestBody`,
+`@RequestParam`, `@RequestHeader`, `@PathVariable`, `@CookieValue`),
+results and errors are those of HTTP service interfaces: an error status
+is a `RestClientResponseException` (`HttpClientErrorException` for a 4xx,
+`HttpServerErrorException` for a 5xx, with the status and the body), no
+answer a `ResourceAccessException`. A method without an exchange
+annotation, or an interface no `@ImportHttpServices` imports, fails the
+build.
 
 What a function may answer:
 
@@ -858,9 +881,10 @@ What a function may answer:
 |---|---|
 | `Future<T>` (a class, a `Map`, a `List`), `Future<String>` | JSON, or text |
 | `Future<Uint8List>` | a file, read whole |
-| `EventStream<T>`, `Stream<T>` | server-sent events, as they arrive |
+| `EventStream<T>` | server-sent events, as they arrive |
 | `Stream<List<int>>` | the body as it arrives, whatever its content type |
 | `Future<ResponseEntity<T>>` | the status, the headers and the body |
+| `Future<void>` | the status only |
 
 ```dart
 @EdgeFunction('progress', method: HttpMethod.get)
@@ -876,14 +900,42 @@ Stream<List<int>> exportStream();
 A request body is read whole before it is sent.
 
 - A function's name takes `${property}` and `{name}` filled by a
-  `@PathVariable()` parameter; it takes no SpEL.
+  `@PathVariable()` parameter; it takes no SpEL. `@GetExchange` and the
+  other exchange annotations work on its methods too, relative to
+  `/functions/v1`.
 - The method is `POST` unless `method:` says otherwise.
-- Its settings are `spring.feign.client.config.supabase-functions.*`
-  (`@EdgeFunctions(name:)` names another client). The call timeout is the
-  client's, else `spring.supabase.functions.timeout`, else
-  `spring.supabase.timeout`.
+- A call is limited as a whole by `spring.supabase.functions.timeout`,
+  else `spring.supabase.timeout`, and by the `RequestDeadline` of the code
+  that calls (a server's `server.request-timeout`), the earlier of them.
+  The group's other settings are
+  `spring.http.serviceclient.supabase-functions.*`.
 - It never follows a redirect, which could carry the token to another
-  host. `spring.supabase.functions.region` is sent as `x-region`.
+  host, and the key and the token go to the project's address only (a
+  whole URL of another host in `@EdgeFunction` fails the call with a
+  `StateError`). `spring.supabase.functions.region` is sent as
+  `x-region`.
+- Nothing is retried by default. `@Retryable` on a method retries it
+  (with `spring.resilience.enabled: true`), or an
+  `EdgeFunctionsGroupConfigurer` bean of the application's with a
+  `RetryTemplate` retries every call as its policy allows: no answer (no
+  connection, a timeout), or an error status with `Retry-After`, after
+  the pause the server asked for; never another error status, and never a
+  retry whose pause would end after the call's time limit.
+
+  ```dart
+  @Bean()
+  EdgeFunctionsGroupConfigurer edgeFunctionsGroupConfigurer(
+    SupabaseHttp http,
+  ) => EdgeFunctionsGroupConfigurer(
+    http: http,
+    retryTemplate: RetryTemplate(
+      retryPolicy: RetryPolicy.builder()
+          .maxRetries(2)
+          .delay(const Duration(milliseconds: 150))
+          .build(),
+    ),
+  );
+  ```
 - Each call is an `Observation` named `supabase.functions`, with the
   function's name.
 
@@ -921,7 +973,8 @@ wants it (`keyGenerator: 'supabaseKeyGenerator'`).
 ## Tests
 
 A test needs no project: the starter talks through the application's
-`HttpTransport` and `WebSocketTransport` beans, and the test starter
+`HttpTransport` (under its `RestClient`) and `WebSocketTransport` beans,
+and the test starter
 has fakes of both (`MockHttpTransport`, `MockWebSocketTransport` in
 `package:spring_boot_starter_test/spring_boot_starter_test.dart`).
 
@@ -1010,9 +1063,9 @@ Supabase CLI and tests of both, without a project and against one.
 | `supabase.auth.signInWithPassword(…)` | `SupabaseAuth.signInWithPassword(…)`; the user is Spring Security's `Authentication` |
 | `supabase.auth.onAuthStateChange` | `LoginSession.authenticationChanges`, `AuthenticationSuccessEvent`, `LogoutSuccessEvent` |
 | `supabase.storage.from('avatars').upload(…)` | `StorageTemplate`, or a `@StorageBucket` interface |
-| `supabase.functions.invoke('name')` | an `@EdgeFunctions` interface (a Feign client) |
+| `supabase.functions.invoke('name')` | an `@EdgeFunctions` interface (an HTTP service interface) |
 | `supabase.channel('room')…subscribe()` | `SupabaseRealtime.channel('room')` or a `@RealtimeChannel` interface: streams, joined while used, no `subscribe()` |
-| `AuthException`, `PostgrestException`, `StorageException` | Spring Security's `AuthenticationException`s, the data starter's `DataAccessException`s, `StorageException` |
+| `AuthException`, `PostgrestException`, `StorageException` | Spring Security's `AuthenticationException` instances, the data starter's `DataAccessException` instances, `StorageException` |
 
 - **Its own client**: none of Supabase's packages; the HTTP transport,
   the WebSocket transport, the JSON mapper, the logs and the observations

@@ -920,7 +920,7 @@ A `ConfigurationCondition` chooses when it is decided, with its
 `ConfigurationPhase`:
 
 - `parseConfiguration`: while parsing. A failing one also stops the
-  class's imports and `@PropertySource`s.
+  class's imports and `@PropertySource` annotations.
 - `registerBean`: when the class is read, after the classes before it have
   registered their beans and run their registrars (see [Modules](#modules)).
   This is for conditions on other beans, such as Boot's
@@ -1013,7 +1013,7 @@ final context = AnnotationConfigApplicationContext([appBeans])
   ..refresh();
 ```
 
-- `ImportSelector` returns `BeanModule`s to import;
+- `ImportSelector` returns `BeanModule` instances to import;
   `ImportBeanDefinitionRegistrar` gets the `BeanDefinitionRegistry`. Both
   are used like a registrar, and may implement `EnvironmentAware`,
   `BeanFactoryAware` and `ResourceLoaderAware`.
@@ -1028,15 +1028,15 @@ This matters only for conditions on other beans. Imports follow Spring's
 configuration class parser and reader:
 
 1. **Parsing** (only parse-phase conditions count) loads a class's
-   `@PropertySource`s and runs its selectors. The modules they select are
+   `@PropertySource` annotations and runs its selectors. The modules they select are
    parsed at once, and their classes are read before the importing class.
 2. **Reading** goes class by class, application classes before
    auto-configurations, and decides each class once: it is skipped when
    every class that imports it was skipped, else its `registerBean`-phase
    conditions (`ConfigurationCondition`, such as Boot's
    `@ConditionalOnBean`) decide, for the class, its `@Bean` methods and
-   its imports alike. A scanned component or an `@Import`ed class with
-   such a condition counts as a class too, decided at its place in that
+   its imports alike. A scanned component or a class that `@Import` brings in,
+   with such a condition, counts as a class too, decided at its place in that
    order.
 3. A kept class registers its `@Bean` methods (each one's own conditions
    decided at that moment), then runs its registrars, so every later class
@@ -1261,7 +1261,7 @@ for (final page in context.getResources('resources:content/**/*.md')) {
 
 **Remote addresses.** Configuration that downloads a file (themes,
 images, page loaders) reads its address through `RemoteAddresses`, a
-chain of `RemoteAddressResolver`s: the application's first (by
+chain of `RemoteAddressResolver` instances: the application's first (by
 `Ordered`), then the built-in `GitHubAddressResolver`
 (`github:owner/repo/path@ref`) and `UrlAddressResolver` (`https://`,
 `http://`); a new kind of address (`cdn:`) is a resolver of its own.
@@ -1636,7 +1636,7 @@ write a `JsonSerializer<T>` / `JsonDeserializer<T>`, and pass it to
 `ObjectMapper(serializers:, deserializers:)`, declare it as a bean, or
 group several in a `JsonModule` bean. Spring Boot adds every serializer,
 deserializer and `JsonModule` bean to its mapper, as it does with
-`@JsonComponent`s and Jackson `Module`s.
+`@JsonComponent` annotations and Jackson `Module` instances.
 
 **Settings:** `namingStrategy` (`snakeCase`, `kebabCase`,
 `upperCamelCase`, ...), `inclusion`, `failOnUnknownProperties` (off, as in
@@ -2020,6 +2020,12 @@ too (see [Build-time checks](#build-time-checks)); the Zed extension
 @Aspect() @Component() @Order(2) class TimingAspect { ... }   // inner
 ```
 
+The framework's own advisors have fixed places (`AdvisorOrder`): method
+security first, then `@Observed`, `@ConcurrencyLimit`, `@Retryable`,
+`@Transactional`, the cache and method validation, close to the method.
+An aspect without `@Order` runs inside all of them; give it an order
+below one of them to run outside it.
+
 #### Advice without annotations
 
 A `PointcutAdvisor` bean is applied like an aspect. This suits libraries
@@ -2164,6 +2170,130 @@ Nothing is skipped:
 `aop_prune: false` in `build.yaml` generates the proxies of every bean
 again.
 
+### Retries and concurrency limits
+
+`@Retryable` calls a method again when it fails; `@ConcurrencyLimit` lets
+only so many calls of it run at once. They are Spring Framework 7's, in
+the core as in Spring, and are put into effect by one switch in
+`application.yml` (without it the build writes no proxy for them, and
+they cost nothing):
+
+```yaml
+spring:
+  resilience:
+    enabled: true
+```
+
+```dart
+@Service()
+class Payments {
+  Payments(this.gateway);
+
+  final PaymentGateway gateway;
+
+  // At most four charges at a time; each retried twice on a timeout,
+  // 200 ms then 400 ms apart.
+  @ConcurrencyLimit(4)
+  @Retryable(
+    includes: [TimeoutException],
+    maxRetries: 2,
+    delay: Duration(milliseconds: 200),
+    multiplier: 2,
+  )
+  Future<Receipt> charge(Order order) => gateway.charge(order);
+}
+```
+
+Spring (Java):
+
+```java
+@ConcurrencyLimit(4)
+@Retryable(includes = TimeoutException.class, maxRetries = 2,
+    delay = 200, multiplier = 2)
+public CompletableFuture<Receipt> charge(Order order) { ... }
+```
+
+How a retry works: the bean's proxy runs the rest of the call again (the
+advice inside it and the method), so each attempt of a `@Transactional`
+method is a new transaction, and the caller gets the first success or,
+when the retries give up, the last failure itself (not a wrapper). Each
+attempt gets a copy of the arguments: a `List`, `Set` or `Map` the method
+changed in a failed attempt is given to the next one as the caller passed
+it. `maxRetries` (3) new attempts, `delay` (1 s) before the first, each
+pause `multiplier` (1) times the one before up to `maxDelay`, with a
+random `jitter`; `timeout` limits the time to the start of the last one.
+Each attribute has a `*String` form with `${...}` placeholders
+(`delayString: r'${payments.retry-delay:200ms}'`).
+
+- **What is retried**: every failure, or only `includes` (and their
+  subtypes), not `excludes`, both matched along the causes of the failure
+  (an exception that wraps another implements `NestedException`); then a
+  `predicate` (a `MethodRetryPredicate`) decides.
+- **Never retried**, whatever is listed: a Dart `Error` (`TypeError`,
+  `StateError`, an assertion: a bug), and a `NonRetryableException`: the
+  security's `AuthenticationException` and `AccessDeniedException`,
+  validation's `ConstraintViolationException`, the data starter's
+  `UnexpectedRollbackException` and `TransactionSystemException` (the
+  commit may have happened). Implement `NonRetryableException` in your own
+  exception that a new attempt cannot cure.
+- **A `Future`** is retried when it fails, and when the method throws
+  before returning it.
+- **A `Stream`** (an `EventStream` too) is retried when it emits an error:
+  the method is called again and its events go on in the stream the
+  caller listens to, with `maxRetries` counted over the stream's life. A
+  source that starts from the beginning repeats its events (send
+  `Last-Event-ID` to go on where it stopped). The stream keeps its type: a
+  `RetryStreamAdapter` per stream type makes it (`spring_web_dart` has the
+  `EventStream` one), and an `EventStream`'s own reconnects come first.
+- **A synchronous method** is retried at once: Dart cannot wait without
+  returning, so a delay, a jitter or a timeout on one fails the build.
+  Write `delay: Duration.zero`, or return a `Future`.
+- **Inside a transaction it did not open**, a call is not retried: its
+  failure has marked that transaction rollback-only, so a new attempt
+  would write twice and the commit would fail anyway. The failure goes to
+  the caller at once, and a debug build logs it once per method. Put
+  `@Retryable` on the method that opens the transaction, or give this one
+  `Propagation.requiresNew`. (The data starter adds this rule, a
+  `MethodRetryVeto`.)
+- **The request's deadline** (`RequestDeadline`): a retry whose pause
+  would end after it is not made.
+- **A call the bean makes on itself** (`this.charge(...)`) skips the proxy
+  and is not retried, as in Spring.
+
+Every failure is published as a `MethodRetryEvent` (`retryAborted` on the
+last one), and each `RetryListener` bean is told of the attempts.
+
+`@ConcurrencyLimit(n)` counts the running calls of each bean (on a class,
+of all its methods together): a call over the limit waits for its turn
+(`ThrottlePolicy.block`, only on a method that returns a `Future`) or
+fails with an `InvocationRejectedException` (`ThrottlePolicy.reject`). A
+`Future` holds its permit until it completes, across its retries too. The
+count is in the memory of one isolate: a pool of isolates, or a function
+on the edge, has one per isolate.
+
+The order of the framework's advice is fixed (`AdvisorOrder`), from the
+outside in: method security, `@Observed` and the Flutter starter's
+notifications, `@ConcurrencyLimit`, `@Retryable`, `@Transactional`, the
+cache, method validation, then the method. So a denied call is checked
+once and never retried, an observation or a notification counts the
+whole call, and each attempt is a new transaction.
+
+The same retries in code, without the switch or a container:
+
+```dart
+final template = RetryTemplate(
+  retryPolicy: RetryPolicy.builder()
+      .maxRetries(4)
+      .delay(const Duration(milliseconds: 100))
+      .multiplier(2)
+      .include<TimeoutException>()
+      .build(),
+);
+final receipt = await template.execute(() => gateway.charge(order));
+// RetryException (cause: the last failure) when it gives up;
+// template.invoke(...) throws the last failure itself.
+```
+
 ### Logging
 
 `@Log()` on a class gives it a logger, so it can write `log.info(...)`
@@ -2218,7 +2348,7 @@ most applications never write them.
 - `BeanFactoryPostProcessor` / `BeanDefinitionRegistryPostProcessor`:
   change bean definitions before any bean is created.
 - `BeanPostProcessor`: see or wrap every bean the container creates.
-- Custom scopes, hand-written `BeanDefinition`s and `BeanModule`s,
+- Custom scopes, hand-written `BeanDefinition` instances and `BeanModule` instances,
   `registerSingleton`.
 - `@Configurable` with `autowireBean`: inject beans into objects created
   elsewhere, such as a Flutter `State`.
@@ -2262,7 +2392,7 @@ the previous one is registered or invoked, so a `PriorityOrdered`
 queried again before each phase; registry post-processors repeat the last
 phase while they register more of themselves.
 
-A regular bean created while the `BeanPostProcessor`s are being registered
+A regular bean created while the `BeanPostProcessor` instances are being registered
 (a dependency of one of them) misses the later ones. As Spring's
 `BeanPostProcessorChecker` does, this is logged at info level ("Bean
 'repo' of type [Repo] is not eligible for getting processed by all
@@ -2291,7 +2421,7 @@ becomes a bean whose implementation the generator writes. Each method
 hands the call, with its annotations, parameter names and types, to an
 `InvocationHandler` that an `InvocationHandlerFactory` bean creates. This
 replaces Java's dynamic proxies, without reflection. It is how
-`@FeignClient` works, and how Spring Data repositories will.
+`@WebSocketClient` works (and the Phoenix channels of the WebSocket starter).
 
 ```dart
 @InterfaceProxy()
@@ -2350,7 +2480,7 @@ for (final method in beanFactory.getBeanDefinition(name).annotatedMethods) {
 A digest without a dependency: `Sha256` is SHA-256 and HMAC-SHA-256 in
 plain Dart, on every platform (`Sha256.hex(Sha256.hmac(key, bytes))`);
 the web starter's rate limiter hashes addresses with it. Passwords belong
-to the `PasswordEncoder`s of `spring_security_core`.
+to the `PasswordEncoder` instances of `spring_security_core`.
 
 ## Differences from Spring
 
@@ -2370,6 +2500,8 @@ to the `PasswordEncoder`s of `spring_security_core`.
 | CGLIB and JDK proxies | Generated `implements` proxies. A class that cannot be implemented (private members, `base`) is created as a generated subclass, its own proxy. A `final`, `sealed` or `interface` class (or one with only factory constructors) is advised only through an interface it implements | No runtime bytecode generation; Dart cannot extend such classes from another library |
 | A CGLIB proxy wraps a separate target, so only the bean's `this.` calls skip the advice | A generated subclass is the bean itself. While one of its advised members runs (also after an `await` in a `Future` member), every call on the bean skips the advice, also one coming back through another bean. A call through a `@Lazy` reference to the bean is advised, and `AopContext.currentProxy()` advises the one call made right after it. The body of a `Stream` (`async*`) or lazy `Iterable` (`sync*`) member runs later, when the result is listened to or iterated, so the calls it makes on the bean are advised | Dart cannot tell a `this.` call from another call on the same object |
 | Circular references (opt-in) | Always an error | Same as Spring Boot's default |
+| `@Retryable` before method security; every exception retried by default | Method security runs first (a denial is never retried); Dart `Error` subclasses, `NonRetryableException` instances and a call inside a transaction it did not open are never retried; a `Future` is retried when it fails, not only when it throws; a synchronous method cannot pause | A denial or a bug does not get better on a new attempt; Dart's failures are asynchronous; Dart cannot wait without returning |
+| `@EnableResilientMethods` | `spring.resilience.enabled: true` (a build switch) | Without it the build writes no proxy for the annotations |
 | A `ConfigurationCondition` of the `registerBean` phase on a `@Bean` method sees the `@Bean` methods of the configuration classes processed before it | It is decided when its class is read, in the same class order. But `@Bean` methods without a `registerBean`-phase condition (in classes the reader does not decide) register while parsing, so it also sees those of later classes and modules | Only conditional definitions wait for the reader; the others keep the definition order |
 | `UrlResource.exists()` sends a `HEAD` request | `exists()` is `true`; `existsAsync()` sends the `HEAD` request (config data imports, `optional:` and `@PropertySource(ignoreResourceNotFound: true)` use it, so a 404 is a missing file). Reading fails for a status of 400 or above | No synchronous HTTP in Dart |
 | `SmartFactoryBean.getObject(Class)` | `getObjectForType(Type)`; the extra product types are served once the factory exists | No overloading; no reflection on types not created yet |
@@ -2395,7 +2527,7 @@ to the `PasswordEncoder`s of `spring_security_core`.
 | Custom qualifier annotations match by type and attributes | They match by their qualifier value only | Annotations are not read at runtime |
 | `@EventListener(condition = "#event.big")` (SpEL) | `condition:` takes a Dart function | Type-checked, no reflection |
 | `@EnableAsync` switches `@Async` on; `@Async` on any bean method (proxies) | A `TaskExecutor` bean switches it on (the scheduling starter has one); `@Async` on `@EventListener` methods only; a `TaskExecutor` runs tasks in a later event-loop turn | No runtime proxies; Dart isolates have no threads |
-| `ImportSelector.selectImports(metadata)` returns class names; registrars get the importing class's metadata; imported classes get fully qualified names; `BeanRegistry.registerBean(Class)` instantiates the class | `selectImports()` returns `BeanModule`s, without metadata; simple bean names; `registerBean<T>` needs a supplier | No reflection, no packages in Dart |
+| `ImportSelector.selectImports(metadata)` returns class names; registrars get the importing class's metadata; imported classes get fully qualified names; `BeanRegistry.registerBean(Class)` instantiates the class | `selectImports()` returns `BeanModule` instances, without metadata; simple bean names; `registerBean<T>` needs a supplier | No reflection, no packages in Dart |
 | `SmartLifecycle.stop(Runnable callback)` blocks `close()`, `stop()` and `restart()` per phase | `stopWithCallback(callback)`. `closeAsync()` waits for a later callback (per-phase timeouts), `close()` goes on. A bean asked to start while its callback is pending (`restart()`, `start()` after `stop()`) starts when the callback fires | No overloading; Dart cannot block on a `Future` |
 | A `null` result reaches an `@AfterReturning` parameter of any type | Only `Object?` / `dynamic` (and nullable types) get `null` | Dart null safety |
 | Jackson writes Java enums by name (`IN_STOCK`) | Enums go over the wire by their Dart name (`inStock`); use `@JsonValue` to talk to Java peers | Dart naming conventions |

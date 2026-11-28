@@ -26,8 +26,9 @@ const _log = SpringLog('spring.security.oauth2.client.login');
 /// mixed-up providers, the PKCE verifier binds the code to this app, the
 /// ID token's issuer, audience, times and `nonce`, and the user info's
 /// subject. The user then is an [OAuth2AuthenticationToken] in the
-/// `SecurityContextHolder` (so `@PreAuthorize` and the Feign interceptor
-/// see them), the tokens are in the [OAuth2AuthorizedClientService] (the
+/// `SecurityContextHolder` (so `@PreAuthorize` and the `RestClient`
+/// interceptor see them), the tokens are in the
+/// [OAuth2AuthorizedClientService] (the
 /// `SecretStoreOAuth2AuthorizedClientService` on the platform's secure
 /// storage), and an `AuthenticationSuccessEvent` is published.
 ///

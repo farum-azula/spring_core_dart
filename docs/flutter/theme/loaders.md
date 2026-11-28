@@ -353,7 +353,7 @@ Recommendations:
   gradient's angle.
 - Progress comes from the script (`--spring-progress`), so it is
   main-thread: it stalls while the app compiles. Show it as something that
-  can wait, such as a bar that `scale`s by the variable, next to a movement
+  can wait, such as a bar whose size follows the variable (`scale`), next to a movement
   that never stops (a turn, a pulse).
 - Keep the page loader small: every byte of its HTML and CSS is downloaded
   before anything shows.
