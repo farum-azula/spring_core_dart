@@ -1658,8 +1658,10 @@ is the theme's `frame-meter`. Every key:
 [Configuration, the app widget](https://github.com/farum-azula/spring_core_dart/blob/main/docs/configuration.md#the-app-widget).
 
 **The debug console.** One overlay for what the app does while it runs,
-shown and hidden by the action `debug.console` (⌘⇧O / Ctrl+Shift+O, or
-`taps:8+hold:2s`). Top to bottom:
+shown and hidden by the action `debug.console`, as a game's console: the
+key left of `1` (`backquote`, and `section` for the `§` there on a Mac's
+ISO keyboard; whatever the layout, and not while a text field has the
+focus), or `taps:8+hold:2s`. Top to bottom:
 
 - **the header**, a row of compact segments
   (`fps 60  3D 120  lost 0  logs all`): numbers in the debug theme's number

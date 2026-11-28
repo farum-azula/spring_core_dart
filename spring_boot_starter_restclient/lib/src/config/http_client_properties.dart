@@ -89,7 +89,11 @@ class HttpServiceClientProperties {
 ///       catalog:
 ///         base-url: https://catalog.neon.books
 ///         default-header:
-///           X-Api-Version: 2
+///           X-Tenant: neon
+///         apiversion:
+///           default: '1.2'
+///           insert:
+///             header: API-Version
 ///         read-timeout: 5s
 /// ```
 ///
@@ -112,4 +116,62 @@ class HttpServiceClientGroupProperties {
 
   /// The group's redirects. Default: `spring.http.clients`'.
   HttpRedirects? redirects;
+
+  /// The API version of the group's calls, and where it goes.
+  ApiversionProperties apiversion = ApiversionProperties();
+}
+
+/// The API version of an HTTP service group's calls
+/// (`spring.http.serviceclient.<group>.apiversion.*`): the version a call
+/// asks for unless its exchange annotation gives one, and where the
+/// group's `RestClient` puts it.
+///
+/// ```yaml
+/// spring:
+///   http:
+///     serviceclient:
+///       catalog:
+///         apiversion:
+///           default: '1.2'
+///           insert:
+///             header: API-Version
+/// ```
+///
+/// Spring (Java): Spring Boot's `ApiversionProperties`.
+@Introspected()
+class ApiversionProperties {
+  /// The version every call of the group asks for, unless its method or
+  /// interface gives one (`version:` of the exchange annotation). It needs
+  /// a place to go (`insert.*`, or an `ApiVersionInserter` a customizer
+  /// sets): a group with a default version and no inserter fails the
+  /// start. Default: none.
+  @Name('default')
+  String? defaultVersion;
+
+  /// Where the version goes into a request.
+  ApiversionInsertProperties insert = ApiversionInsertProperties();
+}
+
+/// Where an HTTP service group puts the API version of a call
+/// (`spring.http.serviceclient.<group>.apiversion.insert.*`); several
+/// places may be set at once. With none set, the group keeps the inserter
+/// of its builder (a `RestClientCustomizer`'s), if any; Spring Boot sets
+/// one that inserts nothing.
+///
+/// Spring (Java): Spring Boot's `ApiversionProperties.Insert`.
+@Introspected()
+class ApiversionInsertProperties {
+  /// The header that holds the version (`API-Version`).
+  String? header;
+
+  /// The query parameter that holds the version (`version`).
+  String? queryParameter;
+
+  /// The index of the path segment the version is inserted as (`0`:
+  /// `/books` becomes `/1.2/books`).
+  int? pathSegment;
+
+  /// The parameter of the `Content-Type` that holds the version
+  /// (`application/json;v=1.2`).
+  String? mediaTypeParameter;
 }

@@ -6,13 +6,16 @@ import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:spring_web_dart/src/client/http_request.dart';
 import 'package:spring_web_dart/src/client/http_response.dart';
 import 'package:spring_web_dart/src/client/http_transport.dart';
+import 'package:spring_web_dart/src/client/rest/api_version_inserter.dart';
 import 'package:spring_web_dart/src/client/rest/client_http_request_interceptor.dart';
 import 'package:spring_web_dart/src/client/rest/http_message_converter.dart';
+import 'package:spring_web_dart/src/client/rest/request_values.dart';
 import 'package:spring_web_dart/src/client/rest/rest_client.dart';
 import 'package:spring_web_dart/src/client/rest/rest_client_exception.dart';
 import 'package:spring_web_dart/src/client/rest/uri_builder.dart';
 import 'package:spring_web_dart/src/client/rest/uri_template.dart';
 import 'package:spring_web_dart/src/client/streamed_http_response.dart';
+import 'package:spring_web_dart/src/client/streaming_body.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
 import 'package:spring_web_dart/src/http_method.dart';
 import 'package:spring_web_dart/src/http_secrets.dart';
@@ -42,6 +45,8 @@ final class DefaultRestClient implements RestClient {
     required this.connectTimeout,
     required this.followRedirects,
     required this.sensitiveHeaders,
+    this.defaultApiVersion,
+    this.apiVersionInserter,
   });
 
   // The builder as it was, for mutate.
@@ -85,6 +90,31 @@ final class DefaultRestClient implements RestClient {
 
   /// More credential headers, in lower case.
   final Set<String> sensitiveHeaders;
+
+  /// The API version of the calls that give none; `null`: none.
+  final Object? defaultApiVersion;
+
+  /// Puts a call's API version into its request; `null`: none.
+  final ApiVersionInserter? apiVersionInserter;
+
+  /// [url] with the API [version] put in by the [apiVersionInserter], which
+  /// may put it into [headers] too. Throws a [StateError] when the
+  /// client has no inserter, as Spring's
+  /// `Assert.state(apiVersionInserter != null, ...)`.
+  Uri insertApiVersion(Object version, Uri url, HttpHeaders headers) {
+    final inserter = apiVersionInserter;
+    if (inserter == null) {
+      throw StateError(
+        'No ApiVersionInserter configured: the call asks for the API '
+        'version "$version" and the RestClient has no way to send it. Set '
+        'RestClientBuilder.apiVersionInserter(ApiVersionInserter.useHeader'
+        "('API-Version')), or the group's "
+        'spring.http.serviceclient.<group>.apiversion.insert.*',
+      );
+    }
+    inserter.insertVersionIntoHeaders(version, headers);
+    return inserter.insertVersionIntoUri(version, url);
+  }
 
   static const _log = SpringLog('web.client.RestClient');
 
@@ -243,18 +273,59 @@ final class DefaultRestClient implements RestClient {
   Object? Function(TypeInfo<Object?> type) readerOf(HttpResponse response) =>
       (type) => readBody(type, response);
 
-  /// Runs [request] through the interceptors to [terminal].
+  /// Runs [request] through the interceptors to [terminal]. A streamed
+  /// body passes them as a stream when all of them are
+  /// [StreamingClientHttpRequestInterceptor]s; otherwise it is read whole
+  /// first and they get the bytes, as Spring's interceptors do.
   Future<HttpResponse> intercepted(
     HttpRequest request,
     Future<HttpResponse> Function(HttpRequest request, List<int>? body)
     terminal,
-  ) => interceptors.isEmpty
-      ? terminal(request, request.body)
-      : _Chain(interceptors, 0, terminal).execute(request, request.body);
+  ) {
+    if (interceptors.isEmpty) {
+      return terminal(request, request.body);
+    }
+    if (request.streamingBody case final streaming? when !_interceptorsStream) {
+      return _buffered(request, streaming, terminal);
+    }
+    return _Chain(interceptors, 0, terminal).execute(request, request.body);
+  }
 
-  /// [request] as it is sent: with [body], and its timeouts cut to what is
-  /// left of the deadline of the code that sends it (the shorter of the
-  /// two).
+  // Whether every interceptor lets a streamed body through unread.
+  late final bool _interceptorsStream = interceptors.every(
+    (interceptor) => interceptor is StreamingClientHttpRequestInterceptor,
+  );
+
+  // Spring's InterceptingClientHttpRequest: the interceptors get the body
+  // as bytes, read whole from [streaming].
+  Future<HttpResponse> _buffered(
+    HttpRequest request,
+    StreamingBody streaming,
+    Future<HttpResponse> Function(HttpRequest request, List<int>? body)
+    terminal,
+  ) async {
+    final Uint8List bytes;
+    try {
+      bytes = await streaming.toBytes();
+    } on NonRepeatableBodyException {
+      rethrow;
+    } on Exception catch (error) {
+      throw ResourceAccessException(
+        'I/O error on ${request.method.value} request for '
+        '"${_withoutQuery(request.url)}": the request body failed: $error',
+        cause: error,
+      );
+    }
+    return await _Chain(
+      interceptors,
+      0,
+      terminal,
+    ).execute(request.withBody(body: bytes), bytes);
+  }
+
+  /// [request] as it is sent: with [body] (without, its streamed body when
+  /// it has one), and its timeouts cut to what is left of the deadline of
+  /// the code that sends it (the shorter of the two).
   HttpRequest prepared(HttpRequest request, List<int>? body) {
     final left = RequestDeadline.current?.remaining;
     if (left == null && identical(body, request.body)) {
@@ -265,6 +336,7 @@ final class DefaultRestClient implements RestClient {
       url: request.url,
       headers: request.headers,
       body: body,
+      streamingBody: body == null ? request.streamingBody : null,
       timeout: _shorter(request.timeout, left),
       readTimeout: _shorter(request.readTimeout, left),
       connectTimeout: request.connectTimeout,
@@ -443,8 +515,43 @@ abstract class _RequestSpec {
     };
   }
 
-  void _addCookie(String name, String value) =>
-      ((_cookies ??= {})[name] ??= []).add(value);
+  void _addCookie(String name, String value) {
+    checkCookie(name, value);
+    ((_cookies ??= {})[name] ??= []).add(value);
+  }
+
+  void _addHeader(String name, String value) {
+    checkHeader(name, value);
+    _ownHeaders.add(name, value);
+  }
+
+  void _configureHeaders(void Function(HttpHeaders headers) configure) {
+    final headers = _ownHeaders;
+    configure(headers);
+    headers.forEach((name, values) {
+      for (final value in values) {
+        checkHeader(name, value);
+      }
+    });
+  }
+
+  // The call's own API version: [_clientVersion] until `apiVersion(...)`,
+  // `null` for none.
+  Object? _apiVersion = _clientVersion;
+
+  static const Object _clientVersion = _ClientVersion();
+
+  // The URL of the request, with the API version of the call (its own,
+  // else the client's default) put in, and into [headers].
+  Uri _url(HttpHeaders headers) {
+    final url = _uri ?? client.expand('', null);
+    final version = identical(_apiVersion, _clientVersion)
+        ? client.defaultApiVersion
+        : _apiVersion;
+    return version == null
+        ? url
+        : client.insertApiVersion(version, url, headers);
+  }
 
   Map<String, Object?> get _ownAttributes => _attributes ??= {};
 
@@ -477,6 +584,7 @@ abstract class _RequestSpec {
     }
     _setCookies(headers);
     List<int>? bytes;
+    StreamingBody? streaming;
     final body = _body;
     if (body != null) {
       final declared = headers.contentType;
@@ -489,23 +597,37 @@ abstract class _RequestSpec {
           '[${declared ?? 'no content type'}]',
         );
       }
-      final ({List<int> bytes, String contentType}) written;
+      final String contentType;
       try {
-        written = converter.write(body, declared, _bodyType);
+        // A streaming converter may write it as a stream, read when sent.
+        final streamed = converter is StreamingHttpMessageConverter
+            ? converter.writeStreaming(body, declared, _bodyType)
+            : null;
+        if (streamed != null) {
+          streaming = streamed.body;
+          contentType = streamed.contentType;
+        } else {
+          final written = converter.write(body, declared, _bodyType);
+          bytes = written.bytes;
+          contentType = written.contentType;
+        }
+      } on NonRepeatableBodyException {
+        // A stream sent once already: no attempt may follow.
+        rethrow;
       } on Object catch (error) {
         throw RestClientException(
           'Cannot write the body (${body.runtimeType}): $error',
           cause: error,
         );
       }
-      bytes = written.bytes;
-      headers.contentType = written.contentType;
+      headers.contentType = contentType;
     }
     return HttpRequest(
       method: method,
-      url: _uri ?? client.expand('', null),
+      url: _url(headers),
       headers: headers,
       body: bytes,
+      streamingBody: streaming,
       readTimeout: client.readTimeout,
       connectTimeout: client.connectTimeout,
       followRedirects: client.followRedirects,
@@ -562,13 +684,13 @@ final class _HeadersSpec extends _RequestSpec implements RequestHeadersUriSpec {
 
   @override
   _HeadersSpec header(String name, String value) {
-    _ownHeaders.add(name, value);
+    _addHeader(name, value);
     return this;
   }
 
   @override
   _HeadersSpec headers(void Function(HttpHeaders headers) configure) {
-    configure(_ownHeaders);
+    _configureHeaders(configure);
     return this;
   }
 
@@ -581,6 +703,12 @@ final class _HeadersSpec extends _RequestSpec implements RequestHeadersUriSpec {
   @override
   _HeadersSpec cookie(String name, String value) {
     _addCookie(name, value);
+    return this;
+  }
+
+  @override
+  _HeadersSpec apiVersion(Object? version) {
+    _apiVersion = version;
     return this;
   }
 
@@ -877,13 +1005,13 @@ final class _BodySpec extends _RequestSpec implements RequestBodyUriSpec {
 
   @override
   _BodySpec header(String name, String value) {
-    _ownHeaders.add(name, value);
+    _addHeader(name, value);
     return this;
   }
 
   @override
   _BodySpec headers(void Function(HttpHeaders headers) configure) {
-    configure(_ownHeaders);
+    _configureHeaders(configure);
     return this;
   }
 
@@ -896,6 +1024,12 @@ final class _BodySpec extends _RequestSpec implements RequestBodyUriSpec {
   @override
   _BodySpec cookie(String name, String value) {
     _addCookie(name, value);
+    return this;
+  }
+
+  @override
+  _BodySpec apiVersion(Object? version) {
+    _apiVersion = version;
     return this;
   }
 
@@ -961,4 +1095,10 @@ final class _StreamCancelled implements Exception {
 
   @override
   String toString() => 'the stream was cancelled before its request';
+}
+
+/// The API version of a call that has not set its own: the client's
+/// default.
+final class _ClientVersion {
+  const _ClientVersion();
 }

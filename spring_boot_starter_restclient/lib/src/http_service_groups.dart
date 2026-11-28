@@ -101,9 +101,10 @@ final class HttpServiceGroupBuilders {
 /// The `RestClient` of each HTTP service group (the `httpServiceGroups`
 /// bean): set up like the `RestClientBuilder` bean (the transport, the
 /// `ObjectMapper`, `spring.http.clients.*`, the customizers), then by
-/// `spring.http.serviceclient.<group>.*` (base URL, default headers,
-/// timeouts, redirects), then by the
-/// [RestClientHttpServiceGroupConfigurer] beans.
+/// `spring.http.serviceclient.<group>.*` (base URL, default headers, API
+/// version, timeouts, redirects), then by the
+/// [RestClientHttpServiceGroupConfigurer] beans. A group with a default
+/// API version and no `ApiVersionInserter` fails the start.
 ///
 /// ```dart
 /// @Service()
@@ -121,7 +122,8 @@ final class HttpServiceGroupBuilders {
 final class HttpServiceGroups {
   /// The groups of [properties] and [declared], with builders from
   /// [newBuilder] set up by [configurers]. Throws a [StateError] for a
-  /// group's base URL that cannot be read.
+  /// group's base URL that cannot be read, or a group with a default API
+  /// version and no `ApiVersionInserter`.
   factory HttpServiceGroups({
     required HttpServiceClientProperties properties,
     required RestClientBuilder Function() newBuilder,
@@ -152,6 +154,7 @@ final class HttpServiceGroups {
     for (final configurer in configurers) {
       configurer.configureGroups(configurable);
     }
+    builders.forEach(_checkApiVersion);
     return HttpServiceGroups._({
       for (final MapEntry(key: group, value: builder) in builders.entries)
         group.name: (group, builder.build()),
@@ -188,6 +191,57 @@ final class HttpServiceGroups {
     }
     if (settings.redirects case final redirects?) {
       builder.followRedirects(redirects.followsRedirects);
+    }
+    final apiversion = settings.apiversion;
+    if (apiversion.defaultVersion?.trim() case final version?
+        when version.isNotEmpty) {
+      builder.defaultApiVersion(version);
+    }
+    if (_inserter(apiversion.insert) case final inserter?) {
+      builder.apiVersionInserter(inserter);
+    }
+  }
+
+  // The inserter of [insert]; `null` when it sets no place.
+  //
+  // Spring (Java): Spring Boot's `PropertiesApiVersionInserter.get(...)`.
+  static ApiVersionInserter? _inserter(ApiversionInsertProperties insert) {
+    String? text(String? value) =>
+        value == null || value.trim().isEmpty ? null : value.trim();
+    final header = text(insert.header);
+    final queryParameter = text(insert.queryParameter);
+    final mediaTypeParameter = text(insert.mediaTypeParameter);
+    final pathSegment = insert.pathSegment;
+    if (header == null &&
+        queryParameter == null &&
+        pathSegment == null &&
+        mediaTypeParameter == null) {
+      return null;
+    }
+    return ApiVersionInserter.builder()
+        .useHeader(header)
+        .useQueryParam(queryParameter)
+        .usePathSegment(pathSegment)
+        .useMediaTypeParam(mediaTypeParameter)
+        .build();
+  }
+
+  // A group whose calls ask for a default API version needs a place to
+  // put it: without one every call would fail, so the start does.
+  static void _checkApiVersion(
+    HttpServiceGroup group,
+    RestClientBuilder builder,
+  ) {
+    final version = builder.configuredDefaultApiVersion;
+    if (version != null && builder.configuredApiVersionInserter == null) {
+      final name = group.name;
+      throw StateError(
+        'The HTTP service group "$name" asks for the API version '
+        '"$version" (spring.http.serviceclient.$name.apiversion.default) '
+        'and has no ApiVersionInserter to send it: set '
+        'spring.http.serviceclient.$name.apiversion.insert.header (or '
+        'query-parameter, path-segment, media-type-parameter).',
+      );
     }
   }
 

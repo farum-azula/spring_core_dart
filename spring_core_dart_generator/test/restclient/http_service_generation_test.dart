@@ -76,6 +76,8 @@ abstract interface class BookService {
     @RequestPart() Book meta,
     @RequestPart() String? note,
     @RequestPart() Uint8List thumbnail,
+    @RequestPart() List<MultipartFile> pages,
+    @RequestPart() MultipartFile? back,
   );
 
   @GetExchange('/events')
@@ -97,6 +99,69 @@ abstract interface class BookService {
 @Configuration()
 @ImportHttpServices(group: 'catalog', types: [BookService])
 class Clients {}
+''';
+
+// The parameters Spring's HTTP service clients take beyond one value per
+// parameter, and API versions.
+const _moreServices = '''
+@HttpExchange.of(url: '/stock', version: '1.0')
+abstract interface class StockService {
+  @GetExchange('/{sku}')
+  Future<String> level(@PathVariable() String sku);
+
+  @GetExchange.of(url: '/{sku}/history', version: '2.0')
+  Future<String> history(@PathVariable() String sku);
+
+  @GetExchange.of(url: '/blank', version: ' ')
+  Future<String> blank();
+
+  @GetExchange('/filter')
+  Future<List<Book>> filter(
+    @RequestParam() Map<String, String> filters, {
+    @RequestParam() Map<String, List<Shelf>>? shelves,
+    @RequestHeader() Map<String, int> counts = const {},
+    @RequestHeader() Map<String, List<String>>? tags,
+    @RequestHeader() HttpHeaders? more,
+    @CookieValue() Map<String, Shelf> cookies = const {},
+    @RequestAttribute('trace.tag') String? tag,
+    @RequestAttribute() Map<String, Object?> marks = const {},
+  });
+
+  @GetExchange('/{shelf}/{sku}')
+  Future<String> at(
+    @PathVariable() Map<String, String> location,
+    @RequestHeader() HttpHeaders headers,
+    @RequestAttribute() int attempt,
+  );
+
+  @GetExchange('/{sku}')
+  Future<String> fromMirror(
+    UriBuilderFactory mirror,
+    @PathVariable() String sku,
+  );
+
+  @GetExchange('/search')
+  Future<String> searchMirror(
+    UriBuilderFactory? mirror,
+    @RequestParam() String q,
+  );
+
+  @PostExchange.of(
+    url: '/subscribe',
+    contentType: 'application/x-www-form-urlencoded',
+  )
+  Future<String> subscribe(
+    @RequestParam() String user,
+    @RequestParam() Map<String, Shelf> topics,
+  );
+
+  @PostExchange('/scan')
+  Stream<List<int>> scan(@RequestPart() MultipartFile file);
+}
+
+@Configuration()
+@ImportHttpServices(group: 'stock', types: [StockService])
+class StockClients {}
 ''';
 
 Future<TestBuilderResult> _build(String source) => buildPackage({
@@ -269,7 +334,7 @@ Future<void> remove(String id) => _rest
       );
     });
 
-    test('multipart parts: a file, JSON, an optional field, bytes', () {
+    test('multipart parts: files streamed, JSON, an optional field, bytes', () {
       expect(
         module,
         hasCode('''
@@ -279,27 +344,25 @@ Future<void> upload(
   Book meta,
   String? note,
   Uint8List thumbnail,
-) async {
-  await _rest
-      .post()
-      .uri(r'/books/{isbn}/cover', {r'isbn': isbn})
-      .attribute(r'tenant', r'neon')
-      .body(
-        MultipartBody([
-          MultipartBodyPart.file(
-            r'cover',
-            await cover.bytes,
-            filename: cover.originalFilename,
-            contentType: cover.contentType,
-          ),
-          MultipartBodyPart.json(r'meta', _mapper.writeValueAsString(meta)),
-          if (note != null) MultipartBodyPart.field(r'note', note),
-          MultipartBodyPart.file(r'thumbnail', thumbnail),
-        ]),
-      )
-      .retrieve()
-      .toBodilessEntity();
-}
+  List<MultipartFile> pages,
+  MultipartFile? back,
+) => _rest
+    .post()
+    .uri(r'/books/{isbn}/cover', {r'isbn': isbn})
+    .attribute(r'tenant', r'neon')
+    .body(
+      MultipartBody([
+        MultipartBodyPart.multipartFile(r'cover', cover),
+        MultipartBodyPart.json(r'meta', _mapper.writeValueAsString(meta)),
+        if (note != null) MultipartBodyPart.field(r'note', note),
+        MultipartBodyPart.file(r'thumbnail', thumbnail),
+        for (final file in pages)
+          MultipartBodyPart.multipartFile(r'pages', file),
+        if (back != null) MultipartBodyPart.multipartFile(r'back', back),
+      ]),
+    )
+    .retrieve()
+    .toBodilessEntity();
 '''),
       );
     });
@@ -344,6 +407,398 @@ BeanDefinition<HttpServiceGroup>(
   create: (r) => const HttpServiceGroup(r'catalog', types: [BookService]),
 )
 '''),
+      );
+    });
+  });
+
+  group('API versions and the parameters of several values', () {
+    late String module;
+
+    setUpAll(() async {
+      final result = await _build(_moreServices);
+      expect(result.errors, isEmpty);
+      module = normalize(moduleText(result));
+    });
+
+    test('compiles against the starter', () async {
+      expect(
+        await compileErrors({
+          'lib/src/service.dart': '$_imports$_book$_moreServices',
+        }),
+        isEmpty,
+      );
+    });
+
+    test("the interface's version, the method's, a blank one", () {
+      expect(
+        module,
+        hasCode('''
+Future<String> level(String sku) => _rest
+    .get()
+    .uri(r'/stock/{sku}', {r'sku': sku})
+    .apiVersion(r'1.0')
+    .retrieve()
+    .body<String>();
+'''),
+      );
+      expect(
+        module,
+        hasCode('''
+.uri(r'/stock/{sku}/history', {r'sku': sku})
+.apiVersion(r'2.0')
+'''),
+      );
+      expect(
+        module,
+        hasCode('''
+.uri(r'/stock/blank')
+.apiVersion(r'1.0')
+'''),
+      );
+    });
+
+    test('maps of query parameters, headers, cookies; HttpHeaders; '
+        'attributes', () {
+      expect(
+        module,
+        hasCode('''
+final request = _rest
+    .get()
+    .uri(
+      (UriBuilder uri) => uri
+          .path(r'/stock/filter')
+          .queryParams(filters)
+          .queryParams(shelves ?? const {})
+          .build(),
+    )
+    .apiVersion(r'1.0');
+for (final MapEntry(key: name, value: value) in counts.entries) {
+  request.header(name, value.toString());
+}
+if (tags != null) {
+  for (final MapEntry(key: name2, value: values) in tags.entries) {
+    for (final value2 in values) {
+      request.header(name2, value2);
+    }
+  }
+}
+if (more != null) {
+  request.headers((all) => all.addHeaders(more));
+}
+for (final MapEntry(key: name3, value: value3) in cookies.entries) {
+  request.cookie(name3, value3.name);
+}
+if (tag != null) {
+  request.attribute(r'trace.tag', tag);
+}
+for (final MapEntry(key: name4, value: value4) in marks.entries) {
+  if (value4 != null) {
+    request.attribute(name4, value4);
+  }
+}
+return request.retrieve().body<List<Book>>(
+  const ListType<Book>(ClassType<Book>()),
+);
+'''),
+      );
+    });
+
+    test('a map of path variables, HttpHeaders, an attribute in the chain', () {
+      expect(
+        module,
+        hasCode('''
+Future<String> at(
+  Map<String, String> location,
+  HttpHeaders headers,
+  int attempt,
+) => _rest
+    .get()
+    .uri(r'/stock/{shelf}/{sku}', location)
+    .apiVersion(r'1.0')
+    .headers((all) => all.addHeaders(headers))
+    .attribute(r'attempt', attempt)
+    .retrieve()
+    .body<String>();
+'''),
+      );
+    });
+
+    test('a UriBuilderFactory expands the URL', () {
+      expect(
+        module,
+        hasCode('''
+Future<String> fromMirror(UriBuilderFactory mirror, String sku) => _rest
+    .get()
+    .uri(mirror.expand(r'/stock/{sku}', {r'sku': sku}))
+'''),
+      );
+      expect(
+        module,
+        hasCode('''
+.uri(
+  (mirror ?? const UriBuilderFactory())
+      .uriString(r'/stock/search')
+      .queryParam(r'q', q)
+      .build(),
+)
+'''),
+      );
+    });
+
+    test('a MultipartFile part in a method returning a stream', () {
+      expect(
+        module,
+        hasCode('''
+Stream<List<int>> scan(MultipartFile file) => _rest
+    .post()
+    .uri(r'/stock/scan')
+    .apiVersion(r'1.0')
+    .body(MultipartBody([MultipartBodyPart.multipartFile(r'file', file)]))
+    .retrieve()
+    .bodyStream();
+'''),
+      );
+    });
+
+    test('a map of form fields, enums by name', () {
+      expect(
+        module,
+        hasCode('''
+.body({
+  r'user': user,
+  ...topics.map((name, value) => MapEntry(name, value.name)),
+})
+'''),
+      );
+    });
+  });
+
+  group('basePackages and basePackageClasses', () {
+    const catalog = '''
+abstract interface class BookApi {
+  @GetExchange('/books')
+  Future<String> all();
+}
+
+@HttpExchange('/authors')
+abstract interface class AuthorApi {
+  @GetExchange()
+  Future<String> all();
+}
+
+class Helper {}
+''';
+    const deep = '''
+abstract interface class ShelfApi {
+  @GetExchange('/shelves')
+  Future<String> all();
+}
+''';
+    const other = '''
+abstract interface class PaymentApi {
+  @GetExchange('/payments')
+  Future<String> all();
+}
+''';
+
+    // The build of [importer] (in lib/src/clients.dart) with the libraries
+    // of lib/src/catalog/, lib/src/catalog/deep/ and lib/src/other/.
+    Future<TestBuilderResult> buildWith(String importer) => buildPackage({
+      'lib/src/beans.dart': scanRoot,
+      'lib/src/catalog/catalog.dart': '$_imports$catalog',
+      'lib/src/catalog/deep/deep.dart': '$_imports$deep',
+      'lib/src/other/other.dart': '$_imports$other',
+      'lib/src/util/util.dart': 'class Util {}',
+      'lib/src/clients.dart':
+          "$_imports\nimport 'catalog/catalog.dart';\n"
+          "import 'other/other.dart';\nimport 'util/util.dart';\n$importer",
+    }, proxyMode: ProxyMode.all);
+
+    String groupOf(String module, String name) {
+      final start = module.indexOf(
+        normalize("name: r'httpServiceGroup.$name#"),
+      );
+      expect(start, isNot(-1), reason: name);
+      final end = module.indexOf('BeanDefinition', start);
+      return module.substring(start, end < 0 ? module.length : end);
+    }
+
+    test('a library URI prefix: its interfaces and those below', () async {
+      final result = await buildWith('''
+@Configuration()
+@ImportHttpServices(group: 'catalog', basePackages: ['package:pkg/src/catalog/'])
+class Clients {}
+''');
+      expect(result.errors, isEmpty);
+      final module = normalize(moduleText(result));
+      expect(
+        groupOf(module, 'catalog'),
+        contains(normalize('types: [BookApi, AuthorApi, ShelfApi]')),
+      );
+      expect(module, isNot(contains(r'_$PaymentApiHttpService')));
+      expect(module, contains(r'_$ShelfApiHttpService'));
+    });
+
+    test('the directory of a type, with types of the same group', () async {
+      final result = await buildWith('''
+@Configuration()
+@ImportHttpServices(
+  group: 'shop',
+  types: [PaymentApi, BookApi],
+  basePackageClasses: [BookApi],
+)
+class Clients {}
+''');
+      expect(result.errors, isEmpty);
+      expect(
+        groupOf(normalize(moduleText(result)), 'shop'),
+        contains(
+          normalize('types: [PaymentApi, BookApi, AuthorApi, ShelfApi]'),
+        ),
+      );
+    });
+
+    test('a prefix without its last slash is the same directory', () async {
+      final result = await buildWith('''
+@Configuration()
+@ImportHttpServices(basePackages: ['package:pkg/src/other'])
+class Clients {}
+''');
+      expect(result.errors, isEmpty);
+      expect(
+        groupOf(normalize(moduleText(result)), 'default'),
+        contains(normalize('types: [PaymentApi]')),
+      );
+    });
+
+    test("the found interfaces follow the importer's conditions", () async {
+      final result = await buildWith('''
+@Profile(['prod'])
+@Configuration()
+@ImportHttpServices(basePackages: ['package:pkg/src/other/'])
+class Clients {}
+''');
+      expect(result.errors, isEmpty);
+      final module = normalize(moduleText(result));
+      final start = module.indexOf(normalize('BeanDefinition<PaymentApi>('));
+      expect(
+        module.substring(start, module.indexOf('BeanDefinition', start + 1)),
+        contains(normalize("[const ProfileCondition([r'prod'])]")),
+      );
+    });
+
+    final errors = <String, (String, List<String>)>{
+      'a prefix that finds nothing': (
+        "@ImportHttpServices(basePackages: ['package:pkg/src/catalgo/'])",
+        [
+          "basePackages 'package:pkg/src/catalgo/' finds no interface",
+          '(lib/src/catalgo/ holds no Dart library)',
+        ],
+      ),
+      'a directory of libraries without interfaces': (
+        '@ImportHttpServices(basePackageClasses: [Util])',
+        [
+          'basePackageClasses Util finds no interface',
+          '(lib/src/util/ holds 1 library, none with @HttpExchange',
+        ],
+      ),
+      'a prefix of another package': (
+        "@ImportHttpServices(basePackages: ['package:spring_web_dart/src/'])",
+        [
+          "basePackages 'package:spring_web_dart/src/' is in the package",
+          "lists the libraries of the package it builds only ('pkg')",
+          'List the interfaces of',
+        ],
+      ),
+      'a Java package name': (
+        "@ImportHttpServices(basePackages: ['com.shop.catalog'])",
+        [
+          "basePackages 'com.shop.catalog' is no library URI prefix",
+          "'package:pkg/src/catalog/'",
+        ],
+      ),
+      'a type of another package': (
+        '@ImportHttpServices(basePackageClasses: [RestClient])',
+        [
+          'basePackageClasses RestClient is declared in the package',
+          "'spring_web_dart', and the build lists",
+        ],
+      ),
+      'a type of the SDK': (
+        '@ImportHttpServices(basePackageClasses: [String])',
+        ['basePackageClasses String is declared in dart:core'],
+      ),
+      'found in one group, listed in another': (
+        "@ImportHttpServices(group: 'a', basePackages: "
+            "['package:pkg/src/other/'])\n"
+            "@ImportHttpServices(group: 'b', types: [PaymentApi])",
+        ['PaymentApi is imported into the groups "a" and "b"'],
+      ),
+    };
+    for (final MapEntry(key: name, value: (annotations, messages))
+        in errors.entries) {
+      test(name, () async {
+        final result = await buildWith('''
+@Configuration()
+$annotations
+class Clients {}
+''');
+        expect(result.succeeded, isFalse);
+        final text = result.errors.join('\n');
+        for (final message in messages) {
+          expect(text, contains(message));
+        }
+      });
+    }
+
+    test('found by two importers under different conditions', () async {
+      final result = await buildWith('''
+@Profile(['prod'])
+@Configuration()
+@ImportHttpServices(basePackages: ['package:pkg/src/other/'])
+class Prod {}
+
+@Profile(['dev'])
+@Configuration()
+@ImportHttpServices(types: [PaymentApi])
+class Dev {}
+''');
+      expect(
+        result.errors.join('\n'),
+        contains(
+          'PaymentApi is imported by Prod and by Dev, which are registered '
+          'under different conditions',
+        ),
+      );
+    });
+
+    test('on a class that is no bean', () async {
+      final result = await buildWith('''
+@ImportHttpServices(basePackages: ['package:pkg/src/other/'])
+class NotABean {}
+''');
+      expect(
+        result.errors.join('\n'),
+        contains('@ImportHttpServices on NotABean, which is no bean'),
+      );
+    });
+
+    test('on main, in bin/', () async {
+      final result = await _application('''
+@HttpExchange('/api')
+abstract interface class Api {
+  @GetExchange('/ping')
+  Future<String> ping();
+}
+
+@SpringBootApplication()
+@ImportHttpServices(basePackageClasses: [Api])
+void main(List<String> args) => runApplication(args);
+''');
+      expect(result.errors, isEmpty);
+      expect(
+        _applicationText(result),
+        hasCode("const HttpServiceGroup(r'default', types: [Api])"),
       );
     });
   });
@@ -667,20 +1122,76 @@ class Two {}
             'find(); }',
         ['@GetMapping on A.find', 'Write @GetExchange instead'],
       ),
-      'an API version': (
+      'an API version with a placeholder': (
         "abstract interface class A { @GetExchange.of(url: '/b', version: "
-            "'2') Future<Book> find(); }",
-        ['A.find asks for the API version "2"'],
+            r"r'${api.version}') Future<Book> find(); }",
+        [
+          r'A.find asks for the API version "${api.version}", a placeholder',
+          'spring.http.serviceclient.default.apiversion.default',
+        ],
+      ),
+      'an API version with a line break': (
+        "abstract interface class A { @GetExchange.of(url: '/b', version: "
+            r"'1\n2') Future<Book> find(); }",
+        ['A.find asks for an API version with a control character'],
+      ),
+      'a version on a method without an exchange annotation': (
+        "@HttpExchange.of(url: '/b', version: '2') abstract interface class "
+            'A { Future<Book> find(); }',
+        ['A.find has no exchange annotation'],
       ),
       'a nullable path variable': (
         "abstract interface class A { @GetExchange('/b/{id}') Future<Book> "
             'find(@PathVariable() String? id); }',
         ['A.find: parameter id is nullable with @PathVariable'],
       ),
-      'a Map of query parameters': (
+      'a Map of values that are no text': (
         "abstract interface class A { @GetExchange('/b') Future<Book> "
-            'find(@RequestParam() Map<String, String> q); }',
-        ['A.find: parameter q is a Map with @RequestParam'],
+            'find(@RequestParam() Map<String, Book> q); }',
+        [
+          'A.find: parameter q is a Map<String, Book> with @RequestParam',
+          'its values are Book, and a query parameter is text',
+        ],
+      ),
+      'a Map of nullable header values': (
+        "abstract interface class A { @GetExchange('/b') Future<Book> "
+            'find(@RequestHeader() Map<String, String?> h); }',
+        ['its values may be null, and a null has no text to send'],
+      ),
+      'a Map of dynamic cookie values': (
+        "abstract interface class A { @GetExchange('/b') Future<Book> "
+            'find(@CookieValue() Map<String, dynamic> c); }',
+        ['A.find: parameter c is a Map<String, dynamic> with @CookieValue'],
+      ),
+      'a Map whose keys are no Strings': (
+        "abstract interface class A { @GetExchange('/b') Future<Book> "
+            'find(@RequestParam() Map<int, String> q); }',
+        ['the keys of the map are the names of the query parameters'],
+      ),
+      'a Map of lists of path variables': (
+        "abstract interface class A { @GetExchange('/b/{id}') Future<Book> "
+            'find(@PathVariable() Map<String, List<String>> p); }',
+        ['A path variable is one value, so a map of them holds no lists.'],
+      ),
+      'an HttpHeaders without @RequestHeader': (
+        "abstract interface class A { @GetExchange('/b') Future<Book> "
+            'find(HttpHeaders headers); }',
+        ['A.find: parameter headers is an HttpHeaders without an annotation'],
+      ),
+      'a wildcard parameter': (
+        "abstract interface class A { @GetExchange('/b') Future<Book> "
+            'find(@RequestAttribute() String _); }',
+        ['A.find: a parameter is the wildcard _'],
+      ),
+      'a UriBuilderFactory and a whole URL': (
+        "abstract interface class A { @GetExchange('https://x.neon.books/b') "
+            'Future<Book> find(UriBuilderFactory f); }',
+        ['A.find: the URL "https://x.neon.books/b" is whole'],
+      ),
+      'a UriBuilderFactory and a Uri': (
+        "abstract interface class A { @GetExchange('/b') Future<Book> "
+            'find(Uri url, UriBuilderFactory f); }',
+        ['the Uri parameter url is the whole URL of the call, and f'],
       ),
       'a header that is no text': (
         "abstract interface class A { @GetExchange('/b') Future<Book> "
@@ -705,11 +1216,6 @@ class Two {}
         "abstract interface class A { @GetExchange.of(url: '/b', headers: "
             "['X-Flag']) Future<Book> find(); }",
         ['A.find: the header "X-Flag" is not written "Name=value"'],
-      ),
-      'a multipart file in a stream': (
-        "abstract interface class A { @PostExchange('/b') Stream<List<int>> "
-            'send(@RequestPart() MultipartFile file); }',
-        ['A.send returns a stream and sends a MultipartFile'],
       ),
     };
     for (final MapEntry(key: name, value: (source, messages))
@@ -741,6 +1247,28 @@ class Clients {}
       expect(
         result.errors.join('\n'),
         contains('A is imported into the groups "one" and "two"'),
+      );
+    });
+
+    test('@RequestAttribute on a controller handler', () async {
+      final result = await buildPackage({
+        'lib/src/beans.dart': scanRoot,
+        'lib/src/service.dart':
+            '''
+$_imports
+@RestController()
+class Orders {
+  @GetMapping('/orders')
+  String all(@RequestAttribute('tag') String tag) => tag;
+}
+''',
+      });
+      expect(
+        result.errors.join('\n'),
+        contains(
+          '@RequestAttribute on parameter tag of Orders.all: only a method '
+          'of an HTTP service interface',
+        ),
       );
     });
 

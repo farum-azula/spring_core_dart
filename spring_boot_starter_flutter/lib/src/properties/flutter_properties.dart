@@ -120,8 +120,8 @@ final class FlutterDebugProperties {
   /// build apart from the panel.
   final FlutterDebugIsolatesProperties isolates;
 
-  /// The debug console over the app, `debug.console` (⌘⇧O, or eight quick
-  /// taps and a ninth held): in the build only when enabled.
+  /// The debug console over the app, `debug.console` (the key left of `1`,
+  /// or eight quick taps and a ninth held): in the build only when enabled.
   final FlutterDebugConsoleProperties console;
 
   /// Moving the debug overlays by dragging them: in the build apart from

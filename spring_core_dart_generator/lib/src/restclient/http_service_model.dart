@@ -275,7 +275,9 @@ final class HttpCallModel {
     required this.response,
     this.methodParameter,
     this.uriParameter,
+    this.uriBuilderFactory,
     this.contentType,
+    this.version,
     this.accept = const [],
     this.headers = const [],
     this.attributes = const [],
@@ -298,6 +300,14 @@ final class HttpCallModel {
   /// The parameter of type `Uri` that is the URL of each call instead of
   /// [url]; `null` for none.
   final String? uriParameter;
+
+  /// The parameter of type `UriBuilderFactory` that expands [url] instead
+  /// of the group's base URL; `null` for none.
+  final UriBuilderFactoryParameter? uriBuilderFactory;
+
+  /// The API version the call asks for (the method's `version:`, else the
+  /// interface's); `null`: the client's default.
+  final String? version;
 
   /// The `Content-Type` of the body; `null`: the converter's.
   final String? contentType;
@@ -334,15 +344,6 @@ final class HttpCallModel {
         'application/x-www-form-urlencoded',
       ) ??
       false;
-
-  /// Whether the call reads a file's bytes first (`await file.bytes`), so
-  /// the method is `async`.
-  bool get awaitsParts => arguments.any(
-    (argument) =>
-        argument is PartArgument &&
-        (argument.kind == PartKind.multipartFile ||
-            argument.kind == PartKind.multipartFiles),
-  );
 }
 
 /// A parameter of a method and where its value goes in the request.
@@ -359,13 +360,36 @@ sealed class HttpArgument {
   bool get isNullable => type.nullabilitySuffix != NullabilitySuffix.none;
 }
 
-/// A `@PathVariable`: fills `{name}` of the URL.
+/// What a named value parameter holds: one value, several of one name,
+/// or values by name (Spring's `Map` and `MultiValueMap` parameters).
+enum ValueShape {
+  /// One value (`String isbn`).
+  single,
+
+  /// Several values of the parameter's name (`List<String> tags`).
+  iterable,
+
+  /// One value per name (`Map<String, String> headers`).
+  map,
+
+  /// Several values per name (`Map<String, List<String>> headers`).
+  multiMap;
+
+  /// Whether the names come from the map's keys.
+  bool get isMap => this == map || this == multiMap;
+}
+
+/// A `@PathVariable`: fills `{name}` of the URL, or, for a
+/// `Map<String, T>` ([isMap]), the variables of its keys.
 final class PathArgument extends HttpArgument {
   /// The variable [name] from [parameter].
-  PathArgument(super.parameter, super.type, this.name);
+  PathArgument(super.parameter, super.type, this.name, {this.isMap = false});
 
-  /// The variable's name.
+  /// The variable's name (not used for a map).
   final String name;
+
+  /// Whether the parameter is a map of variables by name.
+  final bool isMap;
 }
 
 /// A `@RequestParam`: a query parameter, or a field of a form body.
@@ -376,17 +400,20 @@ final class QueryArgument extends HttpArgument {
     super.type, {
     required this.name,
     required this.text,
-    required this.isIterable,
+    this.shape = ValueShape.single,
   });
 
-  /// The query parameter's name.
+  /// The query parameter's name (not used for a map).
   final String name;
 
   /// How one value is written as text, for a form body.
   final TextKind text;
 
+  /// What the parameter holds.
+  final ValueShape shape;
+
   /// Whether the parameter holds several values, one parameter each.
-  final bool isIterable;
+  bool get isIterable => shape == ValueShape.iterable;
 }
 
 /// A value sent as text by a method of the request spec of its own: a
@@ -397,17 +424,20 @@ sealed class TextArgument extends HttpArgument {
     super.type, {
     required this.name,
     required this.text,
-    required this.isIterable,
+    this.shape = ValueShape.single,
   });
 
-  /// The header's or cookie's name.
+  /// The header's or cookie's name (not used for a map).
   final String name;
 
   /// How one value is written as text.
   final TextKind text;
 
+  /// What the parameter holds.
+  final ValueShape shape;
+
   /// Whether the parameter holds several values, one each.
-  final bool isIterable;
+  bool get isIterable => shape == ValueShape.iterable;
 
   /// The method of the request spec that adds one (`header`, `cookie`).
   String get specMethod;
@@ -421,7 +451,7 @@ final class HeaderArgument extends TextArgument {
     super.type, {
     required super.name,
     required super.text,
-    required super.isIterable,
+    super.shape,
   });
 
   @override
@@ -436,11 +466,53 @@ final class CookieArgument extends TextArgument {
     super.type, {
     required super.name,
     required super.text,
-    required super.isIterable,
+    super.shape,
   });
 
   @override
   String get specMethod => 'cookie';
+}
+
+/// A `@RequestHeader()` parameter of type `HttpHeaders`: every header of
+/// it added to the request.
+final class HeadersArgument extends HttpArgument {
+  /// The headers of [parameter].
+  HeadersArgument(super.parameter, super.type);
+}
+
+/// A `@RequestAttribute`: a request attribute of the call, or one per
+/// entry of a `Map<String, T>` ([isMap]); the value as it is.
+final class AttributeArgument extends HttpArgument {
+  /// The attribute [name] from [parameter].
+  AttributeArgument(
+    super.parameter,
+    super.type,
+    this.name, {
+    this.isMap = false,
+    this.nullableValues = false,
+  });
+
+  /// The attribute's name (not used for a map).
+  final String name;
+
+  /// Whether the parameter is a map of attributes by name.
+  final bool isMap;
+
+  /// Whether a map's values may be `null` (left out).
+  final bool nullableValues;
+}
+
+/// A parameter of type `UriBuilderFactory`: the base the URL of the call
+/// is expanded against, instead of the group's base URL.
+final class UriBuilderFactoryParameter {
+  /// The parameter [name]; [isNullable] when a `null` means the group's.
+  const UriBuilderFactoryParameter(this.name, {required this.isNullable});
+
+  /// The parameter's name.
+  final String name;
+
+  /// Whether it is nullable.
+  final bool isNullable;
 }
 
 /// A `@RequestBody`: the body, written by the client's converters.
@@ -472,7 +544,8 @@ final class PartArgument extends HttpArgument {
 
 /// How a `@RequestPart` value becomes parts of the body.
 enum PartKind {
-  /// A `MultipartFile`: a file part with its name and content type.
+  /// A `MultipartFile`: a file part with its name and content type,
+  /// streamed from the file.
   multipartFile,
 
   /// Several `MultipartFile` values: a file part each.

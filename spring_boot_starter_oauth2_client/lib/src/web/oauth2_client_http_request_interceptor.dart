@@ -40,7 +40,9 @@ const _log = SpringLog('spring.security.oauth2.client.web.client');
 ///   that server;
 /// - a `401` with `WWW-Authenticate: DPoP error="use_dpop_nonce"` is sent
 ///   once more, with a proof that carries the new nonce (RFC 9449 §9: the
-///   server refused the request before handling it);
+///   server refused the request before handling it); a streamed body that
+///   cannot be sent again (`StreamingBody.isRepeatable`) is not, and the
+///   `401` is the answer;
 /// - another `401` marks the token expired when it is still the stored
 ///   one ([authorizedClientService]), so the next call refreshes it (or
 ///   gets a new client-credentials token); the call itself is not
@@ -62,14 +64,19 @@ const _log = SpringLog('spring.security.oauth2.client.web.client');
 /// makes (`spring.security.oauth2.client.restclient.enabled`), or to the
 /// HTTP service groups of `OAuth2RestClientHttpServiceGroupConfigurer`.
 ///
+/// It never reads the body (a `StreamingClientHttpRequestInterceptor`), so
+/// an upload streamed by the client passes it as a stream rather than
+/// being read whole into memory first.
+///
 /// Spring Security 7 (Java): `OAuth2ClientHttpRequestInterceptor`
 /// (`org.springframework.security.oauth2.client.web.client`), with
 /// `RequestAttributeClientRegistrationIdResolver` and
 /// `SecurityContextHolderPrincipalResolver`; the default registration,
 /// DPoP and the expired mark on a `401` (Spring removes the client) are
-/// additions.
+/// additions, and so is the streamed body (Spring's interceptors get the
+/// body as bytes).
 final class OAuth2ClientHttpRequestInterceptor
-    implements ClientHttpRequestInterceptor {
+    implements StreamingClientHttpRequestInterceptor {
   /// An interceptor taking tokens from [authorizedClientManager]; calls
   /// without the registration attribute use [defaultClientRegistrationId]
   /// (none by default); [authorizedClientService] (where the manager
@@ -145,7 +152,8 @@ final class OAuth2ClientHttpRequestInterceptor
       return response;
     }
     if (token.tokenType == TokenType.dpop && wantsNonce(response.headers)) {
-      if (nonce == null) {
+      // A stream read once cannot be sent with the new nonce.
+      if (nonce == null || !(request.streamingBody?.isRepeatable ?? true)) {
         return response;
       }
       _log.debug('The resource server asked for a DPoP nonce; sending again');

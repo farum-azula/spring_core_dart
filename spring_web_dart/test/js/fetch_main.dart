@@ -191,6 +191,47 @@ Future<void> main() async {
       .lastWhere((line) => line.startsWith('data: '))
       .substring(6);
 
+  // A streamed body: node's fetch takes a ReadableStream (duplex: 'half'),
+  // read while it is sent; a body read once is sent once.
+  Stream<List<int>> chunks() async* {
+    for (var i = 0; i < 4; i++) {
+      yield List.filled(25000, i);
+    }
+  }
+
+  Future<String> upload(StreamingBody body) async {
+    try {
+      final response = await transport.send(
+        HttpRequest(
+          method: HttpMethod.post,
+          url: Uri.parse('http://$host/upload'),
+          streamingBody: body,
+        ),
+      );
+      return response.bodyText;
+    } on NonRepeatableBodyException {
+      return 'not repeatable';
+    }
+  }
+
+  // Followed by the transport (a server runtime with an allow list): a
+  // 303 goes on as a GET without the body.
+  final hopped = await guarded.send(
+    HttpRequest(
+      method: HttpMethod.post,
+      url: Uri.parse('http://$host/hop?code=303&to=/upload'),
+      streamingBody: StreamingBody(chunks()),
+    ),
+  );
+  result['streamed303'] = hopped.bodyText;
+  final once = StreamingBody(chunks());
+  result['streamed'] = [
+    await upload(once),
+    await upload(StreamingBody(chunks(), length: 100000)),
+    await upload(once),
+    await upload(StreamingBody.repeatable(chunks, length: 100000)),
+  ];
+
   final sockets = platformWebSocketTransport();
   final socket = await sockets.connect(
     Uri.parse('ws://$host/ws'),

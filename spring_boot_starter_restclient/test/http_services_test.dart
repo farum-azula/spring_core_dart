@@ -11,12 +11,15 @@ import 'package:spring_boot_starter_restclient/spring_boot_starter_restclient.da
 import 'package:spring_boot_starter_test/spring_boot_starter_test.dart';
 import 'package:test/test.dart';
 
+import 'http_services/app/clients/stock_service.dart';
 import 'http_services/app/http_services_app.dart';
 import 'spring_gen/http_services/app/http_services_app.spring.dart';
 
 const _catalog = 'https://catalog.neon.books';
 const _payments = 'https://pay.neon.books';
 const _reports = 'https://reports.neon.books';
+const _stock = 'https://stock.neon.books';
+const _insert = 'spring.http.serviceclient.stock.apiversion.insert';
 
 const _dune = {'isbn': '978-0', 'title': 'Dune'};
 
@@ -167,34 +170,45 @@ void main() {
       });
     });
 
-    test('multipart parts: a file, a JSON part, an optional field', () async {
-      final server = MockHttpTransport()
-        ..when(HttpMethod.post, '/books/978-0/cover').respond(204);
-      await _withBooks(server, (books) async {
-        await books.upload(
-          '978-0',
-          InMemoryMultipartFile(
-            'cover',
-            [1, 2, 3],
-            originalFilename: 'dune.png',
-            contentType: 'image/png',
-          ),
-          const Book(isbn: '978-0', title: 'Dune'),
-          null,
-        );
-        final request = server.lastRequest;
-        expect(
-          request.headers['Content-Type'],
-          startsWith('multipart/form-data'),
-        );
-        final body = latin1.decode(request.body!);
-        expect(body, contains('name="cover"; filename="dune.png"'));
-        expect(body, contains('Content-Type: image/png'));
-        expect(body, contains('name="meta"'));
-        expect(body, contains('{"isbn":"978-0","title":"Dune"}'));
-        expect(body, isNot(contains('name="note"')));
-      });
-    });
+    test(
+      'multipart parts: a file streamed, a JSON part, an optional field',
+      () async {
+        var sent = <int>[];
+        final server = MockHttpTransport()
+          ..when(HttpMethod.post, '/books/978-0/cover').respondWith((
+            request,
+          ) async {
+            // The file's part is streamed: the body is read as it is sent.
+            sent = await request.streamingBody!.toBytes();
+            return HttpResponse(204, request: request);
+          });
+        await _withBooks(server, (books) async {
+          await books.upload(
+            '978-0',
+            InMemoryMultipartFile(
+              'cover',
+              [1, 2, 3],
+              originalFilename: 'dune.png',
+              contentType: 'image/png',
+            ),
+            const Book(isbn: '978-0', title: 'Dune'),
+            null,
+          );
+          final request = server.lastRequest;
+          expect(
+            request.headers['Content-Type'],
+            startsWith('multipart/form-data'),
+          );
+          expect(request.body, isNull);
+          final body = latin1.decode(sent);
+          expect(body, contains('name="cover"; filename="dune.png"'));
+          expect(body, contains('Content-Type: image/png'));
+          expect(body, contains('name="meta"'));
+          expect(body, contains('{"isbn":"978-0","title":"Dune"}'));
+          expect(body, isNot(contains('name="note"')));
+        });
+      },
+    );
 
     test(
       "a form of the request parameters, and the method's attribute",
@@ -226,6 +240,245 @@ void main() {
           'GET, HEAD',
         );
       });
+    });
+  });
+
+  group('the parameters of several values', () {
+    test('maps of query parameters, headers and cookies; HttpHeaders; '
+        'request attributes', () async {
+      final server = MockHttpTransport()
+        ..when(HttpMethod.get, '/books/filter').respond(200, body: 'ok');
+      await _withBooks(server, (books) async {
+        await books.filter(
+          {'author': 'Frank Herbert'},
+          shelves: {
+            'shelf': [Shelf.fiction, Shelf.science],
+          },
+          counts: {'X-Count': 2},
+          more: HttpHeaders()..add('X-More', 'yes'),
+          cookies: {
+            'pref': ['dark', 'compact'],
+          },
+          tag: 'checkout',
+          marks: {'mark': 1, 'none': null},
+        );
+        final request = server.lastRequest;
+        expect(request.url.queryParametersAll, {
+          'author': ['Frank Herbert'],
+          'shelf': ['fiction', 'science'],
+        });
+        expect(request.headers['X-Count'], '2');
+        expect(request.headers['X-More'], 'yes');
+        expect(request.headers['Cookie'], 'pref=dark; pref=compact');
+        expect(request.attributes['trace.tag'], 'checkout');
+        expect(request.attributes['mark'], 1);
+        expect(request.attributes.containsKey('none'), isFalse);
+        expect(request.attributes['tenant'], 'neon');
+        // A null map, a null HttpHeaders and a null attribute add nothing.
+        await books.filter({});
+        final bare = server.lastRequest;
+        expect(bare.url.query, isEmpty);
+        expect(bare.headers['Cookie'], isNull);
+        expect(bare.attributes.containsKey('trace.tag'), isFalse);
+      });
+    });
+
+    test('a header value with a line break never reaches the server', () async {
+      final server = MockHttpTransport()
+        ..when(HttpMethod.get, '/books/filter').respond(200, body: 'ok');
+      await _withBooks(server, (books) async {
+        expect(
+          () => books.filter({}, more: HttpHeaders()..add('X-A', 'a\r\nX-B')),
+          throwsA(isA<ArgumentError>()),
+        );
+        expect(
+          () => books.filter(
+            {},
+            cookies: {
+              'session': ['a; admin=1'],
+            },
+          ),
+          throwsA(isA<ArgumentError>()),
+        );
+        expect(server.requests, isEmpty);
+      });
+    });
+
+    test('a map of path variables', () async {
+      final server = MockHttpTransport()
+        ..when(
+          HttpMethod.get,
+          '/books/fiction/978-0',
+        ).respond(200, json: _dune);
+      await _withBooks(server, (books) async {
+        final book = await books.onShelf({'shelf': 'fiction', 'isbn': '978-0'});
+        expect(book.title, 'Dune');
+        expect(
+          () => books.onShelf({'shelf': 'fiction'}),
+          throwsA(isA<ArgumentError>()),
+        );
+      });
+    });
+
+    test("a UriBuilderFactory: its base URL, else the group's", () async {
+      final server = MockHttpTransport()
+        ..when(HttpMethod.get, '/books/978-0').respond(200, json: _dune);
+      await _withBooks(server, (books) async {
+        await books.fromMirror(
+          const UriBuilderFactory('https://mirror.neon.books'),
+          '978-0',
+        );
+        expect(
+          '${server.lastRequest.url}',
+          'https://mirror.neon.books/books/978-0',
+        );
+        await books.fromMirror(null, '978-0');
+        expect('${server.lastRequest.url}', '$_catalog/books/978-0');
+      });
+    });
+
+    test('a map of form fields, an enum by its name', () async {
+      final server = MockHttpTransport()
+        ..when(HttpMethod.post, '/books/subscribe').respond(200, body: 'ok');
+      await _withBooks(server, (books) async {
+        await books.subscribe({'weekly': Shelf.fiction});
+        expect(_text(server.lastRequest), 'weekly=fiction');
+      });
+    });
+  });
+
+  group('the stock group: basePackageClasses and API versions', () {
+    ApplicationContextRunner stock(MockHttpTransport server) =>
+        _runner(server).withPropertyValues([
+          'spring.http.serviceclient.stock.base-url=$_stock',
+        ]);
+
+    MockHttpTransport stockServer() => MockHttpTransport()
+      ..when(HttpMethod.get, '/stock/s-1').respond(200, body: '5')
+      ..when(HttpMethod.get, '/stock/s-1/history').respond(200, body: '[]')
+      ..when(HttpMethod.get, '/alerts').respond(200, body: 'none');
+
+    test('the interfaces of the directory, found by the build', () {
+      _runner(MockHttpTransport()).run((context) {
+        expect(context, hasSingleBean<StockService>());
+        expect(context, hasSingleBean<StockAlerts>());
+        expect(
+          context.getBean<HttpServiceGroups>().group('stock').types,
+          [StockService, StockAlerts],
+        );
+      });
+    });
+
+    test(
+      "the group's default version, the method's, the interface's",
+      () async {
+        final server = stockServer();
+        await stock(server)
+            .withPropertyValues([
+              'spring.http.serviceclient.stock.apiversion.default=1.0',
+              '$_insert.header=API-Version',
+            ])
+            .runAsync((context) async {
+              expect(context.startupFailure, isNull);
+              final service = context.getBean<StockService>();
+              expect(await service.level('s-1'), '5');
+              expect(server.lastRequest.headers['API-Version'], '1.0');
+              await service.history('s-1');
+              expect(server.lastRequest.headers['API-Version'], '2.0');
+              await context.getBean<StockAlerts>().all();
+              expect(server.lastRequest.headers['API-Version'], '3.1');
+            });
+      },
+    );
+
+    test('a query parameter, a path segment', () async {
+      final server = MockHttpTransport()
+        ..when(HttpMethod.get, '/stock/s-1').respond(200, body: '5')
+        ..when(
+          HttpMethod.get,
+          '/2.0/stock/s-1/history',
+        ).respond(200, body: 'h');
+      await stock(server)
+          .withPropertyValues([
+            'spring.http.serviceclient.stock.apiversion.default=1.0',
+            '$_insert.query-parameter=v',
+          ])
+          .runAsync((context) async {
+            expect(context.startupFailure, isNull);
+            await context.getBean<StockService>().level('s-1');
+            expect('${server.lastRequest.url}', '$_stock/stock/s-1?v=1.0');
+          });
+      await stock(server)
+          .withPropertyValues([
+            '$_insert.path-segment=0',
+          ])
+          .runAsync((context) async {
+            expect(context.startupFailure, isNull);
+            await context.getBean<StockService>().history('s-1');
+            expect(
+              '${server.lastRequest.url}',
+              '$_stock/2.0/stock/s-1/history',
+            );
+          });
+    });
+
+    test('a default version and no inserter fail the start', () async {
+      await stock(MockHttpTransport())
+          .withPropertyValues([
+            'spring.http.serviceclient.stock.apiversion.default=1.0',
+          ])
+          .runAsync((context) async {
+            expect(
+              '${context.startupFailure}',
+              allOf(
+                contains(
+                  'The HTTP service group "stock" asks for the API '
+                  'version "1.0"',
+                ),
+                contains('spring.http.serviceclient.stock.apiversion.insert'),
+              ),
+            );
+          });
+    });
+
+    test('a version of the annotation and no inserter fail the call, as in '
+        'Spring', () async {
+      final server = stockServer();
+      await stock(server).runAsync((context) async {
+        expect(context.startupFailure, isNull);
+        expect(await context.getBean<StockService>().level('s-1'), '5');
+        expect(server.lastRequest.headers['API-Version'], isNull);
+        await expectLater(
+          context.getBean<StockService>().history('s-1'),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              startsWith('No ApiVersionInserter configured'),
+            ),
+          ),
+        );
+      });
+    });
+
+    test("a customizer's inserter serves the group's default", () async {
+      final server = stockServer();
+      await stock(server)
+          .withPropertyValues([
+            'spring.http.serviceclient.stock.apiversion.default=1.0',
+          ])
+          .withBean<RestClientCustomizer>(
+            () => RestClientCustomizer.of(
+              (builder) => builder.apiVersionInserter(
+                ApiVersionInserter.useHeader('X-Version'),
+              ),
+            ),
+          )
+          .runAsync((context) async {
+            expect(context.startupFailure, isNull);
+            await context.getBean<StockService>().level('s-1');
+            expect(server.lastRequest.headers['X-Version'], '1.0');
+          });
     });
   });
 
@@ -283,6 +536,28 @@ void main() {
           ),
         );
       });
+    });
+  });
+
+  test('@Retryable with a MultipartFile part: each attempt streams the file '
+      'again', () async {
+    final bodies = <String>[];
+    final server = MockHttpTransport()
+      ..when(
+        HttpMethod.post,
+        '/books/978-0/scan',
+      ).fail(HttpTransportException('connection reset'))
+      ..when(HttpMethod.post, '/books/978-0/scan').respondWith((request) async {
+        bodies.add(latin1.decode(await request.streamingBody!.toBytes()));
+        return HttpResponse(204, request: request);
+      });
+    await _withBooks(server, (books) async {
+      await books.scanPatiently(
+        '978-0',
+        InMemoryMultipartFile('scan', utf8.encode('page one')),
+      );
+      expect(server.requests, hasLength(2));
+      expect(bodies.single, contains('page one'));
     });
   });
 

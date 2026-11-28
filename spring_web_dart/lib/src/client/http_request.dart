@@ -1,8 +1,9 @@
+import 'package:spring_web_dart/src/client/streaming_body.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
 import 'package:spring_web_dart/src/http_method.dart';
 
 /// One outgoing HTTP request, complete and ready to send: method, URL,
-/// headers, body bytes and timeouts.
+/// headers, body (bytes or a stream) and timeouts.
 ///
 /// It is what an `HttpTransport` sends. `RestClient` builds one for every
 /// call (an HTTP service client's too), so most applications never create
@@ -31,6 +32,20 @@ import 'package:spring_web_dart/src/http_method.dart';
 /// final response = await transport.send(request);
 /// ```
 ///
+/// A large body goes as a [streamingBody] instead, read while it is sent:
+///
+/// ```dart
+/// final file = File('backup.tar');
+/// await transport.send(HttpRequest(
+///   method: HttpMethod.put,
+///   url: Uri.parse('https://storage.neon.books/backups/1'),
+///   streamingBody: StreamingBody.repeatable(
+///     file.openRead,
+///     length: file.lengthSync(),
+///   ),
+/// ));
+/// ```
+///
 /// Spring (Java): `ClientHttpRequest`, which a factory creates and which
 /// then sends itself:
 /// ```java
@@ -47,11 +62,14 @@ final class HttpRequest {
   /// [connectTimeout] limits opening the connection. [abort]
   /// lets the caller give the request up while it waits for the response.
   /// [attributes] are for the code around the request, never sent.
+  /// [body] and [streamingBody] are the two kinds of body: give one at
+  /// most (an [ArgumentError] otherwise).
   HttpRequest({
     required this.method,
     required this.url,
     HttpHeaders? headers,
     this.body,
+    this.streamingBody,
     this.timeout,
     this.readTimeout,
     this.connectTimeout,
@@ -59,7 +77,13 @@ final class HttpRequest {
     this.sensitiveHeaders = const {},
     this.abort,
     this.attributes = const {},
-  }) : headers = headers ?? HttpHeaders();
+  }) : headers = headers ?? HttpHeaders() {
+    if (body != null && streamingBody != null) {
+      throw ArgumentError(
+        'A request has bytes (body) or a stream (streamingBody), not both',
+      );
+    }
+  }
 
   /// The HTTP method, such as [HttpMethod.get].
   final HttpMethod method;
@@ -68,11 +92,24 @@ final class HttpRequest {
   final Uri url;
 
   /// The request headers. They can still be changed until the request is
-  /// sent. A transport sets `Content-Length` from [body] itself.
+  /// sent. A transport sets `Content-Length` from the body itself.
   final HttpHeaders headers;
 
-  /// The body bytes, or `null` to send no body.
+  /// The body bytes, or `null` for no body or a [streamingBody].
   final List<int>? body;
+
+  /// The body as a stream read while it is sent (a large upload), or
+  /// `null` for no body or one in [body]. A transport sends it with
+  /// `Content-Length` when its length is known, else in chunks, and
+  /// never gathers it in memory; a transport that wraps another passes it
+  /// on as it is. One made from a stream is sent once: a second attempt
+  /// fails with a [NonRepeatableBodyException].
+  ///
+  /// Spring (Java): `StreamingHttpOutputMessage.setBody(Body)`.
+  final StreamingBody? streamingBody;
+
+  /// Whether the request has a body, of either kind.
+  bool get hasBody => body != null || streamingBody != null;
 
   /// The deadline for the whole exchange, from sending the request to the
   /// last byte of the response; `null` for none. A transport that runs out
@@ -148,6 +185,7 @@ final class HttpRequest {
     url: url,
     headers: headers,
     body: body,
+    streamingBody: streamingBody,
     timeout: timeout,
     readTimeout: readTimeout,
     connectTimeout: connectTimeout,
@@ -156,6 +194,25 @@ final class HttpRequest {
     abort: abort,
     attributes: attributes,
   );
+
+  /// This request with another body, bytes ([body]) or a stream
+  /// ([streamingBody]) or none, everything else kept: for code that wraps
+  /// a transport and passes the body on changed (counted, read whole).
+  HttpRequest withBody({List<int>? body, StreamingBody? streamingBody}) =>
+      HttpRequest(
+        method: method,
+        url: url,
+        headers: headers,
+        body: body,
+        streamingBody: streamingBody,
+        timeout: timeout,
+        readTimeout: readTimeout,
+        connectTimeout: connectTimeout,
+        followRedirects: followRedirects,
+        sensitiveHeaders: sensitiveHeaders,
+        abort: abort,
+        attributes: attributes,
+      );
 
   @override
   String toString() => '${method.value} $url';

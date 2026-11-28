@@ -1,9 +1,11 @@
 ## Unreleased
 
+- **Changed:** the debug console opens and closes with the key left of `1`, as a game's console drops down: the action `debug.console` has the keys `backquote` and `section` (the `§` there on a Mac's ISO keyboard) besides `taps:8+hold:2s`, instead of `primary+shift+o`. The keys are matched where they lie, so any layout opens it (`ё` on a Russian one), and a text field with the focus keeps them for its text. `spring.flutter.shortcuts.debug.console: primary+shift+o` brings the old keys back.
 - The documentation of the network recorder names `RestClient` and the `RestClientBuilder`'s `sensitiveHeaders` as what it records and masks.
 - **Renamed:** the debug network recorder's HTTP entry `HttpExchange` is `HttpCall`, and its `HttpExchangeState` is `HttpCallState` (beside `WebSocketConnection`), so that the starter, which re-exports `spring_web_dart`, does not clash with the `@HttpExchange` annotation of HTTP service interfaces. Code that reads the journal's entries (`entry is HttpExchange`) changes the name; nothing else changes.
 - The `notifyListenersAdvisor` and the `beanReadsAdvisor` are at `AdvisorOrder.notifyListeners` and `AdvisorOrder.beanReads` (were `Ordered.lowestPrecedence`): outside the retries, so listeners hear once for a retried call.
 - The documentation says what 0.10.0 does: the Logs tab lists the oldest record first and the newest at the bottom (the dartdoc of `debugLogsSection`), and the console bean's dartdoc names the Console tab beside the Overlays tab.
+- The debug network recorder passes a streamed request body (`HttpRequest.streamingBody`) on as the transport reads it, never gathered: the call's `requestSize` is counted as it goes out, `HttpCall.requestStreamed` marks it, and the detail shows `Request body: streamed`; its bytes are never kept, with `spring.flutter.debug.network.bodies` too.
 
 ## 0.10.0
 

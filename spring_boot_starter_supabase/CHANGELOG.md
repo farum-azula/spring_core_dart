@@ -5,6 +5,7 @@
 - `SupabaseHttp` sends through a `RestClient` (Spring's layering): the application's `RestClientBuilder` (the `restClientBuilder` constructor parameter; its transport, `spring.http.clients.*` and the `RestClientCustomizer` beans), never following a redirect, with `SupabaseCredentialsInterceptor` last, so the key and the token stay what `SupabaseCredentials` says whatever another interceptor does. A call is limited by `spring.supabase.timeout` and the caller's `RequestDeadline`, the earlier (it was the property alone); no answer stays a `SupabaseUnavailableException`, a passed deadline one with `isTimeout`. Downloads (`stream`) stay on the transport. On the benchmark a select of the REST API takes 8.5-8.7 µs instead of 7.5-7.8 µs.
 - **Security:** the starter depends on `spring_boot_starter_restclient` and re-exports it, so the application's `httpTransport` calls only the addresses allowed by hand. The host of `spring.supabase.url` is allowed by the starter (`supabaseAllowedAddresses`, an `AllowedAddressesContributor`; the address of a local stack, `127.0.0.1`, too): a configured project needs nothing in `spring.http.clients.allowed-addresses`.
 - `NOTICE` names this package.
+- `SupabaseCredentialsInterceptor` and the time limit of `SupabaseHttp`'s calls are `StreamingClientHttpRequestInterceptor` instances, so a streamed body passes them as a stream; a request's `streamingBody` is kept when its time limit is set.
 
 ## 0.10.0
 

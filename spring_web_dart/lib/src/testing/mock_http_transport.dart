@@ -23,6 +23,17 @@ import 'package:spring_web_dart/src/sse/server_sent_event.dart';
 /// the last one repeats. A request without a prepared answer throws a
 /// `StateError` that lists the prepared ones.
 ///
+/// A request's `streamingBody` is read to its end before a prepared answer,
+/// as a server reads a request, and the recorded request ([requests],
+/// [lastRequest]) holds the bytes read as its `body`, as Spring's
+/// `MockClientHttpRequest` keeps them, so a test checks an upload the same
+/// way whether it was streamed or not. A body that can be read once is
+/// sent once here too (a second attempt throws a
+/// `NonRepeatableBodyException`). A [MockResponseBuilder.respondWith]
+/// handler gets it unread, to read it itself
+/// (`request.streamingBody!.toBytes()`); one read once that it left unread
+/// is read, and recorded, after it.
+///
 /// ```dart
 /// // The catalog service an HTTP service client calls is played by the
 /// // mock.
@@ -119,7 +130,31 @@ class MockHttpTransport implements HttpTransport {
         (throw StateError(
           'MockHttpTransport: when($expectation) has no respond(...)',
         ));
-    return await answer(request);
+    final streaming = request.streamingBody;
+    if (streaming == null) {
+      return await answer(request);
+    }
+    if (!expectation.handlesBody) {
+      // Read as a server reads a request, and kept for the test.
+      _record(request, await streaming.toBytes());
+      return await answer(request);
+    }
+    try {
+      return await answer(request);
+    } finally {
+      if (!streaming.isRepeatable && !streaming.isConsumed) {
+        _record(request, await streaming.toBytes());
+      }
+    }
+  }
+
+  // Replaces the recorded [request] with the same request holding [bytes],
+  // the streamed body read, as its body.
+  void _record(HttpRequest request, List<int> bytes) {
+    final index = _requests.lastIndexOf(request);
+    if (index != -1) {
+      _requests[index] = request.withBody(body: bytes);
+    }
   }
 
   @override
@@ -178,19 +213,23 @@ class MockResponseBuilder {
     } else {
       content = bytes ?? const [];
     }
-    _expectation.answer = (request) async => StreamedHttpResponse(
-      status,
-      headers: responseHeaders.copy(),
-      body: Stream.value(content),
-      request: request,
-    );
+    _expectation
+      ..handlesBody = false
+      ..answer = (request) async => StreamedHttpResponse(
+        status,
+        headers: responseHeaders.copy(),
+        body: Stream.value(content),
+        request: request,
+      );
   }
 
   /// Answers with the response [handler] builds from the request, for an
-  /// answer that depends on what was sent (an echo, a generated id).
+  /// answer that depends on what was sent (an echo, a generated id). A
+  /// streamed body reaches [handler] unread
+  /// (`await request.streamingBody!.toBytes()` reads it).
   void respondWith(
     FutureOr<HttpResponse> Function(HttpRequest request) handler,
-  ) => _expectation.answer = (request) async {
+  ) => (_expectation..handlesBody = true).answer = (request) async {
     final response = await handler(request);
     return StreamedHttpResponse(
       response.statusCode,
@@ -244,20 +283,24 @@ class MockResponseBuilder {
     int status,
     Stream<List<int>> Function() body, {
     Map<String, String> headers = const {},
-  }) => _expectation.answer = (request) async => StreamedHttpResponse(
-    status,
-    headers: HttpHeaders(headers),
-    body: body(),
-    request: request,
-  );
+  }) =>
+      (_expectation..handlesBody = false).answer = (request) async =>
+          StreamedHttpResponse(
+            status,
+            headers: HttpHeaders(headers),
+            body: body(),
+            request: request,
+          );
 
   /// Makes the request fail with [error] instead of answering, as a lost
   /// connection does; an [HttpTransportException] tests how the client
   /// retries or reports it.
   void fail(Object error) =>
-      // Any object can be prepared as the failure, as the caller passes it.
-      // ignore: only_throw_errors
-      _expectation.answer = (request) async => throw error;
+      (_expectation..handlesBody = false).answer = (request) async =>
+          // Any object can be prepared as the failure, as the caller
+          // passes it.
+          // ignore: only_throw_errors
+          throw error;
 }
 
 final class _Expectation {
@@ -270,6 +313,8 @@ final class _Expectation {
   final Uri _uri;
   final bool _hasQuery;
   bool used = false;
+  // Whether the answer reads a streamed body itself (respondWith).
+  bool handlesBody = false;
   Future<StreamedHttpResponse> Function(HttpRequest request)? answer;
 
   bool matches(HttpRequest request) {

@@ -271,22 +271,37 @@ final class _CallWriter {
               _emission.string(contentType),
             ]);
     }
+    if (call.version case final version?) {
+      request = request.property('apiVersion').call([
+        _emission.string(version),
+      ]);
+    }
     for (final attribute in call.attributes) {
       request = request.property('attribute').call([
         _emission.string(attribute.name),
         _emission.constant(attribute.value, attribute.element),
       ]);
     }
-    final pending = <TextArgument>[];
+    final pending = <HttpArgument>[];
     for (final argument in call.arguments) {
       switch (argument) {
-        case TextArgument(:final name, :final text, isIterable: false)
+        case TextArgument(:final name, :final text, shape: ValueShape.single)
             when !argument.isNullable:
           request = request.property(argument.specMethod).call([
             _emission.string(name),
             _text(refer(argument.parameter), text),
           ]);
-        case TextArgument():
+        case AttributeArgument(:final name, isMap: false)
+            when !argument.isNullable:
+          request = request.property('attribute').call([
+            _emission.string(name),
+            refer(argument.parameter),
+          ]);
+        case HeadersArgument(:final parameter) when !argument.isNullable:
+          request = request.property('headers').call([
+            _addHeaders(refer(parameter)),
+          ]);
+        case TextArgument() || AttributeArgument() || HeadersArgument():
           pending.add(argument);
         case BodyArgument(:final parameter, :final type):
           request = request.property('body').call([
@@ -317,9 +332,7 @@ final class _CallWriter {
       sent = refer(name);
     }
     final result = _response(sent.property('retrieve').call([]), element);
-    final isAsync = call.awaitsParts;
-    final voidResult = call.response is BodilessResponse;
-    final lambda = statements.isEmpty && !(isAsync && voidResult);
+    final lambda = statements.isEmpty;
     return Method(
       (m) => m
         ..annotations.add(refer('override'))
@@ -335,17 +348,10 @@ final class _CallWriter {
             if (parameter.isNamed || !parameter.isRequired)
               _emission.parameter(parameter, element),
         ])
-        ..modifier = isAsync ? MethodModifier.async : null
         ..lambda = lambda
         ..body = lambda
             ? result.code
-            : Block.of([
-                ...statements,
-                if (isAsync && voidResult)
-                  result.awaited.statement
-                else
-                  result.returned.statement,
-              ]),
+            : Block.of([...statements, result.returned.statement]),
     );
   }
 
@@ -373,7 +379,8 @@ final class _CallWriter {
       call.hasBody;
 
   // `.uri(...)`: the template and its variables, a `UriBuilder` function
-  // when there are query parameters, or the `Uri` parameter.
+  // when there are query parameters, the `Uri` parameter, or the URL
+  // expanded by the `UriBuilderFactory` parameter.
   Expression _uri(Expression request) {
     if (call.uriParameter case final uri?) {
       return request.property('uri').call([refer(uri)]);
@@ -385,9 +392,15 @@ final class _CallWriter {
     ];
     final variables = paths.isEmpty
         ? null
+        : paths.length == 1 && paths.single.isMap && !paths.single.isNullable
+        ? refer(paths.single.parameter)
         : literalMap({
             for (final path in paths)
-              _emission.string(path.name): refer(path.parameter),
+              if (path.isMap)
+                (path.isNullable ? literalNullSafeSpread() : literalSpread()):
+                    refer(path.parameter)
+              else
+                _emission.string(path.name): refer(path.parameter),
           });
     final template = url.hasPlaceholders
         ? refer(url.fieldName)
@@ -398,16 +411,30 @@ final class _CallWriter {
             for (final argument in call.arguments)
               if (argument is QueryArgument) argument,
           ];
+    final factory = switch (call.uriBuilderFactory) {
+      null => null,
+      UriBuilderFactoryParameter(:final name, isNullable: false) => refer(name),
+      UriBuilderFactoryParameter(:final name) =>
+        refer(name)
+            .ifNullThen(_starter('UriBuilderFactory').constInstance([]))
+            .parenthesized,
+    };
     if (queries.isEmpty) {
+      if (factory != null) {
+        return request.property('uri').call([
+          factory.property('expand').call([template, ?variables]),
+        ]);
+      }
       return request.property('uri').call([template, ?variables]);
     }
     final absolute = !url.hasPlaceholders && url.isAbsolute;
-    final builderName = absolute ? '_' : _free('uri');
-    var builder = absolute
+    final path = url.hasPlaceholders ? template : _emission.string(url.path);
+    final builderName = absolute || factory != null ? '_' : _free('uri');
+    var builder = factory != null
+        ? factory.property('uriString').call([path])
+        : absolute
         ? _starter('UriBuilder').newInstance([_emission.string(url.path)])
-        : refer(builderName).property('path').call([
-            if (url.hasPlaceholders) template else _emission.string(url.path),
-          ]);
+        : refer(builderName).property('path').call([path]);
     if (!url.hasPlaceholders) {
       for (final (name, value) in url.query) {
         builder = builder.property('queryParam').call([
@@ -417,11 +444,23 @@ final class _CallWriter {
       }
     }
     for (final query in queries) {
-      builder = builder
-          .property(query.isNullable ? 'queryParamIfPresent' : 'queryParam')
-          .call([_emission.string(query.name), refer(query.parameter)]);
+      builder = query.shape.isMap
+          ? builder.property('queryParams').call([
+              if (query.isNullable)
+                refer(query.parameter).ifNullThen(literalConstMap({}))
+              else
+                refer(query.parameter),
+            ])
+          : builder
+                .property(
+                  query.isNullable ? 'queryParamIfPresent' : 'queryParam',
+                )
+                .call([_emission.string(query.name), refer(query.parameter)]);
     }
     builder = builder.property('build').call([?variables]);
+    if (factory != null) {
+      return request.property('uri').call([builder]);
+    }
     return request.property('uri').call([
       Method(
         (m) => m
@@ -438,36 +477,107 @@ final class _CallWriter {
     ]);
   }
 
-  // A header or cookie that a `null` leaves out, or that has a value for
-  // each item.
-  Code _pendingStatement(String request, TextArgument argument) {
-    Code add(Expression value) => refer(request)
-        .property(argument.specMethod)
-        .call([_emission.string(argument.name), _text(value, argument.text)])
-        .statement;
+  // `(all) => all.addHeaders(headers)`: every header of an `HttpHeaders`
+  // parameter added to the request's.
+  Expression _addHeaders(Expression headers) {
+    final all = _free('all');
+    return Method(
+      (m) => m
+        ..requiredParameters.add(Parameter((p) => p..name = all))
+        ..lambda = true
+        ..body = refer(all).property('addHeaders').call([headers]).code,
+    ).closure;
+  }
+
+  // A value set by a statement of its own: a header or cookie that a
+  // `null` leaves out, that has a value for each item or a value for each
+  // entry of a map; a nullable request attribute or a map of them; the
+  // headers of a nullable `HttpHeaders`.
+  Code _pendingStatement(String request, HttpArgument argument) {
     final parameter = argument.parameter;
-    final Code each;
-    if (argument.isIterable) {
-      final item = _free('value');
-      each = Block.of([
-        Code('for (final $item in $parameter) {'),
-        add(refer(item)),
-        const Code('}'),
-      ]);
-    } else {
-      each = add(refer(parameter));
-    }
+    final each = switch (argument) {
+      TextArgument() => _textStatement(request, argument),
+      AttributeArgument() => _attributeStatement(request, argument),
+      HeadersArgument() => refer(
+        request,
+      ).property('headers').call([_addHeaders(refer(parameter))]).statement,
+      _ => throw StateError('No statement for ${argument.runtimeType}'),
+    };
     return argument.isNullable
         ? Block.of([Code('if ($parameter != null) {'), each, const Code('}')])
         : each;
   }
 
+  Code _textStatement(String request, TextArgument argument) {
+    Code add(Expression name, Expression value) =>
+        refer(request)
+            .property(argument.specMethod)
+            .call([name, _text(value, argument.text)])
+            .statement;
+    Code loop(String item, String over, Code body) =>
+        Block.of([Code('for (final $item in $over) {'), body, const Code('}')]);
+    final parameter = argument.parameter;
+    final name = _emission.string(argument.name);
+    switch (argument.shape) {
+      case ValueShape.single:
+        return add(name, refer(parameter));
+      case ValueShape.iterable:
+        final item = _free('value');
+        return loop(item, parameter, add(name, refer(item)));
+      case ValueShape.map:
+        final (key, value) = (_free('name'), _free('value'));
+        return loop(
+          'MapEntry(key: $key, value: $value)',
+          '$parameter.entries',
+          add(refer(key), refer(value)),
+        );
+      case ValueShape.multiMap:
+        final (key, values, value) = (
+          _free('name'),
+          _free('values'),
+          _free('value'),
+        );
+        return loop(
+          'MapEntry(key: $key, value: $values)',
+          '$parameter.entries',
+          loop(value, values, add(refer(key), refer(value))),
+        );
+    }
+  }
+
+  Code _attributeStatement(String request, AttributeArgument argument) {
+    Code set(Expression name, Expression value) => refer(
+      request,
+    ).property('attribute').call([name, value]).statement;
+    final parameter = argument.parameter;
+    if (!argument.isMap) {
+      return set(_emission.string(argument.name), refer(parameter));
+    }
+    final (key, value) = (_free('name'), _free('value'));
+    final body = set(refer(key), refer(value));
+    return Block.of([
+      Code(
+        'for (final MapEntry(key: $key, value: $value) in '
+        '$parameter.entries) {',
+      ),
+      if (argument.nullableValues)
+        Block.of([Code('if ($value != null) {'), body, const Code('}')])
+      else
+        body,
+      const Code('}'),
+    ]);
+  }
+
   // The `@RequestParam` values as the fields of a form body; a `null` one
-  // is left out by the form converter.
+  // is left out by the form converter, a map's entries spread into it.
   Expression _form() => literalMap({
     for (final argument in call.arguments)
       if (argument is QueryArgument)
-        _emission.string(argument.name): _formValue(argument),
+        if (argument.shape.isMap)
+          (argument.isNullable ? literalNullSafeSpread() : literalSpread()):
+              _formMap(argument)
+        else
+          _emission.string(argument.name): _formValue(argument),
   });
 
   Expression _formValue(QueryArgument argument) {
@@ -503,20 +613,56 @@ final class _CallWriter {
         .call([mapped]);
   }
 
+  // A map of form fields, its values converted when the form converter's
+  // `toString()` would not write them (an enum's name, a `DateTime` in
+  // ISO-8601).
+  Expression _formMap(QueryArgument argument) {
+    final map = refer(argument.parameter);
+    if (argument.text == TextKind.string || argument.text == TextKind.other) {
+      return map;
+    }
+    final (key, value) = (_free('name'), _free('value'));
+    Expression converted(Expression item) => _text(item, argument.text);
+    final Expression entryValue;
+    if (argument.shape == ValueShape.multiMap) {
+      final item = _free('item');
+      entryValue = refer(value).property('map').call([
+        Method(
+          (m) => m
+            ..requiredParameters.add(Parameter((p) => p..name = item))
+            ..lambda = true
+            ..body = converted(refer(item)).code,
+        ).closure,
+      ]);
+    } else {
+      entryValue = converted(refer(value));
+    }
+    final mapped = argument.isNullable
+        ? map.nullSafeProperty('map')
+        : map.property('map');
+    return mapped.call([
+      Method(
+        (m) => m
+          ..requiredParameters.addAll([
+            Parameter((p) => p..name = key),
+            Parameter((p) => p..name = value),
+          ])
+          ..lambda = true
+          ..body = refer('MapEntry').call([refer(key), entryValue]).code,
+      ).closure,
+    ]);
+  }
+
   // The parts of one `@RequestPart` parameter, as elements of the parts'
-  // list: `if (x != null)` and `for (final file in files)` where needed.
+  // list: `if (x != null)` and `for (final file in files)` where needed. A
+  // `MultipartFile` streams its content, opened again for each attempt of
+  // a retried call, so nothing is awaited.
   Expression _part(PartArgument argument) {
     final name = _emission.string(argument.name);
     final part = _starter('MultipartBodyPart');
     final parameter = argument.parameter;
-    Expression file(Expression value) => part.newInstanceNamed(
-      'file',
-      [name, value.property('bytes').awaited],
-      {
-        'filename': value.property('originalFilename'),
-        'contentType': value.property('contentType'),
-      },
-    );
+    Expression file(Expression value) =>
+        part.newInstanceNamed('multipartFile', [name, value]);
     Expression field(Expression value) =>
         part.newInstanceNamed('field', [name, _text(value, argument.text)]);
     Code each(Expression Function(Expression item) make) {

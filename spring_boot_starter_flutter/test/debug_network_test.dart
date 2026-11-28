@@ -83,6 +83,75 @@ String _headers(List<NetworkHeader> headers) =>
 
 void main() {
   group('HTTP', () {
+    test('a streamed request body passes through as it is read: its size '
+        'counted, marked streamed, its bytes never kept', () async {
+      final delegate = _Transport(answer: (_) => _json('{}'));
+      final journal = _journal(bodies: true);
+      final transport = RecordingHttpTransport(delegate, journal);
+      var made = 0;
+      Stream<List<int>> chunks() async* {
+        for (var i = 0; i < 3; i++) {
+          made++;
+          yield List.filled(1000, i);
+        }
+      }
+
+      final body = StreamingBody(chunks(), length: 3000);
+      final request = HttpRequest(
+        method: HttpMethod.put,
+        url: Uri.parse('https://api.neon.books/scans/1'),
+        streamingBody: body,
+      );
+      final pending = transport.send(request);
+      // Nothing is read before the delegate reads it.
+      final sent = await pending;
+      expect(sent.statusCode, 200);
+      final exchange = journal.entries.single as HttpCall;
+      expect(exchange.requestStreamed, isTrue);
+      expect(exchange.requestBody, isNull);
+      expect(exchange.requestSize, 0);
+      expect(made, 0);
+      final passed = delegate.requests.single;
+      expect(passed.streamingBody!.length, 3000);
+      expect(passed.streamingBody!.isRepeatable, isFalse);
+      // The delegate reads it: counted as it goes.
+      final bytes = await passed.streamingBody!.toBytes();
+      expect(bytes, hasLength(3000));
+      expect(exchange.requestSize, 3000);
+      expect(body.isConsumed, isTrue);
+      expect(
+        passed.streamingBody!.open,
+        throwsA(isA<NonRepeatableBodyException>()),
+      );
+    });
+
+    test('a repeatable streamed body stays repeatable', () async {
+      final delegate = _Transport(
+        streamed: (request) => StreamedHttpResponse(
+          200,
+          body: const Stream<List<int>>.empty(),
+          request: request,
+        ),
+      );
+      final journal = _journal();
+      final transport = RecordingHttpTransport(delegate, journal);
+      await transport.stream(
+        HttpRequest(
+          method: HttpMethod.post,
+          url: Uri.parse('https://api.neon.books/scans'),
+          streamingBody: StreamingBody.repeatable(
+            () => Stream.value(List.filled(10, 1)),
+            length: 10,
+          ),
+        ),
+      );
+      final passed = delegate.requests.single.streamingBody!;
+      expect(passed.isRepeatable, isTrue);
+      await passed.toBytes();
+      await passed.toBytes();
+      expect((journal.entries.single as HttpCall).requestSize, 20);
+    });
+
     test('a request and its response pass through unchanged and are '
         'recorded', () async {
       final delegate = _Transport(answer: (_) => _json('{"id":1}'));

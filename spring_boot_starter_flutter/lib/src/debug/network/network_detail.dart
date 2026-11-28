@@ -100,6 +100,7 @@ class NetworkDetail extends StatelessWidget {
           ),
         ('Total', NetworkFormat.duration(exchange.totalTime), null),
         ('Sent', NetworkFormat.bytes(exchange.requestSize), null),
+        if (exchange.requestStreamed) ('Request body', 'streamed', null),
         ('Received', NetworkFormat.bytes(exchange.responseSize), null),
         if (exchange.streamed) ('Body', 'streamed', null),
         if (browser?.protocol case final protocol?)

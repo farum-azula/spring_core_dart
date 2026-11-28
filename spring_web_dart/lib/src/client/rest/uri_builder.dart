@@ -139,6 +139,31 @@ final class UriBuilder {
       ? text
       : UriTemplate.encodeAllowing(text, _isQueryCharacter);
 
+  /// Adds a query parameter for each entry of [params], as [queryParam]
+  /// does (an `Iterable` value gives one parameter per item); a `null`
+  /// value, or a `null` item, adds nothing, as for the entries of a `Map`
+  /// parameter of Spring's HTTP service clients.
+  ///
+  /// ```dart
+  /// uri.path('/books').queryParams({'author': author, 'tag': ['sf', 'classic']})
+  /// ```
+  ///
+  /// Spring (Java): `queryParams(MultiValueMap<String, String>)`.
+  UriBuilder queryParams(Map<String, Object?> params) {
+    for (final MapEntry(key: name, :value) in params.entries) {
+      if (value is Iterable<Object?>) {
+        for (final item in value) {
+          if (item != null) {
+            queryParam(name, item);
+          }
+        }
+      } else if (value != null) {
+        queryParam(name, value);
+      }
+    }
+    return this;
+  }
+
   /// Adds the query parameter [name] when [value] is not `null`; as
   /// [queryParam] otherwise.
   ///
@@ -229,4 +254,89 @@ final class UriBuilder {
 
   @override
   String toString() => toTemplate();
+}
+
+/// Makes the [UriBuilder] instances of one base URL, and expands URI
+/// templates against it: what an HTTP service method's `UriBuilderFactory`
+/// parameter gives its call instead of the group's base URL (another host
+/// per call; the host must still be among the allowed addresses).
+///
+/// ```dart
+/// @GetExchange('/books/{isbn}')
+/// Future<Book> find(UriBuilderFactory mirror, @PathVariable() String isbn);
+///
+/// await books.find(UriBuilderFactory('https://mirror.neon.books'), '978-0');
+/// // GET https://mirror.neon.books/books/978-0
+/// ```
+///
+/// Spring (Java): `UriBuilderFactory` with its `DefaultUriBuilderFactory`
+/// (a base URI template and default URI variables; the encoding is that
+/// of `UriTemplate`, not a setting).
+final class UriBuilderFactory {
+  /// The factory of [baseUrl] (a URL or a URI template, `''` for none),
+  /// filling variables from [defaultUriVariables].
+  const UriBuilderFactory([
+    this.baseUrl = '',
+    this.defaultUriVariables = const {},
+  ]);
+
+  /// The base of every URI it makes.
+  final String baseUrl;
+
+  /// The values of the variables a call does not give.
+  final Map<String, Object?> defaultUriVariables;
+
+  static final _scheme = RegExp('^[a-zA-Z][a-zA-Z0-9+.-]*:');
+
+  /// A builder starting from the base URL.
+  ///
+  /// Spring (Java): `builder()`.
+  UriBuilder builder() => UriBuilder(baseUrl, defaultUriVariables);
+
+  /// A builder starting from [template] put after the base URL (one `/`
+  /// between the paths, the base's query first); a whole URL
+  /// (`https://...`) stays as it is.
+  ///
+  /// Spring (Java): `uriString(String)`.
+  UriBuilder uriString(String template) =>
+      UriBuilder(_withBase(template), defaultUriVariables);
+
+  /// [template] put after the base URL and expanded with [variables], as
+  /// `UriTemplate.expand` fills them (a `List` in order, a `Map` by name,
+  /// one value for one variable).
+  ///
+  /// Spring (Java): `expand(String, Map)` and `expand(String, Object...)`.
+  Uri expand(String template, [Object? variables]) =>
+      UriTemplate(_withBase(template)).expand(variables, defaultUriVariables);
+
+  String _withBase(String template) {
+    final base = baseUrl;
+    if (base.isEmpty || _scheme.hasMatch(template)) {
+      return template;
+    }
+    final (basePath, baseQuery) = _splitQuery(base);
+    final (path, query) = _splitQuery(template);
+    final String joined;
+    if (path.isEmpty) {
+      joined = basePath;
+    } else if (basePath.endsWith('/') && path.startsWith('/')) {
+      joined = '$basePath${path.substring(1)}';
+    } else if (basePath.endsWith('/') || path.startsWith('/')) {
+      joined = '$basePath$path';
+    } else {
+      joined = '$basePath/$path';
+    }
+    final queries = [?baseQuery, ?query];
+    return queries.isEmpty ? joined : '$joined?${queries.join('&')}';
+  }
+
+  static (String, String?) _splitQuery(String text) {
+    final question = text.indexOf('?');
+    return question < 0
+        ? (text, null)
+        : (text.substring(0, question), text.substring(question + 1));
+  }
+
+  @override
+  String toString() => 'UriBuilderFactory($baseUrl)';
 }

@@ -228,6 +228,39 @@ void main() {
       expect(sent.followRedirects, isFalse);
     });
 
+    test('a streamed body is passed on unread, with the token', () async {
+      var listened = false;
+      final body = StreamingBody(
+        Stream.value(<int>[1, 2, 3]).map((chunk) {
+          listened = true;
+          return chunk;
+        }),
+        length: 3,
+      );
+      network
+          .when(HttpMethod.post, '/api/scans')
+          .respondWith(
+            (request) async => HttpResponse(
+              201,
+              body: await request.streamingBody!.toBytes(),
+            ),
+          );
+      final pending = transport.send(
+        HttpRequest(
+          method: HttpMethod.post,
+          url: Uri.parse('http://localhost:8080/api/scans'),
+          streamingBody: body,
+        ),
+      );
+      expect(listened, isFalse);
+      final response = await pending;
+      final sent = network.requests.last;
+      expect(sent.headers['X-XSRF-TOKEN'], 'token-1');
+      expect(sent.streamingBody, same(body));
+      expect(sent.body, isNull);
+      expect(response.bodyBytes, [1, 2, 3]);
+    });
+
     test('without the cookie, or with a header of its own: as it is', () async {
       page.cookies.clear();
       final post = await sent(
@@ -303,6 +336,19 @@ void main() {
       }
       expect(toOthers.requests, hasLength(3));
       expect(toServer.requests, hasLength(3));
+    });
+
+    test('a streamed body goes to the chosen transport as it is', () async {
+      toServer.when(HttpMethod.post, '/api/books').respond(201);
+      final body = StreamingBody.repeatable(() => Stream.value([1]));
+      await transport.send(
+        HttpRequest(
+          method: HttpMethod.post,
+          url: Uri.parse('http://localhost:8080/api/books'),
+          streamingBody: body,
+        ),
+      );
+      expect(toServer.requests.single.streamingBody, same(body));
     });
 
     test("relative URLs are the page's origin", () async {

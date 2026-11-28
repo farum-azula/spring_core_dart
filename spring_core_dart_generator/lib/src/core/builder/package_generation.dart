@@ -213,10 +213,11 @@ abstract class PackageGeneration {
   /// Reads what needs every library of the module scanned first, after
   /// the last one is and before the core checks the beans' names: which
   /// classes are beans, and under which conditions
-  /// ([ModuleScan.beanClassConditions]). The RestClient starter's part
-  /// imports there the HTTP services of each bean class's
-  /// `@ImportHttpServices`.
-  void scanModule(ModuleScan scan) {}
+  /// ([ModuleScan.beanClassConditions]). It may read more libraries of the
+  /// package through [ModuleBuild.buildStep]. The RestClient starter's
+  /// part imports there the HTTP services of each bean class's
+  /// `@ImportHttpServices`, with those it finds in their `basePackages`.
+  Future<void> scanModule(ModuleBuild build) async {}
 
   /// Reads [element], a mixin of a scanned library, as [scanClass] does a
   /// class.

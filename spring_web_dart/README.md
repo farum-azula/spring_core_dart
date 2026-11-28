@@ -280,7 +280,7 @@ server and the HTTP clients both use them.
 | `MultipartFile` | `MultipartFile` | An uploaded file: `name`, `originalFilename`, `contentType`, `size`, `isEmpty`, `headers`, `bytes`, `openRead()`, `transferTo(path)`. |
 | `InMemoryMultipartFile` | `MockMultipartFile` (roughly) | A `MultipartFile` held in memory, such as a file a client sends (`InMemoryMultipartFile.fromString(name, text)`). |
 | `MultipartParser` | the parsing of `StandardServletMultipartResolver` | Reads a `multipart/*` body part by part as it arrives: `MultipartParser.boundaryOf(contentType)`, `bind(body)`. |
-| `MultipartBody`, `MultipartBodyPart` | `MultipartBodyBuilder` | Writes a `multipart/form-data` body from `MultipartBodyPart.field`, `.file` and `.json` parts; `contentType` (with the boundary), `encode()`. |
+| `MultipartBody`, `MultipartBodyPart` | `MultipartBodyBuilder` | Writes a `multipart/form-data` body from `MultipartBodyPart.field`, `.file` and `.json` parts held in memory, and streamed ones read while the body is sent: `.fromPath` (a file on disk, Spring's `FileSystemResource`; `dart:io` only), `.multipartFile` (an uploaded `MultipartFile` passed on through `openRead()`), `.stream` and `.streaming`; `contentType` (with the boundary), `encode()`, `toStreamingBody()`, `contentLength`. |
 | `MediaTypeFactory` | `MediaTypeFactory` | The media type of a file name's extension: `MediaTypeFactory.getMediaType('cover.png')` is `image/png`, `null` when unknown. |
 
 ```dart
@@ -296,6 +296,29 @@ await transport.send(HttpRequest(
   body: body.encode(),
 ));
 ```
+
+A part of any size costs a chunk or two of memory when it is streamed:
+the body is then written as a `StreamingBody` (`toStreamingBody()`, which
+a `RestClient` uses by itself), with an exact `Content-Length` when every
+part's length is known. A part made from a stream is sent once; a file
+part opens its file again for another attempt.
+
+```dart
+// Pass a controller's upload on to the archive, never whole in memory.
+@PostMapping.of(path: '/covers', consumes: MediaType.multipartFormData)
+Future<void> upload(@RequestPart() MultipartFile cover) => archive.post()
+    .uri('/covers')
+    .body(MultipartBody([
+      MultipartBodyPart.multipartFile('cover', cover),
+      MultipartBodyPart.fromPath('scan', '/var/scans/dune.pdf'),
+    ]))
+    .retrieve()
+    .toBodilessEntity();
+```
+
+On an HTTP service interface, an `@RequestPart() MultipartFile cover`
+parameter sends the same part: the generated call reads it through
+`openRead()` as well.
 
 How a controller receives the parts, the upload limits and file
 downloads are described in the web starter's
@@ -380,9 +403,11 @@ missing value, one value too many (Spring ignores it) and a path variable
 and kept by the client.
 
 **Bodies** go through the `HttpMessageConverter` chain: `Uint8List` and
-`String` as they are, a `MultipartBody` as `multipart/form-data`, a
-`Map` sent with `contentType(MediaType.applicationFormUrlencoded)` as a
-form, anything else as JSON through the `ObjectMapper`. Reading takes
+`String` as they are, a `Stream<List<int>>` or a `StreamingBody` read
+while it is sent, a `MultipartBody` as `multipart/form-data` (as a stream
+when a part is streamed), a `Map` sent with
+`contentType(MediaType.applicationFormUrlencoded)` as a form, anything
+else as JSON through the `ObjectMapper`. Reading takes
 `String`, `Uint8List` or anything JSON can be read into; an empty body is
 `null` for a nullable type and an error otherwise. `get()`, `head()`,
 `delete()` and `options()` have no `body` at all.
@@ -444,6 +469,32 @@ arrive. A `@Retryable` method that returns an `EventStream` is retried
 into one `EventStream` by `EventStreamRetryAdapter`, which the web and
 RestClient starters declare with `spring.resilience.enabled: true`.
 
+**API versions.** `apiVersionInserter` on the builder says where a
+call's API version goes (`ApiVersionInserter.useHeader`,
+`useQueryParam`, `usePathSegment`, `useMediaTypeParam`, or several and a
+formatter through `ApiVersionInserter.builder()`); `defaultApiVersion` is
+every call's, `apiVersion(...)` on a call replaces it (`null`: none). A
+version on a client without an inserter fails the call with a
+`StateError`, as Spring's `IllegalStateException`. On an HTTP service
+method it is the exchange annotation's `version:`.
+
+```dart
+final rest = RestClient.builder()
+    .baseUrl('https://api.neon.books')
+    .apiVersionInserter(ApiVersionInserter.useHeader('API-Version'))
+    .defaultApiVersion('1.2')
+    .build();
+await rest.get().uri('/books').apiVersion('2.0').retrieve().body<String>();
+
+@GetExchange.of(url: '/books', version: '2.0') // the same, declared
+Future<String> books();
+```
+
+**Header injection.** `header(...)`, `headers(...)`, `cookie(...)` and
+the builder's defaults refuse a header value with CR, LF or NUL, a
+cookie value with a control character or `;`, and a name that is no
+token, with an `ArgumentError`, whatever the transport.
+
 **Time limits.** The builder's `readTimeout` and `connectTimeout` go
 into every request; a call made under a `RequestDeadline` is not sent
 when the deadline has passed and is given up when it passes.
@@ -456,12 +507,16 @@ query parameters are always `***`.
 **HTTP service interfaces.** The annotations `@HttpExchange`,
 `@GetExchange`, `@PostExchange`, `@PutExchange`, `@PatchExchange` and
 `@DeleteExchange` (in the main library, which the RestClient starter
-re-exports) describe calls on an interface, and
-`@ImportHttpServices(group: ..., types: [...])` puts interfaces into a
-group whose `RestClient` the RestClient starter configures. The
-parameters take the annotations a controller uses (`@PathVariable`,
-`@RequestParam`, `@RequestHeader`, `@CookieValue`, `@RequestBody`,
-`@RequestPart`). The generator writes the class of each interface,
+re-exports) describe calls on an interface (`version:` is the API
+version a call asks for), and `@ImportHttpServices(group: ..., types:
+[...])` puts interfaces into a group whose `RestClient` the RestClient
+starter configures (`basePackages`, library URI prefixes, and
+`basePackageClasses` let the build find them). The parameters take the
+annotations a controller uses (`@PathVariable`, `@RequestParam`,
+`@RequestHeader`, `@CookieValue`, `@RequestBody`, `@RequestPart`), on one
+value, a list or a `Map` of them, and `@RequestAttribute` for a request
+attribute; a `UriBuilderFactory` parameter is the base its URL is
+expanded against. The generator writes the class of each interface,
 whose methods are the `RestClient` calls written out, and registers it
 as a bean: see
 [HTTP service clients](https://pub.dev/packages/spring_boot_starter_restclient#http-service-clients).
@@ -572,6 +627,45 @@ final transport = platformHttpTransport(
 - An `InetAddressFilter` (Spring Boot 4.1's, with `of`, `and`, `or`,
   `andNot`, `externalAddresses`, `internalAddresses`, ...) narrows the
   list further: every address must match it too.
+
+### Streamed request bodies
+
+A large body goes as `HttpRequest.streamingBody`, a `StreamingBody` read
+while it is sent: `Content-Length` when its length is known, else
+chunked, never gathered. `StreamingBody(stream)` is sent once (a second
+attempt throws a `NonRepeatableBodyException`, which no retry policy
+retries); `StreamingBody.repeatable(open)` opens its source again, and a
+redirect that would send the body again follows only then (else the
+`3xx` is the answer, as Apache HttpClient does). In a browser, `fetch`
+takes a stream where it can (Chromium over HTTP/2 or HTTP/3, found out by
+trying the feature, never by the browser's name); elsewhere the body is
+read whole first.
+
+```dart
+// A two-gigabyte image, sent the way a small one is.
+await rest.put()
+    .uri('/images/{id}', id)
+    .body(MultipartBody([MultipartBodyPart.fromPath('image', 'disk.img')]))
+    .retrieve()
+    .toBodilessEntity();
+
+// Declared on an HTTP service interface, a MultipartFile part streams too.
+@PutExchange.of(url: '/images/{id}', contentType: 'multipart/form-data')
+Future<void> put(
+  @PathVariable() String id,
+  @RequestPart() MultipartFile image,
+);
+```
+
+A body of its own goes the same way: `body(file.openRead())`, or
+`body(StreamingBody.repeatable(file.openRead, length: ...))` for one that
+a retry may send again.
+
+A `RestClient` hands its interceptors the body as bytes, as Spring
+does (`InterceptingClientHttpRequest` buffers it): a streamed body is
+read whole first unless every interceptor is a
+`StreamingClientHttpRequestInterceptor`, which never reads it. The
+OAuth2 client's and the Supabase starter's interceptors are.
 
 ### Streaming responses
 
@@ -934,7 +1028,12 @@ any size is delivered.
   `HttpClientErrorException.NotFound` and the other per-status classes
   are not there: compare `statusCode`. `eventStream` and `bodyStream`
   have no `RestClient` counterpart in Spring (`WebClient` streams).
-  There is no `RestTemplate`.
+  There is no `RestTemplate`. `ApiVersionInserter`'s two `insertVersion`
+  overloads are `insertVersionIntoUri` and `insertVersionIntoHeaders`,
+  `ApiVersionFormatter` is a function type, and `useMediaTypeParam` also
+  sets the parameter on the `Content-Type` the body's converter chose.
+  `UriBuilderFactory` is one class (a base URL and default variables), no
+  interface with encoding modes.
 - **Outgoing addresses** (`AllowedAddresses`) are denied until allowed;
   Spring Boot 4.1 allows every address until an `InetAddressFilter` is
   set.

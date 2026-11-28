@@ -25,13 +25,20 @@ import 'package:spring_web_dart/src/http_headers.dart';
 /// - Its headers replace the `HttpClient` defaults of the same name
 ///   (`User-Agent`, `Accept-Encoding`); `Content-Length` is always taken
 ///   from the body.
+/// - A `streamingBody` is read while it is written to the connection, as
+///   fast as the connection takes it, never gathered: with
+///   `Content-Length` when its length is known, else chunked. It is opened
+///   once the address is allowed, so a denied call reads nothing.
 /// - Redirects are followed when `followRedirects` is set, as far as
 ///   `HttpClient` follows them: for `GET` and `HEAD`, and a `303` after a
 ///   `POST` (then a `GET`), at most [maxRedirects]. A redirect to another
 ///   origin drops the headers that carry a credential
 ///   (`HttpSecrets.isSensitiveHeader` and the request's
 ///   `sensitiveHeaders`), as browsers drop `Authorization`; a redirect
-///   from `https` to `http` is not followed (the `3xx` is returned).
+///   from `https` to `http` is not followed (the `3xx` is returned). A
+///   hop that keeps the method sends the body again: a `streamingBody`
+///   that cannot be opened again is not, and the `3xx` is returned, as
+///   Apache HttpClient does for a body that is not repeatable.
 /// - `readTimeout` limits each wait for data (the response, then every
 ///   chunk of the body) and `timeout` the whole exchange. When one runs
 ///   out the request is aborted and an [HttpTransportException] with
@@ -208,11 +215,18 @@ class IoHttpTransport implements HttpTransport {
       var method = request.method;
       var url = request.url;
       var body = request.body;
+      final streaming = request.streamingBody;
+      Stream<List<int>>? stream;
       final headers = HttpHeaders()..addHeaders(request.headers);
       for (var redirects = 0; ; redirects++) {
         // Redirects are followed here, not by HttpClient: a hop to another
         // origin must drop the credentials, and each hop is checked.
         allowedAddresses?.checkUrl(url);
+        // Before connecting: a body that cannot be sent again fails here,
+        // and a stream is only listened to when it is written.
+        if (streaming != null && redirects == 0) {
+          stream = streaming.open();
+        }
         final opening = _client.openUrl(method.value, url);
         final connectTimeout = request.connectTimeout;
         final outgoing =
@@ -243,6 +257,8 @@ class IoHttpTransport implements HttpTransport {
           outgoing
             ..contentLength = body.length
             ..add(body);
+        } else if (stream != null) {
+          await _write(outgoing, stream, streaming!.length);
         }
         final readTimeout = request.readTimeout;
         final incoming = readTimeout == null
@@ -259,16 +275,22 @@ class IoHttpTransport implements HttpTransport {
                 incoming.headers.value('location'),
               )
             : null;
-        if (next == null) {
+        final keepsBody = next != null && next.method == method;
+        // A stream read once cannot follow: the 3xx is the answer.
+        if (next == null ||
+            (keepsBody && stream != null && !streaming!.isRepeatable)) {
           final result = await read(incoming, outgoing);
           answered = true;
           return result;
         }
         await incoming.drain<void>();
         HttpRedirects.applyHop(headers, request, url, next.url);
-        if (next.method != method) {
+        if (!keepsBody) {
           body = null;
+          stream = null;
           headers.remove('content-type');
+        } else if (stream != null) {
+          stream = streaming!.open();
         }
         method = next.method;
         url = next.url;
@@ -323,6 +345,32 @@ class IoHttpTransport implements HttpTransport {
         request: request,
         cause: error,
       );
+    }
+  }
+
+  // Writes [stream] as the body of [outgoing], at the pace of the
+  // connection: with Content-Length when [length] is known, else chunked.
+  static Future<void> _write(
+    io.HttpClientRequest outgoing,
+    Stream<List<int>> stream,
+    int? length,
+  ) async {
+    if (length != null) {
+      outgoing.contentLength = length;
+    } else {
+      outgoing.headers.chunkedTransferEncoding = true;
+    }
+    // Each chunk goes out as it comes: a stream produced slowly is not
+    // held back to fill a buffer.
+    outgoing.bufferOutput = false;
+    try {
+      await outgoing.addStream(stream);
+    } on Object catch (error) {
+      // A source that failed, or a connection that broke: nothing more is
+      // sent on it.
+      outgoing.abort(error);
+      unawaited(outgoing.done.then<void>((_) {}, onError: (Object _) {}));
+      rethrow;
     }
   }
 

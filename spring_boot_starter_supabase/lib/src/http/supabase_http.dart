@@ -322,8 +322,9 @@ final class SupabaseHttp {
 }
 
 // Gives a request the time limit its call asked for (the attribute
-// [attribute]): the whole exchange, as `HttpRequest.timeout` says.
-final class _CallTimeout implements ClientHttpRequestInterceptor {
+// [attribute]): the whole exchange, as `HttpRequest.timeout` says. It
+// never reads the body, so a streamed one passes as a stream.
+final class _CallTimeout implements StreamingClientHttpRequestInterceptor {
   const _CallTimeout();
 
   static const attribute = 'supabase.timeout';

@@ -17,6 +17,10 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// reads it, never gathered: each chunk is counted, and with bodies on its
 /// first bytes up to the limit are copied. The exchange is over when the
 /// caller has read the body to its end, stopped reading or seen it fail.
+/// A streamed request body (`HttpRequest.streamingBody`) is passed on the
+/// same way, as [delegate] reads it: its size is counted as it goes out
+/// and the call is marked streamed, its bytes are never kept (the request
+/// [delegate] gets is then a copy whose body counts).
 ///
 /// The times: the total of every exchange; the arrival of the status and
 /// headers (the time to the first byte) of a streamed one, as [stream]
@@ -64,7 +68,7 @@ final class RecordingHttpTransport implements HttpTransport {
     final clock = Stopwatch()..start();
     final HttpResponse response;
     try {
-      response = await delegate.send(request);
+      response = await delegate.send(_counted(request, exchange));
     } on Object catch (error) {
       _fail(exchange, error, clock.elapsed);
       if (mark != null) {
@@ -104,7 +108,7 @@ final class RecordingHttpTransport implements HttpTransport {
     final clock = Stopwatch()..start();
     final StreamedHttpResponse response;
     try {
-      response = await delegate.stream(request);
+      response = await delegate.stream(_counted(request, exchange));
     } on Object catch (error) {
       _fail(exchange, error, clock.elapsed);
       if (mark != null) {
@@ -141,6 +145,19 @@ final class RecordingHttpTransport implements HttpTransport {
   @override
   void close() => delegate.close();
 
+  // [request] with its streamed body counted into [exchange] as it is
+  // sent; a request with bytes or none as it is.
+  HttpRequest _counted(HttpRequest request, HttpCall exchange) =>
+      switch (request.streamingBody) {
+        null => request,
+        final body => request.withBody(
+          streamingBody: body.observed((chunk) {
+            exchange.requestSize += chunk.length;
+            journal.changed();
+          }),
+        ),
+      };
+
   HttpCall _start(HttpRequest request, {required bool streamed}) {
     final size = request.body?.length ?? 0;
     return journal.add(
@@ -160,6 +177,7 @@ final class RecordingHttpTransport implements HttpTransport {
           request.headers.contentType,
         ),
         streamed: streamed,
+        requestStreamed: request.streamingBody != null,
       ),
     );
   }

@@ -34,3 +34,38 @@ abstract class HttpRequestAttribute {
   /// Its value.
   final Object attributeValue;
 }
+
+/// Makes a parameter of an HTTP service method a request attribute of the
+/// call: `.attribute(name, value)` on the `RestClient` request, not sent,
+/// read by the interceptors from `HttpRequest.attributes`. The value goes
+/// as it is (no conversion); a `null` sets nothing. A
+/// `Map<String, Object?>` parameter sets one attribute per entry, as in
+/// Spring. Without a [name], the parameter's own name is the attribute's.
+///
+/// ```dart
+/// @HttpExchange('/orders')
+/// abstract interface class OrderService {
+///   @GetExchange()
+///   Future<List<Order>> all(@RequestAttribute('trace.tag') String tag);
+/// }
+/// ```
+///
+/// A value the same for every call is an annotation extending
+/// [HttpRequestAttribute] instead. A server does not read request
+/// attributes into handler parameters: the build accepts it only on a
+/// method with an exchange annotation.
+///
+/// Spring (Java): `@RequestAttribute` on a parameter of an HTTP service
+/// method (`RequestAttributeArgumentResolver`):
+/// ```java
+/// @GetExchange
+/// List<Order> all(@RequestAttribute("trace.tag") String tag);
+/// ```
+class RequestAttribute {
+  /// The attribute [name]; without one, the attribute named like the
+  /// parameter.
+  const RequestAttribute([this.name]);
+
+  /// The attribute's name, or `null` to use the parameter's name.
+  final String? name;
+}

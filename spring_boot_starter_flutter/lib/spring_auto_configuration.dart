@@ -691,8 +691,8 @@ final List<BeanDefinition<Object>> _debugLogFilter = [
 ];
 
 /// The debug console over the app (`debugConsole`), on and off by the
-/// action `debug.console` (⌘⇧O, or eight quick taps and a ninth held two
-/// seconds) or the debug panel's Overlays tab (its segments and panes
+/// action `debug.console` (the key left of `1`, or eight quick taps and a
+/// ninth held two seconds) or the debug panel's Overlays tab (its segments and panes
 /// switched in the Console tab): a header of segments
 /// (every `DebugConsoleSegment` bean the build has, by the name of its
 /// `@ConsoleSegment`, those of `spring.flutter.debug.console.header`

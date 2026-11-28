@@ -69,12 +69,13 @@ Future<ApplicationContext> _start(
   return context;
 }
 
+// The key left of `1` (any layout: it is matched where it lies, see
+// keyboard_shortcuts_test.dart).
 Future<void> _keys(WidgetTester tester) async {
-  await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
-  await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
-  await tester.sendKeyEvent(LogicalKeyboardKey.keyO);
-  await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
-  await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+  await tester.sendKeyEvent(
+    LogicalKeyboardKey.backquote,
+    physicalKey: PhysicalKeyboardKey.backquote,
+  );
   await tester.pump();
 }
 
@@ -121,7 +122,7 @@ void main() {
     expect(overlay.shown, isFalse);
     expect(_view, findsNothing);
     expect(overlay.action, 'debug.console');
-    expect(overlay.keys, ['primary+shift+o', 'taps:8+hold:2s']);
+    expect(overlay.keys, ['backquote', 'section', 'taps:8+hold:2s']);
     expect(overlay.id, 'console');
     expect(overlay.corner, DebugCorner.topLeft);
     expect(overlay.opacity, 0.9);
@@ -144,7 +145,7 @@ void main() {
     );
   });
 
-  testWidgets('Ctrl+Shift+O shows the newest records, again hides them', (
+  testWidgets('the key left of 1 shows the newest records, again hides them', (
     tester,
   ) async {
     final context = await _start(tester);

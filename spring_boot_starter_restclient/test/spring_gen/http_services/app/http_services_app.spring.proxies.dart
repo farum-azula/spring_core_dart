@@ -37,6 +37,21 @@ class _$BookServiceProxy with _i1.AdvisedWrapper implements _i2.BookService {
         original: (args) => this._target.findPatiently((args[0] as String)),
       );
 
+  /// scanPatiently:
+  /// `@Retryable(includes: [ResourceAccessException], delay: Duration(milliseconds: 1))`
+  @override
+  _i3.Future<void> scanPatiently(String isbn, _i4.MultipartFile scan) =>
+      this.aopInvoker.invokeAsync<void>(
+        proxy: this,
+        target: this._target,
+        methodIndex: 1,
+        arguments: [isbn, scan],
+        original: (args) => this._target.scanPatiently(
+          (args[0] as String),
+          (args[1] as _i4.MultipartFile),
+        ),
+      );
+
   @override
   _i3.Future<_i2.Book> find(String isbn) => this._target.find(isbn);
 
@@ -56,7 +71,7 @@ class _$BookServiceProxy with _i1.AdvisedWrapper implements _i2.BookService {
   );
 
   @override
-  _i3.Future<_i4.ResponseEntity<_i2.Book>> create(
+  _i3.Future<_i5.ResponseEntity<_i2.Book>> create(
     _i2.Book book,
     int requestId,
   ) => this._target.create(book, requestId);
@@ -66,16 +81,16 @@ class _$BookServiceProxy with _i1.AdvisedWrapper implements _i2.BookService {
       this._target.replace(isbn, book);
 
   @override
-  _i3.Future<_i4.ResponseEntity<void>> remove(String isbn) =>
+  _i3.Future<_i5.ResponseEntity<void>> remove(String isbn) =>
       this._target.remove(isbn);
 
   @override
-  _i3.Future<_i5.HttpHeaders> head(String isbn) => this._target.head(isbn);
+  _i3.Future<_i6.HttpHeaders> head(String isbn) => this._target.head(isbn);
 
   @override
   _i3.Future<void> upload(
     String isbn,
-    _i6.MultipartFile cover,
+    _i4.MultipartFile cover,
     _i2.Book meta,
     String? note,
   ) => this._target.upload(isbn, cover, meta, note);
@@ -93,4 +108,35 @@ class _$BookServiceProxy with _i1.AdvisedWrapper implements _i2.BookService {
   @override
   _i3.Future<String> exchange(_i8.HttpMethod method, Uri url) =>
       this._target.exchange(method, url);
+
+  @override
+  _i3.Future<String> filter(
+    Map<String, String> filters, {
+    Map<String, List<_i2.Shelf>>? shelves,
+    Map<String, int> counts = const {},
+    _i6.HttpHeaders? more,
+    Map<String, List<String>> cookies = const {},
+    String? tag,
+    Map<String, Object?> marks = const {},
+  }) => this._target.filter(
+    filters,
+    shelves: shelves,
+    counts: counts,
+    more: more,
+    cookies: cookies,
+    tag: tag,
+    marks: marks,
+  );
+
+  @override
+  _i3.Future<_i2.Book> onShelf(Map<String, String> location) =>
+      this._target.onShelf(location);
+
+  @override
+  _i3.Future<_i2.Book> fromMirror(_i9.UriBuilderFactory? mirror, String isbn) =>
+      this._target.fromMirror(mirror, isbn);
+
+  @override
+  _i3.Future<String> subscribe(Map<String, _i2.Shelf> topics) =>
+      this._target.subscribe(topics);
 }

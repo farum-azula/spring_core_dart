@@ -15,7 +15,9 @@ import 'package:spring_core_dart_generator/src/restclient/http_service_scanner.d
 ///
 /// - Each `@ImportHttpServices` (on a class of a scanned library, on the
 ///   application's `main` or on a `@ComponentScan` variable) imports its
-///   interfaces into its group: each becomes a bean, a generated class
+///   interfaces into its group, those of `types` and those the build finds
+///   in the package's libraries below `basePackages` and
+///   `basePackageClasses`: each becomes a bean, a generated class
 ///   whose methods are the `RestClient` calls of their exchange
 ///   annotations, written out, on the `RestClient` of the group. As any
 ///   bean it gets a proxy for the advice on the interface's methods
@@ -67,6 +69,15 @@ final class HttpServiceGeneration extends PackageGeneration {
           'class',
     ),
     _ExchangePlacement(),
+    // A server reads no request attribute into a handler's parameter.
+    ParameterPlacement(
+      [requestAttributeChecker],
+      methodNoun:
+          'a method of an HTTP service interface (with @GetExchange, '
+          '@PostExchange... ; a server does not read request attributes '
+          'into parameters)',
+      methodsWith: [httpExchangeChecker],
+    ),
   ];
 
   // The `@ImportHttpServices` of the entry library's functions and
@@ -74,10 +85,13 @@ final class HttpServiceGeneration extends PackageGeneration {
   @override
   Future<void> prepareModule(ModuleBuild build) async {
     final library = await build.buildStep.inputLibrary;
-    [
+    final scanner = HttpServiceScanner(build);
+    for (final element in [
       ...library.topLevelFunctions,
       ...library.topLevelVariables,
-    ].forEach(HttpServiceScanner(build).importFrom);
+    ]) {
+      await scanner.importFrom(element, build);
+    }
   }
 
   @override
@@ -92,7 +106,8 @@ final class HttpServiceGeneration extends PackageGeneration {
   // class is a bean (and under which conditions) only when the core has
   // read the configuration that imports it.
   @override
-  void scanModule(ModuleScan scan) => HttpServiceScanner(scan).importClasses();
+  Future<void> scanModule(ModuleBuild build) =>
+      HttpServiceScanner(build).importClasses(build);
 
   // An interface with calls that no `@ImportHttpServices` imports is no
   // bean: nothing would implement it. Only an application's module says

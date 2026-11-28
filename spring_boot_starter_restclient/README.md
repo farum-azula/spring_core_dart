@@ -221,6 +221,11 @@ addresses are then yours to check. The check cannot be switched off.
 | `spring.http.clients.allowed-addresses` | empty | the hosts and addresses the clients may call |
 | `spring.http.serviceclient.<group>.base-url` | none | the group's base URL, allowed by itself |
 | `spring.http.serviceclient.<group>.default-header.<name>` | none | headers of every call of the group |
+| `spring.http.serviceclient.<group>.apiversion.default` | none | the API version of the calls that give none |
+| `spring.http.serviceclient.<group>.apiversion.insert.header` | none | the header that holds the version |
+| `spring.http.serviceclient.<group>.apiversion.insert.query-parameter` | none | the query parameter that holds it |
+| `spring.http.serviceclient.<group>.apiversion.insert.path-segment` | none | the index of the path segment it is inserted as |
+| `spring.http.serviceclient.<group>.apiversion.insert.media-type-parameter` | none | the `Content-Type` parameter that holds it |
 | `spring.http.serviceclient.<group>.connect-timeout` | the clients' | |
 | `spring.http.serviceclient.<group>.read-timeout` | the clients' | |
 | `spring.http.serviceclient.<group>.redirects` | the clients' | |
@@ -273,7 +278,12 @@ class CatalogTest {
 - A group's `connect-timeout` longer than the clients' raises the
   transport's own (on `dart:io` one `HttpClient` serves every group);
   each request still waits only as long as its group says.
-- No SSL bundles, cookie handling, API versioning or `RestClientSsl` yet.
+- API versions are set per group (`apiversion.*`), as in Spring Boot 4,
+  which has no `spring.http.clients.apiversion`. A group with
+  `apiversion` properties and no `insert.*` keeps its builder's inserter
+  (a `RestClientCustomizer`'s), where Spring Boot sets one that inserts
+  nothing; a default version with no inserter fails the start.
+- No SSL bundles, cookie handling or `RestClientSsl` yet.
 - HTTP service interfaces are implemented by the build, not by a proxy
   made when the application starts (see
   [HTTP service clients](#http-service-clients)).
@@ -332,6 +342,21 @@ registered: its conditions (`@Profile`, `@ConditionalOnProperty`, and
 those of a class importing it with `@Import`) apply to their beans and
 their group.
 
+Instead of listing them in `types`, let the build find them:
+`basePackages` takes library URI prefixes of the package being built,
+`basePackageClasses` types whose library's directory is searched; every
+class with an exchange annotation below is imported, subdirectories
+included. build_runner lists the files of the package it builds only, so
+another package's prefix or type fails the build (list its interfaces in
+`types`), and so does an entry that finds nothing.
+
+```dart
+@SpringBootApplication()
+@ImportHttpServices(group: 'catalog', basePackages: ['package:shop/src/catalog/'])
+@ImportHttpServices(group: 'payments', basePackageClasses: [PaymentService])
+void main(List<String> args) => runApplication(args);
+```
+
 **The URL and the defaults.** The interface's `@HttpExchange` gives the
 URL prefix and the defaults of its methods (`method`, `contentType`,
 `accept`, `headers`); a method's annotation adds to the URL and
@@ -358,14 +383,72 @@ controller uses:
 | `@RequestParam()` | a query parameter (a list: one per item; `null`: left out); with `contentType: 'application/x-www-form-urlencoded'`, a field of the form body |
 | `@RequestHeader('X-Name')` | a header (a list: one value per item; `null`: left out) |
 | `@CookieValue()` | a cookie (`null`: left out) |
+| `@RequestParam()`, `@RequestHeader()`, `@CookieValue()` on a `Map<String, T>` (or `Map<String, List<T>>`, Spring's `MultiValueMap`) | one per entry (or per item), named by the key |
+| `@PathVariable()` on a `Map<String, T>` | the URL's variables by name |
+| `@RequestHeader()` on an `HttpHeaders` | every header of it |
+| `@RequestAttribute()` | a request attribute of the call, the value as it is (a `Map<String, T>`: one per entry) |
 | `@RequestBody()` | the body: JSON through the `ObjectMapper`, a `String` or bytes as they are |
 | `@RequestPart()` | a part of a `multipart/form-data` body: a `MultipartFile` (or a list of them) as a file, `Uint8List` as a file without a name, a `String`, number, enum or `DateTime` as a text field, anything else as JSON |
 | none, type `Uri` | the whole URL of the call |
 | none, type `HttpMethod` | the method of the call |
+| none, type `UriBuilderFactory` | the base the URL is expanded against instead of the group's (`null`: the group's) |
 
 The name is the parameter's unless the annotation gives one
 (`@RequestParam('page_size') int size`). A parameter with none of these
-fails the build (Spring fails it when the application starts).
+fails the build (Spring fails it when the application starts). A map's
+values are written as a single parameter's; a `null` map adds nothing. A
+header value with CR, LF or NUL, and a cookie value with a control
+character or `;`, throw an `ArgumentError` before anything is sent.
+
+```dart
+@GetExchange('/search')
+Future<List<Book>> search(
+  @RequestParam() Map<String, String> filters, {
+  @RequestHeader() HttpHeaders? extra,
+  @RequestAttribute('trace.tag') String? trace,
+});
+```
+
+**Uploads.** A `MultipartFile` part is read through its `openRead()`
+while the body is sent, with its `size` as the length, never loaded
+whole: a file a controller received goes on to another service in a
+chunk or two of memory, and a retried call reads it again. With a
+`RestClient`, `MultipartBodyPart.multipartFile` sends the same part, and
+`MultipartBodyPart.fromPath` a file from the disk:
+
+```dart
+@PostExchange.of(url: '/{isbn}/cover', contentType: 'multipart/form-data')
+Future<void> upload(@PathVariable() String isbn, @RequestPart() MultipartFile cover);
+
+await rest.post()
+    .uri('/{isbn}/cover', isbn)
+    .body(MultipartBody([MultipartBodyPart.multipartFile('cover', cover)]))
+    .retrieve()
+    .toBodilessEntity();
+```
+
+A streamed body is read whole first only for an interceptor that wants
+the bytes (Spring's interceptors get a `byte[]`); one that implements
+`StreamingClientHttpRequestInterceptor`, as the OAuth2 starter's does,
+lets it through. A part made from a stream is sent once: a retry fails
+with a `NonRepeatableBodyException` instead of sending half of it.
+
+**API versions.** `version:` of an exchange annotation (the method's, else
+the interface's) is the version the call asks for; the group's client
+puts it where `spring.http.serviceclient.<group>.apiversion.insert.*`
+says, and a method without one sends the group's `apiversion.default`.
+With a `RestClient`, the same is `apiVersionInserter(...)` and
+`defaultApiVersion(...)` on the builder, `apiVersion(...)` on a call:
+
+```dart
+@GetExchange.of(url: '/stock/{sku}', version: '2.0')
+Future<Level> level(@PathVariable() String sku);
+
+await rest.get().uri('/stock/{sku}', sku).apiVersion('2.0').retrieve().body<Level>();
+```
+
+A version on a client without an inserter fails the call with a
+`StateError`, as Spring's.
 
 **What a method returns** decides what is read of the answer:
 
@@ -454,16 +537,23 @@ what to write instead:
 - a `@RequestBody` (or parts, or a form) on a `GET` or `HEAD`; two
   `@RequestBody`; `@RequestPart` with a `@RequestBody`, or with a content
   type that is not multipart; a form content type with a `@RequestBody`;
-- a nullable `@PathVariable`; a `Map` parameter of a header, cookie or
-  query parameter (one parameter per name); a header or cookie that is no
-  text (a `String`, number, `bool`, enum, `DateTime` or a list of them);
+- a nullable `@PathVariable`; a header or cookie that is no text (a
+  `String`, number, `bool`, enum, `DateTime` or a list of them);
+- a `Map` parameter whose keys are no `String`, whose values are no text
+  or may be `null`, or, for path variables, are lists; an `HttpHeaders`
+  parameter without `@RequestHeader()`; a wildcard `_` parameter;
+  `@RequestAttribute` on a method without an exchange annotation (a
+  controller's handler); a `UriBuilderFactory` with a whole URL or a `Uri`
+  parameter;
 - a method without an exchange annotation, with two, or with a server's
   mapping (`@GetMapping`: write `@GetExchange`); a method with a body, a
   getter or a field; a generic method;
-- a return type no call gives (above); a `MultipartFile` part in a method
-  that returns a stream;
-- an API `version` (the `RestClient` has no API version inserter yet:
-  send it as a header);
+- a return type no call gives (above);
+- an API `version` with a `${...}` placeholder (Spring sends it as
+  written: set the group's `apiversion.default`) or a control character;
+- a `basePackages` entry that is no `package:` prefix or names another
+  package, a `basePackageClasses` type of another package, an entry that
+  finds no interface;
 - a listed type that is not an `abstract interface class`, or is generic,
   or carries an annotation whose starter implements it too (one marked
   `@InterfaceProxy`); an interface imported into two groups;
@@ -471,10 +561,11 @@ what to write instead:
   `@ImportHttpServices` imports (it would be no bean). An interface of a
   library is left to the applications that import it.
 
-Compared with Spring: the interfaces are imported by type (`types:`),
-not by package scan (`basePackages`); `@RequestAttribute` parameters,
-`Map` and `MultiValueMap` parameters, `UriBuilderFactory` parameters and
-API versions are not supported yet.
+Compared with Spring: `basePackages` names library URI prefixes and is
+read by the build, not scanned on the classpath when the application
+starts; `Map<String, List<T>>` stands for `MultiValueMap`, and a
+`@RequestHeader() HttpHeaders` for the `MultiValueMap` of headers Spring 6
+took (Spring 7's `HttpHeaders` is no `MultiValueMap`).
 
 The [example](example/example.dart) calls a catalog through an HTTP
 service, and [test/http_services_test.dart](test/http_services_test.dart)

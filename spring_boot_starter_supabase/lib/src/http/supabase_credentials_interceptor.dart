@@ -14,8 +14,11 @@ import 'package:spring_web_dart/spring_web_dart.dart';
 /// A request for another origin than [origin] (the scheme, host and port
 /// of `spring.supabase.url`) fails with a [StateError] before anything is
 /// sent: the key and the token go to the project only.
+///
+/// It never reads the body (a `StreamingClientHttpRequestInterceptor`): a
+/// streamed upload passes it as a stream.
 final class SupabaseCredentialsInterceptor
-    implements ClientHttpRequestInterceptor {
+    implements StreamingClientHttpRequestInterceptor {
   /// The interceptor of the calls of [origin] with [credentials].
   const SupabaseCredentialsInterceptor({
     required this.credentials,

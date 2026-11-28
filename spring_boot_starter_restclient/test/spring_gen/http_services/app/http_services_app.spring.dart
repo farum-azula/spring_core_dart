@@ -11,26 +11,28 @@
 
 import 'dart:async' as _i3;
 
-import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i16;
+import 'package:spring_boot_dart/spring_auto_configuration.dart' as _i18;
 import 'package:spring_boot_dart/spring_boot_dart.dart' as _i1;
 import 'package:spring_boot_starter_logging/spring_auto_configuration.dart'
-    as _i17;
+    as _i19;
 import 'package:spring_boot_starter_restclient/spring_boot_starter_restclient.dart'
-    as _i9;
-import 'package:spring_boot_starter_restclient/src/config/config.dart' as _i14;
-import 'package:spring_web_dart/src/annotations.dart' as _i11;
+    as _i10;
+import 'package:spring_boot_starter_restclient/src/config/config.dart' as _i16;
+import 'package:spring_web_dart/src/annotations.dart' as _i13;
 import 'package:spring_web_dart/src/client/rest/rest_client_exception.dart'
-    as _i12;
-import 'package:spring_web_dart/src/http_headers.dart' as _i5;
+    as _i14;
+import 'package:spring_web_dart/src/client/rest/uri_builder.dart' as _i9;
+import 'package:spring_web_dart/src/http_headers.dart' as _i6;
 import 'package:spring_web_dart/src/http_method.dart' as _i8;
-import 'package:spring_web_dart/src/multipart/multipart.dart' as _i6;
-import 'package:spring_web_dart/src/response_entity.dart' as _i4;
-import 'package:spring_web_dart/src/service/http_exchange.dart' as _i10;
-import 'package:spring_web_dart/src/service/import_http_services.dart' as _i13;
+import 'package:spring_web_dart/src/multipart/multipart.dart' as _i4;
+import 'package:spring_web_dart/src/response_entity.dart' as _i5;
+import 'package:spring_web_dart/src/service/http_exchange.dart' as _i12;
+import 'package:spring_web_dart/src/service/import_http_services.dart' as _i15;
 import 'package:spring_web_dart/src/sse/event_stream.dart' as _i7;
 
+import '../../../http_services/app/clients/stock_service.dart' as _i11;
 import '../../../http_services/app/http_services_app.dart' as _i2;
-import 'http_services_app.spring.introspection.dart' as _i15;
+import 'http_services_app.spring.introspection.dart' as _i17;
 
 part 'http_services_app.spring.debug.dart';
 part 'http_services_app.spring.env.dart';
@@ -48,7 +50,7 @@ class _$BookServiceHttpService implements _i2.BookService {
          r'${app.source}',
        );
 
-  final _i9.RestClient _rest;
+  final _i10.RestClient _rest;
 
   final _i1.ObjectMapper _mapper;
 
@@ -73,7 +75,7 @@ class _$BookServiceHttpService implements _i2.BookService {
     final request = _rest
         .get()
         .uri(
-          (_i9.UriBuilder uri) => uri
+          (_i10.UriBuilder uri) => uri
               .path(r'/books')
               .queryParam(r'q', q)
               .queryParamIfPresent(r'year', year)
@@ -93,7 +95,7 @@ class _$BookServiceHttpService implements _i2.BookService {
   }
 
   @override
-  _i3.Future<_i4.ResponseEntity<_i2.Book>> create(
+  _i3.Future<_i5.ResponseEntity<_i2.Book>> create(
     _i2.Book book,
     int requestId,
   ) => _rest
@@ -117,7 +119,7 @@ class _$BookServiceHttpService implements _i2.BookService {
       .toBodilessEntity();
 
   @override
-  _i3.Future<_i4.ResponseEntity<void>> remove(String isbn) => _rest
+  _i3.Future<_i5.ResponseEntity<void>> remove(String isbn) => _rest
       .delete()
       .uri(r'/books/{isbn}', {r'isbn': isbn})
       .attribute(r'tenant', r'neon')
@@ -125,7 +127,7 @@ class _$BookServiceHttpService implements _i2.BookService {
       .toBodilessEntity();
 
   @override
-  _i3.Future<_i5.HttpHeaders> head(String isbn) => _rest
+  _i3.Future<_i6.HttpHeaders> head(String isbn) => _rest
       .head()
       .uri(r'/books/{isbn}', {r'isbn': isbn})
       .attribute(r'tenant', r'neon')
@@ -136,32 +138,25 @@ class _$BookServiceHttpService implements _i2.BookService {
   @override
   _i3.Future<void> upload(
     String isbn,
-    _i6.MultipartFile cover,
+    _i4.MultipartFile cover,
     _i2.Book meta,
     String? note,
-  ) async {
-    await _rest
-        .post()
-        .uri(r'/books/{isbn}/cover', {r'isbn': isbn})
-        .attribute(r'tenant', r'neon')
-        .body(
-          _i9.MultipartBody([
-            _i9.MultipartBodyPart.file(
-              r'cover',
-              await cover.bytes,
-              filename: cover.originalFilename,
-              contentType: cover.contentType,
-            ),
-            _i9.MultipartBodyPart.json(
-              r'meta',
-              _mapper.writeValueAsString(meta),
-            ),
-            if (note != null) _i9.MultipartBodyPart.field(r'note', note),
-          ]),
-        )
-        .retrieve()
-        .toBodilessEntity();
-  }
+  ) => _rest
+      .post()
+      .uri(r'/books/{isbn}/cover', {r'isbn': isbn})
+      .attribute(r'tenant', r'neon')
+      .body(
+        _i10.MultipartBody([
+          _i10.MultipartBodyPart.multipartFile(r'cover', cover),
+          _i10.MultipartBodyPart.json(
+            r'meta',
+            _mapper.writeValueAsString(meta),
+          ),
+          if (note != null) _i10.MultipartBodyPart.field(r'note', note),
+        ]),
+      )
+      .retrieve()
+      .toBodilessEntity();
 
   @override
   _i7.EventStream<_i2.Book> events() => _rest
@@ -204,6 +199,93 @@ class _$BookServiceHttpService implements _i2.BookService {
       .attribute(r'tenant', r'neon')
       .retrieve()
       .body<String>();
+
+  @override
+  _i3.Future<void> scanPatiently(String isbn, _i4.MultipartFile scan) => _rest
+      .post()
+      .uri(r'/books/{isbn}/scan', {r'isbn': isbn})
+      .attribute(r'tenant', r'neon')
+      .body(
+        _i10.MultipartBody([
+          _i10.MultipartBodyPart.multipartFile(r'scan', scan),
+        ]),
+      )
+      .retrieve()
+      .toBodilessEntity();
+
+  @override
+  _i3.Future<String> filter(
+    Map<String, String> filters, {
+    Map<String, List<_i2.Shelf>>? shelves,
+    Map<String, int> counts = const {},
+    _i6.HttpHeaders? more,
+    Map<String, List<String>> cookies = const {},
+    String? tag,
+    Map<String, Object?> marks = const {},
+  }) {
+    final request = _rest
+        .get()
+        .uri(
+          (_i10.UriBuilder uri) => uri
+              .path(r'/books/filter')
+              .queryParams(filters)
+              .queryParams(shelves ?? const {})
+              .build(),
+        )
+        .attribute(r'tenant', r'neon');
+    for (final MapEntry(key: name, value: value) in counts.entries) {
+      request.header(name, value.toString());
+    }
+    if (more != null) {
+      request.headers((all) => all.addHeaders(more));
+    }
+    for (final MapEntry(key: name2, value: values) in cookies.entries) {
+      for (final value2 in values) {
+        request.cookie(name2, value2);
+      }
+    }
+    if (tag != null) {
+      request.attribute(r'trace.tag', tag);
+    }
+    for (final MapEntry(key: name3, value: value3) in marks.entries) {
+      if (value3 != null) {
+        request.attribute(name3, value3);
+      }
+    }
+    return request.retrieve().body<String>();
+  }
+
+  @override
+  _i3.Future<_i2.Book> onShelf(Map<String, String> location) => _rest
+      .get()
+      .uri(r'/books/{shelf}/{isbn}', location)
+      .attribute(r'tenant', r'neon')
+      .retrieve()
+      .body<_i2.Book>();
+
+  @override
+  _i3.Future<_i2.Book> fromMirror(_i9.UriBuilderFactory? mirror, String isbn) =>
+      _rest
+          .get()
+          .uri(
+            (mirror ?? const _i10.UriBuilderFactory()).expand(
+              r'/books/{isbn}',
+              {r'isbn': isbn},
+            ),
+          )
+          .attribute(r'tenant', r'neon')
+          .retrieve()
+          .body<_i2.Book>();
+
+  @override
+  _i3.Future<String> subscribe(Map<String, _i2.Shelf> topics) => _rest
+      .post()
+      .uri(r'/books/subscribe')
+      .contentType(r'application/x-www-form-urlencoded')
+      .attribute(r'tenant', r'neon')
+      .body({...topics.map((name, value) => MapEntry(name, value.name))})
+      .retrieve()
+      .body<String>();
 }
 
 /// `PaymentService`: each method a call through the `RestClient` of the HTTP
@@ -211,13 +293,13 @@ class _$BookServiceHttpService implements _i2.BookService {
 class _$PaymentServiceHttpService implements _i2.PaymentService {
   _$PaymentServiceHttpService(this._rest);
 
-  final _i9.RestClient _rest;
+  final _i10.RestClient _rest;
 
   @override
   _i3.Future<void> pay(String id, int cents) => _rest
       .post()
       .uri(
-        (_i9.UriBuilder uri) => uri
+        (_i10.UriBuilder uri) => uri
             .path(r'/payments/{id}')
             .queryParam(r'cents', cents)
             .build({r'id': id}),
@@ -226,12 +308,44 @@ class _$PaymentServiceHttpService implements _i2.PaymentService {
       .toBodilessEntity();
 }
 
+/// `StockService`: each method a call through the `RestClient` of the HTTP
+/// service group "stock".
+class _$StockServiceHttpService implements _i11.StockService {
+  _$StockServiceHttpService(this._rest);
+
+  final _i10.RestClient _rest;
+
+  @override
+  _i3.Future<String> level(String sku) =>
+      _rest.get().uri(r'/stock/{sku}', {r'sku': sku}).retrieve().body<String>();
+
+  @override
+  _i3.Future<String> history(String sku) => _rest
+      .get()
+      .uri(r'/stock/{sku}/history', {r'sku': sku})
+      .apiVersion(r'2.0')
+      .retrieve()
+      .body<String>();
+}
+
+/// `StockAlerts`: each method a call through the `RestClient` of the HTTP
+/// service group "stock".
+class _$StockAlertsHttpService implements _i11.StockAlerts {
+  _$StockAlertsHttpService(this._rest);
+
+  final _i10.RestClient _rest;
+
+  @override
+  _i3.Future<String> all() =>
+      _rest.get().uri(r'/alerts').apiVersion(r'3.1').retrieve().body<String>();
+}
+
 /// `ReportService`: each method a call through the `RestClient` of the HTTP
 /// service group "reports".
 class _$ReportServiceHttpService implements _i2.ReportService {
   _$ReportServiceHttpService(this._rest);
 
-  final _i9.RestClient _rest;
+  final _i10.RestClient _rest;
 
   @override
   _i3.Future<String> find(String id) =>
@@ -241,7 +355,7 @@ class _$ReportServiceHttpService implements _i2.ReportService {
 const _$target0 = _i1.AopTarget(
   r'BookService',
   types: [r'BookService'],
-  annotations: [_i10.HttpExchange(r'/books'), _i2.Tenant(r'neon')],
+  annotations: [_i12.HttpExchange(r'/books'), _i2.Tenant(r'neon')],
   annotationTypes: [r'HttpExchange', r'Tenant'],
 );
 const _$knownAdvisors1 = {
@@ -258,11 +372,11 @@ _i1.BeanModule get $application => _i1.BeanModule(
       name: r'bookService',
       source: r'asset:spring_boot_starter_restclient/test/http_services/app/http_services_app.dart#BookService',
       create: (r) => _$BookServiceHttpService(
-        r.dependency<_i9.HttpServiceGroups>().restClient(r'catalog'),
+        r.dependency<_i10.HttpServiceGroups>().restClient(r'catalog'),
         environment: r.dependency<_i1.Environment>(),
         mapper: r.dependency<_i1.ObjectMapper>(),
       ),
-      annotations: const [_i10.HttpExchange(r'/books'), _i2.Tenant(r'neon')],
+      annotations: const [_i12.HttpExchange(r'/books'), _i2.Tenant(r'neon')],
       aopProxy: _i1.AopProxyFactory(
         signatures: const [
           _i1.MethodSignature.of(
@@ -272,16 +386,35 @@ _i1.BeanModule get $application => _i1.BeanModule(
             parameterTypes: [r'String'],
             parameterNames: [r'isbn'],
             parameterAnnotations: [
-              [_i11.PathVariable()],
+              [_i13.PathVariable()],
             ],
             annotations: [
-              _i10.GetExchange(r'/{isbn}'),
+              _i12.GetExchange(r'/{isbn}'),
               _i1.Retryable(
-                includes: [_i12.ResourceAccessException],
+                includes: [_i14.ResourceAccessException],
                 delay: Duration(milliseconds: 1),
               ),
             ],
             annotationTypes: [r'GetExchange', r'Retryable'],
+          ),
+          _i1.MethodSignature.of(
+            r'scanPatiently',
+            _$target0,
+            returnType: r'Future',
+            parameterTypes: [r'String', r'MultipartFile'],
+            parameterNames: [r'isbn', r'scan'],
+            parameterAnnotations: [
+              [_i13.PathVariable()],
+              [_i13.RequestPart()],
+            ],
+            annotations: [
+              _i12.PostExchange(r'/{isbn}/scan'),
+              _i1.Retryable(
+                includes: [_i14.ResourceAccessException],
+                delay: Duration(milliseconds: 1),
+              ),
+            ],
+            annotationTypes: [r'PostExchange', r'Retryable'],
           ),
         ],
         knownAdvisors: _$knownAdvisors1,
@@ -293,9 +426,33 @@ _i1.BeanModule get $application => _i1.BeanModule(
       name: r'paymentService',
       source: r'asset:spring_boot_starter_restclient/test/http_services/app/http_services_app.dart#PaymentService',
       create: (r) => _$PaymentServiceHttpService(
-        r.dependency<_i9.HttpServiceGroups>().restClient(r'payments'),
+        r.dependency<_i10.HttpServiceGroups>().restClient(r'payments'),
       ),
-      annotations: const [_i10.HttpExchange(r'/payments')],
+      annotations: const [_i12.HttpExchange(r'/payments')],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
+      ),
+    ),
+    _i1.BeanDefinition<_i11.StockService>(
+      name: r'stockService',
+      source: r'asset:spring_boot_starter_restclient/test/http_services/app/clients/stock_service.dart#StockService',
+      create: (r) => _$StockServiceHttpService(
+        r.dependency<_i10.HttpServiceGroups>().restClient(r'stock'),
+      ),
+      annotations: const [_i12.HttpExchange(r'/stock')],
+      aopProxy: const _i1.AopProxyFactory.pruned(
+        knownAdvisors: _$knownAdvisors1,
+      ),
+    ),
+    _i1.BeanDefinition<_i11.StockAlerts>(
+      name: r'stockAlerts',
+      source: r'asset:spring_boot_starter_restclient/test/http_services/app/clients/stock_service.dart#StockAlerts',
+      create: (r) => _$StockAlertsHttpService(
+        r.dependency<_i10.HttpServiceGroups>().restClient(r'stock'),
+      ),
+      annotations: const [
+        _i12.HttpExchange.of(url: r'/alerts', version: r'3.1'),
+      ],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors1,
       ),
@@ -315,7 +472,7 @@ _i1.BeanModule get $application => _i1.BeanModule(
       annotations: const [
         _i1.Profile([r'reports']),
         _i1.Configuration(),
-        _i13.ImportHttpServices(group: r'reports', types: [_i2.ReportService]),
+        _i15.ImportHttpServices(group: r'reports', types: [_i2.ReportService]),
       ],
     ),
     _i1.BeanDefinition<_i2.ReportService>(
@@ -330,34 +487,43 @@ _i1.BeanModule get $application => _i1.BeanModule(
         ),
       ],
       create: (r) => _$ReportServiceHttpService(
-        r.dependency<_i9.HttpServiceGroups>().restClient(r'reports'),
+        r.dependency<_i10.HttpServiceGroups>().restClient(r'reports'),
       ),
-      annotations: const [_i10.HttpExchange(r'/reports')],
+      annotations: const [_i12.HttpExchange(r'/reports')],
       aopProxy: const _i1.AopProxyFactory.pruned(
         knownAdvisors: _$knownAdvisors1,
       ),
     ),
-    _i1.BeanDefinition<_i9.HttpServiceGroup>(
+    _i1.BeanDefinition<_i10.HttpServiceGroup>(
       name: r'httpServiceGroup.catalog#application',
       source:
           r'package:spring_boot_starter_restclient#HttpServiceGroup.catalog',
-      types: const [_i9.HttpServiceGroup],
+      types: const [_i10.HttpServiceGroup],
       create: (r) =>
-          const _i9.HttpServiceGroup(r'catalog', types: [_i2.BookService]),
+          const _i10.HttpServiceGroup(r'catalog', types: [_i2.BookService]),
     ),
-    _i1.BeanDefinition<_i9.HttpServiceGroup>(
+    _i1.BeanDefinition<_i10.HttpServiceGroup>(
       name: r'httpServiceGroup.payments#application',
       source:
           r'package:spring_boot_starter_restclient#HttpServiceGroup.payments',
-      types: const [_i9.HttpServiceGroup],
+      types: const [_i10.HttpServiceGroup],
       create: (r) =>
-          const _i9.HttpServiceGroup(r'payments', types: [_i2.PaymentService]),
+          const _i10.HttpServiceGroup(r'payments', types: [_i2.PaymentService]),
     ),
-    _i1.BeanDefinition<_i9.HttpServiceGroup>(
+    _i1.BeanDefinition<_i10.HttpServiceGroup>(
+      name: r'httpServiceGroup.stock#application',
+      source: r'package:spring_boot_starter_restclient#HttpServiceGroup.stock',
+      types: const [_i10.HttpServiceGroup],
+      create: (r) => const _i10.HttpServiceGroup(
+        r'stock',
+        types: [_i11.StockService, _i11.StockAlerts],
+      ),
+    ),
+    _i1.BeanDefinition<_i10.HttpServiceGroup>(
       name: r'httpServiceGroup.reports#application.ReportClients',
       source:
           r'package:spring_boot_starter_restclient#HttpServiceGroup.reports',
-      types: const [_i9.HttpServiceGroup],
+      types: const [_i10.HttpServiceGroup],
       conditions: [
         _i1.ConditionGroup(
           r'asset:spring_boot_starter_restclient/test/http_services/app/http_services_app.dart#ReportClients',
@@ -367,22 +533,22 @@ _i1.BeanModule get $application => _i1.BeanModule(
         ),
       ],
       create: (r) =>
-          const _i9.HttpServiceGroup(r'reports', types: [_i2.ReportService]),
+          const _i10.HttpServiceGroup(r'reports', types: [_i2.ReportService]),
     ),
   ],
-  imports: [_i14.restClientConfigBeans],
+  imports: [_i16.restClientConfigBeans],
   resources: const {
     r'application.yml': _i1.EmbeddedResource.text(
       'spring:\n  resilience:\n    enabled: true\n',
     ),
   },
-  introspections: [..._i15.$applicationIntrospections],
+  introspections: [..._i17.$applicationIntrospections],
   typeTests: {
-    _i12.ResourceAccessException: (value) =>
-        value is _i12.ResourceAccessException,
+    _i14.ResourceAccessException: (value) =>
+        value is _i14.ResourceAccessException,
     _i2.ReportService: (value) => value is _i2.ReportService,
   },
-  typeDepths: {_i12.ResourceAccessException: 3, _i2.ReportService: 1},
+  typeDepths: {_i14.ResourceAccessException: 3, _i2.ReportService: 1},
 );
 
 /// The `@SpringBootApplication` of the current code (a getter, so it is
@@ -390,9 +556,9 @@ _i1.BeanModule get $application => _i1.BeanModule(
 _i1.SpringApplication get springApplication => _i1.SpringApplication(
   [$application],
   autoConfigurations: [
-    _i16.springBootAutoConfiguration,
-    _i16.springBootResilienceAutoConfiguration,
-    _i17.springBootStarterLoggingAutoConfiguration,
+    _i18.springBootAutoConfiguration,
+    _i18.springBootResilienceAutoConfiguration,
+    _i19.springBootStarterLoggingAutoConfiguration,
   ],
   dartDefines: _$dartDefines,
   fingerprint:

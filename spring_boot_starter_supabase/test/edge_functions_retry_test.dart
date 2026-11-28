@@ -241,6 +241,40 @@ void main() {
     await expectLater(call(other), throwsA(isA<StateError>()));
     expect(transport.requests, isEmpty);
   });
+
+  test('a streamed body passes the credentials as a stream', () async {
+    transport
+        .when(HttpMethod.post, '/rest/v1/scans')
+        .respondWith(
+          (request) async => HttpResponse(
+            201,
+            headers: HttpHeaders({
+              'X-Kind': request.streamingBody == null ? 'bytes' : 'stream',
+              'X-Key': request.headers['apikey'] ?? '-',
+            }),
+            body: await request.streamingBody!.toBytes(),
+          ),
+        );
+    final rest = RestClient.builder()
+        .baseUrl(projectUrl)
+        .transport(transport)
+        .requestInterceptor(
+          SupabaseCredentialsInterceptor(
+            credentials: _CountingCredentials(tokens),
+            origin: Uri.parse(projectUrl),
+          ),
+        )
+        .build();
+    final entity = await rest
+        .post()
+        .uri('/rest/v1/scans')
+        .body(Stream.value(<int>[1, 2, 3]))
+        .retrieve()
+        .toEntity<String>();
+    expect(entity.headers['X-Kind'], 'stream');
+    expect(entity.headers['X-Key'], 'anon-key');
+    expect(entity.body, '\u0001\u0002\u0003');
+  });
 }
 
 // Credentials whose token changes at each call, as after a refresh.

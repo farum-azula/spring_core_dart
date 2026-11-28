@@ -9,6 +9,7 @@ HttpRequest timedRequest(HttpRequest request, Duration timeout) => HttpRequest(
   url: request.url,
   headers: request.headers,
   body: request.body,
+  streamingBody: request.streamingBody,
   timeout: timeout,
   readTimeout: request.readTimeout,
   connectTimeout: request.connectTimeout,

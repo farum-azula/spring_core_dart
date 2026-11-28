@@ -31,10 +31,41 @@ void _$set7(_i1.HttpServiceClientGroupProperties object, Object? value) =>
 Object? _$get8(_i1.HttpServiceClientGroupProperties object) => object.redirects;
 void _$set9(_i1.HttpServiceClientGroupProperties object, Object? value) =>
     object.redirects = (value as _i1.HttpRedirects?);
-_i1.HttpServiceClientGroupProperties _$create10(
+Object? _$get10(_i1.HttpServiceClientGroupProperties object) =>
+    object.apiversion;
+void _$set11(_i1.HttpServiceClientGroupProperties object, Object? value) =>
+    object.apiversion = (value as _i1.ApiversionProperties);
+_i1.HttpServiceClientGroupProperties _$create12(
   List<Object?> positional,
   Map<Symbol, Object?> named,
 ) => _i1.HttpServiceClientGroupProperties();
+Object? _$get13(_i1.ApiversionProperties object) => object.defaultVersion;
+void _$set14(_i1.ApiversionProperties object, Object? value) =>
+    object.defaultVersion = (value as String?);
+Object? _$get15(_i1.ApiversionProperties object) => object.insert;
+void _$set16(_i1.ApiversionProperties object, Object? value) =>
+    object.insert = (value as _i1.ApiversionInsertProperties);
+_i1.ApiversionProperties _$create17(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.ApiversionProperties();
+Object? _$get18(_i1.ApiversionInsertProperties object) => object.header;
+void _$set19(_i1.ApiversionInsertProperties object, Object? value) =>
+    object.header = (value as String?);
+Object? _$get20(_i1.ApiversionInsertProperties object) => object.queryParameter;
+void _$set21(_i1.ApiversionInsertProperties object, Object? value) =>
+    object.queryParameter = (value as String?);
+Object? _$get22(_i1.ApiversionInsertProperties object) => object.pathSegment;
+void _$set23(_i1.ApiversionInsertProperties object, Object? value) =>
+    object.pathSegment = (value as int?);
+Object? _$get24(_i1.ApiversionInsertProperties object) =>
+    object.mediaTypeParameter;
+void _$set25(_i1.ApiversionInsertProperties object, Object? value) =>
+    object.mediaTypeParameter = (value as String?);
+_i1.ApiversionInsertProperties _$create26(
+  List<Object?> positional,
+  Map<Symbol, Object?> named,
+) => _i1.ApiversionInsertProperties();
 
 /// The descriptions of the classes the module `restClientConfigBeans` uses: its
 /// `@Introspected` classes, and those its beans read, write or call by
@@ -84,13 +115,83 @@ List<_i2.Introspection<Object>> get $restClientConfigBeansIntrospections => [
         get: _$get8,
         set: _$set9,
       ),
+      _i2.IntrospectedProperty<_i1.HttpServiceClientGroupProperties>(
+        r'apiversion',
+        typeInfo: _i2.ClassType<_i1.ApiversionProperties>(),
+        get: _$get10,
+        set: _$set11,
+      ),
     ],
     library: r'package:spring_boot_starter_restclient/src/config/http_client_properties.dart',
     instantiate: _i1.HttpServiceClientGroupProperties.new,
     constructor:
         _i2.IntrospectedConstructor<_i1.HttpServiceClientGroupProperties>(
           parameters: [],
-          create: _$create10,
+          create: _$create12,
         ),
+  ),
+  const _i2.Introspection<_i1.ApiversionProperties>(
+    className: r'ApiversionProperties',
+    properties: [
+      _i2.IntrospectedProperty<_i1.ApiversionProperties>(
+        r'defaultVersion',
+        nullable: true,
+        typeInfo: _i2.ClassType<String>(nullable: true),
+        get: _$get13,
+        set: _$set14,
+        annotations: [_i2.Name(r'default')],
+      ),
+      _i2.IntrospectedProperty<_i1.ApiversionProperties>(
+        r'insert',
+        typeInfo: _i2.ClassType<_i1.ApiversionInsertProperties>(),
+        get: _$get15,
+        set: _$set16,
+      ),
+    ],
+    library: r'package:spring_boot_starter_restclient/src/config/http_client_properties.dart',
+    instantiate: _i1.ApiversionProperties.new,
+    constructor: _i2.IntrospectedConstructor<_i1.ApiversionProperties>(
+      parameters: [],
+      create: _$create17,
+    ),
+  ),
+  const _i2.Introspection<_i1.ApiversionInsertProperties>(
+    className: r'ApiversionInsertProperties',
+    properties: [
+      _i2.IntrospectedProperty<_i1.ApiversionInsertProperties>(
+        r'header',
+        nullable: true,
+        typeInfo: _i2.ClassType<String>(nullable: true),
+        get: _$get18,
+        set: _$set19,
+      ),
+      _i2.IntrospectedProperty<_i1.ApiversionInsertProperties>(
+        r'queryParameter',
+        nullable: true,
+        typeInfo: _i2.ClassType<String>(nullable: true),
+        get: _$get20,
+        set: _$set21,
+      ),
+      _i2.IntrospectedProperty<_i1.ApiversionInsertProperties>(
+        r'pathSegment',
+        nullable: true,
+        typeInfo: _i2.ClassType<int>(nullable: true),
+        get: _$get22,
+        set: _$set23,
+      ),
+      _i2.IntrospectedProperty<_i1.ApiversionInsertProperties>(
+        r'mediaTypeParameter',
+        nullable: true,
+        typeInfo: _i2.ClassType<String>(nullable: true),
+        get: _$get24,
+        set: _$set25,
+      ),
+    ],
+    library: r'package:spring_boot_starter_restclient/src/config/http_client_properties.dart',
+    instantiate: _i1.ApiversionInsertProperties.new,
+    constructor: _i2.IntrospectedConstructor<_i1.ApiversionInsertProperties>(
+      parameters: [],
+      create: _$create26,
+    ),
   ),
 ];

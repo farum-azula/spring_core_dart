@@ -9,6 +9,7 @@ import 'package:spring_web_dart/src/client/http_request.dart';
 import 'package:spring_web_dart/src/client/http_response.dart';
 import 'package:spring_web_dart/src/client/http_transport.dart';
 import 'package:spring_web_dart/src/client/streamed_http_response.dart';
+import 'package:spring_web_dart/src/client/streaming_body.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
 import 'package:spring_web_dart/src/http_method.dart';
 
@@ -24,6 +25,18 @@ import 'package:spring_web_dart/src/http_method.dart';
 /// How it treats an [HttpRequest]:
 ///
 /// - Several values of one header are sent joined with `, `.
+/// - A `streamingBody` goes to `fetch` as a `ReadableStream` (with
+///   `duplex: 'half'`) where the platform takes one, which the transport
+///   finds out by trying the feature once, never by the browser's name:
+///   Chromium-based browsers (over HTTP/2 or HTTP/3), Node and Deno do.
+///   Elsewhere (Firefox and Safari for now) the body is read whole into
+///   memory first and sent as bytes. Chromium refuses a stream over
+///   HTTP/1.1 before reading any of it: the transport then sends the body
+///   read whole, and does so for that origin from then on. A stream is
+///   sent without `Content-Length`, and to another origin always after a
+///   CORS preflight (the server must answer the `OPTIONS`). When the
+///   browser follows a `307` or `308` itself, a streamed body fails the
+///   request (the Fetch standard does not send a stream twice).
 /// - Cookies go with requests to the page's own origin only, unless
 ///   [credentials] says otherwise ([FetchCredentials.include] for an API
 ///   on another origin of the same site).
@@ -210,14 +223,49 @@ class FetchHttpTransport implements HttpTransport {
       var method = request.method;
       var url = request.url;
       var body = request.body;
+      var streaming = request.streamingBody;
       final sent = HttpHeaders()..addHeaders(request.headers);
       late _Response response;
       for (var redirects = 0; ; redirects++) {
         allowedAddresses?.checkUrl(url);
-        response = await _fetch(
-          url.toString().toJS,
-          _init(method, sent, body, controller.signal, followsItself),
-        ).toDart;
+        _BodySource? source;
+        if (streaming != null && body == null) {
+          if (_streamsBodies && !_collectedOrigins.contains(_origin(url))) {
+            source = _BodySource(streaming.open(), streaming.length);
+          } else {
+            // A platform that cannot send a stream: read whole, once.
+            body = await streaming.toBytes();
+          }
+        }
+        try {
+          response = await _fetch(
+            url.toString().toJS,
+            _init(
+              method,
+              sent,
+              source?.readable ?? _bytes(body),
+              controller.signal,
+              followsItself,
+              streamed: source != null,
+            ),
+          ).toDart;
+        } on Object {
+          // Refused before the browser read any of it (Chromium over
+          // HTTP/1.1): sent again whole, as from now on to this origin.
+          if (source == null ||
+              source.pulled ||
+              aborted ||
+              timer.timedOut ||
+              wait.timedOut) {
+            rethrow;
+          }
+          body = await streaming!.toBytes();
+          response = await _fetch(
+            url.toString().toJS,
+            _init(method, sent, _bytes(body), controller.signal, followsItself),
+          ).toDart;
+          _collectedOrigins.add(_origin(url));
+        }
         if (followsItself || !request.followRedirects) {
           break;
         }
@@ -238,14 +286,21 @@ class FetchHttpTransport implements HttpTransport {
                 response.headers.get('location'),
               )
             : null;
-        if (next == null) {
+        final keepsBody = next != null && next.method == method;
+        // A stream read once cannot follow: the 3xx is the answer.
+        if (next == null ||
+            (keepsBody &&
+                streaming != null &&
+                body == null &&
+                !streaming.isRepeatable)) {
           break;
         }
         unawaited(response.body?.cancel().toDart);
         wait.restart();
         HttpRedirects.applyHop(sent, request, url, next.url);
-        if (next.method != method) {
+        if (!keepsBody) {
           body = null;
+          streaming = null;
           sent.remove('content-type');
         }
         method = next.method;
@@ -262,6 +317,12 @@ class FetchHttpTransport implements HttpTransport {
       );
       return (response, responseHeaders, timer, controller);
     } on HttpTransportException {
+      timer.cancel();
+      wait.cancel();
+      rethrow;
+    } on NonRepeatableBodyException {
+      // A body read once that was sent already fails as it is: nothing
+      // went out, and no retry can cure it.
       timer.cancel();
       wait.cancel();
       rethrow;
@@ -308,32 +369,87 @@ class FetchHttpTransport implements HttpTransport {
   _RequestInit _init(
     HttpMethod method,
     HttpHeaders sent,
-    List<int>? body,
+    JSAny? body,
     _AbortSignal signal,
-    bool followsItself,
-  ) {
+    bool followsItself, {
+    bool streamed = false,
+  }) {
     final headers = JSObject();
     sent.toMap().forEach(
       (name, value) => headers.setProperty(name.toJS, value.toJS),
     );
     final redirect = (followsItself ? 'follow' : 'manual').toJS;
-    return body == null
-        ? _RequestInit(
-            method: method.value.toJS,
-            headers: headers,
-            signal: signal,
-            redirect: redirect,
-            credentials: credentials.value.toJS,
-          )
-        : _RequestInit(
-            method: method.value.toJS,
-            headers: headers,
-            body: (body is Uint8List ? body : Uint8List.fromList(body)).toJS,
-            signal: signal,
-            redirect: redirect,
-            credentials: credentials.value.toJS,
-          );
+    return switch (body) {
+      null => _RequestInit(
+        method: method.value.toJS,
+        headers: headers,
+        signal: signal,
+        redirect: redirect,
+        credentials: credentials.value.toJS,
+      ),
+      final body when streamed => _RequestInit(
+        method: method.value.toJS,
+        headers: headers,
+        body: body,
+        duplex: 'half'.toJS,
+        signal: signal,
+        redirect: redirect,
+        credentials: credentials.value.toJS,
+      ),
+      final body => _RequestInit(
+        method: method.value.toJS,
+        headers: headers,
+        body: body,
+        signal: signal,
+        redirect: redirect,
+        credentials: credentials.value.toJS,
+      ),
+    };
   }
+
+  static JSAny? _bytes(List<int>? body) => body == null
+      ? null
+      : (body is Uint8List ? body : Uint8List.fromList(body)).toJS;
+
+  static String _origin(Uri url) => '${url.scheme}://${url.host}:${url.port}';
+
+  // The origins that refused a streamed body: theirs are read whole.
+  final Set<String> _collectedOrigins = {};
+
+  // Whether `fetch` takes a ReadableStream as a body: a `Request` that
+  // reads `duplex` and does not turn the stream into text (which would set
+  // a `Content-Type`) does.
+  static final bool _streamsBodies = () {
+    try {
+      var duplexRead = false;
+      final init = JSObject()
+        ..setProperty('method'.toJS, 'POST'.toJS)
+        ..setProperty('body'.toJS, _ReadableStream());
+      final getter = JSObject()
+        ..setProperty(
+          'get'.toJS,
+          (() {
+            duplexRead = true;
+            return 'half'.toJS;
+          }).toJS,
+        );
+      globalContext
+          .getProperty<JSObject>('Object'.toJS)
+          .callMethod<JSAny?>(
+            'defineProperty'.toJS,
+            init,
+            'duplex'.toJS,
+            getter,
+          );
+      final typed = _Request(
+        'http://localhost/'.toJS,
+        _RequestInit._(init),
+      ).headers.has('content-type'.toJS);
+      return duplexRead && !typed;
+    } on Object {
+      return false;
+    }
+  }();
 
   // What a browser's `fetch` removes on a redirect to another origin
   // (`Authorization`) or never lets a page set (the other two).
@@ -375,6 +491,7 @@ extension type _RequestInit._(JSObject _) implements JSObject {
     JSString method,
     JSObject headers,
     JSAny body,
+    JSString duplex,
     _AbortSignal signal,
     JSString redirect,
     JSString credentials,
@@ -398,7 +515,9 @@ extension type _Response._(JSObject _) implements JSObject {
   external JSPromise<JSArrayBuffer> arrayBuffer();
 }
 
+@JS('ReadableStream')
 extension type _ReadableStream._(JSObject _) implements JSObject {
+  external factory _ReadableStream([JSObject source, JSObject strategy]);
   external _Reader getReader();
   external JSPromise<JSAny?> cancel();
 }
@@ -410,6 +529,73 @@ extension type _Reader._(JSObject _) implements JSObject {
 extension type _ReadResult._(JSObject _) implements JSObject {
   external bool get done;
   external JSUint8Array? get value;
+}
+
+extension type _StreamController._(JSObject _) implements JSObject {
+  external void enqueue(JSUint8Array chunk);
+  external void close();
+  external void error(JSAny? reason);
+}
+
+/// A streamed request body as the `ReadableStream` `fetch` reads: a chunk
+/// of the Dart stream each time `fetch` asks for one (`highWaterMark: 0`
+/// asks for none ahead), so the stream is read at the pace of the
+/// connection, and not at all when the browser refuses it first.
+final class _BodySource {
+  _BodySource(Stream<List<int>> stream, this._length)
+    : _chunks = StreamIterator(stream);
+
+  final StreamIterator<List<int>> _chunks;
+  final int? _length;
+  int _sent = 0;
+
+  /// Whether `fetch` has asked for a chunk.
+  bool pulled = false;
+
+  late final _ReadableStream readable = _ReadableStream(
+    JSObject()
+      ..setProperty(
+        'pull'.toJS,
+        ((_StreamController controller) => _pull(controller).toJS).toJS,
+      )
+      ..setProperty(
+        'cancel'.toJS,
+        ((JSAny? _) => _chunks.cancel().toJS).toJS,
+      ),
+    JSObject()..setProperty('highWaterMark'.toJS, 0.toJS),
+  );
+
+  Future<void> _pull(_StreamController controller) async {
+    pulled = true;
+    try {
+      while (await _chunks.moveNext()) {
+        final chunk = _chunks.current;
+        if (chunk.isEmpty) {
+          continue;
+        }
+        _sent += chunk.length;
+        if (_length case final length? when _sent > length) {
+          controller.error(_mismatch(length).toJS);
+          return;
+        }
+        controller.enqueue(
+          (chunk is Uint8List ? chunk : Uint8List.fromList(chunk)).toJS,
+        );
+        return;
+      }
+      if (_length case final length? when _sent != length) {
+        controller.error(_mismatch(length).toJS);
+        return;
+      }
+      controller.close();
+    } on Object catch (error) {
+      controller.error('the request body failed: $error'.toJS);
+    }
+  }
+
+  String _mismatch(int length) =>
+      'the request body does not have the $length bytes its length says '
+      '(it gave $_sent)';
 }
 
 /// A timer that aborts a request when its timeout runs out. With a `null`

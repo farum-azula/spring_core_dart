@@ -235,23 +235,16 @@ class _$AdminClientHttpService implements _i31.AdminClient {
       .toEntity<_i7.Book>();
 
   @override
-  _i4.Future<void> uploadCover(String isbn, _i5.MultipartFile file) async {
-    await _rest
-        .put()
-        .uri(r'/api/books/{isbn}/cover', {r'isbn': isbn})
-        .body(
-          _i30.MultipartBody([
-            _i30.MultipartBodyPart.file(
-              r'file',
-              await file.bytes,
-              filename: file.originalFilename,
-              contentType: file.contentType,
-            ),
-          ]),
-        )
-        .retrieve()
-        .toBodilessEntity();
-  }
+  _i4.Future<void> uploadCover(String isbn, _i5.MultipartFile file) => _rest
+      .put()
+      .uri(r'/api/books/{isbn}/cover', {r'isbn': isbn})
+      .body(
+        _i30.MultipartBody([
+          _i30.MultipartBodyPart.multipartFile(r'file', file),
+        ]),
+      )
+      .retrieve()
+      .toBodilessEntity();
 
   @override
   _i4.Future<void> deleteBook(String isbn) => _rest

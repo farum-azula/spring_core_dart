@@ -6,9 +6,13 @@ import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:build/build.dart';
+import 'package:glob/glob.dart';
+import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
 import 'package:spring_core_dart_generator/src/core/beans/bean_model.dart';
 import 'package:spring_core_dart_generator/src/core/builder/closest_name.dart';
+import 'package:spring_core_dart_generator/src/core/builder/generated_path.dart';
 import 'package:spring_core_dart_generator/src/core/builder/package_generation.dart';
 import 'package:spring_core_dart_generator/src/restclient/http_service_model.dart';
 
@@ -58,6 +62,15 @@ const springBootApplicationOf = TypeChecker.fromUrl(
   'package:spring_boot_dart/src/annotations.dart#SpringBootApplication',
 );
 
+/// `@RequestAttribute`, on a parameter of an HTTP service method.
+const requestAttributeChecker = TypeChecker.fromUrl(
+  '$_service/http_request_attribute.dart#RequestAttribute',
+);
+
+const _uriBuilderFactory = TypeChecker.fromUrl(
+  '$_web/client/rest/uri_builder.dart#UriBuilderFactory',
+);
+
 // Where a parameter's value goes, by its annotation.
 enum _Role {
   path('PathVariable'),
@@ -65,14 +78,26 @@ enum _Role {
   header('RequestHeader'),
   cookie('CookieValue'),
   body('RequestBody'),
-  part('RequestPart');
+  part('RequestPart'),
+  attribute('RequestAttribute', '$_service/http_request_attribute.dart');
 
-  _Role(this.annotation);
+  _Role(this.annotation, [this.library = '$_web/annotations.dart']);
 
   final String annotation;
 
-  TypeChecker get checker =>
-      TypeChecker.fromUrl('$_web/annotations.dart#$annotation');
+  final String library;
+
+  TypeChecker get checker => TypeChecker.fromUrl('$library#$annotation');
+
+  // What one value is, in messages.
+  String get noun => switch (this) {
+    path => 'path variable',
+    query => 'query parameter',
+    header => 'header',
+    cookie => 'cookie',
+    attribute => 'request attribute',
+    body || part => 'value',
+  };
 }
 
 // The client's annotation for each server mapping.
@@ -106,11 +131,20 @@ final class HttpServiceScanner {
   /// Keeps [element] among the module's interfaces with calls when it or
   /// one of its methods has an exchange annotation.
   void remember(ClassElement element) {
-    bool declaresCalls(Element annotated) => httpExchangeChecker
-        .hasAnnotationOf(annotated, throwOnUnresolved: false);
-    if (declaresCalls(element) || element.methods.any(declaresCalls)) {
+    if (declaresCalls(element)) {
       _model.declared.add(element);
     }
+  }
+
+  /// Whether [element] or one of its methods has an exchange annotation:
+  /// what `basePackages` imports, as Spring's scan takes the interfaces
+  /// with type or method `@HttpExchange` annotations.
+  static bool declaresCalls(ClassElement element) {
+    bool annotated(Element annotated) => httpExchangeChecker.hasAnnotationOf(
+      annotated,
+      throwOnUnresolved: false,
+    );
+    return annotated(element) || element.methods.any(annotated);
   }
 
   /// Keeps [element], a class with `@ImportHttpServices`, to import its
@@ -130,7 +164,7 @@ final class HttpServiceScanner {
   /// beans take the class's conditions (`@Profile`, `@Conditional...`, and
   /// those of the class importing it with `@Import`). On a class that is
   /// no bean it fails the build: nothing would read it.
-  void importClasses() {
+  Future<void> importClasses(ModuleBuild build) async {
     for (final element in _model.importingClasses) {
       final conditions = scan.beanClassConditions(element);
       if (conditions == null) {
@@ -145,8 +179,9 @@ final class HttpServiceScanner {
         );
         continue;
       }
-      importFrom(
+      await importFrom(
         element,
+        build,
         HttpServiceImporter(
           element,
           key: scan.requireName(element),
@@ -158,8 +193,14 @@ final class HttpServiceScanner {
 
   /// Imports the interfaces of each `@ImportHttpServices` on [element] (a
   /// bean class, the application's `main`, a `@ComponentScan` variable)
-  /// for [importer] (by default [element], without conditions).
-  void importFrom(Element element, [HttpServiceImporter? importer]) {
+  /// for [importer] (by default [element], without conditions): those of
+  /// `types`, then those the build finds in `basePackages` and
+  /// `basePackageClasses` ([build] lists the package's libraries).
+  Future<void> importFrom(
+    Element element,
+    ModuleBuild build, [
+    HttpServiceImporter? importer,
+  ]) async {
     final by = importer ?? HttpServiceImporter(element);
     for (final annotation in importHttpServicesChecker.annotationsOf(
       element,
@@ -176,6 +217,13 @@ final class HttpServiceScanner {
       }
       for (final value in reader.read('types').listValue) {
         scan.collectErrors(() => _import(value.toTypeValue(), group));
+      }
+      for (final type in await _PackageScan(
+        scan,
+        build,
+        element,
+      ).interfaces(reader)) {
+        scan.collectErrors(() => _import(type, group));
       }
     }
   }
@@ -258,6 +306,157 @@ final class HttpServiceScanner {
         conditions: declared.importer.conditions,
       );
     }
+  }
+}
+
+// The interfaces of the `basePackages` and `basePackageClasses` of one
+// `@ImportHttpServices`: the classes with an exchange annotation in the
+// libraries of the package being built below each directory, in the order
+// of their paths. build_runner lists the files of that package only, so a
+// directory of another package fails the build with the remedy.
+final class _PackageScan {
+  _PackageScan(this.scan, this.build, this.importer);
+
+  final ModuleScan scan;
+  final ModuleBuild build;
+  final Element importer;
+
+  BuildStep get _step => build.buildStep;
+
+  String get _package => _step.inputId.package;
+
+  String get _where => '@ImportHttpServices on ${importer.displayName}';
+
+  void _fail(String message) => scan.collectErrors(
+    () => throw InvalidGenerationSource(message, element: importer),
+  );
+
+  Future<List<DartType>> interfaces(ConstantReader annotation) async {
+    final directories = <(String, String)>[
+      for (final value
+          in annotation.peek('basePackages')?.listValue ?? const <DartObject>[])
+        ?_packageDirectory(value.toStringValue() ?? ''),
+      for (final value
+          in annotation.peek('basePackageClasses')?.listValue ??
+              const <DartObject>[])
+        ?_classDirectory(value.toTypeValue()),
+    ];
+    final found = <DartType>[];
+    for (final (directory, origin) in directories) {
+      final assets =
+          await _step
+                .findAssets(
+                  Glob('${Glob.quote(directory)}/**.dart'),
+                )
+                .where((asset) => !isGeneratedSource(asset.path))
+                .toList()
+            ..sort((a, b) => a.path.compareTo(b.path));
+      var libraries = 0;
+      final before = found.length;
+      for (final asset in assets) {
+        if (!await _step.resolver.isLibrary(asset)) {
+          continue;
+        }
+        libraries++;
+        final library = await _step.resolver.libraryFor(asset);
+        for (final element in library.classes) {
+          if (HttpServiceScanner.declaresCalls(element)) {
+            found.add(element.thisType);
+          }
+        }
+      }
+      if (found.length == before) {
+        final holds = switch (libraries) {
+          0 => 'holds no Dart library',
+          1 => 'holds 1 library',
+          _ => 'holds $libraries libraries',
+        };
+        final none = libraries == 0
+            ? ''
+            : ', none with @HttpExchange or @GetExchange... on a class or '
+                  'method';
+        _fail(
+          '$_where: $origin finds no interface with an exchange annotation '
+          '($directory/ $holds$none), so it imports nothing. Check the '
+          'directory, or list the interfaces in types.',
+        );
+      }
+    }
+    return found;
+  }
+
+  // The directory of a `basePackages` entry, a library URI prefix of the
+  // package being built (`package:shop/src/catalog/`), with the entry for
+  // messages; `null` (and a build error) for one that is not.
+  (String, String)? _packageDirectory(String prefix) {
+    final origin = "basePackages '$prefix'";
+    if (!prefix.startsWith('package:')) {
+      _fail(
+        '$_where: $origin is no library URI prefix. Dart has no Java '
+        'packages: write the beginning of the library URIs of this '
+        "package, as 'package:$_package/src/catalog/', or name a type of "
+        'that directory in basePackageClasses (which also works outside '
+        'lib/).',
+      );
+      return null;
+    }
+    final rest = prefix.substring('package:'.length);
+    final slash = rest.indexOf('/');
+    final package = slash < 0 ? rest : rest.substring(0, slash);
+    final path = slash < 0 ? '' : rest.substring(slash + 1);
+    if (package != _package) {
+      _fail(
+        "$_where: $origin is in the package '$package', and the build "
+        "lists the libraries of the package it builds only ('$_package'). "
+        "List the interfaces of '$package' in types.",
+      );
+      return null;
+    }
+    final segments = [
+      'lib',
+      for (final segment in path.split('/'))
+        if (segment.isNotEmpty) segment,
+    ];
+    if (segments.any((segment) => segment == '.' || segment == '..')) {
+      _fail('$_where: $origin holds "." or "..": write the directory itself.');
+      return null;
+    }
+    return (segments.join('/'), origin);
+  }
+
+  // The directory of the library of a `basePackageClasses` type; `null`
+  // (and a build error) for a type of another package or none.
+  (String, String)? _classDirectory(DartType? type) {
+    final element = type is InterfaceType ? type.element : null;
+    if (element == null) {
+      _fail(
+        '$_where: basePackageClasses lists $type, which is no class: name '
+        'a class or interface of the directory to look in.',
+      );
+      return null;
+    }
+    final origin = 'basePackageClasses ${element.displayName}';
+    final uri = element.library.uri;
+    final AssetId asset;
+    try {
+      asset = AssetId.resolve(uri);
+    } on Object {
+      _fail(
+        '$_where: $origin is declared in $uri, no library of the package '
+        "being built ('$_package'). Name a type of this package.",
+      );
+      return null;
+    }
+    if (asset.package != _package) {
+      _fail(
+        "$_where: $origin is declared in the package '${asset.package}', "
+        'and the build lists the libraries of the package it builds only '
+        "('$_package'). List the interfaces of '${asset.package}' in "
+        'types.',
+      );
+      return null;
+    }
+    return (p.url.dirname(asset.path), origin);
   }
 }
 
@@ -452,20 +651,12 @@ final class _ServiceReader {
     }
     final own = _Exchange(exchanges.single);
     final shared = _typeExchange;
-    final version = own.version ?? shared?.version;
-    if (version != null) {
-      _fail(
-        '$where asks for the API version "$version": the RestClient has no '
-        'API version inserter yet, so the version would not be sent. Send '
-        "it as a header (headers: ['X-API-Version=$version']), or as the "
-        "group's spring.http.serviceclient.$group.default-header.",
-        method,
-      );
-    }
+    final version = _version(own, shared, method, where);
     final response = _response(method, where);
     final arguments = <HttpArgument>[];
     String? uriParameter;
     String? methodParameter;
+    UriBuilderFactoryParameter? uriBuilderFactory;
     for (final parameter in method.formalParameters) {
       switch (_argument(parameter, where)) {
         case final HttpArgument argument:
@@ -474,6 +665,8 @@ final class _ServiceReader {
           uriParameter = parameter.name;
         case _MethodParameter():
           methodParameter = parameter.name;
+        case final UriBuilderFactoryParameter factory:
+          uriBuilderFactory = factory;
         case null:
           break;
       }
@@ -484,7 +677,9 @@ final class _ServiceReader {
       methodParameter: methodParameter,
       url: HttpUrlModel(_joinUrl(shared?.url ?? '', own.url), methodName),
       uriParameter: uriParameter,
+      uriBuilderFactory: uriBuilderFactory,
       contentType: own.contentType ?? shared?.contentType,
+      version: version,
       accept: own.accept.isNotEmpty ? own.accept : shared?.accept ?? const [],
       headers: _headers(shared, own, methodName, method, where),
       attributes: _mergedAttributes(method),
@@ -494,6 +689,45 @@ final class _ServiceReader {
     _checkUrl(call, method, where);
     _checkBody(call, method, where);
     return _failed || response == null ? null : call;
+  }
+
+  // The method's API version, else the interface's, as Spring's
+  // `initVersion`: a blank one counts as none. Spring fills no `${...}` in
+  // it, and a version travels in a header, a query or a path, so neither
+  // a placeholder nor a control character is taken.
+  String? _version(
+    _Exchange own,
+    _Exchange? shared,
+    MethodElement method,
+    String where,
+  ) {
+    String? text(String? version) =>
+        version == null || version.trim().isEmpty ? null : version;
+    final version = text(own.version) ?? text(shared?.version);
+    if (version == null) {
+      return null;
+    }
+    if (version.contains(r'${')) {
+      _fail(
+        '$where asks for the API version "$version", a placeholder: as in '
+        'Spring, the version of an exchange annotation is sent as written, '
+        'not filled from the configuration. Write the version, or leave it '
+        'out and set the default of the group: '
+        'spring.http.serviceclient.$group.apiversion.default.',
+        method,
+      );
+      return null;
+    }
+    if (version.codeUnits.any((unit) => unit < 0x20 || unit == 0x7F)) {
+      _fail(
+        '$where asks for an API version with a control character (a line '
+        'break, a tab): it goes into a header, a query parameter or a path '
+        'segment of the request. Remove it.',
+        method,
+      );
+      return null;
+    }
+    return version;
   }
 
   // Spring's join of the interface's URL and the method's: one `/`
@@ -655,25 +889,17 @@ final class _ServiceReader {
       );
       return null;
     }
-    if (roles.isEmpty) {
-      if (type is InterfaceType &&
-          type.nullabilitySuffix == NullabilitySuffix.none) {
-        if (_isCore(type, 'Uri')) {
-          return const _UriParameter();
-        }
-        if (_httpMethod.isExactlyType(type)) {
-          return const _MethodParameter();
-        }
-      }
+    if (parameterName == '_') {
       _fail(
-        '$subject has no annotation, so the build does not know where it '
-        'goes in the request (Spring fails such a parameter: "No suitable '
-        'resolver"). Add @PathVariable, @RequestParam, @RequestHeader, '
-        '@CookieValue, @RequestBody or @RequestPart; a Uri parameter is the '
-        'URL of the call, an HttpMethod one its method.',
+        '$where: a parameter is the wildcard _, which the generated call '
+        'cannot read (and whose name cannot be the name of a value). Give '
+        'it a name.',
         parameter,
       );
       return null;
+    }
+    if (roles.isEmpty) {
+      return _unannotated(parameter, parameterName, subject);
     }
     final (role, annotation) = roles.single;
     final named = ConstantReader(annotation).peek('name')?.stringValue;
@@ -682,13 +908,7 @@ final class _ServiceReader {
         role != _Role.part &&
         type is InterfaceType &&
         type.isDartCoreMap) {
-      _fail(
-        '$subject is a Map with @${role.annotation}: one parameter is one '
-        'value (or a list of values) of the name it gives. Declare one '
-        'parameter for each name.',
-        parameter,
-      );
-      return null;
+      return _mapArgument(parameter, parameterName, type, role, subject);
     }
     switch (role) {
       case _Role.path:
@@ -709,8 +929,11 @@ final class _ServiceReader {
           type,
           name: name,
           text: _textKind(item ?? type) ?? TextKind.other,
-          isIterable: item != null,
+          shape: item == null ? ValueShape.single : ValueShape.iterable,
         );
+      case _Role.header
+          when type is InterfaceType && _httpHeaders.isExactlyType(type):
+        return HeadersArgument(parameterName, type);
       case _Role.header || _Role.cookie:
         final item = _itemType(type);
         final text = _textKind(item ?? type);
@@ -726,34 +949,161 @@ final class _ServiceReader {
         if (text == null) {
           _fail(
             '$subject is a ${item ?? type} with @${role.annotation}: a '
-            '${role == _Role.header ? 'header' : 'cookie'} is text, and the '
-            'build writes a String, a number, a bool, an enum (its name), a '
-            'DateTime (ISO-8601) or a list of them. Pass one of those.',
+            '${role.noun} is text, and the build writes a String, a '
+            'number, a bool, an enum (its name), a DateTime (ISO-8601) or a '
+            'list of them${role == _Role.header ? ' (or all the headers of '
+                      'an HttpHeaders, or a Map of names to values)' : ''}. '
+            'Pass one of those.',
             parameter,
           );
           return null;
         }
+        final shape = item == null ? ValueShape.single : ValueShape.iterable;
         return role == _Role.header
             ? HeaderArgument(
                 parameterName,
                 type,
                 name: name,
                 text: text,
-                isIterable: item != null,
+                shape: shape,
               )
             : CookieArgument(
                 parameterName,
                 type,
                 name: name,
                 text: text,
-                isIterable: item != null,
+                shape: shape,
               );
+      case _Role.attribute:
+        return AttributeArgument(parameterName, type, name);
       case _Role.body:
         _write(type);
         return BodyArgument(parameterName, type);
       case _Role.part:
         return _part(parameterName, type, name);
     }
+  }
+
+  // A parameter without a role: the URL, the method or the URI builder
+  // factory of the call, by its type.
+  Object? _unannotated(
+    FormalParameterElement parameter,
+    String parameterName,
+    String subject,
+  ) {
+    final type = parameter.type;
+    if (type is InterfaceType) {
+      final nullable = type.nullabilitySuffix != NullabilitySuffix.none;
+      if (_uriBuilderFactory.isExactlyType(type)) {
+        return UriBuilderFactoryParameter(parameterName, isNullable: nullable);
+      }
+      if (!nullable && _isCore(type, 'Uri')) {
+        return const _UriParameter();
+      }
+      if (!nullable && _httpMethod.isExactlyType(type)) {
+        return const _MethodParameter();
+      }
+      if (_httpHeaders.isExactlyType(type)) {
+        _fail(
+          '$subject is an HttpHeaders without an annotation: its headers '
+          'are added to the request with @RequestHeader(), as Spring adds '
+          'a MultiValueMap of headers. Annotate it @RequestHeader().',
+          parameter,
+        );
+        return null;
+      }
+    }
+    _fail(
+      '$subject has no annotation, so the build does not know where it '
+      'goes in the request (Spring fails such a parameter: "No suitable '
+      'resolver"). Add @PathVariable, @RequestParam, @RequestHeader, '
+      '@CookieValue, @RequestAttribute, @RequestBody or @RequestPart; a Uri '
+      'parameter is the URL of the call, an HttpMethod one its method, a '
+      'UriBuilderFactory one the base its URL is expanded against.',
+      parameter,
+    );
+    return null;
+  }
+
+  // A `Map<String, T>` (Spring's `Map`) or `Map<String, List<T>>` (its
+  // `MultiValueMap`) of values by name, for [role]: the keys are the
+  // names, the values written as a single parameter's are.
+  HttpArgument? _mapArgument(
+    FormalParameterElement parameter,
+    String parameterName,
+    InterfaceType type,
+    _Role role,
+    String subject,
+  ) {
+    final annotation = '@${role.annotation}';
+    final key = type.typeArguments.first;
+    final value = type.typeArguments.last;
+    if (!key.isDartCoreString ||
+        key.nullabilitySuffix != NullabilitySuffix.none) {
+      _fail(
+        '$subject is a $type with $annotation: the keys of the map are the '
+        'names of the ${role.noun}s, so they are Strings. Declare it '
+        'Map<String, ...>.',
+        parameter,
+      );
+      return null;
+    }
+    if (role == _Role.attribute) {
+      return AttributeArgument(
+        parameterName,
+        type,
+        '',
+        isMap: true,
+        nullableValues:
+            value.nullabilitySuffix != NullabilitySuffix.none ||
+            value is DynamicType,
+      );
+    }
+    final item = role == _Role.path ? null : _itemType(value);
+    final single = item ?? value;
+    final text = _textKind(single);
+    final nullable =
+        single.nullabilitySuffix != NullabilitySuffix.none ||
+        (item != null && value.nullabilitySuffix != NullabilitySuffix.none);
+    if (text == null || nullable) {
+      final what = text == null
+          ? 'its values are ${single.getDisplayString()}, and a '
+                '${role.noun} is text: the build writes a String, a number, '
+                'a bool, an enum (its name), a DateTime (ISO-8601)'
+                '${role == _Role.path ? '' : ' or a list of them'}'
+          : 'its values may be null, and a null has no text to send: make '
+                'them non-nullable (leave a name out of the map instead)';
+      final lists = role == _Role.path && _itemType(value) != null
+          ? ' A path variable is one value, so a map of them holds no lists.'
+          : '';
+      _fail('$subject is a $type with $annotation: $what.$lists', parameter);
+      return null;
+    }
+    final shape = item == null ? ValueShape.map : ValueShape.multiMap;
+    return switch (role) {
+      _Role.path => PathArgument(parameterName, type, '', isMap: true),
+      _Role.query => QueryArgument(
+        parameterName,
+        type,
+        name: '',
+        text: text,
+        shape: shape,
+      ),
+      _Role.header => HeaderArgument(
+        parameterName,
+        type,
+        name: '',
+        text: text,
+        shape: shape,
+      ),
+      _ => CookieArgument(
+        parameterName,
+        type,
+        name: '',
+        text: text,
+        shape: shape,
+      ),
+    };
   }
 
   PartArgument _part(String parameter, DartType type, String name) {
@@ -847,30 +1197,44 @@ final class _ServiceReader {
   void _checkUrl(HttpCallModel call, MethodElement method, String where) {
     final paths = [
       for (final argument in call.arguments)
-        if (argument is PathArgument) argument,
+        if (argument is PathArgument && !argument.isMap) argument,
     ];
+    final factory = call.uriBuilderFactory;
     if (call.uriParameter case final uri?) {
       final templated = [
         for (final argument in call.arguments)
           if (argument is PathArgument ||
               (argument is QueryArgument && !call.sendsForm))
             argument.parameter,
+        ?factory?.name,
       ];
       if (templated.isNotEmpty) {
         _fail(
           '$where: the Uri parameter $uri is the whole URL of the call, and '
-          '${templated.join(', ')} would fill the URL of the annotation, '
-          'which is not used then. Put the values into the Uri, or remove '
-          'the Uri parameter.',
+          '${templated.join(', ')} would fill or expand the URL of the '
+          'annotation, which is not used then. Put the values into the Uri, '
+          'or remove the Uri parameter.',
           method,
         );
       }
       return;
     }
     final url = call.url;
+    if (factory != null && !url.hasPlaceholders && url.isAbsolute) {
+      _fail(
+        '$where: the URL "${url.text}" is whole, so the UriBuilderFactory '
+        '${factory.name} would not change it (its base URL is put before a '
+        'relative URL). Make the URL relative, or remove the parameter.',
+        method,
+      );
+    }
+    // A map of path variables may fill any of them: the URI template
+    // fails the call that leaves one empty.
+    final mapped = call.arguments.any((a) => a is PathArgument && a.isMap);
     final variables = url.variables;
     final bound = {for (final path in paths) path.name};
-    for (final variable in variables.difference(bound)) {
+    for (final variable
+        in mapped ? const <String>{} : variables.difference(bound)) {
       final close = closestName(variable, {
         ...bound,
         for (final parameter in method.formalParameters) ?parameter.name,
@@ -957,17 +1321,6 @@ final class _ServiceReader {
         '${httpMethod.toUpperCase()} request has no body (a browser refuses '
         'one, as Spring advises against it). Use @PostExchange or '
         '@PutExchange, or send the values as @RequestParam.',
-        method,
-      );
-    }
-    final streams =
-        call.response is EventStreamResponse ||
-        call.response is BodyStreamResponse;
-    if (streams && call.awaitsParts) {
-      _fail(
-        '$where returns a stream and sends a MultipartFile: its bytes are '
-        'read asynchronously, which a method returning a stream cannot '
-        'wait for. Pass the bytes (Uint8List), or return a Future.',
         method,
       );
     }

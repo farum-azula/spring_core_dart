@@ -6,9 +6,11 @@ import 'package:spring_web_dart/src/client/address/allowed_addresses.dart';
 import 'package:spring_web_dart/src/client/http_request.dart';
 import 'package:spring_web_dart/src/client/http_response.dart';
 import 'package:spring_web_dart/src/client/http_transport.dart';
+import 'package:spring_web_dart/src/client/rest/api_version_inserter.dart';
 import 'package:spring_web_dart/src/client/rest/client_http_request_interceptor.dart';
 import 'package:spring_web_dart/src/client/rest/default_rest_client.dart';
 import 'package:spring_web_dart/src/client/rest/http_message_converter.dart';
+import 'package:spring_web_dart/src/client/rest/request_values.dart';
 import 'package:spring_web_dart/src/client/rest/rest_client_exception.dart';
 import 'package:spring_web_dart/src/client/rest/uri_builder.dart';
 import 'package:spring_web_dart/src/client/rest/uri_template.dart';
@@ -45,8 +47,10 @@ import 'package:spring_web_dart/src/sse/sse_connection.dart';
 ///   `onStatus` (per call) and `defaultStatusHandler` (per client) change
 ///   that.
 /// - Bodies go through the [HttpMessageConverter]s: bytes and text as
-///   they are, a `MultipartBody` as `multipart/form-data`, a `Map` with
-///   `application/x-www-form-urlencoded` as a form, anything else as JSON.
+///   they are, a stream read while it is sent, a `MultipartBody` as
+///   `multipart/form-data` (as a stream when a part is streamed), a `Map`
+///   with `application/x-www-form-urlencoded` as a form, anything else as
+///   JSON.
 /// - A call runs under the `RequestDeadline` of the code that makes it:
 ///   it is not sent when the deadline has passed and is given up when it
 ///   passes.
@@ -174,17 +178,40 @@ abstract interface class UriSpec<S> {
 abstract interface class RequestHeadersSpec {
   /// Adds [value] to the header [name] (with the client's default headers,
   /// a header of the same name set here replaces the default's values).
+  /// Throws an [ArgumentError] for a name that is no header name, or a
+  /// value with a line break (CR, LF) or a NUL, which would start another
+  /// header.
   RequestHeadersSpec header(String name, String value);
 
-  /// Changes the headers of the request in [configure].
+  /// Changes the headers of the request in [configure] (checked as
+  /// [header] checks them).
   RequestHeadersSpec headers(void Function(HttpHeaders headers) configure);
 
   /// Sets `Accept`: one media type or a comma-separated list.
   RequestHeadersSpec accept(String mediaTypes);
 
   /// Adds a cookie (all of them go in one `Cookie` header, after the
-  /// client's default cookies).
+  /// client's default cookies). Throws an [ArgumentError] for a name that
+  /// is no token, or a value with a control character or a `;`, which
+  /// would add another cookie.
   RequestHeadersSpec cookie(String name, String value);
+
+  /// The API version of this call, put into the request by the client's
+  /// `ApiVersionInserter` (a header, a query parameter, a path segment);
+  /// it replaces the client's `defaultApiVersion`, and `null` sends none.
+  /// A call with a version on a client without an inserter fails with a
+  /// [StateError], as in Spring.
+  ///
+  /// ```dart
+  /// final books = await rest.get()
+  ///     .uri('/books')
+  ///     .apiVersion('2.0')
+  ///     .retrieve()
+  ///     .body<String>();
+  /// ```
+  ///
+  /// Spring (Java): `RequestHeadersSpec.apiVersion(Object)`.
+  RequestHeadersSpec apiVersion(Object? version);
 
   /// Sets the request attribute [name] to [value]: not sent, but handed
   /// to the interceptors in `HttpRequest.attributes` (the OAuth2
@@ -244,6 +271,9 @@ abstract interface class RequestBodySpec implements RequestHeadersSpec {
   RequestBodySpec cookie(String name, String value);
 
   @override
+  RequestBodySpec apiVersion(Object? version);
+
+  @override
   RequestBodySpec attribute(String name, Object? value);
 
   @override
@@ -256,9 +286,17 @@ abstract interface class RequestBodySpec implements RequestHeadersSpec {
   RequestBodySpec contentType(String mediaType);
 
   /// The body: written by the first converter that takes it
-  /// (`Uint8List` and `String` as they are, a `MultipartBody`, a form, or
-  /// JSON through the `ObjectMapper`, with [type] for a generic value).
-  /// Throws an [ArgumentError] for a `GET` or `HEAD` request.
+  /// (`Uint8List` and `String` as they are, a `Stream<List<int>>` or a
+  /// `StreamingBody` read while it is sent, a `MultipartBody`, as a stream
+  /// when a part is streamed, a form, or JSON through the `ObjectMapper`,
+  /// with [type] for a generic value). Throws an [ArgumentError] for a
+  /// `GET` or `HEAD` request.
+  ///
+  /// A streamed body is never read whole into memory, unless an
+  /// interceptor of the client needs the bytes (see
+  /// `StreamingClientHttpRequestInterceptor`). A stream is sent once: a
+  /// retry of the call fails with a `NonRepeatableBodyException`, where a
+  /// `StreamingBody.repeatable` (a file) is opened again.
   RequestBodySpec body(Object? body, [TypeInfo<Object?>? type]);
 }
 
@@ -418,7 +456,9 @@ final class RestClientBuilder {
       _readTimeout = other._readTimeout,
       _connectTimeout = other._connectTimeout,
       _followRedirects = other._followRedirects,
-      _sensitiveHeaders = {...other._sensitiveHeaders};
+      _sensitiveHeaders = {...other._sensitiveHeaders},
+      _defaultApiVersion = other._defaultApiVersion,
+      _apiVersionInserter = other._apiVersionInserter;
 
   String? _baseUrl;
   Map<String, Object?> _defaultUriVariables = {};
@@ -435,10 +475,20 @@ final class RestClientBuilder {
   Duration? _connectTimeout;
   bool _followRedirects = true;
   Set<String> _sensitiveHeaders = {};
+  Object? _defaultApiVersion;
+  ApiVersionInserter? _apiVersionInserter;
 
   /// The base of every relative URI (a URL or a URI template, `${...}`
   /// already resolved); `null` for none.
   String? get configuredBaseUrl => _baseUrl;
+
+  /// The API version of the calls that give none ([defaultApiVersion]);
+  /// `null` for none.
+  Object? get configuredDefaultApiVersion => _defaultApiVersion;
+
+  /// What puts a call's API version into its request
+  /// ([apiVersionInserter]); `null` for none.
+  ApiVersionInserter? get configuredApiVersionInserter => _apiVersionInserter;
 
   /// Sets the base URL ([baseUrl] may hold `{variables}`, filled from
   /// [defaultUriVariables]).
@@ -471,6 +521,34 @@ final class RestClientBuilder {
   /// Adds the cookie [name] with [value] to every request.
   RestClientBuilder defaultCookie(String name, String value) {
     (_defaultCookies[name] ??= []).add(value);
+    return this;
+  }
+
+  /// The API version every call asks for unless it gives its own
+  /// (`apiVersion(...)` on the request, the `version:` of an exchange
+  /// annotation); `null`: none. It goes into the request through the
+  /// [apiVersionInserter], which a client with a version needs.
+  ///
+  /// ```dart
+  /// builder
+  ///     .apiVersionInserter(ApiVersionInserter.useHeader('API-Version'))
+  ///     .defaultApiVersion('1.2');
+  /// ```
+  ///
+  /// Spring (Java): `RestClient.Builder.defaultApiVersion(Object)`.
+  RestClientBuilder defaultApiVersion(Object? version) {
+    _defaultApiVersion = version;
+    return this;
+  }
+
+  /// Puts the API version of each call into its request: a header, a query
+  /// parameter, a path segment, a parameter of the `Content-Type`
+  /// ([ApiVersionInserter]); `null`: none, and a call with a version then
+  /// fails with a [StateError].
+  ///
+  /// Spring (Java): `RestClient.Builder.apiVersionInserter(...)`.
+  RestClientBuilder apiVersionInserter(ApiVersionInserter? inserter) {
+    _apiVersionInserter = inserter;
     return this;
   }
 
@@ -587,13 +665,25 @@ final class RestClientBuilder {
   RestClientBuilder clone() => RestClientBuilder._copy(this);
 
   /// The client with the settings as they are now; later changes to the
-  /// builder do not reach it.
+  /// builder do not reach it. Throws an [ArgumentError] for a default
+  /// header or cookie that `RequestHeadersSpec.header` or `cookie` would
+  /// refuse.
   RestClient build() {
     final mapper = _mapper ?? ObjectMapper();
     final converters = defaultConverters(mapper);
     for (final configure in _converterConfigurers) {
       configure(converters);
     }
+    _defaultHeaders.forEach((name, values) {
+      for (final value in values) {
+        checkHeader(name, value);
+      }
+    });
+    _defaultCookies.forEach((name, values) {
+      for (final value in values) {
+        checkCookie(name, value);
+      }
+    });
     return DefaultRestClient(
       clone(),
       baseUrl: _baseUrl,
@@ -612,6 +702,8 @@ final class RestClientBuilder {
       connectTimeout: _connectTimeout,
       followRedirects: _followRedirects,
       sensitiveHeaders: Set.unmodifiable(_sensitiveHeaders),
+      defaultApiVersion: _defaultApiVersion,
+      apiVersionInserter: _apiVersionInserter,
     );
   }
 
@@ -620,6 +712,7 @@ final class RestClientBuilder {
   static List<HttpMessageConverter> defaultConverters(ObjectMapper mapper) => [
     const ByteArrayHttpMessageConverter(),
     const StringHttpMessageConverter(),
+    const StreamingBodyHttpMessageConverter(),
     const MultipartHttpMessageConverter(),
     const FormHttpMessageConverter(),
     JsonHttpMessageConverter(mapper),

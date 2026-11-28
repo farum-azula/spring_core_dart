@@ -293,6 +293,79 @@ void main() {
       );
     });
 
+    test('a streamed upload passes as a stream; one read once is not sent '
+        'again for a nonce, the 401 is the answer', () async {
+      // The server asks for a new nonce twice, then answers.
+      Future<HttpResponse> nonce(HttpRequest request, String value) async {
+        await request.streamingBody!.toBytes();
+        return HttpResponse(
+          401,
+          headers: HttpHeaders({
+            'WWW-Authenticate': 'DPoP error="use_dpop_nonce"',
+            'DPoP-Nonce': value,
+          }),
+        );
+      }
+
+      final api = MockHttpTransport()
+        ..when(
+          HttpMethod.post,
+          'https://api.test/orders',
+        ).respondWith((request) => nonce(request, 'n-1'))
+        ..when(
+          HttpMethod.post,
+          'https://api.test/orders',
+        ).respondWith((request) => nonce(request, 'n-2'))
+        ..when(HttpMethod.post, 'https://api.test/orders').respondWith(
+          (request) async => HttpResponse(
+            201,
+            headers: HttpHeaders({
+              'X-Size': '${(await request.streamingBody!.toBytes()).length}',
+            }),
+          ),
+        );
+      final rest = RestClient.builder()
+          .baseUrl('https://api.test')
+          .transport(api)
+          .requestInterceptor(
+            OAuth2ClientHttpRequestInterceptor(
+              _FixedManager(stored),
+              dPoPKey: key,
+              defaultClientRegistrationId: 'partner',
+            ),
+          )
+          .build();
+      Stream<List<int>> upload() => Stream.fromIterable([
+        List.filled(5000, 1),
+        List.filled(5000, 2),
+      ]);
+
+      await expectLater(
+        rest.post().uri('/orders').body(upload()).retrieve().toBodilessEntity(),
+        throwsA(
+          isA<HttpClientErrorException>().having(
+            (e) => e.statusCode.value,
+            'status',
+            401,
+          ),
+        ),
+      );
+      expect(api.requests, hasLength(1));
+      expect(api.requests.single.body, isNull);
+      expect(api.requests.single.headers['DPoP'], isNotNull);
+
+      // One that opens again is sent again, with the nonce.
+      final entity = await rest
+          .post()
+          .uri('/orders')
+          .body(StreamingBody.repeatable(upload, length: 10000))
+          .retrieve()
+          .toBodilessEntity();
+      expect(entity.headers['X-Size'], '10000');
+      expect(api.requests, hasLength(3));
+      expect(_claims(api.requests.last.headers['DPoP']!)['nonce'], 'n-2');
+    });
+
     // What only the tests of the interceptor this one replaces checked.
     test('a Bearer token with a key: Bearer, no proof, the stale headers '
         'replaced', () async {

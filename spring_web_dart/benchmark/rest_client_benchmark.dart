@@ -1,21 +1,26 @@
 // What a RestClient call costs on top of the bare HttpTransport: a GET of
 // a URI template with one variable whose JSON answer is read into a map,
-// the same with the template without variables, and a POST of a JSON
-// body, against the same call written by hand on the transport as the
-// family's code does it today (the URL built, a status check, the JSON
-// written and read with the same ObjectMapper). The transport answers at
-// once, so only the client's own work is measured. Not part of the tests; run
-// with
+// the same with the template without variables, the same with a default
+// API version put into a header by an ApiVersionInserter, and a POST of a
+// JSON body, against the same call written by hand on the transport as
+// the family's code does it today (the URL built, a header set, a status
+// check, the JSON written and read with the same ObjectMapper). The
+// transport answers at once, so only the client's own work is measured.
+// Not part of the tests; run with
 //   dart run benchmark/rest_client_benchmark.dart
 //   dart compile exe benchmark/rest_client_benchmark.dart -o /tmp/rc && /tmp/rc
 //
 // November 2026, Apple M5, AOT, microseconds per call (medians of 5 runs
 // of 200 000 calls), bare / RestClient:
-//   GET, template with a variable: 1.54 / 1.85 (+0.31)
-//   GET, template without one:     1.48 / 1.63 (+0.15)
-//   POST, a JSON body:             2.16 / 2.37 (+0.21)
-// The ObjectMapper reading the map is most of either (0.62 us, against
-// 0.14 us for jsonDecode alone).
+//   GET, template with a variable:     1.56 / 1.86 (+0.30)
+//   GET, template without one:         1.48 / 1.64 (+0.16)
+//   GET, a default API version header: 1.54 / 1.68 (+0.15)
+//   POST, a JSON body:                 2.15 / 2.38 (+0.23)
+// The API version costs the client 0.04 to 0.11 us over the same GET
+// without one (two runs: 1.68 and 1.75 against 1.64 and 1.63): the
+// formatted version, its header check and one header set. The
+// ObjectMapper reading the map is most of either (0.62 us, against 0.14 us
+// for jsonDecode alone).
 
 import 'dart:convert';
 import 'dart:io';
@@ -63,6 +68,12 @@ Future<void> main(List<String> args) async {
   final transport = _Instant(utf8.encode('{"isbn":"1","title":"Dune"}'));
   const base = 'https://api.neon.books/v1';
   final rest = RestClient.builder().baseUrl(base).transport(transport).build();
+  final versioned = RestClient.builder()
+      .baseUrl(base)
+      .transport(transport)
+      .apiVersionInserter(ApiVersionInserter.useHeader('API-Version'))
+      .defaultApiVersion('1.2')
+      .build();
   final payload = {'isbn': '1', 'title': 'Dune'};
   final mapper = ObjectMapper();
 
@@ -82,6 +93,20 @@ Future<void> main(List<String> args) async {
   Future<void> bareConstant(int i) async {
     final response = await transport.send(
       HttpRequest(method: HttpMethod.get, url: Uri.parse('$base/books')),
+    );
+    if (!response.isSuccess) {
+      throw StateError('${response.statusCode}');
+    }
+    mapper.readValue(response.bodyText, _json);
+  }
+
+  Future<void> bareVersioned(int i) async {
+    final response = await transport.send(
+      HttpRequest(
+        method: HttpMethod.get,
+        url: Uri.parse('$base/books'),
+        headers: HttpHeaders({'API-Version': '1.2'}),
+      ),
     );
     if (!response.isSuccess) {
       throw StateError('${response.statusCode}');
@@ -110,6 +135,9 @@ Future<void> main(List<String> args) async {
   Future<void> restConstant(int i) =>
       rest.get().uri('/books').retrieve().body(_json);
 
+  Future<void> restVersioned(int i) =>
+      versioned.get().uri('/books').retrieve().body(_json);
+
   Future<void> restPost(int i) =>
       rest.post().uri('/books').body(payload).retrieve().body(_json);
 
@@ -121,6 +149,10 @@ Future<void> main(List<String> args) async {
     'GET, template without one': (
       await _median(bareConstant, count),
       await _median(restConstant, count),
+    ),
+    'GET, a default API version in a header': (
+      await _median(bareVersioned, count),
+      await _median(restVersioned, count),
     ),
     'POST, a JSON body': (
       await _median(barePost, count),

@@ -1880,7 +1880,11 @@ spring:
       catalog:
         base-url: https://catalog.neon.books
         default-header:
-          X-Api-Version: 2
+          X-Tenant: neon
+        apiversion:
+          default: '2'
+          insert:
+            header: API-Version
         read-timeout: 5s
 ```
 
@@ -1891,7 +1895,9 @@ spring.http.clients.connect-timeout=2s
 spring.http.clients.read-timeout=10s
 spring.http.clients.allowed-addresses=api.neon.books,10.20.0.0/16
 spring.http.serviceclient.catalog.base-url=https://catalog.neon.books
-spring.http.serviceclient.catalog.default-header.X-Api-Version=2
+spring.http.serviceclient.catalog.default-header.X-Tenant=neon
+spring.http.serviceclient.catalog.apiversion.default=2
+spring.http.serviceclient.catalog.apiversion.insert.header=API-Version
 spring.http.serviceclient.catalog.read-timeout=5s
 ```
 
@@ -1906,6 +1912,11 @@ spring.http.serviceclient.catalog.read-timeout=5s
 | `spring.http.clients.redirects` | `follow-when-possible`, `follow`, `dont-follow` | `follow-when-possible` | Whether redirects are followed |
 | `spring.http.serviceclient.<group>.base-url` | URL | none | The base of the group's calls; its host is allowed |
 | `spring.http.serviceclient.<group>.default-header.<name>` | list | none | Headers sent with every call of the group |
+| `spring.http.serviceclient.<group>.apiversion.default` | string | none | The API version of the group's calls whose exchange annotation gives no `version:`. It needs an inserter (`apiversion.insert.*`, or one a `RestClientCustomizer` sets): without one the start fails |
+| `spring.http.serviceclient.<group>.apiversion.insert.header` | string | none | The header that holds the version (`API-Version`) |
+| `spring.http.serviceclient.<group>.apiversion.insert.query-parameter` | string | none | The query parameter that holds the version |
+| `spring.http.serviceclient.<group>.apiversion.insert.path-segment` | int | none | The index of the path segment the version is inserted as (`0`: `/books` becomes `/2/books`) |
+| `spring.http.serviceclient.<group>.apiversion.insert.media-type-parameter` | string | none | The parameter of the `Content-Type` that holds the version. With no `insert.*`, the group keeps its builder's inserter (Spring Boot sets one that inserts nothing) |
 | `spring.http.serviceclient.<group>.connect-timeout` | duration | `spring.http.clients`' | The group's connect timeout |
 | `spring.http.serviceclient.<group>.read-timeout` | duration | `spring.http.clients`' | The group's read timeout |
 | `spring.http.serviceclient.<group>.redirects` | as above | `spring.http.clients`' | The group's redirects |
@@ -1913,7 +1924,10 @@ spring.http.serviceclient.catalog.read-timeout=5s
 An `InetAddressFilter` bean narrows the allow list further (every
 address must match it too), and an `AllowedAddressesContributor` bean
 adds what another starter was given by hand. There is no key to switch
-the filter off. The OAuth2 client's keys for `RestClient` calls
+the filter off. As in Spring Boot 4, the API version keys are a group's
+only (there is no `spring.http.clients.apiversion`); a `RestClient`
+built from the `RestClientBuilder` bean takes `apiVersionInserter(...)`
+and `defaultApiVersion(...)` on the builder. The OAuth2 client's keys for `RestClient` calls
 (`spring.security.oauth2.client.restclient.*`) are in
 [section 19](#19-reference-oauth2-clients).
 
@@ -3637,7 +3651,7 @@ spring:
 | `spring.flutter.debug.frame-meter.enabled` | `true` / `false` | not set | The same, for the frame meter, a module of its own (`springBootStarterFlutterDebugFrameMeterAutoConfiguration`, bean `debugFrameMeter` with `on` and `position`). Its action `debug.frame-meter` has the keys `primary+shift+x` and `taps:5+hold:2s` (`spring.flutter.shortcuts.debug.frame-meter`), and it starts in the corner `spring.flutter.frame-meter.position`. With `debug.enabled: false` and this `true`, a release build has the frame meter and no panel |
 | `spring.flutter.debug.motion.enabled` | `true` / `false` | not set | The same, for the motion switch, a module of its own (`springBootStarterFlutterDebugMotionAutoConfiguration`, bean `debugMotion` with `animations`). Its action `debug.motion` has the key `primary+shift+m` (`spring.flutter.shortcuts.debug.motion`) |
 | `spring.flutter.debug.flutter-tools.enabled` | `true` / `false` | not set | The same, for the panel's Flutter tab, a module of its own (`springBootStarterFlutterDebugFlutterToolsAutoConfiguration`, bean `debugFlutterTools`) whose beans need the panel: `spring.flutter.debug.enabled` is its parent switch, so a build without the panel has none of its code whatever this key says, and with the panel not set it is in debug builds only (the narrowest of the two). Flutter's own debug tools, switched live and kept while the app runs: the widget inspector (with the selected widget's type, size, position and ancestors), the performance overlay, the semantics debugger, paint size, baselines, layer borders, pointers, the repaint rainbow, inverted oversized images, slow animations (`timeDilation` 1, 2, 5, 10), and `dart devtools <address>` to copy. In profile and release the inspector and the paint flags show as off with the reason; on the web the performance overlay and the DevTools address do |
-| `spring.flutter.debug.console.enabled` | `true` / `false` | not set | The debug console, a module of its own (`springBootStarterFlutterDebugConsoleAutoConfiguration`, bean `debugConsole`): only `true` puts it in the build, and then in every build, a release build included (unlike the panel, not set does not mean debug builds); not set or `false`, the app has none of its code, nor of its segments and panes (the scene and signals starters' too), its commands, or the application's `@ConsoleSegment`, `@ConsolePane` and `@ConsoleCommand` classes. Its action `debug.console` has the keys `primary+shift+o` and `taps:8+hold:2s` (`spring.flutter.shortcuts.debug.console`). From top to bottom: a header row of segments, then the shown panes, by default the `logs` pane (the newest records colored as the console colors them, the time and `:` faint, the level green, yellow or red, the logger cyan, wrapped, by the Logs tab's filter, the `debugLogFilter` bean, live, or without the panel by `filter.*`); with no pane shown, the header alone ([below](#the-debug-console)); colors and fonts from the [debug theme](#debug-themes) |
+| `spring.flutter.debug.console.enabled` | `true` / `false` | not set | The debug console, a module of its own (`springBootStarterFlutterDebugConsoleAutoConfiguration`, bean `debugConsole`): only `true` puts it in the build, and then in every build, a release build included (unlike the panel, not set does not mean debug builds); not set or `false`, the app has none of its code, nor of its segments and panes (the scene and signals starters' too), its commands, or the application's `@ConsoleSegment`, `@ConsolePane` and `@ConsoleCommand` classes. Its action `debug.console` has the keys `backquote` and `section` (the key left of `1`, `§` on a Mac's ISO keyboard: as a game's console, on any layout, not while a text field has the focus) and `taps:8+hold:2s` (`spring.flutter.shortcuts.debug.console`). From top to bottom: a header row of segments, then the shown panes, by default the `logs` pane (the newest records colored as the console colors them, the time and `:` faint, the level green, yellow or red, the logger cyan, wrapped, by the Logs tab's filter, the `debugLogFilter` bean, live, or without the panel by `filter.*`); with no pane shown, the header alone ([below](#the-debug-console)); colors and fonts from the [debug theme](#debug-themes) |
 | `spring.flutter.debug.console.position` | `top-left`, `top-right`, `bottom-left`, `bottom-right` | `top-left` | Its corner |
 | `spring.flutter.debug.console.opacity` | 0 to 1 | `0.9` | How opaque its background is; the text stays opaque. The header's always, the panes' while they interact (unless a pane gives its own `backgroundOpacity`) |
 | `spring.flutter.debug.console.interaction` | `pass-through`, `interact` | `interact` | How the panes take the pointer at the start, every pane alike, the application's too ([below](#the-debug-console)): `pass-through`, every tap, scroll, hover and drag over them reaches the app, only the header and the handles take one; `interact`, the panes work (the records scroll and select, a row takes a tap, the graph pans, the input line types). The toggle at the right of the header switches it while the app runs (`debugConsole.interaction`), ⌥ (Alt) held on a desktop interacts while held; starting the records' selection or focusing the input line switches it to `interact`. The debug panel is not affected |

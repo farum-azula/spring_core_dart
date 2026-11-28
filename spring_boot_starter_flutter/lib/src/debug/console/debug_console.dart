@@ -33,8 +33,11 @@ import 'package:spring_boot_starter_flutter/src/shortcuts/shortcut_invocation.da
 /// mouse or touch ([paneHeight], [resize]); the heights stay while the app
 /// runs, a hidden pane's too.
 ///
-/// The action `debug.console` shows or hides it: by default ⌘⇧O
-/// (Ctrl+Shift+O) or eight quick taps and a ninth held two seconds;
+/// The action `debug.console` shows or hides it, as a game's console
+/// drops down: by default the key left of `1` (`backquote`, and `section`,
+/// the `§` there on a Mac's ISO keyboard), matched where it lies whatever
+/// the layout and left to the text while a text field has the focus, or
+/// eight quick taps and a ninth held two seconds;
 /// `spring.flutter.shortcuts.debug.console` names other keys or taps. The
 /// debug panel's Overlays tab switches it too. It slides in from its edge
 /// and back out in [slideDuration]
@@ -241,7 +244,7 @@ class DebugConsole extends ChangeNotifier
   String get action => 'debug.console';
 
   @override
-  List<String> get keys => const ['primary+shift+o', 'taps:8+hold:2s'];
+  List<String> get keys => const ['backquote', 'section', 'taps:8+hold:2s'];
 
   @override
   bool handle(ShortcutInvocation invocation) {

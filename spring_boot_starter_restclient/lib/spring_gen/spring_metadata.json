@@ -43,13 +43,63 @@
       "class": "HttpClientsProperties"
     },
     {
+      "name": "spring.http.serviceclient.*.apiversion.default",
+      "type": "String?",
+      "description": "The version every call of the group asks for, unless its method or interface gives one (`version:` of the exchange annotation). It needs a place to go (`insert.*`, or an `ApiVersionInserter` a customizer sets): a group with a default version and no inserter fails the start. Default: none.",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 149,
+      "class": "ApiversionProperties"
+    },
+    {
+      "name": "spring.http.serviceclient.*.apiversion.insert.header",
+      "type": "String?",
+      "description": "The header that holds the version (`API-Version`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 165,
+      "class": "ApiversionInsertProperties"
+    },
+    {
+      "name": "spring.http.serviceclient.*.apiversion.insert.media-type-parameter",
+      "type": "String?",
+      "description": "The parameter of the `Content-Type` that holds the version (`application/json;v=1.2`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 176,
+      "class": "ApiversionInsertProperties"
+    },
+    {
+      "name": "spring.http.serviceclient.*.apiversion.insert.path-segment",
+      "type": "int?",
+      "description": "The index of the path segment the version is inserted as (`0`: `/books` becomes `/1.2/books`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 172,
+      "class": "ApiversionInsertProperties"
+    },
+    {
+      "name": "spring.http.serviceclient.*.apiversion.insert.query-parameter",
+      "type": "String?",
+      "description": "The query parameter that holds the version (`version`).",
+      "default": null,
+      "deprecated": null,
+      "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
+      "line": 168,
+      "class": "ApiversionInsertProperties"
+    },
+    {
       "name": "spring.http.serviceclient.*.base-url",
       "type": "String?",
       "description": "The base URL of the group's calls; its host is allowed by itself (see `spring.http.clients.allowed-addresses`). Default: none.",
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
-      "line": 101,
+      "line": 105,
       "class": "HttpServiceClientGroupProperties"
     },
     {
@@ -59,7 +109,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
-      "line": 108,
+      "line": 112,
       "class": "HttpServiceClientGroupProperties"
     },
     {
@@ -69,7 +119,7 @@
       "default": {},
       "deprecated": null,
       "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
-      "line": 105,
+      "line": 109,
       "class": "HttpServiceClientGroupProperties"
     },
     {
@@ -79,7 +129,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
-      "line": 111,
+      "line": 115,
       "class": "HttpServiceClientGroupProperties"
     },
     {
@@ -89,7 +139,7 @@
       "default": null,
       "deprecated": null,
       "source": "package:spring_boot_starter_restclient/src/config/http_client_properties.dart",
-      "line": 114,
+      "line": 118,
       "class": "HttpServiceClientGroupProperties"
     }
   ],
@@ -392,6 +442,14 @@
       "injects": [],
       "members": [
         {
+          "name": "apiVersionInserter",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "ApiVersionInserter? inserter"
+          ]
+        },
+        {
           "name": "apply",
           "kind": "method",
           "type": "RestClientBuilder",
@@ -420,9 +478,19 @@
           "parameters": []
         },
         {
+          "name": "configuredApiVersionInserter",
+          "kind": "getter",
+          "type": "ApiVersionInserter?"
+        },
+        {
           "name": "configuredBaseUrl",
           "kind": "getter",
           "type": "String?"
+        },
+        {
+          "name": "configuredDefaultApiVersion",
+          "kind": "getter",
+          "type": "Object?"
         },
         {
           "name": "connectTimeout",
@@ -430,6 +498,14 @@
           "type": "RestClientBuilder",
           "parameters": [
             "Duration? timeout"
+          ]
+        },
+        {
+          "name": "defaultApiVersion",
+          "kind": "method",
+          "type": "RestClientBuilder",
+          "parameters": [
+            "Object? version"
           ]
         },
         {

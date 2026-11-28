@@ -82,4 +82,72 @@ void main() {
       expect(() => transport.send(_get('/x')), throwsStateError);
     },
   );
+
+  group('a streamed body', () {
+    HttpRequest post(StreamingBody body) => HttpRequest(
+      method: HttpMethod.post,
+      url: Uri.parse('/upload'),
+      streamingBody: body,
+    );
+
+    Stream<List<int>> chunks() => Stream.fromIterable([
+      [1, 2],
+      [3],
+    ]);
+
+    test('is read as a server reads it and kept for the test', () async {
+      final transport = MockHttpTransport()
+        ..when(HttpMethod.post, '/upload').respond(201);
+      final body = StreamingBody(chunks(), length: 3);
+      expect((await transport.send(post(body))).statusCode, 201);
+      expect(transport.lastRequest.body, [1, 2, 3]);
+      expect(transport.lastRequest.streamingBody, isNull);
+      expect(transport.lastRequest.url, Uri.parse('/upload'));
+      expect(body.isConsumed, isTrue);
+      // Read once: a second attempt fails as with a real server.
+      expect(
+        () => transport.send(post(body)),
+        throwsA(isA<NonRepeatableBodyException>()),
+      );
+    });
+
+    test('a failure reads it too', () async {
+      final transport = MockHttpTransport()
+        ..when(HttpMethod.post, '/upload').fail(HttpTransportException('x'));
+      final body = StreamingBody(chunks());
+      await expectLater(
+        transport.send(post(body)),
+        throwsA(isA<HttpTransportException>()),
+      );
+      expect(body.isConsumed, isTrue);
+    });
+
+    test('respondWith gets it unread', () async {
+      final transport = MockHttpTransport()
+        ..when(HttpMethod.post, '/upload').respondWith(
+          (request) async => HttpResponse(
+            200,
+            body: await request.streamingBody!.toBytes(),
+          ),
+        );
+      final response = await transport.send(post(StreamingBody(chunks())));
+      expect(response.bodyBytes, [1, 2, 3]);
+      // A repeatable one again, through stream().
+      final streamed = await transport.stream(
+        post(StreamingBody.repeatable(chunks, length: 3)),
+      );
+      expect(await streamed.body.expand((c) => c).toList(), [1, 2, 3]);
+    });
+
+    test('one respondWith left unread is read after it', () async {
+      final transport = MockHttpTransport()
+        ..when(
+          HttpMethod.post,
+          '/upload',
+        ).respondWith((request) => HttpResponse(204));
+      final body = StreamingBody(chunks());
+      await transport.send(post(body));
+      expect(body.isConsumed, isTrue);
+    });
+  });
 }

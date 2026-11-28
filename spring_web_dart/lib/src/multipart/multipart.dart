@@ -3,8 +3,12 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:spring_web_dart/src/client/streaming_body.dart';
 import 'package:spring_web_dart/src/http_headers.dart';
 import 'package:spring_web_dart/src/media_type.dart';
+import 'package:spring_web_dart/src/multipart/file_source_stub.dart'
+    if (dart.library.io) 'package:spring_web_dart/src/multipart/file_source_io.dart'
+    as file_source;
 
 /// A file uploaded with a form (a `multipart/form-data` request): its
 /// name, type, size and content.
@@ -568,11 +572,20 @@ final class _ByteReader {
 /// builds them from its `@RequestPart` parameters; build them yourself
 /// only to send a multipart body by hand.
 ///
+/// A part holds its content in memory ([MultipartBodyPart.field],
+/// [MultipartBodyPart.file], [MultipartBodyPart.json]) or reads it while
+/// the body is sent ([MultipartBodyPart.stream],
+/// [MultipartBodyPart.streaming], [MultipartBodyPart.fromPath],
+/// [MultipartBodyPart.multipartFile]): a file of any size then costs a
+/// chunk or two of memory.
+///
 /// ```dart
 /// final parts = [
 ///   MultipartBodyPart.field('title', 'Dune'),
 ///   MultipartBodyPart.json('meta', '{"pages": 412}'),
 ///   MultipartBodyPart.file('cover', bytes, filename: 'dune.png'),
+///   // Read from the disk while it is sent.
+///   MultipartBodyPart.fromPath('scan', '/var/scans/dune.pdf'),
 /// ];
 /// ```
 final class MultipartBodyPart {
@@ -585,7 +598,8 @@ final class MultipartBodyPart {
           name: name,
         ).toString(),
       }),
-      body = utf8.encode(value);
+      _bytes = utf8.encode(value),
+      _streaming = null;
 
   /// A file field [name] holding [content], with an optional [filename].
   /// [contentType] defaults to the type guessed from the [filename]
@@ -596,18 +610,100 @@ final class MultipartBodyPart {
     List<int> content, {
     String? filename,
     String? contentType,
-  }) : headers = HttpHeaders({
-         HttpHeaders.contentDispositionHeader: ContentDisposition(
-           'form-data',
-           name: name,
-           filename: filename,
-         ).toString(),
-         HttpHeaders.contentTypeHeader:
-             contentType ??
-             MediaTypeFactory.getMediaType(filename) ??
-             MediaType.applicationOctetStream,
-       }),
-       body = content;
+  }) : headers = _fileHeaders(name, filename, contentType),
+       _bytes = content,
+       _streaming = null;
+
+  /// A file field [name] whose content is read from [stream] while the
+  /// body is sent, once: a body with this part cannot be sent again (see
+  /// [StreamingBody]). [length] is the number of bytes of [stream] when it
+  /// is known (exact): with the lengths of all its parts known, the body
+  /// goes with `Content-Length`, else in chunks. [filename] and
+  /// [contentType] as for [MultipartBodyPart.file].
+  ///
+  /// ```dart
+  /// // Passes on a download without keeping it.
+  /// final scan = await transport.stream(request);
+  /// final length = scan.headers.contentLength; // -1 when not sent
+  /// final part = MultipartBodyPart.stream(
+  ///   'scan',
+  ///   scan.body,
+  ///   length: length < 0 ? null : length,
+  ///   filename: 'scan.pdf',
+  /// );
+  /// ```
+  MultipartBodyPart.stream(
+    String name,
+    Stream<List<int>> stream, {
+    int? length,
+    String? filename,
+    String? contentType,
+  }) : this.streaming(
+         name,
+         StreamingBody(stream, length: length),
+         filename: filename,
+         contentType: contentType,
+       );
+
+  /// A file field [name] whose content [body] gives while the body is
+  /// sent; a [StreamingBody.repeatable] opens it again for another
+  /// attempt. [filename] and [contentType] as for
+  /// [MultipartBodyPart.file].
+  MultipartBodyPart.streaming(
+    String name,
+    StreamingBody body, {
+    String? filename,
+    String? contentType,
+  }) : headers = _fileHeaders(name, filename, contentType),
+       _bytes = null,
+       _streaming = body;
+
+  /// A file field [name] holding the file at [path], read from the disk
+  /// while the body is sent and opened again for another attempt. Its
+  /// length is read now (a `FileSystemException` when the file cannot be
+  /// read). [filename] defaults to the file's name, [contentType] to the
+  /// type guessed from it. Needs `dart:io`: in a browser it throws an
+  /// [UnsupportedError].
+  ///
+  /// Spring (Java): a `FileSystemResource` as a part,
+  /// `builder.part("scan", new FileSystemResource(path))`.
+  factory MultipartBodyPart.fromPath(
+    String name,
+    String path, {
+    String? filename,
+    String? contentType,
+  }) {
+    final source = file_source.fileSource(path);
+    return MultipartBodyPart.streaming(
+      name,
+      source.body,
+      filename: filename ?? source.filename,
+      contentType: contentType,
+    );
+  }
+
+  /// A file field [name] holding the uploaded [file], read through
+  /// [MultipartFile.openRead] while the body is sent instead of loaded
+  /// whole (`await file.bytes`), with its size, original name and type:
+  /// how a server passes an upload on to another service. Each attempt
+  /// reads the file again.
+  ///
+  /// ```dart
+  /// @PostMapping.of(path: '/covers', consumes: MediaType.multipartFormData)
+  /// Future<void> upload(@RequestPart('file') MultipartFile file) =>
+  ///     rest.post().uri('/archive').body(MultipartBody([
+  ///       MultipartBodyPart.multipartFile('file', file),
+  ///     ])).retrieve().toBodilessEntity();
+  /// ```
+  ///
+  /// Spring (Java): `builder.part("file", file.getResource())`.
+  MultipartBodyPart.multipartFile(String name, MultipartFile file)
+    : this.streaming(
+        name,
+        StreamingBody.repeatable(file.openRead, length: file.size),
+        filename: file.originalFilename,
+        contentType: file.contentType,
+      );
 
   /// A part [name] holding the JSON text [json], with
   /// `Content-Type: application/json`; a server reads it into an object
@@ -620,23 +716,73 @@ final class MultipartBodyPart {
         ).toString(),
         HttpHeaders.contentTypeHeader: MediaType.applicationJson,
       }),
-      body = utf8.encode(json);
+      _bytes = utf8.encode(json),
+      _streaming = null;
+
+  static HttpHeaders _fileHeaders(
+    String name,
+    String? filename,
+    String? contentType,
+  ) => HttpHeaders({
+    HttpHeaders.contentDispositionHeader: ContentDisposition(
+      'form-data',
+      name: name,
+      filename: filename,
+    ).toString(),
+    HttpHeaders.contentTypeHeader:
+        contentType ??
+        MediaTypeFactory.getMediaType(filename) ??
+        MediaType.applicationOctetStream,
+  });
 
   /// The headers of the part: `Content-Disposition`, and `Content-Type`
   /// for a file or JSON part.
   final HttpHeaders headers;
 
-  /// The bytes of the part.
-  final List<int> body;
+  final List<int>? _bytes;
+  final StreamingBody? _streaming;
+
+  /// The bytes of the part. A streamed part has none in memory: it throws
+  /// a [StateError] (read [open] instead).
+  List<int> get body =>
+      _bytes ??
+      (throw StateError(
+        'A streamed multipart part has no bytes in memory; read open()',
+      ));
+
+  /// Whether the content is read while the body is sent, not held in
+  /// memory.
+  bool get isStreamed => _streaming != null;
+
+  /// Whether the part can be sent again: always for one in memory, for a
+  /// streamed one when its source opens again.
+  bool get isRepeatable => _streaming?.isRepeatable ?? true;
+
+  /// The number of bytes of the content, or `null` for a stream whose
+  /// length is not known.
+  int? get length => _bytes?.length ?? _streaming!.length;
+
+  /// The content as a stream: the bytes in one chunk, or the stream of a
+  /// streamed part (see [StreamingBody.open]).
+  Stream<List<int>> open() => switch (_bytes) {
+    final bytes? => Stream.value(bytes),
+    null => _streaming!.open(),
+  };
+
+  bool get _isConsumed => _streaming?.isConsumed ?? false;
 }
 
 /// A `multipart/form-data` body to send: the parts and the boundary that
-/// separates them, encoded into bytes by [encode].
+/// separates them, encoded into bytes by [encode], or written as a stream
+/// by [toStreamingBody] when a part is streamed.
 ///
 /// It is how a client uploads files together with form fields. HTTP
 /// service clients and `MockMvc.multipart` build one for you; use it
 /// directly to send an upload through a `RestClient` or an
-/// `HttpTransport`.
+/// `HttpTransport`. A `RestClient` sends it whole when its parts are in
+/// memory, and as a stream when one of them is streamed (a file of any
+/// size then costs a chunk or two of memory): with `Content-Length` when
+/// the length of every part is known, else in chunks.
 ///
 /// ```dart
 /// // Uploads a book with its cover to another service.
@@ -653,7 +799,7 @@ final class MultipartBodyPart {
 /// ```
 ///
 /// Spring (Java): `MultipartBodyBuilder`, written by
-/// `FormHttpMessageWriter`:
+/// `FormHttpMessageConverter`:
 /// ```java
 /// MultipartBodyBuilder builder = new MultipartBodyBuilder();
 /// builder.part("title", "Dune");
@@ -683,24 +829,95 @@ final class MultipartBody {
   String get contentType =>
       '${MediaType.multipartFormData}; boundary=$boundary';
 
+  /// Whether a part is streamed: the body is then sent through
+  /// [toStreamingBody], not [encode].
+  bool get isStreamed => parts.any((part) => part.isStreamed);
+
+  /// The exact number of bytes of the body, or `null` when the length of
+  /// a streamed part is not known.
+  int? get contentLength {
+    var total = _closing.length;
+    for (final part in parts) {
+      final length = part.length;
+      if (length == null) {
+        return null;
+      }
+      total += _head(part).length + length + 2;
+    }
+    return total;
+  }
+
   /// The whole body as bytes, ready to send; each call encodes it again.
+  /// Throws a [StateError] when a part is streamed ([isStreamed]): send
+  /// [toStreamingBody] instead.
   Uint8List encode() {
+    if (isStreamed) {
+      throw StateError(
+        'The multipart body has a streamed part: send toStreamingBody(), '
+        'not encode()',
+      );
+    }
     final out = BytesBuilder(copy: false);
     for (final part in parts) {
-      out.add(ascii.encode('--$boundary\r\n'));
-      part.headers.forEach((name, values) {
-        for (final value in values) {
-          out.add(utf8.encode('$name: $value\r\n'));
-        }
-      });
       out
-        ..add(const [0x0D, 0x0A])
+        ..add(_head(part))
         ..add(part.body)
         ..add(const [0x0D, 0x0A]);
     }
-    out.add(ascii.encode('--$boundary--\r\n'));
+    out.add(_closing);
     return out.takeBytes();
   }
+
+  /// The body as a [StreamingBody] that writes the parts one after the
+  /// other while it is read, the streamed ones as they arrive, with the
+  /// exact [contentLength] when it is known. It can be sent again when
+  /// every streamed part can (see [MultipartBodyPart.isRepeatable]). Throws
+  /// a [NonRepeatableBodyException] when a part read once has been sent
+  /// already.
+  StreamingBody toStreamingBody() {
+    _checkNotSent();
+    final length = contentLength;
+    return parts.every((part) => part.isRepeatable)
+        ? StreamingBody.repeatable(_write, length: length)
+        : StreamingBody(_write(), length: length);
+  }
+
+  void _checkNotSent() {
+    if (parts.any((part) => part._isConsumed)) {
+      throw NonRepeatableBodyException(
+        'A part of the multipart body is a stream that was sent once '
+        'already and cannot be sent again; make it with '
+        'MultipartBodyPart.streaming and StreamingBody.repeatable, '
+        'MultipartBodyPart.fromPath or MultipartBodyPart.multipartFile to '
+        'allow another attempt',
+      );
+    }
+  }
+
+  Stream<List<int>> _write() async* {
+    // Nothing goes out when a part cannot be sent whole.
+    _checkNotSent();
+    for (final part in parts) {
+      yield _head(part);
+      yield* part.open();
+      yield const [0x0D, 0x0A];
+    }
+    yield _closing;
+  }
+
+  // The boundary line and the headers of [part], up to its content.
+  Uint8List _head(MultipartBodyPart part) {
+    final out = BytesBuilder(copy: false)..add(ascii.encode('--$boundary\r\n'));
+    part.headers.forEach((name, values) {
+      for (final value in values) {
+        out.add(utf8.encode('$name: $value\r\n'));
+      }
+    });
+    out.add(const [0x0D, 0x0A]);
+    return out.takeBytes();
+  }
+
+  List<int> get _closing => ascii.encode('--$boundary--\r\n');
 
   static String _randomBoundary() {
     const chars =

@@ -1,13 +1,17 @@
 // An application with HTTP service interfaces in two groups: every
-// parameter role, every return type, request attributes, a `${...}`
-// header and a @Retryable call; and a third group imported by a
-// configuration with a @Profile. The generator writes their classes and
+// parameter role (maps of values, HttpHeaders, request attributes, a
+// UriBuilderFactory), every return type, request attributes, a `${...}`
+// header and a @Retryable call; a third group imported by a configuration
+// with a @Profile; and the stock group, whose interfaces (clients/) are
+// found by basePackageClasses and ask for API versions. The generator
+// writes their classes and
 // beans (../../spring_gen/http_services/app/http_services_app.spring.dart,
 // from `dart run build_runner build`), with spring.resilience.enabled: true
 // (lib/resources/application.yml) for the retried call.
 import 'package:spring_boot_starter_restclient/spring_boot_starter_restclient.dart';
 
 import '../../spring_gen/http_services/app/http_services_app.spring.dart';
+import 'clients/stock_service.dart';
 
 @Introspected()
 class Book {
@@ -90,6 +94,42 @@ abstract interface class BookService {
 
   @HttpExchange()
   Future<String> exchange(HttpMethod method, Uri url);
+
+  @PostExchange('/{isbn}/scan')
+  @Retryable(
+    includes: [ResourceAccessException],
+    delay: Duration(milliseconds: 1),
+  )
+  Future<void> scanPatiently(
+    @PathVariable() String isbn,
+    @RequestPart() MultipartFile scan,
+  );
+
+  @GetExchange('/filter')
+  Future<String> filter(
+    @RequestParam() Map<String, String> filters, {
+    @RequestParam() Map<String, List<Shelf>>? shelves,
+    @RequestHeader() Map<String, int> counts = const {},
+    @RequestHeader() HttpHeaders? more,
+    @CookieValue() Map<String, List<String>> cookies = const {},
+    @RequestAttribute('trace.tag') String? tag,
+    @RequestAttribute() Map<String, Object?> marks = const {},
+  });
+
+  @GetExchange('/{shelf}/{isbn}')
+  Future<Book> onShelf(@PathVariable() Map<String, String> location);
+
+  @GetExchange('/{isbn}')
+  Future<Book> fromMirror(
+    UriBuilderFactory? mirror,
+    @PathVariable() String isbn,
+  );
+
+  @PostExchange.of(
+    url: '/subscribe',
+    contentType: 'application/x-www-form-urlencoded',
+  )
+  Future<String> subscribe(@RequestParam() Map<String, Shelf> topics);
 }
 
 @HttpExchange('/payments')
@@ -114,6 +154,7 @@ class ReportClients {}
 @SpringBootApplication()
 @ImportHttpServices(group: 'catalog', types: [BookService])
 @ImportHttpServices(group: 'payments', types: [PaymentService])
+@ImportHttpServices(group: 'stock', basePackageClasses: [StockService])
 Future<void> main(List<String> args) async {
   final context = await springApplication.runAsync(args);
   context.close();

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:spring_core_dart/spring_core_dart.dart';
 import 'package:spring_web_dart/src/client/http_response.dart';
+import 'package:spring_web_dart/src/client/streaming_body.dart';
 import 'package:spring_web_dart/src/media_type.dart';
 import 'package:spring_web_dart/src/multipart/multipart.dart';
 
@@ -12,12 +13,15 @@ import 'package:spring_web_dart/src/multipart/multipart.dart';
 ///
 /// The defaults, in order: [ByteArrayHttpMessageConverter] (`Uint8List`),
 /// [StringHttpMessageConverter] (`String`),
-/// [MultipartHttpMessageConverter] (`MultipartBody`, written only),
-/// [FormHttpMessageConverter] (a `Map` sent as
-/// `application/x-www-form-urlencoded`, written only) and
+/// [StreamingBodyHttpMessageConverter] (a `Stream<List<int>>` or a
+/// `StreamingBody`, sent as it is read, written only),
+/// [MultipartHttpMessageConverter] (`MultipartBody`, written only, as a
+/// stream when a part is streamed), [FormHttpMessageConverter] (a `Map`
+/// sent as `application/x-www-form-urlencoded`, written only) and
 /// [JsonHttpMessageConverter] (anything else, as JSON through the
 /// `ObjectMapper`). Add one for another format (XML, CBOR, protobuf) in
-/// front of them.
+/// front of them; a [StreamingHttpMessageConverter] writes a body read
+/// while it is sent.
 ///
 /// ```dart
 /// final client = RestClient.builder()
@@ -49,6 +53,104 @@ abstract interface class HttpMessageConverter {
   /// [FormatException] or a [JsonMappingException] for a body that does
   /// not fit.
   Object? read(TypeInfo<Object?> type, Uint8List body, String? contentType);
+}
+
+/// A [HttpMessageConverter] that can write a value as a [StreamingBody],
+/// read while it is sent, instead of bytes held whole in memory: a stream,
+/// a file, a `MultipartBody` with a streamed part.
+///
+/// A `RestClient` asks [writeStreaming] first, and calls `write` for the
+/// bytes when it answers `null`. Implement it for a format whose bodies
+/// can be large (a CSV export, an archive) and add it in front of the
+/// defaults.
+///
+/// ```dart
+/// final class CsvConverter implements StreamingHttpMessageConverter {
+///   @override
+///   bool canWrite(Object value, String? contentType) => value is Report;
+///
+///   @override
+///   ({StreamingBody body, String contentType}) writeStreaming(
+///     Object value,
+///     String? contentType,
+///     TypeInfo<Object?>? type,
+///   ) => (
+///     body: StreamingBody.repeatable((value as Report).csvLines),
+///     contentType: 'text/csv',
+///   );
+///   ...
+/// }
+/// ```
+///
+/// Spring (Java): an `HttpMessageConverter` that writes to a
+/// `StreamingHttpOutputMessage` (`setBody`), as
+/// `ResourceHttpMessageConverter` and `FormHttpMessageConverter` do.
+abstract interface class StreamingHttpMessageConverter
+    implements HttpMessageConverter {
+  /// The body of [value] as a stream and the `Content-Type` to send it
+  /// with, or `null` to write it as bytes with `write`; [type] describes
+  /// [value] when the caller gave it.
+  ({StreamingBody body, String contentType})? writeStreaming(
+    Object value,
+    String? contentType,
+    TypeInfo<Object?>? type,
+  );
+}
+
+/// A stream as it is read: writes a `Stream<List<int>>` (sent once) or a
+/// [StreamingBody] (with its length, sent again when it is repeatable) as
+/// `application/octet-stream` unless the request says otherwise; never as
+/// bytes in memory. Reads nothing (a response is read as a stream with
+/// `bodyStream()`).
+///
+/// ```dart
+/// await rest.post()
+///     .uri('/imports')
+///     .contentType('text/csv')
+///     .body(File('books.csv').openRead())
+///     .retrieve()
+///     .toBodilessEntity();
+/// ```
+///
+/// Spring (Java): `RequestBodySpec.body(StreamingHttpOutputMessage.Body)`,
+/// and `ResourceHttpMessageConverter` writing an `InputStreamResource`.
+final class StreamingBodyHttpMessageConverter
+    implements StreamingHttpMessageConverter {
+  /// The converter; it has no settings.
+  const StreamingBodyHttpMessageConverter();
+
+  @override
+  bool canWrite(Object value, String? contentType) =>
+      value is StreamingBody || value is Stream<List<int>>;
+
+  @override
+  ({StreamingBody body, String contentType}) writeStreaming(
+    Object value,
+    String? contentType,
+    TypeInfo<Object?>? type,
+  ) => (
+    body: switch (value) {
+      final StreamingBody body => body,
+      _ => StreamingBody(value as Stream<List<int>>),
+    },
+    contentType: contentType ?? MediaType.applicationOctetStream,
+  );
+
+  @override
+  ({List<int> bytes, String contentType}) write(
+    Object value,
+    String? contentType,
+    TypeInfo<Object?>? type,
+  ) => throw UnsupportedError(
+    'StreamingBodyHttpMessageConverter writes streams: writeStreaming',
+  );
+
+  @override
+  bool canRead(TypeInfo<Object?> type, String? contentType) => false;
+
+  @override
+  Object? read(TypeInfo<Object?> type, Uint8List body, String? contentType) =>
+      throw UnsupportedError('StreamingBodyHttpMessageConverter reads nothing');
 }
 
 /// Bytes as they are: writes a `Uint8List` (as
@@ -114,16 +216,31 @@ final class StringHttpMessageConverter implements HttpMessageConverter {
 }
 
 /// Writes a `MultipartBody` with its own `Content-Type` (which carries the
-/// boundary); reads nothing.
+/// boundary): as bytes when its parts are in memory, as a stream
+/// (`MultipartBody.toStreamingBody`) when one of them is streamed, with
+/// `Content-Length` when every length is known. Reads nothing.
 ///
 /// Spring (Java): `FormHttpMessageConverter` writing a `MultiValueMap` of
 /// parts as `multipart/form-data`.
-final class MultipartHttpMessageConverter implements HttpMessageConverter {
+final class MultipartHttpMessageConverter
+    implements StreamingHttpMessageConverter {
   /// The converter; it has no settings.
   const MultipartHttpMessageConverter();
 
   @override
   bool canWrite(Object value, String? contentType) => value is MultipartBody;
+
+  @override
+  ({StreamingBody body, String contentType})? writeStreaming(
+    Object value,
+    String? contentType,
+    TypeInfo<Object?>? type,
+  ) {
+    final body = value as MultipartBody;
+    return body.isStreamed
+        ? (body: body.toStreamingBody(), contentType: body.contentType)
+        : null;
+  }
 
   @override
   ({List<int> bytes, String contentType}) write(

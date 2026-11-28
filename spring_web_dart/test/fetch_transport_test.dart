@@ -58,6 +58,18 @@ void main() {
         await request.response.close();
         return;
       }
+      if (request.uri.path == '/upload') {
+        var size = 0;
+        await for (final chunk in request) {
+          size += chunk.length;
+        }
+        final chunked = request.headers.chunkedTransferEncoding;
+        request.response
+          ..headers.set('Access-Control-Allow-Origin', '*')
+          ..write('$size ${chunked ? 'chunked' : 'length'}');
+        await request.response.close();
+        return;
+      }
       if (request.uri.path == '/loop') {
         request.response
           ..statusCode = HttpStatus.found
@@ -155,6 +167,14 @@ void main() {
       'events': ['1:tick 1', '2:tick 2', '3:tick 3'],
       'readTimeout': 'timeout',
       'steady': 'tick 3',
+      'streamed303': '0 length',
+      // Node's fetch streams a body without Content-Length.
+      'streamed': [
+        '100000 chunked',
+        '100000 chunked',
+        'not repeatable',
+        '100000 chunked',
+      ],
       'webSocket': {
         'platform': true,
         'echo': ['hello', '[1,2,3]'],
@@ -208,7 +228,124 @@ void main() {
       'modes': ['follow', 'follow', 'follow', 'manual', 'manual', 'manual'],
     });
   }, timeout: const Timeout(Duration(minutes: 2)));
+  test('a streamed body: a stream where fetch takes one, else read whole '
+      'first', () async {
+    if (!await _hasNode()) {
+      markTestSkipped('node is not on the PATH');
+      return;
+    }
+    final lib = await Isolate.resolvePackageUri(
+      Uri.parse('package:spring_web_dart/'),
+    );
+    final package = Directory.fromUri(lib!).parent.path;
+    final temp = Directory.systemTemp.createTempSync('spring_web_fetch_');
+    addTearDown(() => temp.deleteSync(recursive: true));
+    final output = '${temp.path}/fetch_stream_main.js';
+    final compiled = await Process.run(Platform.resolvedExecutable, [
+      'compile',
+      'js',
+      '-o',
+      output,
+      'test/js/fetch_stream_main.dart',
+    ], workingDirectory: package);
+    expect(
+      compiled.exitCode,
+      0,
+      reason: '${compiled.stdout}${compiled.stderr}',
+    );
+    Future<Object?> run(String standIn) async {
+      final run = await Process.run('node', [
+        '-e',
+        '$standIn require(${jsonEncode(output)})',
+      ]);
+      expect(run.exitCode, 0, reason: '${run.stdout}${run.stderr}');
+      final line = (run.stdout as String)
+          .split('\n')
+          .firstWhere((l) => l.startsWith('RESULT '));
+      return jsonDecode(line.substring(7));
+    }
+
+    // A fetch that takes streams (detected through Request), and refuses
+    // one from h1.example before reading it, as Chromium over HTTP/1.1.
+    expect(await run(_streamFetchStandIn), {
+      'refused': 'ok',
+      'refusedAgain': 'ok',
+      'streams': 'ok',
+      'broken': 'error',
+      'brokenAgain': 'not repeatable',
+      'calls': [
+        'h1.example refused',
+        'h1.example bytes 4000',
+        // The origin's bodies are read whole from then on.
+        'h1.example bytes 4000',
+        'h2.example stream half 4000',
+        'broken.example broke after 1000',
+      ],
+    });
+    // A browser whose Request turns a stream into text: read whole first.
+    expect(await run('$_noRequestStreams $_streamFetchStandIn'), {
+      'refused': 'ok',
+      'refusedAgain': 'ok',
+      'streams': 'ok',
+      'broken': 'ok',
+      'brokenAgain': 'not repeatable',
+      'calls': [
+        'h1.example bytes 4000',
+        'h1.example bytes 4000',
+        'h2.example bytes 4000',
+        'broken.example bytes 4000',
+      ],
+    });
+  }, timeout: const Timeout(Duration(minutes: 2)));
 }
+
+const _streamFetchStandIn = '''
+globalThis.self = globalThis;
+globalThis.calls = [];
+globalThis.fetch = async (url, init) => {
+  const host = new URL(url).host;
+  const body = init.body;
+  if (body instanceof ReadableStream) {
+    if (host === "h1.example") {
+      calls.push(host + " refused");
+      throw new TypeError("Failed to fetch");
+    }
+    const reader = body.getReader();
+    let size = 0;
+    if (host === "broken.example") {
+      size += (await reader.read()).value.length;
+      calls.push(host + " broke after " + size);
+      throw new TypeError("network error");
+    }
+    for (;;) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      size += chunk.value.length;
+    }
+    calls.push(host + " stream " + init.duplex + " " + size);
+  } else {
+    calls.push(host + " bytes " + (body ? body.length : 0));
+  }
+  return new Response("ok");
+};
+''';
+
+const _noRequestStreams = '''
+const RealRequest = Request;
+globalThis.Request = class extends RealRequest {
+  constructor(url, init) {
+    const copy = {};
+    for (const key of ["method", "headers", "body", "signal", "redirect"]) {
+      if (init && key in init) {
+        copy[key] = key === "body" && init.body instanceof ReadableStream
+          ? String(init.body)
+          : init[key];
+      }
+    }
+    super(url, copy);
+  }
+};
+''';
 
 const _browserStandIn = '''
 globalThis.self = globalThis;

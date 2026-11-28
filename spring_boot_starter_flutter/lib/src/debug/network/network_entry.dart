@@ -242,7 +242,8 @@ enum HttpCallState {
 /// clash with the `@HttpExchange` annotation of `spring_web_dart`.
 final class HttpCall extends NetworkEntry {
   /// A call of [method] to [url], sent with [requestHeaders] and
-  /// [requestSize] bytes of body, of which [requestBody] was kept.
+  /// [requestSize] bytes of body, of which [requestBody] was kept; a
+  /// [requestStreamed] body is counted as it goes, never kept.
   HttpCall({
     required super.id,
     required super.url,
@@ -252,6 +253,7 @@ final class HttpCall extends NetworkEntry {
     required this.requestSize,
     this.requestBody,
     this.streamed = false,
+    this.requestStreamed = false,
   });
 
   @override
@@ -260,14 +262,19 @@ final class HttpCall extends NetworkEntry {
   /// The request's headers, masked.
   final List<NetworkHeader> requestHeaders;
 
-  /// The request's body bytes.
-  final int requestSize;
+  /// The request's body bytes; those of a streamed body counted as they
+  /// are sent.
+  int requestSize;
 
   /// The request's body as kept; `null` without bodies or without one.
   final NetworkBody? requestBody;
 
   /// Whether the response is read as a stream (`HttpTransport.stream`).
   final bool streamed;
+
+  /// Whether the request's body is sent as a stream
+  /// (`HttpRequest.streamingBody`): only its size is recorded.
+  final bool requestStreamed;
 
   /// Where it is.
   HttpCallState state = HttpCallState.waiting;

@@ -24,7 +24,8 @@
 ///   (`AllowedOrigins`, shared by CORS and WebSocket handshakes);
 /// - `RestClient`, which calls an HTTP API and gives the answer back as
 ///   objects (URI templates, bodies through the `ObjectMapper`, 4xx and
-///   5xx as `RestClientResponseException` instances, interceptors);
+///   5xx as `RestClientResponseException` instances, interceptors, API
+///   versions through an `ApiVersionInserter`);
 /// - the client transports that send HTTP and WebSocket traffic
 ///   (`HttpTransport`, `WebSocketTransport`; `platformHttpTransport()`
 ///   picks the right one for the VM, Flutter or the browser), and the
@@ -36,8 +37,9 @@
 /// - the annotations of HTTP service interfaces (`@HttpExchange`,
 ///   `@GetExchange`, `@PostExchange`, `@PutExchange`, `@PatchExchange`,
 ///   `@DeleteExchange`), `@ImportHttpServices` that puts them into
-///   groups, and `HttpRequestAttribute`, the base of an annotation that
-///   sets a request attribute on their calls;
+///   groups, `@RequestAttribute` for a parameter that is a request
+///   attribute, and `HttpRequestAttribute`, the base of an annotation
+///   that sets a request attribute on their calls;
 /// - the `RequestDeadline` that limits the total time of a request and
 ///   the calls it makes (`spring_core_dart`'s, re-exported; an extension,
 ///   Spring has no counterpart).
@@ -85,6 +87,7 @@ export 'package:spring_web_dart/src/client/address/ip_address.dart';
 export 'package:spring_web_dart/src/client/http_request.dart';
 export 'package:spring_web_dart/src/client/http_response.dart';
 export 'package:spring_web_dart/src/client/http_transport.dart';
+export 'package:spring_web_dart/src/client/rest/api_version_inserter.dart';
 export 'package:spring_web_dart/src/client/rest/client_http_request_interceptor.dart';
 export 'package:spring_web_dart/src/client/rest/http_message_converter.dart';
 export 'package:spring_web_dart/src/client/rest/rest_client.dart'
@@ -92,6 +95,7 @@ export 'package:spring_web_dart/src/client/rest/rest_client.dart'
 export 'package:spring_web_dart/src/client/rest/rest_client_exception.dart';
 export 'package:spring_web_dart/src/client/rest/uri_builder.dart';
 export 'package:spring_web_dart/src/client/streamed_http_response.dart';
+export 'package:spring_web_dart/src/client/streaming_body.dart';
 export 'package:spring_web_dart/src/controller_annotations.dart';
 export 'package:spring_web_dart/src/http_headers.dart';
 export 'package:spring_web_dart/src/http_method.dart';
