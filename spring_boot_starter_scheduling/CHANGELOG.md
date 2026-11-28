@@ -1,3 +1,7 @@
+## Unreleased
+
+- Documentation: the dartdoc of `@Scheduled` reads `Duration` values, an inline code span no longer glued to a plural.
+
 ## 0.10.0
 
 - `scheduledAnnotationBeanPostProcessor` takes the `TaskScheduler` and the properties on first use (`ScheduledAnnotationBeanPostProcessor.lazy`): made with it, they and what they need (`defaultValidator`, the advice of other starters) were made before the other post-processors and skipped by them ("not eligible for getting processed by all BeanPostProcessors").

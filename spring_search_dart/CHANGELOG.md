@@ -1,3 +1,7 @@
+## Unreleased
+
+- Documentation: the dartdoc of `SearchIndexInvalidatedEvent` reads `SearchDocumentSource` instances, an inline code span no longer glued to a plural.
+
 ## 0.10.0
 
 - No changes of its own: its generated code (`lib/spring_gen/`) is regenerated with spring_core_dart_generator 0.10.0.
