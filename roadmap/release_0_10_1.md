@@ -68,8 +68,15 @@ Spring stops developing something, the family stops supporting it.
   `example/flutter_guide`, `example/server_guide`, `example/supabase`,
   the tools, READMEs, roadmap, the Zed extension, NOTICE. Past CHANGELOG
   entries stay: they are history.
-- The site (some 466 files): the Feign pages go, every example moves to
-  the HTTP client.
+- The site: the Feign pages stay, marked discontinued, read from its card
+  on the components page and left out of the search (the owner, 28
+  November 2026); every other example moves to the HTTP client.
+- Until 0.10.1 is published Feign stays in the workspace, `publish.yml`
+  and `tool/version.dart`, for its last version; `test_all`, the
+  coverage gate and the release's test run leave it out already
+  (`discontinued` in tool/test_all.dart). **After the publish**, one
+  commit takes it out of all three, and the owner marks it discontinued
+  on pub.dev, replaced by `spring_boot_starter_restclient`.
 - Dota Passport (some 30 files): moves to the HTTP client, on the
   owner's word, as every Dota change.
 

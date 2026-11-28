@@ -84,8 +84,11 @@ Future<void> main(List<String> args) async {
   if (options.only case final wanted?) {
     packages.retainWhere(wanted.contains);
   }
-  // A package with a pipeline of its own is tested there, not here.
-  packages.removeWhere(ownPipeline.contains);
+  // A package with a pipeline of its own is tested there, not here; a
+  // discontinued one nowhere.
+  packages
+    ..removeWhere(ownPipeline.contains)
+    ..removeWhere(discontinued.contains);
   // The package's test folders (`--test-paths`, else test/); with
   // `--tags <tag>` only their files that mention the tag.
   final testPaths = _testPathsByPackage(options.testPaths, packages);
@@ -424,6 +427,13 @@ final class _Options {
 /// This script, the coverage gate and the release's test run leave them
 /// out; they are still analyzed, formatted and checked with the others.
 const ownPipeline = {'spring_boot_starter_supabase'};
+
+/// The discontinued packages, in the workspace only until their last
+/// version is published (`spring_boot_starter_feign`: 0.10.1, then it
+/// leaves the workspace, publish.yml and tool/version.dart). Nothing
+/// depends on them and CI tests them nowhere: this script, the coverage
+/// gate and the release's test run leave them out.
+const discontinued = {'spring_boot_starter_feign'};
 
 /// The `workspace:` entries of the root pubspec.yaml.
 List<String> workspacePackages() {
