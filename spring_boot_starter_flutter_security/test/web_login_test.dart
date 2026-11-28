@@ -339,7 +339,11 @@ void main() {
     });
 
     test('a streamed body goes to the chosen transport as it is', () async {
-      toServer.when(HttpMethod.post, '/api/books').respond(201);
+      StreamingBody? received;
+      toServer.when(HttpMethod.post, '/api/books').respondWith((request) async {
+        received = request.streamingBody;
+        return HttpResponse(201, request: request);
+      });
       final body = StreamingBody.repeatable(() => Stream.value([1]));
       await transport.send(
         HttpRequest(
@@ -348,7 +352,7 @@ void main() {
           streamingBody: body,
         ),
       );
-      expect(toServer.requests.single.streamingBody, same(body));
+      expect(received, same(body));
     });
 
     test("relative URLs are the page's origin", () async {
